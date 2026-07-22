@@ -1,0 +1,26 @@
+{
+  "kind": "critique-panel",
+  "score": 4.9,
+  "axes": {
+    "clarity": {
+      "score": 5,
+      "notes": "The responsive contract now has exactly four named modes—S, M, L, and XL—with one canonical owner in DESIGN.md and matching visual references."
+    },
+    "hierarchy": {
+      "score": 4.8,
+      "notes": "The baseline sheet compares the same four widths in a stable left-to-right sequence, making structural changes easy to scan without extra threshold cards."
+    },
+    "typography": {
+      "score": 4.8,
+      "notes": "PickFlick display-serif, product-sans, and metadata-mono roles remain intact while responsive labels use a concise S/M/L/XL vocabulary."
+    },
+    "motion": {
+      "score": 4.7,
+      "notes": "Existing motion contracts remain unchanged; the responsive reference itself stays deliberately static and uses reduced-motion-safe behavior."
+    },
+    "brand": {
+      "score": 4.9,
+      "notes": "Projector Noir styling remains consistent; gold is limited to breakpoint pivots and does not turn the documentation into a decorative dashboard."
+    }
+  }
+}

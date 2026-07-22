@@ -1,0 +1,122 @@
+# PickFlick
+
+> Agent operating instructions for this repository. The project is greenfield: guidance and design sources exist, application code does not yet exist.
+
+## Core Contract
+
+- The human provides intent, constraints, and acceptance criteria. The agent chooses the smallest safe route, executes, and proves the result.
+- Deliverables are complete or explicitly blocked. Never claim tests, builds, deployments, reviews, or file changes without evidence.
+- If quality, truth, security, privacy, billing correctness, design fidelity, or maintainability is at risk, state the concrete risk and the smallest safer alternative.
+- Keep one coherent objective per iteration. Do not mix unrelated refactors or cleanup into feature work.
+- Treat `Club`, `Session`, `Selection`, `SessionRating`, and `PersonalMovieRating` as canonical domain names; do not revive legacy “Group” or ambiguous “Vote phase” naming.
+
+## Start Here
+
+- For non-trivial work, read the [documentation map](_docs/README.md) and the artifacts relevant to the change.
+- Inspect `git status --short` before editing and preserve unrelated user changes.
+- Before frontend work, inspect the canonical screen, [_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
+- Before domain/API/worker work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
+- For changes touching more than 5 files or roughly 100 lines, present a short impact/verification plan and obtain approval unless an already-approved phase/task clearly covers that breadth.
+- Group genuine requirement questions. If a safe, reversible assumption does not change product scope, state it and proceed.
+
+## Current Repository State
+
+- No package manifests, application source, migrations, tests, or executable project commands exist yet.
+- Do not invent install/dev/build/test/lint/migration commands. Phase 1 must scaffold and verify them before adding a command map here.
+- Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.
+- The HTML prototypes are inspectable design specifications and disposable implementation examples; do not copy their inline JavaScript, fixture data, or page-local CSS into production uncritically.
+
+## Phase Workflow
+
+- Before starting a Roadmap phase, create `_docs/phase-N-short-name.md` and link it from `_docs/README.md` while active.
+- The phase document owns temporary implementation detail: dependencies, inherited behavior, shims/removals, exact subtasks, edge cases, commands, and evidence in progress.
+- It must not replace Roadmap scope/acceptance, Design behavior, Architecture boundaries, or accepted ADR rationale.
+- At phase completion, consolidate durable knowledge into canonical guidance, record evidence/progress in `ROADMAP.md`, then delete the temporary phase document and its docs-map link.
+- Human Verification & Bug Fixing phases occur after each five-phase delivery block. They require a severity-classified issue register; resolve all Blockers/Majors before continuing and record every lower-severity deferral explicitly.
+- Stabilization gates supplement normal per-phase tests and checks; never defer ordinary quality work to the next gate.
+
+## Execution Loop
+
+```text
+understand -> inspect source authority -> choose smallest useful move -> edit -> verify -> update guidance -> report evidence
+```
+
+- Prefer direct, readable implementation over premature abstraction.
+- Add a dependency only with developer approval and a concrete requirement; prefer existing dependencies, platform APIs, or the standard library.
+- If evidence is inconclusive, perform one stronger confirming check before concluding.
+- Verify the affected layer: focused tests for logic, integration tests for boundaries, and visual/accessibility checks for UI.
+- After a CLI scaffold, audit every generated file before keeping it.
+
+## Product Invariants
+
+These rules are high-risk and require database/server enforcement plus focused tests:
+
+- Registered users only; Google and Apple are the MVP identity providers.
+- App roles are User and App Admin only. Club roles are Admin, Moderator, and Member.
+- One Club may have at most one Session in Nomination, Selection, or Watching; Rating Sessions are non-blocking and unlimited.
+- Automatic phase transitions are idempotent and serialized. Watching moves to Rating manually.
+- Session invitations disclose nothing to non-members and never create Club membership.
+- Selection score range is Club-configured as `0..N` or `1..N`, with upper bound no greater than 10.
+- Historical Session Ratings are separate from editable Personal Ratings.
+- Account deletion anonymizes shared history; it does not erase other members’ Club/Session records.
+- Billing webhooks, background jobs, exports, ownership changes, suspension, and destructive actions are idempotent/audited where applicable.
+
+## Frontend & Design Rules
+
+- Canonical visual/behavior authority is the self-contained package under `_docs/design/prototypes`; the production-ready image inventory is under `assets/brand`.
+- Build Projector Noir through shared tokens/components. Do not hard-code near-duplicate values per screen.
+- Mobile is a first-class recomposition. Avoid horizontal page scrolling; bound table scrolling locally.
+- Mouse, keyboard, and touch must work. Preserve visible focus, semantic control names, dialog focus trap/return, live feedback, 44px touch targets, and reduced motion.
+- Implement applicable loading, empty, validation, error, unauthorized, read-only, offline, success, and destructive-confirmation states.
+- Do not bake new user-facing text into image assets. `panda-invited-2.webp` already contains English text and must be used only where that limitation is acceptable.
+- Fixture film images/content do not establish licensing, provider identifiers, business rules, roles, billing plans, or production copy.
+
+## Code, Data & Safety Rules
+
+- Match surrounding conventions once code exists; write minimal, typed, readable code.
+- Names carry meaning. Do not use one term for different concepts or multiple terms for the same concept.
+- Validate untrusted browser/provider/file/webhook input at boundaries and encode user/provider output contextually.
+- Enforce authorization at the server/data boundary; hidden UI is never a permission boundary.
+- Never hardcode or log secrets, tokens, credentials, raw invitation URLs, private keys, or unnecessary personal data.
+- New environment variables must enter `.env.example`, typed startup validation, and the environment inventory in the same change.
+- Never swallow errors or hide failure behind silent fallback. Surface, handle, retry, or log/rethrow intentionally.
+- Treat migrations, data deletion/anonymization, auth, billing, ownership, role changes, exports, and retention as high-risk; use stronger review and evidence.
+- Structural refactors require approval and should be separate from behavior changes. Small necessary cleanup within touched code is fine.
+
+## Git & Worktree
+
+- Branch naming: `PF-type-short-kebab-descriptor` unless the repository later adopts a different documented convention.
+- Use Conventional Commits unless superseded by a project rule.
+- One logical change per commit. Never commit, push, or open a PR without explicit developer approval.
+- Never reset, revert, overwrite, or delete user work unless explicitly requested and exact targets are verified.
+
+## Project Documentation
+
+Guidance is part of implementation. Update every affected artifact in the same task.
+
+| Artifact | Owns | Update when the task changes |
+| --- | --- | --- |
+| [ROADMAP.md](ROADMAP.md) | Product scope, business rules, routes, phases/progress/evidence, open/deferred work. | Scope, priority, behavior, limits, phase status, or a Decision Log item. |
+| [DESIGN.md](DESIGN.md) | Experience direction, sources, screens/states, components, responsive/accessibility contract, design QA. | Visible behavior/content, design foundations, component/state coverage, or QA status. |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Deployables/modules, data/interface ownership, integrations, runtime, security/reliability/operations. | A boundary, dependency, schema/interface workflow, integration, environment, deployment, or guarantee. |
+| [_docs/decisions/README.md](_docs/decisions/README.md) | Durable rationale and supersession for significant technical choices. | A meaningful alternative is accepted, rejected, superseded, or materially revisited. |
+
+Documentation impact check after implementation:
+
+1. Update every affected artifact before reporting completion.
+2. Mark Roadmap work Done only with the acceptance evidence it requests.
+3. Describe verified implementation as Active/current and unimplemented direction as Proposed.
+4. Append/supersede accepted ADR history; never rewrite it to hide a changed decision.
+5. If no artifact is affected, report `Documentation impact: none` and one short reason.
+
+## Reporting Back
+
+Final reports include:
+
+- outcome and files changed;
+- checks run and their results;
+- documentation impact;
+- anything not verified;
+- blockers or follow-up only when relevant.
+
+If blocked, report the blocker, attempted work, evidence, and the smallest decision/access needed next.
