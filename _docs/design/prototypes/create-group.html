@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create Club — PickFlick</title>
+  <style>
+    :root {
+      --bg: #0c0c0c;
+      --surface: #161616;
+      --surface-lit: #1e1e1e;
+      --fg: #eee9e5;
+      --fg-secondary: #a6a19c;
+      --muted: #7d7a76;
+      --border: #2d2a27;
+      --border-lit: #403c38;
+      --accent: #eee9e5;
+      --accent-dim: #706a64;
+      --accent-glow: rgba(238, 233, 229, 0.08);
+      --accent-soft: rgba(238, 233, 229, 0.06);
+      --accent-on: #0c0c0c;
+      --gold: #C89B55;
+      --gold-light: #E0B87A;
+      --gold-dark: #8A6330;
+      --gold-soft: rgba(200, 155, 85, 0.14);
+      --gold-glow: rgba(200, 155, 85, 0.18);
+      --gold-border: rgba(200, 155, 85, 0.34);
+      --ivory: #E8D8B8;
+      --ivory-soft: rgba(232, 216, 184, 0.10);
+      --ivory-muted: rgba(232, 216, 184, 0.68);
+      --warm-accent: var(--gold);
+      --warm-accent-soft: var(--gold-soft);
+      --warm-accent-line: var(--gold-border);
+      --danger: #A94E4A;
+      --danger-hover: #B65A55;
+      --danger-border: rgba(169, 78, 74, 0.38);
+      --danger-soft: rgba(169, 78, 74, 0.12);
+      --danger-text: #D9A09B;
+      --success: #6F8A63;
+      --success-soft: rgba(111, 138, 99, 0.13);
+      --success-border: rgba(111, 138, 99, 0.34);
+      --warn: #B9823A;
+      --warn-soft: rgba(185, 130, 58, 0.14);
+      --warn-border: rgba(185, 130, 58, 0.34);
+      --focus: rgba(232, 216, 184, 0.72);
+      --focus-ring: 0 0 0 3px rgba(232, 216, 184, 0.18);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, 'Times New Roman', serif;
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      --fs-hero: clamp(48px, 6vw, 80px);
+      --fs-section: clamp(32px, 4vw, 52px);
+      --fs-app-title: clamp(32px, 9vw, 48px);
+      --fs-app-section: 24px;
+      --fs-card-title: 22px;
+      --fs-lead: 19px;
+      --fs-body: 16px;
+      --fs-body-sm: 14px;
+      --fs-meta: 13px;
+      --fs-caption: 12px;
+      --fs-micro: 11px;
+      --fs-nav: 12px;
+      --lh-tight: 1.05;
+      --lh-title: 1.12;
+      --lh-body: 1.55;
+      --lh-ui: 1.3;
+      --lh-caption: 1.2;
+      --tracking-tight: -0.025em;
+      --tracking-normal: 0;
+      --tracking-wide: 0.06em;
+      --tracking-caps: 0.12em;
+      --button-primary-hover: #ddd7d1;
+      --radius-pill: 999px;
+      --gap-xs: 8px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --gap-2xl: 96px;
+      --radius: 12px;
+      --radius-lg: 18px;
+      --container: 1120px;
+      --gutter: 32px;
+    }
+
+    :focus-visible {
+      outline: 1px solid var(--focus);
+      box-shadow: var(--focus-ring);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; height: 100%; }
+    body {
+      margin: 0; min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      display: flex; align-items: center; justify-content: center;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2 { text-wrap: balance; }
+
+    .film-grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 100;
+      opacity: 0.025; background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
+    }
+
+    .back-link {
+      position: fixed; top: 24px; left: 24px; z-index: 10;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--fs-body-sm); color: var(--muted); transition: color 0.15s;
+    }
+    .back-link svg { width: 16px; height: 16px; }
+    .back-link:hover { color: var(--fg); }
+
+    .create-scene {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 96px 24px 48px;
+      max-width: 480px; width: 100%;
+    }
+
+    .spotlight {
+      position: absolute; top: -20%; left: 50%; translate: -50% 0;
+      width: 500px; height: 500px; z-index: -1; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 50%, var(--accent-glow) 0%, transparent 70%);
+    }
+
+    .create-mascot { width: 200px; margin-top: 25px; margin-bottom: -40px; position: relative; z-index: 2; transform: translateY(-21px); }
+    .create-mascot img { width: 100%; height: auto; }
+
+    .create-card {
+      position: relative; z-index: 1;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 40px 36px;
+      width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+      margin-top: 5px; text-align: left;
+    }
+
+    .create-card h1 {
+      font-family: var(--font-display); font-size: var(--fs-app-section); line-height: var(--lh-title);
+      letter-spacing: var(--tracking-tight); margin: 0 0 8px; text-align: center;
+    }
+    .create-card .lead { font-size: var(--fs-body); margin-bottom: var(--gap-lg); text-align: center; color: var(--fg-secondary); }
+
+    .field-group { margin-bottom: var(--gap-md); }
+    .field-group label {
+      display: block; font-size: var(--fs-body-sm); font-weight: 500; color: var(--fg);
+      margin-bottom: 6px;
+    }
+    .field-group label .hint { font-weight: 400; color: var(--muted); font-size: var(--fs-caption); }
+    .field-group input[type="text"],
+    .field-group textarea {
+      width: 100%; padding: 12px 14px;
+      background: var(--bg); color: var(--fg);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: var(--fs-body); font-family: var(--font-body);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-group input[type="text"]:focus,
+    .field-group textarea:focus {
+      outline: none; border-color: var(--accent-dim);
+      box-shadow: 0 0 0 1px var(--accent-dim);
+    }
+    .field-group textarea { resize: vertical; min-height: 80px; }
+
+    .scale-row {
+      display: flex; align-items: center; gap: var(--gap-sm);
+    }
+    .scale-row input[type="range"] {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 4px; background: var(--border);
+      border-radius: 2px; outline: none;
+    }
+    .scale-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+      cursor: pointer; transition: box-shadow 0.15s;
+    }
+    .scale-row input[type="range"]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+    .scale-row input[type="range"]::-moz-range-thumb {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+      cursor: pointer;
+    }
+    .scale-value {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 500;
+      color: var(--accent); flex-shrink: 0;
+    }
+
+    .scale-label-row {
+      display: flex; justify-content: space-between;
+      font-size: var(--fs-caption); color: var(--muted); margin-top: 4px;
+    }
+
+    .divider { height: 1px; background: var(--border); margin: var(--gap-md) 0; }
+
+    .create-btn {
+      width: 100%; padding: 14px 24px;
+      background: var(--accent); color: var(--bg);
+      border: none; border-radius: var(--radius);
+      font-size: var(--fs-body); font-weight: 600;
+      letter-spacing: var(--tracking-tight);
+      transition: background 0.2s, box-shadow 0.2s, transform 0.05s;
+      margin-top: var(--gap-sm);
+    }
+    .create-btn:hover { background: var(--button-primary-hover); box-shadow: 0 0 0 1px var(--accent-dim); }
+    .create-btn:active { transform: translateY(1px); }
+
+    .sprocket-divider {
+      display: flex; align-items: center; gap: var(--gap-sm); margin-top: var(--gap-xl);
+    }
+    .sprocket-divider::before, .sprocket-divider::after {
+      content: ''; height: 1px; flex: 1; min-width: 32px;
+      background: repeating-linear-gradient(90deg, var(--border) 0px, var(--border) 3px, transparent 3px, transparent 10px);
+    }
+    .sprocket-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+
+    .scene-ornament {
+      margin-top: var(--gap-lg); text-align: center;
+      font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps);
+      text-transform: uppercase; color: var(--accent-dim);
+    }
+
+    @media (max-width: 480px) {
+      .create-card { padding: 32px 24px; }
+      .create-mascot { width: 140px; }
+      .back-link { top: 16px; left: 16px; }
+    }
+
+    .mobile-bottom-bar {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: color-mix(in oklch, var(--bg) 96%, transparent);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-lit);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .mobile-bottom-bar nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      max-width: 480px; margin-inline: auto;
+    }
+
+    .nav-group {
+      position: relative; min-width: 0;
+    }
+
+    .nav-trigger {
+      position: relative;
+      width: 100%; min-height: 63px;
+      padding: 0; border: 0; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--accent-dim); cursor: pointer;
+      transition: color .18s ease;
+      font-size: var(--fs-micro); font-weight: 500; letter-spacing: var(--tracking-wide);
+      line-height: var(--lh-tight);
+    }
+
+    .nav-trigger:hover,
+    .nav-group.is-open .nav-trigger,
+    .nav-group.active .nav-trigger { color: var(--fg); }
+
+    .nav-trigger svg { display: block; width: 22px; height: 22px; stroke-width: 1.5; }
+
+    .mini-icon { width: 20px; height: 20px; stroke-width: 1.8; flex-shrink: 0; }
+
+    .nav-trigger .bar-badge {
+      position: absolute; top: 6px; right: calc(50% - 18px);
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    }
+
+    .film-menu {
+      position: absolute; left: 50%; bottom: calc(100% - 1px);
+      width: 174px;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateX(-50%) translateY(14px) scaleY(.18);
+      transform-origin: bottom center;
+      transition: opacity .18s ease, visibility 0s linear .34s, transform .34s cubic-bezier(.22,.8,.3,1);
+    }
+
+    .nav-group.is-open .film-menu {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scaleY(1);
+      transition: opacity .18s ease, visibility 0s linear 0s, transform .34s cubic-bezier(.22,.8,.3,1);
+    }
+
+    .film-strip {
+      position: relative;
+      padding: 10px 22px;
+      border: 1px solid var(--border-lit);
+      border-radius: 7px 7px 3px 3px;
+      background: linear-gradient(var(--surface-lit), var(--bg));
+      box-shadow: 0 -12px 28px rgba(0,0,0,.45);
+    }
+
+    .film-strip::before,
+    .film-strip::after {
+      content: "";
+      position: absolute; top: 8px; bottom: 8px;
+      width: 9px; border-radius: 2px; opacity: .68;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 7px,
+        var(--accent-dim) 7px 14px,
+        transparent 14px 22px
+      );
+    }
+
+    .film-strip::before { left: 6px; }
+    .film-strip::after { right: 6px; }
+
+    .film-frame {
+      min-height: 48px;
+      padding: 12px 0;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--muted); text-decoration: none; text-align: center;
+      cursor: pointer;
+      border: none; background: none;
+      width: 100%;
+      font: inherit;
+      border-bottom: 1px solid var(--border);
+      transition: color .16s ease, background-color .16s ease;
+    }
+
+    .film-frame:last-child { border-bottom: 0; }
+
+    .film-frame:hover,
+    .film-frame:focus-visible {
+      color: var(--fg);
+      background: var(--accent-soft);
+      outline: none;
+    }
+
+    .film-frame b {
+      max-width: 110px;
+      font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption);
+    }
+
+    .film-frame.active { color: var(--accent); font-weight: 600; }
+
+    .film-tail {
+      width: 42px; height: 10px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg);
+    }
+
+    .mobile-bar-btn {
+      position: relative;
+      width: 100%; min-height: 63px;
+      padding: 0; border: 0; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--accent-dim); cursor: pointer;
+      transition: color .18s ease;
+      font-size: var(--fs-micro); font-weight: 500; letter-spacing: var(--tracking-wide);
+      line-height: var(--lh-tight);
+    }
+    .mobile-bar-btn:hover { color: var(--fg); }
+    .mobile-bar-btn svg { display: block; width: 22px; height: 22px; stroke-width: 1.5; }
+    .mobile-bar-btn.active { color: var(--accent); }
+
+    .mobile-notif-popover {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1px solid var(--border-lit); border-radius: var(--radius);
+      width: 280px; max-width: calc(100vw - 32px); display: none; z-index: 300;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4); overflow: hidden;
+    }
+    .mobile-notif-popover.show { display: block; }
+    .notif-popover-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .notif-popover-header h4 { margin: 0; font-size: var(--fs-body-sm); }
+    .notif-popover-header button { background: none; border: none; color: var(--accent-dim); font-size: var(--fs-caption); cursor: pointer; }
+    .notif-list { max-height: 340px; overflow-y: auto; }
+    .notif-item { display: flex; gap: 12px; padding: 12px 16px; align-items: flex-start; }
+    .notif-item + .notif-item { border-top: 1px solid var(--border); }
+    .notif-item.unread { background: var(--accent-glow); }
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-body p { margin: 0; font-size: var(--fs-meta); line-height: var(--lh-ui); color: var(--fg); }
+    .notif-body .notif-meta { font-size: var(--fs-micro); color: var(--muted); margin-top: 4px; }
+    .notif-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--surface-lit); display: grid; place-items: center; flex-shrink: 0; }
+    .notif-icon svg { width: 14px; height: 14px; }
+
+    @media (max-width: 820px) {
+      .mobile-bottom-bar { display: block; }
+      body { padding-bottom: 65px; }
+    }
+    @media (min-width: 821px) {
+      .mobile-bottom-bar { display: none; }
+    }
+
+    /* Shared standalone-flow alignment */
+    html { background: #090909; }
+    body {
+      position: relative;
+      min-height: 100svh;
+      padding-bottom: 0;
+      background: #090909;
+      isolation: isolate;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 8%, color-mix(in srgb, var(--gold-soft) 32%, transparent), transparent 34rem),
+        linear-gradient(180deg, var(--bg), #090909);
+    }
+    .back-link {
+      top: 20px; left: 20px;
+      min-height: var(--hit); padding: 0 10px 0 8px;
+      border-radius: var(--radius);
+      color: var(--fg-secondary);
+      font-weight: 500;
+      transition: color .15s ease, background-color .15s ease;
+    }
+    .back-link svg { width: 18px; height: 18px; }
+    .back-link:hover { color: var(--fg); background: var(--accent-soft); }
+    .create-card { box-shadow: 0 20px 52px rgba(0,0,0,.28); }
+    .field-group input[type="text"]:focus,
+    .field-group textarea:focus {
+      border-color: var(--gold-border);
+      box-shadow: 0 0 0 3px var(--gold-soft);
+    }
+    .mobile-bottom-bar,
+    .mobile-notif-popover { display: none !important; }
+
+    @media (max-width: 480px) {
+      .back-link { top: 12px; left: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back
+  </a>
+
+  <div class="film-grain" aria-hidden="true"></div>
+
+  <div class="create-scene" data-od-id="create-scene">
+    <div class="spotlight" aria-hidden="true"></div>
+
+    <div class="create-mascot">
+      <img src="mqvbzvqz-panda-settings-2.webp" alt="PickFlick panda mascot" />
+    </div>
+
+    <div class="create-card">
+      <h1>Open a Screening Room</h1>
+      <p class="lead">Every great film club starts with a name.</p>
+
+      <div class="field-group">
+        <label for="groupName">Club name <span class="hint">— required</span></label>
+        <input type="text" id="groupName" placeholder="e.g. Friday Night Film Club" value="Friday Night Film Club" />
+      </div>
+
+      <div class="field-group">
+        <label for="groupDesc">Description <span class="hint">— optional</span></label>
+        <textarea id="groupDesc" placeholder="What kind of movies does your group watch?">A weekly noir and classic cinema screening club. We watch, we rate, we argue.</textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-group">
+        <label>Nomination voting scale</label>
+        <div class="scale-row">
+          <input type="range" id="voteScale" min="1" max="10" value="3" oninput="updateScale(this, 'voteVal')" />
+          <span class="scale-value" id="voteVal">3</span>
+        </div>
+        <div class="scale-label-row"><span>0</span><span>Members rate nominees 0–<span id="voteMax">3</span></span></div>
+        <p style="font-size:var(--fs-caption);color:var(--fg-secondary);margin-top:6px;">How many points members can give to a nominee during voting.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="create-btn" onclick="handleCreate()">Create Screening Room</button>
+    </div>
+
+    <div class="sprocket-divider" aria-hidden="true">
+      <span class="sprocket-dot"></span>
+      <span class="sprocket-dot"></span>
+      <span class="sprocket-dot"></span>
+    </div>
+
+    <p class="scene-ornament">Scene 02 · Opening Night</p>
+  </div>
+
+  <div class="mobile-notif-popover" id="mobileNotifPopover">
+    <div class="notif-popover-header">
+      <h4>Notifications</h4>
+      <button onclick="markAllRead(); event.stopPropagation();">Mark all as read</button>
+    </div>
+    <div class="notif-list" id="mobileNotifList"></div>
+  </div>
+
+  <div class="mobile-bottom-bar">
+    <nav>
+      <div class="nav-group" id="appNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('appNavGroup')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="20" height="10" rx="2"/><path d="M2 11L5 2h14l3 9"/><line x1="8" y1="2" x2="5" y2="11"/><line x1="12" y1="2" x2="12" y2="11"/><line x1="16" y1="2" x2="19" y2="11"/></svg>
+          <span id="mobileCurrentTab">Hub</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><b>Overview</b></a>
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><b>Sessions</b></a>
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><b>Ratings</b></a>
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><b>Members</b></a>
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg><b>Achievements</b></a>
+            <a class="film-frame" href="app.html"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><b>Manage Club</b></a>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+
+      <div class="nav-group" id="libraryNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('libraryNavGroup')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="2.5"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2"/><circle cx="15.5" cy="5" r="1.2"/><circle cx="17" cy="10" r="1.2"/><circle cx="15.5" cy="15" r="1.2"/><circle cx="10" cy="17" r="1.2"/><circle cx="4.5" cy="15" r="1.2"/><circle cx="3" cy="10" r="1.2"/><circle cx="4.5" cy="5" r="1.2"/><path d="M16 15c1.5 0.5 2.5 1.5 3 3c0.3 1 0.8 1.5 1.5 1.5"/></svg>
+          <span>My Library</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <a class="film-frame" href="library.html?tab=my-ratings"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><b>My Ratings</b></a>
+            <a class="film-frame" href="library.html?tab=watchlist"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><b>Watchlist</b></a>
+            <a class="film-frame" href="library.html?tab=achievements"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg><b>Achievements</b></a>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+
+      <button class="mobile-bar-btn" id="mobileAlertsBtn" onclick="toggleMobileNotif()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bar-badge" id="mobileBellBadge"></span>
+        Alerts
+      </button>
+
+      <div class="nav-group" id="settingsNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('settingsNavGroup')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span id="mobileSettingsLabel">Settings</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <button class="film-frame" onclick="selectSettingsFromFilm('Profile'); window.location.href='settings.html?tab=profile'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><b>Profile</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Notifications'); window.location.href='settings.html?tab=notifications'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><b>Notifications</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Subscription'); window.location.href='settings.html?tab=subscription'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/></svg><b>Subscription</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Privacy'); window.location.href='settings.html?tab=privacy'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><b>Privacy</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Import & Export'); closeNavGroup('settingsNavGroup'); window.location.href='settings.html?tab=import-export'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><b>Import & Export</b></button>
+            <button class="film-frame" onclick="closeNavGroup('settingsNavGroup'); window.location.href='contact.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><b>Contact Us</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Pricing'); window.location.href='pricing.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><b>Pricing</b></button>
+            <button class="film-frame" onclick="closeNavGroup('settingsNavGroup'); alert('Sign out')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><b>Sign out</b></button>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    const notifData = [
+      { id: 1, icon: 'vote', text: 'Voting opened for <strong>Friday Night Film Club</strong>', time: '2 min ago', unread: true },
+      { id: 2, icon: 'nominate', text: '<strong>Sarah</strong> nominated <em>Parasite</em> for the next round', time: '14 min ago', unread: true },
+      { id: 3, icon: 'rate', text: 'Rating closed — <strong>Everything Everywhere</strong> scored 8.6', time: '2 hours ago', unread: true },
+      { id: 4, icon: 'session', text: 'New session logged: <strong>Dune: Part Two</strong>', time: 'Yesterday', unread: false },
+      { id: 5, icon: 'member', text: '<strong>Tom</strong> joined <strong>Friday Night Film Club</strong>', time: '2 days ago', unread: false },
+    ];
+    const notifIcons = {
+      vote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+      nominate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      rate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      session: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>',
+      member: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+    };
+    function renderNotifs() {
+      const unreadCount = notifData.filter(n => n.unread).length;
+      const mobileBadge = document.getElementById('mobileBellBadge');
+      if (mobileBadge) mobileBadge.style.display = unreadCount > 0 ? '' : 'none';
+      const list = document.getElementById('mobileNotifList');
+      if (!list) return;
+      list.innerHTML = notifData.map(n => `
+        <div class="notif-item ${n.unread ? 'unread' : ''}">
+          <div class="notif-icon">${notifIcons[n.icon]}</div>
+          <div class="notif-body"><p>${n.text}</p><div class="notif-meta">${n.time}</div></div>
+        </div>
+      `).join('');
+    }
+    function markAllRead() { notifData.forEach(n => n.unread = false); renderNotifs(); }
+    function toggleNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (!group) return;
+      const isOpen = group.classList.contains('is-open');
+      closeAllNavGroups();
+      if (!isOpen) group.classList.add('is-open');
+    }
+    function closeNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (group) group.classList.remove('is-open');
+    }
+    function closeAllNavGroups() {
+      document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('is-open'));
+    }
+    function toggleMobileNotif() { const pop = document.getElementById('mobileNotifPopover'); if (pop) pop.classList.toggle('show'); }
+    function setActiveFooterBtn(btnId) { document.querySelectorAll('.mobile-bar-btn, .nav-group').forEach(b => b.classList.remove('active')); const btn = document.getElementById(btnId); if (btn) btn.classList.add('active'); }
+    function selectSettingsFromFilm(label) {
+      const el = document.getElementById('mobileSettingsLabel');
+      if (el) el.textContent = label;
+      setActiveFooterBtn('settingsNavGroup');
+      closeNavGroup('settingsNavGroup');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.nav-group')) closeAllNavGroups();
+      const mPop = document.getElementById('mobileNotifPopover'), mBtn = document.getElementById('mobileAlertsBtn');
+      if (mPop && !mPop.contains(e.target) && e.target !== mBtn && !mBtn.contains(e.target)) mPop.classList.remove('show');
+    });
+    renderNotifs();
+    document.addEventListener('DOMContentLoaded', () => renderNotifs());
+
+    function updateScale(slider, valueId) {
+      document.getElementById(valueId).textContent = slider.value;
+      if (slider.id === 'voteScale') {
+        document.getElementById('voteMax').textContent = slider.value;
+      }
+    }
+
+    function handleCreate() {
+      const name = document.getElementById('groupName').value.trim();
+      if (!name) {
+        document.getElementById('groupName').style.borderColor = 'var(--accent-dim)';
+        document.getElementById('groupName').focus();
+        return;
+      }
+      window.location.href = 'app.html';
+    }
+  </script>
+
+</body>
+</html>

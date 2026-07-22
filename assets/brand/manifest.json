@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-22",
+  "formatPolicy": "Preserve transparent WebP originals; generate platform icon derivatives during implementation.",
+  "assets": [
+    { "file": "favicon.png", "width": 300, "height": 300, "role": "favicon-pwa-source", "containsEmbeddedText": false },
+    { "file": "panda-logo.webp", "width": 350, "height": 350, "role": "brand-mark", "containsEmbeddedText": false },
+    { "file": "panda-hero.webp", "width": 750, "height": 400, "role": "landing-hero", "containsEmbeddedText": false },
+    { "file": "panda-404.webp", "width": 604, "height": 381, "role": "error-recovery", "containsEmbeddedText": false },
+    { "file": "panda-analytic.webp", "width": 308, "height": 358, "role": "analytics", "containsEmbeddedText": false },
+    { "file": "panda-basic.webp", "width": 340, "height": 392, "role": "free-plan", "containsEmbeddedText": false },
+    { "file": "panda-projectionist.webp", "width": 281, "height": 361, "role": "pro-plan", "containsEmbeddedText": false },
+    { "file": "panda-chill.webp", "width": 434, "height": 351, "role": "calm-empty-waiting", "containsEmbeddedText": false },
+    { "file": "panda-choosing.webp", "width": 435, "height": 300, "role": "selection", "containsEmbeddedText": false },
+    { "file": "panda-scales.webp", "width": 400, "height": 360, "role": "tie-break-balance", "containsEmbeddedText": false },
+    { "file": "panda-poll-master.webp", "width": 355, "height": 360, "role": "poll-selection-achievement", "containsEmbeddedText": false },
+    { "file": "panda-watching.webp", "width": 348, "height": 240, "role": "watching-members", "containsEmbeddedText": false },
+    { "file": "panda-session.webp", "width": 460, "height": 350, "role": "session-management", "containsEmbeddedText": false },
+    { "file": "panda-rating.webp", "width": 435, "height": 250, "role": "rating-prompt", "containsEmbeddedText": false },
+    { "file": "panda-rating-2.webp", "width": 470, "height": 315, "role": "rating-results-alternate", "containsEmbeddedText": false },
+    { "file": "panda-critic.webp", "width": 305, "height": 375, "role": "reviews-critique", "containsEmbeddedText": false },
+    { "file": "panda-collection.webp", "width": 440, "height": 300, "role": "library-collection", "containsEmbeddedText": false },
+    { "file": "panda-coffee-collection.webp", "width": 455, "height": 305, "role": "library-achievements-alternate", "containsEmbeddedText": false },
+    { "file": "panda-privacy.webp", "width": 270, "height": 270, "role": "privacy-data", "containsEmbeddedText": false },
+    { "file": "panda-settings-1.webp", "width": 400, "height": 400, "role": "settings-profile", "containsEmbeddedText": false },
+    { "file": "panda-settings-2.webp", "width": 450, "height": 325, "role": "settings-subscription-alternate", "containsEmbeddedText": false },
+    { "file": "panda-invited.webp", "width": 400, "height": 300, "role": "invitation", "containsEmbeddedText": false },
+    { "file": "panda-invited-2.webp", "width": 400, "height": 290, "role": "invitation-campaign-alternate", "containsEmbeddedText": true },
+    { "file": "panda-zoom.webp", "width": 464, "height": 385, "role": "search-discovery", "containsEmbeddedText": false }
+  ]
+}

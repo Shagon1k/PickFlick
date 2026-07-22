@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings — PickFlick</title>
+  <style>
+    :root {
+      --bg: #0c0c0c;
+      --surface: #161616;
+      --surface-lit: #1e1e1e;
+      --fg: #eee9e5;
+      --muted: #7d7a76;
+      --fg-secondary: #a6a19c;
+      --border: #2d2a27;
+      --border-lit: #403c38;
+      --button-primary-hover: #ddd7d1;
+      --accent: #eee9e5;
+      --accent-dim: #706a64;
+      --accent-glow: rgba(238, 233, 229, 0.08);
+      --accent-soft: rgba(238, 233, 229, 0.06);
+      --accent-on: #0c0c0c;
+      --gold: #C89B55;
+      --gold-light: #E0B87A;
+      --gold-dark: #8A6330;
+      --gold-soft: rgba(200, 155, 85, 0.14);
+      --gold-glow: rgba(200, 155, 85, 0.18);
+      --gold-border: rgba(200, 155, 85, 0.34);
+      --ivory: #E8D8B8;
+      --ivory-soft: rgba(232, 216, 184, 0.10);
+      --ivory-muted: rgba(232, 216, 184, 0.68);
+      --warm-accent: var(--gold);
+      --warm-accent-soft: var(--gold-soft);
+      --warm-accent-line: var(--gold-border);
+      --danger: #A94E4A;
+      --danger-hover: #B65A55;
+      --danger-border: rgba(169, 78, 74, 0.38);
+      --danger-soft: rgba(169, 78, 74, 0.12);
+      --danger-text: #D9A09B;
+      --success: #6F8A63;
+      --success-soft: rgba(111,138,99,.13);
+      --success-border: rgba(111,138,99,.34);
+      --warn: #B9823A;
+      --warn-soft: rgba(185,130,58,.14);
+      --warn-border: rgba(185,130,58,.34);
+      --focus: rgba(232,216,184,.72);
+      --focus-ring: 0 0 0 3px rgba(232,216,184,.18);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, 'Times New Roman', serif;
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      --fs-hero: clamp(44px, 6vw, 76px);
+      --fs-section: clamp(32px, 4vw, 48px);
+      --fs-app-title: clamp(32px, 9vw, 48px);
+      --fs-app-section: 24px;
+      --fs-card-title: 20px;
+      --fs-lead: 19px;
+      --fs-body: 16px;
+      --fs-body-sm: 14px;
+      --fs-meta: 13px;
+      --fs-caption: 12px;
+      --fs-micro: 11px;
+      --fs-nav: 12px;
+      --lh-tight: 1.05;
+      --lh-title: 1.12;
+      --lh-body: 1.55;
+      --lh-ui: 1.3;
+      --lh-caption: 1.2;
+      --tracking-tight: -0.025em;
+      --tracking-normal: 0;
+      --tracking-wide: 0.06em;
+      --tracking-caps: 0.12em;
+      --gap-xs: 8px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --gap-2xl: 96px;
+      --container: 1120px;
+      --gutter: 24px;
+      --radius: 12px;
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --hit: 44px;
+      --sidebar-w: 235px;
+    }
+
+    :focus-visible {
+      outline: 1px solid var(--focus);
+      box-shadow: var(--focus-ring);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: var(--fs-body);
+      line-height: var(--lh-body); text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 { text-wrap: balance; }
+
+    .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); position: relative; }
+
+    .film-grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 100;
+      opacity: 0.025; background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 94%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding-block: 0;
+    }
+    .topbar-inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; padding-block: 12px; }
+    .logo { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0; line-height: 16px; white-space: nowrap; }
+    .logo img { width: 48px; height: 48px; border-radius: 6px; object-fit: contain; }
+    .topbar-nav { display: flex; align-items: center; justify-content: center; gap: var(--gap-lg); }
+    .topbar-nav a {
+      position: relative; display: flex; align-items: center; min-height: 48px;
+      font-size: var(--fs-body-sm); color: var(--muted); transition: color .18s ease;
+    }
+    .topbar-nav a::after {
+      content: ''; position: absolute; left: 50%; right: 50%; bottom: -12px;
+      height: 2px; border-radius: var(--radius-pill); background: var(--gold);
+      transition: left .18s ease, right .18s ease;
+    }
+    .topbar-nav a:hover,
+    .topbar-nav a:focus-visible { color: var(--ivory); }
+    .topbar-nav a:hover::after,
+    .topbar-nav a:focus-visible::after { left: 0; right: 0; }
+    .topbar-actions { display: flex; align-items: center; gap: var(--gap-md); }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; font-size: var(--fs-meta); font-weight: 600; color: var(--accent-dim); cursor: pointer; }
+    .avatar:hover { border-color: var(--border-lit); color: var(--fg); }
+    .film-popover {
+      position: absolute; top: calc(100% + 4px); right: 0; z-index: 300;
+      width: 174px;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(8px);
+      clip-path: inset(0 0 82% 0 round 0 0 7px 7px);
+      transition: opacity .18s ease, visibility 0s linear .34s, transform .34s cubic-bezier(.22,.8,.3,1), clip-path .34s cubic-bezier(.22,.8,.3,1);
+    }
+    .film-popover.show {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateY(0);
+      clip-path: inset(0 0 0 0 round 0 0 7px 7px);
+      transition: opacity .18s ease, visibility 0s linear 0s, transform .34s cubic-bezier(.22,.8,.3,1), clip-path .34s cubic-bezier(.22,.8,.3,1);
+    }
+    .film-popover .film-strip {
+      border-radius: 3px 3px 7px 7px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.28);
+    }
+    .film-popover .film-tail {
+      border-bottom: 1px solid var(--border-lit);
+      border-radius: 10px 10px 0 0;
+      margin-bottom: -1px;
+    }
+    .film-popover .film-frame { min-height: 44px; padding: 8px 0; }
+    .sep { height: 1px; background: var(--border); margin: 4px 0; }
+    .avatar-wrap { position: relative; }
+    .bell { position: relative; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+    .bell:hover { color: var(--fg); border-color: var(--border-lit); }
+    .bell-badge { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+    .bell-wrap { position: relative; }
+    .notif-popover {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--surface); border: 1px solid var(--border-lit); border-radius: var(--radius);
+      width: 340px; max-width: calc(100vw - 32px); display: none; z-index: 300;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4); overflow: hidden;
+    }
+    .notif-popover.show { display: block; }
+    .notif-popover-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .notif-popover-header h4 { margin: 0; font-size: var(--fs-body-sm); font-weight: 600; }
+    .notif-popover-header button {
+      background: none; border: none; color: var(--muted); font-size: var(--fs-caption); cursor: pointer;
+      font-family: var(--font-body); padding: 4px 8px; border-radius: 6px;
+    }
+    .notif-popover-header button:hover { color: var(--fg); background: var(--surface-lit); }
+    .notif-list { max-height: 320px; overflow-y: auto; }
+    .notif-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border);
+      transition: background 0.12s; cursor: default;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: var(--accent-soft); }
+    .notif-item.unread { background: var(--accent-glow); }
+    .notif-item.unread:hover { background: color-mix(in oklch, var(--accent-glow) 80%, var(--surface)); }
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-body p { margin: 0; font-size: var(--fs-meta); line-height: 1.4; color: var(--fg); }
+    .notif-body .notif-meta { font-size: var(--fs-micro); color: var(--muted); margin-top: 4px; }
+    .notif-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--surface-lit); display: grid; place-items: center; flex-shrink: 0; }
+    .notif-icon svg { width: 14px; height: 14px; }
+    .notif-empty { padding: 32px 16px; text-align: center; color: var(--muted); font-size: var(--fs-meta); }
+    .mobile-notif-popover {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1px solid var(--border-lit); border-radius: var(--radius);
+      width: 280px; max-width: calc(100vw - 32px); display: none; z-index: 300;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4); overflow: hidden;
+    }
+    .mobile-notif-popover.show { display: block; }
+
+    .settings-page-heading {
+      padding-top: 52px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .settings-page-heading h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(38px, 5vw, 58px);
+      line-height: 1.03;
+      font-weight: 500;
+      letter-spacing: -.03em;
+    }
+    .settings-page-heading p { max-width: 500px; margin: 12px 0 0; color: var(--fg-secondary); font-size: var(--fs-body-sm); }
+    .settings-context { text-align: right; }
+    .settings-context strong { display: block; font-size: var(--fs-body-sm); }
+    .settings-context span { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .08em; }
+
+    .settings-layout {
+      display: flex; gap: var(--gap-2xl); align-items: flex-start;
+      padding: var(--gap-2xl) 24px 120px;
+      max-width: var(--container); margin-inline: auto;
+    }
+    .card { margin-top: var(--gap-lg); }
+    .card:first-child { margin-top: 0; }
+    .avatar-upload {
+      display: flex; align-items: center; gap: var(--gap-md);
+      padding: var(--gap-md) 0; margin-bottom: var(--gap-md);
+      border-bottom: 1px solid var(--border);
+    }
+    .avatar-upload-preview {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--surface-lit); border: 1px solid var(--border);
+      display: grid; place-items: center; cursor: pointer;
+      overflow: hidden; flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .avatar-upload-preview:hover { border-color: var(--border-lit); }
+    .avatar-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-upload-initials { font-size: 24px; font-weight: 600; color: var(--accent-dim); }
+    .avatar-upload-info { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .avatar-upload-hint { font-size: var(--fs-caption); color: var(--fg-secondary); width: 100%; }
+    .btn-text {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: var(--fs-meta); padding: 0;
+    }
+    .btn-text:hover { color: var(--danger-hover); }
+    .settings-sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      position: sticky; top: 80px;
+      display: flex; flex-direction: column;
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+      min-height: calc(100vh - 200px);
+    }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface-lit); border: 1px solid var(--border);
+      display: grid; place-items: center; font-size: 15px; font-weight: 600;
+      color: var(--accent-dim); flex-shrink: 0; cursor: pointer; overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .sidebar-avatar:hover { border-color: var(--border-lit); }
+    .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sidebar-user-info { min-width: 0; }
+    .sidebar-user-name { font-size: var(--fs-body-sm); font-weight: 600; color: var(--fg); line-height: var(--lh-caption); }
+    .sidebar-user-email { font-size: var(--fs-caption); color: var(--fg-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-nav {
+      flex: 1; display: flex; flex-direction: column; gap: 2px;
+    }
+    .sidebar-actions {
+      padding-top: 16px; margin-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: var(--radius);
+      font-size: var(--fs-body-sm); font-weight: 500; color: var(--fg-secondary);
+      border: 1px solid transparent; background: transparent;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .sidebar-link:hover { color: var(--fg); background: var(--accent-soft); }
+    .sidebar-link.active {
+      color: var(--ivory); background: transparent;
+      border-color: transparent;
+      box-shadow: inset 1px 0 0 rgba(200, 155, 85, .58), inset -1px 0 0 rgba(200, 155, 85, .58);
+    }
+    .sidebar-link svg { width: 18px; height: 18px; stroke-width: 1.5; flex-shrink: 0; }
+    .sidebar-link.danger { color: var(--danger-text); }
+    .sidebar-link.danger:hover { color: var(--danger-hover); background: var(--danger-soft); }
+
+    .settings-content { flex: 1; min-width: 0; }
+
+    @keyframes tabFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .settings-panel { display: none; }
+    .settings-panel.active { display: block; animation: tabFadeIn .3s ease; }
+
+    .section-title {
+      font-family: var(--font-display); font-size: var(--fs-card-title); font-weight: 600;
+      letter-spacing: var(--tracking-tight); margin: 0 0 var(--gap-md) 0;
+    }
+    .section-label {
+      font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps);
+      text-transform: uppercase; color: var(--fg-secondary); margin-bottom: var(--gap-sm); font-weight: 600;
+    }
+
+    .card {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px;
+    }
+
+    .accordion { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: transparent; }
+    .accordion-item { background: transparent; border-bottom: 1px solid var(--border); transition: background-color .18s ease; }
+    .accordion-item.open { background: color-mix(in srgb, var(--surface-lit) 42%, transparent); }
+    .accordion-item:last-child { border-bottom: 0; }
+    .accordion-item:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    .accordion-item:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .accordion-item:first-child:last-child { border-radius: var(--radius-lg); }
+    .accordion-header {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 16px 20px; border: 0; background: transparent; color: var(--fg);
+      font-size: var(--fs-body-sm); font-weight: 600; cursor: pointer; text-align: left;
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: color-mix(in srgb, var(--surface-lit) 62%, transparent); }
+    .accordion-chevron { width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.2s ease; color: var(--muted); }
+    .accordion-item.open .accordion-chevron { transform: rotate(180deg); }
+    .accordion-body {
+      display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 0.25s ease;
+    }
+    .accordion-item.open .accordion-body { grid-template-rows: 1fr; }
+    .accordion-body-inner { min-height: 0; }
+    .accordion-body p {
+      margin: 0; padding: 0 20px 16px; font-size: var(--fs-meta); color: var(--fg-secondary); line-height: var(--lh-body);
+    }
+    .accordion-actions { display: flex; gap: var(--gap-md); flex-wrap: wrap; padding: 0 20px 16px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 44px; padding: 11px 20px; border-radius: var(--radius);
+      border: 1px solid transparent; font-family: var(--font-body);
+      font-size: var(--fs-body); font-weight: 500; line-height: var(--lh-ui);
+      letter-spacing: var(--tracking-tight); text-decoration: none; cursor: pointer;
+      transition: transform .05s ease, color .15s ease, background-color .15s ease, border-color .15s ease;
+    }
+    .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn-primary:hover { background: var(--button-primary-hover); border-color: var(--button-primary-hover); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--fg); }
+    .btn-sm { padding: 6px 14px; font-size: var(--fs-meta); min-height: 36px; }
+    .btn[disabled], .btn[aria-disabled="true"] { opacity: .42; pointer-events: none; cursor: not-allowed; }
+    .btn-secondary-danger { background: var(--danger-soft); color: var(--danger-text); border-color: var(--danger-border); }
+    .btn-secondary-danger:hover { border-color: var(--danger); background: rgba(169,78,74,.18); }
+
+    .field {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: var(--gap-md);
+    }
+    .field label {
+      font-size: var(--fs-meta); font-weight: 500; color: var(--fg-secondary);
+      text-transform: uppercase; letter-spacing: var(--tracking-wide);
+    }
+    .field input {
+      min-height: var(--hit); padding: 10px 14px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg);
+      color: var(--fg); font-size: var(--fs-body-sm); font-family: var(--font-body);
+      transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    .field input:hover:not(:disabled) { border-color: var(--border-lit); }
+    .field input:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-ring); }
+    .field input:disabled {
+      opacity: 1; color: var(--fg-secondary);
+      background: color-mix(in srgb, var(--surface-lit) 62%, transparent);
+      border-color: color-mix(in srgb, var(--border-lit) 78%, var(--border));
+      cursor: not-allowed;
+    }
+    .field-hint { font-size: var(--fs-caption); color: var(--fg-secondary); margin-top: 2px; }
+
+    @keyframes pipPop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+    .toggle {
+      appearance: none; width: 38px; height: 22px;
+      background: var(--border); border-radius: 11px;
+      position: relative; cursor: pointer; transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle:active { animation: pipPop .3s ease; }
+    .toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--fg); transition: transform 0.2s;
+    }
+    .toggle:checked { background: var(--accent-dim); }
+    .toggle:checked::after { transform: translateX(16px); background: var(--accent); }
+
+    .inline-code {
+      padding: 2px 5px; border-radius: 4px;
+      background: var(--accent-soft); color: var(--fg-secondary);
+      font-family: var(--font-mono); font-size: var(--fs-caption);
+    }
+
+    .notification-grid {
+      display: grid; grid-template-columns: 1fr 60px 60px;
+      gap: 0; align-items: stretch;
+    }
+    .notification-grid .grid-header {
+      font-size: var(--fs-micro); font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: var(--tracking-wide);
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .notification-grid .grid-header:first-child { text-align: left; }
+    .notification-grid .grid-row { display: contents; }
+    .notification-grid .grid-cell {
+      min-height: 52px; padding: 12px 0; border-bottom: 1px solid var(--border);
+      box-sizing: border-box;
+      display: flex; align-items: center;
+    }
+    .notification-grid .grid-cell:not(:first-child) { justify-content: center; }
+
+    .plan-card {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--gap-md); flex-wrap: wrap;
+    }
+    .plan-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px;
+      font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-wide);
+      font-weight: 600; text-transform: uppercase;
+    }
+    .badge-free { background: var(--accent-soft); color: var(--muted); border: 1px solid var(--border); }
+    .badge-pro { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent-dim); }
+
+    .usage-bar {
+      width: 100%; height: 6px; border-radius: 3px;
+      background: var(--border); margin-top: 8px; overflow: hidden;
+    }
+    .usage-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+    .tier-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg);
+      margin-bottom: var(--gap-lg);
+    }
+    .tier-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px 24px;
+      display: flex; flex-direction: column;
+    }
+    .tier-card.featured {
+      border-color: var(--accent-dim);
+      background: var(--surface-lit);
+      position: relative;
+    }
+    .tier-card.featured::before {
+      content: 'Recommended'; position: absolute; top: -12px; left: 50%; translate: -50% 0;
+      background: var(--accent); color: var(--bg); padding: 4px 14px;
+      border-radius: 999px; font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.08em; font-weight: 600; text-transform: uppercase;
+    }
+    .tier-name { font-family: var(--font-display); font-size: var(--fs-app-section); font-weight: 600; margin: 0 0 4px 0; }
+    .tier-price { font-size: 36px; font-weight: 700; margin: 0 0 4px 0; }
+    .tier-price span { font-size: 16px; font-weight: 400; color: var(--muted); }
+    .tier-desc { font-size: var(--fs-body-sm); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0; }
+    .tier-features { list-style: none; padding: 0; margin: 0 0 var(--gap-lg) 0; flex: 1; }
+    .tier-features li {
+      font-size: var(--fs-body-sm); padding: 6px 0; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .tier-features li::before { content: '—'; color: var(--accent); font-weight: 600; }
+    .tier-card .btn { width: 100%; text-align: center; justify-content: center; }
+
+    .usage-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-md);
+    }
+    .usage-card {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .usage-label { font-size: var(--fs-caption); color: var(--muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+    .usage-value { font-family: var(--font-mono); font-size: 28px; font-weight: 600; margin: 4px 0; }
+
+    .billing-table-wrap { width: 100%; overflow-x: auto; }
+    .billing-table { width: 100%; min-width: 520px; border-collapse: collapse; }
+    .billing-table th, .billing-table td {
+      text-align: left; padding: 12px 0;
+      font-size: var(--fs-body-sm); border-bottom: 1px solid var(--border);
+    }
+    .billing-table th { font-size: var(--fs-micro); color: var(--muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: 600; }
+    .billing-table td:last-child, .billing-table th:last-child { text-align: right; }
+
+    .danger-zone {
+      border: 1px solid var(--danger-border); border-radius: var(--radius-lg);
+      background: var(--danger-soft); padding: 20px 24px; margin-top: var(--gap-md);
+    }
+    .danger-zone h4 { color: var(--danger-text); font-size: var(--fs-body-sm); margin: 0 0 8px 0; }
+
+    .mobile-bottom-bar {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: color-mix(in oklch, var(--bg) 96%, transparent);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255,255,255,.14);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .mobile-bottom-bar nav {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      max-width: 480px; margin-inline: auto;
+    }
+    .nav-group {
+      position: relative; min-width: 0;
+    }
+.nav-trigger {
+      position: relative;
+      width: 100%; min-height: 63px;
+      padding: 0; border: 0; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--accent-dim); cursor: pointer;
+      transition: color .18s ease;
+      font-size: 10px; font-weight: 500; letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .nav-trigger:hover,
+    .nav-group.is-open .nav-trigger,
+    .nav-group.active .nav-trigger { color: var(--fg); }
+
+    .nav-trigger svg { display: block; width: 22px; height: 22px; stroke-width: 1.5; }
+    .mini-icon { width: 20px; height: 20px; stroke-width: 1.8; flex-shrink: 0; }
+    .nav-trigger .bar-badge {
+      position: absolute; top: 6px; right: calc(50% - 18px);
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    }
+    .film-menu {
+      position: absolute; left: 50%; bottom: calc(100% - 1px);
+      width: 174px;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateX(-50%) translateY(14px);
+      clip-path: inset(82% 0 0 0 round 7px 7px 0 0);
+      transition: opacity .18s ease, visibility 0s linear .34s, transform .34s cubic-bezier(.22,.8,.3,1), clip-path .34s cubic-bezier(.22,.8,.3,1);
+    }
+    .nav-group.is-open .film-menu {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+      clip-path: inset(0 0 0 0 round 7px 7px 0 0);
+      transition: opacity .18s ease, visibility 0s linear 0s, transform .34s cubic-bezier(.22,.8,.3,1), clip-path .34s cubic-bezier(.22,.8,.3,1);
+    }
+    .film-strip {
+      position: relative;
+      padding: 10px 22px;
+      border: 1px solid var(--border-lit);
+      border-radius: 7px 7px 3px 3px;
+      background: var(--bg);
+      box-shadow: 0 -8px 20px rgba(0,0,0,.28);
+    }
+    .film-strip::before,
+    .film-strip::after {
+      content: "";
+      position: absolute; top: 8px; bottom: 8px;
+      width: 9px; border-radius: 2px; opacity: .82;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 7px,
+        var(--ivory-muted) 7px 14px,
+        transparent 14px 22px
+      );
+    }
+    .film-strip::before { left: 6px; }
+    .film-strip::after { right: 6px; }
+    .film-frame {
+      min-height: 48px;
+      padding: 12px 0;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--muted); text-decoration: none; text-align: center;
+      position: relative;
+      cursor: pointer;
+      border: none; background: none;
+      width: 100%;
+      font: inherit;
+      border-bottom: 1px solid var(--border);
+      transition: color .16s ease, background-color .16s ease;
+    }
+    .film-frame:last-child { border-bottom: 0; }
+    .film-frame:hover,
+    .film-frame:focus-visible {
+      color: var(--fg);
+      background: color-mix(in srgb, var(--surface-lit) 56%, transparent);
+      outline: none;
+    }
+    .film-frame b {
+      max-width: 110px;
+      font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption);
+    }
+    .film-frame.active { color: var(--ivory); font-weight: 600; }
+    .film-frame.active::before {
+      content: ""; position: absolute; left: 0; top: 9px; bottom: 9px;
+      width: 2px; border-radius: var(--radius-pill); background: var(--gold);
+    }
+    .film-tail {
+      width: 42px; height: 10px;
+      margin: 0 auto;
+      border: 1px solid var(--border-lit);
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg);
+    }
+    .mobile-bar-btn {
+      position: relative;
+      width: 100%; min-height: 63px;
+      padding: 0; border: 0; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+      color: var(--accent-dim); cursor: pointer;
+      transition: color .18s ease;
+      font-size: var(--fs-micro); font-weight: 500; letter-spacing: 0.02em;
+      line-height: 1;
+    }
+    .mobile-bar-btn:hover { color: var(--fg); }
+    .mobile-bar-btn svg { display: block; width: 22px; height: 22px; stroke-width: 1.5; }
+    .mobile-bar-btn.active { color: var(--accent); }
+
+    .global-search {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--bg);
+      height: 100%;
+      display: flex; align-items: center;
+      padding: 0 var(--gutter);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(-100%);
+      transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease, visibility 0s linear 0.3s;
+    }
+    .global-search.open {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateY(0);
+      transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease, visibility 0s linear 0s;
+    }
+    .global-search-inner {
+      display: flex; align-items: center; justify-content: center; gap: var(--gap-sm); width: 100%;
+      max-width: var(--container); margin: 0 auto;
+    }
+    .global-search .input {
+      flex: 0 1 480px; font-size: 16px; font-family: var(--font-display);
+      padding: 10px 16px; background: var(--surface);
+    }
+    .global-search .close-btn {
+      width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 50%;
+      background: var(--surface); color: var(--muted); display: grid; place-items: center;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .global-search .close-btn:hover { color: var(--fg); border-color: var(--border-lit); }
+    .search-hat {
+      width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+      border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+    }
+    .search-hat:hover { color: var(--fg); border-color: var(--border-lit); }
+    .mobile-search-hat { width: 34px; height: 34px; display: none; place-items: center; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+    .mobile-search-hat:hover { color: var(--fg); border-color: var(--border-lit); }
+
+    .search-results {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--surface); border: 1px solid var(--border-lit);
+      border-radius: var(--radius); margin-top: 8px;
+      max-height: 400px; overflow-y: auto; z-index: 200;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .search-results.open { display: block; }
+    .search-result {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .search-result:hover { background: var(--accent-soft); }
+    .search-result + .search-result { border-top: 1px solid var(--border); }
+    .search-result .sr-poster { width: 36px; height: 54px; border-radius: 4px; background: var(--surface-lit); flex-shrink: 0; display: grid; place-items: center; color: var(--muted); font-size: 8px; }
+    .search-result .sr-info { flex: 1; min-width: 0; }
+    .search-result .sr-title { font-size: var(--fs-body-sm); font-weight: 600; }
+    .search-result .sr-meta { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+
+    /* Shared control-page geometry: Settings and Admin use one flat shell. */
+    @media (min-width: 821px) {
+      .settings-layout {
+        display: grid;
+        grid-template-columns: 218px minmax(0, 1fr);
+        gap: 36px;
+        padding: 34px var(--gutter) 120px;
+      }
+      .settings-sidebar {
+        width: auto;
+        min-height: 0;
+        top: 96px;
+        padding: 10px;
+      }
+      .sidebar-user {
+        padding: 12px 14px 16px;
+        margin-bottom: 8px;
+      }
+      .sidebar-nav { gap: 0; }
+      .sidebar-actions {
+        padding: 9px 0 0;
+        margin: 9px 0 0;
+      }
+      .sidebar-link {
+        min-height: 44px;
+        padding: 10px 14px;
+        border-radius: 8px;
+      }
+      .settings-content { width: 100%; }
+      .settings-panel > .card,
+      .settings-panel > .accordion,
+      .settings-panel > .danger-zone {
+        max-width: none;
+      }
+      .settings-panel > .card { padding: 22px 24px; }
+      .card { margin-top: 24px; }
+      .section-label {
+        margin-bottom: 18px;
+        color: var(--fg-secondary);
+        font-size: 10px;
+        letter-spacing: .11em;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar-actions { display: none; }
+      .topbar-nav { display: none; }
+      .topbar { padding-block: 0; }
+      .topbar-inner { display: flex; justify-content: center; padding-block: 4px; position: relative; }
+      .logo { flex-direction: column; gap: 0; line-height: 14px; text-align: center; font-size: var(--fs-body); justify-content: center; align-items: center; }
+      .logo img { width: 40px; height: 40px; }
+      .mobile-search-hat { display: grid; position: absolute; right: 16px; }
+      .settings-sidebar { display: none; }
+      .settings-layout { flex-direction: column; gap: var(--gap-md); padding-top: var(--gap-md); padding-bottom: 96px; }
+      .settings-page-heading { padding-top: 34px; align-items: flex-start; }
+      .settings-context { display: none; }
+      .settings-content { width: 100%; padding-bottom: var(--gap-xl); }
+      .settings-panel, .settings-panel .card { width: 100%; }
+      .mobile-bottom-bar { display: block; }
+      body { padding-bottom: 65px; }
+      .tier-grid { grid-template-columns: 1fr; }
+      .usage-stats { grid-template-columns: 1fr; }
+      .notification-grid { grid-template-columns: 1fr auto auto; font-size: 13px; }
+      .plan-card { flex-direction: column; align-items: flex-start; }
+      .plan-card .btn { width: 100%; text-align: center; }
+      .billing-table { font-size: 13px; }
+      .avatar-upload { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (min-width: 821px) {
+      .mobile-bottom-bar { display: none; }
+      .mobile-search-hat { display: none; }
+    }
+
+    
+  </style>
+</head>
+<body>
+  <div class="film-grain"></div>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="landing.html" class="logo">
+        <img src="mquu6sau-panda-logo.webp" alt="PickFlick" width="32" height="32" />
+        PickFlick
+      </a>
+      <nav class="topbar-nav" aria-label="Primary navigation">
+        <a href="app.html">Hub</a>
+        <a href="library.html">My Library</a>
+      </nav>
+      <button class="mobile-search-hat" onclick="toggleGlobalSearch()" aria-label="Search films">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <div class="topbar-actions">
+        <button class="search-hat" onclick="toggleGlobalSearch()" aria-label="Search films">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="bell-wrap">
+          <button class="bell" id="bellBtn" aria-label="Notifications" aria-haspopup="dialog" aria-controls="notifPopover" aria-expanded="false" onclick="toggleNotifPopover()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="bell-badge" id="bellBadge"></span>
+          </button>
+          <div class="notif-popover" id="notifPopover" role="dialog" aria-label="Notifications" aria-hidden="true">
+            <div class="notif-popover-header">
+              <h4>Notifications</h4>
+              <button onclick="markAllRead(); event.stopPropagation();">Mark all as read</button>
+            </div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
+        <div class="avatar-wrap" id="avatarWrap">
+            <button class="avatar" id="avatarBtn" type="button" title="Account" aria-label="Open account menu" aria-haspopup="menu" aria-controls="avatarPopover" aria-expanded="false">JD</button>
+            <div class="film-popover" id="avatarPopover" role="menu" aria-hidden="true">
+              <div class="film-tail"></div>
+              <div class="film-strip">
+                <a href="settings.html" class="film-frame active" aria-current="page">
+                  <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <b>Settings</b>
+                </a>
+<a href="settings.html?tab=privacy" class="film-frame">
+                <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <b>Privacy</b>
+              </a>
+              <a href="pricing.html" class="film-frame">
+                <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <b>Pricing</b>
+              </a>
+              <a href="contact.html" class="film-frame">
+                <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <b>Contact Us</b>
+              </a>
+              <button class="film-frame" onclick="alert('Sign out')">
+                  <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <b>Sign out</b>
+                </button>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+      <div class="global-search" id="globalSearch">
+        <div class="global-search-inner">
+          <input type="text" class="input" placeholder="Search films…" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" />
+          <button class="close-btn" onclick="toggleGlobalSearch()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="search-results" id="globalSearchResults"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <header class="settings-page-heading container" data-od-id="settings-heading">
+      <div><h1>Settings</h1><p>Manage your profile, notifications, subscription, privacy, and personal data.</p></div>
+      <div class="settings-context"><strong>Jane Doe</strong><span>Personal account</span></div>
+    </header>
+    <div class="settings-layout">
+      <aside class="settings-sidebar">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">JD</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Jane Doe</div>
+            <div class="sidebar-user-email">jane.doe@gmail.com</div>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="sidebar-link active" data-panel="profile" onclick="switchPanel('profile')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+          </button>
+          <button class="sidebar-link" data-panel="notifications" onclick="switchPanel('notifications')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Notifications
+          </button>
+          <button class="sidebar-link" data-panel="subscription" onclick="switchPanel('subscription')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            Subscription
+          </button>
+          <button class="sidebar-link" data-panel="privacy" onclick="switchPanel('privacy')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Privacy
+          </button>
+          <button class="sidebar-link" data-panel="import-export" onclick="switchPanel('import-export')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import & Export
+          </button>
+        </nav>
+        <div class="sidebar-actions">
+          <button class="sidebar-link" onclick="alert('Sign out')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+          
+        </div>
+      </aside>
+
+      <div class="settings-content">
+
+        <div class="settings-panel active" id="panel-profile" data-od-id="profile">
+          <div class="card">
+            <div class="section-label">Profile</div>
+            <div class="avatar-upload">
+              <div class="avatar-upload-preview" id="avatarUploadPreview" onclick="document.getElementById('avatarFile').click()">
+                <span class="avatar-upload-initials">JD</span>
+              </div>
+              <div class="avatar-upload-info">
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('avatarFile').click()">Change photo</button>
+                <button class="btn btn-secondary-danger btn-sm" id="removeAvatarBtn" onclick="removeAvatar()">Remove</button>
+                <span class="avatar-upload-hint">JPG, PNG, or WebP. Max 2 MB.</span>
+              </div>
+              <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarUpload(event)" />
+            </div>
+            <div class="field">
+              <label>Display name</label>
+              <input type="text" value="Jane Doe" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" value="jane.doe@gmail.com" disabled />
+              <span class="field-hint">Managed via Google OAuth — cannot be changed here.</span>
+            </div>
+            <div class="field">
+              <label>Language</label>
+              <input type="text" value="English" disabled />
+              <span class="field-hint">Russian coming in a future update.</span>
+            </div>
+            <button class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </div>
+
+        <div class="settings-panel" id="panel-notifications" data-od-id="notifications">
+          <div class="card">
+            <div class="section-label">Notifications</div>
+            <p style="font-size: var(--fs-meta); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">Choose how you want to be notified about group activity.</p>
+            <div class="notification-grid">
+              <div class="grid-header" style="text-align: left;">Event</div>
+              <div class="grid-header">In-app</div>
+              <div class="grid-header">Email</div>
+
+              <div class="grid-row">
+                <div class="grid-cell">Round started</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Voting opened</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Voting closed / winner</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Rating opened</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Rating closed</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Club inactivity warning</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+              </div>
+              <div class="grid-row">
+                <div class="grid-cell">Payment / billing</div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+                <div class="grid-cell"><input type="checkbox" class="toggle" checked /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-panel" id="panel-subscription" data-od-id="subscription">
+          <div class="card">
+            <div class="section-label">Current plan</div>
+            <div class="plan-card">
+              <div>
+                <div class="plan-name">Free <span class="badge badge-free">Active</span></div>
+                <div style="font-size: var(--fs-body-sm); color: var(--fg-secondary); margin-top: 4px;">€0/month — 1 admin club, up to 8 members</div>
+              </div>
+              <button class="btn btn-primary btn-sm">Upgrade to Pro</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-label">Usage</div>
+            <div class="usage-stats">
+              <div class="usage-card">
+                <div class="usage-label">Admin groups</div>
+                <div class="usage-value">1 / 1</div>
+                <div class="usage-bar"><div class="usage-fill" style="width: 100%;"></div></div>
+              </div>
+              <div class="usage-card">
+                <div class="usage-label">Members in Friday Night Film Club</div>
+                <div class="usage-value">5 / 8</div>
+                <div class="usage-bar"><div class="usage-fill" style="width: 62.5%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: var(--gap-md);">
+            <div class="section-label">Billing history</div>
+            <div class="billing-table-wrap" tabindex="0" aria-label="Billing history table">
+              <table class="billing-table">
+                <thead>
+                  <tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>—</td><td>No billing history</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: var(--gap-md);">
+            <div class="section-label">Billing portal</div>
+            <p style="font-size: var(--fs-body-sm); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">Payment methods, invoices, and billing details are managed through Paddle.</p>
+            <button class="btn btn-secondary btn-sm">Open Paddle billing portal</button>
+          </div>
+
+          <div class="danger-zone" style="margin-top: var(--gap-md);">
+            <h4>Cancel subscription</h4>
+            <p style="font-size: var(--fs-meta); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">
+              Cancelling your Pro subscription will take effect at the end of the current billing period. Existing groups and members above the Free limit are not removed — you just can't create new ones or invite new members until you're under the limit.
+            </p>
+            <button class="btn btn-secondary-danger btn-sm">Cancel Pro subscription</button>
+          </div>
+        </div>
+
+        <div class="settings-panel" id="panel-privacy" data-od-id="privacy">
+          <div class="accordion">
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>What we collect</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>PickFlick stores your profile (display name, avatar, email), club memberships, session nominations, votes, movie ratings, and session history. We do not collect location data, browsing history outside PickFlick, or any third-party tracking data.</p>
+              </div></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>How we use your data</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>Your ratings and nominations are used to power club leaderboards, session recommendations, and your personal watch history. Club admins can see your nominations and ratings within their club. Your email is only used for account recovery, notifications you opt into, and service announcements.</p>
+              </div></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>Data sharing</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>We never sell your data. We do not share your personal information with third parties except as required by law. Anonymous, aggregated club statistics (e.g. "average rating across all clubs") may be used for product insights.</p>
+              </div></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>Data retention</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>Your data is retained as long as your account is active. If you delete your account, all personal data is permanently removed within 30 days. Inactive clubs are automatically archived after 180 days of no activity.</p>
+              </div></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>Your rights</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>You can export your data at any time in CSV format. You can request a full GDPR-compliant archive of all your data. You can delete your account permanently — this removes all your data, club memberships, and cancels any active subscriptions.</p>
+                <div class="accordion-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="exportRatings()">Export my data</button>
+                  <button class="btn btn-secondary btn-sm" onclick="alert('Coming soon — GDPR download link')">Download GDPR archive</button>
+                </div>
+              </div></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span>Cookies</span>
+                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="accordion-body"><div class="accordion-body-inner">
+                <p>PickFlick uses only essential cookies for authentication and session management. We do not use tracking cookies, analytics cookies, or advertising cookies. No cookie consent banner is required.</p>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="danger-zone" data-od-id="danger-zone" style="margin-top: var(--gap-md);">
+            <h4>Danger zone</h4>
+            <p style="font-size: var(--fs-meta); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">
+              Deleting your account is permanent. All your clubs (where you are admin), memberships, nominations, votes, ratings, and session history will be removed. Active subscriptions will be cancelled.
+            </p>
+            <button class="btn btn-secondary-danger btn-sm">Delete account</button>
+          </div>
+        </div>
+
+        <div class="settings-panel" id="panel-import-export" data-od-id="import-export">
+          <div class="card">
+            <div class="section-label">Import Movie Ratings</div>
+            <p style="font-size: var(--fs-meta); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">
+              Upload a CSV file with your movie ratings. The file must have two columns: <code class="inline-code">name</code> and <code class="inline-code">rating</code>.
+            </p>
+            <div style="display: flex; align-items: center; gap: var(--gap-md); flex-wrap: wrap;">
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Choose file
+                <input type="file" id="importFile" accept=".csv" style="display:none" onchange="handleImportFile(event)" />
+              </label>
+              <span id="importFileName" style="font-size: var(--fs-meta); color: var(--muted);">No file chosen</span>
+              <button class="btn btn-primary btn-sm" id="importBtn" onclick="importRatings()" disabled>Import</button>
+            </div>
+            <div id="importResult" style="margin-top: var(--gap-sm); font-size: var(--fs-meta);"></div>
+          </div>
+
+          <div class="card" style="margin-top: var(--gap-md);">
+            <div class="section-label">Export Movie Ratings</div>
+            <p style="font-size: var(--fs-meta); color: var(--fg-secondary); margin: 0 0 var(--gap-md) 0;">
+              Download your movie ratings as a CSV file with <code class="inline-code">name</code> and <code class="inline-code">rating</code> columns.
+            </p>
+            <button class="btn btn-primary btn-sm" onclick="exportRatings()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Export ratings
+            </button>
+            <div id="exportResult" style="margin-top: var(--gap-sm); font-size: var(--fs-meta);"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div class="mobile-notif-popover" id="mobileNotifPopover">
+    <div class="notif-popover-header">
+      <h4>Notifications</h4>
+      <button onclick="markAllRead(); event.stopPropagation();">Mark all as read</button>
+    </div>
+    <div class="notif-list" id="mobileNotifList"></div>
+  </div>
+
+  <div class="mobile-bottom-bar">
+    <nav>
+      <div class="nav-group" id="appNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('appNavGroup')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="20" height="10" rx="2"/><path d="M2 11L5 2h14l3 9"/><line x1="8" y1="2" x2="5" y2="11"/><line x1="12" y1="2" x2="12" y2="11"/><line x1="16" y1="2" x2="19" y2="11"/></svg>
+          <span id="mobileCurrentTab">Hub</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <button class="film-frame" data-tab="overview" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><b>Overview</b></button>
+            <button class="film-frame" data-tab="sessions" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><b>Sessions</b></button>
+            <button class="film-frame" data-tab="rating" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><b>Ratings</b></button>
+            <button class="film-frame" data-tab="members" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><b>Members</b></button>
+            <button class="film-frame" data-tab="achievements" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg><b>Achievements</b></button>
+            <button class="film-frame" data-tab="settings" onclick="window.location.href='app.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><b>Manage Club</b></button>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+
+      <div class="nav-group" id="libraryNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('libraryNavGroup')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="2.5"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="3" r="1.2"/><circle cx="15.5" cy="5" r="1.2"/><circle cx="17" cy="10" r="1.2"/><circle cx="15.5" cy="15" r="1.2"/><circle cx="10" cy="17" r="1.2"/><circle cx="4.5" cy="15" r="1.2"/><circle cx="3" cy="10" r="1.2"/><circle cx="4.5" cy="5" r="1.2"/><path d="M16 15c1.5 0.5 2.5 1.5 3 3c0.3 1 0.8 1.5 1.5 1.5"/></svg>
+          <span>My Library</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <a class="film-frame" href="library.html?tab=my-ratings"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><b>My Ratings</b></a>
+            <a class="film-frame" href="library.html?tab=watchlist"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><b>Watchlist</b></a>
+            <a class="film-frame" href="library.html?tab=achievements"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg><b>Achievements</b></a>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+
+      <button class="mobile-bar-btn" id="mobileAlertsBtn" onclick="toggleMobileNotif()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bar-badge" id="mobileBellBadge"></span>
+        Alerts
+      </button>
+
+      <div class="nav-group active" id="settingsNavGroup">
+        <button class="nav-trigger" type="button" onclick="toggleNavGroup('settingsNavGroup')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span id="mobileSettingsLabel">Settings</span>
+        </button>
+        <div class="film-menu">
+          <div class="film-strip">
+            <button class="film-frame active" onclick="selectSettingsFromFilm('Profile'); switchPanel('profile'); closeNavGroup('settingsNavGroup')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><b>Profile</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Notifications'); switchPanel('notifications'); closeNavGroup('settingsNavGroup')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><b>Notifications</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Subscription'); switchPanel('subscription'); closeNavGroup('settingsNavGroup')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><b>Subscription</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Privacy'); switchPanel('privacy'); closeNavGroup('settingsNavGroup')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><b>Privacy</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Import & Export'); switchPanel('import-export'); closeNavGroup('settingsNavGroup')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><b>Import & Export</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Contact Us'); closeNavGroup('settingsNavGroup'); window.location.href='contact.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><b>Contact Us</b></button>
+            <button class="film-frame" onclick="selectSettingsFromFilm('Pricing'); window.location.href='pricing.html'"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><b>Pricing</b></button>
+            <button class="film-frame" onclick="closeNavGroup('settingsNavGroup'); alert('Sign out')"><svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><b>Sign out</b></button>
+          </div>
+          <div class="film-tail"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    const avatarBtn = document.getElementById('avatarBtn');
+    const avatarPopover = document.getElementById('avatarPopover');
+    avatarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = avatarPopover.classList.toggle('show');
+      avatarBtn.setAttribute('aria-expanded', String(isOpen));
+      avatarPopover.setAttribute('aria-hidden', String(!isOpen));
+    });
+    document.addEventListener('click', (e) => {
+      if (!avatarPopover.contains(e.target) && e.target !== avatarBtn) {
+        avatarPopover.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+        avatarPopover.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    const notifData = [
+      { id: 1, icon: 'vote', text: 'Voting opened for <strong>Friday Night Film Club</strong>', time: '2 min ago', unread: true },
+      { id: 2, icon: 'nominate', text: '<strong>Sarah</strong> nominated <em>Parasite</em> for the next round', time: '14 min ago', unread: true },
+      { id: 3, icon: 'rate', text: 'Rating closed — <strong>Everything Everywhere</strong> scored 8.6', time: '2 hours ago', unread: true },
+      { id: 4, icon: 'session', text: 'New session logged: <strong>Dune: Part Two</strong>', time: 'Yesterday', unread: false },
+      { id: 5, icon: 'member', text: '<strong>Tom</strong> joined <strong>Friday Night Film Club</strong>', time: '2 days ago', unread: false },
+    ];
+
+    const notifIcons = {
+      vote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+      nominate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      rate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      session: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>',
+      member: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+    };
+
+    function renderNotifs() {
+      const unreadCount = notifData.filter(n => n.unread).length;
+      const bellBadge = document.getElementById('bellBadge');
+      const mobileBellBadge = document.getElementById('mobileBellBadge');
+      if (bellBadge) bellBadge.style.display = unreadCount > 0 ? '' : 'none';
+      if (mobileBellBadge) mobileBellBadge.style.display = unreadCount > 0 ? '' : 'none';
+
+      [document.getElementById('notifList'), document.getElementById('mobileNotifList')].forEach(list => {
+        if (!list) return;
+        list.innerHTML = notifData.map(n => `
+          <div class="notif-item ${n.unread ? 'unread' : ''}">
+            <div class="notif-icon">${notifIcons[n.icon]}</div>
+            <div class="notif-body">
+              <p>${n.text}</p>
+              <div class="notif-meta">${n.time}</div>
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function markAllRead() {
+      notifData.forEach(n => n.unread = false);
+      renderNotifs();
+    }
+
+    function toggleNotifPopover() {
+      const pop = document.getElementById('notifPopover');
+      const bell = document.getElementById('bellBtn');
+      if (avatarPopover) {
+        avatarPopover.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+        avatarPopover.setAttribute('aria-hidden', 'true');
+      }
+      const isOpen = pop.classList.toggle('show');
+      if (bell) bell.setAttribute('aria-expanded', String(isOpen));
+      pop.setAttribute('aria-hidden', String(!isOpen));
+    }
+
+function toggleMobileNotif() {
+      const pop = document.getElementById('mobileNotifPopover');
+      pop.classList.toggle('show');
+    }
+
+    function toggleNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (!group) return;
+      const isOpen = group.classList.contains('is-open');
+      closeAllNavGroups();
+      if (!isOpen) group.classList.add('is-open');
+    }
+    function closeNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (group) group.classList.remove('is-open');
+    }
+    function closeAllNavGroups() {
+      document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('is-open'));
+    }
+    function setActiveFooterBtn(btnId) {
+      document.querySelectorAll('.mobile-bar-btn, .nav-group').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(btnId);
+      if (btn) btn.classList.add('active');
+    }
+    function selectSettingsFromFilm(label) {
+      const el = document.getElementById('mobileSettingsLabel');
+      if (el) el.textContent = label;
+      document.querySelectorAll('#settingsNavGroup .film-frame').forEach(frame => {
+        frame.classList.toggle('active', frame.textContent.trim() === label);
+      });
+      setActiveFooterBtn('settingsNavGroup');
+      closeNavGroup('settingsNavGroup');
+    }
+
+    document.addEventListener('click', function(e) {
+      const mPop = document.getElementById('mobileNotifPopover');
+      const mBtn = document.getElementById('mobileAlertsBtn');
+      if (mPop && !mPop.contains(e.target) && e.target !== mBtn && !mBtn.contains(e.target)) {
+        mPop.classList.remove('show');
+      }
+      if (!e.target.closest('.nav-group')) closeAllNavGroups();
+    });
+
+    renderNotifs();
+    document.addEventListener('DOMContentLoaded', () => renderNotifs());
+
+    function switchPanel(name) {
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav .sidebar-link').forEach(b => b.classList.remove('active'));
+      const panel = document.getElementById('panel-' + name);
+      if (panel) { panel.classList.add('active'); panel.style.animation = 'none'; panel.offsetHeight; panel.style.animation = ''; }
+      const link = document.querySelector('[data-panel="' + name + '"]');
+      if (link) link.classList.add('active');
+    }
+
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab) switchPanel(tab);
+    })();
+
+    function handleAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { alert('File too large. Max 2 MB.'); return; }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const preview = document.getElementById('avatarUploadPreview');
+        const initials = preview.querySelector('.avatar-upload-initials');
+        if (initials) initials.style.display = 'none';
+        let img = preview.querySelector('img');
+        if (!img) { img = document.createElement('img'); preview.appendChild(img); }
+        img.src = ev.target.result;
+        const sidebarAvatar = document.querySelector('.sidebar-avatar');
+        if (sidebarAvatar) {
+          sidebarAvatar.innerHTML = '';
+          const simg = document.createElement('img');
+          simg.src = ev.target.result;
+          sidebarAvatar.appendChild(simg);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    let importedFile = null;
+
+    function handleImportFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      importedFile = file;
+      document.getElementById('importFileName').textContent = file.name;
+      document.getElementById('importBtn').disabled = false;
+    }
+
+    function importRatings() {
+      if (!importedFile) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const text = ev.target.result;
+        const lines = text.trim().split('\n');
+        const header = lines[0].trim().toLowerCase();
+        if (header !== 'name,rating') {
+          document.getElementById('importResult').innerHTML = '<span style="color:var(--danger);">Invalid format. Expected columns: name, rating</span>';
+          return;
+        }
+        let count = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const parts = lines[i].split(',');
+          if (parts.length >= 2 && parts[0].trim() && !isNaN(parseFloat(parts[1].trim()))) {
+            count++;
+          }
+        }
+        document.getElementById('importResult').innerHTML = '<span style="color:var(--success);">✓ Imported ' + count + ' ratings successfully.</span>';
+        document.getElementById('importBtn').disabled = true;
+        document.getElementById('importFileName').textContent = 'No file chosen';
+        importedFile = null;
+      };
+      reader.readAsText(importedFile);
+    }
+
+    function exportRatings() {
+      const ratings = [
+        ['Dune: Part Two', 9],
+        ['Furiosa: A Mad Max Saga', 8],
+        ['Oppenheimer', 10],
+        ['Parasite', 9],
+        ['Everything Everywhere All at Once', 8],
+        ['The Grand Budapest Hotel', 8],
+        ['Blade Runner 2049', 9]
+      ];
+      let csv = 'name,rating\n';
+      ratings.forEach(r => { csv += r[0] + ',' + r[1] + '\n'; });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pickflick-ratings-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      document.getElementById('exportResult').innerHTML = '<span style="color:var(--success);">✓ Exported ' + ratings.length + ' ratings.</span>';
+    }
+
+    function removeAvatar() {
+      const preview = document.getElementById('avatarUploadPreview');
+      const img = preview.querySelector('img');
+      if (img) img.remove();
+      const initials = preview.querySelector('.avatar-upload-initials');
+      if (initials) initials.style.display = '';
+      const sidebarAvatar = document.querySelector('.sidebar-avatar');
+      if (sidebarAvatar) { sidebarAvatar.innerHTML = 'JD'; }
+      document.getElementById('avatarFile').value = '';
+    }
+
+    var filmDB = [
+      { title: 'Dune: Part Two', year: 2024, genre: 'Sci-Fi, Adventure' },
+      { title: 'Oppenheimer', year: 2023, genre: 'Drama, History' },
+      { title: 'Poor Things', year: 2023, genre: 'Comedy, Sci-Fi' },
+      { title: 'Challengers', year: 2024, genre: 'Drama, Sport' },
+      { title: 'Past Lives', year: 2023, genre: 'Drama, Romance' },
+      { title: 'The Holdovers', year: 2023, genre: 'Comedy, Drama' },
+      { title: 'Furiosa', year: 2024, genre: 'Action, Sci-Fi' },
+      { title: 'Anatomy of a Fall', year: 2023, genre: 'Drama, Crime' },
+      { title: 'Civil War', year: 2024, genre: 'Action, Drama' },
+      { title: 'Everything Everywhere All At Once', year: 2022, genre: 'Comedy, Sci-Fi' },
+      { title: 'Parasite', year: 2019, genre: 'Drama, Thriller' },
+      { title: 'The Grand Budapest Hotel', year: 2014, genre: 'Comedy, Drama' },
+      { title: 'Blade Runner 2049', year: 2017, genre: 'Sci-Fi, Thriller' },
+      { title: 'Whiplash', year: 2014, genre: 'Drama, Music' },
+      { title: 'The Lighthouse', year: 2019, genre: 'Drama, Horror' },
+      { title: 'Arrival', year: 2016, genre: 'Sci-Fi, Drama' },
+      { title: 'Interstellar', year: 2014, genre: 'Sci-Fi, Adventure' },
+      { title: 'The Lobster', year: 2015, genre: 'Comedy, Drama' },
+      { title: 'Moonlight', year: 2016, genre: 'Drama' },
+      { title: 'The Favourite', year: 2018, genre: 'Drama, Comedy' },
+    ];
+
+    function handleGlobalSearch(query) {
+      var results = document.getElementById('globalSearchResults');
+      if (!results) return;
+      var q = query.toLowerCase().trim();
+      if (!q) { results.classList.remove('open'); results.innerHTML = ''; return; }
+      var matches = filmDB.filter(function(f) { return f.title.toLowerCase().indexOf(q) > -1; });
+      if (matches.length === 0) {
+        results.innerHTML = '<div class="notif-empty">No films found</div>';
+      } else {
+        var html = '';
+        matches.forEach(function(f) {
+          html += '<div class="search-result"><div class="sr-poster">🎬</div><div class="sr-info"><div class="sr-title">' + f.title + '</div><div class="sr-meta">' + f.year + ' · ' + f.genre + '</div></div></div>';
+        });
+        results.innerHTML = html;
+      }
+      results.classList.add('open');
+    }
+
+    function toggleGlobalSearch() {
+      var gs = document.getElementById('globalSearch');
+      var input = document.getElementById('globalSearchInput');
+      var results = document.getElementById('globalSearchResults');
+      if (gs.classList.contains('open')) {
+        gs.classList.remove('open');
+        if (input) input.value = '';
+        if (results) { results.classList.remove('open'); results.innerHTML = ''; }
+      } else {
+        gs.classList.add('open');
+        if (input) setTimeout(function() { input.focus(); }, 350);
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var gs = document.getElementById('globalSearch');
+        if (gs && gs.classList.contains('open')) toggleGlobalSearch();
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      var gs = document.getElementById('globalSearch');
+      var results = document.getElementById('globalSearchResults');
+      if (gs && gs.classList.contains('open') && !e.target.closest('.global-search') && !e.target.closest('.search-hat') && !e.target.closest('.mobile-search-hat')) {
+        gs.classList.remove('open');
+        var input = document.getElementById('globalSearchInput');
+        if (input) input.value = '';
+        if (results) { results.classList.remove('open'); results.innerHTML = ''; }
+      }
+    });
+  </script>
+</body>
+</html>
