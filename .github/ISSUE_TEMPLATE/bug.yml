@@ -1,0 +1,52 @@
+name: Bug report
+description: Report behaviour that differs from what the product promises.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest reliable sequence of actions.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: Actual result
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: Expected result
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did you observe it?
+      options:
+        - Local development
+        - UAT
+        - Production
+        - Other / unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence (optional)
+      description: Attach screenshots, recordings, console errors, logs, Sentry links, HTTP responses, or a Playwright trace.
