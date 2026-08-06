@@ -145,6 +145,19 @@ Every canonical product surface in the design package is part of MVP. “Coming 
 | PWA / installability | Does the app need offline support, installability, push, or an app shell? | Planned | Installable online-first PWA; cached shell/read-only fallback may be used, but mutations require a live connection; push deferred. |
 | Environments & Production Deploy | How are environments, migrations, deploys, rollback, and smoke checks handled? | Planned | Local, CI/test, UAT, and production profiles; Docker deployment through Dokploy remains proposed; forward migrations, backups, rollback, and smoke checks are required. |
 
+### Pre-MVP Production Readiness
+
+These decisions must be resolved before the first production MVP launch. A `Deferred` item needs
+an owner and revisit trigger; it cannot bypass a launch-critical risk.
+
+| Topic | Required decision and evidence | Status | Owner | Current planning direction / revisit trigger |
+| --- | --- | --- | --- | --- |
+| Deploy ownership | Name one release owner and rollback authority; record the exact approved revision, readiness and smoke evidence, and tested rollback path. | Needs decision | Release owner — to be assigned | Phase 23 prepares the release candidate and runbooks; Phase 25 records the deployed revision and production evidence. Assign before Phase 23 release rehearsal. |
+| Data durability | Decide backup destination and retention; demonstrate restore; separately decide the response to regional or hosting-account loss. | Needs decision | Infrastructure owner — to be assigned | PostgreSQL and durable avatars require backups; Redis is not a domain source of truth. Align retention with the Phase 19 legal/privacy decision and complete the restore/disaster-recovery drill in Phase 23. |
+| Edge reliability | Verify client identity behind the chosen proxy, abuse limits, graceful connection/workload drain, and a real UAT drill. | Needs decision | Infrastructure owner — to be assigned | Reverse proxy and Dokploy are Proposed. Decide their concrete behavior before Phase 23; verify it again with production-like UAT before the Go decision. |
+| Public surface | Decide the canonical host; validate SEO, PWA, and social/OG assets in production; account for external crawler cache refresh. | Needs decision | Product owner + developer | Public metadata is implemented in Phase 3 and completed in Phase 23. Final domain remains open; validate deployed canonical/robots/sitemap/preview behavior and document cache-refresh evidence before launch. |
+| Compliance boundary | Separate technically shipped behavior from required external legal action, then explicitly decide `Launch gate` or `Post-launch follow-up` for each unresolved item. | Needs decision | Product owner + legal/privacy reviewer | Privacy, retention, billing, provider disclosure, and public legal copy require review. Resolve the disposition before Phase 23 exits; no safety, privacy, or billing risk may be deferred through Phase 24. |
+
 ## 5. Business, Product & Monetization Rules
 
 ### Identity and access
@@ -1033,6 +1046,10 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 - [ ] Complete public SEO metadata, structured data, sitemap/robots/canonicals/social previews and authenticated/invite/admin noindex verification.
 - [ ] Complete logs/metrics/traces/error monitoring, queue/deadline/webhook/email/export/deletion alerts, health/readiness, dashboards, and runbook links.
 - [ ] Finalize production migrations, zero/low-downtime constraints, backups, restore verification, rollback strategy, retention jobs, and disaster/recovery runbooks.
+- [ ] Assign the release owner and rollback authority; rehearse an exact release revision through readiness, smoke, graceful drain, and rollback procedures.
+- [ ] Decide and verify proxy-derived client identity, edge abuse limits, connection/workload drain, backup destination/retention, and the response to regional or hosting-account loss.
+- [ ] Validate the final canonical host, PWA and social/OG assets, robots/sitemap, and external crawler-cache refresh behavior in production-like UAT.
+- [ ] Reconcile technically shipped privacy/billing/provider behavior with external legal actions; record whether every remaining item is a launch gate or an owned post-launch follow-up.
 - [ ] Run performance/load checks for critical API, SSE, search, worker, aggregate, and admin paths; resolve launch-blocking budgets.
 - [ ] Complete privacy/security/content/accessibility launch checklists and close every unresolved launch-critical Decision Log item.
 
@@ -1040,10 +1057,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 - [ ] Security review/scans and critical abuse tests have no unresolved launch-blocking finding.
 - [ ] Monitoring/alerts detect controlled failures without collecting unnecessary personal data.
-- [ ] Backup restore, migration rehearsal, rollback, and UAT smoke runbooks are demonstrated.
-- [ ] Public SEO is correct; private/token/admin data is not indexable; performance/accessibility targets pass.
+- [ ] Backup restore, migration rehearsal, rollback, graceful drain, and UAT smoke runbooks are demonstrated; regional/account-loss disposition is recorded.
+- [ ] Public SEO is correct; private/token/admin data is not indexable; canonical/PWA/OG production-like checks and crawler-cache refresh evidence are captured; performance/accessibility targets pass.
+- [ ] Every Pre-MVP Production Readiness item has an owner, evidence, and either a resolved decision or an approved, non-launch-critical follow-up.
 
-**Evidence:** Threat model, scan reports, UAT metrics/dashboards, alert tests, performance results, restore/rollback logs, and launch checklists.
+**Evidence:** Threat model, scan reports, UAT metrics/dashboards, alert tests, performance results, release-rehearsal revision, restore/rollback/drain logs, crawler-cache checks, legal-action disposition, and launch checklists.
 
 **Deliverables:** Release candidate, operational runbooks, verified observability/security/SEO/recovery baseline.
 
@@ -1060,6 +1078,7 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 - [ ] Create `_docs/phase-24-human-verification-4.md` with release-candidate identity, environment, data set, owners, and severity-classified issue register.
 - [ ] Execute every canonical public/auth/Club/Session/Library/Settings/Billing/Admin/PWA flow across representative roles, devices, and failure states.
 - [ ] Verify real OAuth, TMDB, Paddle sandbox, Resend, object storage, worker/deadline, SSE, monitoring, backup/restore, and rollback handoffs.
+- [ ] Run the production-like edge/UAT drill through the chosen proxy and verify client identity, abuse handling, graceful drain, external public-crawler behavior, and release/rollback ownership handoffs.
 - [ ] Perform final visual parity, long/empty/error/read-only/offline, keyboard/touch, screen-reader, reduced-motion, and browser/device review.
 - [ ] Fix every Blocker/Major; permit Minor/Polish deferral only with explicit post-launch ownership and no safety/privacy/billing/accessibility risk.
 - [ ] Consolidate staging docs, confirm launch checklists, record the exact remaining risk, and issue go/no-go approval.
@@ -1087,14 +1106,15 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 - [ ] Provision/verify production configuration, secrets, domains/TLS, OAuth callbacks, Paddle webhooks/product, Resend sender, storage, monitoring, and backup targets.
 - [ ] Apply approved database migrations in the rehearsed order and deploy immutable web/API/worker artifacts.
-- [ ] Run production health, migration, auth, public, Club/Session, billing-safe, job/SSE, storage/email, PWA, SEO, and monitoring smoke checks.
-- [ ] Verify alert routing, backup schedule, queue/deadline health, webhook receipt, log scrubbing, and rollback readiness.
+- [ ] Record the release owner, exact deployed revision, readiness decision, and rollback authority before traffic cutover.
+- [ ] Run production health, migration, auth, public, Club/Session, billing-safe, job/SSE, storage/email, PWA, SEO/canonical/OG, crawler-cache, and monitoring smoke checks.
+- [ ] Verify alert routing, backup destination/schedule, queue/deadline health, webhook receipt, log scrubbing, proxy client identity, abuse limits, graceful drain, and rollback readiness.
 - [ ] Monitor the defined launch window, triage production findings, and roll back or forward-fix according to runbook thresholds.
 - [ ] Record deployment evidence, release revision, production verification, remaining risks, and Roadmap/Architecture operational state.
 
 **Acceptance Check:**
 
-- [ ] Production serves the approved revision and critical smoke checks pass with no data/privacy/billing regression.
+- [ ] Production serves the approved exact revision and critical smoke checks pass with no data/privacy/billing regression.
 - [ ] Monitoring, alerts, backups, jobs, webhooks, and provider integrations show healthy real operation.
 - [ ] Rollback remains executable and launch-window Blocker/Major findings are resolved or trigger rollback.
 - [ ] Guidance accurately distinguishes Active production behavior from remaining Proposed/deferred work.
@@ -1115,9 +1135,12 @@ These do not block guidance creation; each has an explicit decision point.
 | --- | --- | --- | --- |
 | Which auth/session library best supports Google + Apple, server-enforced API access, and self-hosting? | Developer + implementation agent | Phase 1 / 4 | Compare maintained official integrations, set the boundary in Phase 1, and accept the implementation ADR before Phase 4 auth work. |
 | Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
-| What are the final production domain, sender domain, and contact address? | Product owner | Phase 3 / 4 | Confirm before final public metadata, OAuth callbacks, email DNS, legal copy, and production configuration. |
-| What exact deletion, export-artifact, audit, and inactive-data retention periods are legally approved? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile implemented behavior and published privacy copy before release readiness. |
+| What are the final production domain, sender domain, and contact address, and how will external crawler caches be refreshed after cutover? | Product owner | Phase 3 / 23 | Confirm before final public metadata, OAuth callbacks, email DNS, legal copy, production validation, and crawler-cache checks. |
+| What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
 | Which PWA service-worker approach and supported browser/device matrix will be maintained? | Developer + implementation agent | Phase 1 / 22 | Verify current framework compatibility during foundation work and finalize before PWA implementation. |
+| Who is the release owner and rollback authority, and what exact revision/readiness/smoke evidence is required before and after production cutover? | Product owner + release owner | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal. |
+| What are the production backup destination, restore target, and regional or hosting-account-loss strategy? | Product owner + infrastructure owner | Phase 23 | Approve the deployment/operations ADR, then complete the restore and disaster-recovery drill. |
+| Which proxy configuration establishes trustworthy client identity, abuse limits, and graceful drain behavior? | Infrastructure owner + developer | Phase 23 | Decide with the final deployment topology and verify in the production-like UAT drill. |
 
 ### Deferred Decisions & Tech Debt
 
