@@ -13,6 +13,7 @@
 ## Start Here
 
 - For non-trivial work, read the [documentation map](_docs/README.md) and the artifacts relevant to the change.
+- For actionable delivery work, inspect [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) and read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - For GitHub task routing, Project 3 workflow, and run authorization, read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - Inspect `git status --short` before editing and preserve unrelated user changes.
 - Before frontend work, inspect the canonical screen, [_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
@@ -29,12 +30,17 @@
 
 ## Phase Workflow
 
-- Before starting a Roadmap phase, create `_docs/phase-N-short-name.md` and link it from `_docs/README.md` while active.
+- Before starting a Roadmap phase, create or confirm its focused Project 3 issues, then create `_docs/phase-N-short-name.md` and link it from `_docs/README.md` while active.
 - The phase document owns temporary implementation detail: dependencies, inherited behavior, shims/removals, exact subtasks, edge cases, commands, and evidence in progress.
-- It must not replace Roadmap scope/acceptance, Design behavior, Architecture boundaries, or accepted ADR rationale.
+- It links owning issues but does not duplicate their live status. It must not replace Roadmap scope/acceptance, Design behavior, Architecture boundaries, or accepted ADR rationale.
 - At phase completion, consolidate durable knowledge into canonical guidance, record evidence/progress in `ROADMAP.md`, then delete the temporary phase document and its docs-map link.
 - Human Verification & Bug Fixing phases occur after each five-phase delivery block. They require a severity-classified issue register; resolve all Blockers/Majors before continuing and record every lower-severity deferral explicitly.
 - Stabilization gates supplement normal per-phase tests and checks; never defer ordinary quality work to the next gate.
+
+## Rule Index
+
+- Git branches, commits, PRs, and worktree safety: [.agent-docs/rules/git.md](.agent-docs/rules/git.md)
+- GitHub issue creation, Project statuses, routing, and phase linkage: [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md)
 
 ## Execution Loop
 
@@ -87,7 +93,8 @@ These rules are high-risk and require database/server enforcement plus focused t
 ## Git & Worktree
 
 - Branch naming: `PF-type-short-kebab-descriptor` unless the repository later adopts a different documented convention.
-- Use Conventional Commits unless superseded by a project rule.
+- Use Conventional Commits and squash merge through a PR.
+- Link every delivery PR to its owning Project 3 issue.
 - One logical change per commit. Commit, push, and PR authorization for owner-started
   Project 3 runs follows `.agent-docs/rules/github-issues.md`. Outside that narrow
   issue-scoped exception, never commit, push, or open a PR without explicit developer
@@ -100,24 +107,29 @@ Guidance is part of implementation. Update every affected artifact in the same t
 
 | Artifact | Owns | Update when the task changes |
 | --- | --- | --- |
-| [ROADMAP.md](ROADMAP.md) | Product scope, business rules, routes, phases/progress/evidence, open/deferred work. | Scope, priority, behavior, limits, phase status, or a Decision Log item. |
+| [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable active/deferred delivery issues and live task status. | Work is created, selected, started, deferred, sent to review, completed, or reprioritized. |
+| [ROADMAP.md](ROADMAP.md) | Product scope, business rules, routes, phase sequence/status/evidence, and product Decision Log. | Scope, behavior, limits, phase acceptance/status, or a durable product decision changes. |
 | [DESIGN.md](DESIGN.md) | Experience direction, sources, screens/states, components, responsive/accessibility contract, design QA. | Visible behavior/content, design foundations, component/state coverage, or QA status. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Deployables/modules, data/interface ownership, integrations, runtime, security/reliability/operations. | A boundary, dependency, schema/interface workflow, integration, environment, deployment, or guarantee. |
 | [_docs/decisions/README.md](_docs/decisions/README.md) | Durable rationale and supersession for significant technical choices. | A meaningful alternative is accepted, rejected, superseded, or materially revisited. |
 
 Documentation impact check after implementation:
 
-1. Update every affected artifact before reporting completion.
+1. Update the owning Project issue and every affected artifact before reporting completion.
 2. Mark Roadmap work Done only with the acceptance evidence it requests.
 3. Describe verified implementation as Active/current and unimplemented direction as Proposed.
 4. Append/supersede accepted ADR history; never rewrite it to hide a changed decision.
 5. If no artifact is affected, report `Documentation impact: none` and one short reason.
+
+Do not copy issue lists or task status into Roadmap prose. Project 3 owns actionable work status;
+Roadmap owns phase-level product acceptance and evidence.
 
 ## Reporting Back
 
 Final reports include:
 
 - outcome and files changed;
+- owning issue and resulting Project status;
 - checks run and their results;
 - documentation impact;
 - anything not verified;

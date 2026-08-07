@@ -2,11 +2,23 @@
 
 Start here before non-trivial product, design, architecture, implementation, or operational work.
 
+## Delivery tracking
+
+[GitHub Project 3](https://github.com/users/Shagon1k/projects/3) is the canonical tracker for
+actionable active and deferred delivery work. `ROADMAP.md` remains the product/MVP/phase contract and
+phase-level acceptance record; do not copy issue status into it.
+
+| Process artifact | Purpose |
+| --- | --- |
+| [Contributing guide](../CONTRIBUTING.md) | Human-facing issue, branch, commit, PR, and merge workflow. |
+| [Git rules](../.agent-docs/rules/git.md) | Canonical branch, commit, PR, and worktree rules. |
+| [GitHub issue rules](../.agent-docs/rules/github-issues.md) | Issue routing, Project status semantics, `human-control`, and phase linkage. |
+
 ## Canonical guidance
 
 | Artifact | Purpose | State |
 | --- | --- | --- |
-| [ROADMAP.md](../ROADMAP.md) | Product contract, MVP boundary, business rules, routes, phases, decisions, and backlog. | Active planning contract; implementation not started. |
+| [ROADMAP.md](../ROADMAP.md) | Product contract, MVP boundary, business rules, routes, phase sequence/acceptance, and decisions. | Active product/phase contract; not the actionable task inbox. |
 | [DESIGN.md](../DESIGN.md) | Design authority, experience structure, screen/state/component coverage, and QA contract. | Approved direction; build/QA not started. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Proposed deployables, module/data/interface boundaries, runtime, security, and operations. | Proposed; Phase 1 approval required. |
 | [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | Registry initialized; no accepted ADRs yet. |
@@ -49,4 +61,6 @@ The retired blueprint was intentionally removed after synthesis; this repository
 
 ## Active phase plan
 
-None. Before Phase 1 implementation begins, create its temporary `_docs/phase-1-infrastructure-foundation.md` execution plan and link it here. Consolidate and remove each temporary phase document when that phase is completed.
+None. Before Phase 1 implementation begins, create or confirm its focused Project 3 issues, create
+the temporary `_docs/phase-1-infrastructure-foundation.md` execution plan, and link both here.
+Consolidate durable knowledge and remove each temporary phase document when that phase is completed.
