@@ -13,6 +13,7 @@
 ## Start Here
 
 - For non-trivial work, read the [documentation map](_docs/README.md) and the artifacts relevant to the change.
+- For GitHub task routing, Project 3 workflow, and run authorization, read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - Inspect `git status --short` before editing and preserve unrelated user changes.
 - Before frontend work, inspect the canonical screen, [_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
 - Before domain/API/worker work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
@@ -87,7 +88,10 @@ These rules are high-risk and require database/server enforcement plus focused t
 
 - Branch naming: `PF-type-short-kebab-descriptor` unless the repository later adopts a different documented convention.
 - Use Conventional Commits unless superseded by a project rule.
-- One logical change per commit. Never commit, push, or open a PR without explicit developer approval.
+- One logical change per commit. Commit, push, and PR authorization for owner-started
+  Project 3 runs follows `.agent-docs/rules/github-issues.md`. Outside that narrow
+  issue-scoped exception, never commit, push, or open a PR without explicit developer
+  approval.
 - Never reset, revert, overwrite, or delete user work unless explicitly requested and exact targets are verified.
 
 ## Project Documentation
