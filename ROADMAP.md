@@ -404,6 +404,8 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** None.
 
+**Tickets:** None. Phase 0 was completed before Project 3 became the actionable delivery tracker; no retroactive implementation issue was created.
+
 **Scope:**
 
 - [x] Audit the retired blueprints, canonical designs, UX flow, design system, responsive rules, and asset inventory.
@@ -429,6 +431,17 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Create a reproducible monorepo/runtime foundation, prove it through automatic UAT delivery, and prepare a disabled production-promotion path for every later vertical slice.
 
 **Dependencies:** Phase 0 guidance; approval of the foundational architecture ADRs; DNS control of `pick-flick.app`.
+
+**Tickets:**
+
+- [1.1 — Approve the Phase 1 architecture and ADR baseline (#9)](https://github.com/Shagon1k/PickFlick/issues/9)
+- [1.2 — Scaffold the typed pnpm monorepo and executable command map (#10)](https://github.com/Shagon1k/PickFlick/issues/10)
+- [1.3 — Establish local data services, migrations, seeds, and typed configuration (#11)](https://github.com/Shagon1k/PickFlick/issues/11)
+- [1.4 — Add health, readiness, structured logging, correlation, and stable API errors (#12)](https://github.com/Shagon1k/PickFlick/issues/12)
+- [1.5 — Build production images and the shared UAT/production Compose topology (#13)](https://github.com/Shagon1k/PickFlick/issues/13)
+- [1.6 — Replace placeholder CI with reproducible quality gates (#14)](https://github.com/Shagon1k/PickFlick/issues/14)
+- [1.7 — Provision isolated UAT and automatic exact-revision delivery (#15)](https://github.com/Shagon1k/PickFlick/issues/15)
+- [1.8 — Prepare guarded production promotion and deployment runbooks (#16)](https://github.com/Shagon1k/PickFlick/issues/16)
 
 **Scope:**
 
@@ -469,6 +482,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 1 runnable web foundation.
 
+**Tickets:**
+
+- [2.1 — Implement Projector Noir tokens, brand assets, and accessible UI primitives (#17)](https://github.com/Shagon1k/PickFlick/issues/17)
+- [2.2 — Establish component accessibility, viewport, and visual-regression QA (#18)](https://github.com/Shagon1k/PickFlick/issues/18)
+- [2.3 — Build responsive public, setup, product, Session, Settings, Library, and Admin shells (#19)](https://github.com/Shagon1k/PickFlick/issues/19)
+
 **Scope:**
 
 - [ ] Implement approved color, typography, spacing, layout, border/elevation, imagery, and motion tokens from the canonical design contract.
@@ -496,6 +515,14 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Deliver the complete public-facing PickFlick story and safe recovery surfaces.
 
 **Dependencies:** Phase 2 public shell and primitives; production domain/contact values may remain environment-configured until confirmed.
+
+**Tickets:**
+
+- [3.1 — Confirm production contact and email sender identity (#20)](https://github.com/Shagon1k/PickFlick/issues/20)
+- [3.2 — Build the responsive Landing and Pricing experiences (#21)](https://github.com/Shagon1k/PickFlick/issues/21)
+- [3.3 — Deliver the Contact form and privacy-safe message handling (#22)](https://github.com/Shagon1k/PickFlick/issues/22)
+- [3.4 — Add public legal-entry routes and indexing metadata boundaries (#23)](https://github.com/Shagon1k/PickFlick/issues/23)
+- [3.5 — Implement branded not-found and application-error recovery (#24)](https://github.com/Shagon1k/PickFlick/issues/24)
 
 **Scope:**
 
@@ -525,6 +552,13 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 1 identity foundation; Phase 2 authenticated shell; confirmed OAuth callback configuration.
 
+**Tickets:**
+
+- [4.1 — Select the auth/session library and account-linking contract (#25)](https://github.com/Shagon1k/PickFlick/issues/25)
+- [4.2 — Implement Google OAuth, secure sessions, and return-to-intent (#26)](https://github.com/Shagon1k/PickFlick/issues/26)
+- [4.3 — Add Sign in with Apple and safe identity linking (#27)](https://github.com/Shagon1k/PickFlick/issues/27)
+- [4.4 — Enforce authentication, suspension, revocation, and global roles at every boundary (#28)](https://github.com/Shagon1k/PickFlick/issues/28)
+
 **Scope:**
 
 - [ ] Choose/record the auth/session implementation and implement Google and Apple OAuth.
@@ -552,6 +586,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Create the secure private Club boundary and its role/entitlement invariants.
 
 **Dependencies:** Phase 4 registered identity; Phase 1 database; Phase 2 authenticated shell.
+
+**Tickets:**
+
+- [5.1 — Implement Club membership, roles, constraints, and policy projections (#29)](https://github.com/Shagon1k/PickFlick/issues/29)
+- [5.2 — Deliver no-Clubs and Create Club onboarding with Selection-scale setup (#30)](https://github.com/Shagon1k/PickFlick/issues/30)
+- [5.3 — Add Club settings, lifecycle, role management, and destructive safeguards (#31)](https://github.com/Shagon1k/PickFlick/issues/31)
 
 **Scope:**
 
@@ -581,6 +621,10 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phases 1–5 complete with their own evidence.
 
+**Tickets:**
+
+- [6.1 — Verify and stabilize Phases 1–5 in UAT (#32)](https://github.com/Shagon1k/PickFlick/issues/32)
+
 **Scope:**
 
 - [ ] Create `_docs/phase-6-human-verification-1.md` with a severity-classified issue register and tested build/environment.
@@ -608,6 +652,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Make Clubs navigable, understandable, and joinable through the approved Hub and invitation experiences.
 
 **Dependencies:** Phase 6 stabilization; Phase 5 Club/membership model.
+
+**Tickets:**
+
+- [7.1 — Build Club switching, post-login routing, and the Hub overview (#33)](https://github.com/Shagon1k/PickFlick/issues/33)
+- [7.2 — Implement the secure Club invitation lifecycle (#34)](https://github.com/Shagon1k/PickFlick/issues/34)
+- [7.3 — Complete Hub membership, moderation, adminless, and read-only states (#35)](https://github.com/Shagon1k/PickFlick/issues/35)
 
 **Scope:**
 
@@ -637,6 +687,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 1 worker/database foundation; Phase 2 shell/search primitives; Phase 4 authentication.
 
+**Tickets:**
+
+- [8.1 — Integrate TMDB and canonicalize cached Movie records (#36)](https://github.com/Shagon1k/PickFlick/issues/36)
+- [8.2 — Deliver authenticated global Movie search (#37)](https://github.com/Shagon1k/PickFlick/issues/37)
+- [8.3 — Build Movie Details, credits, trailers, trusted links, and related titles (#38)](https://github.com/Shagon1k/PickFlick/issues/38)
+
 **Scope:**
 
 - [ ] Implement the TMDB adapter, server-held credentials, search/detail/credits/media mapping, rate-limit handling, and cache freshness state.
@@ -664,6 +720,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Create full-cycle and pre-selected Sessions with a secure member-only roster and one-blocking-Session guarantee.
 
 **Dependencies:** Phase 7 Clubs/invitations; Phase 8 Movie search; Phase 1 worker/database.
+
+**Tickets:**
+
+- [9.1 — Establish Session, roster, settings snapshots, and the blocking-Session invariant (#39)](https://github.com/Shagon1k/PickFlick/issues/39)
+- [9.2 — Build full-cycle and pre-selected Session creation, editing, and cancellation (#40)](https://github.com/Shagon1k/PickFlick/issues/40)
+- [9.3 — Implement member-only Session invitations and roster management (#41)](https://github.com/Shagon1k/PickFlick/issues/41)
 
 **Scope:**
 
@@ -693,6 +755,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 9 Session/roster; Phase 8 Movies; Phase 1 worker/outbox; notification events may be stored before Phase 17 adds the inbox/preferences UI.
 
+**Tickets:**
+
+- [10.1 — Implement Nomination submissions, Club Bench, and visibility rules (#42)](https://github.com/Shagon1k/PickFlick/issues/42)
+- [10.2 — Automate Nomination deadlines with durable reconciliation (#43)](https://github.com/Shagon1k/PickFlick/issues/43)
+- [10.3 — Serialize automatic Nomination transitions and publish live progress events (#44)](https://github.com/Shagon1k/PickFlick/issues/44)
+
 **Scope:**
 
 - [ ] Implement Nomination and Club Bench entities, one-nomination-per-participant constraint, TMDB selection, and bench shortcuts.
@@ -720,6 +788,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Collect immutable scored ballots and resolve one winner deterministically under automatic or operator-controlled closure.
 
 **Dependencies:** Phase 10 Nomination/transition foundation and Phase 9 roster/Club score snapshot.
+
+**Tickets:**
+
+- [11.1 — Build immutable Selection ballots and generated score controls (#45)](https://github.com/Shagon1k/PickFlick/issues/45)
+- [11.2 — Resolve winners deterministically under automatic and early closure (#46)](https://github.com/Shagon1k/PickFlick/issues/46)
+- [11.3 — Publish policy-filtered Selection results and live updates (#47)](https://github.com/Shagon1k/PickFlick/issues/47)
 
 **Scope:**
 
@@ -749,6 +823,10 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phases 7–11 complete with evidence; Phase 6 findings resolved/deferred.
 
+**Tickets:**
+
+- [12.1 — Verify and stabilize the Club-to-winner journey in UAT (#48)](https://github.com/Shagon1k/PickFlick/issues/48)
+
 **Scope:**
 
 - [ ] Create `_docs/phase-12-human-verification-2.md` with environment/build identity and severity-classified findings.
@@ -776,6 +854,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Complete the core Session lifecycle while allowing unfinished ratings to remain non-blocking.
 
 **Dependencies:** Phase 12 stabilized winner flow; Phase 9 one-blocking-Session invariant.
+
+**Tickets:**
+
+- [13.1 — Deliver Watching state and the manual transition to Rating (#49)](https://github.com/Shagon1k/PickFlick/issues/49)
+- [13.2 — Implement historical Session Ratings and idempotent completion (#50)](https://github.com/Shagon1k/PickFlick/issues/50)
+- [13.3 — Build Completed Session history and non-blocking Rating projections (#51)](https://github.com/Shagon1k/PickFlick/issues/51)
 
 **Scope:**
 
@@ -805,6 +889,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 13 completion model; Phase 8 Movies; Phase 5 Membership history.
 
+**Tickets:**
+
+- [14.1 — Record minimal past Sessions with attendees and optional ratings (#52)](https://github.com/Shagon1k/PickFlick/issues/52)
+- [14.2 — Reconstruct optional historical nominations and score matrices safely (#53)](https://github.com/Shagon1k/PickFlick/issues/53)
+
 **Scope:**
 
 - [ ] Implement Create Past Session date/location/Movie/topic/notes and attendee selection.
@@ -832,6 +921,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Give each User a durable, editable personal film memory independent from shared Session history.
 
 **Dependencies:** Phase 8 Movies; Phase 13 Session Ratings; Phase 14 shared history.
+
+**Tickets:**
+
+- [15.1 — Implement editable Personal Ratings without rewriting Session history (#54)](https://github.com/Shagon1k/PickFlick/issues/54)
+- [15.2 — Add the prioritized personal Watchlist across Movie and Library surfaces (#55)](https://github.com/Shagon1k/PickFlick/issues/55)
+- [15.3 — Build searchable and filterable My Library views (#56)](https://github.com/Shagon1k/PickFlick/issues/56)
 
 **Scope:**
 
@@ -861,6 +956,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phases 13–15 provide completed Sessions, ratings, history, and Library data.
 
+**Tickets:**
+
+- [16.1 — Deliver Club statistics and the ratings leaderboard (#57)](https://github.com/Shagon1k/PickFlick/issues/57)
+- [16.2 — Deliver deterministic personal Library statistics (#58)](https://github.com/Shagon1k/PickFlick/issues/58)
+- [16.3 — Implement versioned Club and personal achievements (#59)](https://github.com/Shagon1k/PickFlick/issues/59)
+
 **Scope:**
 
 - [ ] Implement Club statistics, rating leaderboard, sorting, and basic/extended plan projections without coupling to Paddle transport.
@@ -888,6 +989,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Deliver durable in-app and opted-in email notifications for lifecycle, membership, inactivity, and billing-ready events.
 
 **Dependencies:** Domain events from Phases 7–16; Phase 1 worker/outbox; Phase 4 identity; Phase 20 later adds Paddle event producers.
+
+**Tickets:**
+
+- [17.1 — Establish durable Notifications, preferences, and safe event mapping (#60)](https://github.com/Shagon1k/PickFlick/issues/60)
+- [17.2 — Build the inbox, bell, read state, and resilient SSE updates (#61)](https://github.com/Shagon1k/PickFlick/issues/61)
+- [17.3 — Deliver Resend email templates, retries, suppression handling, and observability (#62)](https://github.com/Shagon1k/PickFlick/issues/62)
 
 **Scope:**
 
@@ -917,6 +1024,10 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phases 13–17 complete with evidence; earlier gate issues resolved/deferred.
 
+**Tickets:**
+
+- [18.1 — Verify and stabilize the retention loop in UAT (#63)](https://github.com/Shagon1k/PickFlick/issues/63)
+
 **Scope:**
 
 - [ ] Create `_docs/phase-18-human-verification-3.md` and a severity-classified issue register.
@@ -944,6 +1055,15 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Give Users complete control over profile data, portability, privacy rights, and account removal without damaging shared history.
 
 **Dependencies:** Phase 18 stable data model; Phase 17 notifications; legal/retention decisions required before UAT approval.
+
+**Tickets:**
+
+- [19.1 — Approve retention, deletion, export, and legal-copy policy (#64)](https://github.com/Shagon1k/PickFlick/issues/64)
+- [19.2 — Implement profile and private avatar management (#65)](https://github.com/Shagon1k/PickFlick/issues/65)
+- [19.3 — Deliver safe personal-ratings CSV import and export (#66)](https://github.com/Shagon1k/PickFlick/issues/66)
+- [19.4 — Generate private expiring GDPR archive downloads (#67)](https://github.com/Shagon1k/PickFlick/issues/67)
+- [19.5 — Implement idempotent account deletion and shared-history anonymization (#68)](https://github.com/Shagon1k/PickFlick/issues/68)
+- [19.6 — Publish policy-backed privacy and personal-data surfaces (#69)](https://github.com/Shagon1k/PickFlick/issues/69)
 
 **Scope:**
 
@@ -973,6 +1093,14 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 19 account/privacy hooks; Phase 5 entitlement interfaces; Phase 17 notifications; confirmed Paddle plan/domain configuration.
 
+**Tickets:**
+
+- [20.1 — Resolve downgrade Club selection and confirm Paddle configuration (#70)](https://github.com/Shagon1k/PickFlick/issues/70)
+- [20.2 — Deliver Paddle checkout, portal, billing history, and Subscription UI (#71)](https://github.com/Shagon1k/PickFlick/issues/71)
+- [20.3 — Process and reconcile Paddle webhooks idempotently (#72)](https://github.com/Shagon1k/PickFlick/issues/72)
+- [20.4 — Enforce subscription-derived entitlements and non-destructive downgrade states (#73)](https://github.com/Shagon1k/PickFlick/issues/73)
+- [20.5 — Archive and reactivate inactive Clubs using plan grace periods (#74)](https://github.com/Shagon1k/PickFlick/issues/74)
+
 **Scope:**
 
 - [ ] Implement Paddle customer/checkout, success/cancel/failure returns, portal access, and recurring monthly anchor behavior.
@@ -1000,6 +1128,13 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Let App Admins safely operate Users, Clubs, application settings, metadata, and sensitive actions.
 
 **Dependencies:** Phase 20 billing data; all preceding User/Club/Session modules; Phase 1 observability/audit foundations.
+
+**Tickets:**
+
+- [21.1 — Build the protected App Admin shell, overview, and metrics (#75)](https://github.com/Shagon1k/PickFlick/issues/75)
+- [21.2 — Add audited User suspension, reinstatement, and session revocation (#76)](https://github.com/Shagon1k/PickFlick/issues/76)
+- [21.3 — Add audited Club ownership transfer and destructive deletion (#77)](https://github.com/Shagon1k/PickFlick/issues/77)
+- [21.4 — Add application settings, audit retention, and operational indicators (#78)](https://github.com/Shagon1k/PickFlick/issues/78)
 
 **Scope:**
 
@@ -1029,6 +1164,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phase 21 feature-complete UI; Phase 2 responsive shell; chosen service-worker approach/browser matrix.
 
+**Tickets:**
+
+- [22.1 — Select the service-worker strategy and supported browser/device matrix (#79)](https://github.com/Shagon1k/PickFlick/issues/79)
+- [22.2 — Add manifest, icons, installability, cache privacy, and safe updates (#80)](https://github.com/Shagon1k/PickFlick/issues/80)
+- [22.3 — Complete offline guards and mobile/tablet/standalone behavior (#81)](https://github.com/Shagon1k/PickFlick/issues/81)
+
 **Scope:**
 
 - [ ] Generate final manifest, icons/masks, theme/display metadata, installation affordances, and launch handling from brand sources.
@@ -1056,6 +1197,20 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Make the feature-complete MVP secure, observable, recoverable, discoverable where public, and ready for final UAT.
 
 **Dependencies:** Phases 19–22; production-like UAT environment and final domain/provider configuration.
+
+**Tickets:**
+
+- [23.1 — Assign release ownership and approve launch-governance evidence (#82)](https://github.com/Shagon1k/PickFlick/issues/82)
+- [23.2 — Approve backup retention and regional/account-loss strategy (#83)](https://github.com/Shagon1k/PickFlick/issues/83)
+- [23.3 — Approve proxy client identity, abuse, and graceful-drain contracts (#84)](https://github.com/Shagon1k/PickFlick/issues/84)
+- [23.4 — Complete threat-model hardening and launch security scans (#85)](https://github.com/Shagon1k/PickFlick/issues/85)
+- [23.5 — Complete observability, alerts, dashboards, and operational runbooks (#86)](https://github.com/Shagon1k/PickFlick/issues/86)
+- [23.6 — Enforce approved retention schedules and expiring-object cleanup (#87)](https://github.com/Shagon1k/PickFlick/issues/87)
+- [23.7 — Prove migrations, backups, restore, rollback, and graceful drain (#88)](https://github.com/Shagon1k/PickFlick/issues/88)
+- [23.8 — Verify production brand/media rights and provider attribution (#89)](https://github.com/Shagon1k/PickFlick/issues/89)
+- [23.9 — Finalize public SEO, canonical, social, crawler, and PWA release behavior (#90)](https://github.com/Shagon1k/PickFlick/issues/90)
+- [23.10 — Pass performance, accessibility, and release-candidate quality budgets (#91)](https://github.com/Shagon1k/PickFlick/issues/91)
+- [23.11 — Rehearse the exact release candidate and close release readiness (#92)](https://github.com/Shagon1k/PickFlick/issues/92)
 
 **Scope:**
 
@@ -1090,6 +1245,10 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Dependencies:** Phases 19–23 complete; production-like UAT with live/sandbox providers as appropriate.
 
+**Tickets:**
+
+- [24.1 — Execute final UAT and issue the MVP Go/No-Go decision (#93)](https://github.com/Shagon1k/PickFlick/issues/93)
+
 **Scope:**
 
 - [ ] Create `_docs/phase-24-human-verification-4.md` with release-candidate identity, environment, data set, owners, and severity-classified issue register.
@@ -1118,6 +1277,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 **Goal:** Deploy the approved release candidate safely and verify real production operation.
 
 **Dependencies:** Phase 24 Go decision; production secrets/domains/providers/infrastructure and rollback owners ready.
+
+**Tickets:**
+
+- [25.1 — Provision and verify production providers, secrets, storage, backups, and domains (#94)](https://github.com/Shagon1k/PickFlick/issues/94)
+- [25.2 — Deploy the approved MVP revision and complete production verification (#95)](https://github.com/Shagon1k/PickFlick/issues/95)
 
 **Scope:**
 
@@ -1184,11 +1348,26 @@ These do not block guidance creation; each has an explicit decision point.
 | AI watch-history analysis | Personal trends and deeper retention insight. | Sufficient history, consent/privacy design, evaluation, inference cost controls. | High |
 | Personal rating recomputation/history views | Lets users understand changing opinions across repeated screenings. | Stable Session/Personal Rating model. | High |
 | Personalized AI recommendations | More relevant discovery than provider-related titles. | History quality, AI evaluation, privacy and cost controls. | Medium |
+| AI-enhanced Club analytics | Adds optional assisted insight after deterministic Club analytics prove useful. | Stable deterministic analytics, privacy design, evaluation, and cost controls. | Medium |
 | Club rating CSV export | Portable Club analysis. | Export authorization and privacy policy. | Medium |
 | Russian localization | Expands accessibility for intended users. | Externalized strings and locale QA. | Medium |
 | Web push | Timelier phase participation. | PWA permission strategy and notification reliability. | Medium |
 | Offline writes | Use during poor-connectivity movie nights. | Conflict-resolution and stale-phase protocol. | Low |
 | Annual Pro plan | Lower churn and commercial flexibility. | Monthly plan validation and Paddle pricing design. | Low |
+| Adminless Club ownership recovery | Restores owner-only operations without corrupting shared history. | Real support evidence and an approved identity/ownership recovery policy. | Low |
+
+### Owning tickets
+
+- [PM.1 — Define the privacy-safe AI watch-history analysis MVP (#96)](https://github.com/Shagon1k/PickFlick/issues/96)
+- [PM.2 — Define personal rating recomputation and repeated-viewing history (#97)](https://github.com/Shagon1k/PickFlick/issues/97)
+- [PM.3 — Define personalized Movie recommendations beyond TMDB related titles (#98)](https://github.com/Shagon1k/PickFlick/issues/98)
+- [PM.4 — Define AI-enhanced Club analytics after deterministic analytics mature (#99)](https://github.com/Shagon1k/PickFlick/issues/99)
+- [PM.5 — Export Club ratings as CSV (#100)](https://github.com/Shagon1k/PickFlick/issues/100)
+- [PM.6 — Add Russian localization (#101)](https://github.com/Shagon1k/PickFlick/issues/101)
+- [PM.7 — Define web push rollout and permission strategy (#102)](https://github.com/Shagon1k/PickFlick/issues/102)
+- [PM.8 — Define a safe offline-write and conflict-resolution model (#103)](https://github.com/Shagon1k/PickFlick/issues/103)
+- [PM.9 — Add annual Pro billing after commercial validation (#104)](https://github.com/Shagon1k/PickFlick/issues/104)
+- [PM.10 — Define adminless Club ownership recovery (#105)](https://github.com/Shagon1k/PickFlick/issues/105)
 
 ## 14. Progress Tracking
 
