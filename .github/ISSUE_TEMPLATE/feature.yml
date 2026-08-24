@@ -1,8 +1,6 @@
 name: Feature
 description: Propose a user-facing capability or meaningful product improvement.
 title: "[Feature]: "
-labels:
-  - enhancement
 body:
   - type: markdown
     attributes:

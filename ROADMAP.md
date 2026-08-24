@@ -10,6 +10,11 @@
 | Architecture reference | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | ADR registry | [_docs/decisions/README.md](_docs/decisions/README.md) |
 | Canonical prototypes | [_docs/design/prototypes/index.html](_docs/design/prototypes/index.html) |
+| Actionable delivery tracker | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) |
+
+GitHub Issues in Project 3 are the canonical source for actionable active and deferred delivery
+work. This Roadmap remains the product/MVP/phase contract and phase-level acceptance record; it is
+not a duplicate task inbox.
 
 ## 1. Project Contract
 
@@ -386,7 +391,8 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 ### Phase elaboration and evidence contract
 
 - Keep future phases at the detail level below: dependencies, meaningful scope, observable acceptance, expected evidence, deliverables, and exclusions.
-- Before a phase starts, create `_docs/phase-N-short-name.md` with implementation-level decisions, inherited behavior, temporary shims/removals, exact subtasks, edge cases, and verification commands.
+- Before a phase starts, create or confirm focused Project 3 issues for its delivery slices, then create `_docs/phase-N-short-name.md` with issue links, implementation-level decisions, inherited behavior, temporary shims/removals, edge cases, and verification commands.
+- Project 3 owns live task status. Update the Roadmap only at phase boundaries with phase-level acceptance evidence.
 - Link the active phase document from `_docs/README.md` while work is in progress.
 - On completion, consolidate durable product/design/architecture/operations knowledge into its canonical document, record evidence in this Roadmap, and delete the temporary phase document.
 - Do not mark a phase Done with unchecked acceptance items, missing evidence, or undocumented deferred work.

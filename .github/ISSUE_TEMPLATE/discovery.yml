@@ -1,0 +1,49 @@
+name: Discovery
+description: Resolve a product, design, provider, or technical decision before implementation.
+title: "[Discovery]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for an evidence-backed decision gate. Do not prescribe implementation work
+        until the decision is made; split approved work into focused follow-up issues.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What decision is needed, why is it needed now, and what happens if it remains unresolved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision to make
+      description: State the specific choice or validated design outcome this discovery must produce.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence
+      description: What research, prototypes, provider confirmation, cost model, or user feedback is needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions proving the decision is ready to be made.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: human-checkpoints
+    attributes:
+      label: Human-control checkpoints (optional)
+      description: Record decisions or external actions that require the owner's direct participation.

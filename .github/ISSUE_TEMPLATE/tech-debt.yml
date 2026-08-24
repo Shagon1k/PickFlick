@@ -1,8 +1,6 @@
 name: Technical debt
 description: Track a known maintainability, reliability, or operational cost.
 title: "[Tech debt]: "
-labels:
-  - tech debt
 body:
   - type: textarea
     id: context
