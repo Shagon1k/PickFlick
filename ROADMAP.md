@@ -148,7 +148,7 @@ Every canonical product surface in the design package is part of MVP. “Coming 
 | Data & Privacy | What personal data is stored, exported, deleted, retained, and shared? | Planned | Data inventory, personal CSV and GDPR archive, account deletion/anonymization, shared-history preservation, audit retention, and provider disclosures are launch requirements. |
 | Mobile Support | Is mobile first-class? | Planned | Mobile is first-class, recomposed rather than merely shrunk, with fixed bottom navigation and 44px minimum touch targets. |
 | PWA / installability | Does the app need offline support, installability, push, or an app shell? | Planned | Installable online-first PWA; cached shell/read-only fallback may be used, but mutations require a live connection; push deferred. |
-| Environments & Production Deploy | How are environments, migrations, deploys, rollback, and smoke checks handled? | Planned | Local, CI/test, UAT, and production profiles; Docker deployment through Dokploy remains proposed; forward migrations, backups, rollback, and smoke checks are required. |
+| Environments & Production Deploy | How are environments, migrations, deploys, rollback, and smoke checks handled? | Planned | Local and CI/test profiles plus `https://uat.pick-flick.app` and `https://pick-flick.app`; Phase 1 establishes the shared Dokploy/Cloudflare deployment baseline, automatic UAT delivery, and a disabled manual production-promotion path. Forward migrations, backups, rollback, and smoke checks remain required. |
 
 ### Pre-MVP Production Readiness
 
@@ -160,7 +160,7 @@ an owner and revisit trigger; it cannot bypass a launch-critical risk.
 | Deploy ownership | Name one release owner and rollback authority; record the exact approved revision, readiness and smoke evidence, and tested rollback path. | Needs decision | Release owner — to be assigned | Phase 23 prepares the release candidate and runbooks; Phase 25 records the deployed revision and production evidence. Assign before Phase 23 release rehearsal. |
 | Data durability | Decide backup destination and retention; demonstrate restore; separately decide the response to regional or hosting-account loss. | Needs decision | Infrastructure owner — to be assigned | PostgreSQL and durable avatars require backups; Redis is not a domain source of truth. Align retention with the Phase 19 legal/privacy decision and complete the restore/disaster-recovery drill in Phase 23. |
 | Edge reliability | Verify client identity behind the chosen proxy, abuse limits, graceful connection/workload drain, and a real UAT drill. | Needs decision | Infrastructure owner — to be assigned | Reverse proxy and Dokploy are Proposed. Decide their concrete behavior before Phase 23; verify it again with production-like UAT before the Go decision. |
-| Public surface | Decide the canonical host; validate SEO, PWA, and social/OG assets in production; account for external crawler cache refresh. | Needs decision | Product owner + developer | Public metadata is implemented in Phase 3 and completed in Phase 23. Final domain remains open; validate deployed canonical/robots/sitemap/preview behavior and document cache-refresh evidence before launch. |
+| Public surface | Validate the confirmed canonical host, SEO, PWA, and social/OG assets in production; account for external crawler cache refresh. | Planned | Product owner + developer | Production is `https://pick-flick.app`; UAT is `https://uat.pick-flick.app`. Public metadata is implemented in Phase 3 and completed in Phase 23; validate deployed canonical/robots/sitemap/preview behavior and document cache-refresh evidence before launch. |
 | Compliance boundary | Separate technically shipped behavior from required external legal action, then explicitly decide `Launch gate` or `Post-launch follow-up` for each unresolved item. | Needs decision | Product owner + legal/privacy reviewer | Privacy, retention, billing, provider disclosure, and public legal copy require review. Resolve the disposition before Phase 23 exits; no safety, privacy, or billing risk may be deferred through Phase 24. |
 
 ## 5. Business, Product & Monetization Rules
@@ -424,33 +424,44 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Out of scope:** Application scaffolding or dependency installation.
 
-### Phase 1 — Infrastructure & Repository Foundation · Not started
+### Phase 1 — Infrastructure, Repository & Deployment Foundation · Not started
 
-**Goal:** Create a reproducible monorepo/runtime foundation on which every vertical slice can be built and verified.
+**Goal:** Create a reproducible monorepo/runtime foundation, prove it through automatic UAT delivery, and prepare a disabled production-promotion path for every later vertical slice.
 
-**Dependencies:** Phase 0 guidance; approval of the foundational architecture ADRs.
+**Dependencies:** Phase 0 guidance; approval of the foundational architecture ADRs; DNS control of `pick-flick.app`.
 
 **Scope:**
 
-- [ ] Decide and record repository topology, auth-boundary direction, database workflow, queue/outbox approach, and deployment baseline.
+- [ ] Decide and record repository topology, auth-boundary direction, database workflow, queue/outbox approach, and the Dokploy/Cloudflare deployment baseline.
 - [ ] Scaffold web, API, worker, database, contracts, UI, and configuration packages without retaining unused generated files.
 - [ ] Establish PostgreSQL, Redis, object-storage, and mail-development dependencies with typed environment validation.
 - [ ] Create the initial Prisma/migration workflow, seed/test-fixture strategy, and safe reset policy for non-production environments.
-- [ ] Add real install/dev/build/lint/type-check/test/migrate commands and update `AGENTS.md`.
-- [ ] Establish CI, structured logging, request/job correlation, health/readiness endpoints, and a stable API error envelope.
+- [ ] Add real install/dev/build/lint/type-check/test/migrate/seed, image-build, Compose-validation, and E2E-smoke commands and update `AGENTS.md`.
+- [ ] Build production-oriented web, API, worker, and one-shot release images plus one Compose definition shared by UAT and production, with ordered migrations/seeds, health gates, environment isolation, and graceful worker shutdown.
+- [ ] Provision the isolated UAT deployment through Dokploy and Cloudflare at `https://uat.pick-flick.app` with synthetic data and sandbox providers.
+- [ ] Prepare the production Dokploy resource and environment contract for `https://pick-flick.app`, with automatic deployment disabled and an explicit production-enable guard kept false.
+- [ ] Replace the placeholder CI job with real quality gates; deploy a green `main` revision automatically to UAT, wait for the exact Dokploy revision, and run health plus browser smoke checks.
+- [ ] Add a dormant manual SemVer production-promotion workflow that accepts only a revision with successful UAT evidence and cannot deploy while the production-enable guard is false.
+- [ ] Establish typed environment inventories, secret/build-time/runtime boundaries, structured logging, request/job correlation, health/readiness endpoints, and a stable API error envelope.
+- [ ] Document deployment, configuration, migration compatibility, UAT smoke, rollback, and production-enable procedures without recording secret values.
 
 **Acceptance Check:**
 
 - [ ] A clean checkout installs, starts required services, migrates, seeds, and runs web/API/worker from documented commands.
-- [ ] Lint, type-check, unit test, integration test, and production builds pass locally and in CI.
+- [ ] Lint, type-check, unit test, integration test, production builds, image builds, and Compose validation pass locally and in CI.
+- [ ] A green `main` revision deploys automatically to `https://uat.pick-flick.app`, and the exact deployed revision passes HTTPS health and browser smoke checks.
+- [ ] A failed release migration/seed prevents the new API, worker, and web revision from becoming active.
+- [ ] UAT and production configuration, networks, PostgreSQL, Redis, storage scopes, and private service identities remain isolated; no application or data-service port is published directly.
+- [ ] A known-good UAT revision can be restored under the documented schema-compatibility rules.
+- [ ] The production workflow and configuration validate without deploying production while the production-enable guard is false.
 - [ ] Invalid/missing configuration fails safely without exposing secrets.
 - [ ] Architecture/ADR documentation matches the generated repository and runtime topology.
 
-**Evidence:** Command logs, CI run, service health checks, initial migration/test output, ADRs, and repository tree review.
+**Evidence:** Local/CI command logs, image builds, Compose validation, migration/idempotent-seed output, exact UAT revision and Dokploy deployment record, Cloudflare DNS/TLS checks, health/E2E results, failed-release gate, UAT rollback exercise, production-disabled guard test, ADRs, and repository tree review.
 
-**Deliverables:** Runnable monorepo, local dependency stack, CI baseline, database foundation, typed configuration, and real command map.
+**Deliverables:** Runnable monorepo, local dependency stack, real CI, database foundation, typed configuration, production images, shared deployment Compose, operational UAT, inactive production-promotion path, deployment/environment/runbook guidance, and real command map.
 
-**Out of scope:** Production UI and end-user feature behavior.
+**Out of scope:** Production traffic cutover, real production users/data, activation of live billing/email/storage providers, final production restore drill, production UI, and end-user feature behavior.
 
 ### Phase 2 — Production Design System & App Shells · Not started
 
@@ -1133,6 +1144,12 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 ## 12. Decision Log
 
+### Resolved Decisions
+
+| Decision | Owner | Resolution | Evidence |
+| --- | --- | --- | --- |
+| Canonical UAT and production domains | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases. | Developer decision, 2026-08-24. |
+
 ### Open Questions
 
 These do not block guidance creation; each has an explicit decision point.
@@ -1141,7 +1158,7 @@ These do not block guidance creation; each has an explicit decision point.
 | --- | --- | --- | --- |
 | Which auth/session library best supports Google + Apple, server-enforced API access, and self-hosting? | Developer + implementation agent | Phase 1 / 4 | Compare maintained official integrations, set the boundary in Phase 1, and accept the implementation ADR before Phase 4 auth work. |
 | Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
-| What are the final production domain, sender domain, and contact address, and how will external crawler caches be refreshed after cutover? | Product owner | Phase 3 / 23 | Confirm before final public metadata, OAuth callbacks, email DNS, legal copy, production validation, and crawler-cache checks. |
+| What are the final sender domain and contact address, and how will external crawler caches be refreshed after cutover? | Product owner | Phase 3 / 23 | The production domain is confirmed as `pick-flick.app`; resolve the remaining email identity and cache-refresh procedure before final metadata, email DNS, legal copy, and production validation. |
 | What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
 | Which PWA service-worker approach and supported browser/device matrix will be maintained? | Developer + implementation agent | Phase 1 / 22 | Verify current framework compatibility during foundation work and finalize before PWA implementation. |
 | Who is the release owner and rollback authority, and what exact revision/readiness/smoke evidence is required before and after production cutover? | Product owner + release owner | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal. |
@@ -1178,7 +1195,7 @@ These do not block guidance creation; each has an explicit decision point.
 | Phase | Status | Evidence | Notes |
 | --- | --- | --- | --- |
 | 0 — Guidance Baseline | Done | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22. | No application code was created. |
-| 1 — Infrastructure & Repository Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
+| 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
 | 2 — Production Design System & App Shells | Not started |  |  |
 | 3 — Public Site & System States | Not started |  |  |
 | 4 — Authentication & Account Onboarding | Not started |  |  |
