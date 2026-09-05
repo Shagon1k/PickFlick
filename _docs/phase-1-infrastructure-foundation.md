@@ -127,11 +127,19 @@ change remains independently reviewable. Never weaken an earlier gate to run wor
 
 ## Command map
 
-No application package manifests or executable project commands exist yet. Issue #10 must establish
-the first real install, development, build, lint, type-check, test, and generation commands and add
-them to `AGENTS.md`. Later Phase 1 issues add migration, seed, image, Compose, deployment, and smoke
-commands when those capabilities exist. Never document a command before it is executed successfully
-from its stated context.
+Issue #10 established the first executable command map. `AGENTS.md` owns the durable list.
+
+| Capability | Root command | Current boundary |
+| --- | --- | --- |
+| Install | `pnpm install --frozen-lockfile` | Uses the committed lockfile and pinned Node/pnpm versions. |
+| Develop/start | `pnpm dev` / `pnpm start` | Runs the web, API, and worker scaffold entrypoints. |
+| Static and unit gates | `pnpm lint`, `pnpm typecheck`, `pnpm test` | Covers the current scaffold. |
+| Build and full verification | `pnpm build`, `pnpm verify` | Builds all workspaces and rejects invalid workspace boundaries/cycles. |
+| Database migration/seed | `pnpm migrate`, `pnpm seed` | Executes explicit zero-change plans until issue #11 adds PostgreSQL/Prisma behavior. |
+
+Later Phase 1 issues add real database changes, image, Compose, deployment, and smoke commands when
+those capabilities exist. Never treat a zero-change database plan as migration or seed integration
+evidence.
 
 ## Evidence register
 
@@ -139,7 +147,7 @@ from its stated context.
 | --- | --- | --- |
 | Compatible architecture comparison and developer approval | Verified | [ADR registry](decisions/README.md), accepted 2026-09-05. |
 | Canonical architecture alignment | In progress | Issue #9 documentation change. |
-| Runnable monorepo and command map | Missing | Issue #10. |
+| Runnable monorepo and command map | Verified locally | Clean source-only export of issue #10 branch: frozen locked install with a fresh store; workspace-boundary check; lint; type-check; 7 unit tests; web/API/worker production builds and startup probes. |
 | Local data, migrations, seeds, typed configuration | Missing | Issue #11. |
 | Health/readiness/logging/error baseline | Missing | Issue #12. |
 | Immutable images and isolated Compose topology | Missing | Issue #13. |

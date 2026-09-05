@@ -20,7 +20,7 @@ phase-level acceptance record; do not copy issue status into it.
 | --- | --- | --- |
 | [ROADMAP.md](../ROADMAP.md) | Product contract, MVP boundary, business rules, routes, phase sequence/acceptance, and decisions. | Active product/phase contract; not the actionable task inbox. |
 | [DESIGN.md](../DESIGN.md) | Design authority, experience structure, screen/state/component coverage, and QA contract. | Approved direction; build/QA not started. |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | Accepted deployable, module/data/interface, runtime, security, and operations direction. | Direction accepted; implementation remains Proposed. |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Accepted deployable, module/data/interface, runtime, security, and operations direction. | Repository/runtime scaffold is active; product and infrastructure implementation remains Proposed or Partial. |
 | [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | ADR-001 through ADR-006 accepted. |
 
 ## Agent entrypoints
