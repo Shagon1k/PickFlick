@@ -1,11 +1,11 @@
 # PickFlick — Architecture Reference
 
-> Proposed technical structure for the greenfield system.
-> Product scope lives in the Roadmap, UX lives in the Design reference, and accepted technical rationale will live in ADRs.
+> Accepted technical direction for the greenfield system; implementation remains Proposed.
+> Product scope lives in the Roadmap, UX lives in the Design reference, and accepted technical rationale lives in ADRs.
 
 | Document owner | Last reviewed | Verified against |
 | --- | --- | --- |
-| Developer | 2026-07-22 | No application implementation exists; all topology is Proposed |
+| Developer | 2026-09-05 | ADR-001 through ADR-006 accepted; no application implementation exists |
 
 ## 1. Architecture Contract & Sources
 
@@ -16,7 +16,9 @@
 - **[_docs/decisions/README.md](_docs/decisions/README.md) owns:** accepted/rejected/superseded rationale for significant technical decisions.
 - **Future code and deployed configuration will own:** the latest verifiable implementation state.
 
-Proposed guidance never becomes `Active` merely because it is written here. Phase 1 must approve choices, implement them, and record verification evidence.
+An accepted ADR makes a technical direction current. It does not make code, configuration, or
+infrastructure `Active`; each affected row remains `Proposed` until implementation and named
+verification evidence exist.
 
 ### Architecture sources
 
@@ -26,9 +28,13 @@ Proposed guidance never becomes `Active` merely because it is written here. Phas
 | Design/UX contract | [DESIGN.md](DESIGN.md) | Required surfaces, interaction behavior, responsive/accessibility needs. | Static prototype code is not production architecture. |
 | Canonical prototype package | [_docs/design/prototypes/index.html](_docs/design/prototypes/index.html) | Screen families, state examples, data needs, and cross-screen flows. | Fixture content is clarified in Design/Roadmap. |
 | Official Next.js docs | [App Router](https://nextjs.org/docs/app/getting-started) and [self-hosting](https://nextjs.org/docs/app/guides/self-hosting) | Current framework and container/self-hosting capabilities. | Exact version remains a Phase 1 choice. |
+| Official pnpm docs | [Workspaces](https://pnpm.io/workspaces) | Workspace and local-package resolution behavior. | Exact version remains a Phase 1 choice. |
 | Official NestJS docs | [Task scheduling](https://docs.nestjs.com/techniques/task-scheduling), [queues](https://docs.nestjs.com/techniques/queues), and [SSE](https://docs.nestjs.com/techniques/server-sent-events) | Current framework patterns for API, scheduled/queued work, and server push. | Does not choose the project’s exact queue topology by itself. |
 | Official Mantine guide | [Next.js guide](https://mantine.dev/guides/next/) | Current integration baseline for selective UI primitives. | Bespoke Projector Noir styling remains project-owned. |
 | Official Prisma docs | [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate) | Migration and PostgreSQL ORM baseline. | Manual SQL may be required for advanced constraints. |
+| BullMQ docs | [Idempotent jobs](https://docs.bullmq.io/patterns/idempotent-jobs) | Retry-safe job design. | Does not provide exactly-once external side effects. |
+| OWASP cheat sheets | [Session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) and [CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) | Browser session and CSRF security baseline. | The concrete auth/session library remains a Phase 4 decision. |
+| Dokploy and Cloudflare docs | [Isolated deployments](https://docs.dokploy.com/docs/core/docker-compose/utilities), [Compose domains](https://docs.dokploy.com/docs/core/docker-compose/domains), and [Cloudflare proxy](https://developers.cloudflare.com/fundamentals/concepts/how-cloudflare-works/) | Deployment-network and public-ingress capabilities. | Production behavior must still be proven in UAT. |
 
 ### State legend
 
@@ -72,17 +78,17 @@ flowchart LR
 
 ### Architecture summary
 
-| Concern | Proposed choice | State | Rationale / source |
+| Concern | Accepted direction | Implementation state | Rationale / ADR |
 | --- | --- | --- | --- |
-| Application style | Modular client/API/worker monolith in one pnpm monorepo. | Proposed | Clear deployable boundaries without microservice operational cost. |
-| Frontend | Next.js App Router + TypeScript; Server Components for public/shell data where useful, Client Components for rich workflows; custom tokens/CSS Modules with selective Mantine primitives; TanStack Query for API state. | Proposed | Public SEO, authenticated application routing, bespoke design, and current self-hosting support. |
+| Application style | Modular client/API/worker monolith in one pnpm monorepo. | Proposed | Atomic cross-layer changes with separate runtime failure boundaries; [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints). |
+| Frontend | Next.js App Router + TypeScript; Server Components for public/shell data where useful, Client Components for rich workflows; project tokens/CSS Modules with wrapped selective Mantine primitives; TanStack Query for API state. | Proposed | Public SEO, self-hosting, bespoke design ownership, and accessible complex controls; [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively). |
 | Client state | URL/server state first; local React state second; Zustand only after a demonstrated shared-client-state need. | Proposed | Avoid a global state layer before real requirements exist. |
-| Backend | NestJS modular REST API, generated OpenAPI, server-managed sessions, SSE for live Club/Session progress. | Proposed | Explicit authorization/domain boundary and separate web/runtime deployment. |
-| Primary data store | PostgreSQL through Prisma migrations/client; explicit SQL for constraints Prisma cannot express. | Proposed | Relational invariants, transactions, reporting, and auditability. |
-| Async work | Redis + BullMQ worker with delayed/idempotent jobs and a transactional outbox. | Proposed | Deadlines, notifications, exports, metadata refresh, and webhook follow-up survive request/process restarts. |
+| Backend | NestJS modular REST API, generated OpenAPI, API-owned opaque server sessions, and SSE for live Club/Session progress. | Proposed | One same-origin server authorization boundary; [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary). |
+| Primary data store | PostgreSQL through reviewed Prisma migrations/client; explicit SQL for high-risk constraints. | Proposed | Relational invariants, transactions, reporting, and auditability; [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations). |
+| Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
 | Object storage | S3-compatible storage for avatars and time-limited exports. | Proposed | Keeps binary/user-generated objects outside application/database containers. |
 | Real-time | SSE from API; durable truth remains PostgreSQL, Redis distributes invalidation/events. | Proposed | One-way progress updates fit the product; WebSockets are unnecessary for MVP. |
-| Deployment | Separate Docker images/processes for web, API, and worker behind a reverse proxy; proposed Dokploy deployment. | Proposed | Matches self-hosting direction and isolates worker failure/restarts. |
+| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
 
 ## 3. Building Blocks & Boundaries
 
@@ -103,7 +109,10 @@ PickFlick/
   _docs/              # Durable guidance, design prototypes, decisions, future guides
 ```
 
-The layout is a target, not permission to scaffold during planning. Phase 1 may simplify package boundaries before the first code is committed.
+The layout is the accepted scaffold target, not implemented state. Keep only packages with an
+immediate consumer. When API and worker first need the same server-side behavior, extract a focused
+domain/application package rather than importing one app from another or creating a generic
+`shared` package.
 
 | Deployable / package | Responsibility | Owns | Depends on | State |
 | --- | --- | --- | --- | --- |
@@ -217,9 +226,9 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 | Interface | Direction | Protocol | Contract source / workflow | Auth / trust boundary | Failure behavior | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| Browser API | Web -> API | HTTPS JSON REST | Nest DTOs -> generated OpenAPI/client | Opaque secure session; CSRF/CORS policy; Club/App server authorization. | Structured safe errors; no silent fallback; idempotency key for sensitive retries. | Proposed |
+| Browser API | Web -> API | Same-origin HTTPS JSON REST under `/api/*` | Nest DTOs -> generated OpenAPI/client | Host-only opaque secure session; explicit CSRF/Origin checks; Club/App server authorization. | Structured safe errors; no silent fallback; idempotency key for sensitive retries. | Proposed |
 | Live progress | Web -> API | HTTPS SSE | Versioned event envelope generated with API contract | Authenticated, Club/Session-authorized stream. | Reconnect with last event/version; re-fetch authoritative projection after gaps. | Proposed |
-| OAuth | API/browser -> Google/Apple | OIDC/OAuth over HTTPS | Provider config + chosen auth library | State/nonce/PKCE as applicable; callback allowlist. | Deny and return to safe login state; never expose provider tokens to client logs. | Proposed |
+| OAuth | API/browser -> Google/Apple | OIDC/OAuth over HTTPS | API-owned provider adapter; library selected in issue #25 | State/nonce/PKCE as applicable; callback allowlist; server-held provider tokens. | Deny and return to safe login state; never expose provider tokens to browser storage or logs. | Proposed |
 | TMDB | API/worker -> TMDB | HTTPS API | Provider adapter with integration tests | Server-held API credential; provider data untrusted. | Timeout, bounded retry, cached stale detail where safe, explicit unavailable state. | Proposed |
 | Paddle checkout/portal | Web/API -> Paddle | Hosted provider flow | Billing adapter and return-state contract | Authenticated Admin; server creates provider session. | Safe cancel/failure return and server-side entitlement recheck. | Proposed |
 | Paddle webhook | Paddle -> API | Signed HTTPS webhook | Raw-body verification + versioned handler | Public endpoint, signature/timestamp/replay validation. | Fast reject invalid; store valid idempotently; async processing/retry. | Proposed |
@@ -244,7 +253,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 | Concern | System contract | Canonical source | State |
 | --- | --- | --- | --- |
-| Authentication | Registered Google/Apple identities; opaque server-managed sessions; revoke all sessions on suspension/deletion; exact library chosen in Phase 1. | Identity module + future security guide. | Proposed |
+| Authentication | Registered Google/Apple identities; same-origin API-owned opaque server sessions in host-only secure cookies; explicit CSRF/Origin defense; revoke all sessions on suspension/deletion; exact library chosen by issue #25. | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) + future security guide. | Proposed |
 | Authorization | Deny by default; App Admin/User globally, Admin/Moderator/Member per Club; every query/mutation/SSE/file URL is server/data-boundary authorized. | [Roadmap identity rules](ROADMAP.md#identity-and-access) | Proposed |
 | Validation and errors | Validate path/query/body/file/provider input at entry; use stable machine code + safe user message + request ID; encode user/provider output contextually. | Future API contract. | Proposed |
 | Security | TLS, reverse proxy, secure headers/cookies, CSRF/CORS strategy, rate limits, webhook signatures, upload allowlists, secret isolation, dependency/scanner gates. | Phase 1 baseline with Phase 23 hardening/release review. | Proposed |
@@ -289,8 +298,8 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | --- | --- | --- | --- |
 | Local development | pnpm workspace; app commands run natively, dependencies through containers where helpful; real command map added after scaffolding. | Future getting-started guide and AGENTS command map. | Proposed |
 | CI quality gates | Locked install, generated-artifact drift, lint, type-check, unit, integration, migration, build, E2E smoke, accessibility, and security checks. | Future CI workflows. | Proposed |
-| Deployment | Immutable Docker images promoted to UAT/production; reverse proxy handles TLS/limits; proposed Dokploy target. | Future deployment guide/config. | Proposed |
-| Database migrations | Forward, reviewed Prisma/manual SQL migrations; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | Future migration guide. | Proposed |
+| Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + future deployment guide/config. | Proposed |
+| Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + future migration guide. | Proposed |
 | Rollback | Roll back images only when database compatibility permits; use forward fix for non-reversible data changes; document each risky migration. | Future release runbook. | Proposed |
 | Backup and restore | Automated PostgreSQL backups, durable avatar backup, documented retention, and restore drill before launch; exports are regenerable/expiring. | Future backup runbook. | Proposed |
 | Scheduled/background work | BullMQ delayed/repeatable jobs with stable IDs, idempotent handlers, retry/dead-letter visibility, and deadline reconciliation. | Worker implementation/runbook. | Proposed |
@@ -310,14 +319,18 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 ## 7. Architecture Decisions
 
-No architecture decision is accepted yet because there is no implementation baseline and the developer approved the prior stack only provisionally. Phase 1 must compare and approve at least these durable choices before scaffolding locks them in:
+The developer accepted the compatible Phase 1 baseline on 2026-09-05. The decisions are current
+direction; every implementation row above remains `Proposed` until the owning issue supplies its
+named evidence.
 
-- Client/API/worker monorepo topology versus a single full-stack application.
-- Auth/session library and browser-to-API session boundary.
-- PostgreSQL/Prisma migration workflow, including manual partial-index migrations.
-- BullMQ/Redis worker plus transactional outbox strategy.
-- Docker/Dokploy production topology and managed versus self-hosted data dependencies.
-- Production UI primitive strategy for Projector Noir.
+| ADR | Accepted direction | Implementation gate |
+| --- | --- | --- |
+| [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) | pnpm modular monorepo with web, API, and worker entrypoints. | Issue #10 scaffold and command evidence. |
+| [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) | Same-origin API-owned opaque server sessions; library deferred to issue #25. | Issues #25–#28 auth/session evidence. |
+| [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) | PostgreSQL with committed, reviewed Prisma/manual SQL migrations. | Issue #11 migration and constraint evidence. |
+| [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) | BullMQ/Redis execution with PostgreSQL outbox, idempotency, and reconciliation. | Worker/domain failure-injection evidence. |
+| [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Immutable images, isolated Dokploy environments, Cloudflare/Traefik ingress, disabled production gate. | Issues #13–#16 UAT and deployment evidence. |
+| [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) | Project-owned CSS tokens/components with wrapped selective Mantine primitives. | Issues #17–#19 design-system and accessibility evidence. |
 
 Create an ADR only when a concrete option is accepted or rejected; do not populate the registry with template decisions.
 

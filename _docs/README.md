@@ -20,8 +20,8 @@ phase-level acceptance record; do not copy issue status into it.
 | --- | --- | --- |
 | [ROADMAP.md](../ROADMAP.md) | Product contract, MVP boundary, business rules, routes, phase sequence/acceptance, and decisions. | Active product/phase contract; not the actionable task inbox. |
 | [DESIGN.md](../DESIGN.md) | Design authority, experience structure, screen/state/component coverage, and QA contract. | Approved direction; build/QA not started. |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | Proposed deployables, module/data/interface boundaries, runtime, security, and operations. | Proposed; Phase 1 approval required. |
-| [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | Registry initialized; no accepted ADRs yet. |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Accepted deployable, module/data/interface, runtime, security, and operations direction. | Direction accepted; implementation remains Proposed. |
+| [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | ADR-001 through ADR-006 accepted. |
 
 ## Agent entrypoints
 
@@ -61,6 +61,6 @@ The retired blueprint was intentionally removed after synthesis; this repository
 
 ## Active phase plan
 
-None. Before Phase 1 implementation begins, create or confirm its focused Project 3 issues, create
-the temporary `_docs/phase-1-infrastructure-foundation.md` execution plan, and link both here.
-Consolidate durable knowledge and remove each temporary phase document when that phase is completed.
+| Plan | Purpose | Lifecycle |
+| --- | --- | --- |
+| [Phase 1 — Infrastructure, Repository & Deployment Foundation](phase-1-infrastructure-foundation.md) | Cross-issue sequence, inherited contracts, edge cases, commands, and evidence in progress for issues #9–#16. | Consolidate durable knowledge and remove this temporary plan/link when Phase 1 completes. |

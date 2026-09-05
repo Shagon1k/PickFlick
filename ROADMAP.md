@@ -359,17 +359,20 @@ stateDiagram-v2
 
 ## 9. Architecture Decisions
 
-All technical choices are proposed until verified in Phase 1. Exact versions are selected then, not frozen in planning prose.
+The developer accepted the foundational direction in ADR-001 through ADR-006 on 2026-09-05.
+Accepted direction is not implemented state: each runtime row remains Proposed until the owning
+phase provides verification. Exact dependency versions are selected and pinned during scaffolding,
+not frozen in planning prose.
 
 | Area | Planning decision | State | Architecture / ADR reference |
 | --- | --- | --- | --- |
-| Repository | pnpm TypeScript monorepo with web, API, worker, and shared packages. | Proposed | [Architecture](ARCHITECTURE.md#3-building-blocks--boundaries) |
-| Frontend | Next.js App Router, selective Mantine primitives, CSS Modules/custom tokens, TanStack Query; add Zustand only for demonstrated cross-route client state. | Proposed | [Architecture](ARCHITECTURE.md#2-system-overview) |
-| Backend | NestJS modular REST API with OpenAPI contracts and SSE for live progress. | Proposed | [Architecture](ARCHITECTURE.md#2-system-overview) |
-| Database | PostgreSQL with Prisma migrations and transactional domain invariants. | Proposed | [Architecture](ARCHITECTURE.md#4-data--interfaces) |
-| Jobs / async | Redis + BullMQ worker for deadlines, notification delivery, exports, metadata refresh, and webhook follow-up. | Proposed | [Architecture](ARCHITECTURE.md#3-building-blocks--boundaries) |
-| Storage | S3-compatible object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Proposed | [Architecture](ARCHITECTURE.md#4-data--interfaces) |
-| Deployment | Docker images behind a reverse proxy, proposed Dokploy target, PostgreSQL/Redis/object-store dependencies, separate API and worker processes. | Proposed | [Architecture](ARCHITECTURE.md#6-runtime--delivery) |
+| Repository | pnpm modular monorepo with separate web, API, and worker entrypoints. | Accepted direction; Proposed implementation | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) |
+| Frontend | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state. | Accepted direction; Proposed implementation | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
+| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin OAuth and opaque server sessions; issue #25 selects the library. | Accepted direction; Proposed implementation | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) |
+| Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
+| Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
+| Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) |
+| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy environments behind Cloudflare/Traefik; production stays manually disabled. | Accepted direction; Proposed implementation | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) |
 
 ## 10. External Integrations
 
@@ -426,11 +429,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Out of scope:** Application scaffolding or dependency installation.
 
-### Phase 1 — Infrastructure, Repository & Deployment Foundation · Not started
+### Phase 1 — Infrastructure, Repository & Deployment Foundation · In progress
 
 **Goal:** Create a reproducible monorepo/runtime foundation, prove it through automatic UAT delivery, and prepare a disabled production-promotion path for every later vertical slice.
 
-**Dependencies:** Phase 0 guidance; approval of the foundational architecture ADRs; DNS control of `pick-flick.app`.
+**Dependencies:** Phase 0 guidance; accepted foundational ADRs; DNS control of `pick-flick.app` before UAT provisioning.
 
 **Tickets:**
 
@@ -445,7 +448,7 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 **Scope:**
 
-- [ ] Decide and record repository topology, auth-boundary direction, database workflow, queue/outbox approach, and the Dokploy/Cloudflare deployment baseline.
+- [x] Decide and record repository topology, auth-boundary direction, database workflow, queue/outbox approach, Dokploy/Cloudflare deployment baseline, and UI primitive strategy.
 - [ ] Scaffold web, API, worker, database, contracts, UI, and configuration packages without retaining unused generated files.
 - [ ] Establish PostgreSQL, Redis, object-storage, and mail-development dependencies with typed environment validation.
 - [ ] Create the initial Prisma/migration workflow, seed/test-fixture strategy, and safe reset policy for non-production environments.
@@ -470,7 +473,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 - [ ] Invalid/missing configuration fails safely without exposing secrets.
 - [ ] Architecture/ADR documentation matches the generated repository and runtime topology.
 
-**Evidence:** Local/CI command logs, image builds, Compose validation, migration/idempotent-seed output, exact UAT revision and Dokploy deployment record, Cloudflare DNS/TLS checks, health/E2E results, failed-release gate, UAT rollback exercise, production-disabled guard test, ADRs, and repository tree review.
+**Evidence:** ADR-001 through ADR-006 were accepted on 2026-09-05. Remaining Phase 1 evidence:
+local/CI command logs, image builds, Compose validation, migration/idempotent-seed output, exact UAT
+revision and Dokploy deployment record, Cloudflare DNS/TLS checks, health/E2E results,
+failed-release gate, UAT rollback exercise, production-disabled guard test, and repository tree
+review.
 
 **Deliverables:** Runnable monorepo, local dependency stack, real CI, database foundation, typed configuration, production images, shared deployment Compose, operational UAT, inactive production-promotion path, deployment/environment/runbook guidance, and real command map.
 
@@ -1320,7 +1327,7 @@ These do not block guidance creation; each has an explicit decision point.
 
 | Question | Owner | Needed by | Next check |
 | --- | --- | --- | --- |
-| Which auth/session library best supports Google + Apple, server-enforced API access, and self-hosting? | Developer + implementation agent | Phase 1 / 4 | Compare maintained official integrations, set the boundary in Phase 1, and accept the implementation ADR before Phase 4 auth work. |
+| Which auth/session library best supports Google + Apple, the accepted API-owned session boundary, and self-hosting? | Developer + implementation agent | Phase 4 | Compare maintained official integrations in issue #25 and accept the implementation ADR before auth work. |
 | Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
 | What are the final sender domain and contact address, and how will external crawler caches be refreshed after cutover? | Product owner | Phase 3 / 23 | The production domain is confirmed as `pick-flick.app`; resolve the remaining email identity and cache-refresh procedure before final metadata, email DNS, legal copy, and production validation. |
 | What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
