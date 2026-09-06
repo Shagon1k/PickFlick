@@ -3,8 +3,9 @@
 PickFlick helps private film clubs nominate, select, watch, rate, and remember films together,
 while giving each registered user a personal film library.
 
-The repository is greenfield. Its typed pnpm monorepo, web/API/worker entrypoints, and local data
-foundation run, while product features, provider integrations, and deployment remain future work.
+The repository is greenfield. Its typed pnpm monorepo, web/API/worker entrypoints, local data
+foundation, and runtime observability baseline run, while product features, provider integrations,
+and deployment remain future work.
 
 ## Start here
 
@@ -36,7 +37,7 @@ pnpm dev
 The development command builds the internal packages, then starts the Next.js web app, NestJS API,
 and worker together. Run the complete workspace gate with `pnpm verify`. See the
 [environment and local data services reference](_docs/environment.md) for configuration, database
-safety, and service commands.
+safety, health endpoints, runtime logs, and service commands.
 
 ## Delivery workflow
 

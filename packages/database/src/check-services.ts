@@ -1,9 +1,9 @@
 import { connect } from "node:net";
 
 import { loadRuntimeEnvironment } from "@pickflick/config/environment";
+import { checkStorage } from "@pickflick/observability";
 
 import { createDatabaseClient } from "./client.js";
-import { checkStorage } from "./check-storage.js";
 
 const environment = loadRuntimeEnvironment();
 
