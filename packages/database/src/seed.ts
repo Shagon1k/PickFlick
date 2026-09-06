@@ -60,24 +60,24 @@ try {
       },
     });
     await transaction.session.upsert({
-      where: { id: SYNTHETIC_FIXTURES.ratingSession.id },
+      where: { id: SYNTHETIC_FIXTURES.pastSession.id },
       create: {
-        id: SYNTHETIC_FIXTURES.ratingSession.id,
+        id: SYNTHETIC_FIXTURES.pastSession.id,
         clubId: SYNTHETIC_FIXTURES.club.id,
         type: "PAST",
-        phase: "RATING",
-        topic: SYNTHETIC_FIXTURES.ratingSession.topic,
+        phase: "COMPLETED",
+        topic: SYNTHETIC_FIXTURES.pastSession.topic,
       },
       update: {
         clubId: SYNTHETIC_FIXTURES.club.id,
         type: "PAST",
-        phase: "RATING",
-        topic: SYNTHETIC_FIXTURES.ratingSession.topic,
+        phase: "COMPLETED",
+        topic: SYNTHETIC_FIXTURES.pastSession.topic,
         phaseVersion: 1,
       },
     });
   });
-  console.log("Synthetic local/test seed applied idempotently (2 users, 1 club, 2 memberships, 1 Rating Session).");
+  console.log("Synthetic local/test seed applied idempotently (2 users, 1 club, 2 memberships, 1 Past Session).");
 } finally {
   await database.$disconnect();
 }

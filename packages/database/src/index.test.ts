@@ -39,6 +39,16 @@ describe("database safety", () => {
     ).toThrow("Local seed/reset requires a loopback database host");
   });
 
+  it("refuses a database host override in the connection query", () => {
+    expect(() =>
+      assertSafeSeedOrResetTarget({
+        appEnvironment: "local",
+        databaseUrl:
+          "postgresql://pickflick:password@127.0.0.1:5432/pickflick_local?host=production.internal",
+      }),
+    ).toThrow("Database seed/reset does not allow a host query parameter");
+  });
+
   it("uses deterministic synthetic fixture identifiers", () => {
     expect(SYNTHETIC_FIXTURES.club.id).toBe("10000000-0000-4000-8000-000000000001");
     expect(SYNTHETIC_FIXTURES.users.every(({ email }) => email.endsWith("@example.invalid"))).toBe(true);

@@ -50,6 +50,27 @@ describe("environment validation", () => {
     }
   });
 
+  it.each(["postgresql:pickflick_local", "postgresql:///pickflick_local"])(
+    "rejects a database URL without a host: %s",
+    (databaseUrl) => {
+      expect(() => parseDatabaseEnvironment({ ...validEnvironment, DATABASE_URL: databaseUrl })).toThrow(
+        /DATABASE_URL must include a host/,
+      );
+    },
+  );
+
+  it("rejects a database URL without a database name", () => {
+    expect(() =>
+      parseDatabaseEnvironment({ ...validEnvironment, DATABASE_URL: "postgresql://127.0.0.1" }),
+    ).toThrow(/DATABASE_URL must include a database name/);
+  });
+
+  it.each(["redis:0", "redis:///0"])("rejects a Redis URL without a host: %s", (redisUrl) => {
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, REDIS_URL: redisUrl })).toThrow(
+      /REDIS_URL must include a host/,
+    );
+  });
+
   it("reports every missing required variable in one safe failure", () => {
     expect(() => parseRuntimeEnvironment({})).toThrow(/APP_ENV is required; API_HOST is required/);
   });

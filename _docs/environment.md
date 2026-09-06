@@ -37,7 +37,8 @@ it changes no columns or types.
 
 `pnpm seed` is idempotent and uses stable identifiers plus `example.invalid` email addresses. It
 refuses every environment except `local` and `test`. A local seed also requires a loopback database
-host and the database name `pickflick_local`; a test seed requires `pickflick_test`.
+host, no driver-level host override, and the database name `pickflick_local`; a test seed requires
+`pickflick_test`.
 
 `pnpm db:reset` is destructive. It applies the same positive environment, host, and database-name
 guards before invoking `prisma migrate reset`. Never use it against shared, UAT, or production data.
@@ -52,8 +53,8 @@ invalid variables but never echo their values.
 | `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, database commands | No |
 | `API_HOST` | Non-empty host without whitespace | API | No |
 | `API_PORT` | Integer from 1 through 65535 | API | No |
-| `DATABASE_URL` | `postgresql:` or `postgres:` URL | API, worker, database | Yes |
-| `REDIS_URL` | `redis:` or `rediss:` URL | API, worker | Yes when authenticated |
+| `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
+| `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
 | `S3_ENDPOINT` | HTTP or HTTPS URL | API, worker | No |
 | `S3_REGION` | Non-empty region | API, worker | No |
 | `S3_BUCKET` | Valid lowercase S3 bucket name | API, worker | No |

@@ -88,12 +88,17 @@ function url(
   name: string,
   protocols: readonly string[],
   failures: ValidationFailure[],
+  structure?: "host" | "host-and-path",
 ): string {
   const value = required(source, name, failures);
   if (!value) return value;
   try {
     const parsed = new URL(value);
     if (!protocols.includes(parsed.protocol)) failures.push({ name, reason: `must use ${protocols.join(" or ")}` });
+    if (structure && !parsed.hostname) failures.push({ name, reason: "must include a host" });
+    if (structure === "host-and-path" && (!parsed.pathname || parsed.pathname === "/")) {
+      failures.push({ name, reason: "must include a database name" });
+    }
   } catch {
     failures.push({ name, reason: "must be a valid URL" });
   }
@@ -104,7 +109,7 @@ export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnv
   const failures: ValidationFailure[] = [];
   const result: DatabaseEnvironment = {
     appEnvironment: oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures),
-    databaseUrl: url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures),
+    databaseUrl: url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path"),
   };
   if (failures.length > 0) throw new EnvironmentValidationError(failures);
   return result;
@@ -115,8 +120,8 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const appEnvironment = oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures);
   const apiHost = required(source, "API_HOST", failures);
   const apiPort = integer(source, "API_PORT", failures);
-  const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures);
-  const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures);
+  const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
+  const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
   const endpoint = url(source, "S3_ENDPOINT", ["http:", "https:"], failures);
   const region = required(source, "S3_REGION", failures);
   const bucket = required(source, "S3_BUCKET", failures);

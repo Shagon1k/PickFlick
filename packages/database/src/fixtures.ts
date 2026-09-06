@@ -19,7 +19,7 @@ export const SYNTHETIC_FIXTURES = {
     admin: "20000000-0000-4000-8000-000000000001",
     member: "20000000-0000-4000-8000-000000000002",
   },
-  ratingSession: {
+  pastSession: {
     id: "30000000-0000-4000-8000-000000000001",
     topic: "Synthetic fixture — safe to replace",
   },
