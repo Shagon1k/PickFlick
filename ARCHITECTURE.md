@@ -2,12 +2,12 @@
 
 > Accepted technical direction for the greenfield system. The repository/runtime scaffold is
 > implemented; the local data/configuration foundation is active, while product, provider, and
-> deployment behavior remains Proposed or Partial.
+> deployment behavior remains Partial.
 > Product scope lives in the Roadmap, UX lives in the Design reference, and accepted technical rationale lives in ADRs.
 
 | Document owner | Last reviewed | Verified against |
 | --- | --- | --- |
-| Developer | 2026-09-06 | ADR-001 through ADR-006 and issues #10–#12 local evidence |
+| Developer | 2026-09-06 | ADR-001 through ADR-006 and issues #10–#13 local evidence |
 
 ## 1. Architecture Contract & Sources
 
@@ -90,7 +90,7 @@ flowchart LR
 | Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Partial — runnable worker, startup readiness, correlated job-execution wrapper, and local Redis are active; BullMQ, outbox, and product jobs remain Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
 | Object storage | S3-compatible storage for avatars and time-limited exports. | Partial — local MinIO service, bucket initialization, typed configuration, and connectivity check are active; product storage behavior remains Proposed | Keeps binary/user-generated objects outside application/database containers. |
 | Real-time | SSE from API; durable truth remains PostgreSQL, Redis distributes invalidation/events. | Proposed | One-way progress updates fit the product; WebSockets are unnecessary for MVP. |
-| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
+| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Partial — issue #13 implements and locally verifies the four image targets, ordered release gate, private shared Compose topology, and graceful API/worker shutdown; registry promotion, provisioned environments, and edge drills remain Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
 
 ## 3. Building Blocks & Boundaries
 
@@ -306,8 +306,8 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | Local development | pnpm workspace; app commands run natively, dependencies through containers. | [README](README.md#run-locally), [environment reference](_docs/environment.md), and [AGENTS command map](AGENTS.md#command-map). | Active — issue #11 verifies the loopback PostgreSQL, Redis, MinIO, and Mailpit stack plus application entrypoints. |
 | Runtime probes and diagnostics | API liveness/readiness endpoints; worker startup readiness; structured request/job logs and safe API errors. | [Environment reference](_docs/environment.md#runtime-health-errors-and-logs). | Active — issue #12 focused tests and failure smoke evidence. |
 | CI quality gates | Locked install, generated-artifact drift, lint, type-check, unit, integration, migration, build, E2E smoke, accessibility, and security checks. | Future CI workflows. | Proposed |
-| Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + future deployment guide/config. | Proposed |
-| Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + [environment reference](_docs/environment.md). | Partial — local fresh/upgrade migrations, compatibility statement, seed, and guarded reset are active; release gating remains Proposed. |
+| Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + [environment reference](_docs/environment.md#deployment-images-and-compose). | Partial — issue #13 locally verifies the image and shared Compose foundation; registry promotion, Dokploy/Cloudflare provisioning, and exact-revision delivery remain issues #14–#16. |
+| Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + [environment reference](_docs/environment.md). | Partial — local fresh/upgrade migrations, compatibility statement, seed, guarded reset, and ordered one-shot release gating are active; deployed migration and rollback drills remain Proposed. |
 | Rollback | Roll back images only when database compatibility permits; use forward fix for non-reversible data changes; document each risky migration. | Future release runbook. | Proposed |
 | Backup and restore | Automated PostgreSQL backups, durable avatar backup, documented retention, and restore drill before launch; exports are regenerable/expiring. | Future backup runbook. | Proposed |
 | Scheduled/background work | BullMQ delayed/repeatable jobs with stable IDs, idempotent handlers, retry/dead-letter visibility, and deadline reconciliation. | Worker implementation/runbook. | Proposed |
@@ -347,11 +347,11 @@ Create an ADR only when a concrete option is accepted or rejected; do not popula
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Repository/deployable map matches code | `pnpm check:workspace`, production builds, and bounded startup probes on issue #10 branch. | Verified locally |
-| Runtime/deployment topology matches configuration | Local data-service topology matches `compose.local.yaml`; application images and deployment topology remain Proposed. | Partial |
+| Runtime/deployment topology matches configuration | Local services match `compose.local.yaml`; issue #13 verifies four image builds plus isolated UAT/production renders with no host-published ports. Provisioned Dokploy environments remain Proposed. | Partial |
 | Data ownership and schemas match migrations | Initial User/Club/Membership/Session schema and two migrations match; remaining Roadmap entities remain Proposed. | Partial |
 | Interfaces match API/event contracts | No OpenAPI/event contract exists. | Not implemented |
 | Auth and trust boundaries are enforced server-side | No auth/policy implementation exists. | Not implemented |
 | Failure and recovery paths are exercised | Missing/invalid configuration, unsafe seed/reset targets, unavailable runtime dependencies, and unsafe API failures are rejected or reported safely; broader product and deployment failures remain Proposed. | Partial |
-| Operational docs and environment inventory resolve | Local environment inventory and data-service workflow are active; deployment/provider additions remain later Phase 1 work. | Partial |
+| Operational docs and environment inventory resolve | Local/runtime variables, image builds, release order, Compose isolation, and shutdown are documented; provisioned deployment and provider additions remain later work. | Partial |
 
 Update this document whenever a deployable, module/data owner, interface, integration, environment, security boundary, job model, deployment shape, or operational guarantee changes. Promote a row to `Active` only with named code/runtime evidence.

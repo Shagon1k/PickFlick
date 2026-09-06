@@ -1,11 +1,20 @@
 import { loadWorkerEnvironment } from "@pickflick/config/environment";
 import { checkDatabaseReadiness } from "@pickflick/database";
-import { checkReadiness, createLogger, createRuntimeDependencyProbes } from "@pickflick/observability";
+import {
+  checkReadiness,
+  createLogger,
+  createRuntimeDependencyProbes,
+  DrainController,
+} from "@pickflick/observability";
 
 import { runWorker } from "./worker.js";
 
 const controller = new AbortController();
-const stop = () => controller.abort();
+const drain = new DrainController();
+const stop = () => {
+  drain.stopAccepting();
+  controller.abort();
+};
 
 process.once("SIGINT", stop);
 process.once("SIGTERM", stop);
@@ -21,12 +30,15 @@ async function bootstrap(): Promise<void> {
     await runWorker(controller.signal, {
       logger,
       readiness: () => checkReadiness(probes),
+      drain,
+      shutdownTimeoutMilliseconds: environment.shutdownTimeoutMilliseconds,
     });
   } catch {
-    if (!controller.signal.aborted) {
-      logger.fatal({ event: "service.start.failed" }, "Worker failed to start.");
-      process.exitCode = 1;
-    }
+    logger.fatal(
+      { event: controller.signal.aborted ? "service.shutdown.failed" : "service.start.failed" },
+      "Worker failed.",
+    );
+    process.exitCode = 1;
   }
 }
 

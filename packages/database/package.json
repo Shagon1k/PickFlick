@@ -16,6 +16,7 @@
     "migrate": "tsx src/run-prisma.ts migrate deploy",
     "reset": "tsx src/reset.ts",
     "seed": "tsx src/run-prisma.ts db seed",
+    "seed:release": "tsx src/seed-release.ts",
     "services:check": "tsx src/check-services.ts",
     "typecheck": "pnpm generate && tsc -p tsconfig.json"
   },

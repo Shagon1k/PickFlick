@@ -1,0 +1,155 @@
+name: pickflick-${APP_ENV:?APP_ENV must be uat or production}
+
+x-runtime-environment: &runtime-environment
+  APP_ENV: ${APP_ENV:?APP_ENV is required}
+  SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:?SHUTDOWN_TIMEOUT_MS is required}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
+  S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
+  S3_REGION: ${S3_REGION:?S3_REGION is required}
+  S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:?S3_FORCE_PATH_STYLE is required}
+  SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+  SMTP_PORT: ${SMTP_PORT:?SMTP_PORT is required}
+  SMTP_SECURE: ${SMTP_SECURE:?SMTP_SECURE is required}
+  MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+
+x-application-service: &application-service
+  cap_drop:
+    - ALL
+  init: true
+  read_only: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  stop_grace_period: ${SHUTDOWN_GRACE_PERIOD:?SHUTDOWN_GRACE_PERIOD is required}
+  stop_signal: SIGTERM
+  tmpfs:
+    - /tmp
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE must be pinned by digest}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - data
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: ${REDIS_IMAGE:?REDIS_IMAGE must be pinned by digest}
+    command: ["/bin/sh", "-ec", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - data
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  release:
+    <<: *application-service
+    image: ${RELEASE_IMAGE:?RELEASE_IMAGE must be pinned by digest}
+    environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+    restart: "no"
+
+  api:
+    <<: *application-service
+    image: ${API_IMAGE:?API_IMAGE must be pinned by digest}
+    environment:
+      <<: *runtime-environment
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      release:
+        condition: service_completed_successfully
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - data
+      - ingress
+
+  worker:
+    <<: *application-service
+    image: ${WORKER_IMAGE:?WORKER_IMAGE must be pinned by digest}
+    environment: *runtime-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      release:
+        condition: service_completed_successfully
+    networks:
+      - data
+
+  web:
+    <<: *application-service
+    image: ${WEB_IMAGE:?WEB_IMAGE must be pinned by digest}
+    environment:
+      NODE_ENV: production
+      SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+    depends_on:
+      api:
+        condition: service_healthy
+      release:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - ingress
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache
+
+networks:
+  data:
+    internal: true
+    name: pickflick-${APP_ENV:?APP_ENV is required}-data
+  ingress:
+    external: true
+    name: ${DOKPLOY_NETWORK:?DOKPLOY_NETWORK is required}
+
+volumes:
+  postgres-data:
+    name: pickflick-${APP_ENV:?APP_ENV is required}-postgres
+  redis-data:
+    name: pickflick-${APP_ENV:?APP_ENV is required}-redis

@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+**/.next
+**/dist
+**/node_modules
+_docs
+assets
+coverage
+*.md
+compose*.yaml

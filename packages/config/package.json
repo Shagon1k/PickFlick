@@ -18,13 +18,22 @@
     "build": "tsc -p tsconfig.build.json && node scripts/validate.mjs",
     "typecheck": "tsc -p tsconfig.json && node scripts/validate.mjs"
   },
-  "dependencies": {
+  "devDependencies": {
     "@eslint/js": "10.0.1",
     "globals": "17.12.0",
+    "typescript": "catalog:",
     "typescript-eslint": "8.69.0"
   },
   "peerDependencies": {
     "eslint": "10.10.0",
     "typescript": "6.0.3"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
   }
 }

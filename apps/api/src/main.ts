@@ -2,7 +2,7 @@ import "reflect-metadata";
 
 import { NestFactory } from "@nestjs/core";
 import { loadRuntimeEnvironment } from "@pickflick/config/environment";
-import { createLogger } from "@pickflick/observability";
+import { completeWithin, createLogger } from "@pickflick/observability";
 
 import { ApiExceptionFilter } from "./api-exception.filter.js";
 import { AppModule } from "./app.module.js";
@@ -16,12 +16,31 @@ async function bootstrap(): Promise<void> {
     const app = await NestFactory.create(AppModule.register(environment), { logger: false });
     app.use(createRequestContextMiddleware(logger));
     app.useGlobalFilters(new ApiExceptionFilter(logger));
-    app.enableShutdownHooks();
     await app.listen(environment.apiPort, environment.apiHost);
     logger.info(
       { event: "service.started", host: environment.apiHost, port: environment.apiPort },
       "API listening.",
     );
+
+    let shutdown: Promise<void> | undefined;
+    const stop = (signal: NodeJS.Signals) => {
+      shutdown ??= (async () => {
+        try {
+          logger.info({ event: "service.stopping", signal }, "API stopping.");
+          const closed = await completeWithin(app.close(), environment.shutdownTimeoutMilliseconds);
+          if (!closed) {
+            logger.fatal({ event: "service.shutdown.timeout", signal }, "API shutdown timed out.");
+            process.exit(1);
+          }
+          logger.info({ event: "service.stopped", signal }, "API stopped.");
+        } catch {
+          logger.fatal({ event: "service.shutdown.failed", signal }, "API shutdown failed.");
+          process.exit(1);
+        }
+      })();
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
   } catch {
     logger.fatal({ event: "service.start.failed" }, "API failed to start.");
     process.exitCode = 1;

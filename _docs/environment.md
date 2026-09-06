@@ -1,8 +1,69 @@
-# Environment and local data services
+# Environment and runtime operations
 
 This reference defines the configuration implemented for the API, worker, database commands, and
-local data-service stack. Later provider and deployment issues extend this inventory when their
-consumers exist.
+local data-service stack, production images, and shared deployment topology. Later provider and
+provisioning issues extend this inventory when their consumers exist.
+
+## Deployment images and Compose
+
+`Dockerfile` builds four targets from the same locked workspace and full source revision:
+
+| Target | Runtime | Default command |
+| --- | --- | --- |
+| `web` | Next.js standalone server on port 3000 | `node apps/web/server.js` |
+| `api` | Compiled NestJS API on port 3001 | `node dist/main.js` |
+| `worker` | Compiled worker process | `node dist/main.js` |
+| `release` | One-shot database release gate | `node scripts/run-release.mjs` |
+
+Run `pnpm images:build` from a Git checkout. The command passes the full Git revision into each
+build, sets the image revision label, and tags each local image with the first 12 revision
+characters. Set `SOURCE_REVISION` only when the build context represents that full hexadecimal
+revision. The Dockerfile pins both Node base images by multi-platform digest and installs from the
+committed pnpm lockfile.
+
+The release image runs committed Prisma migrations before the production-safe required-seed step.
+The required-seed step currently verifies database connectivity because no shared reference rows
+exist. Any failed step exits nonzero. `compose.deploy.yaml` uses
+`condition: service_completed_successfully` so web, API, and worker cannot start for that revision
+after a release failure.
+
+Use `compose.deploy.yaml` for either UAT or production. Do not combine both environments in one
+Compose project or deploy them to the same server. Supply all values from the environment-specific
+Dokploy project, use digest-qualified image references, and render the exact configuration before
+deployment:
+
+```bash
+pnpm compose:check
+docker compose -f compose.deploy.yaml config --format json
+```
+
+`pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
+isolation contract. The second command validates the operator-supplied values. Do not save rendered
+output because it contains resolved secrets.
+
+Dokploy supplies these Compose-only values. They do not belong in the local `.env` file:
+
+| Variable | Contract |
+| --- | --- |
+| `WEB_IMAGE`, `API_IMAGE`, `WORKER_IMAGE`, `RELEASE_IMAGE` | Registry references for one source revision, each qualified by digest |
+| `POSTGRES_IMAGE`, `REDIS_IMAGE` | Approved data-service images qualified by digest |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Environment-specific PostgreSQL bootstrap identity |
+| `REDIS_PASSWORD` | Environment-specific Redis password; `REDIS_URL` carries the matching credential |
+| `DOKPLOY_NETWORK` | External Traefik ingress network on that environment's deployment server |
+| `SOURCE_REVISION` | Full hexadecimal revision built into the four application images |
+| `SHUTDOWN_GRACE_PERIOD` | Compose duration greater than `SHUTDOWN_TIMEOUT_MS` |
+
+The topology creates environment-named internal PostgreSQL/Redis networks and volumes. Application
+and data services use `expose` or no port declaration; no service publishes a host port. Only web
+and API join the external Dokploy ingress network. UAT and production must also use different
+deployment servers, database and Redis credentials, S3 buckets and credentials, SMTP/provider
+identities, and Dokploy projects.
+
+API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
+`SHUTDOWN_TIMEOUT_MS` for shutdown work to finish. Configure `SHUTDOWN_GRACE_PERIOD` above that
+process deadline so Compose can send `SIGKILL` only after the application drain expires. The local
+10-second process and 15-second Compose evidence values cover the current scaffold; recalibrate
+them with observed job and request duration before product jobs ship.
 
 ## Start the local stack
 
@@ -54,6 +115,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, database commands | No |
 | `API_HOST` | Non-empty host without whitespace | API | No |
 | `API_PORT` | Integer from 1 through 65535 | API | No |
+| `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 65535 | API, worker | No |
 | `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
 | `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
 | `S3_ENDPOINT` | HTTP or HTTPS URL | API, worker | No |

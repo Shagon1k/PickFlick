@@ -5,7 +5,7 @@ while giving each registered user a personal film library.
 
 The repository is greenfield. Its typed pnpm monorepo, web/API/worker entrypoints, local data
 foundation, and runtime observability baseline run, while product features, provider integrations,
-and deployment remain future work.
+and provisioned deployment environments remain future work.
 
 ## Start here
 
@@ -38,6 +38,22 @@ The development command builds the internal packages, then starts the Next.js we
 and worker together. Run the complete workspace gate with `pnpm verify`. See the
 [environment and local data services reference](_docs/environment.md) for configuration, database
 safety, health endpoints, runtime logs, and service commands.
+
+## Build deployment artifacts
+
+Build the immutable web, API, worker, and release image targets from the current revision:
+
+```bash
+pnpm images:build
+pnpm compose:check
+```
+
+`pnpm images:build` tags local images with the first 12 characters of the full source revision.
+`pnpm compose:check` renders the shared `compose.deploy.yaml` topology for synthetic UAT and
+production inputs. It rejects published host ports, mutable image references, missing release
+gates, and shared data networks, volumes, or storage buckets. See the
+[environment and runtime operations reference](_docs/environment.md#deployment-images-and-compose)
+before supplying real environment values.
 
 ## Delivery workflow
 

@@ -8,6 +8,7 @@ export interface RuntimeEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
   readonly apiHost: string;
   readonly apiPort: number;
+  readonly shutdownTimeoutMilliseconds: number;
   readonly databaseUrl: string;
   readonly redisUrl: string;
   readonly s3: {
@@ -135,6 +136,7 @@ function parseWorkerValues(
   failures: ValidationFailure[],
 ): WorkerEnvironment {
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
+  const shutdownTimeoutMilliseconds = integer(source, "SHUTDOWN_TIMEOUT_MS", failures);
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
   const endpoint = url(source, "S3_ENDPOINT", ["http:", "https:"], failures);
   const region = required(source, "S3_REGION", failures);
@@ -161,6 +163,7 @@ function parseWorkerValues(
   return {
     appEnvironment,
     databaseUrl,
+    shutdownTimeoutMilliseconds,
     redisUrl,
     s3: { endpoint, region, bucket, accessKeyId, secretAccessKey, forcePathStyle },
     smtp: { host: smtpHost, port: smtpPort, secure: smtpSecure, from },

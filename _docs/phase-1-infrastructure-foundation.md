@@ -135,6 +135,8 @@ Issue #10 established the first executable command map. `AGENTS.md` owns the dur
 | Develop/start | `pnpm dev` / `pnpm start` | Runs the web, API, and worker scaffold entrypoints. |
 | Static and unit gates | `pnpm lint`, `pnpm typecheck`, `pnpm test` | Covers the current scaffold. |
 | Build and full verification | `pnpm build`, `pnpm verify` | Builds all workspaces and rejects invalid workspace boundaries/cycles. |
+| Production images | `pnpm images:build` | Builds revision-labelled web, API, worker, and one-shot release targets from pinned bases and the locked workspace. |
+| Deployment topology | `pnpm compose:check` | Renders synthetic UAT and production configurations and checks release gates, digest references, private ports, and isolated data scopes. |
 | Local services | `pnpm services:up`, `pnpm services:check`, `pnpm services:down` | Starts and checks loopback-only PostgreSQL, Redis, MinIO, and Mailpit services. |
 | Database migration/seed | `pnpm migrate`, `pnpm seed`, `pnpm db:check` | Applies reviewed Prisma migrations, deterministic local/test fixtures, and constraint/upgrade checks. |
 
@@ -151,7 +153,7 @@ evidence.
 | Runnable monorepo and command map | Verified locally | Clean source-only export of issue #10 branch: frozen locked install with a fresh store; workspace-boundary check; lint; type-check; 7 unit tests; web/API/worker production builds and startup probes. |
 | Local data, migrations, seeds, typed configuration | Verified locally | Issue #11 branch: Compose readiness for PostgreSQL/Redis/MinIO/Mailpit; two fresh migrations; repeated idempotent seed; migration-upgrade, partial-index, score-range, service-connectivity, and safe-config tests. |
 | Health/readiness/logging/error baseline | Verified locally | Issue #12: 48 focused/workspace tests, lint, type-check, builds, structured scrubbed log samples, and unavailable-dependency HTTP/worker smoke evidence. |
-| Immutable images and isolated Compose topology | Missing | Issue #13. |
+| Immutable images and isolated Compose topology | Verified locally | Issue #13: four non-root image targets built from one source revision; isolated UAT/production renders passed; web/API container smoke and API SIGTERM drain passed; injected migration failure exited before the seed step; 57 tests passed. Provisioning and registry promotion remain issues #14–#16. |
 | Reproducible CI gates | Missing | Issue #14. |
 | Exact-revision UAT deployment and smoke evidence | Missing | Issue #15. |
 | Disabled production-promotion path and runbooks | Missing | Issue #16. |

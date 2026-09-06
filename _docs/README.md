@@ -22,7 +22,7 @@ phase-level acceptance record; do not copy issue status into it.
 | [DESIGN.md](../DESIGN.md) | Design authority, experience structure, screen/state/component coverage, and QA contract. | Approved direction; build/QA not started. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Accepted deployable, module/data/interface, runtime, security, and operations direction. | Repository and runtime foundations are active; product and deployment implementation remains Proposed or Partial. |
 | [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | ADR-001 through ADR-006 accepted. |
-| [Environment and runtime operations](environment.md) | Runtime variables, local services, migration/seed safety, health probes, logging, correlation, and API errors. | Active local and runtime foundation; deployment/provider inventories extend it later. |
+| [Environment and runtime operations](environment.md) | Runtime variables, local services, image/Compose delivery, migration/release safety, health probes, logging, correlation, shutdown, and API errors. | Active local/runtime and image/topology foundation; provisioned environments extend it later. |
 
 ## Agent entrypoints
 

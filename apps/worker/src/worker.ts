@@ -1,5 +1,5 @@
 import { SERVICE_NAMES, type ReadinessReport, type ServiceStatus } from "@pickflick/contracts";
-import { runWithJobCorrelation, type ApplicationLogger } from "@pickflick/observability";
+import { DrainController, runWithJobCorrelation, type ApplicationLogger } from "@pickflick/observability";
 
 export const workerStatus: ServiceStatus = {
   service: SERVICE_NAMES.worker,
@@ -9,6 +9,8 @@ export const workerStatus: ServiceStatus = {
 export interface WorkerRuntime {
   readonly logger: ApplicationLogger;
   readonly readiness: () => Promise<ReadinessReport>;
+  readonly drain: DrainController;
+  readonly shutdownTimeoutMilliseconds: number;
 }
 
 export interface CorrelatedJob {
@@ -23,12 +25,20 @@ export class WorkerNotReadyError extends Error {
   }
 }
 
+export class WorkerDrainTimeoutError extends Error {
+  constructor() {
+    super("Worker did not finish active work before its shutdown deadline.");
+    this.name = "WorkerDrainTimeoutError";
+  }
+}
+
 export async function executeCorrelatedJob<T>(
   job: CorrelatedJob,
   logger: ApplicationLogger,
+  drain: DrainController,
   handler: () => Promise<T>,
 ): Promise<T> {
-  return runWithJobCorrelation(job.id, job.correlationId, async () => {
+  return drain.run(() => runWithJobCorrelation(job.id, job.correlationId, async () => {
     logger.info({ event: "job.started" }, "Worker job started.");
     try {
       const result = await handler();
@@ -38,7 +48,7 @@ export async function executeCorrelatedJob<T>(
       logger.error({ event: "job.failed" }, "Worker job failed.");
       throw error;
     }
-  });
+  }));
 }
 
 export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Promise<void> {
@@ -70,11 +80,24 @@ export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Pr
     signal.addEventListener(
       "abort",
       () => {
+        runtime.drain.stopAccepting();
         clearInterval(keepAlive);
-        runtime.logger.info({ event: "service.stopped" }, "Worker stopped.");
         resolve();
       },
       { once: true },
     );
   });
+
+  runtime.logger.info(
+    { event: "service.draining", activeWork: runtime.drain.activeWorkCount },
+    "Worker draining active work.",
+  );
+  if (!(await runtime.drain.waitForIdle(runtime.shutdownTimeoutMilliseconds))) {
+    runtime.logger.error(
+      { event: "service.shutdown.timeout", activeWork: runtime.drain.activeWorkCount },
+      "Worker shutdown timed out.",
+    );
+    throw new WorkerDrainTimeoutError();
+  }
+  runtime.logger.info({ event: "service.stopped" }, "Worker stopped.");
 }
