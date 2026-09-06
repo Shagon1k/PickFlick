@@ -54,4 +54,17 @@ describe("checkWorkspace", () => {
     expect(errors).toContain("apps/web must not depend on application workspace apps/api");
     expect(errors.some((error) => error.startsWith("Workspace dependency cycle:"))).toBe(true);
   });
+
+  it("rejects package dependencies on application workspaces", async () => {
+    const root = await createWorkspace();
+    await writeManifest(root, "packages/database", {
+      name: "@pickflick/database",
+      private: true,
+      dependencies: { "@pickflick/api": "workspace:*" },
+    });
+
+    const errors = await checkWorkspace(root);
+
+    expect(errors).toContain("packages/database must not depend on application workspace apps/api");
+  });
 });

@@ -11,7 +11,7 @@
   "scripts": {
     "build": "pnpm check:workspace && pnpm -r --if-present build",
     "check:workspace": "node scripts/check-workspace.mjs",
-    "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/web --filter @pickflick/api --filter @pickflick/worker dev",
+    "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/ui --filter @pickflick/web --filter @pickflick/api --filter @pickflick/worker dev",
     "build:packages": "pnpm -r --filter './packages/*' --if-present build",
     "lint": "eslint .",
     "migrate": "pnpm --filter @pickflick/database migrate",

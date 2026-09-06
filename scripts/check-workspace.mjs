@@ -57,7 +57,7 @@ export async function checkWorkspace(root) {
         if (!String(version).startsWith("workspace:")) {
           errors.push(`${directory} must use workspace: for ${dependency}`);
         }
-        if (directory.startsWith("apps/") && dependency !== manifest.name) {
+        if (dependency !== manifest.name) {
           const target = byName.get(dependency);
           if (target?.directory.startsWith("apps/")) {
             errors.push(`${directory} must not depend on application workspace ${target.directory}`);
