@@ -135,7 +135,8 @@ Issue #10 established the first executable command map. `AGENTS.md` owns the dur
 | Develop/start | `pnpm dev` / `pnpm start` | Runs the web, API, and worker scaffold entrypoints. |
 | Static and unit gates | `pnpm lint`, `pnpm typecheck`, `pnpm test` | Covers the current scaffold. |
 | Build and full verification | `pnpm build`, `pnpm verify` | Builds all workspaces and rejects invalid workspace boundaries/cycles. |
-| Database migration/seed | `pnpm migrate`, `pnpm seed` | Executes explicit zero-change plans until issue #11 adds PostgreSQL/Prisma behavior. |
+| Local services | `pnpm services:up`, `pnpm services:check`, `pnpm services:down` | Starts and checks loopback-only PostgreSQL, Redis, MinIO, and Mailpit services. |
+| Database migration/seed | `pnpm migrate`, `pnpm seed`, `pnpm db:check` | Applies reviewed Prisma migrations, deterministic local/test fixtures, and constraint/upgrade checks. |
 
 Later Phase 1 issues add real database changes, image, Compose, deployment, and smoke commands when
 those capabilities exist. Never treat a zero-change database plan as migration or seed integration
@@ -148,7 +149,7 @@ evidence.
 | Compatible architecture comparison and developer approval | Verified | [ADR registry](decisions/README.md), accepted 2026-09-05. |
 | Canonical architecture alignment | In progress | Issue #9 documentation change. |
 | Runnable monorepo and command map | Verified locally | Clean source-only export of issue #10 branch: frozen locked install with a fresh store; workspace-boundary check; lint; type-check; 7 unit tests; web/API/worker production builds and startup probes. |
-| Local data, migrations, seeds, typed configuration | Missing | Issue #11. |
+| Local data, migrations, seeds, typed configuration | Verified locally | Issue #11 branch: Compose readiness for PostgreSQL/Redis/MinIO/Mailpit; two fresh migrations; repeated idempotent seed; migration-upgrade, partial-index, score-range, service-connectivity, and safe-config tests. |
 | Health/readiness/logging/error baseline | Missing | Issue #12. |
 | Immutable images and isolated Compose topology | Missing | Issue #13. |
 | Reproducible CI gates | Missing | Issue #14. |

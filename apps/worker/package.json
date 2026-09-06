@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@pickflick/config": "workspace:*",
     "@pickflick/contracts": "workspace:*"
   },
   "devDependencies": {

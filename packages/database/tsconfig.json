@@ -1,7 +1,9 @@
 {
   "extends": "@pickflick/config/tsconfig/library.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "noEmit": true,
+    "rewriteRelativeImportExtensions": true,
     "rootDir": "src",
     "types": ["node"]
   },

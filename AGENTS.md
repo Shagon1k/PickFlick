@@ -24,11 +24,13 @@
 
 ## Current Repository State
 
-- The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, and baseline
-  quality commands are executable. Product modules, provider integrations, data services, and
-  deployment configuration remain unimplemented.
-- `packages/database` exposes explicit empty migration and seed plans until issue #11 adds the first
-  PostgreSQL schema, reviewed migration, and guarded local/test seed.
+- The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
+  PostgreSQL/Redis/MinIO/Mailpit stack, typed runtime configuration, and baseline quality commands
+  are executable. Product modules, provider integrations, and deployment configuration remain
+  unimplemented.
+- `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
+  two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
+  commands. Remaining product entities arrive with their owning phases.
 - Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.
 - The HTML prototypes are inspectable design specifications and disposable implementation examples; do not copy their inline JavaScript, fixture data, or page-local CSS into production uncritically.
 
@@ -39,6 +41,9 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Task | Command |
 | --- | --- |
 | Install dependencies | `pnpm install --frozen-lockfile` |
+| Start local data services and create the object-storage bucket | `pnpm services:up` |
+| Check local PostgreSQL, Redis, object storage, and SMTP | `pnpm services:check` |
+| Stop local data services and retain their volumes | `pnpm services:down` |
 | Start web, API, and worker in development | `pnpm dev` |
 | Start previously built production entrypoints | `pnpm start` |
 | Validate workspace topology and dependency boundaries | `pnpm check:workspace` |
@@ -49,10 +54,12 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Run all scaffold quality gates | `pnpm verify` |
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |
+| Verify migrations, fixtures, and database constraints | `pnpm db:check` |
+| Reset a positively identified local/test database | `pnpm db:reset` |
 
-The migration and seed commands currently report a zero-change plan. Issue #11 replaces those
-plans with the first PostgreSQL migration and guarded local/test seed. Do not treat the current
-zero-change result as database integration evidence.
+Copy `.env.example` to `.env` before running services or runtime commands. See
+[_docs/environment.md](_docs/environment.md) for the variable inventory and destructive-reset
+safeguards.
 
 ## Phase Workflow
 

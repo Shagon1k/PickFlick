@@ -5,6 +5,7 @@ dist/
 coverage/
 *.log
 *.tsbuildinfo
+packages/database/src/generated/
 
 .env
 .env.*
