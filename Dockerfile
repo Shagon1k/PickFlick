@@ -83,6 +83,9 @@ ENV NODE_ENV=production
 WORKDIR /workspace
 COPY --from=openssl-files /openssl-root/ /
 COPY --from=release-package --chown=node:node /out/database/ ./packages/database/
+COPY --from=builder --chown=node:node \
+    /workspace/node_modules/.pnpm/@prisma+engines@7.10.0/node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x \
+    ./packages/database/node_modules/.pnpm/@prisma+engines@7.10.0/node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x
 COPY --from=builder --chown=node:node /workspace/scripts/run-release.mjs ./scripts/run-release.mjs
 USER node
 CMD ["node", "scripts/run-release.mjs"]
