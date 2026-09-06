@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./environment": {
+      "types": "./src/environment.ts",
+      "default": "./dist/environment.js"
+    },
     "./eslint/base": "./eslint/base.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/library.json": "./tsconfig/library.json",
@@ -11,8 +15,8 @@
     "./tsconfig/node.json": "./tsconfig/node.json"
   },
   "scripts": {
-    "build": "node scripts/validate.mjs",
-    "typecheck": "node scripts/validate.mjs"
+    "build": "tsc -p tsconfig.build.json && node scripts/validate.mjs",
+    "typecheck": "tsc -p tsconfig.json && node scripts/validate.mjs"
   },
   "dependencies": {
     "@eslint/js": "10.0.1",

@@ -1,0 +1,111 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppRole {
+  USER
+  APP_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  ANONYMIZED
+}
+
+enum ClubLifecycle {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ClubRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  LEFT
+  REMOVED
+}
+
+enum SessionType {
+  FULL_CYCLE
+  PRE_SELECTED
+  PAST
+}
+
+enum SessionPhase {
+  NOMINATION
+  SELECTION
+  WATCHING
+  RATING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id          String       @id @db.Uuid
+  email       String       @unique
+  displayName String
+  appRole     AppRole      @default(USER)
+  status      UserStatus   @default(ACTIVE)
+  locale      String       @default("en")
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+  memberships Membership[]
+}
+
+model Club {
+  id                String        @id @db.Uuid
+  name              String
+  description       String?
+  lifecycle         ClubLifecycle @default(ACTIVE)
+  selectionScaleMin Int           @default(1)
+  selectionScaleMax Int           @default(5)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(3)
+  memberships       Membership[]
+  sessions          Session[]
+}
+
+model Membership {
+  id       String           @id @db.Uuid
+  clubId   String           @db.Uuid
+  userId   String           @db.Uuid
+  role     ClubRole         @default(MEMBER)
+  status   MembershipStatus @default(ACTIVE)
+  joinedAt DateTime         @default(now()) @db.Timestamptz(3)
+  leftAt   DateTime?        @db.Timestamptz(3)
+  club     Club             @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([clubId, userId])
+  @@index([userId, status])
+}
+
+model Session {
+  id           String       @id @db.Uuid
+  clubId       String       @db.Uuid
+  type         SessionType
+  phase        SessionPhase
+  scheduledAt  DateTime?    @db.Timestamptz(3)
+  location     String?
+  topic        String?
+  notes        String?
+  deadlineAt   DateTime?    @db.Timestamptz(3)
+  phaseVersion Int          @default(1)
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+  club         Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  @@index([clubId, phase])
+}
