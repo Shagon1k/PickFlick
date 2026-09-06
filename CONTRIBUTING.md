@@ -40,6 +40,7 @@ docs(project): align GitHub delivery workflow
 
 ## Current enforcement
 
-No package manifests or executable repository commands exist yet. Until Phase 1 adds and verifies
-the toolchain, these conventions are review-enforced. Do not invent install, test, lint, or commit-hook
-commands; update this file when real commands exist.
+The pinned pnpm workspace enforces install-time engine and peer-dependency checks. Run `pnpm verify`
+before requesting review; it covers lint, type-checks, unit tests, workspace-boundary checks, and
+production builds. Commit-message and pull-request conventions remain review-enforced because the
+repository does not install commit hooks yet.

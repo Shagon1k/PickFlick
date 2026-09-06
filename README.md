@@ -3,8 +3,8 @@
 PickFlick helps private film clubs nominate, select, watch, rate, and remember films together,
 while giving each registered user a personal film library.
 
-The repository is currently greenfield: product, design, architecture, and delivery guidance
-exist, but application scaffolding has not started.
+The repository is greenfield. Its typed pnpm monorepo and web/API/worker entrypoints run, while
+product features, data services, provider integrations, and deployment remain future work.
 
 ## Start here
 
@@ -16,6 +16,21 @@ exist, but application scaffolding has not started.
 | Understand proposed technical boundaries | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Navigate repository guidance | [_docs/README.md](_docs/README.md) |
 | Contribute a change | [CONTRIBUTING.md](CONTRIBUTING.md) |
+
+## Run the scaffold
+
+Use the Node version pinned in `.node-version`, then enable the package manager pinned in
+`package.json`:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The development command builds the internal packages, then starts the Next.js web app, NestJS API,
+and worker together. Run the complete scaffold gate with `pnpm verify`. See [AGENTS.md](AGENTS.md#command-map)
+for the full command map and the current migration/seed limitation.
 
 ## Delivery workflow
 

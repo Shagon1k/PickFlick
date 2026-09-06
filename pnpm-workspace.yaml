@@ -1,0 +1,25 @@
+packages:
+  - apps/*
+  - packages/*
+
+autoInstallPeers: false
+
+engineStrict: true
+
+linkWorkspacePackages: false
+
+preferWorkspacePackages: false
+
+saveExact: true
+
+strictPeerDependencies: true
+
+catalog:
+  '@types/node': 22.20.1
+  '@types/react': 19.2.18
+  '@types/react-dom': 19.2.7
+  tsx: 4.23.13
+  typescript: 6.0.3
+
+allowBuilds:
+  esbuild: true

@@ -1,6 +1,7 @@
 # PickFlick
 
-> Agent operating instructions for this repository. The project is greenfield: guidance and design sources exist, application code does not yet exist.
+> Agent operating instructions for this repository. The project is greenfield with an executable
+> web/API/worker workspace scaffold; product behavior is not implemented yet.
 
 ## Core Contract
 
@@ -23,10 +24,35 @@
 
 ## Current Repository State
 
-- No package manifests, application source, migrations, tests, or executable project commands exist yet.
-- Do not invent install/dev/build/test/lint/migration commands. Phase 1 must scaffold and verify them before adding a command map here.
+- The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, and baseline
+  quality commands are executable. Product modules, provider integrations, data services, and
+  deployment configuration remain unimplemented.
+- `packages/database` exposes explicit empty migration and seed plans until issue #11 adds the first
+  PostgreSQL schema, reviewed migration, and guarded local/test seed.
 - Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.
 - The HTML prototypes are inspectable design specifications and disposable implementation examples; do not copy their inline JavaScript, fixture data, or page-local CSS into production uncritically.
+
+## Command Map
+
+Use the Node and pnpm versions pinned by `.node-version` and `package.json` from the repository root.
+
+| Task | Command |
+| --- | --- |
+| Install dependencies | `pnpm install --frozen-lockfile` |
+| Start web, API, and worker in development | `pnpm dev` |
+| Start previously built production entrypoints | `pnpm start` |
+| Validate workspace topology and dependency boundaries | `pnpm check:workspace` |
+| Lint | `pnpm lint` |
+| Type-check | `pnpm typecheck` |
+| Run unit tests | `pnpm test` |
+| Build every package and app | `pnpm build` |
+| Run all scaffold quality gates | `pnpm verify` |
+| Apply database migrations | `pnpm migrate` |
+| Run the database seed | `pnpm seed` |
+
+The migration and seed commands currently report a zero-change plan. Issue #11 replaces those
+plans with the first PostgreSQL migration and guarded local/test seed. Do not treat the current
+zero-change result as database integration evidence.
 
 ## Phase Workflow
 

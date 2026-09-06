@@ -1,11 +1,12 @@
 # PickFlick — Architecture Reference
 
-> Accepted technical direction for the greenfield system; implementation remains Proposed.
+> Accepted technical direction for the greenfield system. The repository/runtime scaffold is
+> implemented; product, data, integration, and deployment behavior remains Proposed or Partial.
 > Product scope lives in the Roadmap, UX lives in the Design reference, and accepted technical rationale lives in ADRs.
 
 | Document owner | Last reviewed | Verified against |
 | --- | --- | --- |
-| Developer | 2026-09-05 | ADR-001 through ADR-006 accepted; no application implementation exists |
+| Developer | 2026-09-05 | ADR-001 through ADR-006 and issue #10 local scaffold evidence |
 
 ## 1. Architecture Contract & Sources
 
@@ -14,7 +15,7 @@
 - **[DESIGN.md](DESIGN.md) owns:** UI/UX direction, screens, components, responsive behavior, and design status.
 - **Future schema/API references will own:** exact database and HTTP contracts after Phase 1 creates them.
 - **[_docs/decisions/README.md](_docs/decisions/README.md) owns:** accepted/rejected/superseded rationale for significant technical decisions.
-- **Future code and deployed configuration will own:** the latest verifiable implementation state.
+- **Code and deployed configuration own:** the latest verifiable implementation state.
 
 An accepted ADR makes a technical direction current. It does not make code, configuration, or
 infrastructure `Active`; each affected row remains `Proposed` until implementation and named
@@ -80,19 +81,19 @@ flowchart LR
 
 | Concern | Accepted direction | Implementation state | Rationale / ADR |
 | --- | --- | --- | --- |
-| Application style | Modular client/API/worker monolith in one pnpm monorepo. | Proposed | Atomic cross-layer changes with separate runtime failure boundaries; [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints). |
-| Frontend | Next.js App Router + TypeScript; Server Components for public/shell data where useful, Client Components for rich workflows; project tokens/CSS Modules with wrapped selective Mantine primitives; TanStack Query for API state. | Proposed | Public SEO, self-hosting, bespoke design ownership, and accessible complex controls; [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively). |
+| Application style | Modular client/API/worker monolith in one pnpm monorepo. | Active — issue #10 workspace check, builds, and startup probes | Atomic cross-layer changes with separate runtime failure boundaries; [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints). |
+| Frontend | Next.js App Router + TypeScript; Server Components for public/shell data where useful, Client Components for rich workflows; project tokens/CSS Modules with wrapped selective Mantine primitives; TanStack Query for API state. | Partial — runnable App Router scaffold and initial tokens only; product routes, state, and selective primitives remain Proposed | Public SEO, self-hosting, bespoke design ownership, and accessible complex controls; [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively). |
 | Client state | URL/server state first; local React state second; Zustand only after a demonstrated shared-client-state need. | Proposed | Avoid a global state layer before real requirements exist. |
-| Backend | NestJS modular REST API, generated OpenAPI, API-owned opaque server sessions, and SSE for live Club/Session progress. | Proposed | One same-origin server authorization boundary; [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary). |
+| Backend | NestJS modular REST API, generated OpenAPI, API-owned opaque server sessions, and SSE for live Club/Session progress. | Partial — runnable NestJS scaffold only; modules, OpenAPI, sessions, and SSE remain Proposed | One same-origin server authorization boundary; [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary). |
 | Primary data store | PostgreSQL through reviewed Prisma migrations/client; explicit SQL for high-risk constraints. | Proposed | Relational invariants, transactions, reporting, and auditability; [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations). |
-| Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
+| Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Partial — independently runnable worker scaffold only; Redis, BullMQ, outbox, and jobs remain Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
 | Object storage | S3-compatible storage for avatars and time-limited exports. | Proposed | Keeps binary/user-generated objects outside application/database containers. |
 | Real-time | SSE from API; durable truth remains PostgreSQL, Redis distributes invalidation/events. | Proposed | One-way progress updates fit the product; WebSockets are unnecessary for MVP. |
 | Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
 
 ## 3. Building Blocks & Boundaries
 
-### Proposed repository and deployables
+### Repository and deployables
 
 ```text
 PickFlick/
@@ -109,20 +110,20 @@ PickFlick/
   _docs/              # Durable guidance, design prototypes, decisions, future guides
 ```
 
-The layout is the accepted scaffold target, not implemented state. Keep only packages with an
-immediate consumer. When API and worker first need the same server-side behavior, extract a focused
-domain/application package rather than importing one app from another or creating a generic
-`shared` package.
+The issue #10 scaffold implements this layout. Product capabilities inside each boundary remain
+Proposed unless the table says otherwise. Keep only packages with an immediate command or consumer.
+When API and worker first need the same server-side behavior, extract a focused domain/application
+package rather than importing one app from another or creating a generic `shared` package.
 
 | Deployable / package | Responsibility | Owns | Depends on | State |
 | --- | --- | --- | --- | --- |
-| `apps/web` | Render public/private/admin experiences and manage browser interaction. | Routes, presentation, browser/PWA shell. | API contract, UI package, brand assets. | Proposed |
-| `apps/api` | Authenticate/authorize, execute synchronous domain commands/queries, expose REST/SSE/webhooks. | HTTP boundary, session boundary, domain orchestration. | Database, Redis, providers, contracts. | Proposed |
-| `apps/worker` | Execute delayed/retryable/background work. | Queue consumers, deadline reconciliation, email/export/refresh jobs. | Database, Redis, object storage, providers. | Proposed |
-| `packages/contracts` | Prevent handwritten client/server contract drift. | Generated client/types and stable enums/value objects. | API OpenAPI generation. | Proposed |
-| `packages/database` | Own schema/migrations/client and database test helpers. | Relational schema and database constraints. | PostgreSQL, Prisma. | Proposed |
-| `packages/ui` | Implement canonical design tokens and shared UI behavior. | Tokens, primitives, shared shell/components. | React, selective Mantine primitives. | Proposed |
-| `packages/config` | Share tool configuration and typed environment schemas. | Build/test/lint/TS/env-validation baselines. | Toolchain. | Proposed |
+| `apps/web` | Render public/private/admin experiences and manage browser interaction. | Routes, presentation, browser/PWA shell. | API contract, UI package, brand assets. | Partial — scaffold route only. |
+| `apps/api` | Authenticate/authorize, execute synchronous domain commands/queries, expose REST/SSE/webhooks. | HTTP boundary, session boundary, domain orchestration. | Database, Redis, providers, contracts. | Partial — scaffold HTTP entrypoint only. |
+| `apps/worker` | Execute delayed/retryable/background work. | Queue consumers, deadline reconciliation, email/export/refresh jobs. | Database, Redis, object storage, providers. | Partial — scaffold process lifecycle only. |
+| `packages/contracts` | Prevent handwritten client/server contract drift. | Generated client/types and stable enums/value objects. | API OpenAPI generation. | Partial — initial runtime identity contract; generation remains Proposed. |
+| `packages/database` | Own schema/migrations/client and database test helpers. | Relational schema and database constraints. | PostgreSQL, Prisma. | Partial — command boundary with empty plans; schema/migrations remain issue #11. |
+| `packages/ui` | Implement canonical design tokens and shared UI behavior. | Tokens, primitives, shared shell/components. | React, selective Mantine primitives. | Partial — initial tokens and scaffold component; production system remains Phase 2. |
+| `packages/config` | Share tool configuration and typed environment schemas. | Build/test/lint/TS/env-validation baselines. | Toolchain. | Partial — lint and TypeScript baselines active; environment schemas remain issue #11. |
 
 ### Internal modules
 
@@ -296,7 +297,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 | Concern | Contract / approach | Canonical source | State |
 | --- | --- | --- | --- |
-| Local development | pnpm workspace; app commands run natively, dependencies through containers where helpful; real command map added after scaffolding. | Future getting-started guide and AGENTS command map. | Proposed |
+| Local development | pnpm workspace; app commands run natively, dependencies through containers where helpful. | [README](README.md#run-the-scaffold) and [AGENTS command map](AGENTS.md#command-map). | Partial — app scaffold is active; local data services remain issue #11. |
 | CI quality gates | Locked install, generated-artifact drift, lint, type-check, unit, integration, migration, build, E2E smoke, accessibility, and security checks. | Future CI workflows. | Proposed |
 | Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + future deployment guide/config. | Proposed |
 | Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + future migration guide. | Proposed |
@@ -338,12 +339,12 @@ Create an ADR only when a concrete option is accepted or rejected; do not popula
 
 | Check | Evidence | Status |
 | --- | --- | --- |
-| Repository/deployable map matches code | No app/package manifests exist. | Not implemented |
+| Repository/deployable map matches code | `pnpm check:workspace`, production builds, and bounded startup probes on issue #10 branch. | Verified locally |
 | Runtime/deployment topology matches configuration | No runtime/deploy configuration exists. | Not implemented |
 | Data ownership and schemas match migrations | No schema/migrations exist. | Not implemented |
 | Interfaces match API/event contracts | No OpenAPI/event contract exists. | Not implemented |
 | Auth and trust boundaries are enforced server-side | No auth/policy implementation exists. | Not implemented |
 | Failure and recovery paths are exercised | Planning acceptance cases exist in Roadmap; no tests/runbooks exist. | Not implemented |
-| Operational docs and environment inventory resolve | Must be created in Phase 1 and expanded through launch phases. | Not implemented |
+| Operational docs and environment inventory resolve | Scaffold command map is active; environment inventory remains issue #11 and later Phase 1 work. | Partial |
 
 Update this document whenever a deployable, module/data owner, interface, integration, environment, security boundary, job model, deployment shape, or operational guarantee changes. Promote a row to `Active` only with named code/runtime evidence.
