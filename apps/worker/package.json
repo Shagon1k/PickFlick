@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@pickflick/config": "workspace:*",
-    "@pickflick/contracts": "workspace:*"
+    "@pickflick/contracts": "workspace:*",
+    "@pickflick/database": "workspace:*",
+    "@pickflick/observability": "workspace:*"
   },
   "devDependencies": {
     "@pickflick/config": "workspace:*",

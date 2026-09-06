@@ -7,7 +7,7 @@
 
 | Document owner | Last reviewed | Verified against |
 | --- | --- | --- |
-| Developer | 2026-09-06 | ADR-001 through ADR-006 and issues #10–#11 local evidence |
+| Developer | 2026-09-06 | ADR-001 through ADR-006 and issues #10–#12 local evidence |
 
 ## 1. Architecture Contract & Sources
 
@@ -85,9 +85,9 @@ flowchart LR
 | Application style | Modular client/API/worker monolith in one pnpm monorepo. | Active — issue #10 workspace check, builds, and startup probes | Atomic cross-layer changes with separate runtime failure boundaries; [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints). |
 | Frontend | Next.js App Router + TypeScript; Server Components for public/shell data where useful, Client Components for rich workflows; project tokens/CSS Modules with wrapped selective Mantine primitives; TanStack Query for API state. | Partial — runnable App Router scaffold and initial tokens only; product routes, state, and selective primitives remain Proposed | Public SEO, self-hosting, bespoke design ownership, and accessible complex controls; [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively). |
 | Client state | URL/server state first; local React state second; Zustand only after a demonstrated shared-client-state need. | Proposed | Avoid a global state layer before real requirements exist. |
-| Backend | NestJS modular REST API, generated OpenAPI, API-owned opaque server sessions, and SSE for live Club/Session progress. | Partial — runnable NestJS scaffold only; modules, OpenAPI, sessions, and SSE remain Proposed | One same-origin server authorization boundary; [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary). |
+| Backend | NestJS modular REST API, generated OpenAPI, API-owned opaque server sessions, and SSE for live Club/Session progress. | Partial — runnable NestJS entrypoint, health endpoints, request correlation, and safe error boundary are active; product modules, OpenAPI, sessions, and SSE remain Proposed | One same-origin server authorization boundary; [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary). |
 | Primary data store | PostgreSQL through reviewed Prisma migrations/client; explicit SQL for high-risk constraints. | Partial — issue #11 implements the local service, initial User/Club/Membership/Session schema, and high-risk Club/Session constraints; remaining entities and production operations are Proposed | Relational invariants, transactions, reporting, and auditability; [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations). |
-| Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Partial — runnable worker and local Redis are active; BullMQ, outbox, and jobs remain Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
+| Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Partial — runnable worker, startup readiness, correlated job-execution wrapper, and local Redis are active; BullMQ, outbox, and product jobs remain Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
 | Object storage | S3-compatible storage for avatars and time-limited exports. | Partial — local MinIO service, bucket initialization, typed configuration, and connectivity check are active; product storage behavior remains Proposed | Keeps binary/user-generated objects outside application/database containers. |
 | Real-time | SSE from API; durable truth remains PostgreSQL, Redis distributes invalidation/events. | Proposed | One-way progress updates fit the product; WebSockets are unnecessary for MVP. |
 | Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
@@ -105,6 +105,7 @@ PickFlick/
   packages/
     contracts/        # Generated API client/types and shared stable value objects
     database/         # Prisma schema, migrations, client, seeds/test fixtures
+    observability/    # Structured logs, correlation context, and dependency probes
     ui/               # Projector Noir tokens and reusable production components
     config/           # Shared lint, TypeScript, test, and environment schemas
   assets/brand/       # Production-ready bundled brand imagery
@@ -119,10 +120,11 @@ package rather than importing one app from another or creating a generic `shared
 | Deployable / package | Responsibility | Owns | Depends on | State |
 | --- | --- | --- | --- | --- |
 | `apps/web` | Render public/private/admin experiences and manage browser interaction. | Routes, presentation, browser/PWA shell. | API contract, UI package, brand assets. | Partial — scaffold route only. |
-| `apps/api` | Authenticate/authorize, execute synchronous domain commands/queries, expose REST/SSE/webhooks. | HTTP boundary, session boundary, domain orchestration. | Database, Redis, providers, contracts. | Partial — scaffold HTTP entrypoint and typed startup configuration only. |
-| `apps/worker` | Execute delayed/retryable/background work. | Queue consumers, deadline reconciliation, email/export/refresh jobs. | Database, Redis, object storage, providers. | Partial — scaffold process lifecycle and typed startup configuration only. |
+| `apps/api` | Authenticate/authorize, execute synchronous domain commands/queries, expose REST/SSE/webhooks. | HTTP boundary, session boundary, domain orchestration. | Database, Redis, providers, contracts. | Partial — HTTP lifecycle, typed startup configuration, health/readiness, request correlation, and safe error envelope are active; product APIs remain Proposed. |
+| `apps/worker` | Execute delayed/retryable/background work. | Queue consumers, deadline reconciliation, email/export/refresh jobs. | Database, Redis, object storage, providers. | Partial — process lifecycle, typed startup configuration, dependency readiness, and correlated job-execution wrapper are active; queue consumers remain Proposed. |
 | `packages/contracts` | Prevent handwritten client/server contract drift. | Generated client/types and stable enums/value objects. | API OpenAPI generation. | Partial — initial runtime identity contract; generation remains Proposed. |
 | `packages/database` | Own schema/migrations/client and database test helpers. | Relational schema and database constraints. | PostgreSQL, Prisma. | Partial — issue #11 initial schema, client, reviewed migrations, synthetic fixtures, guarded seed/reset, and integration checks are active; remaining product entities are Proposed. |
+| `packages/observability` | Share server runtime diagnostics without coupling deployables. | Structured Pino logger, correlation context, dependency probes, and readiness aggregation. | Runtime configuration and stable contracts. | Active — issue #12 unit, build, and HTTP smoke evidence. |
 | `packages/ui` | Implement canonical design tokens and shared UI behavior. | Tokens, primitives, shared shell/components. | React, selective Mantine primitives. | Partial — initial tokens and scaffold component; production system remains Phase 2. |
 | `packages/config` | Share tool configuration and typed environment schemas. | Build/test/lint/TS/env-validation baselines. | Toolchain. | Active — lint, TypeScript, and typed API/worker/data-service startup configuration are verified locally. |
 
@@ -258,10 +260,10 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | --- | --- | --- | --- |
 | Authentication | Registered Google/Apple identities; same-origin API-owned opaque server sessions in host-only secure cookies; explicit CSRF/Origin defense; revoke all sessions on suspension/deletion; exact library chosen by issue #25. | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) + future security guide. | Proposed |
 | Authorization | Deny by default; App Admin/User globally, Admin/Moderator/Member per Club; every query/mutation/SSE/file URL is server/data-boundary authorized. | [Roadmap identity rules](ROADMAP.md#identity-and-access) | Proposed |
-| Validation and errors | Validate path/query/body/file/provider input at entry; use stable machine code + safe user message + request ID; encode user/provider output contextually. | Future API contract. | Proposed |
+| Validation and errors | Validate path/query/body/file/provider input at entry; use stable machine code + safe user message + request ID; encode user/provider output contextually. | `packages/contracts` error codes and API exception filter; future generated API contract. | Partial — safe envelope and HTTP failure mapping are active; route-specific input validation remains Proposed. |
 | Security | TLS, reverse proxy, secure headers/cookies, CSRF/CORS strategy, rate limits, webhook signatures, upload allowlists, secret isolation, dependency/scanner gates. | Phase 1 baseline with Phase 23 hardening/release review. | Proposed |
 | Privacy and retention | Minimize collection; separate shared/personal data; private storage; user CSV/GDPR export; deletion anonymizes shared history; policy timing approved before launch. | [Roadmap account deletion](ROADMAP.md#account-deletion-and-shared-history) | Proposed |
-| Observability | Structured Pino logs, request/job IDs, health/readiness, error/performance telemetry, queue/deadline/webhook/delivery metrics and alerts; scrub personal data. | Future operations guide. | Proposed |
+| Observability | Structured Pino logs, request/job IDs, health/readiness, error/performance telemetry, queue/deadline/webhook/delivery metrics and alerts; scrub personal data. | [Environment reference](_docs/environment.md#runtime-health-errors-and-logs) plus future operations guide. | Partial — structured logs, correlation, API health/readiness, worker startup readiness, and sensitive-field redaction are active; telemetry, metrics, and alerts remain Proposed. |
 | Reliability | Idempotency for transitions/webhooks/jobs; transaction + outbox; bounded retry; stale-job checks; deadline reconciliation; provider timeouts/circuit behavior. | Execution paths above. | Proposed |
 | Performance and scaling | Ordinary MVP baseline; paginate/search server-side, bound list sizes, index authorization/query paths, measure before horizontal scaling. | Phase acceptance evidence. | Proposed |
 | Caching | TMDB data uses explicit freshness/refresh state; user/Club dynamic responses are private/no-store unless proven safe; Redis cache is disposable and invalidated by domain events. | Movies/API implementation. | Proposed |
@@ -302,6 +304,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | Concern | Contract / approach | Canonical source | State |
 | --- | --- | --- | --- |
 | Local development | pnpm workspace; app commands run natively, dependencies through containers. | [README](README.md#run-locally), [environment reference](_docs/environment.md), and [AGENTS command map](AGENTS.md#command-map). | Active — issue #11 verifies the loopback PostgreSQL, Redis, MinIO, and Mailpit stack plus application entrypoints. |
+| Runtime probes and diagnostics | API liveness/readiness endpoints; worker startup readiness; structured request/job logs and safe API errors. | [Environment reference](_docs/environment.md#runtime-health-errors-and-logs). | Active — issue #12 focused tests and failure smoke evidence. |
 | CI quality gates | Locked install, generated-artifact drift, lint, type-check, unit, integration, migration, build, E2E smoke, accessibility, and security checks. | Future CI workflows. | Proposed |
 | Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + future deployment guide/config. | Proposed |
 | Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + [environment reference](_docs/environment.md). | Partial — local fresh/upgrade migrations, compatibility statement, seed, and guarded reset are active; release gating remains Proposed. |
@@ -348,7 +351,7 @@ Create an ADR only when a concrete option is accepted or rejected; do not popula
 | Data ownership and schemas match migrations | Initial User/Club/Membership/Session schema and two migrations match; remaining Roadmap entities remain Proposed. | Partial |
 | Interfaces match API/event contracts | No OpenAPI/event contract exists. | Not implemented |
 | Auth and trust boundaries are enforced server-side | No auth/policy implementation exists. | Not implemented |
-| Failure and recovery paths are exercised | Missing/invalid configuration and unsafe seed/reset targets are rejected; broader runtime and deployment failures remain Proposed. | Partial |
+| Failure and recovery paths are exercised | Missing/invalid configuration, unsafe seed/reset targets, unavailable runtime dependencies, and unsafe API failures are rejected or reported safely; broader product and deployment failures remain Proposed. | Partial |
 | Operational docs and environment inventory resolve | Local environment inventory and data-service workflow are active; deployment/provider additions remain later Phase 1 work. | Partial |
 
 Update this document whenever a deployable, module/data owner, interface, integration, environment, security boundary, job model, deployment shape, or operational guarantee changes. Promote a row to `Active` only with named code/runtime evidence.

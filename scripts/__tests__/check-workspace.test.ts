@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { mkdtemp } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-import { checkWorkspace } from "./check-workspace.mjs";
+import { checkWorkspace } from "../check-workspace.mjs";
 
 async function writeManifest(root: string, directory: string, manifest: object) {
   const path = join(root, directory);
@@ -21,6 +21,7 @@ async function createWorkspace() {
     ["packages/config", "@pickflick/config"],
     ["packages/contracts", "@pickflick/contracts"],
     ["packages/database", "@pickflick/database"],
+    ["packages/observability", "@pickflick/observability"],
     ["packages/ui", "@pickflick/ui"],
   ] as const;
 
@@ -66,5 +67,16 @@ describe("checkWorkspace", () => {
     const errors = await checkWorkspace(root);
 
     expect(errors).toContain("packages/database must not depend on application workspace apps/api");
+  });
+
+  it("rejects test files outside __tests__ directories", async () => {
+    const root = await createWorkspace();
+    const sourceDirectory = join(root, "apps/api/src");
+    await mkdir(sourceDirectory, { recursive: true });
+    await writeFile(join(sourceDirectory, "app.test.ts"), "");
+
+    const errors = await checkWorkspace(root);
+
+    expect(errors).toContain("apps/api/src/app.test.ts must be placed under a __tests__ directory");
   });
 });

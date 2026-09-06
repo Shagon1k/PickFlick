@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AppController } from "./app.controller.js";
+import { AppController } from "../app.controller.js";
 
 describe("AppController", () => {
   it("identifies the API scaffold", () => {

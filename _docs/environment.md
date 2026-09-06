@@ -72,6 +72,46 @@ the process environment. Set `PICKFLICK_ENV_FILE` to an absolute path or a repos
 to use another file. The named file must exist. Do not use the override to commit or expose secret
 files.
 
+## Runtime health, errors, and logs
+
+The API exposes two unauthenticated probe endpoints:
+
+| Endpoint | Success | Failure behavior |
+| --- | --- | --- |
+| `GET /health/live` | HTTP 200 with `{"service":"api","status":"alive"}` while the process can serve HTTP. | Process or HTTP-server failure prevents a response. The endpoint does not query dependencies. |
+| `GET /health/ready` | HTTP 200 with each required dependency marked `up`. | HTTP 503 with each required dependency marked `up` or `down`; probe errors and configuration values are omitted. |
+
+Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, authenticates an S3
+`HeadBucket` request, and waits for the complete SMTP greeting. Each probe enforces its two-second
+deadline through its database driver, abort signal, or socket and cancels timed-out work. The worker
+runs the same checks before it reports `service.ready`. If a dependency is unavailable, the worker
+logs only its stable dependency name and exits unsuccessfully.
+
+API responses include `x-request-id`. The API keeps a valid UUIDv4 supplied in `x-request-id` and
+generates a new UUIDv4 for missing or invalid input. Boundary failures use this envelope:
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Resource not found.",
+    "requestId": "123e4567-e89b-42d3-a456-426614174000"
+  }
+}
+```
+
+Stable baseline codes are `VALIDATION_FAILED`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`,
+`METHOD_NOT_ALLOWED`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`, `RATE_LIMITED`,
+`SERVICE_UNAVAILABLE`, `REQUEST_FAILED`, and `INTERNAL_ERROR`. Route-specific APIs may add codes
+to the shared contract, but they must keep the safe message and request identifier.
+
+API and worker logs are newline-delimited JSON. Each record has `service`, `environment`, `event`,
+`level`, `time`, and the active request or job correlation fields. HTTP completion records contain
+the route template, method, status, and duration. They omit request headers, bodies, and query
+strings. Job logs omit handler payloads and raw errors. The logger redacts common credential keys as
+a backstop; callers must still log allowlisted operational metadata instead of raw browser,
+provider, job, or configuration objects.
+
 ## Local Compose variables
 
 These variables configure `compose.local.yaml`. They are not application runtime variables unless

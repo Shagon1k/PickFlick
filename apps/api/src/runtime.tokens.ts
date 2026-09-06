@@ -1,0 +1,1 @@
+export const RUNTIME_ENVIRONMENT = Symbol("RUNTIME_ENVIRONMENT");

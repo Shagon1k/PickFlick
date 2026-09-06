@@ -8,7 +8,9 @@ export function assertSafeSeedOrResetTarget(environment: DatabaseEnvironment): v
   const target = new URL(environment.databaseUrl);
   const databaseName = target.pathname.replace(/^\//, "");
   const expectedName = `pickflick_${environment.appEnvironment}`;
-  if (databaseName !== expectedName) throw new Error(`Database seed/reset requires the database name ${expectedName}.`);
+  if (databaseName !== expectedName) {
+    throw new Error(`Database seed/reset requires the database name ${expectedName}.`);
+  }
 
   if (target.searchParams.has("host")) {
     throw new Error("Database seed/reset does not allow a host query parameter.");

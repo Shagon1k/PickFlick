@@ -1,6 +1,9 @@
+import { createServer } from "node:net";
+import type { AddressInfo, Socket } from "node:net";
+
 import { describe, expect, it, vi } from "vitest";
 
-import { checkStorage } from "./check-storage.js";
+import { checkSmtp, checkStorage } from "../readiness.js";
 
 const storageEnvironment = {
   endpoint: "http://127.0.0.1:9000",
@@ -11,7 +14,7 @@ const storageEnvironment = {
   forcePathStyle: true,
 } as const;
 
-describe("object storage service check", () => {
+describe("object storage readiness", () => {
   it("authenticates a HeadBucket request with the configured S3 identity", async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 200 }));
 
@@ -30,11 +33,11 @@ describe("object storage service check", () => {
     expect(init?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("reports bucket or credential rejection", async () => {
+  it("reports bucket or credential rejection without credential details", async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 403 }));
 
     await expect(checkStorage(storageEnvironment, { fetch: request })).rejects.toThrow(
-      "Object storage bucket check failed with HTTP 403.",
+      "Object storage readiness check failed with HTTP 403.",
     );
   });
 
@@ -48,6 +51,40 @@ describe("object storage service check", () => {
 
     await expect(
       checkStorage(storageEnvironment, { fetch: request, timeoutMilliseconds: 1 }),
-    ).rejects.toThrow("Object storage check timed out.");
+    ).rejects.toThrow("Object storage readiness check timed out.");
+  });
+});
+
+describe("SMTP readiness", () => {
+  it("waits for a complete greeting split across TCP chunks", async () => {
+    const sockets = new Set<Socket>();
+    const server = createServer((socket) => {
+      sockets.add(socket);
+      socket.once("close", () => sockets.delete(socket));
+      socket.write("2");
+      setImmediate(() => socket.write("20 Mailpit ready\r\n"));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    const address = server.address() as AddressInfo;
+
+    try {
+      await expect(checkSmtp("127.0.0.1", address.port, false, 500)).resolves.toBeUndefined();
+    } finally {
+      for (const socket of sockets) {
+        socket.destroy();
+      }
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
+    }
   });
 });

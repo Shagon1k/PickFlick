@@ -20,7 +20,9 @@ async function runRollbackProbe(action: (transaction: Prisma.TransactionClient) 
       throw rollback;
     });
   } catch (error) {
-    if (error === rollback) return;
+    if (error === rollback) {
+      return;
+    }
     throw error;
   }
 }
@@ -32,7 +34,9 @@ async function expectConstraint(
   try {
     await runRollbackProbe(action);
   } catch (error) {
-    if (error instanceof Error && error.message.includes(name)) return;
+    if (error instanceof Error && error.message.includes(name)) {
+      return;
+    }
     throw new Error(`Expected PostgreSQL constraint ${name} to reject the write.`, { cause: error });
   }
   throw new Error(`PostgreSQL constraint ${name} accepted an invalid write.`);
@@ -52,7 +56,9 @@ async function verifyMigrationUpgrade(): Promise<void> {
   );
   await client.connect();
   try {
-    for (const schema of schemas) await client.query(`CREATE SCHEMA "${schema}"`);
+    for (const schema of schemas) {
+      await client.query(`CREATE SCHEMA "${schema}"`);
+    }
     await client.query(`SET search_path TO "${schemas[0]}"`);
     await client.query(initialSql);
     await client.query(invariantSql);
@@ -64,10 +70,14 @@ async function verifyMigrationUpgrade(): Promise<void> {
     );
     await client.query(invariantSql);
     const upgraded = await client.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM "Club"`);
-    if (upgraded.rows[0]?.count !== "1") throw new Error("Upgrade migration did not preserve the existing Club row.");
+    if (upgraded.rows[0]?.count !== "1") {
+      throw new Error("Upgrade migration did not preserve the existing Club row.");
+    }
   } finally {
     await client.query("SET search_path TO public");
-    for (const schema of schemas.reverse()) await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+    for (const schema of schemas.reverse()) {
+      await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+    }
     await client.end();
   }
 }
@@ -76,12 +86,16 @@ try {
   const migrationCount = await database.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint AS count FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL
   `;
-  if (migrationCount[0]?.count !== 2n) throw new Error("Expected exactly two completed database migrations.");
+  if (migrationCount[0]?.count !== 2n) {
+    throw new Error("Expected exactly two completed database migrations.");
+  }
 
   const fixtureCount = await database.user.count({
     where: { id: { in: SYNTHETIC_FIXTURES.users.map(({ id }) => id) } },
   });
-  if (fixtureCount !== SYNTHETIC_FIXTURES.users.length) throw new Error("Deterministic synthetic users are missing.");
+  if (fixtureCount !== SYNTHETIC_FIXTURES.users.length) {
+    throw new Error("Deterministic synthetic users are missing.");
+  }
 
   const pastSession = await database.session.findUnique({
     where: { id: SYNTHETIC_FIXTURES.pastSession.id },

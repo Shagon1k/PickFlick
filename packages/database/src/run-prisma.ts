@@ -4,7 +4,9 @@ import { loadDatabaseEnvironment } from "@pickflick/config/environment";
 
 const allowedArguments = new Set(["migrate deploy", "db seed"]);
 const argumentsToPrisma = process.argv.slice(2);
-if (!allowedArguments.has(argumentsToPrisma.join(" "))) throw new Error("Unsupported Prisma command wrapper invocation.");
+if (!allowedArguments.has(argumentsToPrisma.join(" "))) {
+  throw new Error("Unsupported Prisma command wrapper invocation.");
+}
 
 loadDatabaseEnvironment();
 

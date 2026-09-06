@@ -1,7 +1,7 @@
 # PickFlick
 
-> Agent operating instructions for this repository. The project is greenfield with an executable
-> web/API/worker workspace scaffold; product behavior is not implemented yet.
+> Agent operating instructions for this repository. The project is greenfield with executable
+> web/API/worker runtime foundations; product behavior is not implemented yet.
 
 ## Core Contract
 
@@ -26,8 +26,9 @@
 
 - The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
   PostgreSQL/Redis/MinIO/Mailpit stack, typed runtime configuration, and baseline quality commands
-  are executable. Product modules, provider integrations, and deployment configuration remain
-  unimplemented.
+  are executable. The API and worker also have structured logging, correlation, dependency
+  readiness, and safe API error foundations. Product modules, provider integrations, and deployment
+  configuration remain unimplemented.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
   two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
   commands. Remaining product entities arrive with their owning phases.
