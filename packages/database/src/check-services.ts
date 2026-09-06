@@ -3,6 +3,7 @@ import { connect } from "node:net";
 import { loadRuntimeEnvironment } from "@pickflick/config/environment";
 
 import { createDatabaseClient } from "./client.js";
+import { checkStorage } from "./check-storage.js";
 
 const environment = loadRuntimeEnvironment();
 
@@ -44,8 +45,7 @@ try {
   await database.$disconnect();
 }
 await checkRedis(environment.redisUrl);
-const storageResponse = await fetch(new URL("/minio/health/live", environment.s3.endpoint));
-if (!storageResponse.ok) throw new Error(`Object storage health check failed with HTTP ${storageResponse.status}.`);
+await checkStorage(environment.s3);
 await checkSmtp(environment.smtp.host, environment.smtp.port);
 
 console.log("Local services reachable: PostgreSQL, Redis, S3-compatible storage, and SMTP.");

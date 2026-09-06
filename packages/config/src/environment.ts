@@ -26,6 +26,8 @@ export interface RuntimeEnvironment {
   };
 }
 
+export type WorkerEnvironment = Omit<RuntimeEnvironment, "apiHost" | "apiPort">;
+
 export interface DatabaseEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
   readonly databaseUrl: string;
@@ -115,11 +117,11 @@ export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnv
   return result;
 }
 
-export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvironment {
-  const failures: ValidationFailure[] = [];
-  const appEnvironment = oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures);
-  const apiHost = required(source, "API_HOST", failures);
-  const apiPort = integer(source, "API_PORT", failures);
+function parseWorkerValues(
+  source: EnvironmentSource,
+  appEnvironment: DeploymentEnvironment,
+  failures: ValidationFailure[],
+): WorkerEnvironment {
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
   const endpoint = url(source, "S3_ENDPOINT", ["http:", "https:"], failures);
@@ -133,24 +135,45 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const smtpSecure = boolean(source, "SMTP_SECURE", failures);
   const from = required(source, "MAIL_FROM", failures);
 
-  if (apiHost && /\s/.test(apiHost)) failures.push({ name: "API_HOST", reason: "must not contain whitespace" });
-  if (bucket && !/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket)) {
+  if (
+    bucket &&
+    (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket) ||
+      bucket.includes("..") ||
+      /^(?:\d{1,3}\.){3}\d{1,3}$/.test(bucket))
+  ) {
     failures.push({ name: "S3_BUCKET", reason: "must be a valid lowercase S3 bucket name" });
   }
   if (from && !/^[^@\s]+(?:\s+<[^@\s]+@[^@\s]+\.[^@\s]+>|@[^@\s]+\.[^@\s]+)$/.test(from)) {
     failures.push({ name: "MAIL_FROM", reason: "must be an email address or a name plus email address" });
   }
-  if (failures.length > 0) throw new EnvironmentValidationError(failures);
-
   return {
     appEnvironment,
-    apiHost,
-    apiPort,
     databaseUrl,
     redisUrl,
     s3: { endpoint, region, bucket, accessKeyId, secretAccessKey, forcePathStyle },
     smtp: { host: smtpHost, port: smtpPort, secure: smtpSecure, from },
   };
+}
+
+export function parseWorkerEnvironment(source: EnvironmentSource): WorkerEnvironment {
+  const failures: ValidationFailure[] = [];
+  const appEnvironment = oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures);
+  const result = parseWorkerValues(source, appEnvironment, failures);
+  if (failures.length > 0) throw new EnvironmentValidationError(failures);
+  return result;
+}
+
+export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvironment {
+  const failures: ValidationFailure[] = [];
+  const appEnvironment = oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures);
+  const apiHost = required(source, "API_HOST", failures);
+  const apiPort = integer(source, "API_PORT", failures);
+  const workerEnvironment = parseWorkerValues(source, appEnvironment, failures);
+
+  if (apiHost && /\s/.test(apiHost)) failures.push({ name: "API_HOST", reason: "must not contain whitespace" });
+  if (failures.length > 0) throw new EnvironmentValidationError(failures);
+
+  return { ...workerEnvironment, apiHost, apiPort };
 }
 
 export function loadRepositoryEnvironmentFile(source: EnvironmentSource = process.env): void {
@@ -181,4 +204,9 @@ export function loadDatabaseEnvironment(): DatabaseEnvironment {
 export function loadRuntimeEnvironment(): RuntimeEnvironment {
   loadRepositoryEnvironmentFile();
   return parseRuntimeEnvironment(process.env);
+}
+
+export function loadWorkerEnvironment(): WorkerEnvironment {
+  loadRepositoryEnvironmentFile();
+  return parseWorkerEnvironment(process.env);
 }

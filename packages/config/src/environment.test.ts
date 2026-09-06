@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { EnvironmentValidationError, parseDatabaseEnvironment, parseRuntimeEnvironment } from "./environment.js";
+import {
+  EnvironmentValidationError,
+  parseDatabaseEnvironment,
+  parseRuntimeEnvironment,
+  parseWorkerEnvironment,
+} from "./environment.js";
 
 const validEnvironment = {
   APP_ENV: "local",
@@ -35,6 +40,20 @@ describe("environment validation", () => {
       appEnvironment: "local",
       databaseUrl: validEnvironment.DATABASE_URL,
     });
+  });
+
+  it("accepts the worker inventory without API bind settings", () => {
+    expect(parseWorkerEnvironment({ ...validEnvironment, API_HOST: undefined, API_PORT: undefined })).toMatchObject({
+      appEnvironment: "local",
+      databaseUrl: validEnvironment.DATABASE_URL,
+      redisUrl: validEnvironment.REDIS_URL,
+    });
+  });
+
+  it.each(["foo..bar", "192.168.5.4"])("rejects an invalid S3 bucket name: %s", (bucket) => {
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, S3_BUCKET: bucket })).toThrow(
+      /S3_BUCKET must be a valid lowercase S3 bucket name/,
+    );
   });
 
   it("names invalid variables without echoing their values", () => {

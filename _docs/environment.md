@@ -21,7 +21,8 @@ pnpm dev
 ```
 
 `pnpm services:up` waits for PostgreSQL, Redis, MinIO, and Mailpit, then creates the configured
-MinIO bucket if it does not exist. `pnpm services:check` checks each service from the host.
+MinIO bucket if it does not exist. `pnpm services:check` checks each service from the host and uses
+the runtime S3 credentials to verify access to the configured bucket.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
 fixtures, and PostgreSQL constraints.
 
@@ -45,8 +46,8 @@ guards before invoking `prisma migrate reset`. Never use it against shared, UAT,
 
 ## Runtime variables
 
-The API and worker validate this complete runtime set before starting. Validation errors name
-invalid variables but never echo their values.
+The API and worker validate their runtime variables before starting. The worker does not require
+the API-only bind settings. Validation errors name invalid variables but never echo their values.
 
 | Variable | Type and allowed values | Consumer | Sensitive |
 | --- | --- | --- | --- |
