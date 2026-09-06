@@ -9,7 +9,9 @@ const environment = loadRuntimeEnvironment();
 
 async function checkRedis(redisUrl: string): Promise<void> {
   const target = new URL(redisUrl);
-  if (target.protocol !== "redis:") throw new Error("The local service check requires a redis:// URL.");
+  if (target.protocol !== "redis:") {
+    throw new Error("The local service check requires a redis:// URL.");
+  }
   await new Promise<void>((resolve, reject) => {
     const socket = connect({ host: target.hostname, port: Number(target.port || 6379) });
     const timeout = setTimeout(() => socket.destroy(new Error("Redis check timed out.")), 5_000);
@@ -17,8 +19,11 @@ async function checkRedis(redisUrl: string): Promise<void> {
     socket.once("data", (data) => {
       clearTimeout(timeout);
       socket.end();
-      if (data.toString() === "+PONG\r\n") resolve();
-      else reject(new Error("Redis did not return PONG."));
+      if (data.toString() === "+PONG\r\n") {
+        resolve();
+      } else {
+        reject(new Error("Redis did not return PONG."));
+      }
     });
     socket.once("error", reject);
   });
@@ -31,8 +36,11 @@ async function checkSmtp(host: string, port: number): Promise<void> {
     socket.once("data", (data) => {
       clearTimeout(timeout);
       socket.end("QUIT\r\n");
-      if (data.toString().startsWith("220")) resolve();
-      else reject(new Error("SMTP service did not return a greeting."));
+      if (data.toString().startsWith("220")) {
+        resolve();
+      } else {
+        reject(new Error("SMTP service did not return a greeting."));
+      }
     });
     socket.once("error", reject);
   });

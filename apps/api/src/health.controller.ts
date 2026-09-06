@@ -17,7 +17,9 @@ export class HealthController {
   @Get("ready")
   async readiness(@Res({ passthrough: true }) response: ServerResponse): Promise<ReadinessReport> {
     const report = await this.health.readiness();
-    if (report.status === "not_ready") response.statusCode = 503;
+    if (report.status === "not_ready") {
+      response.statusCode = 503;
+    }
     return report;
   }
 }

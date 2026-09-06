@@ -5,7 +5,7 @@ import { Writable } from "node:stream";
 import { createLogger } from "@pickflick/observability";
 import { describe, expect, it, vi } from "vitest";
 
-import { createRequestContextMiddleware } from "./request-context.js";
+import { createRequestContextMiddleware } from "../request-context.js";
 
 describe("request context middleware", () => {
   it("logs a route template and replaces unsafe request identifiers", () => {

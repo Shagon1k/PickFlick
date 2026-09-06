@@ -8,6 +8,11 @@ import { RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";
 
 @Module({})
 export class AppModule {
+  /**
+   * Supplies the environment that bootstrap has already parsed and validated.
+   * A dynamic module lets Nest inject that runtime value without loading process
+   * environment variables again inside providers.
+   */
   static register(environment: RuntimeEnvironment): DynamicModule {
     return {
       module: AppModule,

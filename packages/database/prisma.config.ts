@@ -17,7 +17,9 @@ try {
   loadEnvFile(environmentFile);
 } catch (error) {
   const code = error instanceof Error && "code" in error ? error.code : undefined;
-  if (code !== "ENOENT" || configuredEnvironmentFile) throw error;
+  if (code !== "ENOENT" || configuredEnvironmentFile) {
+    throw error;
+  }
 }
 
 export default defineConfig({

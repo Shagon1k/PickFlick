@@ -150,7 +150,7 @@ evidence.
 | Canonical architecture alignment | In progress | Issue #9 documentation change. |
 | Runnable monorepo and command map | Verified locally | Clean source-only export of issue #10 branch: frozen locked install with a fresh store; workspace-boundary check; lint; type-check; 7 unit tests; web/API/worker production builds and startup probes. |
 | Local data, migrations, seeds, typed configuration | Verified locally | Issue #11 branch: Compose readiness for PostgreSQL/Redis/MinIO/Mailpit; two fresh migrations; repeated idempotent seed; migration-upgrade, partial-index, score-range, service-connectivity, and safe-config tests. |
-| Health/readiness/logging/error baseline | Verified locally | Issue #12: 43 focused/workspace tests, lint, type-check, builds, structured scrubbed log samples, and unavailable-dependency HTTP/worker smoke evidence. |
+| Health/readiness/logging/error baseline | Verified locally | Issue #12: 48 focused/workspace tests, lint, type-check, builds, structured scrubbed log samples, and unavailable-dependency HTTP/worker smoke evidence. |
 | Immutable images and isolated Compose topology | Missing | Issue #13. |
 | Reproducible CI gates | Missing | Issue #14. |
 | Exact-revision UAT deployment and smoke evidence | Missing | Issue #15. |

@@ -3,7 +3,7 @@ import { Writable } from "node:stream";
 import { createLogger } from "@pickflick/observability";
 import { describe, expect, it } from "vitest";
 
-import { executeCorrelatedJob, runWorker, WorkerNotReadyError, workerStatus } from "./worker.js";
+import { executeCorrelatedJob, runWorker, WorkerNotReadyError, workerStatus } from "../worker.js";
 
 function captureLogger() {
   let output = "";

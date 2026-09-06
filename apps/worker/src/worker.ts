@@ -42,10 +42,14 @@ export async function executeCorrelatedJob<T>(
 }
 
 export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Promise<void> {
-  if (signal.aborted) return;
+  if (signal.aborted) {
+    return;
+  }
 
   const readiness = await runtime.readiness();
-  if (signal.aborted) return;
+  if (signal.aborted) {
+    return;
+  }
   if (readiness.status === "not_ready") {
     runtime.logger.error(
       {

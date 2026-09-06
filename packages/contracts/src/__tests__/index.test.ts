@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { API_ERROR_CODES, DEPENDENCY_NAMES, SERVICE_NAMES } from "./index.js";
+import { API_ERROR_CODES, DEPENDENCY_NAMES, SERVICE_NAMES } from "../index.js";
 
 describe("service contracts", () => {
   it("names each independent runtime", () => {

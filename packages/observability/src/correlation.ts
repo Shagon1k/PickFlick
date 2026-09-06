@@ -1,3 +1,8 @@
+/**
+ * Carries safe request and job identifiers across asynchronous calls. Loggers can
+ * read this context without passing identifiers through every function, while
+ * untrusted identifiers are validated or replaced before they reach logs.
+ */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomUUID } from "node:crypto";
 
@@ -18,7 +23,9 @@ export function resolveCorrelationId(candidate?: string): string {
 
 function safeJobIdentifier(candidate: string): string {
   const value = candidate.trim();
-  if (value && jobIdentifierPattern.test(value)) return value;
+  if (value && jobIdentifierPattern.test(value)) {
+    return value;
+  }
   return `job-${createHash("sha256").update(candidate).digest("hex").slice(0, 16)}`;
 }
 

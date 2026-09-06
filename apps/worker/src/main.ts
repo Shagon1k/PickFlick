@@ -1,5 +1,5 @@
 import { loadWorkerEnvironment } from "@pickflick/config/environment";
-import { createDatabaseClient } from "@pickflick/database";
+import { checkDatabaseReadiness } from "@pickflick/database";
 import { checkReadiness, createLogger, createRuntimeDependencyProbes } from "@pickflick/observability";
 
 import { runWorker } from "./worker.js";
@@ -13,10 +13,9 @@ process.once("SIGTERM", stop);
 async function bootstrap(): Promise<void> {
   const environment = loadWorkerEnvironment();
   const logger = createLogger({ service: "worker", environment: environment.appEnvironment });
-  const database = createDatabaseClient(environment.databaseUrl);
-  const probes = createRuntimeDependencyProbes(environment, async () => {
-    await database.$queryRaw`SELECT 1`;
-  });
+  const probes = createRuntimeDependencyProbes(environment, (timeoutMilliseconds) =>
+    checkDatabaseReadiness(environment.databaseUrl, timeoutMilliseconds),
+  );
 
   try {
     await runWorker(controller.signal, {
@@ -28,8 +27,6 @@ async function bootstrap(): Promise<void> {
       logger.fatal({ event: "service.start.failed" }, "Worker failed to start.");
       process.exitCode = 1;
     }
-  } finally {
-    await database.$disconnect();
   }
 }
 

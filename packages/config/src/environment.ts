@@ -66,7 +66,9 @@ function oneOf<T extends readonly string[]>(
   failures: ValidationFailure[],
 ): T[number] {
   const value = required(source, name, failures);
-  if (value && !values.includes(value)) failures.push({ name, reason: `must be one of ${values.join(", ")}` });
+  if (value && !values.includes(value)) {
+    failures.push({ name, reason: `must be one of ${values.join(", ")}` });
+  }
   return value as T[number];
 }
 
@@ -81,7 +83,9 @@ function integer(source: EnvironmentSource, name: string, failures: ValidationFa
 
 function boolean(source: EnvironmentSource, name: string, failures: ValidationFailure[]): boolean {
   const value = required(source, name, failures);
-  if (value && value !== "true" && value !== "false") failures.push({ name, reason: "must be true or false" });
+  if (value && value !== "true" && value !== "false") {
+    failures.push({ name, reason: "must be true or false" });
+  }
   return value === "true";
 }
 
@@ -93,11 +97,17 @@ function url(
   structure?: "host" | "host-and-path",
 ): string {
   const value = required(source, name, failures);
-  if (!value) return value;
+  if (!value) {
+    return value;
+  }
   try {
     const parsed = new URL(value);
-    if (!protocols.includes(parsed.protocol)) failures.push({ name, reason: `must use ${protocols.join(" or ")}` });
-    if (structure && !parsed.hostname) failures.push({ name, reason: "must include a host" });
+    if (!protocols.includes(parsed.protocol)) {
+      failures.push({ name, reason: `must use ${protocols.join(" or ")}` });
+    }
+    if (structure && !parsed.hostname) {
+      failures.push({ name, reason: "must include a host" });
+    }
     if (structure === "host-and-path" && (!parsed.pathname || parsed.pathname === "/")) {
       failures.push({ name, reason: "must include a database name" });
     }
@@ -113,7 +123,9 @@ export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnv
     appEnvironment: oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures),
     databaseUrl: url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path"),
   };
-  if (failures.length > 0) throw new EnvironmentValidationError(failures);
+  if (failures.length > 0) {
+    throw new EnvironmentValidationError(failures);
+  }
   return result;
 }
 
@@ -159,7 +171,9 @@ export function parseWorkerEnvironment(source: EnvironmentSource): WorkerEnviron
   const failures: ValidationFailure[] = [];
   const appEnvironment = oneOf(source, "APP_ENV", DEPLOYMENT_ENVIRONMENTS, failures);
   const result = parseWorkerValues(source, appEnvironment, failures);
-  if (failures.length > 0) throw new EnvironmentValidationError(failures);
+  if (failures.length > 0) {
+    throw new EnvironmentValidationError(failures);
+  }
   return result;
 }
 
@@ -170,8 +184,12 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const apiPort = integer(source, "API_PORT", failures);
   const workerEnvironment = parseWorkerValues(source, appEnvironment, failures);
 
-  if (apiHost && /\s/.test(apiHost)) failures.push({ name: "API_HOST", reason: "must not contain whitespace" });
-  if (failures.length > 0) throw new EnvironmentValidationError(failures);
+  if (apiHost && /\s/.test(apiHost)) {
+    failures.push({ name: "API_HOST", reason: "must not contain whitespace" });
+  }
+  if (failures.length > 0) {
+    throw new EnvironmentValidationError(failures);
+  }
 
   return { ...workerEnvironment, apiHost, apiPort };
 }
@@ -189,7 +207,9 @@ export function loadRepositoryEnvironmentFile(source: EnvironmentSource = proces
     process.loadEnvFile(environmentPath);
   } catch (error) {
     const code = error instanceof Error && "code" in error ? error.code : undefined;
-    if (code === "ENOENT" && !configuredPath) return;
+    if (code === "ENOENT" && !configuredPath) {
+      return;
+    }
     throw new EnvironmentValidationError([
       { name: "PICKFLICK_ENV_FILE", reason: code === "ENOENT" ? "does not exist" : "could not be loaded" },
     ]);

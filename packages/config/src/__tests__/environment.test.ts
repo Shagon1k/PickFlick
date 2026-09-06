@@ -5,7 +5,7 @@ import {
   parseDatabaseEnvironment,
   parseRuntimeEnvironment,
   parseWorkerEnvironment,
-} from "./environment.js";
+} from "../environment.js";
 
 const validEnvironment = {
   APP_ENV: "local",

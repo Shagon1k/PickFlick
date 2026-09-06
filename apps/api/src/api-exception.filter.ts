@@ -46,20 +46,41 @@ function responseRequestId(response: HttpResponse): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function frameworkStatusCode(exception: unknown): number | undefined {
+  if (typeof exception !== "object" || exception === null) {
+    return undefined;
+  }
+
+  const candidates = [
+    "statusCode" in exception ? exception.statusCode : undefined,
+    "status" in exception ? exception.status : undefined,
+  ];
+  return candidates.find(
+    (candidate): candidate is number =>
+      typeof candidate === "number" && Number.isInteger(candidate) && candidate >= 400 && candidate <= 599,
+  );
+}
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: ApplicationLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponse>();
-    const statusCode = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const statusCode =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : (frameworkStatusCode(exception) ?? HttpStatus.INTERNAL_SERVER_ERROR);
     const definition = errorDefinition(statusCode);
     const requestId =
       currentCorrelationContext()?.requestId ?? resolveCorrelationId(responseRequestId(response));
     const fields = { event: "http.request.failed", requestId, statusCode, errorCode: definition.code };
 
-    if (statusCode >= 500) this.logger.error(fields, "HTTP request failed.");
-    else this.logger.warn(fields, "HTTP request rejected.");
+    if (statusCode >= 500) {
+      this.logger.error(fields, "HTTP request failed.");
+    } else {
+      this.logger.warn(fields, "HTTP request rejected.");
+    }
 
     response.status(statusCode).json({
       error: {

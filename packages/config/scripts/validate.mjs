@@ -10,6 +10,8 @@ const jsonFiles = [
 
 await Promise.all(jsonFiles.map(async (file) => JSON.parse(await readFile(file, "utf8"))));
 const { default: eslintConfig } = await import(eslintFile.href);
-if (!Array.isArray(eslintConfig)) throw new TypeError("ESLint configuration must export an array.");
+if (!Array.isArray(eslintConfig)) {
+  throw new TypeError("ESLint configuration must export an array.");
+}
 
 console.log(`Shared configuration valid (${jsonFiles.length + 1} files).`);

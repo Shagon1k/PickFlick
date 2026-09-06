@@ -15,6 +15,9 @@ export default [
         ...globals.node,
       },
     },
+    rules: {
+      curly: ["error", "all"],
+    },
   },
   {
     files: ["apps/web/**/*.{ts,tsx}"],

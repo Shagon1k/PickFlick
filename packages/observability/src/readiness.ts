@@ -7,7 +7,7 @@ import type { DependencyName, ReadinessReport } from "@pickflick/contracts";
 
 export interface DependencyProbe {
   readonly name: DependencyName;
-  readonly check: () => Promise<void>;
+  readonly check: (timeoutMilliseconds: number) => Promise<void>;
 }
 
 interface ProbeOptions {
@@ -18,20 +18,12 @@ interface ProbeOptions {
 
 const defaultTimeoutMilliseconds = 2_000;
 
-async function runBounded(check: () => Promise<void>, timeoutMilliseconds: number): Promise<void> {
-  let timer: NodeJS.Timeout | undefined;
-  try {
-    await Promise.race([
-      check(),
-      new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new Error("Dependency readiness check timed out.")), timeoutMilliseconds);
-      }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
-}
-
+/**
+ * Runs every required dependency probe concurrently and returns only its safe
+ * status. Each probe receives the same deadline and enforces it at the driver or
+ * socket boundary, so timed-out work is cancelled instead of continuing in the
+ * background.
+ */
 export async function checkReadiness(
   probes: readonly DependencyProbe[],
   timeoutMilliseconds = defaultTimeoutMilliseconds,
@@ -39,7 +31,7 @@ export async function checkReadiness(
   const checks = await Promise.all(
     probes.map(async ({ name, check }) => {
       try {
-        await runBounded(check, timeoutMilliseconds);
+        await check(timeoutMilliseconds);
         return { name, status: "up" as const };
       } catch {
         return { name, status: "down" as const };
@@ -72,8 +64,11 @@ export async function checkRedis(redisUrl: string, timeoutMilliseconds = default
     const finish = (error?: Error) => {
       clearTimeout(timer);
       socket.destroy();
-      if (error) reject(error);
-      else resolve();
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
     };
 
     socket.once(secure ? "secureConnect" : "connect", () => {
@@ -87,8 +82,11 @@ export async function checkRedis(redisUrl: string, timeoutMilliseconds = default
     });
     socket.on("data", (data) => {
       response += data.toString("utf8");
-      if (response.includes("-ERR")) finish(new Error("Redis readiness check was rejected."));
-      else if (response.endsWith("+PONG\r\n")) finish();
+      if (response.includes("-ERR")) {
+        finish(new Error("Redis readiness check was rejected."));
+      } else if (response.endsWith("+PONG\r\n")) {
+        finish();
+      }
     });
     socket.once("error", () => finish(new Error("Redis readiness check failed.")));
   });
@@ -151,11 +149,15 @@ export async function checkStorage(
       signal,
     });
   } catch (error) {
-    if (signal.aborted) throw new Error("Object storage readiness check timed out.", { cause: error });
+    if (signal.aborted) {
+      throw new Error("Object storage readiness check timed out.", { cause: error });
+    }
     throw error;
   }
 
-  if (!response.ok) throw new Error(`Object storage readiness check failed with HTTP ${response.status}.`);
+  if (!response.ok) {
+    throw new Error(`Object storage readiness check failed with HTTP ${response.status}.`);
+  }
 }
 
 export async function checkSmtp(
@@ -166,33 +168,68 @@ export async function checkSmtp(
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const socket = secure ? connectTls({ host, port, servername: host }) : connectTcp({ host, port });
-    const timer = setTimeout(() => socket.destroy(new Error("SMTP readiness check timed out.")), timeoutMilliseconds);
+    const timer = setTimeout(
+      () => finish(new Error("SMTP readiness check timed out.")),
+      timeoutMilliseconds,
+    );
+    let response = "";
+    let settled = false;
 
-    socket.once("data", (data) => {
+    const finish = (error?: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       clearTimeout(timer);
-      socket.end("QUIT\r\n");
-      if (data.toString("utf8").startsWith("220")) resolve();
-      else reject(new Error("SMTP readiness check was rejected."));
+      if (error) {
+        socket.destroy();
+        reject(error);
+      } else {
+        socket.end("QUIT\r\n");
+        resolve();
+      }
+    };
+
+    socket.on("data", (data) => {
+      response += data.toString("utf8");
+      const completeLines = response.split("\r\n");
+      completeLines.pop();
+      const firstLine = completeLines[0];
+
+      if (!firstLine) {
+        return;
+      }
+      if (firstLine.startsWith("220 ")) {
+        finish();
+        return;
+      }
+      if (!firstLine.startsWith("220-")) {
+        finish(new Error("SMTP readiness check was rejected."));
+        return;
+      }
+      if (completeLines.slice(1).some((line) => line.startsWith("220 "))) {
+        finish();
+      }
     });
-    socket.once("error", () => {
-      clearTimeout(timer);
-      socket.destroy();
-      reject(new Error("SMTP readiness check failed."));
-    });
+    socket.once("error", () => finish(new Error("SMTP readiness check failed.")));
   });
 }
 
 export function createRuntimeDependencyProbes(
   environment: WorkerEnvironment,
-  checkDatabase: () => Promise<void>,
+  checkDatabase: (timeoutMilliseconds: number) => Promise<void>,
 ): readonly DependencyProbe[] {
   return [
     { name: "database", check: checkDatabase },
-    { name: "redis", check: () => checkRedis(environment.redisUrl) },
-    { name: "objectStorage", check: () => checkStorage(environment.s3) },
+    { name: "redis", check: (timeoutMilliseconds) => checkRedis(environment.redisUrl, timeoutMilliseconds) },
+    {
+      name: "objectStorage",
+      check: (timeoutMilliseconds) => checkStorage(environment.s3, { timeoutMilliseconds }),
+    },
     {
       name: "smtp",
-      check: () => checkSmtp(environment.smtp.host, environment.smtp.port, environment.smtp.secure),
+      check: (timeoutMilliseconds) =>
+        checkSmtp(environment.smtp.host, environment.smtp.port, environment.smtp.secure, timeoutMilliseconds),
     },
   ];
 }

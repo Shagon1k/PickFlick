@@ -1,9 +1,9 @@
 import { Writable } from "node:stream";
 import { describe, expect, it } from "vitest";
 
-import { checkReadiness } from "./readiness.js";
-import { createLogger } from "./logging.js";
-import { currentCorrelationContext, resolveCorrelationId, runWithJobCorrelation } from "./correlation.js";
+import { currentCorrelationContext, resolveCorrelationId, runWithJobCorrelation } from "../correlation.js";
+import { createLogger } from "../logging.js";
+import { checkReadiness } from "../readiness.js";
 
 const requestId = "123e4567-e89b-42d3-a456-426614174000";
 
@@ -104,12 +104,22 @@ describe("readiness", () => {
     expect(JSON.stringify(report)).not.toContain("secret-value");
   });
 
-  it("bounds checks that do not settle", async () => {
+  it("passes the readiness deadline to each dependency probe", async () => {
+    let receivedTimeout: number | undefined;
     const report = await checkReadiness(
-      [{ name: "database", check: () => new Promise<void>(() => undefined) }],
-      1,
+      [
+        {
+          name: "database",
+          check: async (timeoutMilliseconds) => {
+            receivedTimeout = timeoutMilliseconds;
+            throw new Error("probe timed out at its driver boundary");
+          },
+        },
+      ],
+      17,
     );
 
+    expect(receivedTimeout).toBe(17);
     expect(report).toEqual({
       status: "not_ready",
       checks: [{ name: "database", status: "down" }],

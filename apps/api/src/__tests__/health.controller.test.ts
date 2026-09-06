@@ -2,8 +2,8 @@ import type { ServerResponse } from "node:http";
 
 import { describe, expect, it } from "vitest";
 
-import { HealthController } from "./health.controller.js";
-import type { HealthService } from "./health.service.js";
+import { HealthController } from "../health.controller.js";
+import type { HealthService } from "../health.service.js";
 
 describe("HealthController", () => {
   it("keeps liveness independent from dependency readiness", async () => {

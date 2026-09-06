@@ -82,9 +82,10 @@ The API exposes two unauthenticated probe endpoints:
 | `GET /health/ready` | HTTP 200 with each required dependency marked `up`. | HTTP 503 with each required dependency marked `up` or `down`; probe errors and configuration values are omitted. |
 
 Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, authenticates an S3
-`HeadBucket` request, and waits for the SMTP greeting. Each network probe has a two-second timeout.
-The worker runs the same checks before it reports `service.ready`. If a dependency is unavailable,
-the worker logs only its stable dependency name and exits unsuccessfully.
+`HeadBucket` request, and waits for the complete SMTP greeting. Each probe enforces its two-second
+deadline through its database driver, abort signal, or socket and cancels timed-out work. The worker
+runs the same checks before it reports `service.ready`. If a dependency is unavailable, the worker
+logs only its stable dependency name and exits unsuccessfully.
 
 API responses include `x-request-id`. The API keeps a valid UUIDv4 supplied in `x-request-id` and
 generates a new UUIDv4 for missing or invalid input. Boundary failures use this envelope:
