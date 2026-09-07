@@ -26,9 +26,9 @@
 
 - The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
   PostgreSQL/Redis/MinIO/Mailpit stack, typed runtime configuration, and baseline quality commands
-  are executable. The API and worker also have structured logging, correlation, dependency
-  readiness, and safe API error foundations. Product modules, provider integrations, and deployment
-  configuration remain unimplemented.
+  are executable. Immutable web/API/worker/release images and the shared isolated UAT/production
+  Compose topology are also executable locally. Provisioned environments and delivery automation
+  remain later Phase 1 work.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
   two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
   commands. Remaining product entities arrive with their owning phases.
@@ -52,6 +52,9 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Type-check | `pnpm typecheck` |
 | Run unit tests | `pnpm test` |
 | Build every package and app | `pnpm build` |
+| Build the four production image targets | `pnpm images:build` |
+| Validate isolated UAT/production Compose renders | `pnpm compose:check` |
+| Run the release gate, then converge the deployment | `pnpm deploy:compose` |
 | Run all scaffold quality gates | `pnpm verify` |
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |

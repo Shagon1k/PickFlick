@@ -11,6 +11,7 @@ const validEnvironment = {
   APP_ENV: "local",
   API_HOST: "127.0.0.1",
   API_PORT: "3001",
+  SHUTDOWN_TIMEOUT_MS: "10000",
   DATABASE_URL: "postgresql://pickflick:local-password@127.0.0.1:5432/pickflick_local",
   REDIS_URL: "redis://127.0.0.1:6379/0",
   S3_ENDPOINT: "http://127.0.0.1:9000",
@@ -30,6 +31,7 @@ describe("environment validation", () => {
     expect(parseRuntimeEnvironment(validEnvironment)).toMatchObject({
       appEnvironment: "local",
       apiPort: 3001,
+      shutdownTimeoutMilliseconds: 10_000,
       s3: { forcePathStyle: true },
       smtp: { port: 1025, secure: false },
     });
@@ -48,6 +50,18 @@ describe("environment validation", () => {
       databaseUrl: validEnvironment.DATABASE_URL,
       redisUrl: validEnvironment.REDIS_URL,
     });
+  });
+
+  it("accepts a shutdown drain longer than the port-number range", () => {
+    expect(parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "120000" })).toMatchObject({
+      shutdownTimeoutMilliseconds: 120_000,
+    });
+  });
+
+  it("rejects a shutdown drain longer than 24 hours", () => {
+    expect(() => parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "86400001" })).toThrow(
+      /SHUTDOWN_TIMEOUT_MS must be an integer from 1 through 86400000/,
+    );
   });
 
   it.each(["foo..bar", "192.168.5.4"])("rejects an invalid S3 bucket name: %s", (bucket) => {

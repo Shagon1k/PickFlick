@@ -8,6 +8,7 @@ export interface RuntimeEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
   readonly apiHost: string;
   readonly apiPort: number;
+  readonly shutdownTimeoutMilliseconds: number;
   readonly databaseUrl: string;
   readonly redisUrl: string;
   readonly s3: {
@@ -81,6 +82,15 @@ function integer(source: EnvironmentSource, name: string, failures: ValidationFa
   return parsed;
 }
 
+function durationMilliseconds(source: EnvironmentSource, name: string, failures: ValidationFailure[]): number {
+  const value = required(source, name, failures);
+  const parsed = Number(value);
+  if (value && (!Number.isInteger(parsed) || parsed < 1 || parsed > 86_400_000)) {
+    failures.push({ name, reason: "must be an integer from 1 through 86400000" });
+  }
+  return parsed;
+}
+
 function boolean(source: EnvironmentSource, name: string, failures: ValidationFailure[]): boolean {
   const value = required(source, name, failures);
   if (value && value !== "true" && value !== "false") {
@@ -135,6 +145,7 @@ function parseWorkerValues(
   failures: ValidationFailure[],
 ): WorkerEnvironment {
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
+  const shutdownTimeoutMilliseconds = durationMilliseconds(source, "SHUTDOWN_TIMEOUT_MS", failures);
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
   const endpoint = url(source, "S3_ENDPOINT", ["http:", "https:"], failures);
   const region = required(source, "S3_REGION", failures);
@@ -161,6 +172,7 @@ function parseWorkerValues(
   return {
     appEnvironment,
     databaseUrl,
+    shutdownTimeoutMilliseconds,
     redisUrl,
     s3: { endpoint, region, bucket, accessKeyId, secretAccessKey, forcePathStyle },
     smtp: { host: smtpHost, port: smtpPort, secure: smtpSecure, from },
