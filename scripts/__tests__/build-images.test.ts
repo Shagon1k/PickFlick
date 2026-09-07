@@ -39,4 +39,16 @@ describe("production image source revision", () => {
   it("uses the configured revision when Git metadata is unavailable", () => {
     expect(sourceRevision({ SOURCE_REVISION: headRevision }, gitWith({ inside: false }))).toBe(headRevision);
   });
+
+  it("accepts a 64-character Git revision when Git metadata is unavailable", () => {
+    const sha256Revision = "b".repeat(64);
+
+    expect(sourceRevision({ SOURCE_REVISION: sha256Revision }, gitWith({ inside: false }))).toBe(sha256Revision);
+  });
+
+  it.each([41, 63])("rejects a %i-character non-Git revision", (length) => {
+    expect(() => sourceRevision({ SOURCE_REVISION: "b".repeat(length) }, gitWith({ inside: false }))).toThrow(
+      /full hexadecimal source revision/,
+    );
+  });
 });

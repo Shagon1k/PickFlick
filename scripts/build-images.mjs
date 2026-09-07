@@ -15,7 +15,7 @@ function run(command, arguments_) {
 }
 
 function validateRevision(revision) {
-  if (!/^[0-9a-f]{40,64}$/i.test(revision)) {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(revision)) {
     throw new Error("SOURCE_REVISION must be a full hexadecimal source revision.");
   }
   return revision;

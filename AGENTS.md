@@ -54,6 +54,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Build every package and app | `pnpm build` |
 | Build the four production image targets | `pnpm images:build` |
 | Validate isolated UAT/production Compose renders | `pnpm compose:check` |
+| Run the release gate, then converge the deployment | `pnpm deploy:compose` |
 | Run all scaffold quality gates | `pnpm verify` |
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |

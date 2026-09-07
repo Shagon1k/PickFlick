@@ -105,7 +105,18 @@ export function renderDeployment(appEnvironment, source = process.env) {
   }
   const result = spawnSync(
     "docker",
-    ["compose", "-f", "compose.deploy.yaml", "config", "--format", "json"],
+    [
+      "compose",
+      "-f",
+      "compose.deploy.yaml",
+      "--profile",
+      "release",
+      "--profile",
+      "application",
+      "config",
+      "--format",
+      "json",
+    ],
     {
       cwd: repositoryRoot,
       encoding: "utf8",
@@ -141,11 +152,16 @@ export function checkDeployment() {
     for (const name of [...applicationImages, "postgres", "redis"]) {
       assert(deployment.services[name].image.includes("@sha256:"), `${name} must use an immutable image digest.`);
     }
+    assert(
+      deployment.services.release.profiles.length === 1 && deployment.services.release.profiles[0] === "release",
+      "The release gate must use its isolated deployment profile.",
+    );
     for (const name of ["api", "worker", "web"]) {
       assert(
-        deployment.services[name].depends_on.release.condition === "service_completed_successfully",
-        `${name} must wait for a successful release gate.`,
+        deployment.services[name].profiles.length === 1 && deployment.services[name].profiles[0] === "application",
+        `${name} must use the application convergence profile.`,
       );
+      assert(!("release" in deployment.services[name].depends_on), `${name} must not recreate before the release run.`);
     }
     assert(deployment.services.api.depends_on.postgres.condition === "service_healthy", "API must wait for PostgreSQL.");
     assert(deployment.services.worker.depends_on.redis.condition === "service_healthy", "Worker must wait for Redis.");

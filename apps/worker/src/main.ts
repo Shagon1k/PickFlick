@@ -34,10 +34,14 @@ async function bootstrap(): Promise<void> {
       shutdownTimeoutMilliseconds: environment.shutdownTimeoutMilliseconds,
     });
   } catch {
+    const shutdownFailed = controller.signal.aborted;
     logger.fatal(
-      { event: controller.signal.aborted ? "service.shutdown.failed" : "service.start.failed" },
+      { event: shutdownFailed ? "service.shutdown.failed" : "service.start.failed" },
       "Worker failed.",
     );
+    if (shutdownFailed) {
+      process.exit(1);
+    }
     process.exitCode = 1;
   }
 }

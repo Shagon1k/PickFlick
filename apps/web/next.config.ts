@@ -2,9 +2,12 @@ import { resolve } from "node:path";
 
 import type { NextConfig } from "next";
 
+const sourceRevision = process.env.SOURCE_REVISION;
+
 const nextConfig: NextConfig = {
-  ...(process.env.SOURCE_REVISION ? { deploymentId: process.env.SOURCE_REVISION } : {}),
-  generateBuildId: async () => process.env.SOURCE_REVISION ?? "development",
+  ...(sourceRevision
+    ? { deploymentId: sourceRevision, generateBuildId: async () => sourceRevision }
+    : {}),
   output: "standalone",
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   poweredByHeader: false,

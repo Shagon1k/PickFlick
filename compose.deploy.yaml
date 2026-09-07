@@ -66,6 +66,8 @@ services:
 
   release:
     <<: *application-service
+    profiles:
+      - release
     image: ${RELEASE_IMAGE:?RELEASE_IMAGE must be pinned by digest}
     environment:
       APP_ENV: ${APP_ENV:?APP_ENV is required}
@@ -79,6 +81,8 @@ services:
 
   api:
     <<: *application-service
+    profiles:
+      - application
     image: ${API_IMAGE:?API_IMAGE must be pinned by digest}
     environment:
       <<: *runtime-environment
@@ -89,8 +93,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      release:
-        condition: service_completed_successfully
     expose:
       - "3001"
     healthcheck:
@@ -104,6 +106,8 @@ services:
 
   worker:
     <<: *application-service
+    profiles:
+      - application
     image: ${WORKER_IMAGE:?WORKER_IMAGE must be pinned by digest}
     environment: *runtime-environment
     depends_on:
@@ -111,14 +115,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      release:
-        condition: service_completed_successfully
     networks:
       - data
       - egress
 
   web:
     <<: *application-service
+    profiles:
+      - application
     image: ${WEB_IMAGE:?WEB_IMAGE must be pinned by digest}
     environment:
       NODE_ENV: production
@@ -126,8 +130,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-      release:
-        condition: service_completed_successfully
     expose:
       - "3000"
     healthcheck:

@@ -6,8 +6,16 @@
 **/.next
 **/dist
 **/node_modules
+.pnpm-store
+**/*.log
+**/*.tsbuildinfo
 _docs
 assets
 coverage
+packages/database/src/generated
 *.md
 compose*.yaml
+.DS_Store
+**/.DS_Store
+Thumbs.db
+**/Thumbs.db

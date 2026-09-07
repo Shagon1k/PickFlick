@@ -20,13 +20,23 @@ each build, sets the image revision label, and tags each local image with the fi
 characters. When Git metadata is available, a configured `SOURCE_REVISION` must match `HEAD` and
 does not bypass the clean-worktree check. The command trusts the full hexadecimal override only
 when the build context has no Git metadata. The Dockerfile pins both Node base images by
-multi-platform digest and installs from the committed pnpm lockfile.
+multi-platform digest, pins the Dockerfile frontend by digest, and installs from the committed
+pnpm lockfile. `.dockerignore` excludes every local build artifact and platform file covered by
+`.gitignore`, so ignored files do not enter the Docker context.
 
 The release image runs committed Prisma migrations before the production-safe required-seed step.
 The required-seed step currently verifies database connectivity because no shared reference rows
-exist. Any failed step exits nonzero. `compose.deploy.yaml` uses
-`condition: service_completed_successfully` so web, API, and worker cannot start for that revision
-after a release failure.
+exist. Any failed step exits nonzero. `compose.deploy.yaml` keeps the one-shot release service in
+the `release` profile and web, API, and worker in the `application` profile. Run the guarded
+deployment command after configuring the environment-specific values:
+
+```bash
+pnpm deploy:compose
+```
+
+The command runs the release profile first. It converges the application profile only after the
+release container exits successfully. A failed migration or seed stops the command before Compose
+recreates the running application containers. Do not run the `application` profile directly.
 
 Use `compose.deploy.yaml` for either UAT or production. Do not combine both environments in one
 Compose project or deploy them to the same server. Supply all values from the environment-specific
@@ -35,7 +45,7 @@ deployment:
 
 ```bash
 pnpm compose:check
-docker compose -f compose.deploy.yaml config --format json
+docker compose -f compose.deploy.yaml --profile release --profile application config --format json
 ```
 
 `pnpm compose:check` renders synthetic UAT and production configurations and verifies their static

@@ -35,7 +35,6 @@ export async function completeWithin(operation: Promise<unknown>, timeoutMillise
   let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<false>((resolve) => {
     timer = setTimeout(() => resolve(false), timeoutMilliseconds);
-    timer.unref();
   });
 
   try {
