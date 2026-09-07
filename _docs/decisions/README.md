@@ -24,8 +24,9 @@ separately.
 | [ADR-002](#adr-002--keep-authentication-and-sessions-at-the-api-boundary) | Keep authentication and sessions at the API boundary | Accepted | 2026-09-05 |
 | [ADR-003](#adr-003--use-postgresql-and-reviewed-prisma-migrations) | Use PostgreSQL and reviewed Prisma migrations | Accepted | 2026-09-05 |
 | [ADR-004](#adr-004--use-bullmq-with-a-transactional-outbox) | Use BullMQ with a transactional outbox | Accepted | 2026-09-05 |
-| [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Deploy immutable images through isolated Dokploy environments | Accepted | 2026-09-05 |
+| [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Deploy immutable images through isolated Dokploy environments | Superseded by [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | 2026-09-05 |
 | [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively) | Own Projector Noir and use Mantine selectively | Accepted | 2026-09-05 |
+| [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | Use a proportional Dokploy deployment baseline | Accepted | 2026-09-07 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -266,7 +267,7 @@ Until then, the implementation remains `Proposed`.
 
 ## ADR-005 — Deploy immutable images through isolated Dokploy environments
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline)
 - **Date:** 2026-09-05
 - **Decider:** Developer
 - **Owning issue:** [#9](https://github.com/Shagon1k/PickFlick/issues/9)
@@ -395,3 +396,133 @@ into product styling. Until then, UI implementation remains `Proposed`.
 - [Mantine with Next.js](https://mantine.dev/guides/next/)
 - [Mantine CSS Modules](https://mantine.dev/styles/css-modules/)
 - [Mantine style ordering](https://mantine.dev/styles/mantine-styles/)
+
+## ADR-007 — Use a proportional Dokploy deployment baseline
+
+- **Status:** Accepted
+- **Date:** 2026-09-07
+- **Decider:** Developer
+- **Owning issue:** [#112](https://github.com/Shagon1k/PickFlick/issues/112)
+- **Supersedes:** [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments)
+
+### Context
+
+Issue #13 proved four production-oriented images, an ordered release gate, health checks, private
+ports, container hardening, and a UAT/production Compose render. It also put PostgreSQL and Redis
+inside application Compose, required six digest-qualified images before a registry publisher
+existed, added a worker egress bridge without an enforcing firewall or allowlist, and coupled
+deployment to a repository-owned two-command convergence script.
+
+Dokploy already manages PostgreSQL and Redis as environment services, supplies private internal
+connection URLs, schedules database backups, and supports isolated Compose applications. The
+production TailorTales deployment shows the smaller operating model in practice: Dokploy-managed
+data services, one application Compose resource per environment, a one-shot release service,
+health-gated startup, environment-specific aliases, source-revision deployment, UAT browser smoke,
+and manual production promotion. TailorTales is evidence, not authority for PickFlick.
+
+### Decision
+
+Use separate Dokploy projects, credentials, managed PostgreSQL and Redis instances, storage scopes,
+service aliases, and application networks for UAT and production. Keep data-service external ports
+disabled. Use Dokploy's internal credentials from the application services; do not define remote
+PostgreSQL or Redis services or volumes in application Compose.
+
+Keep one application Compose definition with `release`, `api`, `worker`, and `web`. The one-shot
+`release` service applies committed migrations and required idempotent seed work. API and worker
+startup requires successful release completion, and web startup requires API health. Dokploy owns
+the Compose deployment. No application service publishes a host port; Dokploy/Traefik owns public
+routing. Use unique environment-specific service aliases so web-to-API traffic cannot select a
+same-named service from another project.
+
+For UAT, Dokploy builds the selected full Git revision from the locked repository. The deployment
+record, image revision labels, runtime revision, health response, and browser-smoke result identify
+that revision. Disable competing Dokploy and GitHub deployment triggers so one workflow owns each
+deployment. Before the first production deployment—or earlier if separate build and deployment
+servers are introduced—activate [#115](https://github.com/Shagon1k/PickFlick/issues/115): CI builds
+and publishes one web/API/worker/release bundle, records every digest, deploys that bundle to UAT,
+and promotes the UAT-proven digests without rebuilding. The release workflow owns digest updates;
+operators do not edit independent image references by hand.
+
+Keep non-root runtime users, pinned Dockerfile frontend/base images, the locked install, `init`,
+`cap_drop: [ALL]`, `no-new-privileges`, read-only root filesystems with explicit `tmpfs` paths, and
+normal restart policies while the application remains compatible. Repository dependency
+maintenance owns base-image updates and proves them through the normal build and smoke gates.
+
+Before BullMQ consumers exist, API and worker must handle `SIGTERM`, stop accepting new work, close
+their current resources, and exit within Compose's ordinary grace period. Defer a configurable,
+job-aware drain deadline until the first real queue consumer. That implementation issue must set
+the deadline from measured job duration and prove drain/retry behavior in UAT.
+
+Maintain one small `pnpm compose:check`. It renders synthetic UAT and production configurations and
+checks only the service set, allowed environments, ordered release dependency, API/web health
+gates, absence of host-published ports, required environment inputs, and distinct environment
+names/aliases. Platform preview, internal database connectivity, and route behavior are UAT checks.
+Do not add a general-purpose YAML policy engine.
+
+### Control disposition
+
+| PR #111 control | Disposition | Owner | Rationale, failure mode, or activation trigger |
+| --- | --- | --- | --- |
+| Separate UAT/production projects, identities, data, and storage | Adopt now | Infrastructure owner | Cross-environment mistakes can expose or corrupt production data; separation is required before UAT exists. |
+| Separate UAT/production deployment servers | Defer | Infrastructure owner | A second server adds cost before production exists. Decide at production provisioning or earlier if measured contention or host-level isolation needs it. |
+| PostgreSQL/Redis in application Compose with named volumes | Reject | Infrastructure owner | It duplicates Dokploy lifecycle and backup ownership. Use separate Dokploy-managed instances with internal credentials. |
+| Four web/API/worker/release build targets | Adopt now | Application maintainers | The deployables and one-shot migration boundary already exist and need independent commands. |
+| Ordered migration/required-seed release gate | Adopt now | Release owner | Starting incompatible code after a failed migration is a current release-integrity risk. |
+| Health-gated API/web startup and worker readiness | Adopt now | Application maintainers | An unready dependency must not produce a successful deployment. |
+| No application or data-service host ports | Adopt now | Infrastructure owner | Traefik and private internal credentials are the intended access boundaries. |
+| Full source-revision labels and clean-source validation | Adopt now | CI/release owner | UAT evidence must identify the code it exercised even while Dokploy builds from source. |
+| Prebuilt registry images promoted by digest | Defer in [#115](https://github.com/Shagon1k/PickFlick/issues/115) | CI/release owner | Activate before the first production deployment or separate build/deployment servers; until then no publisher owns the references. |
+| Digest-pinned PostgreSQL/Redis Compose images | Reject | Infrastructure owner | Managed services leave application Compose; platform version and upgrade controls replace these inputs. |
+| Pinned build frontend/base images and frozen lockfile | Adopt now | Dependency maintenance owner | They make source builds reviewable; stale pins fail through missed security/runtime updates, so updates use focused PRs and build evidence. |
+| Non-root users, dropped capabilities, and `no-new-privileges` | Adopt now | Application maintainers | These are compatible low-cost least-privilege defaults; build/smoke failure reveals incompatibility. |
+| Read-only roots with explicit `tmpfs` writes | Adopt now | Application maintainers | Current images pass smoke checks. Add a narrow writable mount only when a verified runtime write requires one. |
+| `init`, `SIGTERM`, and ordinary stop grace | Adopt now | Application maintainers | Correct signal forwarding and bounded shutdown are useful before queue work exists. |
+| Configurable queue-aware drain and grace/timeout coupling | Defer | Worker owner | Activate with the first BullMQ consumer and choose the duration from measured jobs, retries, and visibility timeouts. |
+| Worker-only egress bridge | Reject | Infrastructure owner | A normal bridge does not enforce destinations. Propose a real firewall/allowlist control if provider access creates that requirement. |
+| Custom release/application Compose profiles and two-command deploy | Reject | Release owner | One Compose dependency graph gives Dokploy one deployment owner; UAT must still prove that release failure blocks the new revision. |
+| Repository-specific Compose validation | Adopt now in [#114](https://github.com/Shagon1k/PickFlick/issues/114) | Application maintainers | A small render check protects the few static invariants that otherwise regress silently. |
+| General-purpose YAML policy engine | Reject | Application maintainers | One small Compose file does not justify another policy language, dependency, or ruleset owner. |
+
+### Consequences
+
+- UAT provisioning no longer waits for a registry pipeline or application-owned database lifecycle.
+- The application and managed data services may share a Dokploy network on one server. Unique
+  aliases and separate credentials prevent accidental selection; this baseline does not claim
+  network-level egress or cross-project isolation that Dokploy does not enforce.
+- Source builds preserve revision traceability but not byte-for-byte artifact identity. Production
+  remains disabled until #115 supplies the stronger digest-promotion guarantee.
+- A standard Compose deployment may have a brief availability window. Rolling or blue-green
+  delivery needs a measured availability requirement and a separate topology decision.
+- Release-failure behavior, internal database access, proxy routing, and environment separation
+  still require real UAT evidence; static YAML checks cannot prove them.
+
+### Follow-up work
+
+- [#113](https://github.com/Shagon1k/PickFlick/issues/113) aligns the application Compose topology
+  before UAT provisioning.
+- [#114](https://github.com/Shagon1k/PickFlick/issues/114) reduces the maintained Compose check to
+  the approved contract.
+- [#115](https://github.com/Shagon1k/PickFlick/issues/115) is Deferred until production promotion
+  or separate build/deployment servers make digest-addressed bundles necessary.
+
+### Verification
+
+Issues #113 and #114 must prove the source-built four-service Compose render, release/health gates,
+absence of host ports, and distinct UAT/production identities before issue #15 provisions UAT.
+Issue #15 must then prove the full deployed revision, migration-failure behavior, internal managed
+data access, routing, health, browser smoke, and rollback compatibility. Issue #115 must pass before
+the first production deployment.
+
+### Evidence
+
+- [Dokploy managed databases](https://docs.dokploy.com/docs/core/databases)
+- [Dokploy internal database connections](https://docs.dokploy.com/docs/core/databases/connection)
+- [Dokploy database backups](https://docs.dokploy.com/docs/core/databases/backups)
+- [Dokploy isolated Compose deployments](https://docs.dokploy.com/docs/core/docker-compose/utilities)
+- [Dokploy Compose domains](https://docs.dokploy.com/docs/core/docker-compose/domains)
+- [Docker Engine security](https://docs.docker.com/engine/security/)
+- [Docker Compose service controls](https://docs.docker.com/reference/compose-file/services/)
+- [TailorTales application Compose at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/deploy/docker-compose.yml)
+- [TailorTales deployment flow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/_docs/guides/deployment.md)
+- [TailorTales UAT workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-uat.yml)
+- [TailorTales production workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-prod.yml)

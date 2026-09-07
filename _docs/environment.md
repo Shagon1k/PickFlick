@@ -4,6 +4,13 @@ This reference defines the configuration implemented for the API, worker, databa
 local data-service stack, production images, and shared deployment topology. Later provider and
 provisioning issues extend this inventory when their consumers exist.
 
+> **Transition:** This page describes the issue #13 implementation that is still checked in.
+> [ADR-007](decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) replaces its
+> remote in-Compose PostgreSQL/Redis, mandatory pre-registry digests, worker egress bridge, and
+> custom staged convergence. Issues [#113](https://github.com/Shagon1k/PickFlick/issues/113) and
+> [#114](https://github.com/Shagon1k/PickFlick/issues/114) must update this reference with the code;
+> do not provision the current remote topology as the approved UAT baseline.
+
 ## Deployment images and Compose
 
 `Dockerfile` builds four targets from the same locked workspace and full source revision:

@@ -7,7 +7,7 @@
 
 | Document owner | Last reviewed | Verified against |
 | --- | --- | --- |
-| Developer | 2026-09-06 | ADR-001 through ADR-006 and issues #10–#13 local evidence |
+| Developer | 2026-09-07 | ADR-001 through ADR-007, issues #10–#13 local evidence, and issue #112 deployment comparison |
 
 ## 1. Architecture Contract & Sources
 
@@ -90,7 +90,7 @@ flowchart LR
 | Async work | Redis + BullMQ worker with idempotent jobs, a transactional outbox, and reconciliation. | Partial — runnable worker, startup readiness, correlated job-execution wrapper, and local Redis are active; BullMQ, outbox, and product jobs remain Proposed | PostgreSQL retains durable intent across database/queue failure windows; [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox). |
 | Object storage | S3-compatible storage for avatars and time-limited exports. | Partial — local MinIO service, bucket initialization, typed configuration, and connectivity check are active; product storage behavior remains Proposed | Keeps binary/user-generated objects outside application/database containers. |
 | Real-time | SSE from API; durable truth remains PostgreSQL, Redis distributes invalidation/events. | Proposed | One-way progress updates fit the product; WebSockets are unnecessary for MVP. |
-| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy UAT/production environments behind Cloudflare and Traefik. | Partial — issue #13 implements and locally verifies the four image targets, ordered release gate, private shared Compose topology, and graceful API/worker shutdown; registry promotion, provisioned environments, and edge drills remain Proposed | Tested-artifact promotion, private service networks, and a disabled production gate; [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments). |
+| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis and one application Compose resource for web/API/worker/release; UAT builds the selected revision, while digest promotion becomes mandatory before production. | Partial — issue #13 implements and locally verifies the four image targets, ordered release gate, private ports, and graceful API/worker shutdown, but its in-Compose data services, digest-only inputs, staged deploy script, and nominal egress network await #113/#114 realignment | Proportional current controls, explicit activation triggers, and a disabled production gate; [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline). |
 
 ## 3. Building Blocks & Boundaries
 
@@ -207,8 +207,8 @@ Confirmed deletion request
 
 | Store | Purpose | Owner | Source of truth for | Lifecycle / backup | State |
 | --- | --- | --- | --- | --- | --- |
-| PostgreSQL | Transactional domain data, entitlements, notifications, audits, job/outbox intent. | API/worker modules via database package. | Users, Clubs, Sessions, history, subscription projection, durable workflow state. | Local persistent service and initial schema are active; encrypted production storage, backups, and restore remain Proposed. | Partial |
-| Redis | BullMQ, delayed/retry state, rate-limit counters, short-lived distributed events/cache. | Worker/platform boundary. | Never the sole source for domain state. | Local persistent service and connectivity check are active; queue and production policy remain Proposed. | Partial |
+| PostgreSQL | Transactional domain data, entitlements, notifications, audits, job/outbox intent. | API/worker modules via database package. | Users, Clubs, Sessions, history, subscription projection, durable workflow state. | Local persistent service and initial schema are active; separate Dokploy-managed UAT/production instances, encrypted backups, and restore remain Proposed. | Partial |
+| Redis | BullMQ, delayed/retry state, rate-limit counters, short-lived distributed events/cache. | Worker/platform boundary. | Never the sole source for domain state. | Local persistent service and connectivity check are active; separate Dokploy-managed UAT/production instances and queue policy remain Proposed. | Partial |
 | S3-compatible object storage | Avatars and generated export archives. | Identity/Clubs/Privacy modules. | Binary objects referenced by PostgreSQL. | Local persistent MinIO bucket is active; private product objects, expiry, and production backup remain Proposed. | Partial |
 | Bundled static assets | Logo/mascot PWA and UI artwork. | Web build. | Versioned application brand imagery. | Source controlled and deployed immutably. | Proposed |
 
@@ -306,7 +306,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | Local development | pnpm workspace; app commands run natively, dependencies through containers. | [README](README.md#run-locally), [environment reference](_docs/environment.md), and [AGENTS command map](AGENTS.md#command-map). | Active — issue #11 verifies the loopback PostgreSQL, Redis, MinIO, and Mailpit stack plus application entrypoints. |
 | Runtime probes and diagnostics | API liveness/readiness endpoints; worker startup readiness; structured request/job logs and safe API errors. | [Environment reference](_docs/environment.md#runtime-health-errors-and-logs). | Active — issue #12 focused tests and failure smoke evidence. |
 | CI quality gates | Locked install, generated-artifact drift, lint, type-check, unit, integration, migration, build, E2E smoke, accessibility, and security checks. | Future CI workflows. | Proposed |
-| Deployment | Immutable Docker images promoted by digest through separate Dokploy UAT/production projects and default separate deployment servers; Cloudflare-proxied DNS reaches Traefik only; production promotion remains disabled. | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) + [environment reference](_docs/environment.md#deployment-images-and-compose). | Partial — issue #13 locally verifies the image and shared Compose foundation; registry promotion, Dokploy/Cloudflare provisioning, and exact-revision delivery remain issues #14–#16. |
+| Deployment | Separate Dokploy UAT/production projects use managed PostgreSQL/Redis and one application Compose resource; Cloudflare-proxied DNS reaches Traefik only. UAT builds a selected full revision; CI-published digest promotion is required before production, whose guard remains disabled. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) + [environment reference](_docs/environment.md#deployment-images-and-compose). | Partial — issue #13 verifies reusable image/release/health/hardening foundations, but #113/#114 must align the topology before #15 provisions UAT; #115 is Deferred until its production/build-server trigger. |
 | Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + [environment reference](_docs/environment.md). | Partial — local fresh/upgrade migrations, compatibility statement, seed, guarded reset, and ordered one-shot release gating are active; deployed migration and rollback drills remain Proposed. |
 | Rollback | Roll back images only when database compatibility permits; use forward fix for non-reversible data changes; document each risky migration. | Future release runbook. | Proposed |
 | Backup and restore | Automated PostgreSQL backups, durable avatar backup, documented retention, and restore drill before launch; exports are regenerable/expiring. | Future backup runbook. | Proposed |
@@ -327,7 +327,8 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 ## 7. Architecture Decisions
 
-The developer accepted the compatible Phase 1 baseline on 2026-09-05. The decisions are current
+The developer accepted the compatible Phase 1 baseline on 2026-09-05 and superseded its deployment
+mechanics with ADR-007 on 2026-09-07. The decisions are current
 direction; every implementation row above remains `Proposed` until the owning issue supplies its
 named evidence.
 
@@ -337,8 +338,9 @@ named evidence.
 | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) | Same-origin API-owned opaque server sessions; library deferred to issue #25. | Issues #25–#28 auth/session evidence. |
 | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) | PostgreSQL with committed, reviewed Prisma/manual SQL migrations. | Issue #11 migration and constraint evidence. |
 | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) | BullMQ/Redis execution with PostgreSQL outbox, idempotency, and reconciliation. | Worker/domain failure-injection evidence. |
-| [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Immutable images, isolated Dokploy environments, Cloudflare/Traefik ingress, disabled production gate. | Issues #13–#16 UAT and deployment evidence. |
+| [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Superseded immutable-image and in-Compose data-service baseline. | Preserved as history; ADR-007 owns current deployment direction. |
 | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) | Project-owned CSS tokens/components with wrapped selective Mantine primitives. | Issues #17–#19 design-system and accessibility evidence. |
+| [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) | Dokploy-managed remote data, source-built UAT, triggered digest promotion, proportional hardening, and a narrow Compose contract. | Issues #113–#115 and #15–#16 deployment evidence. |
 
 Create an ADR only when a concrete option is accepted or rejected; do not populate the registry with template decisions.
 
@@ -347,7 +349,7 @@ Create an ADR only when a concrete option is accepted or rejected; do not popula
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Repository/deployable map matches code | `pnpm check:workspace`, production builds, and bounded startup probes on issue #10 branch. | Verified locally |
-| Runtime/deployment topology matches configuration | Local services match `compose.local.yaml`; issue #13 verifies four image builds plus isolated UAT/production renders with no host-published ports. Provisioned Dokploy environments remain Proposed. | Partial |
+| Runtime/deployment topology matches configuration | Local services match `compose.local.yaml`; issue #13 verifies four image builds plus UAT/production renders with no host-published ports. The checked-in remote Compose still precedes ADR-007 and awaits #113/#114; provisioned Dokploy environments remain Proposed. | Partial |
 | Data ownership and schemas match migrations | Initial User/Club/Membership/Session schema and two migrations match; remaining Roadmap entities remain Proposed. | Partial |
 | Interfaces match API/event contracts | No OpenAPI/event contract exists. | Not implemented |
 | Auth and trust boundaries are enforced server-side | No auth/policy implementation exists. | Not implemented |
