@@ -422,17 +422,28 @@ and manual production promotion. TailorTales is evidence, not authority for Pick
 
 ### Decision
 
-Use separate Dokploy projects, credentials, managed PostgreSQL and Redis instances, storage scopes,
-service aliases, and application networks for UAT and production. Keep data-service external ports
-disabled. Use Dokploy's internal credentials from the application services; do not define remote
-PostgreSQL or Redis services or volumes in application Compose.
+Use separate Dokploy projects, credentials, managed PostgreSQL and Redis instances, service aliases,
+and application networks for UAT and production. Keep managed data-service external ports disabled
+and use Dokploy's internal credentials from the application services; do not define remote
+PostgreSQL or Redis services or volumes in application Compose. Issue #15 must verify the UAT
+platform configuration and failed external reachability. Issue #16 must verify the same production
+contract before production is enabled.
 
-Keep one application Compose definition with `release`, `api`, `worker`, and `web`. The one-shot
-`release` service applies committed migrations and required idempotent seed work. API and worker
-startup requires successful release completion, and web startup requires API health. Dokploy owns
-the Compose deployment. No application service publishes a host port; Dokploy/Traefik owns public
-routing. Use unique environment-specific service aliases so web-to-API traffic cannot select a
-same-named service from another project.
+Give each environment a separate private S3-compatible storage scope and credentials. Store
+user/Club avatars and generated exports there; keep bundled brand assets in the application static
+assets.
+
+Keep one application Compose definition with `release`, `api`, `worker`, and `web`. Run the
+one-shot `release` service as a pre-deployment step that applies committed migrations and required
+idempotent seed work. Release changes must remain compatible with the running revision until
+application convergence. Converge API, worker, and web only after the release step succeeds; a
+failed release must stop before Dokploy or Compose replaces, stops, or recreates the running
+application revision.
+Retain separate release and application profiles plus the staged convergence command until a
+Dokploy-native mechanism proves the same failure behavior in UAT. Web startup requires API health.
+No application service publishes a host port; Dokploy/Traefik owns public routing. Use unique
+environment-specific service aliases so web-to-API traffic cannot select a same-named service from
+another project.
 
 For UAT, Dokploy builds the selected full Git revision from the locked repository. The deployment
 record, image revision labels, runtime revision, health response, and browser-smoke result identify
@@ -454,34 +465,38 @@ job-aware drain deadline until the first real queue consumer. That implementatio
 the deadline from measured job duration and prove drain/retry behavior in UAT.
 
 Maintain one small `pnpm compose:check`. It renders synthetic UAT and production configurations and
-checks only the service set, allowed environments, ordered release dependency, API/web health
-gates, absence of host-published ports, required environment inputs, and distinct environment
-names/aliases. Platform preview, internal database connectivity, and route behavior are UAT checks.
-Do not add a general-purpose YAML policy engine.
+checks the service set, allowed environments, staged release/application profiles, API/web health
+gates, absence of application host-published ports, required environment inputs, distinct
+environment names/aliases, `init`, dropped capabilities, `no-new-privileges`, and read-only roots
+with explicit `tmpfs` writes. Platform preview, managed-service port configuration and reachability,
+internal database connectivity, and route behavior are environment checks. Do not add a
+general-purpose YAML policy engine.
 
 ### Control disposition
 
-| PR #111 control | Disposition | Owner | Rationale, failure mode, or activation trigger |
-| --- | --- | --- | --- |
-| Separate UAT/production projects, identities, data, and storage | Adopt now | Infrastructure owner | Cross-environment mistakes can expose or corrupt production data; separation is required before UAT exists. |
-| Separate UAT/production deployment servers | Defer | Infrastructure owner | A second server adds cost before production exists. Decide at production provisioning or earlier if measured contention or host-level isolation needs it. |
-| PostgreSQL/Redis in application Compose with named volumes | Reject | Infrastructure owner | It duplicates Dokploy lifecycle and backup ownership. Use separate Dokploy-managed instances with internal credentials. |
-| Four web/API/worker/release build targets | Adopt now | Application maintainers | The deployables and one-shot migration boundary already exist and need independent commands. |
-| Ordered migration/required-seed release gate | Adopt now | Release owner | Starting incompatible code after a failed migration is a current release-integrity risk. |
-| Health-gated API/web startup and worker readiness | Adopt now | Application maintainers | An unready dependency must not produce a successful deployment. |
-| No application or data-service host ports | Adopt now | Infrastructure owner | Traefik and private internal credentials are the intended access boundaries. |
-| Full source-revision labels and clean-source validation | Adopt now | CI/release owner | UAT evidence must identify the code it exercised even while Dokploy builds from source. |
-| Prebuilt registry images promoted by digest | Defer in [#115](https://github.com/Shagon1k/PickFlick/issues/115) | CI/release owner | Activate before the first production deployment or separate build/deployment servers; until then no publisher owns the references. |
-| Digest-pinned PostgreSQL/Redis Compose images | Reject | Infrastructure owner | Managed services leave application Compose; platform version and upgrade controls replace these inputs. |
-| Pinned build frontend/base images and frozen lockfile | Adopt now | Dependency maintenance owner | They make source builds reviewable; stale pins fail through missed security/runtime updates, so updates use focused PRs and build evidence. |
-| Non-root users, dropped capabilities, and `no-new-privileges` | Adopt now | Application maintainers | These are compatible low-cost least-privilege defaults; build/smoke failure reveals incompatibility. |
-| Read-only roots with explicit `tmpfs` writes | Adopt now | Application maintainers | Current images pass smoke checks. Add a narrow writable mount only when a verified runtime write requires one. |
-| `init`, `SIGTERM`, and ordinary stop grace | Adopt now | Application maintainers | Correct signal forwarding and bounded shutdown are useful before queue work exists. |
-| Configurable queue-aware drain and grace/timeout coupling | Defer | Worker owner | Activate with the first BullMQ consumer and choose the duration from measured jobs, retries, and visibility timeouts. |
-| Worker-only egress bridge | Reject | Infrastructure owner | A normal bridge does not enforce destinations. Propose a real firewall/allowlist control if provider access creates that requirement. |
-| Custom release/application Compose profiles and two-command deploy | Reject | Release owner | One Compose dependency graph gives Dokploy one deployment owner; UAT must still prove that release failure blocks the new revision. |
-| Repository-specific Compose validation | Adopt now in [#114](https://github.com/Shagon1k/PickFlick/issues/114) | Application maintainers | A small render check protects the few static invariants that otherwise regress silently. |
-| General-purpose YAML policy engine | Reject | Application maintainers | One small Compose file does not justify another policy language, dependency, or ruleset owner. |
+| PR #111 control | Disposition | Operational owner | Current product need | Maintenance cost | Failure mode or activation trigger |
+| --- | --- | --- | --- | --- | --- |
+| Separate UAT/production projects, identities, data, and storage | Adopt now | Infrastructure owner | Required before UAT so test configuration cannot select production resources. | Provision and verify duplicate scoped resources and names. | A collision can expose or corrupt production data. |
+| Separate UAT/production deployment servers | Defer | Infrastructure owner | Logical project and credential separation is sufficient before production exists. | Operate, patch, monitor, and fund a second host. | Activate at production provisioning, or earlier for measured contention or required host-level isolation. |
+| PostgreSQL/Redis in application Compose with named volumes | Reject | Infrastructure owner | Applications need private data connections, not a second service lifecycle. | Duplicates platform backup, upgrade, and monitoring work. | Split ownership can leave data services unpatched or unrecoverable; use Dokploy-managed instances. |
+| Four web/API/worker/release build targets | Adopt now | Application maintainers | The deployables and one-shot migration boundary already have separate runtime commands. | Build and smoke four targets when runtime foundations change. | A missing target makes that runtime or release boundary undeployable. |
+| Ordered migration/required-seed release gate | Adopt now | Release owner | Every schema-changing revision needs compatibility checked before application convergence. | Run and observe one idempotent release step per deployment. | Starting incompatible code after a failed migration can break the active revision. |
+| Health-gated API/web startup and worker readiness | Adopt now | Application maintainers | Deployment success must mean required dependencies and HTTP entrypoints are ready. | Maintain focused probes and startup dependency checks. | An unready service can receive traffic or produce a false successful deployment. |
+| No application or managed data-service host ports | Adopt now | Infrastructure owner | Traefik and private internal connections are the only intended network entrypoints. | Maintain routing and inspect platform port settings plus external reachability per environment. | A published port bypasses the intended ingress or data-access boundary. |
+| Full source-revision labels and clean-source validation | Adopt now | CI/release owner | Source-built UAT evidence must identify the exact code it exercised. | Preserve labels, runtime revision reporting, and clean-source checks. | A dirty or unidentified build cannot support promotion or rollback decisions. |
+| Prebuilt registry images promoted by digest | Defer in [#115](https://github.com/Shagon1k/PickFlick/issues/115) | CI/release owner | UAT can build a selected revision before production promotion exists. | Operate a registry publisher, digest manifest, retention, and promotion workflow. | Activate before the first production deployment or when build and deployment servers separate. |
+| Digest-pinned PostgreSQL/Redis Compose images | Reject | Infrastructure owner | Managed services leave application Compose. | Duplicates the platform version and upgrade controls. | Competing pins can misstate the version the platform actually operates. |
+| Redis AOF durability | Defer | Infrastructure owner | Redis has no BullMQ queue or other non-reconstructable application state yet; PostgreSQL remains the domain source of truth. | Configure managed persistence and monitor storage, rewrite, and recovery behavior. | Activate before the first BullMQ consumer or other Redis state that must survive process loss; without it pending work can be lost. |
+| Pinned build frontend/base images and frozen lockfile | Adopt now | Dependency maintenance owner | Source builds need reviewable toolchain and dependency inputs. | Submit focused pin updates and rerun build/smoke evidence. | Stale pins miss security or runtime updates; floating inputs make builds drift. |
+| Non-root users, dropped capabilities, and `no-new-privileges` | Adopt now | Application maintainers | Current images support these low-cost least-privilege defaults. | Retest compatibility when runtime tools or base images change. | Removing a control increases container privilege; incompatible changes fail build or smoke checks. |
+| Read-only roots with explicit `tmpfs` writes | Adopt now | Application maintainers | Current runtimes need only the documented temporary write paths. | Keep the write-path inventory and smoke checks current. | An undeclared write fails at runtime; a broad writable root increases tampering scope. |
+| `init`, `SIGTERM`, and ordinary stop grace | Adopt now | Application maintainers | API and worker already need correct signal forwarding and bounded resource closure. | Maintain lifecycle handlers and termination tests. | Bad forwarding or unbounded shutdown can drop work or stall convergence. |
+| Configurable queue-aware drain and grace/timeout coupling | Defer | Worker owner | No BullMQ consumer has a measured job duration yet. | Tune coordinated deadlines and test retry/visibility behavior. | Activate with the first BullMQ consumer and derive the window from measured jobs. |
+| Normal application restart policies | Adopt now | Application maintainers | MVP runtimes should recover from transient process failure. | Diagnose persistent restart loops through deployment logs and health. | Without restart, a transient exit leaves a service down; persistent failure remains visible as unhealthy. |
+| Worker-only egress bridge | Reject | Infrastructure owner | A normal bridge provides no enforceable destination restriction. | Maintains extra network wiring without a policy boundary. | Propose a firewall or allowlist when provider access creates an enforceable requirement. |
+| Staged release/application Compose profiles and convergence command | Adopt now | Release owner | This is the proven control that leaves running application containers untouched when release fails. | Maintain a two-stage command and focused ordering/failure tests. | A single convergence can stop or recreate the prior revision before a failed release; replace this only after an equivalent Dokploy mechanism passes UAT. |
+| Repository-specific Compose validation | Adopt now in [#114](https://github.com/Shagon1k/PickFlick/issues/114) | Application maintainers | Cheap static checks protect release, routing, isolation, and adopted hardening invariants. | Update focused assertions when the four-service topology changes. | Drift can silently remove a gate, publish a port, collide aliases, or weaken container controls. |
+| General-purpose YAML policy engine | Reject | Application maintainers | One small repository-owned Compose file does not need a policy language. | Adds a dependency, ruleset, and specialist maintenance surface. | The policy layer can drift from the Compose contract without reducing a current risk. |
 
 ### Consequences
 
@@ -491,27 +506,31 @@ Do not add a general-purpose YAML policy engine.
   network-level egress or cross-project isolation that Dokploy does not enforce.
 - Source builds preserve revision traceability but not byte-for-byte artifact identity. Production
   remains disabled until #115 supplies the stronger digest-promotion guarantee.
-- A standard Compose deployment may have a brief availability window. Rolling or blue-green
-  delivery needs a measured availability requirement and a separate topology decision.
+- Successful application convergence may have a brief availability window. A failed release leaves
+  the running application revision untouched. Rolling or blue-green delivery needs a measured
+  availability requirement and a separate topology decision.
 - Release-failure behavior, internal database access, proxy routing, and environment separation
   still require real UAT evidence; static YAML checks cannot prove them.
 
 ### Follow-up work
 
 - [#113](https://github.com/Shagon1k/PickFlick/issues/113) aligns the application Compose topology
-  before UAT provisioning.
+  before UAT provisioning while retaining staged release/application convergence.
 - [#114](https://github.com/Shagon1k/PickFlick/issues/114) reduces the maintained Compose check to
-  the approved contract.
+  the approved contract while preserving assertions for adopted static hardening controls.
 - [#115](https://github.com/Shagon1k/PickFlick/issues/115) is Deferred until production promotion
   or separate build/deployment servers make digest-addressed bundles necessary.
 
 ### Verification
 
-Issues #113 and #114 must prove the source-built four-service Compose render, release/health gates,
-absence of host ports, and distinct UAT/production identities before issue #15 provisions UAT.
-Issue #15 must then prove the full deployed revision, migration-failure behavior, internal managed
-data access, routing, health, browser smoke, and rollback compatibility. Issue #115 must pass before
-the first production deployment.
+Issues #113 and #114 must prove the source-built four-service Compose render, staged release and
+health gates, absence of application host ports, adopted static hardening, and distinct
+UAT/production identities before issue #15 provisions UAT. Issue #15 must then inject a failed
+release and prove that the prior container identities, revision, and health remain unchanged. It
+must also prove internal managed-data access, disabled external database/Redis ports, failed
+external reachability, routing, browser smoke, and rollback compatibility. Issue #16 must verify the
+same disabled external-port contract for production before production is enabled. Issue #115 must
+pass before the first production deployment.
 
 ### Evidence
 

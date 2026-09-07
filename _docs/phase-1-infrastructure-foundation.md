@@ -47,7 +47,7 @@ Do not copy Project status or Priority into this file. Read Project 3 before sta
 | Authentication | Same-origin routes; NestJS API owns OAuth, opaque server sessions, revocation, CSRF, and authorization. The library remains issue #25 work. | [ADR-002](decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) |
 | Database | PostgreSQL through a pinned stable Prisma client and committed reviewed migrations; explicit SQL enforces unsupported/high-risk constraints. | [ADR-003](decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Async | PostgreSQL transaction commits domain state plus outbox intent; BullMQ/Redis executes at-least-once idempotent jobs; reconciliation repairs gaps. | [ADR-004](decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
-| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis; source-built UAT application Compose; ordered release/health gates; revision traceability; digest promotion activated before production; production guard false. | [ADR-007](decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
+| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis; source-built UAT application Compose; staged release-before-convergence and health gates; revision traceability; digest promotion activated before production; production guard false. | [ADR-007](decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
 | UI | Project-owned Projector Noir CSS tokens/components; native HTML first; wrapped selective Mantine behavior primitives. | [ADR-006](decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
 
 ## Sequence and dependencies
@@ -153,8 +153,8 @@ Issue #10 established the first executable command map. `AGENTS.md` owns the dur
 | Static and unit gates | `pnpm lint`, `pnpm typecheck`, `pnpm test` | Covers the current scaffold. |
 | Build and full verification | `pnpm build`, `pnpm verify` | Builds all workspaces and rejects invalid workspace boundaries/cycles. |
 | Production images | `pnpm images:build` | Builds revision-labelled web, API, worker, and one-shot release targets from pinned bases and the locked workspace. |
-| Deployment topology | `pnpm compose:check` | Currently checks the issue #13 topology. Issue #114 reduces it to the service set, allowed environments, release/health gates, private ports, required inputs, and distinct names/aliases. |
-| Deployment convergence | `pnpm deploy:compose` | Current issue #13 local evidence only. Issue #113 moves remote convergence into one Dokploy-owned Compose dependency graph and verifies release-failure behavior before UAT. |
+| Deployment topology | `pnpm compose:check` | Currently checks the issue #13 topology. Issue #114 reduces it to the service set, allowed environments, staged release/application profiles, health gates, private application ports, required inputs, distinct names/aliases, and adopted static hardening. |
+| Deployment convergence | `pnpm deploy:compose` | Current issue #13 local evidence only. Issue #113 retains staged release-before-application convergence while moving data services to Dokploy and verifies release-failure behavior before UAT. |
 | Local services | `pnpm services:up`, `pnpm services:check`, `pnpm services:down` | Starts and checks loopback-only PostgreSQL, Redis, MinIO, and Mailpit services. |
 | Database migration/seed | `pnpm migrate`, `pnpm seed`, `pnpm db:check` | Applies reviewed Prisma migrations, deterministic local/test fixtures, and constraint/upgrade checks. |
 
