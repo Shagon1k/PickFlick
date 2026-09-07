@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const targets = ["web", "api", "worker", "release"];
 
@@ -12,42 +14,66 @@ function run(command, arguments_) {
   }
 }
 
-function sourceRevision() {
-  const configured = process.env.SOURCE_REVISION?.trim();
-  if (configured) {
-    return configured;
+function validateRevision(revision) {
+  if (!/^[0-9a-f]{40,64}$/i.test(revision)) {
+    throw new Error("SOURCE_REVISION must be a full hexadecimal source revision.");
   }
-  const status = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" });
-  if (status.status !== 0) {
+  return revision;
+}
+
+export function sourceRevision(source = process.env, runGit = (arguments_) => spawnSync("git", arguments_, { encoding: "utf8" })) {
+  const configured = source.SOURCE_REVISION?.trim();
+  if (configured) {
+    validateRevision(configured);
+  }
+
+  const worktree = runGit(["rev-parse", "--is-inside-work-tree"]);
+  if (worktree.status !== 0 || worktree.stdout.trim() !== "true") {
+    if (configured) {
+      return configured;
+    }
     throw new Error("SOURCE_REVISION is required when Git worktree state cannot be inspected.");
   }
+
+  const status = runGit(["status", "--porcelain"]);
+  if (status.status !== 0) {
+    throw new Error("Git worktree state could not be inspected.");
+  }
   if (status.stdout.trim()) {
-    throw new Error("Refusing to label an image from a dirty worktree. Commit the exact source or set SOURCE_REVISION explicitly.");
+    throw new Error("Refusing to label an image from a dirty worktree. Commit the exact source first.");
   }
-  const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+
+  const result = runGit(["rev-parse", "HEAD"]);
   if (result.status !== 0) {
-    throw new Error("SOURCE_REVISION is required when the Git revision cannot be resolved.");
+    throw new Error("The Git source revision could not be resolved.");
   }
-  return result.stdout.trim();
+  const headRevision = validateRevision(result.stdout.trim());
+  if (configured && configured.toLowerCase() !== headRevision.toLowerCase()) {
+    throw new Error("SOURCE_REVISION must match the checked-out Git HEAD.");
+  }
+  return configured ?? headRevision;
 }
 
-const revision = sourceRevision();
-if (!/^[0-9a-f]{40,64}$/i.test(revision)) {
-  throw new Error("SOURCE_REVISION must be a full hexadecimal source revision.");
+export function buildImages() {
+  const revision = sourceRevision();
+
+  for (const target of targets) {
+    const tag = `pickflick-${target}:${revision.slice(0, 12)}`;
+    run("docker", [
+      "build",
+      "--build-arg",
+      `SOURCE_REVISION=${revision}`,
+      "--provenance=false",
+      "--target",
+      target,
+      "--tag",
+      tag,
+      ".",
+    ]);
+    console.log(`Built ${target} image: ${tag}.`);
+  }
 }
 
-for (const target of targets) {
-  const tag = `pickflick-${target}:${revision.slice(0, 12)}`;
-  run("docker", [
-    "build",
-    "--build-arg",
-    `SOURCE_REVISION=${revision}`,
-    "--provenance=false",
-    "--target",
-    target,
-    "--tag",
-    tag,
-    ".",
-  ]);
-  console.log(`Built ${target} image: ${tag}.`);
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  buildImages();
 }

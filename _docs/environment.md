@@ -15,11 +15,12 @@ provisioning issues extend this inventory when their consumers exist.
 | `worker` | Compiled worker process | `node dist/main.js` |
 | `release` | One-shot database release gate | `node scripts/run-release.mjs` |
 
-Run `pnpm images:build` from a Git checkout. The command passes the full Git revision into each
-build, sets the image revision label, and tags each local image with the first 12 revision
-characters. Set `SOURCE_REVISION` only when the build context represents that full hexadecimal
-revision. The Dockerfile pins both Node base images by multi-platform digest and installs from the
-committed pnpm lockfile.
+Run `pnpm images:build` from a clean Git checkout. The command passes the full Git revision into
+each build, sets the image revision label, and tags each local image with the first 12 revision
+characters. When Git metadata is available, a configured `SOURCE_REVISION` must match `HEAD` and
+does not bypass the clean-worktree check. The command trusts the full hexadecimal override only
+when the build context has no Git metadata. The Dockerfile pins both Node base images by
+multi-platform digest and installs from the committed pnpm lockfile.
 
 The release image runs committed Prisma migrations before the production-safe required-seed step.
 The required-seed step currently verifies database connectivity because no shared reference rows
@@ -38,8 +39,11 @@ docker compose -f compose.deploy.yaml config --format json
 ```
 
 `pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
-isolation contract. The second command validates the operator-supplied values. Do not save rendered
-output because it contains resolved secrets.
+isolation contract. When image or shutdown values are present in the process environment, the
+command validates those values instead of the corresponding synthetic defaults. It rejects image
+references that are not pinned by a SHA-256 digest and shutdown grace periods that do not exceed
+the application timeout. The second command validates the complete operator-supplied
+configuration. Do not save rendered output because it contains resolved secrets.
 
 Dokploy supplies these Compose-only values. They do not belong in the local `.env` file:
 
@@ -54,10 +58,11 @@ Dokploy supplies these Compose-only values. They do not belong in the local `.en
 | `SHUTDOWN_GRACE_PERIOD` | Compose duration greater than `SHUTDOWN_TIMEOUT_MS` |
 
 The topology creates environment-named internal PostgreSQL/Redis networks and volumes. Application
-and data services use `expose` or no port declaration; no service publishes a host port. Only web
-and API join the external Dokploy ingress network. UAT and production must also use different
-deployment servers, database and Redis credentials, S3 buckets and credentials, SMTP/provider
-identities, and Dokploy projects.
+and data services use `expose` or no port declaration; no service publishes a host port. Web and
+API join the external Dokploy ingress network. The worker joins a separate egress-capable network
+for object-storage and SMTP readiness while retaining access to the internal data network. UAT and
+production must also use different deployment servers, database and Redis credentials, S3 buckets
+and credentials, SMTP/provider identities, and Dokploy projects.
 
 API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
 `SHUTDOWN_TIMEOUT_MS` for shutdown work to finish. Configure `SHUTDOWN_GRACE_PERIOD` above that
@@ -115,7 +120,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, database commands | No |
 | `API_HOST` | Non-empty host without whitespace | API | No |
 | `API_PORT` | Integer from 1 through 65535 | API | No |
-| `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 65535 | API, worker | No |
+| `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
 | `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
 | `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
 | `S3_ENDPOINT` | HTTP or HTTPS URL | API, worker | No |

@@ -115,6 +115,7 @@ services:
         condition: service_completed_successfully
     networks:
       - data
+      - egress
 
   web:
     <<: *application-service
@@ -144,6 +145,8 @@ networks:
   data:
     internal: true
     name: pickflick-${APP_ENV:?APP_ENV is required}-data
+  egress:
+    name: pickflick-${APP_ENV:?APP_ENV is required}-egress
   ingress:
     external: true
     name: ${DOKPLOY_NETWORK:?DOKPLOY_NETWORK is required}

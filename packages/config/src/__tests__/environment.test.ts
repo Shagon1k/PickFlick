@@ -52,6 +52,18 @@ describe("environment validation", () => {
     });
   });
 
+  it("accepts a shutdown drain longer than the port-number range", () => {
+    expect(parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "120000" })).toMatchObject({
+      shutdownTimeoutMilliseconds: 120_000,
+    });
+  });
+
+  it("rejects a shutdown drain longer than 24 hours", () => {
+    expect(() => parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "86400001" })).toThrow(
+      /SHUTDOWN_TIMEOUT_MS must be an integer from 1 through 86400000/,
+    );
+  });
+
   it.each(["foo..bar", "192.168.5.4"])("rejects an invalid S3 bucket name: %s", (bucket) => {
     expect(() => parseRuntimeEnvironment({ ...validEnvironment, S3_BUCKET: bucket })).toThrow(
       /S3_BUCKET must be a valid lowercase S3 bucket name/,
