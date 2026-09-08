@@ -58,6 +58,18 @@ describe("environment validation", () => {
     });
   });
 
+  it("requires a full source revision in deployed environments", () => {
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat" })).toThrow(
+      /SOURCE_REVISION is required/,
+    );
+    expect(
+      parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) }),
+    ).toMatchObject({ sourceRevision: "a".repeat(40) });
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, SOURCE_REVISION: "main" })).toThrow(
+      /SOURCE_REVISION must be a full hexadecimal source revision/,
+    );
+  });
+
   it("rejects a shutdown drain longer than 24 hours", () => {
     expect(() => parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "86400001" })).toThrow(
       /SHUTDOWN_TIMEOUT_MS must be an integer from 1 through 86400000/,

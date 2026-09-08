@@ -17,6 +17,7 @@ export type DependencyName = (typeof DEPENDENCY_NAMES)[number];
 export interface LivenessReport {
   readonly service: ServiceName;
   readonly status: "alive";
+  readonly revision?: string;
 }
 
 export interface DependencyStatus {
