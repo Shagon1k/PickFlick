@@ -53,9 +53,12 @@ docker compose -f compose.deploy.yaml --profile release --profile application co
 ```
 
 `pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
-contract. It checks the exact service set, source revision, build targets, staged profiles, web/API
-health gate, private ports, environment-specific network names and aliases, managed data URLs,
-storage separation, and retained container hardening. The second command validates the complete
+contract. It checks the exact application service set, required environment inputs, source-revision
+build/runtime reporting, staged release/application profiles, enabled API/web health checks, web's
+API-health dependency, private ports, environment-specific project names and service aliases, and
+retained container hardening. It does not require image digests, application-owned PostgreSQL/Redis,
+a worker egress bridge, or queue-drain timing. Provider resources, internal connectivity, port
+settings, and routing remain UAT inspection work. The second command validates the complete
 operator-supplied configuration. Do not save rendered output because it contains resolved secrets.
 
 Dokploy supplies these Compose-only values. They do not belong in the local `.env` file:

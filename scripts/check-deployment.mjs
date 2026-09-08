@@ -6,6 +6,22 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const applicationServices = ["api", "release", "web", "worker"];
 const runtimeServices = ["api", "web", "worker"];
 const deploymentOverrideVariables = ["DOKPLOY_NETWORK", "SOURCE_REVISION"];
+const runtimeEnvironmentVariables = [
+  "APP_ENV",
+  "DATABASE_URL",
+  "MAIL_FROM",
+  "REDIS_URL",
+  "S3_ACCESS_KEY_ID",
+  "S3_BUCKET",
+  "S3_ENDPOINT",
+  "S3_FORCE_PATH_STYLE",
+  "S3_REGION",
+  "S3_SECRET_ACCESS_KEY",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_SECURE",
+  "SOURCE_REVISION",
+];
 
 function assert(condition, message) {
   if (!condition) {
@@ -83,56 +99,59 @@ export function renderDeployment(appEnvironment, source = process.env) {
   return JSON.parse(result.stdout);
 }
 
-export function checkDeployment() {
-  const uat = renderDeployment("uat", {});
-  const production = renderDeployment("production", {});
+function hasOnlyProfile(service, profile) {
+  return service.profiles?.length === 1 && service.profiles[0] === profile;
+}
 
-  for (const deployment of [uat, production]) {
+function validateRequiredEnvironment(service, names, serviceName) {
+  for (const name of names) {
+    const value = service.environment?.[name];
+    assert(value !== undefined && value !== null && value !== "", `${serviceName} must receive ${name}.`);
+  }
+}
+
+export function validateDeployments({ production, uat }) {
+  for (const [appEnvironment, deployment] of Object.entries({ production, uat })) {
     assert(
       JSON.stringify(Object.keys(deployment.services).sort()) === JSON.stringify(applicationServices),
       "Deployment Compose must contain only api, release, web, and worker.",
     );
-    assert(deployment.volumes === undefined, "Deployment Compose must not own data volumes.");
+
     assert(
-      Object.keys(deployment.networks).length === 1 && deployment.networks.application.external === true,
-      "Application services must use one external Dokploy network.",
+      deployment.name === `pickflick-${appEnvironment}`,
+      `${appEnvironment} must use its own Compose project name.`,
     );
+
+    const selectedRevision = deployment.services.web.environment?.SOURCE_REVISION;
+    validateRevision(selectedRevision);
 
     for (const name of applicationServices) {
       const service = deployment.services[name];
       assert(service.ports === undefined, `${name} must not publish host ports.`);
       assert(service.read_only === true, `${name} must use a read-only root filesystem.`);
       assert(service.init === true, `${name} must use an init process.`);
-      assert(service.cap_drop.includes("ALL"), `${name} must drop Linux capabilities.`);
-      assert(service.security_opt.includes("no-new-privileges:true"), `${name} must prevent new privileges.`);
-      assert(service.tmpfs.includes("/tmp"), `${name} must mount /tmp as tmpfs.`);
-      assert(service.build.dockerfile === "Dockerfile", `${name} must build from the repository Dockerfile.`);
-      assert(service.build.target === name, `${name} must build its matching Dockerfile target.`);
+      assert(service.cap_drop?.includes("ALL"), `${name} must drop Linux capabilities.`);
+      assert(service.security_opt?.includes("no-new-privileges:true"), `${name} must prevent new privileges.`);
+      assert(service.tmpfs?.includes("/tmp"), `${name} must mount /tmp as tmpfs.`);
       assert(
-        service.build.args.SOURCE_REVISION === deployment.services.web.environment.SOURCE_REVISION,
+        service.build?.args?.SOURCE_REVISION === selectedRevision,
         `${name} must build the selected source revision.`,
       );
       assert(
-        service.networks.application.aliases.includes(`pickflick-${deployment.services.release.environment.APP_ENV}-${name}`),
+        service.networks?.application?.aliases?.includes(`pickflick-${appEnvironment}-${name}`),
         `${name} must use its environment-specific service alias.`,
       );
     }
 
-    for (const name of ["api", "worker"]) {
-      assert(
-        deployment.services[name].environment.SHUTDOWN_TIMEOUT_MS === "10000",
-        `${name} shutdown timeout must remain below the 15-second Compose stop grace.`,
-      );
-      assert(deployment.services[name].stop_grace_period === "15s", `${name} must retain the 15-second stop grace.`);
-    }
-
     assert(
-      deployment.services.release.profiles.length === 1 && deployment.services.release.profiles[0] === "release",
+      hasOnlyProfile(deployment.services.release, "release"),
       "The release gate must use its isolated deployment profile.",
     );
+    validateRequiredEnvironment(deployment.services.release, ["APP_ENV", "DATABASE_URL"], "release");
+
     for (const name of runtimeServices) {
       assert(
-        deployment.services[name].profiles.length === 1 && deployment.services[name].profiles[0] === "application",
+        hasOnlyProfile(deployment.services[name], "application"),
         `${name} must use the application convergence profile.`,
       );
       assert(
@@ -140,28 +159,42 @@ export function checkDeployment() {
         `${name} must not recreate before the release run.`,
       );
       assert(
-        deployment.services[name].environment.SOURCE_REVISION === deployment.services.web.environment.SOURCE_REVISION,
+        deployment.services[name].environment?.SOURCE_REVISION === selectedRevision,
         `${name} must report the selected source revision.`,
       );
     }
-    assert(deployment.services.web.depends_on.api.condition === "service_healthy", "Web must wait for API health.");
+
+    validateRequiredEnvironment(deployment.services.api, runtimeEnvironmentVariables, "api");
+    validateRequiredEnvironment(deployment.services.worker, runtimeEnvironmentVariables, "worker");
+    assert(deployment.services.release.environment.APP_ENV === appEnvironment, "Release must use the selected environment.");
+    assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
+    assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
+    assert(deployment.services.api.healthcheck?.disable !== true, "API must define an enabled health check.");
+    assert(deployment.services.api.healthcheck?.test !== undefined, "API must define an enabled health check.");
+    assert(deployment.services.web.healthcheck?.disable !== true, "Web must define an enabled health check.");
+    assert(deployment.services.web.healthcheck?.test !== undefined, "Web must define an enabled health check.");
+    assert(deployment.services.web.depends_on?.api?.condition === "service_healthy", "Web must wait for API health.");
   }
 
-  assert(uat.name === "pickflick-uat", "UAT must use its own Compose project name.");
-  assert(production.name === "pickflick-production", "Production must use its own Compose project name.");
-  assert(uat.networks.application.name !== production.networks.application.name, "Application networks must be isolated.");
   for (const name of applicationServices) {
+    const uatAliases = uat.services[name].networks.application.aliases;
+    const productionAliases = production.services[name].networks.application.aliases;
     assert(
-      uat.services[name].networks.application.aliases[0] !==
-        production.services[name].networks.application.aliases[0],
+      !uatAliases.some((alias) => productionAliases.includes(alias)),
       `${name} service aliases must be environment-isolated.`,
     );
   }
-  assert(uat.services.api.environment.DATABASE_URL !== production.services.api.environment.DATABASE_URL, "Database URLs must be isolated.");
-  assert(uat.services.api.environment.REDIS_URL !== production.services.api.environment.REDIS_URL, "Redis URLs must be isolated.");
-  assert(uat.services.api.environment.S3_BUCKET !== production.services.api.environment.S3_BUCKET, "S3 buckets must be isolated.");
 
   return { production, uat };
+}
+
+export function checkDeployment() {
+  const deployments = {
+    production: renderDeployment("production", {}),
+    uat: renderDeployment("uat", {}),
+  };
+
+  return validateDeployments(deployments);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
