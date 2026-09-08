@@ -9,15 +9,21 @@ import { RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";
 @Injectable()
 export class HealthService {
   private readonly probes: readonly DependencyProbe[];
+  private readonly sourceRevision: string | undefined;
 
   constructor(@Inject(RUNTIME_ENVIRONMENT) environment: RuntimeEnvironment) {
+    this.sourceRevision = environment.sourceRevision;
     this.probes = createRuntimeDependencyProbes(environment, (timeoutMilliseconds) =>
       checkDatabaseReadiness(environment.databaseUrl, timeoutMilliseconds),
     );
   }
 
   liveness(): LivenessReport {
-    return { service: "api", status: "alive" };
+    return {
+      service: "api",
+      status: "alive",
+      ...(this.sourceRevision ? { revision: this.sourceRevision } : {}),
+    };
   }
 
   readiness(): Promise<ReadinessReport> {

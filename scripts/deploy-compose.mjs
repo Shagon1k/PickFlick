@@ -15,8 +15,8 @@ function runDocker(arguments_) {
 }
 
 export function deployCompose(run = runDocker) {
-  run([...composeArguments, "--profile", "release", "run", "--rm", "release"]);
-  run([...composeArguments, "--profile", "application", "up", "-d", "--wait"]);
+  run([...composeArguments, "--profile", "release", "run", "--build", "--rm", "release"]);
+  run([...composeArguments, "--profile", "application", "up", "--build", "-d", "--wait"]);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

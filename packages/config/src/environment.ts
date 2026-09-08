@@ -6,6 +6,7 @@ export type DeploymentEnvironment = (typeof DEPLOYMENT_ENVIRONMENTS)[number];
 
 export interface RuntimeEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
+  readonly sourceRevision?: string;
   readonly apiHost: string;
   readonly apiPort: number;
   readonly shutdownTimeoutMilliseconds: number;
@@ -144,6 +145,13 @@ function parseWorkerValues(
   appEnvironment: DeploymentEnvironment,
   failures: ValidationFailure[],
 ): WorkerEnvironment {
+  const sourceRevision = source.SOURCE_REVISION?.trim();
+  if (sourceRevision && !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(sourceRevision)) {
+    failures.push({ name: "SOURCE_REVISION", reason: "must be a full hexadecimal source revision" });
+  }
+  if ((appEnvironment === "uat" || appEnvironment === "production") && !sourceRevision) {
+    failures.push({ name: "SOURCE_REVISION", reason: "is required" });
+  }
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
   const shutdownTimeoutMilliseconds = durationMilliseconds(source, "SHUTDOWN_TIMEOUT_MS", failures);
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
@@ -171,6 +179,7 @@ function parseWorkerValues(
   }
   return {
     appEnvironment,
+    ...(sourceRevision ? { sourceRevision } : {}),
     databaseUrl,
     shutdownTimeoutMilliseconds,
     redisUrl,

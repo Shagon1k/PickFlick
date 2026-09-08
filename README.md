@@ -50,11 +50,12 @@ pnpm compose:check
 
 `pnpm images:build` tags local images with the first 12 characters of the full source revision.
 `pnpm compose:check` renders the shared `compose.deploy.yaml` topology for synthetic UAT and
-production inputs. It rejects published host ports, mutable image references, missing release
-and application profiles, and shared data networks, volumes, or storage buckets. With the
-environment-specific values configured, run `pnpm deploy:compose`. The command completes the
-one-shot release profile before it converges application containers, so a failed release leaves
-the running application revision in place. See the
+production inputs. It checks the four source-built application services, environment-specific
+networks and aliases, private ports, release/application profiles, health gates, revision
+traceability, and container hardening. With the environment-specific Dokploy values configured,
+run `pnpm deploy:compose`. The command builds and completes the one-shot release profile before it
+builds and converges application containers, so a failed release leaves the running application
+revision in place. See the
 [environment and runtime operations reference](_docs/environment.md#deployment-images-and-compose)
 before supplying real environment values.
 

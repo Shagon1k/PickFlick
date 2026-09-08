@@ -26,9 +26,9 @@
 
 - The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
   PostgreSQL/Redis/MinIO/Mailpit stack, typed runtime configuration, and baseline quality commands
-  are executable. Immutable web/API/worker/release images and the shared isolated UAT/production
-  Compose topology are also executable locally. Provisioned environments and delivery automation
-  remain later Phase 1 work.
+  are executable. Production-oriented web/API/worker/release images and the proportional,
+  source-built UAT/production application Compose topology are also executable locally.
+  Provisioned environments and delivery automation remain later Phase 1 work.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
   two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
   commands. Remaining product entities arrive with their owning phases.

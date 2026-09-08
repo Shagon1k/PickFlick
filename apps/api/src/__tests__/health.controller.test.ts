@@ -1,9 +1,10 @@
 import type { ServerResponse } from "node:http";
 
+import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import { describe, expect, it } from "vitest";
 
 import { HealthController } from "../health.controller.js";
-import type { HealthService } from "../health.service.js";
+import { HealthService } from "../health.service.js";
 
 describe("HealthController", () => {
   it("keeps liveness independent from dependency readiness", async () => {
@@ -35,5 +36,12 @@ describe("HealthController", () => {
     await new HealthController(health).readiness(response);
 
     expect(response.statusCode).toBe(200);
+  });
+
+  it("exposes the built source revision through liveness", () => {
+    const revision = "a".repeat(40);
+    const health = new HealthService({ sourceRevision: revision } as RuntimeEnvironment);
+
+    expect(new HealthController(health).liveness()).toEqual({ service: "api", status: "alive", revision });
   });
 });

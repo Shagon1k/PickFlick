@@ -1,7 +1,14 @@
 name: pickflick-${APP_ENV:?APP_ENV must be uat or production}
 
+x-build: &build
+  context: .
+  dockerfile: Dockerfile
+  args:
+    SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+
 x-runtime-environment: &runtime-environment
   APP_ENV: ${APP_ENV:?APP_ENV is required}
+  SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
   SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:?SHUTDOWN_TIMEOUT_MS is required}
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
   REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
@@ -24,75 +31,39 @@ x-application-service: &application-service
   restart: unless-stopped
   security_opt:
     - no-new-privileges:true
-  stop_grace_period: ${SHUTDOWN_GRACE_PERIOD:?SHUTDOWN_GRACE_PERIOD is required}
+  stop_grace_period: 15s
   stop_signal: SIGTERM
   tmpfs:
     - /tmp
 
 services:
-  postgres:
-    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE must be pinned by digest}
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    networks:
-      - data
-    restart: unless-stopped
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-  redis:
-    image: ${REDIS_IMAGE:?REDIS_IMAGE must be pinned by digest}
-    command: ["/bin/sh", "-ec", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    networks:
-      - data
-    restart: unless-stopped
-    volumes:
-      - redis-data:/data
-
   release:
     <<: *application-service
     profiles:
       - release
-    image: ${RELEASE_IMAGE:?RELEASE_IMAGE must be pinned by digest}
+    build:
+      <<: *build
+      target: release
     environment:
       APP_ENV: ${APP_ENV:?APP_ENV is required}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
-      - data
+      application:
+        aliases:
+          - pickflick-${APP_ENV:?APP_ENV is required}-release
     restart: "no"
 
   api:
     <<: *application-service
     profiles:
       - application
-    image: ${API_IMAGE:?API_IMAGE must be pinned by digest}
+    build:
+      <<: *build
+      target: api
     environment:
       <<: *runtime-environment
       API_HOST: 0.0.0.0
       API_PORT: 3001
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     expose:
       - "3001"
     healthcheck:
@@ -101,29 +72,30 @@ services:
       timeout: 3s
       retries: 20
     networks:
-      - data
-      - ingress
+      application:
+        aliases:
+          - pickflick-${APP_ENV:?APP_ENV is required}-api
 
   worker:
     <<: *application-service
     profiles:
       - application
-    image: ${WORKER_IMAGE:?WORKER_IMAGE must be pinned by digest}
+    build:
+      <<: *build
+      target: worker
     environment: *runtime-environment
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     networks:
-      - data
-      - egress
+      application:
+        aliases:
+          - pickflick-${APP_ENV:?APP_ENV is required}-worker
 
   web:
     <<: *application-service
     profiles:
       - application
-    image: ${WEB_IMAGE:?WEB_IMAGE must be pinned by digest}
+    build:
+      <<: *build
+      target: web
     environment:
       NODE_ENV: production
       SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
@@ -138,23 +110,14 @@ services:
       timeout: 3s
       retries: 20
     networks:
-      - ingress
+      application:
+        aliases:
+          - pickflick-${APP_ENV:?APP_ENV is required}-web
     tmpfs:
       - /tmp
       - /app/apps/web/.next/cache
 
 networks:
-  data:
-    internal: true
-    name: pickflick-${APP_ENV:?APP_ENV is required}-data
-  egress:
-    name: pickflick-${APP_ENV:?APP_ENV is required}-egress
-  ingress:
+  application:
     external: true
     name: ${DOKPLOY_NETWORK:?DOKPLOY_NETWORK is required}
-
-volumes:
-  postgres-data:
-    name: pickflick-${APP_ENV:?APP_ENV is required}-postgres
-  redis-data:
-    name: pickflick-${APP_ENV:?APP_ENV is required}-redis

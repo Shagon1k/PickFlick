@@ -9,8 +9,8 @@ describe("deployment convergence", () => {
     deployCompose((arguments_) => commands.push(arguments_));
 
     expect(commands).toEqual([
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--rm", "release"],
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "application", "up", "-d", "--wait"],
+      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--build", "--rm", "release"],
+      ["compose", "-f", "compose.deploy.yaml", "--profile", "application", "up", "--build", "-d", "--wait"],
     ]);
   });
 
@@ -24,7 +24,7 @@ describe("deployment convergence", () => {
       }),
     ).toThrow("release failed");
     expect(commands).toEqual([
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--rm", "release"],
+      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--build", "--rm", "release"],
     ]);
   });
 });
