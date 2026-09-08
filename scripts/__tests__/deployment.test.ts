@@ -31,4 +31,13 @@ describe("deployment Compose", () => {
     expect(deployment.services.api.environment.SOURCE_REVISION).toBe(sourceRevision);
     expect(deployment.services.web.environment.SOURCE_REVISION).toBe(sourceRevision);
   });
+
+  it("keeps the runtime timeout below the Compose stop grace", () => {
+    const deployment = renderDeployment("uat");
+
+    expect(deployment.services.api.environment.SHUTDOWN_TIMEOUT_MS).toBe("10000");
+    expect(deployment.services.worker.environment.SHUTDOWN_TIMEOUT_MS).toBe("10000");
+    expect(deployment.services.api.stop_grace_period).toBe("15s");
+    expect(deployment.services.worker.stop_grace_period).toBe("15s");
+  });
 });

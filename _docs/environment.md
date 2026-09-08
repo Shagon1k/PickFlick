@@ -40,10 +40,12 @@ profile only after the release container exits successfully. A failed migration 
 command before Compose recreates the running application containers. Do not run the `application`
 profile directly.
 
-Use `compose.deploy.yaml` for either UAT or production. Do not combine both environments in one
-Compose project or deploy them to the same server. Configure Dokploy to clone the selected full Git
-revision and use Docker Compose mode, not Docker Stack mode. Supply all runtime values from the
-environment-specific Dokploy project and render the exact configuration before deployment:
+Use `compose.deploy.yaml` for source-built UAT deployments. `pnpm deploy:compose` rejects every
+other `APP_ENV`; production must wait for the UAT-proven digest-promotion workflow from issue #115.
+Keep UAT and production in separate Compose and Dokploy projects. Configure Dokploy to clone the
+selected full Git revision and use Docker Compose mode, not Docker Stack mode. Supply all runtime
+values from the environment-specific Dokploy project and render the exact configuration before
+deployment:
 
 ```bash
 pnpm compose:check
@@ -70,13 +72,15 @@ or persistent volume. Every service joins the pre-created external application n
 environment-specific alias. Web and API use `expose`; no service publishes a host port. Connect the
 environment's managed PostgreSQL and Redis resources to the same application network, supply their
 internal connection URLs, and keep their external ports disabled in Dokploy. UAT and production
-must use different Dokploy projects, deployment servers, application networks, service aliases,
-database/Redis credentials, S3 buckets and credentials, and SMTP/provider identities.
+must use different Dokploy projects, application networks, service aliases, database/Redis
+credentials, S3 buckets and credentials, and SMTP/provider identities. A separate production
+deployment server is deferred until production provisioning, or until measured contention or a
+host-isolation requirement justifies one earlier.
 
 API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
-`SHUTDOWN_TIMEOUT_MS` for shutdown work to finish. Deployment Compose uses a 15-second ordinary
-stop grace around the current 10-second process timeout. Add a configurable, queue-aware drain only
-when a real consumer supplies measured job-duration and retry requirements.
+`SHUTDOWN_TIMEOUT_MS` for shutdown work to finish. Deployment Compose fixes this timeout at 10
+seconds under a 15-second stop grace. Add a configurable, queue-aware drain and coordinated grace
+only when a real consumer supplies measured job-duration and retry requirements.
 
 In UAT and production, `SOURCE_REVISION` is required and must be a full 40- or 64-character
 hexadecimal revision. The API returns it from `/health/live`; every Dockerfile target also records

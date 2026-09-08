@@ -118,6 +118,14 @@ export function checkDeployment() {
       );
     }
 
+    for (const name of ["api", "worker"]) {
+      assert(
+        deployment.services[name].environment.SHUTDOWN_TIMEOUT_MS === "10000",
+        `${name} shutdown timeout must remain below the 15-second Compose stop grace.`,
+      );
+      assert(deployment.services[name].stop_grace_period === "15s", `${name} must retain the 15-second stop grace.`);
+    }
+
     assert(
       deployment.services.release.profiles.length === 1 && deployment.services.release.profiles[0] === "release",
       "The release gate must use its isolated deployment profile.",

@@ -154,7 +154,7 @@ Issue #10 established the first executable command map. `AGENTS.md` owns the dur
 | Build and full verification | `pnpm build`, `pnpm verify` | Builds all workspaces and rejects invalid workspace boundaries/cycles. |
 | Production images | `pnpm images:build` | Builds revision-labelled web, API, worker, and one-shot release targets from pinned bases and the locked workspace. |
 | Deployment topology | `pnpm compose:check` | Checks the source-built four-service topology, allowed environments, staged release/application profiles, health gate, private ports, managed-service URLs, distinct networks/aliases, revision reporting, and adopted static hardening. Issue #114 may reduce or extend this maintained contract without introducing a general policy engine. |
-| Deployment convergence | `pnpm deploy:compose` | Builds and completes the one-shot release profile before building and converging application services. Issue #15 must prove in UAT that a failed release preserves the running revision. |
+| Deployment convergence | `pnpm deploy:compose` | Validates a clean selected revision, rejects non-UAT source builds, and completes the one-shot release profile before building and converging application services. Issue #15 must prove in UAT that a failed release preserves the running revision. |
 | Local services | `pnpm services:up`, `pnpm services:check`, `pnpm services:down` | Starts and checks loopback-only PostgreSQL, Redis, MinIO, and Mailpit services. |
 | Database migration/seed | `pnpm migrate`, `pnpm seed`, `pnpm db:check` | Applies reviewed Prisma migrations, deterministic local/test fixtures, and constraint/upgrade checks. |
 

@@ -9,7 +9,7 @@ x-build: &build
 x-runtime-environment: &runtime-environment
   APP_ENV: ${APP_ENV:?APP_ENV is required}
   SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
-  SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:?SHUTDOWN_TIMEOUT_MS is required}
+  SHUTDOWN_TIMEOUT_MS: "10000"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
   REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
   S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
