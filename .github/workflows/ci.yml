@@ -76,6 +76,9 @@ jobs:
           git diff --quiet
           test -z "$(git status --porcelain --untracked-files=all)"
 
+      - name: Controlled delivery-gate failure proof
+        run: exit 1
+
       - name: Lint
         run: pnpm lint
 
