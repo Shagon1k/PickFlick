@@ -15,6 +15,7 @@
     "db:reset": "pnpm --filter @pickflick/database reset",
     "deploy:compose": "node scripts/deploy-compose.mjs",
     "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/ui --filter @pickflick/web --filter @pickflick/api --filter @pickflick/worker dev",
+    "e2e:smoke": "node scripts/e2e-smoke.mjs",
     "compose:check": "node scripts/check-deployment.mjs",
     "images:build": "node scripts/build-images.mjs",
     "build:packages": "pnpm -r --filter './packages/*' --if-present build",

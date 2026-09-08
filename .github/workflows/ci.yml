@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: read
@@ -14,23 +18,170 @@ jobs:
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: gitleaks/gitleaks-action@v2
+      - name: Scan committed history for secrets
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
 
-  ci:
+  static:
     name: Lint, type-check, test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
-      - name: TODO - lint, type-check and test
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Build workspaces
+        run: pnpm build
+
+      - name: Reject build-artifact drift
+        shell: bash
         run: |
-          echo "TODO: configure lint, type-check and test"
+          git diff --quiet
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  integration:
+    name: Integration and runtime smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APP_ENV: test
+      CI_COMPOSE_PROJECT_NAME: pickflick-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:5432/pickflick_test
+      MINIO_ROOT_PASSWORD: synthetic-ci-password
+      MINIO_ROOT_USER: pickflick-ci
+      PICKFLICK_ENV_FILE: .env.example
+      POSTGRES_DB: pickflick_test
+      POSTGRES_PASSWORD: synthetic-ci-password
+      POSTGRES_USER: pickflick_ci
+      S3_ACCESS_KEY_ID: pickflick-ci
+      S3_BUCKET: pickflick-ci-${{ github.run_id }}
+      S3_SECRET_ACCESS_KEY: synthetic-ci-password
+
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspaces
+        run: pnpm build
+
+      - name: Validate deployment definitions
+        run: pnpm compose:check
+
+      - name: Start isolated test dependencies
+        run: |
+          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml up -d --wait postgres redis minio mailpit
+          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml run --rm minio-init
+
+      - name: Check dependency integration
+        run: pnpm services:check
+
+      - name: Apply migrations
+        run: pnpm migrate
+
+      - name: Load deterministic synthetic fixtures
+        run: pnpm seed
+
+      - name: Check migrations and database constraints
+        run: pnpm db:check
+
+      - name: Run built-runtime E2E smoke
+        run: pnpm e2e:smoke
+
+      - name: Stop isolated test dependencies
+        if: ${{ always() }}
+        run: docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml down --volumes
+
+  images:
+    name: Production images
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Build production image targets
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+        run: pnpm images:build
+
+  delivery-gate:
+    name: Delivery gate
+    if: ${{ always() }}
+    needs: [secret-scan, static, integration, images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every quality job
+        env:
+          IMAGES_RESULT: ${{ needs.images.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+          STATIC_RESULT: ${{ needs.static.result }}
+        shell: bash
+        run: |
+          test "$IMAGES_RESULT" = "success"
+          test "$INTEGRATION_RESULT" = "success"
+          test "$SECRET_SCAN_RESULT" = "success"
+          test "$STATIC_RESULT" = "success"
