@@ -45,12 +45,10 @@ describe("deployment Compose", () => {
     expect(deployment.services.web.environment.SOURCE_REVISION).toBe(sourceRevision);
   });
 
-  it("accepts the proportional topology without deferred controls", () => {
+  it("accepts the proportional topology without deferred timeout coupling", () => {
     const deployments = structuredClone(validDeployments);
 
     for (const deployment of Object.values(deployments)) {
-      delete deployment.services.api.environment.SHUTDOWN_TIMEOUT_MS;
-      delete deployment.services.worker.environment.SHUTDOWN_TIMEOUT_MS;
       delete deployment.services.api.stop_grace_period;
       delete deployment.services.worker.stop_grace_period;
     }
@@ -60,6 +58,40 @@ describe("deployment Compose", () => {
     expect(deployments.uat.services).not.toHaveProperty("redis");
     expect(deployments.uat.services.worker.networks).not.toHaveProperty("egress");
     expect(deployments.uat.services.web).not.toHaveProperty("image");
+  });
+
+  it("rejects every omitted runtime-required environment variable", () => {
+    for (const [serviceName, variableName] of [
+      ["api", "SHUTDOWN_TIMEOUT_MS"],
+      ["api", "API_HOST"],
+      ["api", "API_PORT"],
+      ["worker", "SHUTDOWN_TIMEOUT_MS"],
+    ] as const) {
+      expectRejected(
+        (deployments) => delete deployments.uat.services[serviceName].environment[variableName],
+        new RegExp(`${serviceName} must receive ${variableName}`),
+      );
+    }
+  });
+
+  it("rejects release services that replace the release image behavior", () => {
+    expectRejected(
+      (deployments) => (deployments.uat.services.release.build.target = "api"),
+      /release gate must build the release target/,
+    );
+    expectRejected(
+      (deployments) => (deployments.uat.services.release.command = ["node", "dist/main.js"]),
+      /release gate must use the image command/,
+    );
+  });
+
+  it("rejects health checks disabled with NONE", () => {
+    for (const serviceName of ["api", "web"] as const) {
+      expectRejected(
+        (deployments) => (deployments.uat.services[serviceName].healthcheck.test = ["NONE"]),
+        new RegExp(`${serviceName === "api" ? "API" : "Web"} must define an enabled health check`),
+      );
+    }
   });
 
   it.each([
@@ -125,10 +157,10 @@ describe("deployment Compose", () => {
       message: /worker must use its environment-specific service alias/,
     },
     {
-      name: "a cross-environment alias collision",
+      name: "a cross-service environment alias collision",
       mutate: (deployments: Deployments) =>
-        deployments.uat.services.worker.networks.application.aliases.push("pickflick-production-worker"),
-      message: /worker service aliases must be environment-isolated/,
+        deployments.uat.services.api.networks.application.aliases.push("pickflick-production-worker"),
+      message: /UAT and production service aliases must be environment-isolated/,
     },
     {
       name: "a writable root filesystem",

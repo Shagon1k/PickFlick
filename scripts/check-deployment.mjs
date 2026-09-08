@@ -17,11 +17,13 @@ const runtimeEnvironmentVariables = [
   "S3_FORCE_PATH_STYLE",
   "S3_REGION",
   "S3_SECRET_ACCESS_KEY",
+  "SHUTDOWN_TIMEOUT_MS",
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_SECURE",
   "SOURCE_REVISION",
 ];
+const apiEnvironmentVariables = [...runtimeEnvironmentVariables, "API_HOST", "API_PORT"];
 
 function assert(condition, message) {
   if (!condition) {
@@ -110,6 +112,16 @@ function validateRequiredEnvironment(service, names, serviceName) {
   }
 }
 
+function hasEnabledHealthCheck(service) {
+  const test = service.healthcheck?.test;
+  return (
+    service.healthcheck?.disable !== true &&
+    Array.isArray(test) &&
+    test.length > 1 &&
+    (test[0] === "CMD" || test[0] === "CMD-SHELL")
+  );
+}
+
 export function validateDeployments({ production, uat }) {
   for (const [appEnvironment, deployment] of Object.entries({ production, uat })) {
     assert(
@@ -147,6 +159,8 @@ export function validateDeployments({ production, uat }) {
       hasOnlyProfile(deployment.services.release, "release"),
       "The release gate must use its isolated deployment profile.",
     );
+    assert(deployment.services.release.build?.target === "release", "The release gate must build the release target.");
+    assert(deployment.services.release.command == null, "The release gate must use the image command.");
     validateRequiredEnvironment(deployment.services.release, ["APP_ENV", "DATABASE_URL"], "release");
 
     for (const name of runtimeServices) {
@@ -164,26 +178,26 @@ export function validateDeployments({ production, uat }) {
       );
     }
 
-    validateRequiredEnvironment(deployment.services.api, runtimeEnvironmentVariables, "api");
+    validateRequiredEnvironment(deployment.services.api, apiEnvironmentVariables, "api");
     validateRequiredEnvironment(deployment.services.worker, runtimeEnvironmentVariables, "worker");
     assert(deployment.services.release.environment.APP_ENV === appEnvironment, "Release must use the selected environment.");
     assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
-    assert(deployment.services.api.healthcheck?.disable !== true, "API must define an enabled health check.");
-    assert(deployment.services.api.healthcheck?.test !== undefined, "API must define an enabled health check.");
-    assert(deployment.services.web.healthcheck?.disable !== true, "Web must define an enabled health check.");
-    assert(deployment.services.web.healthcheck?.test !== undefined, "Web must define an enabled health check.");
+    assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");
+    assert(hasEnabledHealthCheck(deployment.services.web), "Web must define an enabled health check.");
     assert(deployment.services.web.depends_on?.api?.condition === "service_healthy", "Web must wait for API health.");
   }
 
-  for (const name of applicationServices) {
-    const uatAliases = uat.services[name].networks.application.aliases;
-    const productionAliases = production.services[name].networks.application.aliases;
-    assert(
-      !uatAliases.some((alias) => productionAliases.includes(alias)),
-      `${name} service aliases must be environment-isolated.`,
-    );
-  }
+  const uatAliases = applicationServices.flatMap(
+    (name) => uat.services[name].networks.application.aliases,
+  );
+  const productionAliases = new Set(
+    applicationServices.flatMap((name) => production.services[name].networks.application.aliases),
+  );
+  assert(
+    !uatAliases.some((alias) => productionAliases.has(alias)),
+    "UAT and production service aliases must be environment-isolated.",
+  );
 
   return { production, uat };
 }
