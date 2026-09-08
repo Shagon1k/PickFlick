@@ -83,6 +83,10 @@ describe("deployment Compose", () => {
       (deployments) => (deployments.uat.services.release.command = ["node", "dist/main.js"]),
       /release gate must use the image command/,
     );
+    expectRejected(
+      (deployments) => (deployments.uat.services.release.entrypoint = ["/bin/true"]),
+      /release gate must use the image entrypoint/,
+    );
   });
 
   it("rejects health checks disabled with NONE", () => {
@@ -90,6 +94,15 @@ describe("deployment Compose", () => {
       expectRejected(
         (deployments) => (deployments.uat.services[serviceName].healthcheck.test = ["NONE"]),
         new RegExp(`${serviceName === "api" ? "API" : "Web"} must define an enabled health check`),
+      );
+    }
+  });
+
+  it("rejects always-successful replacements for the intended health checks", () => {
+    for (const serviceName of ["api", "web"] as const) {
+      expectRejected(
+        (deployments) => (deployments.uat.services[serviceName].healthcheck.test = ["CMD-SHELL", "exit 0"]),
+        new RegExp(`${serviceName === "api" ? "API" : "Web"} must define its intended health check`),
       );
     }
   });
@@ -161,6 +174,12 @@ describe("deployment Compose", () => {
       mutate: (deployments: Deployments) =>
         deployments.uat.services.api.networks.application.aliases.push("pickflick-production-worker"),
       message: /UAT and production service aliases must be environment-isolated/,
+    },
+    {
+      name: "a same-environment alias collision",
+      mutate: (deployments: Deployments) =>
+        deployments.uat.services.api.networks.application.aliases.push("pickflick-uat-worker"),
+      message: /uat service aliases must each have one owner/,
     },
     {
       name: "a writable root filesystem",

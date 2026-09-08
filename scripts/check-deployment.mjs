@@ -6,6 +6,20 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const applicationServices = ["api", "release", "web", "worker"];
 const runtimeServices = ["api", "web", "worker"];
 const deploymentOverrideVariables = ["DOKPLOY_NETWORK", "SOURCE_REVISION"];
+const intendedHealthChecks = {
+  api: [
+    "CMD",
+    "node",
+    "-e",
+    "fetch('http://127.0.0.1:3001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+  ],
+  web: [
+    "CMD",
+    "node",
+    "-e",
+    "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+  ],
+};
 const runtimeEnvironmentVariables = [
   "APP_ENV",
   "DATABASE_URL",
@@ -122,6 +136,26 @@ function hasEnabledHealthCheck(service) {
   );
 }
 
+function hasIntendedHealthCheck(service, intendedTest) {
+  const test = service.healthcheck?.test;
+  return Array.isArray(test) && test.length === intendedTest.length && test.every((part, index) => part === intendedTest[index]);
+}
+
+function hasUniqueAliasOwners(services) {
+  const aliasOwners = new Map();
+
+  for (const name of applicationServices) {
+    for (const alias of new Set(services[name].networks.application.aliases)) {
+      if (aliasOwners.has(alias)) {
+        return false;
+      }
+      aliasOwners.set(alias, name);
+    }
+  }
+
+  return true;
+}
+
 export function validateDeployments({ production, uat }) {
   for (const [appEnvironment, deployment] of Object.entries({ production, uat })) {
     assert(
@@ -161,6 +195,7 @@ export function validateDeployments({ production, uat }) {
     );
     assert(deployment.services.release.build?.target === "release", "The release gate must build the release target.");
     assert(deployment.services.release.command == null, "The release gate must use the image command.");
+    assert(deployment.services.release.entrypoint == null, "The release gate must use the image entrypoint.");
     validateRequiredEnvironment(deployment.services.release, ["APP_ENV", "DATABASE_URL"], "release");
 
     for (const name of runtimeServices) {
@@ -185,7 +220,16 @@ export function validateDeployments({ production, uat }) {
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
     assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");
     assert(hasEnabledHealthCheck(deployment.services.web), "Web must define an enabled health check.");
+    assert(
+      hasIntendedHealthCheck(deployment.services.api, intendedHealthChecks.api),
+      "API must define its intended health check.",
+    );
+    assert(
+      hasIntendedHealthCheck(deployment.services.web, intendedHealthChecks.web),
+      "Web must define its intended health check.",
+    );
     assert(deployment.services.web.depends_on?.api?.condition === "service_healthy", "Web must wait for API health.");
+    assert(hasUniqueAliasOwners(deployment.services), `${appEnvironment} service aliases must each have one owner.`);
   }
 
   const uatAliases = applicationServices.flatMap(
