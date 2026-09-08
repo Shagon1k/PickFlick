@@ -160,6 +160,26 @@ the process environment. Set `PICKFLICK_ENV_FILE` to an absolute path or a repos
 to use another file. The named file must exist. Do not use the override to commit or expose secret
 files.
 
+## Continuous integration
+
+The [CI workflow](../.github/workflows/ci.yml) runs for pull requests to `main` and pushes to
+`main`. It installs the pinned Node.js and pnpm versions from a clean checkout, uses the lockfile
+without updating it, and rejects tracked or untracked repository drift after generation and build
+steps.
+
+The workflow creates a unique Compose project for each run. It overrides `.env.example` with
+synthetic `test` database and object-storage identifiers, starts PostgreSQL, Redis, MinIO, and
+Mailpit on the isolated runner, and removes the containers and volumes even after a failed check.
+The workflow does not read UAT or production environment files, data, or provider credentials.
+
+After static checks and unit tests, CI applies the committed migrations, loads deterministic
+fixtures, verifies database constraints and dependency connectivity, and runs `pnpm e2e:smoke`.
+The smoke command starts the built web, API, and worker entrypoints; checks web rendering, API
+liveness/readiness, and worker readiness; then stops all three processes. CI also validates the
+deployment definitions, builds each production image target from the checked-out revision, and
+runs the repository secret scan. The terminal `Delivery gate` fails unless both the secret scan and
+the complete quality job pass. Any future delivery workflow must require that terminal gate.
+
 ## Runtime health, errors, and logs
 
 The API exposes two unauthenticated probe endpoints:

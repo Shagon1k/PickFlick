@@ -52,6 +52,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Type-check | `pnpm typecheck` |
 | Run unit tests | `pnpm test` |
 | Build every package and app | `pnpm build` |
+| Smoke built web, API, and worker entrypoints | `pnpm e2e:smoke` |
 | Build the four production image targets | `pnpm images:build` |
 | Validate isolated UAT/production Compose renders | `pnpm compose:check` |
 | Run the release gate, then converge the deployment | `pnpm deploy:compose` |
