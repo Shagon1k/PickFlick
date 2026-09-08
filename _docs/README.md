@@ -21,7 +21,7 @@ phase-level acceptance record; do not copy issue status into it.
 | [ROADMAP.md](../ROADMAP.md) | Product contract, MVP boundary, business rules, routes, phase sequence/acceptance, and decisions. | Active product/phase contract; not the actionable task inbox. |
 | [DESIGN.md](../DESIGN.md) | Design authority, experience structure, screen/state/component coverage, and QA contract. | Approved direction; build/QA not started. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Accepted deployable, module/data/interface, runtime, security, and operations direction. | Repository and runtime foundations are active; product and deployment implementation remains Proposed or Partial. |
-| [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | ADR-001 through ADR-006 accepted. |
+| [Architecture Decision Records](decisions/README.md) | Accepted/rejected/superseded rationale for significant technical choices. | ADR-001 through ADR-007 recorded; ADR-007 supersedes ADR-005. |
 | [Environment and runtime operations](environment.md) | Runtime variables, local services, image/Compose delivery, migration/release safety, health probes, logging, correlation, shutdown, and API errors. | Active local/runtime and image/topology foundation; provisioned environments extend it later. |
 
 ## Agent entrypoints
@@ -64,4 +64,4 @@ The retired blueprint was intentionally removed after synthesis; this repository
 
 | Plan | Purpose | Lifecycle |
 | --- | --- | --- |
-| [Phase 1 — Infrastructure, Repository & Deployment Foundation](phase-1-infrastructure-foundation.md) | Cross-issue sequence, inherited contracts, edge cases, commands, and evidence in progress for issues #9–#16. | Consolidate durable knowledge and remove this temporary plan/link when Phase 1 completes. |
+| [Phase 1 — Infrastructure, Repository & Deployment Foundation](phase-1-infrastructure-foundation.md) | Cross-issue sequence, inherited contracts, edge cases, commands, and evidence in progress for the Phase 1 slices and deployment follow-ups. | Consolidate durable knowledge and remove this temporary plan/link when Phase 1 completes. |

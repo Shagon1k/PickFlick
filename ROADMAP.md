@@ -359,7 +359,8 @@ stateDiagram-v2
 
 ## 9. Architecture Decisions
 
-The developer accepted the foundational direction in ADR-001 through ADR-006 on 2026-09-05.
+The developer accepted the foundational direction in ADR-001 through ADR-006 on 2026-09-05 and
+the proportional deployment baseline in ADR-007 on 2026-09-07.
 Accepted direction is not implemented state: each runtime row remains Proposed until the owning
 phase provides verification. Exact dependency versions are selected and pinned during scaffolding,
 not frozen in planning prose.
@@ -371,8 +372,8 @@ not frozen in planning prose.
 | Backend / auth boundary | NestJS modular REST/SSE API owns same-origin OAuth and opaque server sessions; issue #25 selects the library. | Accepted direction; Proposed implementation | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) |
 | Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
-| Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) |
-| Deployment | Immutable web/API/worker/release images promoted by digest through isolated Dokploy environments behind Cloudflare/Traefik; production stays manually disabled. | Accepted direction; Proposed implementation | [ADR-005](_docs/decisions/README.md#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) |
+| Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
+| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis, one source-built application Compose resource, ordered release/health gates, revision traceability, and no host-published ports. Digest promotion becomes mandatory before production; production stays manually disabled. | Accepted direction; Partial implementation | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
 
 ## 10. External Integrations
 
@@ -453,11 +454,11 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 - [ ] Establish PostgreSQL, Redis, object-storage, and mail-development dependencies with typed environment validation.
 - [ ] Create the initial Prisma/migration workflow, seed/test-fixture strategy, and safe reset policy for non-production environments.
 - [ ] Add real install/dev/build/lint/type-check/test/migrate/seed, image-build, Compose-validation, and E2E-smoke commands and update `AGENTS.md`.
-- [ ] Build production-oriented web, API, worker, and one-shot release images plus one Compose definition shared by UAT and production, with ordered migrations/seeds, health gates, environment isolation, and graceful worker shutdown.
+- [ ] Keep production-oriented web, API, worker, and one-shot release images; align the shared application Compose definition with Dokploy-managed PostgreSQL/Redis, ordered release/health gates, revision traceability, private ports, and baseline signal handling.
 - [ ] Provision the isolated UAT deployment through Dokploy and Cloudflare at `https://uat.pick-flick.app` with synthetic data and sandbox providers.
 - [ ] Prepare the production Dokploy resource and environment contract for `https://pick-flick.app`, with automatic deployment disabled and an explicit production-enable guard kept false.
 - [ ] Replace the placeholder CI job with real quality gates; deploy a green `main` revision automatically to UAT, wait for the exact Dokploy revision, and run health plus browser smoke checks.
-- [ ] Add a dormant manual SemVer production-promotion workflow that accepts only a revision with successful UAT evidence and cannot deploy while the production-enable guard is false.
+- [ ] Add a dormant manual SemVer production-promotion workflow that accepts only a revision with successful UAT evidence, promotes its published digest bundle without rebuilding, and cannot deploy while the production-enable guard is false.
 - [ ] Establish typed environment inventories, secret/build-time/runtime boundaries, structured logging, request/job correlation, health/readiness endpoints, and a stable API error envelope.
 - [ ] Document deployment, configuration, migration compatibility, UAT smoke, rollback, and production-enable procedures without recording secret values.
 
@@ -467,19 +468,21 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 - [ ] Lint, type-check, unit test, integration test, production builds, image builds, and Compose validation pass locally and in CI.
 - [ ] A green `main` revision deploys automatically to `https://uat.pick-flick.app`, and the exact deployed revision passes HTTPS health and browser smoke checks.
 - [ ] A failed release migration/seed prevents the new API, worker, and web revision from becoming active.
-- [ ] UAT and production configuration, networks, PostgreSQL, Redis, storage scopes, and private service identities remain isolated; no application or data-service port is published directly.
+- [ ] UAT and production projects, managed PostgreSQL/Redis instances, credentials, storage scopes, application networks, and private service aliases remain distinct; no application or data-service port is published directly.
 - [ ] A known-good UAT revision can be restored under the documented schema-compatibility rules.
 - [ ] The production workflow and configuration validate without deploying production while the production-enable guard is false.
 - [ ] Invalid/missing configuration fails safely without exposing secrets.
 - [ ] Architecture/ADR documentation matches the generated repository and runtime topology.
 
-**Evidence:** ADR-001 through ADR-006 were accepted on 2026-09-05. Remaining Phase 1 evidence:
-local/CI command logs, image builds, Compose validation, migration/idempotent-seed output, exact UAT
-revision and Dokploy deployment record, Cloudflare DNS/TLS checks, health/E2E results,
+**Evidence:** ADR-001 through ADR-006 were accepted on 2026-09-05; ADR-007 superseded the deployment
+baseline on 2026-09-07 after comparison with Dokploy capabilities and TailorTales operations.
+Remaining Phase 1 evidence: local/CI command logs, image builds, the proportional Compose
+validation, migration/idempotent-seed output, exact UAT revision and Dokploy deployment record,
+Cloudflare DNS/TLS checks, health/E2E results,
 failed-release gate, UAT rollback exercise, production-disabled guard test, and repository tree
 review.
 
-**Deliverables:** Runnable monorepo, local dependency stack, real CI, database foundation, typed configuration, production images, shared deployment Compose, operational UAT, inactive production-promotion path, deployment/environment/runbook guidance, and real command map.
+**Deliverables:** Runnable monorepo, local dependency stack, real CI, database foundation, typed configuration, production-oriented images, proportional application Compose, Dokploy-managed remote data services, operational UAT, inactive production-promotion path, deployment/environment/runbook guidance, and real command map.
 
 **Out of scope:** Production traffic cutover, real production users/data, activation of live billing/email/storage providers, final production restore drill, production UI, and end-user feature behavior.
 
@@ -1320,6 +1323,7 @@ review.
 | Decision | Owner | Resolution | Evidence |
 | --- | --- | --- | --- |
 | Canonical UAT and production domains | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases. | Developer decision, 2026-08-24. |
+| Proportional MVP deployment baseline | Developer | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07. |
 
 ### Open Questions
 
