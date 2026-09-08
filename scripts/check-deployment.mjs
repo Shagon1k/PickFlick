@@ -193,6 +193,10 @@ export function validateDeployments({ production, uat }) {
       hasOnlyProfile(deployment.services.release, "release"),
       "The release gate must use its isolated deployment profile.",
     );
+    assert(
+      runtimeServices.every((name) => !(name in (deployment.services.release.depends_on ?? {}))),
+      "The release gate must not depend on application services.",
+    );
     assert(deployment.services.release.build?.target === "release", "The release gate must build the release target.");
     assert(deployment.services.release.command == null, "The release gate must use the image command.");
     assert(deployment.services.release.entrypoint == null, "The release gate must use the image entrypoint.");
@@ -203,6 +207,7 @@ export function validateDeployments({ production, uat }) {
         hasOnlyProfile(deployment.services[name], "application"),
         `${name} must use the application convergence profile.`,
       );
+      assert(deployment.services[name].build?.target === name, `${name} must build the ${name} target.`);
       assert(
         !("release" in (deployment.services[name].depends_on ?? {})),
         `${name} must not recreate before the release run.`,
@@ -229,6 +234,7 @@ export function validateDeployments({ production, uat }) {
       "Web must define its intended health check.",
     );
     assert(deployment.services.web.depends_on?.api?.condition === "service_healthy", "Web must wait for API health.");
+    assert(deployment.services.web.depends_on?.api?.required === true, "Web must require API health.");
     assert(hasUniqueAliasOwners(deployment.services), `${appEnvironment} service aliases must each have one owner.`);
   }
 

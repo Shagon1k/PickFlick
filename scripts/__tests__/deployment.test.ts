@@ -134,6 +134,17 @@ describe("deployment Compose", () => {
       message: /api must use the application convergence profile/,
     },
     {
+      name: "a release dependency on an application service",
+      mutate: (deployments: Deployments) =>
+        (deployments.uat.services.release.depends_on = { api: { condition: "service_healthy", required: true } }),
+      message: /release gate must not depend on application services/,
+    },
+    {
+      name: "a runtime service with the wrong build target",
+      mutate: (deployments: Deployments) => (deployments.uat.services.worker.build.target = "api"),
+      message: /worker must build the worker target/,
+    },
+    {
       name: "an inline release dependency that bypasses staged convergence",
       mutate: (deployments: Deployments) =>
         (deployments.uat.services.api.depends_on = { release: { condition: "service_completed_successfully" } }),
@@ -153,6 +164,11 @@ describe("deployment Compose", () => {
       name: "web startup without the API health gate",
       mutate: (deployments: Deployments) => (deployments.uat.services.web.depends_on.api.condition = "service_started"),
       message: /Web must wait for API health/,
+    },
+    {
+      name: "an optional API health dependency",
+      mutate: (deployments: Deployments) => (deployments.uat.services.web.depends_on.api.required = false),
+      message: /Web must require API health/,
     },
     {
       name: "a directly published application port",
