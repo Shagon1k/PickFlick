@@ -74,13 +74,14 @@ Dokploy supplies these Compose-only values. They do not belong in the local `.en
 
 The remote Compose file owns only `release`, `api`, `worker`, and `web`; it defines no data service
 or persistent volume. Every service joins the pre-created external application network with an
-environment-specific alias. Web and API use `expose`; no service publishes a host port. Connect the
-environment's managed PostgreSQL and Redis resources to the same application network, supply their
-internal connection URLs, and keep their external ports disabled in Dokploy. UAT and production
-must use different Dokploy projects, application networks, service aliases, database/Redis
-credentials, S3 buckets and credentials, and SMTP/provider identities. A separate production
-deployment server is deferred until production provisioning, or until measured contention or a
-host-isolation requirement justifies one earlier.
+environment-specific alias. Web and API use `expose`; no service publishes a host port. The public
+origin routes only to web, whose `/api/*` rewrite targets the environment-specific internal API
+alias. Connect the environment's managed PostgreSQL, Redis, and MinIO resources to the same application network,
+supply their internal connection values, and keep raw external ports disabled in Dokploy. UAT and
+production must use different Dokploy projects, application networks, service aliases,
+database/Redis credentials, storage buckets and credentials, and Resend identities. A separate
+production deployment server is deferred until production provisioning, or until measured
+contention or a host-isolation requirement justifies one earlier.
 
 API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
 `SHUTDOWN_TIMEOUT_MS` for shutdown work to finish. Deployment Compose fixes this timeout at 10
@@ -90,6 +91,40 @@ only when a real consumer supplies measured job-duration and retry requirements.
 In UAT and production, `SOURCE_REVISION` is required and must be a full 40- or 64-character
 hexadecimal revision. The API returns it from `/health/live`; every Dockerfile target also records
 it in the `org.opencontainers.image.revision` label.
+
+The [UAT operations guide](uat-operations.md) owns live provisioning and delivery. After the `CI`
+delivery gate succeeds for a push to `main`, `.github/workflows/deploy-uat.yml` serializes UAT runs,
+confirms the triggering full SHA is still the tip of `main`, and calls the Dokploy Compose API.
+Dokploy auto deploy remains disabled. A confirmed rollback creates an immutable
+`PF-uat-<full-SHA>` tag and temporarily pins the Compose resource to it; the next automatic run
+returns the resource to `main`. The workflow rewrites only the Compose resource's service-level
+environment references and selected `SOURCE_REVISION`; secret values stay in UAT-scoped Dokploy
+environment variables or its assigned vault. Deployment controls run from the current trusted
+`main`; rollback targets supply application/Compose content only.
+
+`pnpm uat:deploy` authenticates through Cloudflare Access, verifies the immutable Dokploy source,
+repository, Compose path, disabled auto-deploy, staged custom command, and idle deployment state
+before it pins the selected Git ref. It requires a new Dokploy `running` to `done` transition, then
+waits until HTTPS liveness reports the selected SHA and readiness reports every dependency as up.
+`pnpm uat:smoke` runs Chromium at desktop and mobile viewports, rejects browser errors and
+horizontal page overflow, and writes exact-SHA screenshots for owner review.
+
+The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
+application runtime variables, and do not belong in `.env` or `.env.example`:
+
+| Setting | GitHub storage | Sensitive | Purpose |
+| --- | --- | --- | --- |
+| `DOKPLOY_URL` | Actions variable | No | HTTPS origin for the Cloudflare-protected Dokploy API. |
+| `DOKPLOY_UAT_COMPOSE_ID` | Actions variable | No | Exact UAT Compose resource identifier. |
+| `DOKPLOY_API_TOKEN` | Actions secret | Yes | Least-privilege UAT Compose read/deploy access. |
+| `CF_ACCESS_CLIENT_ID` | Actions secret | Yes | Cloudflare Access service-token identifier for the Dokploy API. |
+| `CF_ACCESS_CLIENT_SECRET` | Actions secret | Yes | Cloudflare Access service-token secret for the Dokploy API. |
+| `PLAYWRIGHT_BASE_URL` | Actions variable | No | Canonical UAT browser-smoke origin; must be `https://uat.pick-flick.app`. |
+
+`GITHUB_TOKEN`, `GITHUB_REPOSITORY`, `SOURCE_REVISION`, and `UAT_RESTORE_REVISION` are ephemeral
+workflow process inputs. The workflow always sets `UAT_RESTORE_REVISION` explicitly to `true` or
+`false`. `scripts/deploy-uat.mjs` validates these inputs before any external mutation and never logs
+their sensitive values.
 
 ## Start the local stack
 
@@ -107,9 +142,10 @@ pnpm db:check
 pnpm dev
 ```
 
-`pnpm services:up` waits for PostgreSQL, Redis, MinIO, and Mailpit, then creates the configured
+`pnpm services:up` waits for PostgreSQL, Redis, and MinIO, then creates the configured
 MinIO bucket if it does not exist. `pnpm services:check` checks each service from the host and uses
-the runtime S3 credentials to verify access to the configured bucket.
+the runtime storage credentials to verify access to the configured bucket. Local configuration uses
+the non-secret `RESEND_API_KEY=local-disabled` placeholder and does not call Resend.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
 fixtures, and PostgreSQL constraints.
 
@@ -144,16 +180,25 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
 | `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
 | `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
-| `S3_ENDPOINT` | HTTP or HTTPS URL | API, worker | No |
-| `S3_REGION` | Non-empty region | API, worker | No |
-| `S3_BUCKET` | Valid lowercase S3 bucket name | API, worker | No |
-| `S3_ACCESS_KEY_ID` | Non-empty access-key identifier | API, worker | Yes |
-| `S3_SECRET_ACCESS_KEY` | Non-empty secret access key | API, worker | Yes |
-| `S3_FORCE_PATH_STYLE` | `true` or `false` | API, worker | No |
-| `SMTP_HOST` | Non-empty host | API, worker | No |
-| `SMTP_PORT` | Integer from 1 through 65535 | API, worker | No |
-| `SMTP_SECURE` | `true` or `false` | API, worker | No |
-| `MAIL_FROM` | Email address, optionally with a display name | API, worker | No |
+| `STORAGE_ENDPOINT` | HTTP or HTTPS S3-compatible API URL | API, worker | No |
+| `STORAGE_REGION` | Non-empty signing region; use `us-east-1` for MinIO | API, worker | No |
+| `STORAGE_BUCKET` | Valid lowercase S3 bucket name | API, worker | No |
+| `STORAGE_ACCESS_KEY` | Non-empty application access-key identifier | API, worker | Yes |
+| `STORAGE_SECRET_KEY` | Non-empty application secret access key | API, worker | Yes |
+| `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
+| `RESEND_API_KEY` | Non-empty server-side Resend API key or the local disabled placeholder | API, worker | Yes |
+| `RESEND_FROM` | Email address, optionally with a display name | API, worker | No |
+
+MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
+not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as
+`STORAGE_ENDPOINT`, set `STORAGE_FORCE_PATH_STYLE=true`, and keep the console private. This matches
+the future presigned-URL shape. AWS S3 production configuration will use its regional endpoint and
+set `STORAGE_FORCE_PATH_STYLE=false`.
+
+The runtime validates the Resend values at startup but does not call Resend from readiness.
+Readiness must not consume provider rate limits or require a full-access key when the application
+only needs a domain-restricted sending key. Phase 17 adds the sending adapter, retries, and
+delivery observability with the first email use case.
 
 By default, processes load `.env` from the repository root without replacing variables already in
 the process environment. Set `PICKFLICK_ENV_FILE` to an absolute path or a repository-relative path
@@ -167,9 +212,10 @@ The [CI workflow](../.github/workflows/ci.yml) runs for pull requests to `main` 
 without updating it, and rejects tracked or untracked repository drift after the workspace build.
 
 The workflow creates a unique Compose project for each run. It overrides `.env.example` with
-synthetic `test` database and object-storage identifiers, starts PostgreSQL, Redis, MinIO, and
-Mailpit on the isolated runner, and removes the containers and volumes even after a failed check.
-The workflow does not read UAT or production environment files, data, or provider credentials.
+synthetic `test` database and object-storage identifiers, starts PostgreSQL, Redis, and MinIO on the
+isolated runner, and removes the containers and volumes even after a failed check. The workflow
+uses the disabled local Resend placeholder and does not read UAT or production environment files,
+data, or provider credentials.
 
 CI runs static checks, integration/runtime checks, and production image builds as separate parallel
 jobs. The integration job applies the committed migrations, loads deterministic fixtures, verifies
@@ -188,11 +234,12 @@ The API exposes two unauthenticated probe endpoints:
 | `GET /health/live` | HTTP 200 with `{"service":"api","status":"alive"}` while the process can serve HTTP. | Process or HTTP-server failure prevents a response. The endpoint does not query dependencies. |
 | `GET /health/ready` | HTTP 200 with each required dependency marked `up`. | HTTP 503 with each required dependency marked `up` or `down`; probe errors and configuration values are omitted. |
 
-Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, authenticates an S3
-`HeadBucket` request, and waits for the complete SMTP greeting. Each probe enforces its two-second
-deadline through its database driver, abort signal, or socket and cancels timed-out work. The worker
-runs the same checks before it reports `service.ready`. If a dependency is unavailable, the worker
-logs only its stable dependency name and exits unsuccessfully.
+Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, and authenticates an S3
+`HeadBucket` request. Each probe enforces its two-second deadline through its database driver,
+abort signal, or socket and cancels timed-out work. The worker runs the same checks before it
+reports `service.ready`. If a dependency is unavailable, the worker logs only its stable dependency
+name and exits unsuccessfully. Resend is not a readiness dependency; queued delivery and provider
+failure handling arrive with the notification implementation.
 
 API responses include `x-request-id`. The API keeps a valid UUIDv4 supplied in `x-request-id` and
 generates a new UUIDv4 for missing or invalid input. Boundary failures use this envelope:
@@ -230,7 +277,6 @@ the runtime table also lists them.
 | `REDIS_PORT` | Local Redis loopback port |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Local MinIO administrator used by the bucket initializer |
 | `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Local MinIO loopback ports |
-| `MAILPIT_SMTP_PORT`, `MAILPIT_HTTP_PORT` | Local Mailpit SMTP and web-interface loopback ports |
 
 Every published port binds to `127.0.0.1`. UAT and production must supply separate values through
 their secret/configuration systems; they must not reuse this local file or its synthetic values.

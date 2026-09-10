@@ -10,7 +10,6 @@ export { createLogger, type ApplicationLogger, type LoggerOptions } from "./logg
 export {
   checkReadiness,
   checkRedis,
-  checkSmtp,
   checkStorage,
   createRuntimeDependencyProbes,
   type DependencyProbe,

@@ -100,7 +100,7 @@ function hmac(key: string | Buffer, value: string): Buffer {
   return createHmac("sha256", key).update(value).digest();
 }
 
-function bucketUrl(configuration: WorkerEnvironment["s3"]): URL {
+function bucketUrl(configuration: WorkerEnvironment["storage"]): URL {
   const target = new URL(configuration.endpoint);
   if (configuration.forcePathStyle) {
     target.pathname = `${target.pathname.replace(/\/+$/, "")}/${configuration.bucket}`;
@@ -110,7 +110,7 @@ function bucketUrl(configuration: WorkerEnvironment["s3"]): URL {
   return target;
 }
 
-function authorizationHeaders(configuration: WorkerEnvironment["s3"], target: URL, now: Date): Headers {
+function authorizationHeaders(configuration: WorkerEnvironment["storage"], target: URL, now: Date): Headers {
   const timestamp = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
   const date = timestamp.slice(0, 8);
   const payloadHash = sha256("");
@@ -119,7 +119,7 @@ function authorizationHeaders(configuration: WorkerEnvironment["s3"], target: UR
   const canonicalRequest = ["HEAD", target.pathname, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
   const credentialScope = `${date}/${configuration.region}/s3/aws4_request`;
   const stringToSign = ["AWS4-HMAC-SHA256", timestamp, credentialScope, sha256(canonicalRequest)].join("\n");
-  const dateKey = hmac(`AWS4${configuration.secretAccessKey}`, date);
+  const dateKey = hmac(`AWS4${configuration.secretKey}`, date);
   const regionKey = hmac(dateKey, configuration.region);
   const serviceKey = hmac(regionKey, "s3");
   const signingKey = hmac(serviceKey, "aws4_request");
@@ -127,7 +127,7 @@ function authorizationHeaders(configuration: WorkerEnvironment["s3"], target: UR
 
   return new Headers({
     authorization:
-      `AWS4-HMAC-SHA256 Credential=${configuration.accessKeyId}/${credentialScope}, ` +
+      `AWS4-HMAC-SHA256 Credential=${configuration.accessKey}/${credentialScope}, ` +
       `SignedHeaders=${signedHeaders}, Signature=${signature}`,
     "x-amz-content-sha256": payloadHash,
     "x-amz-date": timestamp,
@@ -135,7 +135,7 @@ function authorizationHeaders(configuration: WorkerEnvironment["s3"], target: UR
 }
 
 export async function checkStorage(
-  configuration: WorkerEnvironment["s3"],
+  configuration: WorkerEnvironment["storage"],
   options: ProbeOptions = {},
 ): Promise<void> {
   const target = bucketUrl(configuration);
@@ -160,61 +160,6 @@ export async function checkStorage(
   }
 }
 
-export async function checkSmtp(
-  host: string,
-  port: number,
-  secure: boolean,
-  timeoutMilliseconds = defaultTimeoutMilliseconds,
-): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const socket = secure ? connectTls({ host, port, servername: host }) : connectTcp({ host, port });
-    const timer = setTimeout(
-      () => finish(new Error("SMTP readiness check timed out.")),
-      timeoutMilliseconds,
-    );
-    let response = "";
-    let settled = false;
-
-    const finish = (error?: Error) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timer);
-      if (error) {
-        socket.destroy();
-        reject(error);
-      } else {
-        socket.end("QUIT\r\n");
-        resolve();
-      }
-    };
-
-    socket.on("data", (data) => {
-      response += data.toString("utf8");
-      const completeLines = response.split("\r\n");
-      completeLines.pop();
-      const firstLine = completeLines[0];
-
-      if (!firstLine) {
-        return;
-      }
-      if (firstLine.startsWith("220 ")) {
-        finish();
-        return;
-      }
-      if (!firstLine.startsWith("220-")) {
-        finish(new Error("SMTP readiness check was rejected."));
-        return;
-      }
-      if (completeLines.slice(1).some((line) => line.startsWith("220 "))) {
-        finish();
-      }
-    });
-    socket.once("error", () => finish(new Error("SMTP readiness check failed.")));
-  });
-}
-
 export function createRuntimeDependencyProbes(
   environment: WorkerEnvironment,
   checkDatabase: (timeoutMilliseconds: number) => Promise<void>,
@@ -224,12 +169,7 @@ export function createRuntimeDependencyProbes(
     { name: "redis", check: (timeoutMilliseconds) => checkRedis(environment.redisUrl, timeoutMilliseconds) },
     {
       name: "objectStorage",
-      check: (timeoutMilliseconds) => checkStorage(environment.s3, { timeoutMilliseconds }),
-    },
-    {
-      name: "smtp",
-      check: (timeoutMilliseconds) =>
-        checkSmtp(environment.smtp.host, environment.smtp.port, environment.smtp.secure, timeoutMilliseconds),
+      check: (timeoutMilliseconds) => checkStorage(environment.storage, { timeoutMilliseconds }),
     },
   ];
 }

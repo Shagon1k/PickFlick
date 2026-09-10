@@ -11,7 +11,7 @@ export interface ServiceStatus {
   readonly status: "scaffold";
 }
 
-export const DEPENDENCY_NAMES = ["database", "redis", "objectStorage", "smtp"] as const;
+export const DEPENDENCY_NAMES = ["database", "redis", "objectStorage"] as const;
 export type DependencyName = (typeof DEPENDENCY_NAMES)[number];
 
 export interface LivenessReport {

@@ -29,23 +29,6 @@ async function checkRedis(redisUrl: string): Promise<void> {
   });
 }
 
-async function checkSmtp(host: string, port: number): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const socket = connect({ host, port });
-    const timeout = setTimeout(() => socket.destroy(new Error("SMTP check timed out.")), 5_000);
-    socket.once("data", (data) => {
-      clearTimeout(timeout);
-      socket.end("QUIT\r\n");
-      if (data.toString().startsWith("220")) {
-        resolve();
-      } else {
-        reject(new Error("SMTP service did not return a greeting."));
-      }
-    });
-    socket.once("error", reject);
-  });
-}
-
 const database = createDatabaseClient(environment.databaseUrl);
 try {
   await database.$queryRaw`SELECT 1`;
@@ -53,7 +36,6 @@ try {
   await database.$disconnect();
 }
 await checkRedis(environment.redisUrl);
-await checkStorage(environment.s3);
-await checkSmtp(environment.smtp.host, environment.smtp.port);
+await checkStorage(environment.storage);
 
-console.log("Local services reachable: PostgreSQL, Redis, S3-compatible storage, and SMTP.");
+console.log("Local services reachable: PostgreSQL, Redis, and S3-compatible storage.");

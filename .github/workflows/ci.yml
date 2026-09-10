@@ -89,9 +89,9 @@ jobs:
       POSTGRES_DB: pickflick_test
       POSTGRES_PASSWORD: synthetic-ci-password
       POSTGRES_USER: pickflick_ci
-      S3_ACCESS_KEY_ID: pickflick-ci
-      S3_BUCKET: pickflick-ci-${{ github.run_id }}
-      S3_SECRET_ACCESS_KEY: synthetic-ci-password
+      STORAGE_ACCESS_KEY: pickflick-ci
+      STORAGE_BUCKET: pickflick-ci-${{ github.run_id }}
+      STORAGE_SECRET_KEY: synthetic-ci-password
 
     steps:
       - name: Check out the exact revision
@@ -119,7 +119,7 @@ jobs:
 
       - name: Start isolated test dependencies
         run: |
-          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml up -d --wait postgres redis minio mailpit
+          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml up -d --wait postgres redis minio
           docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml run --rm minio-init
 
       - name: Check dependency integration

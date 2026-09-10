@@ -14,16 +14,14 @@ const validEnvironment = {
   SHUTDOWN_TIMEOUT_MS: "10000",
   DATABASE_URL: "postgresql://pickflick:local-password@127.0.0.1:5432/pickflick_local",
   REDIS_URL: "redis://127.0.0.1:6379/0",
-  S3_ENDPOINT: "http://127.0.0.1:9000",
-  S3_REGION: "us-east-1",
-  S3_BUCKET: "pickflick-local",
-  S3_ACCESS_KEY_ID: "local-access-key",
-  S3_SECRET_ACCESS_KEY: "local-secret-key",
-  S3_FORCE_PATH_STYLE: "true",
-  SMTP_HOST: "127.0.0.1",
-  SMTP_PORT: "1025",
-  SMTP_SECURE: "false",
-  MAIL_FROM: "PickFlick <pickflick@example.invalid>",
+  STORAGE_ENDPOINT: "http://127.0.0.1:9000",
+  STORAGE_REGION: "us-east-1",
+  STORAGE_BUCKET: "pickflick-local",
+  STORAGE_ACCESS_KEY: "local-access-key",
+  STORAGE_SECRET_KEY: "local-secret-key",
+  STORAGE_FORCE_PATH_STYLE: "true",
+  RESEND_API_KEY: "local-disabled",
+  RESEND_FROM: "PickFlick <pickflick@example.invalid>",
 } as const;
 
 describe("environment validation", () => {
@@ -32,8 +30,8 @@ describe("environment validation", () => {
       appEnvironment: "local",
       apiPort: 3001,
       shutdownTimeoutMilliseconds: 10_000,
-      s3: { forcePathStyle: true },
-      smtp: { port: 1025, secure: false },
+      storage: { forcePathStyle: true },
+      resend: { from: "PickFlick <pickflick@example.invalid>" },
     });
   });
 
@@ -42,6 +40,16 @@ describe("environment validation", () => {
       appEnvironment: "local",
       databaseUrl: validEnvironment.DATABASE_URL,
     });
+  });
+
+  it("requires the storage and Resend provider contract", () => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        RESEND_API_KEY: undefined,
+        STORAGE_ACCESS_KEY: undefined,
+      }),
+    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required/);
   });
 
   it("accepts the worker inventory without API bind settings", () => {
@@ -76,9 +84,9 @@ describe("environment validation", () => {
     );
   });
 
-  it.each(["foo..bar", "192.168.5.4"])("rejects an invalid S3 bucket name: %s", (bucket) => {
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, S3_BUCKET: bucket })).toThrow(
-      /S3_BUCKET must be a valid lowercase S3 bucket name/,
+  it.each(["foo..bar", "192.168.5.4"])("rejects an invalid storage bucket name: %s", (bucket) => {
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: bucket })).toThrow(
+      /STORAGE_BUCKET must be a valid lowercase S3 bucket name/,
     );
   });
 

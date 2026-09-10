@@ -8,7 +8,7 @@ describe("service contracts", () => {
   });
 
   it("keeps health dependency names stable", () => {
-    expect(DEPENDENCY_NAMES).toEqual(["database", "redis", "objectStorage", "smtp"]);
+    expect(DEPENDENCY_NAMES).toEqual(["database", "redis", "objectStorage"]);
   });
 
   it("keeps safe API error codes stable", () => {

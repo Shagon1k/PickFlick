@@ -25,10 +25,11 @@
 ## Current Repository State
 
 - The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
-  PostgreSQL/Redis/MinIO/Mailpit stack, typed runtime configuration, and baseline quality commands
+  PostgreSQL/Redis/MinIO stack, typed storage/Resend configuration, and baseline quality commands
   are executable. Production-oriented web/API/worker/release images and the proportional,
-  source-built UAT/production application Compose topology are also executable locally.
-  Provisioned environments and delivery automation remain later Phase 1 work.
+  source-built UAT/production application Compose topology are also executable locally. The
+  exact-revision UAT workflow and operator guide are implemented; live Dokploy/Cloudflare
+  provisioning and UAT evidence remain owner-run Phase 1 work.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
   two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
   commands. Remaining product entities arrive with their owning phases.
@@ -43,7 +44,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | --- | --- |
 | Install dependencies | `pnpm install --frozen-lockfile` |
 | Start local data services and create the object-storage bucket | `pnpm services:up` |
-| Check local PostgreSQL, Redis, object storage, and SMTP | `pnpm services:check` |
+| Check local PostgreSQL, Redis, and object storage | `pnpm services:check` |
 | Stop local data services and retain their volumes | `pnpm services:down` |
 | Start web, API, and worker in development | `pnpm dev` |
 | Start previously built production entrypoints | `pnpm start` |
@@ -56,6 +57,8 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Build the four production image targets | `pnpm images:build` |
 | Validate isolated UAT/production Compose renders | `pnpm compose:check` |
 | Run the release gate, then converge the deployment | `pnpm deploy:compose` |
+| Deploy and wait for the configured exact UAT revision | `pnpm uat:deploy` |
+| Run desktop/mobile UAT browser smoke and screenshots | `pnpm uat:smoke` |
 | Run all scaffold quality gates | `pnpm verify` |
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |

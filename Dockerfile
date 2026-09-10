@@ -14,7 +14,9 @@ COPY . .
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 ARG SOURCE_REVISION
+ARG BACKEND_INTERNAL_URL=http://127.0.0.1:3001
 ENV SOURCE_REVISION=${SOURCE_REVISION}
+ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 RUN test -n "$SOURCE_REVISION" && pnpm build
 
 FROM builder AS api-package
