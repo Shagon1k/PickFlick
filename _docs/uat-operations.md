@@ -19,7 +19,7 @@ See the official [Dokploy releases](https://github.com/Dokploy/dokploy/releases)
 ## Configure GitHub
 
 1. Allow GitHub Actions to create and update repository contents. The UAT workflow uses this access
-   only to create immutable `PF-uat-<full-SHA>` tags during a confirmed rollback.
+   to create immutable `PF-uat-<full-SHA>` tags for automatic delivery and confirmed rollback.
    If a tag ruleset covers that namespace, allow creation by GitHub Actions but keep updates and
    deletion blocked.
 2. Add repository variable `DOKPLOY_URL` with the HTTPS origin of the Dokploy instance. Do not
@@ -33,12 +33,14 @@ See the official [Dokploy releases](https://github.com/Dokploy/dokploy/releases)
 
 Do not enable a second GitHub or Dokploy push trigger. `.github/workflows/deploy-uat.yml` is the
 only deployment owner. After the `CI` workflow succeeds for a push to `main`, it confirms that
-`main` still points to the triggering SHA, asks Dokploy to deploy that ref, waits for the same
-runtime SHA, and runs browser smoke checks. Runs share one non-cancelling concurrency group.
-Deployment controls and dependencies always come from the current trusted `main`; a manual
-rollback creates an immutable restore tag and pins Dokploy to it without executing scripts from
-the older revision. The next successful automatic run pins Dokploy back to `main`. Automatic runs
-stop if `main` advances before deployment; the newer successful CI run then owns UAT.
+`main` still points to the triggering SHA, creates or verifies its immutable tag, asks Dokploy to
+deploy that tag, waits for the same runtime SHA, and runs browser smoke checks. Runs share one
+non-cancelling concurrency group.
+Deployment controls and dependencies always come from the current trusted `main`; every selected
+revision gets an immutable tag and Dokploy is pinned to that tag before it clones the application
+source. Automatic runs stop if `main` advances before deployment; the newer successful CI run then
+owns UAT. Manual rollback also uses the immutable tag without executing scripts from the older
+revision.
 
 ## Provision Dokploy UAT
 
@@ -54,7 +56,7 @@ stop if `main` advances before deployment; the newer successful CI run then owns
 | --- | --- |
 | Source | GitHub |
 | Owner/repository | `Shagon1k/PickFlick` |
-| Branch | `main` |
+| Branch | `main` initially; the workflow pins `PF-uat-<full-SHA>` before deployment |
 | Auto deploy | Off |
 | Compose type | Docker Compose, not Stack |
 | Compose path | `compose.deploy.yaml` |
@@ -145,8 +147,7 @@ or raw application-container ports.
 After this implementation reaches `main` and its `CI` delivery gate succeeds:
 
 1. Open the `Deploy to UAT` workflow and record its triggering full SHA.
-2. Confirm Dokploy observed a `running` to `done` transition and the deployment record title
-   contains the same first 12 SHA characters.
+2. Confirm Dokploy records a new successful deployment for the selected immutable tag.
 3. Confirm `https://uat.pick-flick.app/api/health/live` reports the full SHA and
    `https://uat.pick-flick.app/api/health/ready` reports every dependency as `up`.
 4. Confirm Cloudflare serves a valid HTTPS chain and HTTP redirects to HTTPS.

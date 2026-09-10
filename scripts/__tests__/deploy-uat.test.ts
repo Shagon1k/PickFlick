@@ -40,6 +40,7 @@ function composeContract() {
     composePath: DOKPLOY_COMPOSE_PATH,
     composeStatus: "done",
     composeType: "docker-compose",
+    deployments: [{ deploymentId: "deployment-old", status: "done" }],
     owner: "Shagon1k",
     repository: "PickFlick",
     sourceType: "github",
@@ -60,8 +61,9 @@ function readyHealth(pathname: string) {
 }
 
 describe("UAT deployment", () => {
-  it("deploys main, saves reference-only environment data, and waits for Dokploy", async () => {
+  it("pins automatic delivery to a new immutable tag and accepts fast completion", async () => {
     let composeReads = 0;
+    const revisionTag = uatRestoreTag(revision);
     const requests: Array<{ body?: unknown; method: string; pathname: string }> = [];
     const fetchImplementation = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input));
@@ -73,16 +75,29 @@ describe("UAT deployment", () => {
       });
       if (url.pathname === "/api/compose.one") {
         composeReads += 1;
+        const compose = composeContract();
         return jsonResponse({
-          ...composeContract(),
-          composeStatus: composeReads === 3 ? "running" : "done",
+          ...compose,
+          branch: composeReads === 1 ? UAT_DEFAULT_REF : revisionTag,
+          deployments: composeReads === 3
+            ? [...compose.deployments, { deploymentId: "deployment-new", status: "done" }]
+            : compose.deployments,
         });
+      }
+      if (url.pathname.endsWith(`/git/ref/tags/${revisionTag}`)) {
+        return jsonResponse({ message: "Not Found" }, 404);
+      }
+      if (url.pathname.endsWith("/git/refs")) {
+        return jsonResponse({ object: { sha: revision } }, 201);
+      }
+      if (url.pathname === "/api/compose.update") {
+        return jsonResponse({ autoDeploy: false, branch: revisionTag });
       }
       if (url.pathname === "/api/compose.saveEnvironment") {
         return jsonResponse({});
       }
       if (url.pathname === "/api/compose.deploy") {
-        return jsonResponse({ success: true });
+        return jsonResponse({ composeId: "compose_123", success: true });
       }
       if (url.pathname.startsWith("/api/health/")) {
         return jsonResponse(readyHealth(url.pathname));
@@ -92,7 +107,10 @@ describe("UAT deployment", () => {
 
     await expect(deployUat(source, fetchImplementation, { sleep: vi.fn() })).resolves.toBe(revision);
 
-    expect(requests.some(({ pathname }) => pathname.startsWith(`/repos/`))).toBe(false);
+    expect(requests.find(({ method, pathname }) => method === "POST" && pathname.endsWith("/git/refs")))
+      .toMatchObject({ body: { ref: `refs/tags/${revisionTag}`, sha: revision } });
+    expect(requests.find(({ pathname }) => pathname === "/api/compose.update"))
+      .toMatchObject({ body: { autoDeploy: false, branch: revisionTag, composeId: "compose_123" } });
     const environmentSave = requests.find(({ pathname }) => pathname === "/api/compose.saveEnvironment");
     expect(environmentSave?.body).toEqual({
       composeId: "compose_123",
@@ -113,8 +131,9 @@ describe("UAT deployment", () => {
     expect(requests.at(-1)?.pathname).toBe("/api/health/ready");
   });
 
-  it("returns a restored Dokploy resource to main before automatic delivery", async () => {
+  it("moves a restored Dokploy resource to the automatic revision tag", async () => {
     let composeReads = 0;
+    const revisionTag = uatRestoreTag(revision);
     const requests: Array<{ body?: unknown; method: string; pathname: string }> = [];
     const fetchImplementation = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input));
@@ -126,20 +145,30 @@ describe("UAT deployment", () => {
       });
       if (url.pathname === "/api/compose.one") {
         composeReads += 1;
+        const compose = composeContract();
         return jsonResponse({
-          ...composeContract(),
-          branch: composeReads === 1 ? uatRestoreTag("b".repeat(40)) : UAT_DEFAULT_REF,
+          ...compose,
+          branch: composeReads === 1 ? uatRestoreTag("b".repeat(40)) : revisionTag,
           composeStatus: composeReads === 3 ? "running" : "done",
+          deployments: composeReads >= 3
+            ? [
+                ...compose.deployments,
+                { deploymentId: "deployment-new", status: composeReads === 3 ? "running" : "done" },
+              ]
+            : compose.deployments,
         });
       }
+      if (url.pathname.endsWith(`/git/ref/tags/${revisionTag}`)) {
+        return jsonResponse({ object: { sha: revision } });
+      }
       if (url.pathname === "/api/compose.update") {
-        return jsonResponse({ autoDeploy: false, branch: UAT_DEFAULT_REF });
+        return jsonResponse({ autoDeploy: false, branch: revisionTag });
       }
       if (url.pathname === "/api/compose.saveEnvironment") {
         return jsonResponse({});
       }
       if (url.pathname === "/api/compose.deploy") {
-        return jsonResponse({ success: true });
+        return jsonResponse({ composeId: "compose_123", success: true });
       }
       if (url.pathname.startsWith("/api/health/")) {
         return jsonResponse(readyHealth(url.pathname));
@@ -150,7 +179,7 @@ describe("UAT deployment", () => {
     await deployUat(source, fetchImplementation, { sleep: vi.fn() });
 
     expect(requests.find(({ method, pathname }) => method === "POST" && pathname === "/api/compose.update"))
-      .toMatchObject({ body: { autoDeploy: false, branch: UAT_DEFAULT_REF, composeId: "compose_123" } });
+      .toMatchObject({ body: { autoDeploy: false, branch: revisionTag, composeId: "compose_123" } });
   });
 
   it("checks the immutable Dokploy contract before changing external state", async () => {
@@ -170,6 +199,23 @@ describe("UAT deployment", () => {
     expect(fetchImplementation).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects an automatic revision tag that resolves to another commit", async () => {
+    const revisionTag = uatRestoreTag(revision);
+    const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/api/compose.one") {
+        return jsonResponse(composeContract());
+      }
+      if (url.pathname.endsWith(`/git/ref/tags/${revisionTag}`)) {
+        return jsonResponse({ object: { sha: "b".repeat(40) } });
+      }
+      throw new Error(`Unexpected request: ${url.href}`);
+    });
+
+    await expect(deployUat(source, fetchImplementation)).rejects.toThrow(/already points to another revision/);
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
   it("recognizes an explicitly confirmed manual restore", () => {
     expect(deploymentConfiguration({ ...source, UAT_RESTORE_REVISION: "true" }).restoreRevision).toBe(true);
   });
@@ -181,7 +227,7 @@ describe("UAT deployment", () => {
       .toThrow(/UAT_RESTORE_REVISION must be true or false/);
   });
 
-  it("pins an immutable tag only for an explicitly confirmed manual rollback", async () => {
+  it("pins an immutable tag for an explicitly confirmed manual rollback", async () => {
     let composeReads = 0;
     const restoreTag = uatRestoreTag(revision);
     const requests: Array<{ body?: unknown; method: string; pathname: string }> = [];
@@ -195,9 +241,16 @@ describe("UAT deployment", () => {
       });
       if (url.pathname === "/api/compose.one") {
         composeReads += 1;
+        const compose = composeContract();
         return jsonResponse({
-          ...composeContract(),
+          ...compose,
           composeStatus: composeReads === 3 ? "running" : "done",
+          deployments: composeReads >= 3
+            ? [
+                ...compose.deployments,
+                { deploymentId: "deployment-new", status: composeReads === 3 ? "running" : "done" },
+              ]
+            : compose.deployments,
         });
       }
       if (url.pathname.endsWith(`/git/ref/tags/${restoreTag}`)) {
@@ -213,7 +266,7 @@ describe("UAT deployment", () => {
         return jsonResponse({});
       }
       if (url.pathname === "/api/compose.deploy") {
-        return jsonResponse({ success: true });
+        return jsonResponse({ composeId: "compose_123", success: true });
       }
       if (url.pathname.startsWith("/api/health/")) {
         return jsonResponse(readyHealth(url.pathname));
@@ -236,10 +289,56 @@ describe("UAT deployment", () => {
 });
 
 describe("Dokploy deployment status", () => {
-  it("fails when Dokploy reports a deployment error", async () => {
-    const fetchImplementation = vi.fn(async () => jsonResponse({ composeStatus: "error" }));
+  it("accepts the triggered deployment as done on its first poll", async () => {
+    const fetchImplementation = vi.fn(async () => jsonResponse({
+      ...composeContract(),
+      deployments: [
+        ...composeContract().deployments,
+        { deploymentId: "deployment-new", status: "done" },
+      ],
+    }));
 
-    await expect(waitForDokployDeployment(deploymentConfiguration(source), {
+    await expect(waitForDokployDeployment(deploymentConfiguration(source), new Set(["deployment-old"]), {
+      fetchImplementation,
+      intervalMilliseconds: 0,
+      sleep: vi.fn(),
+      timeoutMilliseconds: 1_000,
+    })).resolves.toBeUndefined();
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores an old done record until the triggered deployment appears", async () => {
+    let reads = 0;
+    const fetchImplementation = vi.fn(async () => {
+      reads += 1;
+      const compose = composeContract();
+      return jsonResponse({
+        ...compose,
+        deployments: reads === 1
+          ? compose.deployments
+          : [...compose.deployments, { deploymentId: "deployment-new", status: "done" }],
+      });
+    });
+
+    await expect(waitForDokployDeployment(deploymentConfiguration(source), new Set(["deployment-old"]), {
+      fetchImplementation,
+      intervalMilliseconds: 0,
+      sleep: vi.fn(),
+      timeoutMilliseconds: 1_000,
+    })).resolves.toBeUndefined();
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails when the triggered Dokploy deployment reports an error", async () => {
+    const fetchImplementation = vi.fn(async () => jsonResponse({
+      ...composeContract(),
+      deployments: [
+        ...composeContract().deployments,
+        { deploymentId: "deployment-new", status: "error" },
+      ],
+    }));
+
+    await expect(waitForDokployDeployment(deploymentConfiguration(source), new Set(["deployment-old"]), {
       fetchImplementation,
       intervalMilliseconds: 0,
       sleep: vi.fn(),

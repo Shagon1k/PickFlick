@@ -163,14 +163,27 @@ async function verifyDokployCompose(fetchImplementation, configuration) {
   if (compose.composeStatus === "running") {
     throw new Error("The Dokploy Compose resource already has a running deployment.");
   }
+  dokployDeploymentRecords(compose);
   return compose;
+}
+
+function dokployDeploymentRecords(compose) {
+  if (!Array.isArray(compose.deployments)) {
+    throw new Error("The Dokploy Compose resource did not report deployment records.");
+  }
+  for (const deployment of compose.deployments) {
+    if (typeof deployment?.deploymentId !== "string" || !deployment.deploymentId) {
+      throw new Error("The Dokploy Compose resource reported an invalid deployment record.");
+    }
+  }
+  return compose.deployments;
 }
 
 export function uatRestoreTag(revision) {
   return `${UAT_RESTORE_TAG_PREFIX}${validateRevision(revision)}`;
 }
 
-async function ensureRestoreTag(fetchImplementation, configuration) {
+async function ensureUatTag(fetchImplementation, configuration) {
   const tag = uatRestoreTag(configuration.revision);
   const encodedTag = encodeURIComponent(tag);
   const refUrl = githubUrl(`/repos/${githubRepository}/git/ref/tags/${encodedTag}`);
@@ -188,18 +201,16 @@ async function ensureRestoreTag(fetchImplementation, configuration) {
       body: JSON.stringify({ ref: `refs/tags/${tag}`, sha: configuration.revision }),
     }, [201]);
     if (created?.object?.sha?.toLowerCase() !== configuration.revision) {
-      throw new Error("GitHub did not confirm the requested UAT restore tag.");
+      throw new Error("GitHub did not confirm the requested immutable UAT tag.");
     }
     return tag;
   }
 
-  throw new Error("The requested UAT restore tag already points to another revision.");
+  throw new Error("The requested immutable UAT tag already points to another revision.");
 }
 
 async function pinDokployRef(fetchImplementation, configuration, currentBranch) {
-  const branch = configuration.restoreRevision
-    ? await ensureRestoreTag(fetchImplementation, configuration)
-    : UAT_DEFAULT_REF;
+  const branch = await ensureUatTag(fetchImplementation, configuration);
   if (currentBranch === branch) {
     return;
   }
@@ -226,7 +237,7 @@ async function saveDokployEnvironment(fetchImplementation, configuration) {
 }
 
 async function triggerDokploy(fetchImplementation, configuration) {
-  await requestJson(fetchImplementation, dokployUrl(configuration.dokployOrigin, "/api/compose.deploy"), {
+  const deployment = await requestJson(fetchImplementation, dokployUrl(configuration.dokployOrigin, "/api/compose.deploy"), {
     method: "POST",
     headers: requestHeaders(dokployAuthentication(configuration)),
     body: JSON.stringify({
@@ -236,35 +247,50 @@ async function triggerDokploy(fetchImplementation, configuration) {
       title: `PickFlick UAT ${configuration.revision.slice(0, 12)}`,
     }),
   });
+  if (deployment?.success !== true || deployment.composeId !== configuration.composeId) {
+    throw new Error("Dokploy did not confirm the requested UAT deployment.");
+  }
 }
 
 export async function waitForDokployDeployment(
   configuration,
+  previousDeploymentIds,
   { fetchImplementation = fetch, intervalMilliseconds = 5_000, sleep = (milliseconds) => new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)), timeoutMilliseconds = 15 * 60_000 } = {},
 ) {
   const deadline = Date.now() + timeoutMilliseconds;
-  let observedRunning = false;
+  let deploymentId;
   while (Date.now() < deadline) {
     const compose = await requestJson(
       fetchImplementation,
       dokployUrl(configuration.dokployOrigin, `/api/compose.one?composeId=${encodeURIComponent(configuration.composeId)}`),
       { headers: requestHeaders(dokployAuthentication(configuration)) },
     );
-    switch (compose.composeStatus) {
-      case "running":
-        observedRunning = true;
-        break;
+    const deployments = dokployDeploymentRecords(compose);
+    if (deploymentId === undefined) {
+      const newDeployments = deployments.filter(({ deploymentId: candidateId }) => !previousDeploymentIds.has(candidateId));
+      if (newDeployments.length > 1) {
+        throw new Error("Dokploy reported multiple new deployments; the requested UAT deployment is ambiguous.");
+      }
+      deploymentId = newDeployments[0]?.deploymentId;
+    }
+    const deployment = deployments.find(({ deploymentId: candidateId }) => candidateId === deploymentId);
+    switch (deployment?.status) {
       case "done":
-        if (observedRunning) {
-          return;
-        }
-        break;
-      case "idle":
-        break;
+        return;
       case "error":
+      case "cancelled":
         throw new Error("Dokploy reported a failed UAT deployment.");
+      case "running":
+      case undefined:
+        break;
       default:
         throw new Error("Dokploy reported an unexpected UAT deployment status.");
+    }
+    if (compose.composeStatus === "error") {
+      throw new Error("Dokploy reported a failed UAT deployment.");
+    }
+    if (!["done", "idle", "running"].includes(compose.composeStatus)) {
+      throw new Error("Dokploy reported an unexpected UAT deployment status.");
     }
     await sleep(intervalMilliseconds);
   }
@@ -344,9 +370,12 @@ export async function deployUat(source = process.env, fetchImplementation = fetc
   const compose = await verifyDokployCompose(fetchImplementation, configuration);
   await pinDokployRef(fetchImplementation, configuration, compose.branch);
   await saveDokployEnvironment(fetchImplementation, configuration);
-  await verifyDokployCompose(fetchImplementation, configuration);
+  const composeBeforeDeployment = await verifyDokployCompose(fetchImplementation, configuration);
+  const previousDeploymentIds = new Set(
+    dokployDeploymentRecords(composeBeforeDeployment).map(({ deploymentId }) => deploymentId),
+  );
   await triggerDokploy(fetchImplementation, configuration);
-  await waitForDokployDeployment(configuration, { ...waitOptions, fetchImplementation });
+  await waitForDokployDeployment(configuration, previousDeploymentIds, { ...waitOptions, fetchImplementation });
   await waitForUatRevision(configuration.revision, { ...waitOptions, fetchImplementation });
   return configuration.revision;
 }

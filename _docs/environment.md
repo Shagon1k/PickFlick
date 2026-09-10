@@ -95,17 +95,17 @@ it in the `org.opencontainers.image.revision` label.
 The [UAT operations guide](uat-operations.md) owns live provisioning and delivery. After the `CI`
 delivery gate succeeds for a push to `main`, `.github/workflows/deploy-uat.yml` serializes UAT runs,
 confirms the triggering full SHA is still the tip of `main`, and calls the Dokploy Compose API.
-Dokploy auto deploy remains disabled. A confirmed rollback creates an immutable
-`PF-uat-<full-SHA>` tag and temporarily pins the Compose resource to it; the next automatic run
-returns the resource to `main`. The workflow rewrites only the Compose resource's service-level
-environment references and selected `SOURCE_REVISION`; secret values stay in UAT-scoped Dokploy
-environment variables or its assigned vault. Deployment controls run from the current trusted
-`main`; rollback targets supply application/Compose content only.
+Dokploy auto deploy remains disabled. Every automatic or confirmed rollback run creates or verifies
+an immutable `PF-uat-<full-SHA>` tag and pins the Compose resource to it. The workflow rewrites only
+the Compose resource's service-level environment references and selected `SOURCE_REVISION`; secret
+values stay in UAT-scoped Dokploy environment variables or its assigned vault. Deployment controls
+run from the current trusted `main`; rollback targets supply application/Compose content only.
 
 `pnpm uat:deploy` authenticates through Cloudflare Access, verifies the immutable Dokploy source,
 repository, Compose path, disabled auto-deploy, staged custom command, and idle deployment state
-before it pins the selected Git ref. It requires a new Dokploy `running` to `done` transition, then
-waits until HTTPS liveness reports the selected SHA and readiness reports every dependency as up.
+before it pins the selected immutable Git tag. It correlates completion with the new Dokploy
+deployment record without requiring a poll to observe its transient `running` state, then waits
+until HTTPS liveness reports the selected SHA and readiness reports every dependency as up.
 `pnpm uat:smoke` runs Chromium at desktop and mobile viewports, rejects browser errors and
 horizontal page overflow, and writes exact-SHA screenshots for owner review.
 
