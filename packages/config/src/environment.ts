@@ -12,18 +12,16 @@ export interface RuntimeEnvironment {
   readonly shutdownTimeoutMilliseconds: number;
   readonly databaseUrl: string;
   readonly redisUrl: string;
-  readonly s3: {
+  readonly storage: {
     readonly endpoint: string;
     readonly region: string;
     readonly bucket: string;
-    readonly accessKeyId: string;
-    readonly secretAccessKey: string;
+    readonly accessKey: string;
+    readonly secretKey: string;
     readonly forcePathStyle: boolean;
   };
-  readonly smtp: {
-    readonly host: string;
-    readonly port: number;
-    readonly secure: boolean;
+  readonly resend: {
+    readonly apiKey: string;
     readonly from: string;
   };
 }
@@ -155,16 +153,14 @@ function parseWorkerValues(
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
   const shutdownTimeoutMilliseconds = durationMilliseconds(source, "SHUTDOWN_TIMEOUT_MS", failures);
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");
-  const endpoint = url(source, "S3_ENDPOINT", ["http:", "https:"], failures);
-  const region = required(source, "S3_REGION", failures);
-  const bucket = required(source, "S3_BUCKET", failures);
-  const accessKeyId = required(source, "S3_ACCESS_KEY_ID", failures);
-  const secretAccessKey = required(source, "S3_SECRET_ACCESS_KEY", failures);
-  const forcePathStyle = boolean(source, "S3_FORCE_PATH_STYLE", failures);
-  const smtpHost = required(source, "SMTP_HOST", failures);
-  const smtpPort = integer(source, "SMTP_PORT", failures);
-  const smtpSecure = boolean(source, "SMTP_SECURE", failures);
-  const from = required(source, "MAIL_FROM", failures);
+  const endpoint = url(source, "STORAGE_ENDPOINT", ["http:", "https:"], failures);
+  const region = required(source, "STORAGE_REGION", failures);
+  const bucket = required(source, "STORAGE_BUCKET", failures);
+  const accessKey = required(source, "STORAGE_ACCESS_KEY", failures);
+  const secretKey = required(source, "STORAGE_SECRET_KEY", failures);
+  const forcePathStyle = boolean(source, "STORAGE_FORCE_PATH_STYLE", failures);
+  const resendApiKey = required(source, "RESEND_API_KEY", failures);
+  const from = required(source, "RESEND_FROM", failures);
 
   if (
     bucket &&
@@ -172,10 +168,10 @@ function parseWorkerValues(
       bucket.includes("..") ||
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(bucket))
   ) {
-    failures.push({ name: "S3_BUCKET", reason: "must be a valid lowercase S3 bucket name" });
+    failures.push({ name: "STORAGE_BUCKET", reason: "must be a valid lowercase S3 bucket name" });
   }
   if (from && !/^[^@\s]+(?:\s+<[^@\s]+@[^@\s]+\.[^@\s]+>|@[^@\s]+\.[^@\s]+)$/.test(from)) {
-    failures.push({ name: "MAIL_FROM", reason: "must be an email address or a name plus email address" });
+    failures.push({ name: "RESEND_FROM", reason: "must be an email address or a name plus email address" });
   }
   return {
     appEnvironment,
@@ -183,8 +179,8 @@ function parseWorkerValues(
     databaseUrl,
     shutdownTimeoutMilliseconds,
     redisUrl,
-    s3: { endpoint, region, bucket, accessKeyId, secretAccessKey, forcePathStyle },
-    smtp: { host: smtpHost, port: smtpPort, secure: smtpSecure, from },
+    storage: { endpoint, region, bucket, accessKey, secretKey, forcePathStyle },
+    resend: { apiKey: resendApiKey, from },
   };
 }
 

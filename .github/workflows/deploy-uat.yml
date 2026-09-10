@@ -1,0 +1,157 @@
+name: Deploy to UAT
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full main-branch revision to restore in UAT
+        required: true
+        type: string
+      confirm_rollback:
+        description: Confirm this manual run may pin an older revision to an immutable restore tag
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-uat
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  uat-e2e:
+    name: UAT E2E
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Resolve the approved revision
+        id: revision
+        shell: bash
+        env:
+          AUTOMATIC_REVISION: ${{ github.event.workflow_run.head_sha }}
+          CONFIRM_ROLLBACK: ${{ inputs.confirm_rollback }}
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_REVISION: ${{ inputs.revision }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            [[ "$WORKFLOW_REF" == "refs/heads/main" ]] || {
+              echo "Manual UAT restore must run from the main workflow definition." >&2
+              exit 1
+            }
+            [[ "$CONFIRM_ROLLBACK" == "true" ]] || {
+              echo "Manual UAT restore requires confirm_rollback=true." >&2
+              exit 1
+            }
+            revision="$MANUAL_REVISION"
+          else
+            revision="$AUTOMATIC_REVISION"
+          fi
+          [[ "$revision" =~ ^[0-9a-fA-F]{40}$ ]] || {
+            echo "The UAT revision must be a full 40-character hexadecimal Git SHA." >&2
+            exit 1
+          }
+          echo "revision=${revision,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out trusted deployment controls
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: main
+
+      - name: Verify the revision belongs to main
+        id: target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git cat-file -e "$SOURCE_REVISION^{commit}"
+          restore_revision=false
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            git merge-base --is-ancestor "$SOURCE_REVISION" origin/main
+            if [[ "$(git rev-parse origin/main)" != "$SOURCE_REVISION" ]]; then
+              restore_revision=true
+            fi
+          else
+            test "$(git rev-parse origin/main)" = "$SOURCE_REVISION" || {
+              echo "main advanced after this CI run; a newer successful run owns UAT." >&2
+              exit 1
+            }
+          fi
+          echo "restore_revision=$restore_revision" >> "$GITHUB_OUTPUT"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for the browser smoke
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pin the selected ref and deploy through Dokploy
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_UAT_COMPOSE_ID: ${{ vars.DOKPLOY_UAT_COMPOSE_ID }}
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
+          UAT_RESTORE_REVISION: ${{ steps.target.outputs.restore_revision }}
+        run: pnpm uat:deploy
+
+      - name: Run desktop and mobile browser smoke
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
+          UAT_SMOKE_ARTIFACT_DIR: test-results/uat-preview
+        run: pnpm uat:smoke
+
+      - name: Upload exact-revision preview screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          name: uat-preview-${{ steps.revision.outputs.revision }}
+          path: test-results/uat-preview/
+          retention-days: 14
+
+      - name: Record the review checkpoint
+        if: ${{ success() }}
+        shell: bash
+        env:
+          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
+        run: |
+          {
+            echo "## UAT exact-revision evidence"
+            echo
+            echo "- Revision: \`$SOURCE_REVISION\`"
+            echo "- URL: https://uat.pick-flick.app"
+            echo "- HTTPS liveness, readiness, desktop smoke, and mobile smoke passed."
+            echo "- Owner acknowledgement of the uploaded screenshots is still required."
+          } >> "$GITHUB_STEP_SUMMARY"

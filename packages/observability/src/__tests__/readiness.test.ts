@@ -1,16 +1,13 @@
-import { createServer } from "node:net";
-import type { AddressInfo, Socket } from "node:net";
-
 import { describe, expect, it, vi } from "vitest";
 
-import { checkSmtp, checkStorage } from "../readiness.js";
+import { checkStorage } from "../readiness.js";
 
 const storageEnvironment = {
   endpoint: "http://127.0.0.1:9000",
   region: "us-east-1",
   bucket: "pickflick-local",
-  accessKeyId: "local-access-key",
-  secretAccessKey: "local-secret-key",
+  accessKey: "local-access-key",
+  secretKey: "local-secret-key",
   forcePathStyle: true,
 } as const;
 
@@ -52,39 +49,5 @@ describe("object storage readiness", () => {
     await expect(
       checkStorage(storageEnvironment, { fetch: request, timeoutMilliseconds: 1 }),
     ).rejects.toThrow("Object storage readiness check timed out.");
-  });
-});
-
-describe("SMTP readiness", () => {
-  it("waits for a complete greeting split across TCP chunks", async () => {
-    const sockets = new Set<Socket>();
-    const server = createServer((socket) => {
-      sockets.add(socket);
-      socket.once("close", () => sockets.delete(socket));
-      socket.write("2");
-      setImmediate(() => socket.write("20 Mailpit ready\r\n"));
-    });
-    await new Promise<void>((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(0, "127.0.0.1", resolve);
-    });
-    const address = server.address() as AddressInfo;
-
-    try {
-      await expect(checkSmtp("127.0.0.1", address.port, false, 500)).resolves.toBeUndefined();
-    } finally {
-      for (const socket of sockets) {
-        socket.destroy();
-      }
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        });
-      });
-    }
   });
 });

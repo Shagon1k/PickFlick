@@ -74,6 +74,15 @@ describe("deployment Compose", () => {
     }
   });
 
+  it("routes the public API path through web to the environment-specific API alias", () => {
+    expect(validDeployments.uat.services.web.build.args.BACKEND_INTERNAL_URL).toBe(
+      "http://pickflick-uat-api:3001",
+    );
+    expect(validDeployments.production.services.web.environment.BACKEND_INTERNAL_URL).toBe(
+      "http://pickflick-production-api:3001",
+    );
+  });
+
   it("rejects release services that replace the release image behavior", () => {
     expectRejected(
       (deployments) => (deployments.uat.services.release.build.target = "api"),
@@ -164,6 +173,12 @@ describe("deployment Compose", () => {
       name: "web startup without the API health gate",
       mutate: (deployments: Deployments) => (deployments.uat.services.web.depends_on.api.condition = "service_started"),
       message: /Web must wait for API health/,
+    },
+    {
+      name: "a web proxy targeting the wrong API alias",
+      mutate: (deployments: Deployments) =>
+        (deployments.uat.services.web.build.args.BACKEND_INTERNAL_URL = "http://api:3001"),
+      message: /same-origin API proxy/,
     },
     {
       name: "an optional API health dependency",

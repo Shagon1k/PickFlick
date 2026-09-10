@@ -23,19 +23,17 @@ const intendedHealthChecks = {
 const runtimeEnvironmentVariables = [
   "APP_ENV",
   "DATABASE_URL",
-  "MAIL_FROM",
   "REDIS_URL",
-  "S3_ACCESS_KEY_ID",
-  "S3_BUCKET",
-  "S3_ENDPOINT",
-  "S3_FORCE_PATH_STYLE",
-  "S3_REGION",
-  "S3_SECRET_ACCESS_KEY",
+  "RESEND_API_KEY",
+  "RESEND_FROM",
   "SHUTDOWN_TIMEOUT_MS",
-  "SMTP_HOST",
-  "SMTP_PORT",
-  "SMTP_SECURE",
   "SOURCE_REVISION",
+  "STORAGE_ACCESS_KEY",
+  "STORAGE_BUCKET",
+  "STORAGE_ENDPOINT",
+  "STORAGE_FORCE_PATH_STYLE",
+  "STORAGE_REGION",
+  "STORAGE_SECRET_KEY",
 ];
 const apiEnvironmentVariables = [...runtimeEnvironmentVariables, "API_HOST", "API_PORT"];
 
@@ -57,19 +55,17 @@ function environmentFor(appEnvironment, source) {
     APP_ENV: appEnvironment,
     DATABASE_URL: `postgresql://pickflick:synthetic@pickflick-${appEnvironment}-postgres:5432/pickflick_${appEnvironment}`,
     DOKPLOY_NETWORK: `pickflick-${appEnvironment}-application`,
-    MAIL_FROM: "PickFlick <pickflick@example.invalid>",
     REDIS_URL: `redis://:synthetic@pickflick-${appEnvironment}-redis:6379/0`,
-    S3_ACCESS_KEY_ID: `pickflick-${appEnvironment}`,
-    S3_BUCKET: `pickflick-${appEnvironment}`,
-    S3_ENDPOINT: `https://objects-${appEnvironment}.example.invalid`,
-    S3_FORCE_PATH_STYLE: "false",
-    S3_REGION: "us-east-1",
-    S3_SECRET_ACCESS_KEY: "synthetic-storage-secret",
+    RESEND_API_KEY: "synthetic-resend-key",
+    RESEND_FROM: "PickFlick <pickflick@example.invalid>",
     SHUTDOWN_TIMEOUT_MS: "10000",
-    SMTP_HOST: `smtp-${appEnvironment}.example.invalid`,
-    SMTP_PORT: "465",
-    SMTP_SECURE: "true",
     SOURCE_REVISION: "a".repeat(40),
+    STORAGE_ACCESS_KEY: `pickflick-${appEnvironment}`,
+    STORAGE_BUCKET: `pickflick-${appEnvironment}`,
+    STORAGE_ENDPOINT: `https://objects-${appEnvironment}.example.invalid`,
+    STORAGE_FORCE_PATH_STYLE: "false",
+    STORAGE_REGION: "us-east-1",
+    STORAGE_SECRET_KEY: "synthetic-storage-secret",
   };
 
   for (const name of deploymentOverrideVariables) {
@@ -235,6 +231,15 @@ export function validateDeployments({ production, uat }) {
     );
     assert(deployment.services.web.depends_on?.api?.condition === "service_healthy", "Web must wait for API health.");
     assert(deployment.services.web.depends_on?.api?.required === true, "Web must require API health.");
+    const backendInternalUrl = `http://pickflick-${appEnvironment}-api:3001`;
+    assert(
+      deployment.services.web.build?.args?.BACKEND_INTERNAL_URL === backendInternalUrl,
+      "Web must build its same-origin API proxy against the environment-specific API alias.",
+    );
+    assert(
+      deployment.services.web.environment?.BACKEND_INTERNAL_URL === backendInternalUrl,
+      "Web must use the environment-specific API alias at runtime.",
+    );
     assert(hasUniqueAliasOwners(deployment.services), `${appEnvironment} service aliases must each have one owner.`);
   }
 

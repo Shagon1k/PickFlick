@@ -451,7 +451,7 @@ Each delivery phase owns one independently verifiable outcome. Verification gate
 
 - [x] Decide and record repository topology, auth-boundary direction, database workflow, queue/outbox approach, Dokploy/Cloudflare deployment baseline, and UI primitive strategy.
 - [ ] Scaffold web, API, worker, database, contracts, UI, and configuration packages without retaining unused generated files.
-- [ ] Establish PostgreSQL, Redis, object-storage, and mail-development dependencies with typed environment validation.
+- [ ] Establish PostgreSQL, Redis, object-storage, and Resend configuration with typed environment validation.
 - [ ] Create the initial Prisma/migration workflow, seed/test-fixture strategy, and safe reset policy for non-production environments.
 - [ ] Add real install/dev/build/lint/type-check/test/migrate/seed, image-build, Compose-validation, and E2E-smoke commands and update `AGENTS.md`.
 - [ ] Keep production-oriented web, API, worker, and one-shot release images; align the shared application Compose definition with Dokploy-managed PostgreSQL/Redis, ordered release/health gates, revision traceability, private ports, and baseline signal handling.

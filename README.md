@@ -57,7 +57,9 @@ run `pnpm deploy:compose`. The command builds and completes the one-shot release
 builds and converges application containers, so a failed release leaves the running application
 revision in place. See the
 [environment and runtime operations reference](_docs/environment.md#deployment-images-and-compose)
-before supplying real environment values.
+before supplying real environment values. The automatic exact-revision path and the owner-run
+Dokploy, Cloudflare, failure-injection, rollback, and preview steps are in the
+[UAT operations guide](_docs/uat-operations.md).
 
 ## Delivery workflow
 

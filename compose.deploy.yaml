@@ -12,16 +12,14 @@ x-runtime-environment: &runtime-environment
   SHUTDOWN_TIMEOUT_MS: "10000"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
   REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
-  S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
-  S3_REGION: ${S3_REGION:?S3_REGION is required}
-  S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
-  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
-  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
-  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:?S3_FORCE_PATH_STYLE is required}
-  SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
-  SMTP_PORT: ${SMTP_PORT:?SMTP_PORT is required}
-  SMTP_SECURE: ${SMTP_SECURE:?SMTP_SECURE is required}
-  MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+  STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
+  STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
+  STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
+  STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
+  STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
+  STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE:?STORAGE_FORCE_PATH_STYLE is required}
+  RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+  RESEND_FROM: ${RESEND_FROM:?RESEND_FROM is required}
 
 x-application-service: &application-service
   cap_drop:
@@ -96,7 +94,11 @@ services:
     build:
       <<: *build
       target: web
+      args:
+        SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+        BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
     environment:
+      BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
       NODE_ENV: production
       SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
     depends_on:
