@@ -51,6 +51,22 @@ describe("environment validation", () => {
     });
   });
 
+  it("accepts a standard display name with spaces for the Resend sender", () => {
+    expect(
+      parseRuntimeEnvironment({ ...validEnvironment, RESEND_FROM: "PickFlick UAT <uat@pick-flick.app>" }),
+    ).toMatchObject({ resend: { from: "PickFlick UAT <uat@pick-flick.app>" } });
+  });
+
+  it.each([
+    '"PickFlick UAT <uat@pick-flick.app>"',
+    "PickFlick UAT <uat@pick-flick.app> extra",
+    "PickFlick UAT <uat@pick-flick.app>\nother@example.com",
+  ])("rejects an unsafe or malformed Resend sender: %s", (from) => {
+    expect(() => parseRuntimeEnvironment({ ...validEnvironment, RESEND_FROM: from })).toThrow(
+      /RESEND_FROM must be an email address or a name plus email address/,
+    );
+  });
+
   it("accepts the focused database inventory", () => {
     expect(parseDatabaseEnvironment(validEnvironment)).toEqual({
       appEnvironment: "local",

@@ -179,7 +179,7 @@ function parseWorkerValues(
   ) {
     failures.push({ name: "STORAGE_BUCKET", reason: "must be a valid lowercase S3 bucket name" });
   }
-  if (from && !/^[^@\s]+(?:\s+<[^@\s]+@[^@\s]+\.[^@\s]+>|@[^@\s]+\.[^@\s]+)$/.test(from)) {
+  if (from && !/^(?:[^@\s]+@[^@\s]+\.[^@\s]+|[^@<>\r\n]+ <[^@\s]+@[^@\s]+\.[^@\s]+>)$/.test(from)) {
     failures.push({ name: "RESEND_FROM", reason: "must be an email address or a name plus email address" });
   }
   return {
