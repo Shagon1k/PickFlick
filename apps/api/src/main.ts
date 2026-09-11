@@ -1,7 +1,7 @@
 import "reflect-metadata";
 
 import { NestFactory } from "@nestjs/core";
-import { loadRuntimeEnvironment } from "@pickflick/config/environment";
+import { loadRuntimeEnvironment, safeEnvironmentValidationFailures } from "@pickflick/config/environment";
 import { completeWithin, createLogger } from "@pickflick/observability";
 
 import { ApiExceptionFilter } from "./api-exception.filter.js";
@@ -49,13 +49,15 @@ async function bootstrap(): Promise<void> {
 
 try {
   await bootstrap();
-} catch {
+} catch (error) {
+  const failures = safeEnvironmentValidationFailures(error);
   process.stderr.write(
     `${JSON.stringify({
       level: "fatal",
       service: "api",
       event: "configuration.invalid",
       message: "API configuration is invalid.",
+      ...(failures ? { failures } : {}),
       time: new Date().toISOString(),
     })}\n`,
   );

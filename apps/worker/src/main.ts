@@ -1,4 +1,4 @@
-import { loadWorkerEnvironment } from "@pickflick/config/environment";
+import { loadWorkerEnvironment, safeEnvironmentValidationFailures } from "@pickflick/config/environment";
 import { checkDatabaseReadiness } from "@pickflick/database";
 import {
   checkReadiness,
@@ -48,13 +48,15 @@ async function bootstrap(): Promise<void> {
 
 try {
   await bootstrap();
-} catch {
+} catch (error) {
+  const failures = safeEnvironmentValidationFailures(error);
   process.stderr.write(
     `${JSON.stringify({
       level: "fatal",
       service: "worker",
       event: "configuration.invalid",
       message: "Worker configuration is invalid.",
+      ...(failures ? { failures } : {}),
       time: new Date().toISOString(),
     })}\n`,
   );

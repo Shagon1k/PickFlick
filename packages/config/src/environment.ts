@@ -50,6 +50,17 @@ export class EnvironmentValidationError extends Error {
   }
 }
 
+/**
+ * Produces diagnostic-safe validation details: names and fixed validation rules only.
+ * Environment values, URLs, tokens, and other supplied data are never included.
+ */
+export function safeEnvironmentValidationFailures(error: unknown): readonly string[] | undefined {
+  if (!(error instanceof EnvironmentValidationError)) {
+    return undefined;
+  }
+  return error.failures.map(({ name, reason }) => `${name} ${reason}`);
+}
+
 function required(source: EnvironmentSource, name: string, failures: ValidationFailure[]): string {
   const value = source[name]?.trim();
   if (!value) {
