@@ -29,7 +29,9 @@
   are executable. Production-oriented web/API/worker/release images and the proportional,
   source-built UAT/production application Compose topology are also executable locally. The
   exact-revision UAT workflow and operator guide are implemented; live Dokploy/Cloudflare
-  provisioning and UAT evidence remain owner-run Phase 1 work.
+  provisioning and UAT evidence remain owner-run Phase 1 work. The guarded manual production
+  promotion workflow and runbook are also implemented; the production guard remains false, and no
+  production provisioning, deployment, or traffic cutover is authorized.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
   two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
   commands. Remaining product entities arrive with their owning phases.
@@ -59,6 +61,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Run the release gate, then converge the deployment | `pnpm deploy:compose` |
 | Deploy and wait for the configured exact UAT revision | `pnpm uat:deploy` |
 | Run desktop/mobile UAT browser smoke and screenshots | `pnpm uat:smoke` |
+| Prepare or execute the guarded production promotion controller | `pnpm production:promote -- <prepare\|deploy>` |
 | Run all scaffold quality gates | `pnpm verify` |
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |

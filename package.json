@@ -21,6 +21,7 @@
     "build:packages": "pnpm -r --filter './packages/*' --if-present build",
     "lint": "eslint .",
     "migrate": "pnpm --filter @pickflick/database migrate",
+    "production:promote": "node scripts/promote-production.mjs",
     "release": "node scripts/run-release.mjs",
     "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
     "seed": "pnpm --filter @pickflick/database seed",

@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { sourceRevision } from "../build-images.mjs";
+import { resolveImageRevision } from "../write-image-revision.mjs";
 
 const headRevision = "a".repeat(40);
 
@@ -50,5 +51,27 @@ describe("production image source revision", () => {
     expect(() => sourceRevision({ SOURCE_REVISION: "b".repeat(length) }, gitWith({ inside: false }))).toThrow(
       /full hexadecimal source revision/,
     );
+  });
+});
+
+describe("image-embedded source revision", () => {
+  it("uses the explicit build revision without reading Git metadata", () => {
+    const readFile = vi.fn();
+
+    expect(resolveImageRevision(headRevision.toUpperCase(), readFile)).toBe(headRevision);
+    expect(readFile).not.toHaveBeenCalled();
+  });
+
+  it("resolves a branch checkout from the minimal safe Git metadata", () => {
+    const readFile = vi.fn((path: string) => path === ".git/HEAD"
+      ? "ref: refs/heads/main\n"
+      : `${headRevision}\n`);
+
+    expect(resolveImageRevision(undefined, readFile)).toBe(headRevision);
+    expect(readFile).toHaveBeenCalledTimes(2);
+  });
+
+  it("resolves a detached tag checkout directly from HEAD", () => {
+    expect(resolveImageRevision(undefined, () => `${headRevision}\n`)).toBe(headRevision);
   });
 });

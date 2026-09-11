@@ -7,6 +7,7 @@ export const DOKPLOY_COMPOSE_PATH = "compose.deploy.yaml";
 
 const githubRepository = "Shagon1k/PickFlick";
 const composeIdPattern = /^[A-Za-z0-9_-]+$/;
+const revisionPattern = /^[0-9a-f]{40}$/;
 const expectedReadinessDependencies = ["database", "redis", "objectStorage"];
 
 function required(source, name) {
@@ -15,6 +16,14 @@ function required(source, name) {
     throw new Error(`${name} is required.`);
   }
   return value;
+}
+
+function validateRevision(value) {
+  const revision = value?.trim().toLowerCase();
+  if (!revisionPattern.test(revision ?? "")) {
+    throw new Error("SOURCE_REVISION must be a full 40-character hexadecimal Git SHA.");
+  }
+  return revision;
 }
 
 export function validateDokployUrl(value) {
@@ -142,9 +151,9 @@ async function triggerDokploy(fetchImplementation, configuration) {
     headers: requestHeaders(dokployAuthentication(configuration)),
     body: JSON.stringify({
       composeId: configuration.composeId,
-      description: `Automated UAT deployment for ${githubRepository}@${UAT_DEFAULT_REF}`,
+      description: `Automated UAT deployment for ${githubRepository}@${configuration.sourceRevision}`,
       freshVolumes: false,
-      title: "PickFlick UAT main",
+      title: `PickFlick UAT ${configuration.sourceRevision.slice(0, 12)}`,
     }),
   });
   if (deployment?.success !== true || deployment.composeId !== configuration.composeId) {
@@ -176,7 +185,13 @@ export async function waitForDokployDeployment(
     const deployment = deployments.find(({ deploymentId: candidateId }) => candidateId === deploymentId);
     switch (deployment?.status) {
       case "done":
-        return;
+        if (deployment.description === `Commit: ${configuration.sourceRevision}`) {
+          return deploymentId;
+        }
+        if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? "")) {
+          throw new Error("Dokploy deployed a different UAT source revision than requested.");
+        }
+        break;
       case "error":
       case "cancelled":
         throw new Error("Dokploy reported a failed UAT deployment.");
@@ -214,6 +229,7 @@ async function fetchHealth(fetchImplementation, pathname) {
 }
 
 export async function waitForUatReadiness(
+  expectedRevision,
   { fetchImplementation = fetch, intervalMilliseconds = 5_000, sleep = (milliseconds) => new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)), timeoutMilliseconds = 20 * 60_000 } = {},
 ) {
   const deadline = Date.now() + timeoutMilliseconds;
@@ -231,6 +247,7 @@ export async function waitForUatReadiness(
     if (
       liveness?.service === "api" &&
       liveness.status === "alive" &&
+      liveness.revision === expectedRevision &&
       readiness?.status === "ready" &&
       hasExpectedReadinessChecks
     ) {
@@ -256,6 +273,7 @@ export function deploymentConfiguration(source = process.env) {
     composeId,
     dokployApiToken: required(source, "DOKPLOY_API_TOKEN"),
     dokployOrigin: validateDokployUrl(required(source, "DOKPLOY_URL")),
+    sourceRevision: validateRevision(required(source, "SOURCE_REVISION")),
   };
 }
 
@@ -265,7 +283,7 @@ export async function deployUat(source = process.env, fetchImplementation = fetc
   const previousDeploymentIds = new Set(dokployDeploymentRecords(compose).map(({ deploymentId }) => deploymentId));
   await triggerDokploy(fetchImplementation, configuration);
   await waitForDokployDeployment(configuration, previousDeploymentIds, { ...waitOptions, fetchImplementation });
-  await waitForUatReadiness({ ...waitOptions, fetchImplementation });
+  await waitForUatReadiness(configuration.sourceRevision, { ...waitOptions, fetchImplementation });
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

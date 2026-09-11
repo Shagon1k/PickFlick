@@ -10,12 +10,14 @@ RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 WORKDIR /workspace
 
 FROM toolchain AS builder
+ARG SOURCE_REVISION
 COPY . .
+RUN node scripts/write-image-revision.mjs "$SOURCE_REVISION" && rm -rf /workspace/.git
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 ARG BACKEND_INTERNAL_URL=http://127.0.0.1:3001
 ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
-RUN pnpm build
+RUN SOURCE_REVISION="$(cat .source-revision)" pnpm build
 
 FROM builder AS api-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
@@ -55,9 +57,10 @@ LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=api-package --chown=node:node /out/api/ ./
+COPY --from=builder --chown=node:node /workspace/.source-revision ./.source-revision
 USER node
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
 
 FROM ${RUNTIME_IMAGE} AS worker
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
@@ -65,8 +68,9 @@ LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=worker-package --chown=node:node /out/worker/ ./
+COPY --from=builder --chown=node:node /workspace/.source-revision ./.source-revision
 USER node
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
 
 FROM ${RUNTIME_IMAGE} AS release
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
