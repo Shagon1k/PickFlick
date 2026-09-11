@@ -27,6 +27,7 @@ separately.
 | [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments) | Deploy immutable images through isolated Dokploy environments | Superseded by [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | 2026-09-05 |
 | [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively) | Own Projector Noir and use Mantine selectively | Accepted | 2026-09-05 |
 | [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | Use a proportional Dokploy deployment baseline | Accepted | 2026-09-07 |
+| [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags) | Promote source-built production from UAT-proven SemVer tags | Accepted | 2026-09-11 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -542,3 +543,95 @@ pass before the first production deployment.
 - [TailorTales deployment flow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/_docs/guides/deployment.md)
 - [TailorTales UAT workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-uat.yml)
 - [TailorTales production workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-prod.yml)
+
+## ADR-008 — Promote source-built production from UAT-proven SemVer tags
+
+- **Status:** Accepted
+- **Date:** 2026-09-11
+- **Decider:** Developer
+- **Owning issue:** [#16](https://github.com/Shagon1k/PickFlick/issues/16)
+- **Amends:** [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) production-promotion mechanics
+
+### Context
+
+ADR-007 kept source-built UAT but required issue #115's registry-published digest bundle before the
+first production deployment. Since that decision, issue #15 aligned PickFlick's exact-revision UAT
+flow with the proportional TailorTales operating model and proved it on the shared application
+Compose topology. PickFlick still has no separate build/deployment servers, registry publisher, or
+production traffic. Building a registry pipeline now would add credentials, retention, manifest,
+and partial-publication failure modes without protecting a current boundary.
+
+The reviewed TailorTales production flow builds the same Compose topology from an immutable SemVer
+tag after checking exact UAT evidence. PickFlick can use that smaller mechanism while preserving an
+explicit activation point for digest-qualified bundles when source and deployment hosts separate or
+another concrete byte-identity requirement appears.
+
+### Decision
+
+Use the same `compose.deploy.yaml` for source-built UAT and production. UAT continues to build
+current `main`. A manual GitHub Actions workflow resolves current `main`, requires a successful run
+of the exact UAT workflow for that full revision, and creates or reuses an annotated stable SemVer
+tag. With no stable tag, version calculation starts from `v0.0.0`. A retry reuses the highest stable
+tag when it already points to current `main`, so failure after tag creation does not consume another
+version.
+
+Keep production fail-closed through two independent controls. The repository variable
+`PRODUCTION_DEPLOY_ENABLED` must equal exact lowercase `true` before GitHub schedules the deploy job,
+and the deployment controller repeats the same check before reading Git or Dokploy state. Put the
+deploy job behind a protected GitHub `production` environment. Keep the Dokploy production Compose
+resource's automatic deployment disabled. Before issue #16 completes, leave the guard false and do
+not attach a production traffic route.
+
+When a later owner-approved release enables the guard, the workflow checks that `main` has not
+advanced, verifies the inactive production resource contract, creates or reuses the tag, pins the
+resource to that tag with automatic deployment still disabled, triggers one deployment, and waits
+for its distinct deployment record. The local `pnpm deploy:compose` command remains UAT-only; a
+workstation cannot use it to converge production.
+
+Keep issue #115 Deferred until separate build/deployment servers or another concrete
+artifact-identity requirement makes source identity insufficient. At that trigger, publish one
+web/API/worker/release digest bundle, prove it in UAT, and replace only the artifact transport in the
+production workflow. The UAT-evidence, SemVer, guard, migration, and rollback contracts remain.
+
+### Consequences
+
+- Production promotion identifies immutable source through a Git tag but does not guarantee that
+  UAT and production builds are byte-for-byte identical.
+- UAT and production can use one reviewed Compose definition and the same Dokploy build mechanics.
+- The guard-disabled workflow can validate release identity and UAT evidence without receiving
+  production credentials or changing external state.
+- A tag can exist after a later Dokploy failure. Retrying the same `main` revision reuses it; tags
+  are never moved or deleted.
+- Production rollback selects a prior immutable tag only when the applied schema remains compatible.
+  Incompatible schema/data changes require a forward fix.
+- Registry publication remains an explicit deferred control rather than disappearing from the
+  architecture.
+
+### Alternatives considered
+
+- **Require issue #115 before any production path exists.** Rejected for the current single-host
+  source-build topology because it adds an unused registry control before a protected boundary
+  exists.
+- **Deploy production directly from `main`.** Rejected because the selected release would move when
+  `main` advances and would not provide an immutable rollback reference.
+- **Use a manually entered revision or tag.** Rejected because the workflow can resolve current
+  `main`, derive the version, and verify UAT evidence without accepting a spoofable operator value.
+- **Rely only on the Dokploy automatic-deploy switch.** Rejected because the GitHub guard and
+  protected environment prevent credentials and mutation logic from running before Dokploy is
+  contacted.
+
+### Verification
+
+Issue #16 must prove stable SemVer calculation, exact workflow/repository/revision UAT matching,
+rejection of missing or failed evidence, stale-`main` rejection, production-resource validation,
+idempotent tag reuse, and zero Git/Dokploy calls while the guard is false. `pnpm compose:check` must
+continue to validate both environment renders. The owner must separately confirm the dormant live
+resource, disabled ports, absent production route, and false repository guard before production
+provisioning evidence is complete.
+
+### Evidence
+
+- [Issue #16](https://github.com/Shagon1k/PickFlick/issues/16) and the developer's 2026-09-11
+  human-control approval of the TailorTales-aligned production approach.
+- ADR-007's evidence list above, including the reviewed TailorTales Compose, deployment guide, UAT
+  workflow, and production workflow revision.

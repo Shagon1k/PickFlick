@@ -1,0 +1,104 @@
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version component to increment from the latest stable release tag
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate production promotion
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      production_enabled: ${{ steps.promotion.outputs.production_enabled }}
+      release_sha: ${{ steps.promotion.outputs.release_sha }}
+      release_version: ${{ steps.promotion.outputs.release_version }}
+      uat_run_id: ${{ steps.promotion.outputs.uat_run_id }}
+
+    steps:
+      - name: Check out trusted promotion controls
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Resolve main and require exact successful UAT evidence
+        id: promotion
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: node scripts/promote-production.mjs prepare
+
+      - name: Record the inactive production checkpoint
+        if: ${{ steps.promotion.outputs.production_enabled != 'true' }}
+        env:
+          RELEASE_SHA: ${{ steps.promotion.outputs.release_sha }}
+          RELEASE_VERSION: ${{ steps.promotion.outputs.release_version }}
+          UAT_RUN_ID: ${{ steps.promotion.outputs.uat_run_id }}
+        shell: bash
+        run: |
+          {
+            echo "## Production promotion validation"
+            echo
+            echo "- Candidate: \`$RELEASE_VERSION\` at \`$RELEASE_SHA\`"
+            echo "- Exact successful UAT run: \`$UAT_RUN_ID\`"
+            echo "- Production deployment is disabled; no tag or Dokploy state was changed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy approved production release
+    needs: validate
+    if: ${{ needs.validate.outputs.production_enabled == 'true' }}
+    environment: production
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the validated release revision
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.release_sha }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Tag and deploy the production release
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          PRODUCTION_DEPLOY_ENABLED: ${{ needs.validate.outputs.production_enabled }}
+          RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+        run: node scripts/promote-production.mjs deploy

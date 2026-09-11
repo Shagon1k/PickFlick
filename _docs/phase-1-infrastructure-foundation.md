@@ -11,7 +11,8 @@ UAT delivery, and prepare a production-promotion path that cannot deploy while i
 false.
 
 The accepted technical direction is recorded in
-[ADR-001 through ADR-007](decisions/README.md). ADR-007 supersedes ADR-005's deployment mechanics.
+[ADR-001 through ADR-008](decisions/README.md). ADR-007 supersedes ADR-005's deployment mechanics,
+and ADR-008 amends ADR-007's production-promotion mechanics.
 Code, configuration, services, and environments remain
 `Proposed` until their owning issues provide verification.
 
@@ -35,7 +36,7 @@ after issue #13. Implement the accepted adjustment through these focused follow-
 | --- | --- | --- |
 | Application topology | [#113](https://github.com/Shagon1k/PickFlick/issues/113) | Move remote PostgreSQL/Redis lifecycle to Dokploy, simplify the application Compose graph, and remove controls without current enforcement. |
 | Static contract | [#114](https://github.com/Shagon1k/PickFlick/issues/114) | Retain only the smallest deployment Compose render and invariant checks. |
-| Artifact promotion | [#115](https://github.com/Shagon1k/PickFlick/issues/115) | Deferred until the first production deployment or separate build/deployment servers require one UAT-proven digest bundle. |
+| Artifact promotion | [#115](https://github.com/Shagon1k/PickFlick/issues/115) | Deferred until separate build/deployment servers or another concrete artifact-identity requirement needs one UAT-proven digest bundle. |
 
 Do not copy Project status or Priority into this file. Read Project 3 before starting each slice.
 
@@ -47,7 +48,7 @@ Do not copy Project status or Priority into this file. Read Project 3 before sta
 | Authentication | Same-origin routes; NestJS API owns OAuth, opaque server sessions, revocation, CSRF, and authorization. The library remains issue #25 work. | [ADR-002](decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) |
 | Database | PostgreSQL through a pinned stable Prisma client and committed reviewed migrations; explicit SQL enforces unsupported/high-risk constraints. | [ADR-003](decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Async | PostgreSQL transaction commits domain state plus outbox intent; BullMQ/Redis executes at-least-once idempotent jobs; reconciliation repairs gaps. | [ADR-004](decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
-| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis; source-built UAT application Compose; staged release-before-convergence and health gates; revision traceability; digest promotion activated before production; production guard false. | [ADR-007](decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
+| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis; one source-built application Compose; staged release-before-convergence and health gates; exact UAT revision evidence; production pinned to an immutable SemVer tag; production guard false. | [ADR-007](decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), [ADR-008](decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags) |
 | UI | Project-owned Projector Noir CSS tokens/components; native HTML first; wrapped selective Mantine behavior primitives. | [ADR-006](decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
 
 ## Sequence and dependencies
@@ -63,8 +64,11 @@ Do not copy Project status or Priority into this file. Read Project 3 before sta
    static contract through #113 and #114.
 7. Make CI reproduce the clean-checkout gates and image evidence in #14.
 8. Provision UAT and verify exact-revision automatic delivery in #15 after DNS control is available.
-9. Add and test the dormant production-promotion path and runbooks in #16. Activate #115 before
-   the first production deployment so promotion consumes the UAT-proven digest bundle.
+9. Add and test the dormant source-built SemVer production-promotion path and runbooks in #16.
+   Activate #115 if separate build/deployment servers or another concrete artifact-identity
+   requirement makes source identity insufficient.
+10. Keep live production resource, provider, secret, backup, and domain provisioning in #94. Keep
+    the first enabled promotion, production verification, and traffic decision in #95.
 
 A later slice may start early only when its prerequisites already have evidence and the resulting
 change remains independently reviewable. Never weaken an earlier gate to run work in parallel.
@@ -119,9 +123,12 @@ change remains independently reviewable. Never weaken an earlier gate to run wor
   becomes a measured requirement.
 - Verify SSE is not buffered across the full Cloudflare/Traefik/API path.
 - Build UAT from the selected full Git revision and report that revision in deployment and smoke
-  evidence. Before production, publish one UAT-proven image bundle and promote it by digest without
-  rebuilding.
+  evidence. Promote only current `main` with exact successful UAT evidence, pin production to its
+  immutable SemVer tag, and keep registry-backed digest promotion deferred until its activation
+  trigger.
 - Keep the production-enable guard false throughout Phase 1.
+- Complete #16 with repository-owned production contract validation and a disabled workflow
+  rehearsal. Do not require live production resources or credentials; #94 provisions them later.
 
 ## Required edge-case evidence
 
@@ -138,7 +145,7 @@ change remains independently reviewable. Never weaken an earlier gate to run wor
 | Lost dispatch | Reconciliation republishes committed pending outbox intent safely. |
 | Proxy identity | The API accepts forwarded identity only through the trusted proxy path. |
 | SSE buffering | A production-shaped UAT stream delivers incremental events and reconnects to authoritative state. |
-| Artifact mismatch | UAT reports the expected full source revision; the production-promotion rehearsal also reports the exact UAT-proven image digests after #115 activates. |
+| Artifact mismatch | UAT evidence identifies the expected full source revision; production validation reports the same revision, its successful UAT workflow run, and the candidate immutable SemVer tag. After #115 activates, extend the evidence with the promoted image digests. |
 | Rollback incompatibility | Deployment refuses or documents a rollback that the applied schema cannot support. |
 | Production guard | Manual promotion validates its inputs but cannot deploy while the guard is false. |
 
@@ -156,6 +163,7 @@ Issue #10 established the first executable command map. `AGENTS.md` owns the dur
 | Production images | `pnpm images:build` | Builds revision-labelled web, API, worker, and one-shot release targets from pinned bases and the locked workspace. |
 | Deployment topology | `pnpm compose:check` | Renders synthetic UAT and production definitions and checks the four application services, runtime-required inputs, source-revision reporting, native release/API/worker ordering, release image invocation, intended API/web health gates, private ports, environment-specific project names, uniquely owned aliases that remain disjoint across environments, and adopted static hardening. Provider resources, connectivity, and routing remain UAT checks; digest pins, application-owned data services, worker egress, and queue-drain timing are outside this MVP validator. |
 | Deployment convergence | `pnpm deploy:compose` | Validates a clean selected revision, rejects non-UAT source builds, and runs native Compose convergence. API and worker wait for the one-shot release service; web waits for API health. Issue #15 must prove UAT failure visibility and recovery after a failed release. |
+| Production promotion | `pnpm production:promote -- <prepare\|deploy>` | Resolves current `main`, requires its exact successful UAT workflow evidence, derives or reuses a stable SemVer tag, and keeps all Git/Dokploy mutation behind the exact `PRODUCTION_DEPLOY_ENABLED=true` guard. GitHub Actions is the intended caller. |
 | Local services | `pnpm services:up`, `pnpm services:check`, `pnpm services:down` | Starts and checks loopback-only PostgreSQL, Redis, and MinIO services. |
 | Database migration/seed | `pnpm migrate`, `pnpm seed`, `pnpm db:check` | Applies reviewed Prisma migrations, deterministic local/test fixtures, and constraint/upgrade checks. |
 
@@ -173,11 +181,11 @@ evidence.
 | Local data, migrations, seeds, typed configuration | Verified locally | PostgreSQL/Redis/MinIO Compose readiness; two fresh migrations; repeated idempotent seed; migration-upgrade, partial-index, score-range, service-connectivity, and safe-config tests. Issue #15 aligns the provider contract with Resend and removes the superseded Mailpit dependency. |
 | Health/readiness/logging/error baseline | Verified locally | Issue #12: 48 focused/workspace tests, lint, type-check, builds, structured scrubbed log samples, and unavailable-dependency HTTP/worker smoke evidence. |
 | Immutable images and isolated Compose topology | Verified locally | Issue #13: four non-root image targets built from one source revision; isolated UAT/production renders passed; web/API container smoke and API SIGTERM drain passed; native Compose gates API/worker on release success; 73 tests passed. Provisioning and registry promotion remain issues #14–#16. |
-| Proportional deployment baseline | Verified locally; platform evidence missing | Issue #113: four source-built application services; Dokploy-managed PostgreSQL/Redis URLs; distinct networks, aliases, and storage scopes; staged release and API-health gates; revision reporting; private ports; retained hardening; 72 tests and Compose renders passed. Issue #15 must prove managed-service connectivity, private data ports, routing, and failed-release behavior in UAT; #115 remains Deferred until production or separate build/deployment servers. |
+| Proportional deployment baseline | Verified locally; platform evidence missing | Issue #113: four source-built application services; Dokploy-managed PostgreSQL/Redis URLs; distinct networks, aliases, and storage scopes; staged release and API-health gates; revision reporting; private ports; retained hardening; 72 tests and Compose renders passed. Issue #15 owns managed-service connectivity, private data ports, routing, and failed-release behavior in UAT; #115 remains Deferred until separate build/deployment servers or another artifact-identity requirement. |
 | Minimal deployment Compose contract | Verified locally; platform evidence missing | Issue #114: 30 focused validator tests cover valid UAT/production renders and every retained rejection class; `pnpm compose:check` and the 100-test `pnpm verify` gate pass. Provider resources, connectivity, ports, routing, and failed-release behavior remain issue #15 UAT evidence. |
 | Reproducible CI gates | Verified locally; remote verification pending | Issue #14: the [green baseline](https://github.com/Shagon1k/PickFlick/actions/runs/34257319125), [controlled failure](https://github.com/Shagon1k/PickFlick/actions/runs/34257975070), and [restored green run](https://github.com/Shagon1k/PickFlick/actions/runs/34258154448) cover predecessor heads. The final PR head still requires a green workflow and terminal delivery gate before remote verification is complete. |
-| Exact-revision UAT deployment and smoke evidence | Repository automation ready; platform evidence missing | Issue #15 adds the serialized post-CI workflow, immutable per-revision deployment tags, Dokploy contract/lifecycle checks, runtime revision/readiness polling, desktop/mobile browser smoke, guarded rollback, and owner runbook. Dokploy/Cloudflare provisioning, failed-release proof, rollback exercise, screenshots, and owner acknowledgement remain required. |
-| Disabled production-promotion path and runbooks | Missing | Issue #16. |
+| Exact-revision UAT deployment and smoke evidence | Verified | Issue #15 added the serialized post-CI workflow, Dokploy contract/lifecycle checks, readiness polling, desktop/mobile browser smoke, guarded rollback, and owner runbook. The exact `4ba9cd6e1766bb91d8017aa31144ff77549f1b28` revision passed UAT workflow run `34631695402`; issue #15 is closed after owner review. |
+| Disabled production-promotion path and runbooks | Verified locally; platform evidence missing | Issue #16: 25 focused promotion tests pass; the full 146-test `pnpm verify` gate, production/UAT `pnpm compose:check`, lint, type-check, builds, and workflow YAML parse pass. Exact UAT evidence validation, fail-closed production guards, idempotent SemVer tag preparation, production Dokploy contract checks, and the configuration/migration/rollback runbook are implemented. Live production provisioning and deployment remain unauthorized. |
 
 Phase 1 remains incomplete until every Roadmap acceptance check has linked evidence. Do not defer
 ordinary tests or safety work to the Phase 6 stabilization gate.

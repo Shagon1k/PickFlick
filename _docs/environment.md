@@ -41,12 +41,13 @@ A failed release blocks the new runtime services. Standard Compose may replace r
 during convergence, so this contract does not promise that a failed release preserves the prior
 runtime revision.
 
-Use `compose.deploy.yaml` for source-built UAT deployments. `pnpm deploy:compose` rejects every
-other `APP_ENV`; production must wait for the UAT-proven digest-promotion workflow from issue #115.
-Keep UAT and production in separate Compose and Dokploy projects. Configure Dokploy to clone the
-selected full Git revision and use Docker Compose mode, not Docker Stack mode. Supply all runtime
-values from the environment-specific Dokploy project and render the exact configuration before
-deployment:
+Use `compose.deploy.yaml` for source-built UAT and production deployments. The local
+`pnpm deploy:compose` command remains UAT-only so an operator cannot start production from a
+workstation. GitHub Actions promotes production from a UAT-proven `main` revision by creating or
+reusing an immutable SemVer tag and asking Dokploy to build that tag. Keep UAT and production in
+separate Compose and Dokploy projects. Configure Dokploy to clone the selected Git ref and use
+Docker Compose mode, not Docker Stack mode. Supply all runtime values from the environment-specific
+Dokploy project and render the exact configuration before deployment:
 
 ```bash
 pnpm compose:check
@@ -89,13 +90,24 @@ API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
 seconds under a 15-second stop grace. Add a configurable, queue-aware drain and coordinated grace
 only when a real consumer supplies measured job-duration and retry requirements.
 
-The [UAT operations guide](uat-operations.md) owns live provisioning and delivery. After the `CI`
+The [UAT operations guide](uat-operations.md) owns live UAT provisioning and delivery. After the `CI`
 delivery gate succeeds for a push to `main`, `.github/workflows/deploy-uat.yml` serializes UAT runs,
 confirms that `main` has not advanced, and triggers the configured Dokploy Compose resource. Dokploy
 auto deploy remains disabled. The workflow never creates deployment tags, changes the resource Git
 branch, or writes the resource environment. It waits for a new Dokploy deployment record, HTTPS
 liveness/readiness, and desktop/mobile browser smoke. The triggering main SHA identifies the review
 artifact; it is not injected into the application runtime.
+
+The [production operations guide](production-operations.md) owns dormant production provisioning,
+manual promotion, migration compatibility, and rollback. `.github/workflows/promote-production.yml`
+resolves current `main`, requires a successful exact-revision run of the UAT workflow, and computes
+the next stable `vMAJOR.MINOR.PATCH` tag. Its deploy job is unreachable unless the repository
+variable `PRODUCTION_DEPLOY_ENABLED` is exactly `true`; the production controller repeats that guard
+before reading Git or Dokploy state. When enabled through a separately approved release, the
+workflow creates or reuses the tag, keeps Dokploy automatic deployment disabled, pins the production
+resource to the tag, and triggers one deployment. This source-build path preserves source identity,
+not byte-for-byte image identity; issue #115 remains deferred until separate build/deployment hosts
+or another concrete artifact-identity requirement justifies registry publication.
 
 The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
 application runtime variables, and do not belong in `.env` or `.env.example`:
@@ -108,9 +120,14 @@ application runtime variables, and do not belong in `.env` or `.env.example`:
 | `CF_ACCESS_CLIENT_ID` | Actions secret | Yes | Cloudflare Access service-token identifier for the Dokploy API. |
 | `CF_ACCESS_CLIENT_SECRET` | Actions secret | Yes | Cloudflare Access service-token secret for the Dokploy API. |
 | `PLAYWRIGHT_BASE_URL` | Actions variable | No | Canonical UAT browser-smoke origin; must be `https://uat.pick-flick.app`. |
+| `PRODUCTION_DEPLOY_ENABLED` | Repository variable | No | Fail-closed production guard; absent or any value except exact `true` disables deployment. |
+| `DOKPLOY_PRODUCTION_COMPOSE_ID` | `production` environment variable | No | Exact dormant production Compose resource identifier. |
 
-`GITHUB_REPOSITORY` is an ephemeral workflow process input. It identifies the trusted repository to
-the UAT controller and is never saved to Dokploy.
+Production reuses `DOKPLOY_URL` and the three Dokploy/Cloudflare credentials, but scopes their
+production values through the protected GitHub `production` environment. Those settings are not
+required for a guard-disabled validation run. `GITHUB_REPOSITORY`, `GITHUB_API_URL`, and
+`GITHUB_TOKEN` are ephemeral workflow inputs. They identify the trusted repository and let the
+promotion controller read UAT workflow evidence; they are never saved to Dokploy.
 
 ## Start the local stack
 
