@@ -88,10 +88,6 @@ export function renderDeployment(appEnvironment, source = process.env) {
       "compose",
       "-f",
       "compose.deploy.yaml",
-      "--profile",
-      "release",
-      "--profile",
-      "application",
       "config",
       "--format",
       "json",
@@ -111,8 +107,9 @@ export function renderDeployment(appEnvironment, source = process.env) {
   return JSON.parse(result.stdout);
 }
 
-function hasOnlyProfile(service, profile) {
-  return service.profiles?.length === 1 && service.profiles[0] === profile;
+function dependsOnCompletedRelease(service) {
+  const release = service.depends_on?.release;
+  return release?.condition === "service_completed_successfully" && release.required === true;
 }
 
 function validateRequiredEnvironment(service, names, serviceName) {
@@ -185,10 +182,7 @@ export function validateDeployments({ production, uat }) {
       );
     }
 
-    assert(
-      hasOnlyProfile(deployment.services.release, "release"),
-      "The release gate must use its isolated deployment profile.",
-    );
+    assert(deployment.services.release.profiles === undefined, "The release gate must use native Compose ordering.");
     assert(
       runtimeServices.every((name) => !(name in (deployment.services.release.depends_on ?? {}))),
       "The release gate must not depend on application services.",
@@ -199,19 +193,16 @@ export function validateDeployments({ production, uat }) {
     validateRequiredEnvironment(deployment.services.release, ["APP_ENV", "DATABASE_URL"], "release");
 
     for (const name of runtimeServices) {
-      assert(
-        hasOnlyProfile(deployment.services[name], "application"),
-        `${name} must use the application convergence profile.`,
-      );
+      assert(deployment.services[name].profiles === undefined, `${name} must use native Compose ordering.`);
       assert(deployment.services[name].build?.target === name, `${name} must build the ${name} target.`);
-      assert(
-        !("release" in (deployment.services[name].depends_on ?? {})),
-        `${name} must not recreate before the release run.`,
-      );
       assert(
         deployment.services[name].environment?.SOURCE_REVISION === selectedRevision,
         `${name} must report the selected source revision.`,
       );
+    }
+
+    for (const name of ["api", "worker"]) {
+      assert(dependsOnCompletedRelease(deployment.services[name]), `${name} must wait for the release gate.`);
     }
 
     validateRequiredEnvironment(deployment.services.api, apiEnvironmentVariables, "api");

@@ -37,8 +37,6 @@ x-application-service: &application-service
 services:
   release:
     <<: *application-service
-    profiles:
-      - release
     build:
       <<: *build
       target: release
@@ -53,8 +51,6 @@ services:
 
   api:
     <<: *application-service
-    profiles:
-      - application
     build:
       <<: *build
       target: api
@@ -62,6 +58,10 @@ services:
       <<: *runtime-environment
       API_HOST: 0.0.0.0
       API_PORT: 3001
+    depends_on:
+      release:
+        condition: service_completed_successfully
+        required: true
     expose:
       - "3001"
     healthcheck:
@@ -76,12 +76,14 @@ services:
 
   worker:
     <<: *application-service
-    profiles:
-      - application
     build:
       <<: *build
       target: worker
     environment: *runtime-environment
+    depends_on:
+      release:
+        condition: service_completed_successfully
+        required: true
     networks:
       application:
         aliases:
@@ -89,8 +91,6 @@ services:
 
   web:
     <<: *application-service
-    profiles:
-      - application
     build:
       <<: *build
       target: web

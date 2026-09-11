@@ -5,8 +5,6 @@ export const UAT_BASE_URL = "https://uat.pick-flick.app";
 export const UAT_DEFAULT_REF = "main";
 export const UAT_RESTORE_TAG_PREFIX = "PF-uat-";
 export const DOKPLOY_COMPOSE_PATH = "compose.deploy.yaml";
-export const DOKPLOY_DEPLOY_COMMAND =
-  "compose -f compose.deploy.yaml --profile release run --build --rm release && docker compose -f compose.deploy.yaml --profile application up --build -d --wait --remove-orphans";
 
 const githubRepository = "Shagon1k/PickFlick";
 const revisionPattern = /^[0-9a-f]{40}$/i;
@@ -150,9 +148,6 @@ async function verifyDokployCompose(fetchImplementation, configuration) {
   }
   if (compose.composePath !== DOKPLOY_COMPOSE_PATH) {
     failures.push(`composePath=${DOKPLOY_COMPOSE_PATH}`);
-  }
-  if (compose.command?.trim() !== DOKPLOY_DEPLOY_COMMAND) {
-    failures.push("the staged release/application deploy command");
   }
   if (failures.length) {
     throw new Error(`The Dokploy Compose resource does not match the UAT contract: ${failures.join(", ")}.`);

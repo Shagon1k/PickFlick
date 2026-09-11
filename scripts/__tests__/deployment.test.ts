@@ -45,6 +45,23 @@ describe("deployment Compose", () => {
     expect(deployment.services.web.environment.SOURCE_REVISION).toBe(sourceRevision);
   });
 
+  it("converges the native Compose release dependency graph", () => {
+    const deployment = validDeployments.uat;
+
+    expect(deployment.services.release.profiles).toBeUndefined();
+    expect(deployment.services.api.depends_on.release).toMatchObject({
+      condition: "service_completed_successfully",
+      required: true,
+    });
+    expect(deployment.services.worker.depends_on.release).toMatchObject({
+      condition: "service_completed_successfully",
+      required: true,
+    });
+    expect(deployment.services.web.depends_on.api).toMatchObject({
+      condition: "service_healthy",
+      required: true,
+    });
+  });
   it("accepts the proportional topology without deferred timeout coupling", () => {
     const deployments = structuredClone(validDeployments);
 
@@ -133,14 +150,14 @@ describe("deployment Compose", () => {
       message: /API must use the selected environment/,
     },
     {
-      name: "a release service outside the isolated release profile",
-      mutate: (deployments: Deployments) => (deployments.uat.services.release.profiles = ["application"]),
-      message: /release gate must use its isolated deployment profile/,
+      name: "a release service assigned a Compose profile",
+      mutate: (deployments: Deployments) => (deployments.uat.services.release.profiles = ["release"]),
+      message: /release gate must use native Compose ordering/,
     },
     {
-      name: "a runtime service outside the application profile",
-      mutate: (deployments: Deployments) => (deployments.uat.services.api.profiles = ["release"]),
-      message: /api must use the application convergence profile/,
+      name: "a runtime service assigned a Compose profile",
+      mutate: (deployments: Deployments) => (deployments.uat.services.api.profiles = ["application"]),
+      message: /api must use native Compose ordering/,
     },
     {
       name: "a release dependency on an application service",
@@ -154,10 +171,15 @@ describe("deployment Compose", () => {
       message: /worker must build the worker target/,
     },
     {
-      name: "an inline release dependency that bypasses staged convergence",
+      name: "an API service that does not wait for the release gate",
       mutate: (deployments: Deployments) =>
-        (deployments.uat.services.api.depends_on = { release: { condition: "service_completed_successfully" } }),
-      message: /api must not recreate before the release run/,
+        (deployments.uat.services.api.depends_on = { release: { condition: "service_started", required: true } }),
+      message: /api must wait for the release gate/,
+    },
+    {
+      name: "a worker service that does not wait for the release gate",
+      mutate: (deployments: Deployments) => delete deployments.uat.services.worker.depends_on,
+      message: /worker must wait for the release gate/,
     },
     {
       name: "a missing API health check",

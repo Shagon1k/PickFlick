@@ -22,8 +22,7 @@ export function deployCompose(run = runDocker, source = process.env, resolveRevi
   }
 
   const environment = { ...source, SOURCE_REVISION: resolveRevision(source) };
-  run([...composeArguments, "--profile", "release", "run", "--build", "--rm", "release"], environment);
-  run([...composeArguments, "--profile", "application", "up", "--build", "-d", "--wait"], environment);
+  run([...composeArguments, "up", "--build", "-d", "--wait", "--remove-orphans"], environment);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

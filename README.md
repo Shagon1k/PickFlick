@@ -51,11 +51,11 @@ pnpm compose:check
 `pnpm images:build` tags local images with the first 12 characters of the full source revision.
 `pnpm compose:check` renders the shared `compose.deploy.yaml` topology for synthetic UAT and
 production inputs. It checks the four source-built application services, environment-specific
-networks and aliases, private ports, release/application profiles, health gates, revision
+networks and aliases, private ports, native release ordering, health gates, revision
 traceability, and container hardening. With the environment-specific Dokploy values configured,
-run `pnpm deploy:compose`. The command builds and completes the one-shot release profile before it
-builds and converges application containers, so a failed release leaves the running application
-revision in place. See the
+run `pnpm deploy:compose`. Docker Compose starts the one-shot release service before API and worker,
+and web waits for API health; a failed release blocks the new runtime services. Standard Compose
+may replace running containers during convergence. See the
 [environment and runtime operations reference](_docs/environment.md#deployment-images-and-compose)
 before supplying real environment values. The automatic exact-revision path and the owner-run
 Dokploy, Cloudflare, failure-injection, rollback, and preview steps are in the

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   DOKPLOY_COMPOSE_PATH,
-  DOKPLOY_DEPLOY_COMMAND,
   UAT_DEFAULT_REF,
   deployUat,
   deploymentConfiguration,
@@ -36,7 +35,6 @@ function composeContract() {
   return {
     autoDeploy: false,
     branch: UAT_DEFAULT_REF,
-    command: DOKPLOY_DEPLOY_COMMAND,
     composePath: DOKPLOY_COMPOSE_PATH,
     composeStatus: "done",
     composeType: "docker-compose",

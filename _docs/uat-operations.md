@@ -62,15 +62,9 @@ revision.
 | Compose path | `compose.deploy.yaml` |
 | Isolated deployment | Off; the repository supplies the external UAT network |
 
-Set the Dokploy custom command to this exact value. Dokploy prefixes the first command with
-`docker`; the explicit second `docker` is required:
-
-```text
-compose -f compose.deploy.yaml --profile release run --build --rm release && docker compose -f compose.deploy.yaml --profile application up --build -d --wait --remove-orphans
-```
-
-The first command runs migrations and required seed work without touching the active application
-containers. The second command runs only after the release container succeeds.
+Set no Dokploy custom command. `compose.deploy.yaml` owns the native Compose dependency graph: the
+one-shot `release` service must complete successfully before `api` and `worker` start, and `web`
+waits for API health. Dokploy's standard Compose deployment is the sole runtime lifecycle.
 
 Add these names as environment-level variables in Dokploy. Keep their values in Dokploy or an
 assigned external vault; never place them in GitHub, issue text, logs, or this repository:
@@ -160,19 +154,20 @@ Do not paste rendered Compose, environment output, connection URLs, tokens, or r
 responses into GitHub evidence. Record only resource names, revision identifiers, pass/fail status,
 timestamps, and redacted screenshots or logs.
 
-## Prove release failure preservation
+## Prove release failure gating
 
-1. Record the active SHA, container identifiers, liveness response, and readiness result.
+1. Record the active SHA, liveness response, and readiness result.
 2. Temporarily replace the UAT environment-level `DATABASE_URL` with a syntactically valid but
    unreachable synthetic internal target.
 3. Manually dispatch `Deploy to UAT` for the active SHA with `confirm_rollback` enabled.
-4. Confirm the release step fails before the application convergence command runs.
-5. Confirm the previously active web, API, and worker container identifiers, SHA, and health remain
-   unchanged.
-6. Restore the original UAT `DATABASE_URL` in Dokploy without copying it elsewhere, then dispatch
+4. Confirm the `release` service fails and Dokploy does not start the new `api`, `worker`, or `web`
+   services because their native `depends_on` gates are unsatisfied.
+5. Restore the original UAT `DATABASE_URL` in Dokploy without copying it elsewhere, then dispatch
    the active SHA again and confirm recovery.
 
-This drill changes only UAT configuration. Never run it against production or real user data.
+Dokploy standard Compose deployment can replace existing containers during convergence. Do not claim
+that a failed release preserves the old runtime revision; use this drill to prove release ordering
+and failed-deployment visibility in UAT.
 
 ## Restore a known-good revision
 
