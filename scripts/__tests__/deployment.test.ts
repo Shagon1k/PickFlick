@@ -30,19 +30,11 @@ describe("deployment Compose", () => {
     expect(() => renderDeployment("test")).toThrow(/only render for uat or production/);
   });
 
-  it("rejects a source build without a full revision", () => {
-    expect(() => renderDeployment("uat", { SOURCE_REVISION: "main" })).toThrow(
-      /SOURCE_REVISION must be a full hexadecimal source revision/,
-    );
-  });
+  it("does not require a source revision in the deployment environment", () => {
+    const deployment = renderDeployment("uat");
 
-  it("builds and reports an explicit full revision", () => {
-    const sourceRevision = "b".repeat(40);
-    const deployment = renderDeployment("uat", { SOURCE_REVISION: sourceRevision });
-
-    expect(deployment.services.api.build.args.SOURCE_REVISION).toBe(sourceRevision);
-    expect(deployment.services.api.environment.SOURCE_REVISION).toBe(sourceRevision);
-    expect(deployment.services.web.environment.SOURCE_REVISION).toBe(sourceRevision);
+    expect(deployment.services.api.environment.SOURCE_REVISION).toBeUndefined();
+    expect(deployment.networks.application.name).toBe("dokploy-network");
   });
 
   it("converges the native Compose release dependency graph", () => {
@@ -260,15 +252,9 @@ describe("deployment Compose", () => {
       message: /api must mount \/tmp as tmpfs/,
     },
     {
-      name: "a build with the wrong source revision",
-      mutate: (deployments: Deployments) =>
-        (deployments.uat.services.release.build.args.SOURCE_REVISION = "b".repeat(40)),
-      message: /release must build the selected source revision/,
-    },
-    {
-      name: "runtime revision drift",
-      mutate: (deployments: Deployments) => (deployments.uat.services.api.environment.SOURCE_REVISION = "b".repeat(40)),
-      message: /api must report the selected source revision/,
+      name: "an application network outside Dokploy's shared network",
+      mutate: (deployments: Deployments) => (deployments.uat.networks.application.name = "other-network"),
+      message: /Application services must use Dokploy's shared network/,
     },
   ])("rejects $name", ({ mutate, message }) => {
     expectRejected(mutate, message);

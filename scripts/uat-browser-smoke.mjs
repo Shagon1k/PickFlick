@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { UAT_BASE_URL, validateRevision } from "./deploy-uat.mjs";
+import { UAT_BASE_URL } from "./deploy-uat.mjs";
 
 const viewports = [
   { name: "desktop", viewport: { height: 900, width: 1440 } },
@@ -17,7 +17,6 @@ export function browserSmokeConfiguration(source = process.env) {
   return {
     artifactDirectory: resolve(source.UAT_SMOKE_ARTIFACT_DIR?.trim() || "test-results/uat-preview"),
     baseUrl,
-    revision: validateRevision(source.SOURCE_REVISION?.trim() ?? ""),
   };
 }
 
@@ -58,7 +57,7 @@ async function inspectViewport(browser, configuration, profile) {
     await page.screenshot({
       animations: "disabled",
       fullPage: true,
-      path: resolve(configuration.artifactDirectory, `uat-${configuration.revision}-${profile.name}.png`),
+      path: resolve(configuration.artifactDirectory, `uat-${profile.name}.png`),
     });
   } finally {
     await context.close();
@@ -82,5 +81,5 @@ export async function runBrowserSmoke(chromium, source = process.env) {
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   const { chromium } = await import("@playwright/test");
   const configuration = await runBrowserSmoke(chromium);
-  console.log(`Browser smoke passed for ${configuration.baseUrl} on revision ${configuration.revision}.`);
+  console.log(`Browser smoke passed for ${configuration.baseUrl}.`);
 }

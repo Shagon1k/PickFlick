@@ -5,7 +5,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const applicationServices = ["api", "release", "web", "worker"];
 const runtimeServices = ["api", "web", "worker"];
-const deploymentOverrideVariables = ["DOKPLOY_NETWORK", "SOURCE_REVISION"];
 const intendedHealthChecks = {
   api: [
     "CMD",
@@ -27,7 +26,7 @@ const runtimeEnvironmentVariables = [
   "RESEND_API_KEY",
   "RESEND_FROM",
   "SHUTDOWN_TIMEOUT_MS",
-  "SOURCE_REVISION",
+
   "STORAGE_ACCESS_KEY",
   "STORAGE_BUCKET",
   "STORAGE_ENDPOINT",
@@ -43,23 +42,16 @@ function assert(condition, message) {
   }
 }
 
-function validateRevision(revision) {
-  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(revision)) {
-    throw new Error("SOURCE_REVISION must be a full hexadecimal source revision.");
-  }
-  return revision;
-}
-
-function environmentFor(appEnvironment, source) {
+function environmentFor(appEnvironment) {
   const environment = {
     APP_ENV: appEnvironment,
     DATABASE_URL: `postgresql://pickflick:synthetic@pickflick-${appEnvironment}-postgres:5432/pickflick_${appEnvironment}`,
-    DOKPLOY_NETWORK: `pickflick-${appEnvironment}-application`,
+
     REDIS_URL: `redis://:synthetic@pickflick-${appEnvironment}-redis:6379/0`,
     RESEND_API_KEY: "synthetic-resend-key",
     RESEND_FROM: "PickFlick <pickflick@example.invalid>",
     SHUTDOWN_TIMEOUT_MS: "10000",
-    SOURCE_REVISION: "a".repeat(40),
+
     STORAGE_ACCESS_KEY: `pickflick-${appEnvironment}`,
     STORAGE_BUCKET: `pickflick-${appEnvironment}`,
     STORAGE_ENDPOINT: `https://objects-${appEnvironment}.example.invalid`,
@@ -68,17 +60,10 @@ function environmentFor(appEnvironment, source) {
     STORAGE_SECRET_KEY: "synthetic-storage-secret",
   };
 
-  for (const name of deploymentOverrideVariables) {
-    if (source[name] !== undefined) {
-      environment[name] = source[name].trim();
-    }
-  }
-
-  validateRevision(environment.SOURCE_REVISION);
   return environment;
 }
 
-export function renderDeployment(appEnvironment, source = process.env) {
+export function renderDeployment(appEnvironment) {
   if (appEnvironment !== "uat" && appEnvironment !== "production") {
     throw new Error("Deployment Compose may only render for uat or production.");
   }
@@ -95,7 +80,7 @@ export function renderDeployment(appEnvironment, source = process.env) {
     {
       cwd: repositoryRoot,
       encoding: "utf8",
-      env: { ...process.env, ...environmentFor(appEnvironment, source) },
+      env: { ...process.env, ...environmentFor(appEnvironment) },
     },
   );
   if (result.error) {
@@ -161,9 +146,6 @@ export function validateDeployments({ production, uat }) {
       `${appEnvironment} must use its own Compose project name.`,
     );
 
-    const selectedRevision = deployment.services.web.environment?.SOURCE_REVISION;
-    validateRevision(selectedRevision);
-
     for (const name of applicationServices) {
       const service = deployment.services[name];
       assert(service.ports === undefined, `${name} must not publish host ports.`);
@@ -172,10 +154,7 @@ export function validateDeployments({ production, uat }) {
       assert(service.cap_drop?.includes("ALL"), `${name} must drop Linux capabilities.`);
       assert(service.security_opt?.includes("no-new-privileges:true"), `${name} must prevent new privileges.`);
       assert(service.tmpfs?.includes("/tmp"), `${name} must mount /tmp as tmpfs.`);
-      assert(
-        service.build?.args?.SOURCE_REVISION === selectedRevision,
-        `${name} must build the selected source revision.`,
-      );
+
       assert(
         service.networks?.application?.aliases?.includes(`pickflick-${appEnvironment}-${name}`),
         `${name} must use its environment-specific service alias.`,
@@ -195,10 +174,7 @@ export function validateDeployments({ production, uat }) {
     for (const name of runtimeServices) {
       assert(deployment.services[name].profiles === undefined, `${name} must use native Compose ordering.`);
       assert(deployment.services[name].build?.target === name, `${name} must build the ${name} target.`);
-      assert(
-        deployment.services[name].environment?.SOURCE_REVISION === selectedRevision,
-        `${name} must report the selected source revision.`,
-      );
+
     }
 
     for (const name of ["api", "worker"]) {
@@ -232,6 +208,7 @@ export function validateDeployments({ production, uat }) {
       "Web must use the environment-specific API alias at runtime.",
     );
     assert(hasUniqueAliasOwners(deployment.services), `${appEnvironment} service aliases must each have one owner.`);
+    assert(deployment.networks.application.name === "dokploy-network", "Application services must use Dokploy's shared network.");
   }
 
   const uatAliases = applicationServices.flatMap(

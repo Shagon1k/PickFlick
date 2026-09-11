@@ -147,9 +147,7 @@ function parseWorkerValues(
   if (sourceRevision && !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(sourceRevision)) {
     failures.push({ name: "SOURCE_REVISION", reason: "must be a full hexadecimal source revision" });
   }
-  if ((appEnvironment === "uat" || appEnvironment === "production") && !sourceRevision) {
-    failures.push({ name: "SOURCE_REVISION", reason: "is required" });
-  }
+
   const databaseUrl = url(source, "DATABASE_URL", ["postgresql:", "postgres:"], failures, "host-and-path");
   const shutdownTimeoutMilliseconds = durationMilliseconds(source, "SHUTDOWN_TIMEOUT_MS", failures);
   const redisUrl = url(source, "REDIS_URL", ["redis:", "rediss:"], failures, "host");

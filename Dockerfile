@@ -13,11 +13,9 @@ FROM toolchain AS builder
 COPY . .
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
-ARG SOURCE_REVISION
 ARG BACKEND_INTERNAL_URL=http://127.0.0.1:3001
-ENV SOURCE_REVISION=${SOURCE_REVISION}
 ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
-RUN test -n "$SOURCE_REVISION" && pnpm build
+RUN pnpm build
 
 FROM builder AS api-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
@@ -41,9 +39,7 @@ RUN mkdir /openssl-root && \
       /openssl-root
 
 FROM ${RUNTIME_IMAGE} AS web
-ARG SOURCE_REVISION
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.title="PickFlick web"
 ENV HOSTNAME=0.0.0.0 NODE_ENV=production PORT=3000
 WORKDIR /app
@@ -54,9 +50,7 @@ EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
 
 FROM ${RUNTIME_IMAGE} AS api
-ARG SOURCE_REVISION
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.title="PickFlick API"
 ENV NODE_ENV=production
 WORKDIR /app
@@ -66,9 +60,7 @@ EXPOSE 3001
 CMD ["node", "dist/main.js"]
 
 FROM ${RUNTIME_IMAGE} AS worker
-ARG SOURCE_REVISION
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.title="PickFlick worker"
 ENV NODE_ENV=production
 WORKDIR /app
@@ -77,9 +69,7 @@ USER node
 CMD ["node", "dist/main.js"]
 
 FROM ${RUNTIME_IMAGE} AS release
-ARG SOURCE_REVISION
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.title="PickFlick release"
 ENV NODE_ENV=production
 WORKDIR /workspace
