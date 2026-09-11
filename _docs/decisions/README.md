@@ -433,17 +433,14 @@ Give each environment a separate private S3-compatible storage scope and credent
 user/Club avatars and generated exports there; keep bundled brand assets in the application static
 assets.
 
-Keep one application Compose definition with `release`, `api`, `worker`, and `web`. Run the
-one-shot `release` service as a pre-deployment step that applies committed migrations and required
-idempotent seed work. Release changes must remain compatible with the running revision until
-application convergence. Converge API, worker, and web only after the release step succeeds; a
-failed release must stop before Dokploy or Compose replaces, stops, or recreates the running
-application revision.
-Retain separate release and application profiles plus the staged convergence command until a
-Dokploy-native mechanism proves the same failure behavior in UAT. Web startup requires API health.
-No application service publishes a host port; Dokploy/Traefik owns public routing. Use unique
-environment-specific service aliases so web-to-API traffic cannot select a same-named service from
-another project.
+Keep one application Compose definition with `release`, `api`, `worker`, and `web`. Native Compose
+`depends_on` gates make API and worker wait for the one-shot `release` service to apply committed
+migrations and required idempotent seed work; web waits for API health. Release changes must remain
+compatible with the running revision until application convergence. A failed release blocks the new
+runtime services. Standard Dokploy Compose can replace existing containers during convergence, so
+this baseline does not claim failure preservation of the prior runtime revision. No application
+service publishes a host port; Dokploy/Traefik owns public routing. Use unique environment-specific
+service aliases so web-to-API traffic cannot select a same-named service from another project.
 
 For UAT, Dokploy builds the selected full Git revision from the locked repository. The deployment
 record, image revision labels, runtime revision, health response, and browser-smoke result identify
@@ -465,7 +462,7 @@ job-aware drain deadline until the first real queue consumer. That implementatio
 the deadline from measured job duration and prove drain/retry behavior in UAT.
 
 Maintain one small `pnpm compose:check`. It renders synthetic UAT and production configurations and
-checks the service set, allowed environments, staged release/application profiles, API/web health
+checks the service set, allowed environments, native release/API/worker ordering, API/web health
 gates, absence of application host-published ports, required environment inputs, distinct
 environment names/aliases, `init`, dropped capabilities, `no-new-privileges`, and read-only roots
 with explicit `tmpfs` writes. Platform preview, managed-service port configuration and reachability,
@@ -494,7 +491,7 @@ general-purpose YAML policy engine.
 | Configurable queue-aware drain and grace/timeout coupling | Defer | Worker owner | No BullMQ consumer has a measured job duration yet. | Tune coordinated deadlines and test retry/visibility behavior. | Activate with the first BullMQ consumer and derive the window from measured jobs. |
 | Normal application restart policies | Adopt now | Application maintainers | MVP runtimes should recover from transient process failure. | Diagnose persistent restart loops through deployment logs and health. | Without restart, a transient exit leaves a service down; persistent failure remains visible as unhealthy. |
 | Worker-only egress bridge | Reject | Infrastructure owner | A normal bridge provides no enforceable destination restriction. | Maintains extra network wiring without a policy boundary. | Propose a firewall or allowlist when provider access creates an enforceable requirement. |
-| Staged release/application Compose profiles and convergence command | Adopt now | Release owner | This is the proven control that leaves running application containers untouched when release fails. | Maintain a two-stage command and focused ordering/failure tests. | A single convergence can stop or recreate the prior revision before a failed release; replace this only after an equivalent Dokploy mechanism passes UAT. |
+| Native Compose release dependencies | Adopt now | Release owner | A plain, repository-owned dependency graph gates API and worker on the one-shot release service. | Maintain focused ordering assertions and UAT failure visibility. | Standard Compose may replace prior containers during convergence; migrations must remain backward compatible and failures must remain observable. |
 | Repository-specific Compose validation | Adopt now in [#114](https://github.com/Shagon1k/PickFlick/issues/114) | Application maintainers | Cheap static checks protect release, routing, isolation, and adopted hardening invariants. | Update focused assertions when the four-service topology changes. | Drift can silently remove a gate, publish a port, collide aliases, or weaken container controls. |
 | General-purpose YAML policy engine | Reject | Application maintainers | One small repository-owned Compose file does not need a policy language. | Adds a dependency, ruleset, and specialist maintenance surface. | The policy layer can drift from the Compose contract without reducing a current risk. |
 
@@ -515,7 +512,7 @@ general-purpose YAML policy engine.
 ### Follow-up work
 
 - [#113](https://github.com/Shagon1k/PickFlick/issues/113) aligns the application Compose topology
-  before UAT provisioning while retaining staged release/application convergence.
+  before UAT provisioning while retaining native Compose release dependencies.
 - [#114](https://github.com/Shagon1k/PickFlick/issues/114) reduces the maintained Compose check to
   the approved contract while preserving assertions for adopted static hardening controls.
 - [#115](https://github.com/Shagon1k/PickFlick/issues/115) is Deferred until production promotion

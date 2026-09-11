@@ -26,19 +26,20 @@ pnpm lockfile. `.dockerignore` excludes every local build artifact and platform 
 
 The release image runs committed Prisma migrations before the production-safe required-seed step.
 The required-seed step currently verifies database connectivity because no shared reference rows
-exist. Any failed step exits nonzero. `compose.deploy.yaml` keeps the one-shot release service in
-the `release` profile and web, API, and worker in the `application` profile. Each service builds
-its matching Dockerfile target from the selected full revision. Run the guarded deployment command
-after configuring the environment-specific values:
+exist. `compose.deploy.yaml` uses native Compose ordering: the one-shot `release` service completes
+before API and worker startup, and web waits for API health. Each service builds its matching
+Dockerfile target from the selected full revision. Run the guarded deployment command after
+configuring the environment-specific values:
 
 ```bash
 pnpm deploy:compose
 ```
 
-The command builds and runs the release profile first. It builds and converges the application
-profile only after the release container exits successfully. A failed migration or seed stops the
-command before Compose recreates the running application containers. Do not run the `application`
-profile directly.
+The command runs Dokploy-compatible native Compose convergence. Docker Compose starts the one-shot
+release service first; API and worker wait for it to exit successfully, and web waits for API health.
+A failed release blocks the new runtime services. Standard Compose may replace running containers
+during convergence, so this contract does not promise that a failed release preserves the prior
+runtime revision.
 
 Use `compose.deploy.yaml` for source-built UAT deployments. `pnpm deploy:compose` rejects every
 other `APP_ENV`; production must wait for the UAT-proven digest-promotion workflow from issue #115.
@@ -49,13 +50,13 @@ deployment:
 
 ```bash
 pnpm compose:check
-docker compose -f compose.deploy.yaml --profile release --profile application config --format json
+docker compose -f compose.deploy.yaml config --format json
 ```
 
 `pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
 contract. It checks the exact application service set, runtime-required environment inputs,
-source-revision build/runtime reporting, staged release/application profiles, the release image
-target plus command/entrypoint inheritance, intended API/web health checks, web's API-health
+source-revision build/runtime reporting, native release-to-runtime dependency ordering, the release
+image target plus command/entrypoint inheritance, intended API/web health checks, web's API-health
 dependency, private ports, environment-specific project names, uniquely owned service aliases that
 are disjoint across environments, and retained container hardening.
 It does not require image digests, application-owned PostgreSQL/Redis, a worker egress bridge, or
@@ -102,8 +103,8 @@ values stay in UAT-scoped Dokploy environment variables or its assigned vault. D
 run from the current trusted `main`; rollback targets supply application/Compose content only.
 
 `pnpm uat:deploy` authenticates through Cloudflare Access, verifies the immutable Dokploy source,
-repository, Compose path, disabled auto-deploy, staged custom command, and idle deployment state
-before it pins the selected immutable Git tag. It correlates completion with the new Dokploy
+repository, Compose path, disabled auto-deploy, and idle deployment state before it pins the
+selected immutable Git tag. It correlates completion with the new Dokploy
 deployment record without requiring a poll to observe its transient `running` state, then waits
 until HTTPS liveness reports the selected SHA and readiness reports every dependency as up.
 `pnpm uat:smoke` runs Chromium at desktop and mobile viewports, rejects browser errors and

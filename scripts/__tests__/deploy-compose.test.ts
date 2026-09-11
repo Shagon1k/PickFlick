@@ -3,19 +3,18 @@ import { describe, expect, it } from "vitest";
 import { deployCompose } from "../deploy-compose.mjs";
 
 describe("deployment convergence", () => {
-  it("runs the release gate before converging application services", () => {
+  it("uses native Compose release ordering", () => {
     const commands: string[][] = [];
     const source = { APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) };
 
     deployCompose((arguments_) => commands.push(arguments_), source, () => source.SOURCE_REVISION);
 
     expect(commands).toEqual([
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--build", "--rm", "release"],
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "application", "up", "--build", "-d", "--wait"],
+      ["compose", "-f", "compose.deploy.yaml", "up", "--build", "-d", "--wait", "--remove-orphans"],
     ]);
   });
 
-  it("does not converge application services when the release gate fails", () => {
+  it("surfaces a native Compose deployment failure", () => {
     const commands: string[][] = [];
     const source = { APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) };
 
@@ -26,7 +25,7 @@ describe("deployment convergence", () => {
       }, source, () => source.SOURCE_REVISION),
     ).toThrow("release failed");
     expect(commands).toEqual([
-      ["compose", "-f", "compose.deploy.yaml", "--profile", "release", "run", "--build", "--rm", "release"],
+      ["compose", "-f", "compose.deploy.yaml", "up", "--build", "-d", "--wait", "--remove-orphans"],
     ]);
   });
 
@@ -44,7 +43,7 @@ describe("deployment convergence", () => {
       },
     );
 
-    expect(environments).toHaveLength(2);
+    expect(environments).toHaveLength(1);
     expect(environments.every((environment) => environment.SOURCE_REVISION === checkedRevision)).toBe(true);
   });
 
