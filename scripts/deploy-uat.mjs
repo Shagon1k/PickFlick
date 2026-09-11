@@ -126,6 +126,10 @@ function dokployUrl(origin, path) {
   return new URL(path, `${origin}/`).href;
 }
 
+export function canonicalComposePath(path) {
+  return typeof path === "string" ? path.trim().replace(/^\.\/+/, "") : path;
+}
+
 async function verifyDokployCompose(fetchImplementation, configuration) {
   const compose = await requestJson(
     fetchImplementation,
@@ -146,7 +150,7 @@ async function verifyDokployCompose(fetchImplementation, configuration) {
   if (compose.composeType !== "docker-compose") {
     failures.push("composeType=docker-compose");
   }
-  if (compose.composePath !== DOKPLOY_COMPOSE_PATH) {
+  if (canonicalComposePath(compose.composePath) !== DOKPLOY_COMPOSE_PATH) {
     failures.push(`composePath=${DOKPLOY_COMPOSE_PATH}`);
   }
   if (failures.length) {

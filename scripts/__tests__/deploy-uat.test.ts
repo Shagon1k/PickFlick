@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DOKPLOY_COMPOSE_PATH,
   UAT_DEFAULT_REF,
+  canonicalComposePath,
   deployUat,
   deploymentConfiguration,
   dokployEnvironment,
@@ -59,6 +60,12 @@ function readyHealth(pathname: string) {
 }
 
 describe("UAT deployment", () => {
+  it("accepts an equivalent Dokploy Compose path with a leading current-directory prefix", () => {
+    expect(canonicalComposePath("./compose.deploy.yaml")).toBe(DOKPLOY_COMPOSE_PATH);
+    expect(canonicalComposePath("compose.deploy.yaml")).toBe(DOKPLOY_COMPOSE_PATH);
+    expect(canonicalComposePath("compose.other.yaml")).toBe("compose.other.yaml");
+  });
+
   it("pins automatic delivery to a new immutable tag and accepts fast completion", async () => {
     let composeReads = 0;
     const revisionTag = uatRestoreTag(revision);
