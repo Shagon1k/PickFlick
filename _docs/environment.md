@@ -89,26 +89,13 @@ API and worker stop accepting new work on `SIGINT` or `SIGTERM`. They wait up to
 seconds under a 15-second stop grace. Add a configurable, queue-aware drain and coordinated grace
 only when a real consumer supplies measured job-duration and retry requirements.
 
-In UAT and production, `SOURCE_REVISION` is required and must be a full 40- or 64-character
-hexadecimal revision. The API returns it from `/health/live`; every Dockerfile target also records
-it in the `org.opencontainers.image.revision` label.
-
 The [UAT operations guide](uat-operations.md) owns live provisioning and delivery. After the `CI`
 delivery gate succeeds for a push to `main`, `.github/workflows/deploy-uat.yml` serializes UAT runs,
-confirms the triggering full SHA is still the tip of `main`, and calls the Dokploy Compose API.
-Dokploy auto deploy remains disabled. Every automatic or confirmed rollback run creates or verifies
-an immutable `PF-uat-<full-SHA>` tag and pins the Compose resource to it. The workflow rewrites only
-the Compose resource's service-level environment references and selected `SOURCE_REVISION`; secret
-values stay in UAT-scoped Dokploy environment variables or its assigned vault. Deployment controls
-run from the current trusted `main`; rollback targets supply application/Compose content only.
-
-`pnpm uat:deploy` authenticates through Cloudflare Access, verifies the immutable Dokploy source,
-repository, Compose path, disabled auto-deploy, and idle deployment state before it pins the
-selected immutable Git tag. It correlates completion with the new Dokploy
-deployment record without requiring a poll to observe its transient `running` state, then waits
-until HTTPS liveness reports the selected SHA and readiness reports every dependency as up.
-`pnpm uat:smoke` runs Chromium at desktop and mobile viewports, rejects browser errors and
-horizontal page overflow, and writes exact-SHA screenshots for owner review.
+confirms that `main` has not advanced, and triggers the configured Dokploy Compose resource. Dokploy
+auto deploy remains disabled. The workflow never creates deployment tags, changes the resource Git
+branch, or writes the resource environment. It waits for a new Dokploy deployment record, HTTPS
+liveness/readiness, and desktop/mobile browser smoke. The triggering main SHA identifies the review
+artifact; it is not injected into the application runtime.
 
 The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
 application runtime variables, and do not belong in `.env` or `.env.example`:
@@ -122,10 +109,8 @@ application runtime variables, and do not belong in `.env` or `.env.example`:
 | `CF_ACCESS_CLIENT_SECRET` | Actions secret | Yes | Cloudflare Access service-token secret for the Dokploy API. |
 | `PLAYWRIGHT_BASE_URL` | Actions variable | No | Canonical UAT browser-smoke origin; must be `https://uat.pick-flick.app`. |
 
-`GITHUB_TOKEN`, `GITHUB_REPOSITORY`, `SOURCE_REVISION`, and `UAT_RESTORE_REVISION` are ephemeral
-workflow process inputs. The workflow always sets `UAT_RESTORE_REVISION` explicitly to `true` or
-`false`. `scripts/deploy-uat.mjs` validates these inputs before any external mutation and never logs
-their sensitive values.
+`GITHUB_REPOSITORY` is an ephemeral workflow process input. It identifies the trusted repository to
+the UAT controller and is never saved to Dokploy.
 
 ## Start the local stack
 

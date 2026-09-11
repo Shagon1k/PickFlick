@@ -3,26 +3,11 @@ import { pathToFileURL } from "node:url";
 
 export const UAT_BASE_URL = "https://uat.pick-flick.app";
 export const UAT_DEFAULT_REF = "main";
-export const UAT_RESTORE_TAG_PREFIX = "PF-uat-";
 export const DOKPLOY_COMPOSE_PATH = "compose.deploy.yaml";
 
 const githubRepository = "Shagon1k/PickFlick";
-const revisionPattern = /^[0-9a-f]{40}$/i;
 const composeIdPattern = /^[A-Za-z0-9_-]+$/;
 const expectedReadinessDependencies = ["database", "redis", "objectStorage"];
-const referencedVariables = [
-  "DATABASE_URL",
-  "DOKPLOY_NETWORK",
-  "REDIS_URL",
-  "RESEND_API_KEY",
-  "RESEND_FROM",
-  "STORAGE_ACCESS_KEY",
-  "STORAGE_BUCKET",
-  "STORAGE_ENDPOINT",
-  "STORAGE_FORCE_PATH_STYLE",
-  "STORAGE_REGION",
-  "STORAGE_SECRET_KEY",
-];
 
 function required(source, name) {
   const value = source[name]?.trim();
@@ -30,21 +15,6 @@ function required(source, name) {
     throw new Error(`${name} is required.`);
   }
   return value;
-}
-
-function requiredBoolean(source, name) {
-  const value = required(source, name);
-  if (value !== "true" && value !== "false") {
-    throw new Error(`${name} must be true or false.`);
-  }
-  return value === "true";
-}
-
-export function validateRevision(revision) {
-  if (!revisionPattern.test(revision)) {
-    throw new Error("SOURCE_REVISION must be a full 40-character hexadecimal Git revision.");
-  }
-  return revision.toLowerCase();
 }
 
 export function validateDokployUrl(value) {
@@ -65,14 +35,6 @@ export function validateDokployUrl(value) {
     throw new Error("DOKPLOY_URL must be an HTTPS origin without credentials, a path, a query, or a fragment.");
   }
   return url.origin;
-}
-
-export function dokployEnvironment(revision) {
-  const lines = ["APP_ENV=uat", `SOURCE_REVISION=${validateRevision(revision)}`];
-  for (const name of referencedVariables) {
-    lines.push(`${name}=\${{environment.${name}}}`);
-  }
-  return `${lines.join("\n")}\n`;
 }
 
 function requestHeaders(authentication) {
@@ -105,9 +67,6 @@ async function requestJson(fetchImplementation, url, options, acceptedStatuses =
   if (!acceptedStatuses.includes(response.status)) {
     throw new Error(`Request to ${new URL(url).pathname} returned HTTP ${response.status}.`);
   }
-  if (response.status === 404) {
-    return undefined;
-  }
   if (response.status === 204) {
     return undefined;
   }
@@ -116,10 +75,6 @@ async function requestJson(fetchImplementation, url, options, acceptedStatuses =
     throw new Error(`Request to ${new URL(url).pathname} did not return JSON.`);
   }
   return response.json();
-}
-
-function githubUrl(path) {
-  return new URL(path, "https://api.github.com").href;
 }
 
 function dokployUrl(origin, path) {
@@ -143,6 +98,9 @@ async function verifyDokployCompose(fetchImplementation, configuration) {
   }
   if (compose.owner !== "Shagon1k" || compose.repository !== "PickFlick") {
     failures.push(`repository=${githubRepository}`);
+  }
+  if (compose.branch !== UAT_DEFAULT_REF) {
+    failures.push(`branch=${UAT_DEFAULT_REF}`);
   }
   if (compose.autoDeploy !== false) {
     failures.push("autoDeploy=false");
@@ -178,72 +136,15 @@ function dokployDeploymentRecords(compose) {
   return compose.deployments;
 }
 
-export function uatRestoreTag(revision) {
-  return `${UAT_RESTORE_TAG_PREFIX}${validateRevision(revision)}`;
-}
-
-async function ensureUatTag(fetchImplementation, configuration) {
-  const tag = uatRestoreTag(configuration.revision);
-  const encodedTag = encodeURIComponent(tag);
-  const refUrl = githubUrl(`/repos/${githubRepository}/git/ref/tags/${encodedTag}`);
-  const authentication = { Authorization: `Bearer ${configuration.githubToken}`, "X-GitHub-Api-Version": "2022-11-28" };
-  const existing = await requestJson(fetchImplementation, refUrl, { headers: requestHeaders(authentication) }, [200, 404]);
-
-  if (existing?.object?.sha?.toLowerCase() === configuration.revision) {
-    return tag;
-  }
-
-  if (existing === undefined) {
-    const created = await requestJson(fetchImplementation, githubUrl(`/repos/${githubRepository}/git/refs`), {
-      method: "POST",
-      headers: requestHeaders(authentication),
-      body: JSON.stringify({ ref: `refs/tags/${tag}`, sha: configuration.revision }),
-    }, [201]);
-    if (created?.object?.sha?.toLowerCase() !== configuration.revision) {
-      throw new Error("GitHub did not confirm the requested immutable UAT tag.");
-    }
-    return tag;
-  }
-
-  throw new Error("The requested immutable UAT tag already points to another revision.");
-}
-
-async function pinDokployRef(fetchImplementation, configuration, currentBranch) {
-  const branch = await ensureUatTag(fetchImplementation, configuration);
-  if (currentBranch === branch) {
-    return;
-  }
-  const updated = await requestJson(fetchImplementation, dokployUrl(configuration.dokployOrigin, "/api/compose.update"), {
-    method: "POST",
-    headers: requestHeaders(dokployAuthentication(configuration)),
-    body: JSON.stringify({ autoDeploy: false, branch, composeId: configuration.composeId }),
-  });
-  if (updated?.branch !== branch) {
-    throw new Error("Dokploy did not retain the requested UAT Git ref.");
-  }
-}
-
-async function saveDokployEnvironment(fetchImplementation, configuration) {
-  await requestJson(fetchImplementation, dokployUrl(configuration.dokployOrigin, "/api/compose.saveEnvironment"), {
-    method: "POST",
-    headers: requestHeaders(dokployAuthentication(configuration)),
-    body: JSON.stringify({
-      composeId: configuration.composeId,
-      createEnvFile: true,
-      env: dokployEnvironment(configuration.revision),
-    }),
-  });
-}
-
 async function triggerDokploy(fetchImplementation, configuration) {
   const deployment = await requestJson(fetchImplementation, dokployUrl(configuration.dokployOrigin, "/api/compose.deploy"), {
     method: "POST",
     headers: requestHeaders(dokployAuthentication(configuration)),
     body: JSON.stringify({
       composeId: configuration.composeId,
-      description: `Automated UAT deployment for ${githubRepository}@${configuration.revision}`,
+      description: `Automated UAT deployment for ${githubRepository}@${UAT_DEFAULT_REF}`,
       freshVolumes: false,
-      title: `PickFlick UAT ${configuration.revision.slice(0, 12)}`,
+      title: "PickFlick UAT main",
     }),
   });
   if (deployment?.success !== true || deployment.composeId !== configuration.composeId) {
@@ -312,11 +213,9 @@ async function fetchHealth(fetchImplementation, pathname) {
   }
 }
 
-export async function waitForUatRevision(
-  revision,
+export async function waitForUatReadiness(
   { fetchImplementation = fetch, intervalMilliseconds = 5_000, sleep = (milliseconds) => new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)), timeoutMilliseconds = 20 * 60_000 } = {},
 ) {
-  const expectedRevision = validateRevision(revision);
   const deadline = Date.now() + timeoutMilliseconds;
   while (Date.now() < deadline) {
     const [liveness, readiness] = await Promise.all([
@@ -332,7 +231,6 @@ export async function waitForUatRevision(
     if (
       liveness?.service === "api" &&
       liveness.status === "alive" &&
-      liveness.revision?.toLowerCase() === expectedRevision &&
       readiness?.status === "ready" &&
       hasExpectedReadinessChecks
     ) {
@@ -340,7 +238,7 @@ export async function waitForUatRevision(
     }
     await sleep(intervalMilliseconds);
   }
-  throw new Error(`UAT did not report ready revision ${expectedRevision} within ${timeoutMilliseconds}ms.`);
+  throw new Error(`UAT did not report ready dependencies within ${timeoutMilliseconds}ms.`);
 }
 
 export function deploymentConfiguration(source = process.env) {
@@ -358,28 +256,19 @@ export function deploymentConfiguration(source = process.env) {
     composeId,
     dokployApiToken: required(source, "DOKPLOY_API_TOKEN"),
     dokployOrigin: validateDokployUrl(required(source, "DOKPLOY_URL")),
-    restoreRevision: requiredBoolean(source, "UAT_RESTORE_REVISION"),
-    githubToken: required(source, "GITHUB_TOKEN"),
-    revision: validateRevision(required(source, "SOURCE_REVISION")),
   };
 }
 
 export async function deployUat(source = process.env, fetchImplementation = fetch, waitOptions = {}) {
   const configuration = deploymentConfiguration(source);
   const compose = await verifyDokployCompose(fetchImplementation, configuration);
-  await pinDokployRef(fetchImplementation, configuration, compose.branch);
-  await saveDokployEnvironment(fetchImplementation, configuration);
-  const composeBeforeDeployment = await verifyDokployCompose(fetchImplementation, configuration);
-  const previousDeploymentIds = new Set(
-    dokployDeploymentRecords(composeBeforeDeployment).map(({ deploymentId }) => deploymentId),
-  );
+  const previousDeploymentIds = new Set(dokployDeploymentRecords(compose).map(({ deploymentId }) => deploymentId));
   await triggerDokploy(fetchImplementation, configuration);
   await waitForDokployDeployment(configuration, previousDeploymentIds, { ...waitOptions, fetchImplementation });
-  await waitForUatRevision(configuration.revision, { ...waitOptions, fetchImplementation });
-  return configuration.revision;
+  await waitForUatReadiness({ ...waitOptions, fetchImplementation });
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  const revision = await deployUat();
-  console.log(`UAT is ready at ${UAT_BASE_URL} on revision ${revision}.`);
+  await deployUat();
+  console.log(`UAT is ready at ${UAT_BASE_URL}.`);
 }

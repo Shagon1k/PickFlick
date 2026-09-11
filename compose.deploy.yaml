@@ -3,12 +3,9 @@ name: pickflick-${APP_ENV:?APP_ENV must be uat or production}
 x-build: &build
   context: .
   dockerfile: Dockerfile
-  args:
-    SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
 
 x-runtime-environment: &runtime-environment
   APP_ENV: ${APP_ENV:?APP_ENV is required}
-  SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
   SHUTDOWN_TIMEOUT_MS: "10000"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
   REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
@@ -95,12 +92,10 @@ services:
       <<: *build
       target: web
       args:
-        SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
         BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
     environment:
       BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
       NODE_ENV: production
-      SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION is required}
     depends_on:
       api:
         condition: service_healthy
@@ -122,4 +117,4 @@ services:
 networks:
   application:
     external: true
-    name: ${DOKPLOY_NETWORK:?DOKPLOY_NETWORK is required}
+    name: dokploy-network

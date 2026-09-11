@@ -66,10 +66,8 @@ describe("environment validation", () => {
     });
   });
 
-  it("requires a full source revision in deployed environments", () => {
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat" })).toThrow(
-      /SOURCE_REVISION is required/,
-    );
+  it("allows deployed environments without a source revision", () => {
+    expect(parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat" })).toMatchObject({ appEnvironment: "uat" });
     expect(
       parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) }),
     ).toMatchObject({ sourceRevision: "a".repeat(40) });
