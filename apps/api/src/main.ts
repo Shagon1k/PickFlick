@@ -13,7 +13,7 @@ async function bootstrap(): Promise<void> {
   const logger = createLogger({ service: "api", environment: environment.appEnvironment });
 
   try {
-    const app = await NestFactory.create(AppModule.register(environment), { logger: false });
+    const app = await NestFactory.create(AppModule.register(environment, logger), { logger: false });
     app.use(createRequestContextMiddleware(logger));
     app.useGlobalFilters(new ApiExceptionFilter(logger));
     await app.listen(environment.apiPort, environment.apiHost);
