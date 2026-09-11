@@ -300,6 +300,16 @@ describe("production deployment guard", () => {
       .rejects.toThrow(/main advanced/);
     expect(fetchImplementation).not.toHaveBeenCalled();
   });
+
+  it("requires manual reconciliation instead of retriggering an already pinned release", async () => {
+    const runGit = vi.fn((arguments_: string[]) => arguments_[0] === "rev-parse" ? releaseSha : "");
+    const fetchImplementation = vi.fn(async () => jsonResponse(productionCompose({ branch: "v0.0.1" })));
+
+    await expect(deployProduction(source, { fetchImplementation, runGit }))
+      .rejects.toThrow(/Reconcile the previous promotion manually/);
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+    expect(runGit).not.toHaveBeenCalledWith(["ls-remote", "origin", "refs/tags/v0.0.1", "refs/tags/v0.0.1^{}"]);
+  });
 });
 
 describe("production promotion workflow", () => {
@@ -313,7 +323,8 @@ describe("production promotion workflow", () => {
     expect(workflow).toMatch(/if: \$\{\{ needs\.validate\.outputs\.production_enabled == 'true' \}\}/);
     expect(workflow).toMatch(/environment: production/);
     expect(workflow).toMatch(/deploy:[\s\S]*?permissions:\n\s{6}actions: read\n\s{6}contents: write/);
-    expect(workflow).toContain("PRODUCTION_DEPLOY_ENABLED: ${{ needs.validate.outputs.production_enabled }}");
+    expect(workflow).toContain("PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}");
+    expect(workflow).not.toContain("PRODUCTION_DEPLOY_ENABLED: ${{ needs.validate.outputs.production_enabled }}");
   });
 
   it("runs read-only preparation before the separately guarded deployment controller", () => {

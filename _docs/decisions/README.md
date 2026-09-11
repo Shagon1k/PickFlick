@@ -568,25 +568,27 @@ another concrete byte-identity requirement appears.
 
 ### Decision
 
-Use the same `compose.deploy.yaml` for source-built UAT and production. UAT continues to build
-current `main`. A manual GitHub Actions workflow resolves current `main`, requires a successful run
-of the exact UAT workflow for that full revision, and creates or reuses an annotated stable SemVer
-tag. With no stable tag, version calculation starts from `v0.0.0`. A retry reuses the highest stable
-tag when it already points to current `main`, so failure after tag creation does not consume another
-version.
+Use the same `compose.deploy.yaml` for source-built UAT and production. UAT builds `main` and accepts
+a run only when Dokploy's deployment record and the live API report the exact triggering revision.
+A manual GitHub Actions workflow resolves current `main`, requires a successful run of the exact UAT
+workflow for that full revision, and creates or reuses an annotated stable SemVer tag. With no stable
+tag, version calculation starts from `v0.0.0`. A retry reuses the highest stable tag when it already
+points to current `main`, so failure after tag creation does not consume another version.
 
 Keep production fail-closed through two independent controls. The repository variable
-`PRODUCTION_DEPLOY_ENABLED` must equal exact lowercase `true` before GitHub schedules the deploy job,
-and the deployment controller repeats the same check before reading Git or Dokploy state. Put the
-deploy job behind a protected GitHub `production` environment. Keep the Dokploy production Compose
-resource's automatic deployment disabled. Before issue #16 completes, leave the guard false and do
-not attach a production traffic route.
+`PRODUCTION_DEPLOY_ENABLED` must equal exact lowercase `true` before GitHub schedules the deploy job.
+After protected-environment approval, the deployment controller reads the current repository value
+and repeats the same check before reading Git or Dokploy state. Put the deploy job behind a protected
+GitHub `production` environment. Keep the Dokploy production Compose resource's automatic deployment
+disabled. Before issue #16 completes, leave the guard false and do not attach a production traffic
+route.
 
 When a later owner-approved release enables the guard, the workflow checks that `main` has not
 advanced, verifies the inactive production resource contract, creates or reuses the tag, pins the
 resource to that tag with automatic deployment still disabled, triggers one deployment, and waits
-for its distinct deployment record. The local `pnpm deploy:compose` command remains UAT-only; a
-workstation cannot use it to converge production.
+for its distinct deployment record. A later run that finds the resource already pinned to the same
+release stops for manual reconciliation instead of triggering another deployment. The local
+`pnpm deploy:compose` command remains UAT-only; a workstation cannot use it to converge production.
 
 Keep issue #115 Deferred until separate build/deployment servers or another concrete
 artifact-identity requirement makes source identity insufficient. At that trigger, publish one

@@ -29,7 +29,10 @@ Use these controls together:
 
 The `Promote to Production` workflow always resolves the candidate and verifies its exact UAT run.
 When `PRODUCTION_DEPLOY_ENABLED` is not exactly `true`, the workflow stops after that read-only
-validation. It cannot create a tag, change the Dokploy resource, or start a deployment.
+validation. It cannot create a tag, change the Dokploy resource, or start a deployment. If the guard
+was true during validation, the deploy job reads it again after protected-environment approval. The
+controller stops before reading Git or Dokploy state unless that current value is still exact
+lowercase `true`.
 
 ## Provision the dormant Dokploy contract
 
@@ -136,9 +139,10 @@ release:
 7. Return `PRODUCTION_DEPLOY_ENABLED` to `false` after the workflow finishes.
 8. Verify production readiness before attaching or restoring public traffic.
 
-The deploy job fetches `main` again immediately before any production mutation. It stops if `main`
-advanced after validation. Re-run the complete workflow against the new revision; do not bypass the
-check or create a tag from a developer machine.
+After protected-environment approval, the deploy job reads the production guard again and fetches
+`main` immediately before any production mutation. It stops if the guard was disabled or `main`
+advanced after validation. Re-run the complete workflow against the new revision; do not bypass
+either check or create a tag from a developer machine.
 
 ## Review migration compatibility
 
@@ -178,14 +182,16 @@ restore a database merely to make an old application image start.
 
 ## Recover partial promotion failures
 
-The workflow is safe to re-run for current `main`:
+The controller permits an automatic retry only before Dokploy is pinned to the candidate release:
 
 - Before tag creation, every failure leaves repository and Dokploy state unchanged.
-- If tag creation succeeds but a later Dokploy call fails, the next run reuses that tag when it still
-  points to current `main`.
+- If tag creation succeeds but the Dokploy ref update does not, the next run reuses that tag when it
+  still points to current `main`.
 - If a tag name points to another revision, promotion stops before changing Dokploy.
-- If the Dokploy ref update succeeds but deployment does not start, automatic deployment remains
-  disabled. Inspect the resource, then re-run only after the owner approves recovery.
+- If the Dokploy ref update succeeds, every later run stops when it finds the resource already
+  pinned to that release. Inspect the resource and deployment records before the owner chooses a
+  manual recovery. This stop prevents an ambiguous deploy response from triggering the release
+  twice.
 - If the deployment starts and fails, preserve its logs and deployment record. Apply the migration
   and rollback rules above; do not hide the failure with another unreviewed deployment.
 

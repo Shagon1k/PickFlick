@@ -457,6 +457,11 @@ export async function deployProduction(
   }
 
   const compose = await verifyProductionCompose(fetchImplementation, configuration);
+  if (compose.branch === configuration.releaseVersion) {
+    throw new Error(
+      "The production resource is already pinned to this release. Reconcile the previous promotion manually before retrying.",
+    );
+  }
   const previousDeploymentIds = new Set(deploymentRecords(compose).map(({ deploymentId }) => deploymentId));
   createOrVerifyTag(configuration, runGit);
   await updateProductionRef(fetchImplementation, configuration);

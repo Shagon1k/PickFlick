@@ -11,18 +11,18 @@ provider and provisioning issues extend this inventory when their consumers exis
 | Target | Runtime | Default command |
 | --- | --- | --- |
 | `web` | Next.js standalone server on port 3000 | `node apps/web/server.js` |
-| `api` | Compiled NestJS API on port 3001 | `node dist/main.js` |
-| `worker` | Compiled worker process | `node dist/main.js` |
+| `api` | Compiled NestJS API on port 3001 | Load the embedded source revision, then run `node dist/main.js` |
+| `worker` | Compiled worker process | Load the embedded source revision, then run `node dist/main.js` |
 | `release` | One-shot database release gate | `node scripts/run-release.mjs` |
 
 Run `pnpm images:build` from a clean Git checkout. The command passes the full Git revision into
-each build, sets the image revision label, and tags each local image with the first 12 revision
+each build, embeds it in the build output, and tags each local image with the first 12 revision
 characters. When Git metadata is available, a configured `SOURCE_REVISION` must match `HEAD` and
-does not bypass the clean-worktree check. The command trusts the full hexadecimal override only
-when the build context has no Git metadata. The Dockerfile pins both Node base images by
-multi-platform digest, pins the Dockerfile frontend by digest, and installs from the committed
-pnpm lockfile. `.dockerignore` excludes every local build artifact and platform file covered by
-`.gitignore`, so ignored files do not enter the Docker context.
+does not bypass the clean-worktree check. A Dokploy source build derives the same value from the
+checked-out Git `HEAD`. The Docker context includes only the Git `HEAD` and local branch refs needed
+for that derivation; it excludes Git configuration, credentials, objects, and logs. The Dockerfile
+pins both Node base images by multi-platform digest, pins the Dockerfile
+frontend by digest, and installs from the committed pnpm lockfile.
 
 The release image runs committed Prisma migrations before the production-safe required-seed step.
 The required-seed step currently verifies database connectivity because no shared reference rows
@@ -72,7 +72,6 @@ Dokploy supplies these Compose-only values. They do not belong in the local `.en
 | `DATABASE_URL` | Internal connection URL for that environment's Dokploy-managed PostgreSQL resource |
 | `REDIS_URL` | Internal connection URL for that environment's Dokploy-managed Redis resource |
 | `DOKPLOY_NETWORK` | Pre-created environment-specific application network shared with the managed data resources and Dokploy routing |
-| `SOURCE_REVISION` | Selected full hexadecimal Git revision passed to every build and runtime service |
 
 The remote Compose file owns only `release`, `api`, `worker`, and `web`; it defines no data service
 or persistent volume. Every service joins the pre-created external application network with an
@@ -92,22 +91,26 @@ only when a real consumer supplies measured job-duration and retry requirements.
 
 The [UAT operations guide](uat-operations.md) owns live UAT provisioning and delivery. After the `CI`
 delivery gate succeeds for a push to `main`, `.github/workflows/deploy-uat.yml` serializes UAT runs,
-confirms that `main` has not advanced, and triggers the configured Dokploy Compose resource. Dokploy
-auto deploy remains disabled. The workflow never creates deployment tags, changes the resource Git
-branch, or writes the resource environment. It waits for a new Dokploy deployment record, HTTPS
-liveness/readiness, and desktop/mobile browser smoke. The triggering main SHA identifies the review
-artifact; it is not injected into the application runtime.
+checks out the triggering SHA, confirms that `main` has not advanced, and triggers the configured
+Dokploy Compose resource. Dokploy auto deploy remains disabled. The workflow never creates
+deployment tags, changes the resource Git branch, or writes the resource environment. The source
+build derives `SOURCE_REVISION` from the checked-out Git metadata, and the API and worker images load
+that embedded value at runtime. The workflow requires both Dokploy's completed deployment record
+and the live API liveness response to report the triggering SHA before it runs desktop/mobile
+browser smoke.
 
 The [production operations guide](production-operations.md) owns dormant production provisioning,
 manual promotion, migration compatibility, and rollback. `.github/workflows/promote-production.yml`
 resolves current `main`, requires a successful exact-revision run of the UAT workflow, and computes
 the next stable `vMAJOR.MINOR.PATCH` tag. Its deploy job is unreachable unless the repository
 variable `PRODUCTION_DEPLOY_ENABLED` is exactly `true`; the production controller repeats that guard
-before reading Git or Dokploy state. When enabled through a separately approved release, the
-workflow creates or reuses the tag, keeps Dokploy automatic deployment disabled, pins the production
-resource to the tag, and triggers one deployment. This source-build path preserves source identity,
-not byte-for-byte image identity; issue #115 remains deferred until separate build/deployment hosts
-or another concrete artifact-identity requirement justifies registry publication.
+from the current repository variable after protected-environment approval and before reading Git or
+Dokploy state. When enabled through a separately approved release, the workflow creates or reuses
+the tag, keeps Dokploy automatic deployment disabled, pins the production resource to the tag, and
+triggers one deployment. If a later run finds the resource already pinned to that release, it stops
+for manual reconciliation. This source-build path preserves source identity, not byte-for-byte image
+identity; issue #115 remains deferred until separate build/deployment hosts or another concrete
+artifact-identity requirement justifies registry publication.
 
 The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
 application runtime variables, and do not belong in `.env` or `.env.example`:

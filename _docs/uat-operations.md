@@ -24,10 +24,11 @@ See the official [Dokploy releases](https://github.com/Dokploy/dokploy/releases)
    `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 5. Add repository variable `PLAYWRIGHT_BASE_URL=https://uat.pick-flick.app`.
 
-Dokploy Auto Deploy remains off. After CI succeeds for a push to `main`, the workflow confirms that
-`main` has not advanced, triggers the configured UAT Compose resource, waits for the new Dokploy
-deployment record, verifies HTTPS liveness/readiness, and runs desktop/mobile browser smoke. It
-never creates tags, changes the Compose branch, or saves its environment text.
+Dokploy Auto Deploy remains off. After CI succeeds for a push to `main`, the workflow checks out the
+exact triggering SHA, confirms that `main` has not advanced, and triggers the configured UAT Compose
+resource. It accepts the deployment only when Dokploy records that exact cloned commit and the live
+API reports the same revision. It then verifies readiness and runs desktop/mobile browser smoke. The
+workflow never creates tags, changes the Compose branch, or saves its environment text.
 
 ## Provision Dokploy UAT
 
@@ -90,9 +91,10 @@ Redis, or raw application ports.
 
 After the workflow is explicitly re-enabled and CI succeeds for a push to `main`:
 
-1. Record the triggering main SHA and the new Dokploy deployment record.
-2. Confirm `https://uat.pick-flick.app/api/health/live` is alive and
-   `https://uat.pick-flick.app/api/health/ready` reports every dependency as up.
+1. Record the triggering main SHA and the new Dokploy deployment record. Confirm that the record's
+   cloned commit equals the triggering SHA.
+2. Confirm `https://uat.pick-flick.app/api/health/live` is alive and reports the triggering SHA.
+   Confirm that `https://uat.pick-flick.app/api/health/ready` reports every dependency as up.
 3. Confirm valid HTTPS and HTTP-to-HTTPS redirect.
 4. Confirm desktop and mobile Playwright smoke pass; compare the uploaded screenshots with live UAT.
 5. From outside the Dokploy host, confirm managed PostgreSQL and Redis ports are unreachable.

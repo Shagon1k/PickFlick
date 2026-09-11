@@ -98,7 +98,7 @@ jobs:
           DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
           DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
           DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
-          PRODUCTION_DEPLOY_ENABLED: ${{ needs.validate.outputs.production_enabled }}
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
           RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
           RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
         run: node scripts/promote-production.mjs deploy
