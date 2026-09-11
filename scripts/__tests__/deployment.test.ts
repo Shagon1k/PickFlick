@@ -30,10 +30,13 @@ describe("deployment Compose", () => {
     expect(() => renderDeployment("test")).toThrow(/only render for uat or production/);
   });
 
-  it("does not require a source revision in the deployment environment", () => {
+  it("passes the selected source revision only as an image build argument", () => {
     const deployment = renderDeployment("uat");
 
     expect(deployment.services.api.environment.SOURCE_REVISION).toBeUndefined();
+    for (const service of Object.values(deployment.services)) {
+      expect(service.build.args.SOURCE_REVISION).toBe("a".repeat(40));
+    }
     expect(deployment.networks.application.name).toBe("dokploy-network");
   });
 

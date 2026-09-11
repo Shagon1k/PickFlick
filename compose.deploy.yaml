@@ -3,6 +3,8 @@ name: pickflick-${APP_ENV:?APP_ENV must be uat or production}
 x-build: &build
   context: .
   dockerfile: Dockerfile
+  args:
+    SOURCE_REVISION: ${SOURCE_REVISION:-}
 
 x-runtime-environment: &runtime-environment
   APP_ENV: ${APP_ENV:?APP_ENV is required}
@@ -93,6 +95,7 @@ services:
       target: web
       args:
         BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
+        SOURCE_REVISION: ${SOURCE_REVISION:-}
     environment:
       BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
       NODE_ENV: production

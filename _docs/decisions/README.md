@@ -570,10 +570,11 @@ another concrete byte-identity requirement appears.
 
 Use the same `compose.deploy.yaml` for source-built UAT and production. UAT builds `main` and accepts
 a run only when Dokploy's deployment record and the live API report the exact triggering revision.
-A manual GitHub Actions workflow resolves current `main`, requires a successful run of the exact UAT
-workflow for that full revision, and creates or reuses an annotated stable SemVer tag. With no stable
-tag, version calculation starts from `v0.0.0`. A retry reuses the highest stable tag when it already
-points to current `main`, so failure after tag creation does not consume another version.
+A manual GitHub Actions workflow resolves current `main`, requires the `UAT E2E` job to have
+completed successfully in an exact UAT workflow run for that full revision, and creates or reuses
+an annotated stable SemVer tag. With no stable tag, version calculation starts from `v0.0.0`. A
+retry reuses the highest stable tag when it already points to current `main`, so failure after tag
+creation does not consume another version.
 
 Keep production fail-closed through two independent controls. The repository variable
 `PRODUCTION_DEPLOY_ENABLED` must equal exact lowercase `true` before GitHub schedules the deploy job.
@@ -586,9 +587,10 @@ route.
 When a later owner-approved release enables the guard, the workflow checks that `main` has not
 advanced, verifies the inactive production resource contract, creates or reuses the tag, pins the
 resource to that tag with automatic deployment still disabled, triggers one deployment, and waits
-for its distinct deployment record. A later run that finds the resource already pinned to the same
-release stops for manual reconciliation instead of triggering another deployment. The local
-`pnpm deploy:compose` command remains UAT-only; a workstation cannot use it to converge production.
+for a correlated deployment record to report that release SHA. A later run that finds the resource
+already pinned to the same release stops for manual reconciliation instead of triggering another
+deployment. The local `pnpm deploy:compose` command remains UAT-only; a workstation cannot use it to
+converge production.
 
 Keep issue #115 Deferred until separate build/deployment servers or another concrete
 artifact-identity requirement makes source identity insufficient. At that trigger, publish one
@@ -624,12 +626,13 @@ production workflow. The UAT-evidence, SemVer, guard, migration, and rollback co
 
 ### Verification
 
-Issue #16 must prove stable SemVer calculation, exact workflow/repository/revision UAT matching,
-rejection of missing or failed evidence, stale-`main` rejection, production-resource validation,
-idempotent tag reuse, and zero Git/Dokploy calls while the guard is false. `pnpm compose:check` must
-continue to validate both environment renders. The owner must separately confirm the dormant live
-resource, disabled ports, absent production route, and false repository guard before production
-provisioning evidence is complete.
+Issue #16 must prove stable SemVer calculation, exact workflow/repository/revision UAT matching, a
+successful `UAT E2E` job, rejection of missing or failed evidence, stale-`main` rejection,
+production-resource validation, release-SHA deployment correlation, idempotent tag reuse, and zero
+Git/Dokploy calls while the guard is false. `pnpm compose:check` must continue to validate both
+environment renders. The owner must separately confirm the dormant live resource, disabled ports,
+absent production route, and false repository guard before production provisioning evidence is
+complete.
 
 ### Evidence
 

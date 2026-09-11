@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   PRODUCTION_COMPOSE_PATH,
+  UAT_JOB_NAME,
   UAT_WORKFLOW_PATH,
   createOrVerifyTag,
   deployProduction,
@@ -48,6 +49,28 @@ function uatEvidence(overrides = {}) {
     updated_at: "2026-09-11T18:11:02Z",
     ...overrides,
   };
+}
+
+function uatJob(overrides = {}) {
+  return {
+    conclusion: "success",
+    name: UAT_JOB_NAME,
+    status: "completed",
+    ...overrides,
+  };
+}
+
+function exactUatFetch(runOverrides = {}, jobOverrides = {}) {
+  return vi.fn(async (input: string | URL | Request) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/actions/workflows/deploy-uat.yml/runs")) {
+      return jsonResponse({ workflow_runs: [uatEvidence(runOverrides)] });
+    }
+    if (url.pathname.endsWith("/actions/runs/12345/jobs")) {
+      return jsonResponse({ jobs: [uatJob(jobOverrides)] });
+    }
+    throw new Error(`Unexpected request: ${url.href}`);
+  });
 }
 
 function productionCompose(overrides = {}) {
@@ -114,11 +137,47 @@ describe("production SemVer", () => {
 
 describe("exact UAT evidence", () => {
   it("accepts only a successful UAT workflow run for the exact main revision", async () => {
+    const fetchImplementation = exactUatFetch();
+
+    await expect(verifyExactUatEvidence(releaseSha, source, fetchImplementation)).resolves.toMatchObject({ id: 12345 });
+    const [runsRequest] = fetchImplementation.mock.calls[0];
+    const runsUrl = new URL(String(runsRequest));
+    expect(runsUrl.pathname).toContain("/actions/workflows/deploy-uat.yml/runs");
+    expect(runsUrl.searchParams.get("head_sha")).toBe(releaseSha);
+    const [jobsRequest] = fetchImplementation.mock.calls[1];
+    const jobsUrl = new URL(String(jobsRequest));
+    expect(jobsUrl.pathname).toContain("/actions/runs/12345/jobs");
+    expect(jobsUrl.searchParams.get("filter")).toBe("latest");
+  });
+
+  it.each([
+    ["skipped", { conclusion: "skipped", status: "completed" }],
+    ["failed", { conclusion: "failure", status: "completed" }],
+    ["incomplete", { conclusion: null, status: "in_progress" }],
+    ["wrong job", { name: "Another job" }],
+  ])("rejects a %s UAT E2E job", async (_name, overrides) => {
+    const fetchImplementation = exactUatFetch({}, overrides);
+
+    await expect(verifyExactUatEvidence(releaseSha, source, fetchImplementation))
+      .rejects.toThrow(/No successful UAT E2E job evidence/);
+  });
+
+  it("uses an older exact run when its UAT E2E job is the latest successful evidence", async () => {
     const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
       const url = new URL(String(input));
-      expect(url.pathname).toContain("/actions/workflows/deploy-uat.yml/runs");
-      expect(url.searchParams.get("head_sha")).toBe(releaseSha);
-      return jsonResponse({ workflow_runs: [uatEvidence()] });
+      if (url.pathname.endsWith("/actions/workflows/deploy-uat.yml/runs")) {
+        return jsonResponse({ workflow_runs: [
+          uatEvidence({ id: 23456, updated_at: "2026-09-11T19:11:02Z" }),
+          uatEvidence(),
+        ] });
+      }
+      if (url.pathname.endsWith("/actions/runs/23456/jobs")) {
+        return jsonResponse({ jobs: [uatJob({ conclusion: "skipped" })] });
+      }
+      if (url.pathname.endsWith("/actions/runs/12345/jobs")) {
+        return jsonResponse({ jobs: [uatJob()] });
+      }
+      throw new Error(`Unexpected request: ${url.href}`);
     });
 
     await expect(verifyExactUatEvidence(releaseSha, source, fetchImplementation)).resolves.toMatchObject({ id: 12345 });
@@ -154,7 +213,7 @@ describe("promotion preparation", () => {
         default: throw new Error(`Unexpected Git arguments: ${arguments_.join(" ")}`);
       }
     });
-    const fetchImplementation = vi.fn(async () => jsonResponse({ workflow_runs: [uatEvidence()] }));
+    const fetchImplementation = exactUatFetch();
 
     await expect(prepareProductionPromotion(
       { ...source, PRODUCTION_DEPLOY_ENABLED: "false" },
@@ -177,7 +236,7 @@ describe("promotion preparation", () => {
         default: throw new Error(`Unexpected Git arguments: ${arguments_.join(" ")}`);
       }
     });
-    const fetchImplementation = vi.fn(async () => jsonResponse({ workflow_runs: [uatEvidence()] }));
+    const fetchImplementation = exactUatFetch();
 
     await expect(prepareProductionPromotion(source, { fetchImplementation, runGit: git }))
       .resolves.toMatchObject({ releaseVersion: "v0.0.1" });
@@ -193,7 +252,7 @@ describe("promotion preparation", () => {
         default: throw new Error(`Unexpected Git arguments: ${arguments_.join(" ")}`);
       }
     });
-    const fetchImplementation = vi.fn(async () => jsonResponse({ workflow_runs: [uatEvidence()] }));
+    const fetchImplementation = exactUatFetch();
 
     await expect(prepareProductionPromotion(source, { fetchImplementation, runGit: git }))
       .resolves.toMatchObject({ releaseSha, releaseVersion: "v0.0.2" });
@@ -201,7 +260,7 @@ describe("promotion preparation", () => {
 });
 
 describe("production deployment guard", () => {
-  it.each([undefined, "", "false", "TRUE", "1"])(
+  it.each([undefined, "", "false", "TRUE", "1", " true", "true ", "true\n", "\ttrue"])(
     "does not read Git or call a remote API when the guard is %s",
     async (guard) => {
       const fetchImplementation = vi.fn();
@@ -262,7 +321,21 @@ describe("production deployment guard", () => {
           return jsonResponse({
             ...compose,
             branch: "v0.0.1",
-            deployments: [...compose.deployments, { deploymentId: "deployment-new", status: "done" }],
+            deployments: [
+              ...compose.deployments,
+              { description: `Commit: ${"b".repeat(40)}`, deploymentId: "deployment-external", status: "done" },
+            ],
+          });
+        }
+        if (composeReads === 4) {
+          return jsonResponse({
+            ...compose,
+            branch: "v0.0.1",
+            deployments: [
+              ...compose.deployments,
+              { description: `Commit: ${"b".repeat(40)}`, deploymentId: "deployment-external", status: "done" },
+              { description: `Commit: ${releaseSha}`, deploymentId: "deployment-new", status: "done" },
+            ],
           });
         }
         return jsonResponse(compose);
@@ -288,7 +361,12 @@ describe("production deployment guard", () => {
       body: { autoDeploy: false, branch: "v0.0.1", composeId: "compose_prod_123" },
     });
     expect(requests.find(({ pathname }) => pathname === "/api/compose.deploy")).toMatchObject({
-      body: { composeId: "compose_prod_123", freshVolumes: false, title: "Deploy v0.0.1" },
+      body: {
+        composeId: "compose_prod_123",
+        description: `Automated production deployment for Shagon1k/PickFlick@${releaseSha} (v0.0.1)`,
+        freshVolumes: false,
+        title: "Deploy v0.0.1",
+      },
     });
   });
 

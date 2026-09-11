@@ -115,7 +115,8 @@ Run **Promote to Production** manually and choose `patch`, `minor`, or `major`. 
    baseline.
 3. Reuses the latest tag when it already points to current `main`; otherwise it increments the
    selected component.
-4. Requires a successful run of `.github/workflows/deploy-uat.yml` for the exact `main` revision.
+4. Requires the `UAT E2E` job to have completed successfully in a
+   `.github/workflows/deploy-uat.yml` run for the exact `main` revision.
 5. Records the candidate revision, version, and UAT run.
 6. Skips the deploy job while `PRODUCTION_DEPLOY_ENABLED` is not exactly `true`.
 
@@ -135,7 +136,8 @@ release:
 4. Set `PRODUCTION_DEPLOY_ENABLED=true` only for the approved release window.
 5. Run **Promote to Production** and approve its protected `production` environment job.
 6. Confirm that the workflow creates or reuses the expected annotated SemVer tag, pins Dokploy to
-   that tag with automatic deployment disabled, and waits for the new deployment record to finish.
+   that tag with automatic deployment disabled, and waits for the correlated deployment record to
+   finish at the release SHA.
 7. Return `PRODUCTION_DEPLOY_ENABLED` to `false` after the workflow finishes.
 8. Verify production readiness before attaching or restoring public traffic.
 

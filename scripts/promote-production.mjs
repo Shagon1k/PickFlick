@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 
 export const PRODUCTION_COMPOSE_PATH = "compose.deploy.yaml";
 export const PRODUCTION_DEFAULT_REF = "main";
+export const UAT_JOB_NAME = "UAT E2E";
 export const UAT_WORKFLOW_PATH = ".github/workflows/deploy-uat.yml";
 
 const githubRepository = "Shagon1k/PickFlick";
@@ -218,11 +219,33 @@ export async function verifyExactUatEvidence(releaseSha, source = process.env, f
   if (!matchingRuns.length) {
     throw new Error(`No successful exact UAT workflow evidence exists for ${revision}.`);
   }
-  return matchingRuns.sort((left, right) => String(right.updated_at).localeCompare(String(left.updated_at)))[0];
+  const sortedRuns = matchingRuns.sort(
+    (left, right) => String(right.updated_at).localeCompare(String(left.updated_at)),
+  );
+  for (const run of sortedRuns) {
+    const jobsUrl = new URL(
+      `/repos/${configuration.repository}/actions/runs/${run.id}/jobs`,
+      `${configuration.apiOrigin}/`,
+    );
+    jobsUrl.searchParams.set("filter", "latest");
+    jobsUrl.searchParams.set("per_page", "100");
+    const jobsResult = await requestJson(fetchImplementation, jobsUrl, {
+      headers: requestHeaders({ Authorization: `Bearer ${configuration.token}` }),
+    });
+    const jobs = Array.isArray(jobsResult?.jobs) ? jobsResult.jobs : [];
+    if (jobs.some((job) =>
+      job?.name === UAT_JOB_NAME &&
+      job?.status === "completed" &&
+      job?.conclusion === "success"
+    )) {
+      return run;
+    }
+  }
+  throw new Error(`No successful ${UAT_JOB_NAME} job evidence exists for ${revision}.`);
 }
 
 export function productionEnabled(source = process.env) {
-  return source.PRODUCTION_DEPLOY_ENABLED?.trim() === "true";
+  return source.PRODUCTION_DEPLOY_ENABLED === "true";
 }
 
 export async function prepareProductionPromotion(
@@ -373,7 +396,12 @@ async function updateProductionRef(fetchImplementation, configuration) {
   }
 }
 
+function productionDeploymentDescription(configuration) {
+  return `Automated production deployment for ${githubRepository}@${configuration.releaseSha} (${configuration.releaseVersion})`;
+}
+
 async function triggerProductionDeployment(fetchImplementation, configuration) {
+  const description = productionDeploymentDescription(configuration);
   const response = await requestJson(
     fetchImplementation,
     dokployUrl(configuration.dokployOrigin, "/api/compose.deploy"),
@@ -382,6 +410,7 @@ async function triggerProductionDeployment(fetchImplementation, configuration) {
       headers: requestHeaders(dokployAuthentication(configuration)),
       body: JSON.stringify({
         composeId: configuration.composeId,
+        description,
         freshVolumes: false,
         title: `Deploy ${configuration.releaseVersion}`,
       }),
@@ -403,6 +432,8 @@ export async function waitForProductionDeployment(
   } = {},
 ) {
   const deadline = Date.now() + timeoutMilliseconds;
+  const requestedDescription = productionDeploymentDescription(configuration);
+  const completedDescription = `Commit: ${configuration.releaseSha}`;
   let deploymentId;
   while (Date.now() < deadline) {
     const compose = await requestJson(
@@ -412,16 +443,25 @@ export async function waitForProductionDeployment(
     );
     const deployments = deploymentRecords(compose);
     if (deploymentId === undefined) {
-      const newDeployments = deployments.filter(({ deploymentId: candidate }) => !previousDeploymentIds.has(candidate));
-      if (newDeployments.length > 1) {
-        throw new Error("Dokploy reported multiple new production deployments.");
+      const correlatedDeployments = deployments.filter((deployment) =>
+        !previousDeploymentIds.has(deployment.deploymentId) &&
+        (deployment.description === requestedDescription || deployment.description === completedDescription)
+      );
+      if (correlatedDeployments.length > 1) {
+        throw new Error("Dokploy reported multiple correlated production deployments.");
       }
-      deploymentId = newDeployments[0]?.deploymentId;
+      deploymentId = correlatedDeployments[0]?.deploymentId;
     }
     const deployment = deployments.find(({ deploymentId: candidate }) => candidate === deploymentId);
     switch (deployment?.status) {
       case "done":
-        return deploymentId;
+        if (deployment.description === completedDescription) {
+          return deploymentId;
+        }
+        if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? "")) {
+          throw new Error("Dokploy deployed a different production source revision than requested.");
+        }
+        break;
       case "error":
       case "cancelled":
         throw new Error("Dokploy reported a failed production deployment.");

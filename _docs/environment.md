@@ -18,10 +18,12 @@ provider and provisioning issues extend this inventory when their consumers exis
 Run `pnpm images:build` from a clean Git checkout. The command passes the full Git revision into
 each build, embeds it in the build output, and tags each local image with the first 12 revision
 characters. When Git metadata is available, a configured `SOURCE_REVISION` must match `HEAD` and
-does not bypass the clean-worktree check. A Dokploy source build derives the same value from the
-checked-out Git `HEAD`. The Docker context includes only the Git `HEAD` and local branch refs needed
-for that derivation; it excludes Git configuration, credentials, objects, and logs. The Dockerfile
-pins both Node base images by multi-platform digest, pins the Dockerfile
+does not bypass the clean-worktree check. `pnpm deploy:compose` resolves the clean checkout's `HEAD`
+before Docker starts and passes it as the `SOURCE_REVISION` build argument, including from linked
+worktrees. A Dokploy source build derives the same value from the checked-out Git `HEAD`. The Docker
+context includes only the Git `HEAD` and local branch refs needed for the Dokploy fallback; it
+excludes Git configuration, credentials, objects, and logs. The Dockerfile pins both Node base
+images by multi-platform digest, pins the Dockerfile
 frontend by digest, and installs from the committed pnpm lockfile.
 
 The release image runs committed Prisma migrations before the production-safe required-seed step.
@@ -101,16 +103,18 @@ browser smoke.
 
 The [production operations guide](production-operations.md) owns dormant production provisioning,
 manual promotion, migration compatibility, and rollback. `.github/workflows/promote-production.yml`
-resolves current `main`, requires a successful exact-revision run of the UAT workflow, and computes
-the next stable `vMAJOR.MINOR.PATCH` tag. Its deploy job is unreachable unless the repository
+resolves current `main`, requires the `UAT E2E` job to have completed successfully in an
+exact-revision UAT workflow run, and computes the next stable `vMAJOR.MINOR.PATCH` tag. Its deploy
+job is unreachable unless the repository
 variable `PRODUCTION_DEPLOY_ENABLED` is exactly `true`; the production controller repeats that guard
 from the current repository variable after protected-environment approval and before reading Git or
 Dokploy state. When enabled through a separately approved release, the workflow creates or reuses
 the tag, keeps Dokploy automatic deployment disabled, pins the production resource to the tag, and
-triggers one deployment. If a later run finds the resource already pinned to that release, it stops
-for manual reconciliation. This source-build path preserves source identity, not byte-for-byte image
-identity; issue #115 remains deferred until separate build/deployment hosts or another concrete
-artifact-identity requirement justifies registry publication.
+triggers one deployment. The controller accepts completion only when the correlated deployment
+record reports the release SHA. If a later run finds the resource already pinned to that release,
+it stops for manual reconciliation. This source-build path preserves source identity, not
+byte-for-byte image identity; issue #115 remains deferred until separate build/deployment hosts or
+another concrete artifact-identity requirement justifies registry publication.
 
 The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
 application runtime variables, and do not belong in `.env` or `.env.example`:

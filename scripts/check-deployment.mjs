@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const applicationServices = ["api", "release", "web", "worker"];
+const deploymentSourceRevision = "a".repeat(40);
 const runtimeServices = ["api", "web", "worker"];
 const intendedHealthChecks = {
   api: [
@@ -51,6 +52,7 @@ function environmentFor(appEnvironment) {
     RESEND_API_KEY: "synthetic-resend-key",
     RESEND_FROM: "PickFlick <pickflick@example.invalid>",
     SHUTDOWN_TIMEOUT_MS: "10000",
+    SOURCE_REVISION: deploymentSourceRevision,
 
     STORAGE_ACCESS_KEY: `pickflick-${appEnvironment}`,
     STORAGE_BUCKET: `pickflick-${appEnvironment}`,
@@ -154,6 +156,10 @@ export function validateDeployments({ production, uat }) {
       assert(service.cap_drop?.includes("ALL"), `${name} must drop Linux capabilities.`);
       assert(service.security_opt?.includes("no-new-privileges:true"), `${name} must prevent new privileges.`);
       assert(service.tmpfs?.includes("/tmp"), `${name} must mount /tmp as tmpfs.`);
+      assert(
+        service.build?.args?.SOURCE_REVISION === deploymentSourceRevision,
+        `${name} must receive the selected source revision as a build argument.`,
+      );
 
       assert(
         service.networks?.application?.aliases?.includes(`pickflick-${appEnvironment}-${name}`),
