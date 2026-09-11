@@ -39,6 +39,10 @@ export async function runCommand(step) {
 }
 
 export async function runReleaseSteps(runner = runCommand) {
+  if (process.env.PICKFLICK_UAT_RELEASE_FAILURE_DRILL === "1") {
+    throw new Error("Intentional UAT release-failure drill.");
+  }
+
   for (const step of releaseSteps) {
     await runner(step);
   }
