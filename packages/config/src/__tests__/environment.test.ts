@@ -5,6 +5,7 @@ import {
   parseDatabaseEnvironment,
   parseRuntimeEnvironment,
   parseWorkerEnvironment,
+  safeEnvironmentValidationFailures,
 } from "../environment.js";
 
 const validEnvironment = {
@@ -25,6 +26,21 @@ const validEnvironment = {
 } as const;
 
 describe("environment validation", () => {
+  it("reports validation field names and fixed rules without supplied values", () => {
+    let error: unknown;
+    try {
+      parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: "Invalid Bucket" });
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(safeEnvironmentValidationFailures(error)).toEqual([
+      "STORAGE_BUCKET must be a valid lowercase S3 bucket name",
+    ]);
+    expect(JSON.stringify(safeEnvironmentValidationFailures(error))).not.toContain("Invalid Bucket");
+    expect(safeEnvironmentValidationFailures(new Error("other"))).toBeUndefined();
+  });
+
   it("parses the typed runtime inventory", () => {
     expect(parseRuntimeEnvironment(validEnvironment)).toMatchObject({
       appEnvironment: "local",
