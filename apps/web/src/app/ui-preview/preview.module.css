@@ -103,8 +103,11 @@
 
 .token span {
   display: block;
+  width: fit-content;
   margin-top: 70px;
+  padding: 2px 4px;
   color: var(--fg);
+  background: var(--bg);
   font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
 }
 

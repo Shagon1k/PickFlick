@@ -10,6 +10,7 @@ import {
   DataTable,
   Dialog,
   ProgressFilmStrip,
+  ProjectorNoirProvider,
   SelectField,
   Tabs,
   TextAreaField,
@@ -65,6 +66,11 @@ describe("Projector Noir primitives", () => {
 
     expect(markup).toContain('id="title-message"');
     expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain('aria-live="assertive"');
+    expect(markup).toContain('data-field-live="error"');
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain('data-field-live="success"');
+    expect(markup.match(/aria-atomic="true"/g)).toHaveLength(2);
   });
 
   it("preserves caller-provided field relationships and invalid states", () => {
@@ -95,7 +101,7 @@ describe("Projector Noir primitives", () => {
     const controls = fields.map((field) =>
       descendants(field).find((element) =>
         ["input", "textarea"].includes(String(element.type)) ||
-        (element.type as { displayName?: string }).displayName === "@mantine/core/Select",
+        (element.type as { name?: string }).name === "ConstraintSelect",
       ),
     );
 
@@ -119,7 +125,7 @@ describe("Projector Noir primitives", () => {
     expect(input?.props["aria-describedby"]).toBe("privacy-policy rating-reminders-description");
   });
 
-  it("adapts select options without exposing a native feature import", () => {
+  it("adapts select options and forwards required form constraints", () => {
     const field = SelectField({
       children: [
         createElement("option", { key: "0-4", value: "0-4" }, "0 to 4"),
@@ -128,9 +134,11 @@ describe("Projector Noir primitives", () => {
       defaultValue: "0-4",
       id: "score-range",
       label: "Selection range",
+      name: "score-range",
+      required: true,
     });
     const select = descendants(field).find(
-      (element) => (element.type as { displayName?: string }).displayName === "@mantine/core/Select",
+      (element) => (element.type as { name?: string }).name === "ConstraintSelect",
     );
 
     expect(select?.props.data).toEqual([
@@ -138,6 +146,8 @@ describe("Projector Noir primitives", () => {
       { value: "1-5", label: "1 to 5" },
     ]);
     expect(select?.props.allowDeselect).toBe(false);
+    expect(select?.props.name).toBe("score-range");
+    expect(select?.props.required).toBe(true);
     expect(select?.props.classNames).toMatchObject({
       dropdown: "pf-select__dropdown",
       input: "pf-control pf-control--select",
@@ -146,15 +156,21 @@ describe("Projector Noir primitives", () => {
   });
 
   it("configures Mantine mechanics behind branded tabs and dialogs", () => {
-    const tabs = Tabs({
-      items: [{ id: "overview", label: "Overview", content: "Overview panel" }],
-      label: "Club views",
-    });
+    const tabs = renderToStaticMarkup(
+      createElement(
+        ProjectorNoirProvider,
+        null,
+        createElement(Tabs, {
+          items: [{ id: "overview", label: "Overview", content: "Overview panel" }],
+          label: "Club views",
+        }),
+      ),
+    );
     const dialog = Dialog({ children: "Dialog body", onClose: () => undefined, open: true, title: "Move phase?" });
 
-    expect((tabs.type as { displayName?: string }).displayName).toBe("@mantine/core/Tabs");
-    expect(tabs.props.activateTabWithKeyboard).toBe(false);
-    expect(tabs.props.classNames).toMatchObject({ root: "pf-tabs", tab: "pf-tabs__tab" });
+    expect(tabs).toContain('role="tablist"');
+    expect(tabs).toContain('aria-label="Club views"');
+    expect(tabs).toContain('aria-selected="true"');
     expect((dialog.type as { displayName?: string }).displayName).toBe("@mantine/core/Modal");
     expect(dialog.props.trapFocus).toBe(true);
     expect(dialog.props.returnFocus).toBe(true);

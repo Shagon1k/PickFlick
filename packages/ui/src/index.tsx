@@ -1,4 +1,3 @@
-import { Select as MantineSelect } from "@mantine/core";
 import {
   Children,
   isValidElement,
@@ -9,6 +8,8 @@ import {
   type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
+
+import { ConstraintSelect } from "./interactive.js";
 
 export { BRAND_ASSETS, BrandImage, type BrandAssetKey, type BrandImageProps } from "./brand-assets.js";
 export {
@@ -126,14 +127,32 @@ function FieldMessage({ error, hint, messageId, success }: FieldMessageProps) {
   const message = error ?? success ?? hint;
 
   return (
-    <span
-      aria-hidden={message ? undefined : true}
-      className="pf-field__message"
-      data-tone={error ? "danger" : success ? "success" : "neutral"}
-      id={messageId}
-    >
-      {message}
-    </span>
+    <>
+      <span
+        aria-hidden={message ? undefined : true}
+        className="pf-field__message"
+        data-tone={error ? "danger" : success ? "success" : "neutral"}
+        id={messageId}
+      >
+        {message}
+      </span>
+      <span
+        aria-atomic="true"
+        aria-live="assertive"
+        className="pf-visually-hidden"
+        data-field-live="error"
+      >
+        {error}
+      </span>
+      <span
+        aria-atomic="true"
+        aria-live="polite"
+        className="pf-visually-hidden"
+        data-field-live="success"
+      >
+        {success}
+      </span>
+    </>
   );
 }
 
@@ -277,7 +296,7 @@ export function SelectField({
   return (
     <div className={classes("pf-field", className)}>
       <label className="pf-field__label" htmlFor={id}>{label}</label>
-      <MantineSelect
+      <ConstraintSelect
         allowDeselect={false}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
         aria-invalid={ariaInvalid ?? (error ? true : undefined)}

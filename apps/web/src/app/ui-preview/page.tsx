@@ -16,7 +16,7 @@ import {
   Toggle,
 } from "@pickflick/ui";
 
-import { PreviewInteractions } from "./preview-interactions";
+import { PreviewInteractions, ReviewFixInteractions } from "./preview-interactions";
 import styles from "./preview.module.css";
 
 const tableColumns = [
@@ -165,6 +165,10 @@ export default function UiPreviewPage() {
 
       <PreviewSection kicker="07 · Score, rating, dialog" title="Keyboard-complete controls" description="Inclusive Club score ranges, the 1–10 rating control, and modal focus containment share the same tokens.">
         <div className={styles.panel} id="dialogs"><PreviewInteractions /></div>
+      </PreviewSection>
+
+      <PreviewSection kicker="08 · Dynamic states" title="Constraint and update behavior" description="Required custom controls, changing tab sets, and asynchronous field feedback preserve native submission and assistive-technology behavior.">
+        <ReviewFixInteractions />
       </PreviewSection>
     </main>
   );

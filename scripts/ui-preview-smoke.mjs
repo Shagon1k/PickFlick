@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import AxeBuilder from "@axe-core/playwright";
 import { chromium, expect } from "@playwright/test";
 
 async function assertVisibleFocus(locator, label) {
@@ -24,7 +25,8 @@ const previewUrl = new URL("/ui-preview", baseUrl).toString();
 const browser = await chromium.launch({ headless: true });
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1024, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
+  const page = await context.newPage();
   const browserErrors = [];
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -36,6 +38,19 @@ try {
   await page.goto(previewUrl, { waitUntil: "networkidle" });
   await expect(page.locator("html")).toHaveAttribute("data-mantine-color-scheme", "dark");
 
+  const accessibilityResults = await new AxeBuilder({ page }).analyze();
+  assert.equal(
+    accessibilityResults.violations.length,
+    0,
+    `accessibility violations:\n${accessibilityResults.violations
+      .map((violation) =>
+        `${violation.id} (${violation.impact ?? "unknown impact"}): ${violation.help}\n${violation.nodes
+          .map((node) => `  ${node.target.join(" ")}: ${node.failureSummary ?? node.html}`)
+          .join("\n")}`,
+      )
+      .join("\n")}`,
+  );
+
   const namedField = page.getByRole("textbox", { name: "Club name", exact: true });
   await expect(namedField).toHaveAttribute("aria-describedby", "club-name-message");
   await expect(page.locator("#club-name-message")).toHaveText("Shown to every Club member.");
@@ -46,7 +61,23 @@ try {
     "empty field message must reserve layout space",
   );
 
-  const select = page.getByRole("combobox", { name: "Selection range" });
+  const asyncField = page.locator("#async-club-name").locator("xpath=ancestor::*[contains(@class, 'pf-field')]");
+  const errorAnnouncement = asyncField.locator('[data-field-live="error"]');
+  const successAnnouncement = asyncField.locator('[data-field-live="success"]');
+  await expect(errorAnnouncement).toBeAttached();
+  await expect(successAnnouncement).toBeAttached();
+  await expect(errorAnnouncement).toBeEmpty();
+  await expect(successAnnouncement).toBeEmpty();
+  await page.getByRole("button", { name: "Show async error" }).click();
+  await expect(page.locator("#async-club-name-message")).toHaveText("Club name could not be saved.");
+  await expect(errorAnnouncement).toHaveText("Club name could not be saved.");
+  await expect(successAnnouncement).toBeEmpty();
+  await page.getByRole("button", { name: "Show async success" }).click();
+  await expect(page.locator("#async-club-name-message")).toHaveText("Club name saved.");
+  await expect(errorAnnouncement).toBeEmpty();
+  await expect(successAnnouncement).toHaveText("Club name saved.");
+
+  const select = page.getByRole("combobox", { name: "Selection range", exact: true });
   await select.focus();
   await page.keyboard.press("Enter");
   await assertVisibleFocus(select, "select");
@@ -55,6 +86,22 @@ try {
   await page.keyboard.press("Enter");
   await expect(select).toHaveValue("1 to 5");
   await expect(page.locator('input[type="hidden"][name="score-range"]')).toHaveValue("1-5");
+
+  const requiredForm = page.getByRole("form", { name: "Required select form" });
+  const requiredSelect = page.getByRole("combobox", { name: "Required selection range" });
+  const constraintInput = requiredForm.locator('input[name="required-range"]');
+  await expect(constraintInput).toHaveAttribute("type", "text");
+  await expect(constraintInput).toHaveAttribute("required", "");
+  await requiredForm.getByRole("button", { name: "Submit required select" }).click();
+  await expect(requiredForm.locator("[data-submitted-value]")).toHaveText("Not submitted");
+  await expect(requiredSelect).toBeFocused();
+  await expect(requiredSelect).toHaveAttribute("aria-invalid", "true");
+  assert.equal(await constraintInput.evaluate((element) => element.matches(":invalid")), true);
+  await requiredSelect.click();
+  await page.getByRole("option", { name: "0 to 4" }).click();
+  await requiredForm.getByRole("button", { name: "Submit required select" }).click();
+  await expect(requiredForm.locator("[data-submitted-value]")).toHaveText("0-4");
+  assert.equal(await constraintInput.evaluate((element) => element.matches(":valid")), true);
 
   const overviewTab = page.getByRole("tab", { name: "Overview" });
   const sessionsTab = page.getByRole("tab", { name: "Sessions" });
@@ -65,6 +112,20 @@ try {
   await expect(overviewTab).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Enter");
   await expect(sessionsTab).toHaveAttribute("aria-selected", "true");
+
+  const changingTabs = page.getByRole("tablist", { name: "Changing views" });
+  const firstChangingTab = changingTabs.getByRole("tab", { name: "First enabled" });
+  const selectedChangingTab = changingTabs.getByRole("tab", { name: "Selected tab" });
+  await expect(selectedChangingTab).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Disable selected tab" }).click();
+  await expect(selectedChangingTab).toBeDisabled();
+  await expect(firstChangingTab).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Enable selected tab" }).click();
+  await selectedChangingTab.click();
+  await expect(selectedChangingTab).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Remove selected tab" }).click();
+  await expect(selectedChangingTab).toHaveCount(0);
+  await expect(firstChangingTab).toHaveAttribute("aria-selected", "true");
 
   const clubTrigger = page.getByRole("button", { name: "Open Club menu" });
   const accountTrigger = page.getByRole("button", { name: "Open account menu" });
@@ -117,7 +178,7 @@ try {
   await clubTrigger.click();
   const targetLocators = [
     page.getByRole("tab", { name: "Overview" }),
-    page.getByRole("combobox", { name: "Selection range" }),
+    page.getByRole("combobox", { name: "Selection range", exact: true }),
     clubTrigger,
     page.getByRole("menuitem", { name: "Overview" }),
     firstAdjustableOption,
@@ -139,7 +200,8 @@ try {
     "rgb(12, 12, 12)",
   );
 
-  const reducedPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const reducedPage = await reducedContext.newPage();
   await reducedPage.emulateMedia({ reducedMotion: "reduce" });
   await reducedPage.goto(previewUrl, { waitUntil: "networkidle" });
   await reducedPage.getByRole("button", { name: "Open Club menu" }).click();
@@ -149,10 +211,11 @@ try {
       Number.parseFloat(element.ownerDocument.defaultView?.getComputedStyle(element).animationDuration ?? "0"),
     );
   assert.ok(animationDuration <= 0.001, "reduced motion must collapse menu animation duration");
-  await reducedPage.close();
+  await reducedContext.close();
 
   assert.deepEqual(browserErrors, [], `browser errors: ${browserErrors.join(" | ")}`);
-  console.log("UI preview smoke passed: semantics, keyboard, overlays, scale state, targets, theme, and motion.");
+  console.log("UI preview smoke passed: axe, form constraints, live feedback, dynamic tabs, keyboard, overlays, targets, theme, and motion.");
+  await context.close();
 } finally {
   await browser.close();
 }

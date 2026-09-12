@@ -37,6 +37,7 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@pickflick/config": "workspace:*",
     "@playwright/test": "1.63.0",
     "@types/node": "catalog:",

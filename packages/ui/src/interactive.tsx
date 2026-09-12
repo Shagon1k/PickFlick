@@ -1,6 +1,12 @@
 "use client";
 
-import { Menu as MantineMenu, Modal as MantineModal, Tabs as MantineTabs } from "@mantine/core";
+import {
+  Menu as MantineMenu,
+  Modal as MantineModal,
+  Select as MantineSelect,
+  type SelectProps as MantineSelectProps,
+  Tabs as MantineTabs,
+} from "@mantine/core";
 import {
   type FocusEvent,
   type KeyboardEvent,
@@ -10,6 +16,68 @@ import {
   useRef,
   useState,
 } from "react";
+
+export interface ConstraintSelectProps
+  extends Omit<MantineSelectProps<string>, "hiddenInputProps" | "onChange"> {
+  readonly "data-state"?: string | undefined;
+  readonly onChange?: (value: string | null) => void;
+}
+
+export function ConstraintSelect({
+  "aria-invalid": ariaInvalid,
+  disabled,
+  error,
+  onChange,
+  required,
+  value,
+  ...props
+}: ConstraintSelectProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [constraintInvalid, setConstraintInvalid] = useState(false);
+  const dataState = props["data-state"] ?? (constraintInvalid ? "error" : undefined);
+  const invalid =
+    constraintInvalid ||
+    Boolean(error) ||
+    (ariaInvalid !== undefined && ariaInvalid !== false && ariaInvalid !== "false");
+
+  useEffect(() => {
+    if (!required || disabled || value) {
+      setConstraintInvalid(false);
+    }
+  }, [disabled, required, value]);
+
+  return (
+    <MantineSelect
+      {...props}
+      {...(dataState !== undefined ? { "data-state": dataState } : {})}
+      {...(disabled !== undefined ? { disabled } : {})}
+      {...(invalid ? { error: true } : {})}
+      {...(required
+        ? {
+            hiddenInputProps: {
+              "aria-hidden": true,
+              className: "pf-visually-hidden",
+              onInvalid: (event) => {
+                event.preventDefault();
+                setConstraintInvalid(true);
+                inputRef.current?.focus();
+              },
+              required: true,
+              tabIndex: -1,
+              type: "text",
+            },
+          }
+        : {})}
+      onChange={(nextValue) => {
+        setConstraintInvalid(false);
+        onChange?.(nextValue);
+      }}
+      ref={inputRef}
+      {...(required !== undefined ? { required } : {})}
+      {...(value !== undefined ? { value } : {})}
+    />
+  );
+}
 
 export interface TabItem {
   readonly id: string;
@@ -26,15 +94,25 @@ export interface TabsProps {
 
 export function Tabs({ initialId, items, label }: TabsProps) {
   const enabledIds = items.filter((item) => !item.disabled).map((item) => item.id);
-  const defaultValue = initialId && enabledIds.includes(initialId) ? initialId : (enabledIds[0] ?? null);
+  const firstEnabledId = enabledIds[0] ?? null;
+  const initialValue = initialId && enabledIds.includes(initialId) ? initialId : firstEnabledId;
+  const [selectedValue, setSelectedValue] = useState(initialValue);
+  const resolvedValue = selectedValue && enabledIds.includes(selectedValue) ? selectedValue : firstEnabledId;
+
+  useEffect(() => {
+    if (selectedValue !== resolvedValue) {
+      setSelectedValue(resolvedValue);
+    }
+  }, [resolvedValue, selectedValue]);
 
   return (
     <MantineTabs
       activateTabWithKeyboard={false}
       classNames={{ list: "pf-tabs__list", panel: "pf-tabs__panel", root: "pf-tabs", tab: "pf-tabs__tab" }}
-      defaultValue={defaultValue}
       keepMounted
+      onChange={setSelectedValue}
       unstyled
+      value={resolvedValue}
     >
       <MantineTabs.List aria-label={label}>
         {items.map((item) => (
