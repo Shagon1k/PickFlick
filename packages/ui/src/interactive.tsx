@@ -21,7 +21,14 @@ export function Tabs({ initialId, items, label }: TabsProps) {
   const [selectedId, setSelectedId] = useState(
     initialId && enabledIds.includes(initialId) ? initialId : (enabledIds[0] ?? ""),
   );
+  const activeId = enabledIds.includes(selectedId) ? selectedId : (enabledIds[0] ?? "");
   const tabsRef = useRef(new Map<string, HTMLButtonElement>());
+
+  useEffect(() => {
+    if (selectedId !== activeId) {
+      setSelectedId(activeId);
+    }
+  }, [activeId, selectedId]);
 
   function focusRelative(currentId: string, direction: -1 | 1): void {
     const currentIndex = enabledIds.indexOf(currentId);
@@ -54,7 +61,7 @@ export function Tabs({ initialId, items, label }: TabsProps) {
     <div className="pf-tabs">
       <div aria-label={label} className="pf-tabs__list" role="tablist">
         {items.map((item) => {
-          const selected = item.id === selectedId;
+          const selected = item.id === activeId;
           return (
             <button
               aria-controls={`${prefix}-${item.id}-panel`}
@@ -85,7 +92,7 @@ export function Tabs({ initialId, items, label }: TabsProps) {
         <div
           aria-labelledby={`${prefix}-${item.id}-tab`}
           className="pf-tabs__panel"
-          hidden={item.id !== selectedId}
+          hidden={item.id !== activeId}
           id={`${prefix}-${item.id}-panel`}
           key={item.id}
           role="tabpanel"
@@ -175,7 +182,7 @@ export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuP
               data-danger={item.danger || undefined}
               href={item.href}
               key={item.id}
-              onClick={() => setOpen(false)}
+              onClick={closeAndRestoreFocus}
               ref={(node) => {
                 itemRefs.current[index] = node;
               }}

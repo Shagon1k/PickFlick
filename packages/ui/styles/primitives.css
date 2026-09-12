@@ -11,6 +11,7 @@
 }
 
 .pf-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +125,11 @@
 }
 
 .pf-button[data-state="loading"] .pf-button__label {
-  opacity: 0.72;
+  opacity: 0;
+}
+
+.pf-button[data-state="loading"] .pf-spinner {
+  position: absolute;
 }
 
 .pf-spinner {
@@ -659,9 +664,9 @@
 }
 
 .pf-scale__rail[data-presentation="rating"] .pf-scale__option {
-  min-width: 38px;
+  min-width: var(--hit);
   min-height: var(--hit);
-  flex-basis: 38px;
+  flex-basis: var(--hit);
   border-color: transparent;
   color: var(--accent-dim);
   font-family: var(--font-body);
@@ -885,6 +890,15 @@
 }
 
 @media (max-width: 575px) {
+  .pf-button--small {
+    min-height: var(--hit);
+  }
+
+  .pf-film-strip {
+    right: auto;
+    left: 0;
+  }
+
   .pf-dialog__actions .pf-button {
     width: 100%;
   }
@@ -892,6 +906,12 @@
   .pf-table th,
   .pf-table td {
     padding-inline: 12px;
+  }
+}
+
+@media (pointer: coarse) {
+  .pf-button--small {
+    min-height: var(--hit);
   }
 }
 

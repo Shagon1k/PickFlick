@@ -32,6 +32,10 @@ function classes(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
 }
 
+function descriptionIds(...values: Array<string | undefined>): string | undefined {
+  return values.filter(Boolean).join(" ") || undefined;
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
@@ -135,7 +139,17 @@ export interface TextFieldProps
   extends SharedFieldProps,
     Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "id"> {}
 
-export function TextField({ className, error, hint, id, label, success, ...props }: TextFieldProps) {
+export function TextField({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  className,
+  error,
+  hint,
+  id,
+  label,
+  success,
+  ...props
+}: TextFieldProps) {
   const messageId = `${id}-message`;
   const hasMessage = Boolean(error ?? success ?? hint);
 
@@ -144,8 +158,8 @@ export function TextField({ className, error, hint, id, label, success, ...props
       <span className="pf-field__label">{label}</span>
       <input
         {...props}
-        aria-describedby={hasMessage ? messageId : undefined}
-        aria-invalid={error ? true : undefined}
+        aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
         className="pf-control"
         data-state={error ? "error" : success ? "success" : undefined}
         id={id}
@@ -159,7 +173,17 @@ export interface TextAreaFieldProps
   extends SharedFieldProps,
     Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className" | "id"> {}
 
-export function TextAreaField({ className, error, hint, id, label, success, ...props }: TextAreaFieldProps) {
+export function TextAreaField({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  className,
+  error,
+  hint,
+  id,
+  label,
+  success,
+  ...props
+}: TextAreaFieldProps) {
   const messageId = `${id}-message`;
   const hasMessage = Boolean(error ?? success ?? hint);
 
@@ -168,8 +192,8 @@ export function TextAreaField({ className, error, hint, id, label, success, ...p
       <span className="pf-field__label">{label}</span>
       <textarea
         {...props}
-        aria-describedby={hasMessage ? messageId : undefined}
-        aria-invalid={error ? true : undefined}
+        aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
         className="pf-control pf-control--textarea"
         data-state={error ? "error" : success ? "success" : undefined}
         id={id}
@@ -183,7 +207,18 @@ export interface SelectFieldProps
   extends SharedFieldProps,
     Omit<SelectHTMLAttributes<HTMLSelectElement>, "className" | "id"> {}
 
-export function SelectField({ children, className, error, hint, id, label, success, ...props }: SelectFieldProps) {
+export function SelectField({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  children,
+  className,
+  error,
+  hint,
+  id,
+  label,
+  success,
+  ...props
+}: SelectFieldProps) {
   const messageId = `${id}-message`;
   const hasMessage = Boolean(error ?? success ?? hint);
 
@@ -192,8 +227,8 @@ export function SelectField({ children, className, error, hint, id, label, succe
       <span className="pf-field__label">{label}</span>
       <select
         {...props}
-        aria-describedby={hasMessage ? messageId : undefined}
-        aria-invalid={error ? true : undefined}
+        aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
         className="pf-control pf-control--select"
         data-state={error ? "error" : success ? "success" : undefined}
         id={id}

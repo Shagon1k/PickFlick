@@ -8,6 +8,8 @@ import {
   Button,
   DataTable,
   ProgressFilmStrip,
+  SelectField,
+  TextAreaField,
   TextField,
   createInclusiveScale,
 } from "../index.js";
@@ -49,6 +51,43 @@ describe("Projector Noir primitives", () => {
     expect(input?.props["aria-invalid"]).toBe(true);
     expect(input?.props["aria-describedby"]).toBe("club-name-message");
     expect(nodes.some((element) => element.props.messageId === "club-name-message")).toBe(true);
+  });
+
+  it("preserves caller-provided field relationships and invalid states", () => {
+    const fields = [
+      TextField({
+        "aria-describedby": "external-instructions",
+        "aria-invalid": "spelling",
+        error: "Review this value.",
+        id: "title",
+        label: "Title",
+      }),
+      TextAreaField({
+        "aria-describedby": "external-instructions",
+        "aria-invalid": false,
+        hint: "Optional context.",
+        id: "notes",
+        label: "Notes",
+      }),
+      SelectField({
+        "aria-describedby": "external-instructions",
+        "aria-invalid": true,
+        children: null,
+        id: "range",
+        label: "Range",
+      }),
+    ];
+
+    const controls = fields.map((field) =>
+      descendants(field).find((element) => ["input", "textarea", "select"].includes(String(element.type))),
+    );
+
+    expect(controls[0]?.props["aria-describedby"]).toBe("external-instructions title-message");
+    expect(controls[0]?.props["aria-invalid"]).toBe("spelling");
+    expect(controls[1]?.props["aria-describedby"]).toBe("external-instructions notes-message");
+    expect(controls[1]?.props["aria-invalid"]).toBe(false);
+    expect(controls[2]?.props["aria-describedby"]).toBe("external-instructions");
+    expect(controls[2]?.props["aria-invalid"]).toBe(true);
   });
 
   it("uses explicit live-region semantics for feedback", () => {
@@ -128,5 +167,13 @@ describe("production contracts", () => {
     expect(primitives).toContain(".pf-button:focus-visible");
     expect(primitives).toContain(".pf-control[data-state=\"error\"]");
     expect(primitives).toContain(".pf-button[data-state=\"success\"]");
+    expect(primitives).toContain(
+      '.pf-button[data-state="loading"] .pf-spinner {\n  position: absolute;',
+    );
+    expect(primitives).toContain(
+      '.pf-scale__rail[data-presentation="rating"] .pf-scale__option {\n  min-width: var(--hit);\n  min-height: var(--hit);\n  flex-basis: var(--hit);',
+    );
+    expect(primitives).toContain("@media (max-width: 575px) {\n  .pf-button--small {\n    min-height: var(--hit);");
+    expect(primitives).toContain(".pf-film-strip {\n    right: auto;\n    left: 0;");
   });
 });
