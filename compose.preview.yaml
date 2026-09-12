@@ -150,6 +150,7 @@ services:
       <<: *build
       target: web
       args:
+        SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION must be the exact CI SHA}
         BACKEND_INTERNAL_URL: http://api:3001
     environment:
       BACKEND_INTERNAL_URL: http://api:3001
