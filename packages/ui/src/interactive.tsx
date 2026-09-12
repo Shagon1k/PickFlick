@@ -12,6 +12,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -28,23 +29,26 @@ export function ConstraintSelect({
   disabled,
   error,
   onChange,
+  readOnly,
   required,
   value,
   ...props
 }: ConstraintSelectProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [constraintInvalid, setConstraintInvalid] = useState(false);
-  const dataState = props["data-state"] ?? (constraintInvalid ? "error" : undefined);
+  const constraintError = constraintInvalid && !readOnly;
+  const effectiveRequired = required && !readOnly;
+  const dataState = props["data-state"] ?? (constraintError ? "error" : undefined);
   const invalid =
-    constraintInvalid ||
+    constraintError ||
     Boolean(error) ||
     (ariaInvalid !== undefined && ariaInvalid !== false && ariaInvalid !== "false");
 
   useEffect(() => {
-    if (!required || disabled || value) {
+    if (!effectiveRequired || disabled || value) {
       setConstraintInvalid(false);
     }
-  }, [disabled, required, value]);
+  }, [disabled, effectiveRequired, value]);
 
   return (
     <MantineSelect
@@ -52,7 +56,7 @@ export function ConstraintSelect({
       {...(dataState !== undefined ? { "data-state": dataState } : {})}
       {...(disabled !== undefined ? { disabled } : {})}
       {...(invalid ? { error: true } : {})}
-      {...(required
+      {...(effectiveRequired
         ? {
             hiddenInputProps: {
               "aria-hidden": true,
@@ -73,7 +77,8 @@ export function ConstraintSelect({
         onChange?.(nextValue);
       }}
       ref={inputRef}
-      {...(required !== undefined ? { required } : {})}
+      {...(readOnly !== undefined ? { readOnly } : {})}
+      {...(effectiveRequired ? { required: true } : {})}
       {...(value !== undefined ? { value } : {})}
     />
   );
@@ -130,13 +135,18 @@ export function Tabs({ initialId, items, label }: TabsProps) {
   );
 }
 
-export interface FilmStripMenuItem {
+interface FilmStripMenuItemBase {
   readonly id: string;
   readonly label: string;
-  readonly href: string;
   readonly current?: boolean;
   readonly danger?: boolean;
 }
+
+export type FilmStripMenuItem = FilmStripMenuItemBase &
+  (
+    | { readonly href: string; readonly onSelect?: never }
+    | { readonly href?: never; readonly onSelect: () => void }
+  );
 
 export interface FilmStripMenuProps {
   readonly triggerLabel: string;
@@ -147,7 +157,7 @@ export interface FilmStripMenuProps {
 export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const itemRefs = useRef<Array<HTMLElement | null>>([]);
 
   useEffect(() => {
     if (!open) {
@@ -185,21 +195,37 @@ export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuP
           </button>
         </MantineMenu.Target>
         <MantineMenu.Dropdown aria-label={menuLabel} className="pf-film-strip">
-          {items.map((item, index) => (
-            <MantineMenu.Item
-              aria-current={item.current ? "page" : undefined}
-              className="pf-film-strip__item"
-              component="a"
-              data-danger={item.danger || undefined}
-              href={item.href}
-              key={item.id}
-              ref={(node) => {
-                itemRefs.current[index] = node;
-              }}
-            >
-              {item.label}
-            </MantineMenu.Item>
-          ))}
+          {items.map((item, index) => {
+            const ref = (node: HTMLElement | null) => {
+              itemRefs.current[index] = node;
+            };
+
+            return item.href !== undefined ? (
+              <MantineMenu.Item
+                aria-current={item.current ? "page" : undefined}
+                className="pf-film-strip__item"
+                component="a"
+                data-danger={item.danger || undefined}
+                href={item.href}
+                key={item.id}
+                ref={ref}
+              >
+                {item.label}
+              </MantineMenu.Item>
+            ) : (
+              <MantineMenu.Item
+                className="pf-film-strip__item"
+                component="button"
+                data-danger={item.danger || undefined}
+                key={item.id}
+                onClick={item.onSelect}
+                ref={ref}
+                type="button"
+              >
+                {item.label}
+              </MantineMenu.Item>
+            );
+          })}
         </MantineMenu.Dropdown>
       </MantineMenu>
     </div>
@@ -267,6 +293,7 @@ export interface ScaleControlProps {
   readonly onChange?: (value: number) => void;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
+  readonly required?: boolean;
   readonly submitted?: boolean;
   readonly presentation?: "score" | "rating";
 }
@@ -281,6 +308,7 @@ export function ScaleControl({
   onChange,
   presentation = "score",
   readOnly = false,
+  required = false,
   submitted = false,
   value,
 }: ScaleControlProps) {
@@ -293,12 +321,21 @@ export function ScaleControl({
   const selectedValue = candidateValue !== undefined && values.includes(candidateValue) ? candidateValue : undefined;
   const activeValue = previewValue !== undefined && values.includes(previewValue) ? previewValue : selectedValue;
   const locked = disabled || readOnly || submitted;
+  const constraintRequired = required && !locked;
+  const [constraintInvalid, setConstraintInvalid] = useState(false);
   const controlRefs = useRef(new Map<number, HTMLButtonElement>());
+  const feedbackId = useId();
 
   useEffect(() => {
     setInternalValue((current) => current !== undefined && values.includes(current) ? current : undefined);
     setPreviewValue((current) => current !== undefined && values.includes(current) ? current : undefined);
   }, [values]);
+
+  useEffect(() => {
+    if (!constraintRequired || selectedValue !== undefined) {
+      setConstraintInvalid(false);
+    }
+  }, [constraintRequired, selectedValue]);
 
   function select(nextValue: number): void {
     if (locked) {
@@ -307,6 +344,7 @@ export function ScaleControl({
     if (value === undefined) {
       setInternalValue(nextValue);
     }
+    setConstraintInvalid(false);
     onChange?.(nextValue);
   }
 
@@ -332,8 +370,11 @@ export function ScaleControl({
     <fieldset className="pf-scale" disabled={disabled}>
       <legend>{label}</legend>
       <div
+        aria-describedby={feedbackId}
+        aria-invalid={constraintInvalid || undefined}
         aria-label={label}
         aria-readonly={readOnly || submitted || undefined}
+        aria-required={constraintRequired || undefined}
         className="pf-scale__rail"
         data-presentation={presentation}
         onBlur={(event) => {
@@ -385,8 +426,29 @@ export function ScaleControl({
         })}
       </div>
       <input name={name} type="hidden" value={selectedValue ?? ""} />
-      <output aria-live="polite" className="pf-scale__value">
-        {selectedValue === undefined ? "Not selected" : `${selectedValue} of ${max}`}
+      {constraintRequired ? (
+        <input
+          aria-hidden="true"
+          className="pf-visually-hidden"
+          data-scale-constraint
+          onChange={() => undefined}
+          onInvalid={(event) => {
+            event.preventDefault();
+            setConstraintInvalid(true);
+            controlRefs.current.get(firstValue)?.focus();
+          }}
+          required
+          tabIndex={-1}
+          type="text"
+          value={selectedValue ?? ""}
+        />
+      ) : null}
+      <output aria-live="polite" className="pf-scale__value" id={feedbackId}>
+        {constraintInvalid
+          ? `Select a ${presentation}.`
+          : selectedValue === undefined
+            ? "Not selected"
+            : `${selectedValue} of ${max}`}
       </output>
     </fieldset>
   );

@@ -123,6 +123,10 @@ describe("Projector Noir primitives", () => {
     const input = descendants(toggle).find((element) => element.type === "input");
 
     expect(input?.props["aria-describedby"]).toBe("privacy-policy rating-reminders-description");
+    expect(input?.props["aria-labelledby"]).toBe("rating-reminders-label");
+    expect(
+      descendants(toggle).find((element) => element.props.id === "rating-reminders-label")?.props.children,
+    ).toBe("Rating reminders");
   });
 
   it("adapts select options and forwards required form constraints", () => {

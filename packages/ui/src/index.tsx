@@ -338,6 +338,7 @@ export interface ToggleProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 
 export function Toggle({
   "aria-describedby": ariaDescribedBy,
+  "aria-labelledby": ariaLabelledBy,
   className,
   description,
   id,
@@ -345,11 +346,13 @@ export function Toggle({
   ...props
 }: ToggleProps) {
   const descriptionId = id && description ? `${id}-description` : undefined;
+  const labelId = id ? `${id}-label` : undefined;
+  const labelledBy = descriptionIds(ariaLabelledBy, labelId);
 
   return (
     <label className={classes("pf-toggle", className)} htmlFor={id}>
       <span className="pf-toggle__copy">
-        <span className="pf-toggle__label">{label}</span>
+        <span className="pf-toggle__label" id={labelId}>{label}</span>
         {description ? (
           <span className="pf-toggle__description" id={descriptionId}>
             {description}
@@ -360,6 +363,8 @@ export function Toggle({
         <input
           {...props}
           aria-describedby={descriptionIds(ariaDescribedBy, descriptionId)}
+          aria-label={labelledBy ? undefined : label}
+          aria-labelledby={labelledBy}
           id={id}
           type="checkbox"
         />

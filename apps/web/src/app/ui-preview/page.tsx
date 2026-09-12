@@ -4,7 +4,6 @@ import {
   Button,
   DataTable,
   EmptyState,
-  FilmStripMenu,
   LoadingState,
   Pill,
   ProgressFilmStrip,
@@ -16,7 +15,7 @@ import {
   Toggle,
 } from "@pickflick/ui";
 
-import { PreviewInteractions, ReviewFixInteractions } from "./preview-interactions";
+import { PreviewInteractions, PreviewMenus, ReviewFixInteractions } from "./preview-interactions";
 import styles from "./preview.module.css";
 
 const tableColumns = [
@@ -116,25 +115,7 @@ export default function UiPreviewPage() {
             />
           </div>
           <div className={styles.panel}>
-            <div className={styles.menuRow}>
-              <FilmStripMenu
-                items={[
-                  { id: "overview", label: "Overview", href: "#navigation", current: true },
-                  { id: "settings", label: "Settings", href: "#forms" },
-                  { id: "leave", label: "Leave Club", href: "#dialogs", danger: true },
-                ]}
-                menuLabel="Club menu"
-                triggerLabel="Open Club menu"
-              />
-              <FilmStripMenu
-                items={[
-                  { id: "profile", label: "Profile", href: "#forms" },
-                  { id: "sign-out", label: "Sign out", href: "#dialogs", danger: true },
-                ]}
-                menuLabel="Account menu"
-                triggerLabel="Open account menu"
-              />
-            </div>
+            <PreviewMenus />
           </div>
         </div>
       </PreviewSection>

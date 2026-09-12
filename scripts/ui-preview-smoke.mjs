@@ -54,6 +54,9 @@ try {
   const namedField = page.getByRole("textbox", { name: "Club name", exact: true });
   await expect(namedField).toHaveAttribute("aria-describedby", "club-name-message");
   await expect(page.locator("#club-name-message")).toHaveText("Shown to every Club member.");
+  const reminderToggle = page.getByRole("checkbox", { name: "Rating reminders", exact: true });
+  await expect(reminderToggle).toHaveAttribute("aria-labelledby", "rating-reminders-label");
+  await expect(reminderToggle).toHaveAttribute("aria-describedby", "rating-reminders-description");
   const emptyMessage = page.locator("#session-note-message");
   await expect(emptyMessage).toBeAttached();
   assert.ok(
@@ -103,6 +106,15 @@ try {
   await expect(requiredForm.locator("[data-submitted-value]")).toHaveText("0-4");
   assert.equal(await constraintInput.evaluate((element) => element.matches(":valid")), true);
 
+  const readOnlyForm = page.getByRole("form", { name: "Read-only required select form" });
+  const readOnlySelect = page.getByRole("combobox", { name: "Read-only selection range" });
+  const readOnlyInput = readOnlyForm.locator('input[name="read-only-range"]');
+  await expect(readOnlySelect).not.toHaveAttribute("required", "");
+  await expect(readOnlyInput).toHaveAttribute("type", "hidden");
+  await expect(readOnlyInput).not.toHaveAttribute("required", "");
+  await readOnlyForm.getByRole("button", { name: "Submit read-only select" }).click();
+  await expect(readOnlyForm.locator("[data-read-only-submitted]")).toHaveText("Submitted");
+
   const overviewTab = page.getByRole("tab", { name: "Overview" });
   const sessionsTab = page.getByRole("tab", { name: "Sessions" });
   await overviewTab.focus();
@@ -146,6 +158,13 @@ try {
   await page.keyboard.press("Escape");
   await expect(accountTrigger).toBeFocused();
 
+  await clubTrigger.click();
+  const leaveClubAction = page.getByRole("menuitem", { name: "Leave Club" });
+  assert.equal(await leaveClubAction.evaluate((element) => element.tagName), "BUTTON");
+  await leaveClubAction.click();
+  await expect(page.locator("[data-menu-action]")).toHaveText("Leave Club selected");
+  await expect(page.getByRole("menu", { name: "Club menu" })).toBeHidden();
+
   const adjustableScale = page.getByRole("radiogroup", { name: "Adjustable score" });
   const adjustableFieldset = adjustableScale.locator("xpath=ancestor::fieldset");
   await expect(adjustableFieldset.locator("output")).toHaveText("5 of 5");
@@ -158,6 +177,22 @@ try {
   await expect(firstAdjustableOption).toHaveAttribute("data-active", "true");
   await page.keyboard.press("Tab");
   await expect(firstAdjustableOption).not.toHaveAttribute("data-active", "true");
+
+  const requiredScoreForm = page.getByRole("form", { name: "Required score form" });
+  const requiredScore = requiredScoreForm.getByRole("radiogroup", { name: "Required selection score" });
+  const scoreConstraint = requiredScoreForm.locator("[data-scale-constraint]");
+  await expect(scoreConstraint).toHaveAttribute("required", "");
+  await requiredScoreForm.getByRole("button", { name: "Submit required score" }).click();
+  await expect(requiredScoreForm.locator("[data-submitted-score]")).toHaveText("Not submitted");
+  await expect(requiredScore).toHaveAttribute("aria-invalid", "true");
+  await expect(requiredScore.getByRole("radio", { name: "0 of 4" })).toBeFocused();
+  await expect(requiredScoreForm.locator(".pf-scale__value")).toHaveText("Select a score.");
+  assert.equal(await scoreConstraint.evaluate((element) => element.matches(":invalid")), true);
+  await requiredScore.getByRole("radio", { name: "0 of 4" }).click();
+  await requiredScoreForm.getByRole("button", { name: "Submit required score" }).click();
+  await expect(requiredScoreForm.locator("[data-submitted-score]")).toHaveText("0");
+  await expect(requiredScore).not.toHaveAttribute("aria-invalid", "true");
+  assert.equal(await scoreConstraint.evaluate((element) => element.matches(":valid")), true);
 
   const dialogTrigger = page.getByRole("button", { name: "Open dialog" });
   await dialogTrigger.focus();
