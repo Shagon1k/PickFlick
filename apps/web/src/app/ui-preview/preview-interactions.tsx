@@ -8,12 +8,17 @@ import styles from "./preview.module.css";
 export function PreviewInteractions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dangerDialogOpen, setDangerDialogOpen] = useState(false);
+  const [adjustableMax, setAdjustableMax] = useState(5);
 
   return (
     <div className={styles.scaleStack}>
       <ScoreControl defaultValue={2} label="Selection score" max={4} min={0} name="preview-score" />
       <RatingControl defaultValue={7} label="Session rating" name="preview-rating" />
       <ScoreControl defaultValue={3} label="Submitted score" max={5} name="submitted-score" submitted />
+      <ScoreControl defaultValue={5} label="Adjustable score" max={adjustableMax} name="adjustable-score" />
+      <Button onClick={() => setAdjustableMax((current) => current === 5 ? 4 : 5)} variant="ghost">
+        {adjustableMax === 5 ? "Reduce adjustable scale" : "Restore adjustable scale"}
+      </Button>
       <div className={styles.dialogActions}>
         <Button onClick={() => setDialogOpen(true)} variant="secondary">Open dialog</Button>
         <Button onClick={() => setDangerDialogOpen(true)} variant="secondary-danger">Delete Club</Button>

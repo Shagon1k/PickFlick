@@ -146,7 +146,8 @@
 
 .buttonRow,
 .pillRow,
-.dialogActions {
+.dialogActions,
+.menuRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-sm);

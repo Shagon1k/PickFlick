@@ -26,8 +26,11 @@ domain data, authentication, provider integrations, and production copy remain o
 ## Inherited contracts
 
 - Keep Projector Noir tokens in `packages/ui`; feature code must not define competing token sets.
-- Prefer native semantic HTML. Add or wrap a behavior library only when a reviewed complex-control
-  requirement justifies the dependency.
+- Use native semantic HTML for straightforward controls and static feedback. Use the branded
+  `@pickflick/ui` wrappers around Mantine for approved select, tabs, menu, and dialog mechanics.
+  Feature code must not import `@mantine/*` directly.
+- Map Projector Noir tokens into the Mantine provider and load Mantine styles beneath project
+  styles. Mantine defaults must not become a second visual system.
 - Keep controls usable by keyboard, mouse, and touch. Preserve visible focus, semantic names,
   dialog focus containment and return, stable live feedback, 44px targets, and reduced motion.
 - Use only the semantic inventory under `assets/brand`. Do not bundle prototype film fixtures.
@@ -51,8 +54,9 @@ domain data, authentication, provider integrations, and production copy remain o
 | --- | --- | --- |
 | Workspace boundaries | `pnpm check:workspace` | Passed locally: 8 workspaces valid. |
 | Static quality | `pnpm lint` and `pnpm typecheck` | Passed locally. |
-| Component behavior | `pnpm test` | Passed locally: 20 files, 173 tests. |
+| Component behavior | `pnpm test` | Passed locally: 20 files, 179 tests. |
 | Production compilation | `pnpm build` | Passed locally; `/ui-preview` prerendered. |
+| Mantine wrapper behavior | `pnpm ui:smoke -- http://127.0.0.1:<port>` against the production web build | Passed locally in Chromium: semantic names, select and tabs keyboard behavior, mutually exclusive menu dismissal, modal focus trap/return, scale-range normalization, preview clearing, 44px targets, Projector Noir styling, and reduced motion. |
 | Built runtime | `pnpm e2e:smoke` | Passed locally against disposable PostgreSQL, Redis, and object-storage services; test containers and volumes were removed afterward. |
 | Component preview | `/ui-preview` at the exact branch revision | Local production-browser audit passed at 390, 768, 1024, and 1440 pixels with no page overflow, unnamed controls, undersized controls, broken images, or keyboard/focus failures. Exact-SHA hosting remains pending. |
 | Visual review | Owner acknowledgement of the exact-SHA preview | Pending external review |

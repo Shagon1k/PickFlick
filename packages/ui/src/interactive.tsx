@@ -1,6 +1,15 @@
 "use client";
 
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Menu as MantineMenu, Modal as MantineModal, Tabs as MantineTabs } from "@mantine/core";
+import {
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export interface TabItem {
   readonly id: string;
@@ -16,92 +25,30 @@ export interface TabsProps {
 }
 
 export function Tabs({ initialId, items, label }: TabsProps) {
-  const prefix = useId();
-  const enabledIds = useMemo(() => items.filter((item) => !item.disabled).map((item) => item.id), [items]);
-  const [selectedId, setSelectedId] = useState(
-    initialId && enabledIds.includes(initialId) ? initialId : (enabledIds[0] ?? ""),
-  );
-  const activeId = enabledIds.includes(selectedId) ? selectedId : (enabledIds[0] ?? "");
-  const tabsRef = useRef(new Map<string, HTMLButtonElement>());
-
-  useEffect(() => {
-    if (selectedId !== activeId) {
-      setSelectedId(activeId);
-    }
-  }, [activeId, selectedId]);
-
-  function focusRelative(currentId: string, direction: -1 | 1): void {
-    const currentIndex = enabledIds.indexOf(currentId);
-    const nextId = enabledIds[(currentIndex + direction + enabledIds.length) % enabledIds.length];
-    if (nextId) {
-      tabsRef.current.get(nextId)?.focus();
-    }
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, id: string): void {
-    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      event.preventDefault();
-      focusRelative(id, -1);
-    } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      event.preventDefault();
-      focusRelative(id, 1);
-    } else if (event.key === "Home" || event.key === "End") {
-      event.preventDefault();
-      const destinationId = event.key === "Home" ? enabledIds[0] : enabledIds.at(-1);
-      if (destinationId) {
-        tabsRef.current.get(destinationId)?.focus();
-      }
-    } else if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setSelectedId(id);
-    }
-  }
+  const enabledIds = items.filter((item) => !item.disabled).map((item) => item.id);
+  const defaultValue = initialId && enabledIds.includes(initialId) ? initialId : (enabledIds[0] ?? null);
 
   return (
-    <div className="pf-tabs">
-      <div aria-label={label} className="pf-tabs__list" role="tablist">
-        {items.map((item) => {
-          const selected = item.id === activeId;
-          return (
-            <button
-              aria-controls={`${prefix}-${item.id}-panel`}
-              aria-selected={selected}
-              className="pf-tabs__tab"
-              disabled={item.disabled}
-              id={`${prefix}-${item.id}-tab`}
-              key={item.id}
-              onClick={() => setSelectedId(item.id)}
-              onKeyDown={(event) => handleKeyDown(event, item.id)}
-              ref={(node) => {
-                if (node) {
-                  tabsRef.current.set(item.id, node);
-                } else {
-                  tabsRef.current.delete(item.id);
-                }
-              }}
-              role="tab"
-              tabIndex={selected ? 0 : -1}
-              type="button"
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
+    <MantineTabs
+      activateTabWithKeyboard={false}
+      classNames={{ list: "pf-tabs__list", panel: "pf-tabs__panel", root: "pf-tabs", tab: "pf-tabs__tab" }}
+      defaultValue={defaultValue}
+      keepMounted
+      unstyled
+    >
+      <MantineTabs.List aria-label={label}>
+        {items.map((item) => (
+          <MantineTabs.Tab disabled={item.disabled} key={item.id} value={item.id}>
+            {item.label}
+          </MantineTabs.Tab>
+        ))}
+      </MantineTabs.List>
       {items.map((item) => (
-        <div
-          aria-labelledby={`${prefix}-${item.id}-tab`}
-          className="pf-tabs__panel"
-          hidden={item.id !== activeId}
-          id={`${prefix}-${item.id}-panel`}
-          key={item.id}
-          role="tabpanel"
-          tabIndex={0}
-        >
+        <MantineTabs.Panel key={item.id} tabIndex={0} value={item.id}>
           {item.content}
-        </div>
+        </MantineTabs.Panel>
       ))}
-    </div>
+    </MantineTabs>
   );
 }
 
@@ -122,78 +69,61 @@ export interface FilmStripMenuProps {
 export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    itemRefs.current[0]?.focus();
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    requestAnimationFrame(() => itemRefs.current[0]?.focus());
   }, [open]);
 
-  function closeAndRestoreFocus(): void {
-    setOpen(false);
-    requestAnimationFrame(() => triggerRef.current?.focus());
-  }
-
-  function handleMenuKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeAndRestoreFocus();
-      return;
-    }
-    const currentIndex = itemRefs.current.findIndex((item) => item === document.activeElement);
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const direction = event.key === "ArrowDown" ? 1 : -1;
-      itemRefs.current[(currentIndex + direction + items.length) % items.length]?.focus();
-    } else if (event.key === "Home" || event.key === "End") {
-      event.preventDefault();
-      (event.key === "Home" ? itemRefs.current[0] : itemRefs.current.at(-1))?.focus();
+  function closeWhenFocusLeaves(event: FocusEvent<HTMLDivElement>): void {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setOpen(false);
     }
   }
 
   return (
-    <div className="pf-menu" ref={containerRef}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="pf-button pf-button--secondary pf-menu__trigger"
-        onClick={() => setOpen((current) => !current)}
-        ref={triggerRef}
-        type="button"
+    <div className="pf-menu" onBlur={closeWhenFocusLeaves} ref={containerRef}>
+      <MantineMenu
+        closeOnClickOutside
+        closeOnEscape
+        loop
+        menuItemTabIndex={0}
+        onChange={setOpen}
+        opened={open}
+        position="bottom-end"
+        returnFocus
+        trapFocus={false}
+        transitionProps={{ duration: 0 }}
+        unstyled
+        withInitialFocusPlaceholder={false}
+        withinPortal={false}
       >
-        {triggerLabel}
-      </button>
-      {open ? (
-        <div aria-label={menuLabel} className="pf-film-strip" onKeyDown={handleMenuKeyDown} role="menu">
+        <MantineMenu.Target>
+          <button className="pf-button pf-button--secondary pf-menu__trigger" type="button">
+            {triggerLabel}
+          </button>
+        </MantineMenu.Target>
+        <MantineMenu.Dropdown aria-label={menuLabel} className="pf-film-strip">
           {items.map((item, index) => (
-            <a
+            <MantineMenu.Item
               aria-current={item.current ? "page" : undefined}
               className="pf-film-strip__item"
+              component="a"
               data-danger={item.danger || undefined}
               href={item.href}
               key={item.id}
-              onClick={closeAndRestoreFocus}
               ref={(node) => {
                 itemRefs.current[index] = node;
               }}
-              role="menuitem"
-              tabIndex={-1}
             >
               {item.label}
-            </a>
+            </MantineMenu.Item>
           ))}
-        </div>
-      ) : null}
+        </MantineMenu.Dropdown>
+      </MantineMenu>
     </div>
   );
 }
@@ -209,56 +139,36 @@ export interface DialogProps {
 }
 
 export function Dialog({ actions, children, dismissible = true, onClose, open, title, tone = "neutral" }: DialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) {
-      return;
-    }
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
-
   return (
-    <dialog
-      aria-labelledby={titleId}
-      className="pf-dialog"
-      data-tone={tone}
-      onCancel={(event) => {
-        if (!dismissible) {
-          event.preventDefault();
-        }
+    <MantineModal
+      centered
+      classNames={{
+        body: "pf-dialog__body",
+        close: "pf-dialog__close",
+        content: tone === "danger" ? "pf-dialog pf-dialog--danger" : "pf-dialog",
+        header: "pf-dialog__header",
+        inner: "pf-dialog__inner",
+        overlay: "pf-dialog__overlay",
+        root: "pf-dialog__root",
+        title: "pf-dialog__title",
       }}
-      onClose={() => {
-        if (open) {
-          onClose();
-        }
-      }}
-      ref={dialogRef}
+      closeButtonProps={{ "aria-label": "Close dialog" }}
+      closeOnClickOutside={dismissible}
+      closeOnEscape={dismissible}
+      onClose={onClose}
+      opened={open}
+      padding={0}
+      returnFocus
+      size="min(560px, calc(100vw - 32px))"
+      title={title}
+      transitionProps={{ duration: 200, transition: "fade-down" }}
+      trapFocus
+      unstyled
+      withCloseButton={dismissible}
     >
-      <div className="pf-dialog__body">
-        <div className="pf-dialog__header">
-          <h2 id={titleId}>{title}</h2>
-          {dismissible ? (
-            <button
-              aria-label="Close dialog"
-              className="pf-dialog__close"
-              onClick={() => dialogRef.current?.close()}
-              type="button"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          ) : null}
-        </div>
-        <div className="pf-dialog__content">{children}</div>
-        {actions ? <div className="pf-dialog__actions">{actions}</div> : null}
-      </div>
-    </dialog>
+      <div className="pf-dialog__content">{children}</div>
+      {actions ? <div className="pf-dialog__actions">{actions}</div> : null}
+    </MantineModal>
   );
 }
 
@@ -301,10 +211,16 @@ export function ScaleControl({
   const initialValue = defaultValue !== undefined && values.includes(defaultValue) ? defaultValue : undefined;
   const [internalValue, setInternalValue] = useState<number | undefined>(initialValue);
   const [previewValue, setPreviewValue] = useState<number | undefined>();
-  const selectedValue = value ?? internalValue;
-  const activeValue = previewValue ?? selectedValue;
+  const candidateValue = value ?? internalValue;
+  const selectedValue = candidateValue !== undefined && values.includes(candidateValue) ? candidateValue : undefined;
+  const activeValue = previewValue !== undefined && values.includes(previewValue) ? previewValue : selectedValue;
   const locked = disabled || readOnly || submitted;
   const controlRefs = useRef(new Map<number, HTMLButtonElement>());
+
+  useEffect(() => {
+    setInternalValue((current) => current !== undefined && values.includes(current) ? current : undefined);
+    setPreviewValue((current) => current !== undefined && values.includes(current) ? current : undefined);
+  }, [values]);
 
   function select(nextValue: number): void {
     if (locked) {
@@ -342,6 +258,11 @@ export function ScaleControl({
         aria-readonly={readOnly || submitted || undefined}
         className="pf-scale__rail"
         data-presentation={presentation}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setPreviewValue(undefined);
+          }
+        }}
         onMouseLeave={() => setPreviewValue(undefined)}
         role="radiogroup"
       >

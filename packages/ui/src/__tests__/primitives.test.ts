@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,11 +8,15 @@ import {
   BRAND_ASSETS,
   Button,
   DataTable,
+  Dialog,
   ProgressFilmStrip,
   SelectField,
+  Tabs,
   TextAreaField,
   TextField,
+  Toggle,
   createInclusiveScale,
+  projectorNoirTheme,
 } from "../index.js";
 
 interface ElementProps {
@@ -40,17 +45,26 @@ describe("Projector Noir primitives", () => {
     expect(descendants(button).some((element) => element.props.children === "Create Session")).toBe(true);
   });
 
-  it("connects field validation to a labeled native input", () => {
+  it("keeps field messages outside the control label", () => {
     const field = TextField({ id: "club-name", label: "Club name", error: "Use at least 3 characters." });
     const nodes = descendants(field);
+    const label = nodes.find((element) => element.type === "label");
     const input = nodes.find((element) => element.type === "input");
 
-    expect(field.type).toBe("label");
-    expect(field.props.htmlFor).toBe("club-name");
+    expect(field.type).toBe("div");
+    expect(label?.props.htmlFor).toBe("club-name");
     expect(input?.props.id).toBe("club-name");
     expect(input?.props["aria-invalid"]).toBe(true);
     expect(input?.props["aria-describedby"]).toBe("club-name-message");
+    expect(descendants(label).some((element) => element.props.messageId === "club-name-message")).toBe(false);
     expect(nodes.some((element) => element.props.messageId === "club-name-message")).toBe(true);
+  });
+
+  it("keeps an empty field-message region mounted", () => {
+    const markup = renderToStaticMarkup(TextField({ id: "title", label: "Title" }));
+
+    expect(markup).toContain('id="title-message"');
+    expect(markup).toContain('aria-hidden="true"');
   });
 
   it("preserves caller-provided field relationships and invalid states", () => {
@@ -79,7 +93,10 @@ describe("Projector Noir primitives", () => {
     ];
 
     const controls = fields.map((field) =>
-      descendants(field).find((element) => ["input", "textarea", "select"].includes(String(element.type))),
+      descendants(field).find((element) =>
+        ["input", "textarea"].includes(String(element.type)) ||
+        (element.type as { displayName?: string }).displayName === "@mantine/core/Select",
+      ),
     );
 
     expect(controls[0]?.props["aria-describedby"]).toBe("external-instructions title-message");
@@ -88,6 +105,61 @@ describe("Projector Noir primitives", () => {
     expect(controls[1]?.props["aria-invalid"]).toBe(false);
     expect(controls[2]?.props["aria-describedby"]).toBe("external-instructions");
     expect(controls[2]?.props["aria-invalid"]).toBe(true);
+  });
+
+  it("merges caller-provided and generated toggle descriptions", () => {
+    const toggle = Toggle({
+      "aria-describedby": "privacy-policy",
+      description: "Receive a reminder while Rating remains open.",
+      id: "rating-reminders",
+      label: "Rating reminders",
+    });
+    const input = descendants(toggle).find((element) => element.type === "input");
+
+    expect(input?.props["aria-describedby"]).toBe("privacy-policy rating-reminders-description");
+  });
+
+  it("adapts select options without exposing a native feature import", () => {
+    const field = SelectField({
+      children: [
+        createElement("option", { key: "0-4", value: "0-4" }, "0 to 4"),
+        createElement("option", { key: "1-5", value: "1-5" }, "1 to 5"),
+      ],
+      defaultValue: "0-4",
+      id: "score-range",
+      label: "Selection range",
+    });
+    const select = descendants(field).find(
+      (element) => (element.type as { displayName?: string }).displayName === "@mantine/core/Select",
+    );
+
+    expect(select?.props.data).toEqual([
+      { value: "0-4", label: "0 to 4" },
+      { value: "1-5", label: "1 to 5" },
+    ]);
+    expect(select?.props.allowDeselect).toBe(false);
+    expect(select?.props.classNames).toMatchObject({
+      dropdown: "pf-select__dropdown",
+      input: "pf-control pf-control--select",
+      option: "pf-select__option",
+    });
+  });
+
+  it("configures Mantine mechanics behind branded tabs and dialogs", () => {
+    const tabs = Tabs({
+      items: [{ id: "overview", label: "Overview", content: "Overview panel" }],
+      label: "Club views",
+    });
+    const dialog = Dialog({ children: "Dialog body", onClose: () => undefined, open: true, title: "Move phase?" });
+
+    expect((tabs.type as { displayName?: string }).displayName).toBe("@mantine/core/Tabs");
+    expect(tabs.props.activateTabWithKeyboard).toBe(false);
+    expect(tabs.props.classNames).toMatchObject({ root: "pf-tabs", tab: "pf-tabs__tab" });
+    expect((dialog.type as { displayName?: string }).displayName).toBe("@mantine/core/Modal");
+    expect(dialog.props.trapFocus).toBe(true);
+    expect(dialog.props.returnFocus).toBe(true);
+    expect(dialog.props.closeOnEscape).toBe(true);
+    expect(dialog.props.classNames).toMatchObject({ content: "pf-dialog", overlay: "pf-dialog__overlay" });
   });
 
   it("uses explicit live-region semantics for feedback", () => {
@@ -174,6 +246,24 @@ describe("production contracts", () => {
       '.pf-scale__rail[data-presentation="rating"] .pf-scale__option {\n  min-width: var(--hit);\n  min-height: var(--hit);\n  flex-basis: var(--hit);',
     );
     expect(primitives).toContain("@media (max-width: 575px) {\n  .pf-button--small {\n    min-height: var(--hit);");
-    expect(primitives).toContain(".pf-film-strip {\n    right: auto;\n    left: 0;");
+    expect(primitives).toContain(".pf-select__option[data-combobox-selected]");
+    expect(primitives).toContain(".pf-dialog__overlay");
+    expect(primitives).toContain("min-height: var(--hit)");
+  });
+
+  it("maps Projector Noir into Mantine without application imports", async () => {
+    const [layout, interactive, provider] = await Promise.all([
+      readFile(new URL("../../../../apps/web/src/app/layout.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../interactive.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../provider.tsx", import.meta.url), "utf8"),
+    ]);
+
+    expect(projectorNoirTheme.fontFamily).toBe("var(--font-body)");
+    expect(projectorNoirTheme.headings?.fontFamily).toBe("var(--font-display)");
+    expect(projectorNoirTheme.primaryColor).toBe("projectorGold");
+    expect(projectorNoirTheme.respectReducedMotion).toBe(true);
+    expect(layout).not.toContain("@mantine/");
+    expect(interactive).toMatch(/MantineMenu|MantineModal|MantineTabs/);
+    expect(provider).toContain('withStaticClasses={false}');
   });
 });

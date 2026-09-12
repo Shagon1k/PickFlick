@@ -1,13 +1,22 @@
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
+import { Select as MantineSelect } from "@mantine/core";
+import {
+  Children,
+  isValidElement,
+  type AriaAttributes,
+  type AnchorHTMLAttributes,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
 } from "react";
 
 export { BRAND_ASSETS, BrandImage, type BrandAssetKey, type BrandImageProps } from "./brand-assets.js";
+export {
+  ProjectorNoirColorSchemeScript,
+  ProjectorNoirProvider,
+  projectorNoirHtmlProps,
+  projectorNoirTheme,
+} from "./provider.js";
 export {
   Dialog,
   FilmStripMenu,
@@ -115,12 +124,14 @@ interface FieldMessageProps {
 
 function FieldMessage({ error, hint, messageId, success }: FieldMessageProps) {
   const message = error ?? success ?? hint;
-  if (!message) {
-    return null;
-  }
 
   return (
-    <span className="pf-field__message" data-tone={error ? "danger" : success ? "success" : "neutral"} id={messageId}>
+    <span
+      aria-hidden={message ? undefined : true}
+      className="pf-field__message"
+      data-tone={error ? "danger" : success ? "success" : "neutral"}
+      id={messageId}
+    >
       {message}
     </span>
   );
@@ -154,8 +165,8 @@ export function TextField({
   const hasMessage = Boolean(error ?? success ?? hint);
 
   return (
-    <label className={classes("pf-field", className)} htmlFor={id}>
-      <span className="pf-field__label">{label}</span>
+    <div className={classes("pf-field", className)}>
+      <label className="pf-field__label" htmlFor={id}>{label}</label>
       <input
         {...props}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
@@ -165,7 +176,7 @@ export function TextField({
         id={id}
       />
       <FieldMessage error={error} hint={hint} messageId={messageId} success={success} />
-    </label>
+    </div>
   );
 }
 
@@ -188,8 +199,8 @@ export function TextAreaField({
   const hasMessage = Boolean(error ?? success ?? hint);
 
   return (
-    <label className={classes("pf-field", className)} htmlFor={id}>
-      <span className="pf-field__label">{label}</span>
+    <div className={classes("pf-field", className)}>
+      <label className="pf-field__label" htmlFor={id}>{label}</label>
       <textarea
         {...props}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
@@ -199,44 +210,104 @@ export function TextAreaField({
         id={id}
       />
       <FieldMessage error={error} hint={hint} messageId={messageId} success={success} />
-    </label>
+    </div>
   );
 }
 
-export interface SelectFieldProps
-  extends SharedFieldProps,
-    Omit<SelectHTMLAttributes<HTMLSelectElement>, "className" | "id"> {}
+interface SelectOptionProps {
+  readonly children?: ReactNode;
+  readonly disabled?: boolean;
+  readonly value?: string | number | readonly string[];
+}
+
+function selectData(children: ReactNode): Array<{ value: string; label: string; disabled?: boolean }> {
+  return Children.toArray(children).flatMap((child) => {
+    if (!isValidElement<SelectOptionProps>(child) || child.type !== "option") {
+      return [];
+    }
+    const value = String(child.props.value ?? child.props.children ?? "");
+    const label =
+      typeof child.props.children === "string" || typeof child.props.children === "number"
+        ? String(child.props.children)
+        : value;
+    return [{ value, label, ...(child.props.disabled ? { disabled: true } : {}) }];
+  });
+}
+
+export interface SelectFieldProps extends SharedFieldProps {
+  readonly children?: ReactNode;
+  readonly value?: string | null;
+  readonly defaultValue?: string | null;
+  readonly onChange?: (value: string | null) => void;
+  readonly name?: string;
+  readonly placeholder?: string;
+  readonly disabled?: boolean;
+  readonly required?: boolean;
+  readonly readOnly?: boolean;
+  readonly autoFocus?: boolean;
+  readonly form?: string;
+  readonly "aria-describedby"?: string;
+  readonly "aria-invalid"?: AriaAttributes["aria-invalid"];
+}
 
 export function SelectField({
   "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
+  autoFocus,
   children,
   className,
+  disabled,
   error,
+  form,
   hint,
   id,
   label,
+  name,
+  onChange,
+  placeholder,
+  readOnly,
+  required,
   success,
-  ...props
+  value,
+  defaultValue,
 }: SelectFieldProps) {
   const messageId = `${id}-message`;
   const hasMessage = Boolean(error ?? success ?? hint);
 
   return (
-    <label className={classes("pf-field", className)} htmlFor={id}>
-      <span className="pf-field__label">{label}</span>
-      <select
-        {...props}
+    <div className={classes("pf-field", className)}>
+      <label className="pf-field__label" htmlFor={id}>{label}</label>
+      <MantineSelect
+        allowDeselect={false}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
         aria-invalid={ariaInvalid ?? (error ? true : undefined)}
-        className="pf-control pf-control--select"
+        classNames={{
+          dropdown: "pf-select__dropdown",
+          input: "pf-control pf-control--select",
+          option: "pf-select__option",
+          root: "pf-select",
+          section: "pf-select__section",
+          wrapper: "pf-select__wrapper",
+        }}
+        comboboxProps={{ transitionProps: { duration: 150 } }}
+        data={selectData(children)}
         data-state={error ? "error" : success ? "success" : undefined}
         id={id}
-      >
-        {children}
-      </select>
+        unstyled
+        withCheckIcon={false}
+        {...(autoFocus !== undefined ? { autoFocus } : {})}
+        {...(defaultValue !== undefined ? { defaultValue } : {})}
+        {...(disabled !== undefined ? { disabled } : {})}
+        {...(form !== undefined ? { form } : {})}
+        {...(name !== undefined ? { name } : {})}
+        {...(onChange ? { onChange } : {})}
+        {...(placeholder !== undefined ? { placeholder } : {})}
+        {...(readOnly !== undefined ? { readOnly } : {})}
+        {...(required !== undefined ? { required } : {})}
+        {...(value !== undefined ? { value } : {})}
+      />
       <FieldMessage error={error} hint={hint} messageId={messageId} success={success} />
-    </label>
+    </div>
   );
 }
 
@@ -246,7 +317,14 @@ export interface ToggleProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   readonly className?: string;
 }
 
-export function Toggle({ className, description, id, label, ...props }: ToggleProps) {
+export function Toggle({
+  "aria-describedby": ariaDescribedBy,
+  className,
+  description,
+  id,
+  label,
+  ...props
+}: ToggleProps) {
   const descriptionId = id && description ? `${id}-description` : undefined;
 
   return (
@@ -260,7 +338,12 @@ export function Toggle({ className, description, id, label, ...props }: TogglePr
         ) : null}
       </span>
       <span className="pf-toggle__track">
-        <input {...props} aria-describedby={descriptionId} id={id} type="checkbox" />
+        <input
+          {...props}
+          aria-describedby={descriptionIds(ariaDescribedBy, descriptionId)}
+          id={id}
+          type="checkbox"
+        />
         <span aria-hidden="true" className="pf-toggle__thumb" />
       </span>
     </label>

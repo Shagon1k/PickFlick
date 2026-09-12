@@ -190,7 +190,7 @@
   cursor: not-allowed;
 }
 
-.pf-control:read-only {
+.pf-control:read-only:not(.pf-control--select) {
   color: var(--fg-secondary);
   background: transparent;
 }
@@ -211,7 +211,8 @@
 }
 
 .pf-control--select {
-  appearance: auto;
+  padding-right: 44px;
+  appearance: none;
 }
 
 .pf-field__message,
@@ -219,6 +220,11 @@
   color: var(--fg-secondary);
   font-size: var(--fs-meta);
   line-height: var(--lh-body);
+}
+
+.pf-field__message {
+  display: block;
+  min-height: 1.55em;
 }
 
 .pf-field__message[data-tone="danger"] {
@@ -486,8 +492,6 @@
 
 .pf-film-strip {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
   z-index: 20;
   width: min(260px, calc(100vw - 32px));
   padding: 14px 22px;
@@ -525,9 +529,13 @@
   min-height: 48px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
   color: var(--fg-secondary);
   font-size: var(--fs-body-sm);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .pf-film-strip__item:last-child {
@@ -554,24 +562,95 @@
   color: var(--danger-text);
 }
 
+.pf-select__dropdown {
+  position: absolute;
+  z-index: 200;
+  padding: 6px;
+  border: 1px solid var(--border-lit);
+  border-radius: var(--radius);
+  color: var(--fg-secondary);
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+}
+
+.pf-select__wrapper {
+  position: relative;
+}
+
+.pf-select__option {
+  min-height: var(--hit);
+  padding: 10px 12px;
+  border-radius: calc(var(--radius) - 4px);
+  color: var(--fg-secondary);
+  font: var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+}
+
+.pf-select__option:hover,
+.pf-select__option[data-combobox-active] {
+  color: var(--fg);
+  background: var(--accent-soft);
+}
+
+.pf-select__option[data-combobox-selected] {
+  color: var(--ivory);
+  background: var(--gold-soft);
+  box-shadow: inset 2px 0 var(--gold);
+}
+
+.pf-select__section {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--ivory-muted);
+  pointer-events: none;
+}
+
+.pf-select__section svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pf-dialog__root {
+  position: relative;
+  z-index: 200;
+}
+
+.pf-dialog__overlay {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.76);
+  backdrop-filter: blur(3px);
+}
+
+.pf-dialog__inner {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
 .pf-dialog {
-  width: min(560px, calc(100% - 32px));
+  width: min(560px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
-  padding: 0;
   overflow: auto;
   border: 1px solid var(--border-lit);
   border-radius: var(--radius-lg);
   color: var(--fg);
   background: var(--surface);
   box-shadow: var(--shadow-overlay);
+  pointer-events: all;
 }
 
-.pf-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.76);
-  backdrop-filter: blur(3px);
-}
-
-.pf-dialog[data-tone="danger"] {
+.pf-dialog--danger {
   border-color: var(--danger-border);
 }
 
@@ -584,10 +663,14 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--gap-md);
+  min-height: var(--hit);
+  padding: clamp(20px, 5vw, 32px) clamp(20px, 5vw, 32px) 0;
+  background: var(--surface);
 }
 
-.pf-dialog__header h2 {
+.pf-dialog__title {
   margin: 0;
+  color: var(--fg);
   font: var(--fs-section)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
 }
@@ -606,8 +689,12 @@
   cursor: pointer;
 }
 
+.pf-dialog__close svg {
+  width: 18px;
+  height: 18px;
+}
+
 .pf-dialog__content {
-  margin-top: var(--gap-md);
   color: var(--fg-secondary);
   line-height: var(--lh-body);
 }
@@ -892,11 +979,6 @@
 @media (max-width: 575px) {
   .pf-button--small {
     min-height: var(--hit);
-  }
-
-  .pf-film-strip {
-    right: auto;
-    left: 0;
   }
 
   .pf-dialog__actions .pf-button {

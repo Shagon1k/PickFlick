@@ -82,7 +82,7 @@ export default function UiPreviewPage() {
         </div>
       </PreviewSection>
 
-      <PreviewSection kicker="03 · Forms" title="Fields and selection" description="Labels, stable help regions, native semantics, and non-color messages travel with every control.">
+      <PreviewSection kicker="03 · Forms" title="Fields and selection" description="Labels, stable help regions, accessible semantics, and non-color messages travel with every control.">
         <div className={styles.grid}>
           <div className={`${styles.panel} ${styles.formStack}`}>
             <TextField id="club-name" hint="Shown to every Club member." label="Club name" defaultValue="Friday Night Film Club" />
@@ -91,7 +91,7 @@ export default function UiPreviewPage() {
             <TextField disabled id="provider-email" label="Email" defaultValue="alexey@example.com" />
           </div>
           <div className={`${styles.panel} ${styles.formStack}`}>
-            <SelectField id="score-range" label="Selection range" defaultValue="0-4">
+            <SelectField id="score-range" label="Selection range" name="score-range" defaultValue="0-4">
               <option value="0-4">0 to 4</option>
               <option value="1-5">1 to 5</option>
             </SelectField>
@@ -116,15 +116,25 @@ export default function UiPreviewPage() {
             />
           </div>
           <div className={styles.panel}>
-            <FilmStripMenu
-              items={[
-                { id: "overview", label: "Overview", href: "#navigation", current: true },
-                { id: "settings", label: "Settings", href: "#forms" },
-                { id: "leave", label: "Leave Club", href: "#dialogs", danger: true },
-              ]}
-              menuLabel="Club menu"
-              triggerLabel="Open Club menu"
-            />
+            <div className={styles.menuRow}>
+              <FilmStripMenu
+                items={[
+                  { id: "overview", label: "Overview", href: "#navigation", current: true },
+                  { id: "settings", label: "Settings", href: "#forms" },
+                  { id: "leave", label: "Leave Club", href: "#dialogs", danger: true },
+                ]}
+                menuLabel="Club menu"
+                triggerLabel="Open Club menu"
+              />
+              <FilmStripMenu
+                items={[
+                  { id: "profile", label: "Profile", href: "#forms" },
+                  { id: "sign-out", label: "Sign out", href: "#dialogs", danger: true },
+                ]}
+                menuLabel="Account menu"
+                triggerLabel="Open account menu"
+              />
+            </div>
           </div>
         </div>
       </PreviewSection>
@@ -153,7 +163,7 @@ export default function UiPreviewPage() {
         </div>
       </PreviewSection>
 
-      <PreviewSection kicker="07 · Score, rating, dialog" title="Keyboard-complete controls" description="Inclusive Club score ranges, the 1–10 rating control, and native modal focus containment share the same tokens.">
+      <PreviewSection kicker="07 · Score, rating, dialog" title="Keyboard-complete controls" description="Inclusive Club score ranges, the 1–10 rating control, and modal focus containment share the same tokens.">
         <div className={styles.panel} id="dialogs"><PreviewInteractions /></div>
       </PreviewSection>
     </main>
