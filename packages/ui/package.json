@@ -8,7 +8,8 @@
       "types": "./src/index.tsx",
       "default": "./dist/index.js"
     },
-    "./tokens.css": "./styles/tokens.css"
+    "./tokens.css": "./styles/tokens.css",
+    "./primitives.css": "./styles/primitives.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@pickflick/config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "react": "19.2.8",
     "typescript": "catalog:"

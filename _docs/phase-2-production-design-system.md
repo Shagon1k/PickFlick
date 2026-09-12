@@ -1,0 +1,62 @@
+# Phase 2 — Production Design System & App Shells
+
+This temporary delivery plan coordinates the Phase 2 issues. `ROADMAP.md` owns phase scope and
+acceptance. `DESIGN.md` and `_docs/design/prototypes` own visual and interaction behavior. GitHub
+Project 3 owns live issue status.
+
+## Owning issues
+
+| Slice | Issue | Outcome |
+| --- | --- | --- |
+| 2.1 | [#17 — Implement Projector Noir tokens, brand assets, and accessible UI primitives](https://github.com/Shagon1k/PickFlick/issues/17) | Establish reusable production foundations and a focused component preview. |
+| 2.2 | [#18 — Establish component accessibility, viewport, and visual-regression QA](https://github.com/Shagon1k/PickFlick/issues/18) | Make accessibility, interaction, and visual comparison repeatable in local and CI runs. |
+| 2.3 | [#19 — Build responsive public, setup, product, Session, Settings, Library, and Admin shells](https://github.com/Shagon1k/PickFlick/issues/19) | Assemble the shared responsive shell structures without feature fixtures. |
+
+## Sequence and boundaries
+
+1. Issue #17 implements canonical tokens, the semantic brand-asset registry, and shared primitives.
+2. Issue #18 builds the reusable QA harness against the component preview from issue #17.
+3. Issue #19 composes the verified primitives into public, setup, product, Session, Settings,
+   Library, and App Admin shells.
+
+Issue #17 may add focused component and browser checks needed to prove its own behavior. The
+cross-browser viewport and visual-regression harness remains owned by issue #18. Feature routes,
+domain data, authentication, provider integrations, and production copy remain outside Phase 2.
+
+## Inherited contracts
+
+- Keep Projector Noir tokens in `packages/ui`; feature code must not define competing token sets.
+- Prefer native semantic HTML. Add or wrap a behavior library only when a reviewed complex-control
+  requirement justifies the dependency.
+- Keep controls usable by keyboard, mouse, and touch. Preserve visible focus, semantic names,
+  dialog focus containment and return, stable live feedback, 44px targets, and reduced motion.
+- Use only the semantic inventory under `assets/brand`. Do not bundle prototype film fixtures.
+- Treat 390, 768, 1024, and 1440 pixels as representative verification widths. Keep layout fluid
+  between canonical breakpoints and contain dense horizontal scrolling within its component.
+
+## Edge cases
+
+| Area | Required handling |
+| --- | --- |
+| Component state | Expose applicable default, hover, focus, pressed, loading, disabled, validation, success, and destructive states without color-only meaning. |
+| Scale controls | Generate inclusive `0..N` or `1..N` ranges with `N <= 10`; support arrows plus `Home` and `End`. |
+| Overlays | Close non-blocking overlays with `Escape`, return focus, and keep one interaction context active. |
+| Feedback | Preserve layout while pending and announce pending, error, and success changes. |
+| Imagery | Require contextual alternative text or an explicit empty value for decorative use; preserve intrinsic dimensions and transparency. |
+| Motion | Remove decorative transforms, continuous motion, and smooth scrolling when reduced motion is requested. |
+
+## Verification in progress
+
+| Evidence | Command or source | Status |
+| --- | --- | --- |
+| Workspace boundaries | `pnpm check:workspace` | Passed locally: 8 workspaces valid. |
+| Static quality | `pnpm lint` and `pnpm typecheck` | Passed locally. |
+| Component behavior | `pnpm test` | Passed locally: 20 files, 173 tests. |
+| Production compilation | `pnpm build` | Passed locally; `/ui-preview` prerendered. |
+| Built runtime | `pnpm e2e:smoke` | Passed locally against disposable PostgreSQL, Redis, and object-storage services; test containers and volumes were removed afterward. |
+| Component preview | `/ui-preview` at the exact branch revision | Local production-browser audit passed at 390, 768, 1024, and 1440 pixels with no page overflow, unnamed controls, undersized controls, broken images, or keyboard/focus failures. Exact-SHA hosting remains pending. |
+| Visual review | Owner acknowledgement of the exact-SHA preview | Pending external review |
+
+Update this table with concise evidence as each issue proceeds. At the Phase 2 boundary, move
+durable implementation facts into canonical guidance, record phase evidence in `ROADMAP.md`, and
+delete this file plus its docs-map link.

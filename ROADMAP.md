@@ -487,7 +487,7 @@ review.
 
 **Out of scope:** Production traffic cutover, real production users/data, activation of live billing/email/storage providers, final production restore drill, production UI, and end-user feature behavior.
 
-### Phase 2 — Production Design System & App Shells · Not started
+### Phase 2 — Production Design System & App Shells · In progress
 
 **Goal:** Translate Projector Noir into reusable production foundations and responsive public/private/admin shells.
 
@@ -1388,7 +1388,7 @@ These do not block guidance creation; each has an explicit decision point.
 | --- | --- | --- | --- |
 | 0 — Guidance Baseline | Done | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22. | No application code was created. |
 | 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
-| 2 — Production Design System & App Shells | Not started |  |  |
+| 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
 | 3 — Public Site & System States | Not started |  |  |
 | 4 — Authentication & Account Onboarding | Not started |  |  |
 | 5 — Clubs, Membership & Roles | Not started |  |  |

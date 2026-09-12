@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "@pickflick/ui/tokens.css";
+import "@pickflick/ui/primitives.css";
 import "./styles.css";
 
 export const metadata: Metadata = {
