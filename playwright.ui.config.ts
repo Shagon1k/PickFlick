@@ -7,9 +7,10 @@ export default defineConfig({
     timeout: 10_000,
     toHaveScreenshot: {
       animations: "disabled",
-      maxDiffPixelRatio: 0.001,
+      maxDiffPixels: 0,
     },
   },
+  failOnFlakyTests: Boolean(process.env.CI),
   forbidOnly: Boolean(process.env.CI),
   fullyParallel: true,
   outputDir: "test-results/ui-artifacts",

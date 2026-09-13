@@ -5,6 +5,8 @@ import { test } from "@playwright/test";
 
 const executeFile = promisify(execFile);
 
+test.setTimeout(75_000);
+
 test("passes the component accessibility and interaction smoke", async ({ baseURL }, testInfo) => {
   let smokeOutput = "";
 
@@ -18,7 +20,6 @@ test("passes the component accessibility and interaction smoke", async ({ baseUR
           ...process.env,
           UI_SMOKE_ARTIFACT_DIR: testInfo.outputPath("interaction-smoke"),
         },
-        timeout: 55_000,
       },
     );
     smokeOutput = `${result.stdout}${result.stderr}`;

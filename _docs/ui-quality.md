@@ -24,7 +24,7 @@ The suite verifies:
 - default axe rules at 390px and 1440px widths;
 - keyboard, focus, native constraint, live-region, menu, tab, score, and dialog behavior;
 - no horizontal page overflow at 390, 640, 768, 900, 1024, 1200, and 1440px widths;
-- committed full-page baselines at 390, 768, 1024, and 1440px widths; and
+- exact matching against committed full-page baselines at 390, 768, 1024, and 1440px widths; and
 - immediate menu feedback when the browser requests reduced motion.
 
 Run only the viewport and screenshot checks with `pnpm ui:visual`. To exercise the interaction
@@ -37,8 +37,9 @@ pnpm ui:smoke -- http://127.0.0.1:<port>
 ## Review a failure
 
 Playwright writes failure screenshots, visual diffs, video, traces, axe JSON, and an HTML report
-under `test-results/`. CI uploads that directory when the UI job fails. Open a trace with the exact
-command printed by Playwright, or open the report locally with:
+under `test-results/`. The interaction smoke enforces its timeout inside the child process so it can
+flush its screenshot, trace, and video before failing. CI uploads `test-results/` when the UI job
+fails. Open a trace with the exact command printed by Playwright, or open the report locally with:
 
 ```bash
 pnpm exec playwright show-report test-results/ui-report
@@ -64,5 +65,6 @@ required visual-review checkpoint for issues labeled `preview-required`.
 ## CI behavior
 
 The `UI accessibility and visual regression` job installs Chromium and runs `pnpm ui:test` from a
-clean checkout. The terminal delivery gate requires this job. CI retains failure evidence for 14
-days; a passing run does not upload routine artifacts.
+clean checkout. CI retries a failed check once, but detected flaky tests still fail the job. The
+terminal delivery gate requires this job. CI retains failure evidence for 14 days; a passing run
+does not upload routine artifacts.

@@ -38,12 +38,15 @@ const artifactDirectory = process.env.UI_SMOKE_ARTIFACT_DIR?.trim()
 if (artifactDirectory) {
   await mkdir(artifactDirectory, { recursive: true });
 }
-const browser = await chromium.launch({ headless: true });
+const smokeTimeoutMs = 50_000;
+let browser;
 let context;
 let page;
 let traceStarted = false;
+let smokeTimeout;
 
-try {
+const smokeRun = (async () => {
+  browser = await chromium.launch({ headless: true });
   context = await browser.newContext({
     viewport: { width: 1024, height: 900 },
     ...(artifactDirectory
@@ -296,6 +299,18 @@ try {
   }
   await context.close();
   context = undefined;
+})();
+
+try {
+  await Promise.race([
+    smokeRun,
+    new Promise((_, reject) => {
+      smokeTimeout = setTimeout(
+        () => reject(new Error(`UI preview smoke timed out after ${smokeTimeoutMs}ms.`)),
+        smokeTimeoutMs,
+      );
+    }),
+  ]);
 } catch (error) {
   if (artifactDirectory && page && context) {
     try {
@@ -327,11 +342,12 @@ try {
 
   throw error;
 } finally {
+  clearTimeout(smokeTimeout);
   if (traceStarted && context) {
     await context.tracing.stop().catch(() => undefined);
   }
   if (context) {
     await context.close().catch(() => undefined);
   }
-  await browser.close();
+  await browser?.close();
 }
