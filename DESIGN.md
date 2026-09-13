@@ -47,8 +47,8 @@ When sources conflict:
 | QA | `Not checked` / `Passed` / `Issues` | `Passed` requires recorded comparison and applicable baseline evidence. |
 
 The design package is **detailed and approved as direction**. Phase 2 tokens, semantic brand assets,
-and the issue #17 primitive set are built; shared shells and product screens are **not started**.
-Prototype quality is not production QA.
+primitives, and shared responsive shells are built. Feature-owned product screens remain **not
+started**. Prototype quality is not production QA.
 
 ## 2. Experience Direction
 
@@ -81,7 +81,7 @@ token sets into feature files.
 | Color and themes | Dark-only MVP; `#0c0c0c` family for structure, neutral text/borders, ivory and connected gold `#C89B55` for warm semantic emphasis. | [DESIGN.md foundations](_docs/design/prototypes/DESIGN.md#1-foundations) | Approved | Done | Not checked |
 | Typography | Iowan/Charter/Georgia-style editorial display, system sans for readable product copy, mono for metadata/status. | [DESIGN.md typography](_docs/design/prototypes/DESIGN.md#2-typography) | Approved | Done | Not checked |
 | Spacing and layout | Shared scale, content containers, gutters, sectional rhythm, flat hierarchy, and deliberate negative space. | [DESIGN.md layout](_docs/design/prototypes/DESIGN.md#3-spacing--layout) | Approved | Done | Not checked |
-| Breakpoints and responsive behavior | Four named modes: S below 576, M from 768, L from 1024, XL from 1400; test the gaps between named pivots too. | [Responsive baseline](_docs/design/prototypes/responsive-baselines.html) | Approved | Partial | Component preview automated; shells pending |
+| Breakpoints and responsive behavior | Four named modes: S below 576, M from 768, L from 1024, XL from 1400; test the gaps between named pivots too. | [Responsive baseline](_docs/design/prototypes/responsive-baselines.html) | Approved | Partial | Component and all seven shell previews automated; feature screens pending |
 | Radii, borders, and elevation | Restrained radii and low-contrast borders; elevation belongs to overlays, tickets, and focused cinematic scenes. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Done | Not checked |
 | Iconography | Fine-line, consistent stroke treatment with accessible names on actions; decorative sprockets/film glyphs remain non-semantic. | [DESIGN.md components](_docs/design/prototypes/DESIGN.md#4-components) | Approved | Not started | Not checked |
 | Imagery and illustration | Transparent noir panda assets provide emotional/scene cues; film-provider imagery is data, not brand chrome. | [Brand assets](assets/brand/README.md) | Approved | Done | Not checked |
@@ -108,6 +108,10 @@ token sets into feature files.
 | Session detail | Back to Hub, phase/status banner, hero metadata/actions, phase content, shared account shell. | Preserve primary phase action and participant progress above secondary detail. | [Session family](_docs/design/prototypes/session-detail-nomination.html) |
 | Personal settings/library | Authenticated global shell plus local tabs/sidebar, tables/cards, stable feedback regions. | Sidebar becomes mobile menu; tables scroll inside bounded regions. | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html) |
 | App administration | Protected admin sidebar, overview panels, searchable tables, operational settings, typed confirmations. | Admin views remain task-complete through mobile admin menu and bounded tables. | [Admin Panel](_docs/design/prototypes/admin-panel.html) |
+
+The reusable shells live under `apps/web/src/components/shells`. `/shell-preview` exposes public,
+setup, product, Session, Settings, Library, and App Admin compositions without feature data. The
+shells default to canonical product routes; the preview supplies its own route map.
 
 ### Key user flows
 
@@ -199,8 +203,8 @@ Every production data surface implements applicable states rather than shipping 
 
 | Component | Purpose | Variants / states | Design source | Design | Build | QA |
 | --- | --- | --- | --- | --- | --- | --- |
-| Public/App header | Brand, global entry/navigation, search, notifications, account. | Public, authenticated, admin; desktop/mobile. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
-| Film-strip menu / mobile bar | Compact cinematic secondary navigation. | Hub, Library, Settings, Admin; open/closed/active. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Partial | Not checked |
+| Public/App header | Brand, global entry/navigation, search, notifications, account. | Public, authenticated, admin; desktop/mobile. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Done | Shell automation passed; owner review pending |
+| Film-strip menu / mobile bar | Compact cinematic secondary navigation. | Hub, Library, Settings, Admin; open/closed/active. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Done | Shell automation passed; owner review pending |
 | Club switcher / Call Sheet | Preserve Club and current-screening context. | Multiple Clubs, no Session, each phase, image/no image. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
 | Tabs / vertical tabs | Switch local views without losing shell context. | Horizontal/vertical/mobile menu; active/focus/disabled. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Partial | Not checked |
 | Buttons | Primary, secondary, danger, secondary-danger, icon. | Default/hover/focus/pressed/loading/disabled/success. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Done | Not checked |
@@ -211,7 +215,7 @@ Every production data surface implements applicable states rather than shipping 
 | Progress film strip | Show `N/N` phase participation. | Compact/full, determinate, complete. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Done | Not checked |
 | Status banner / phase stamp | Make lifecycle and recovery explicit. | Nomination/Selection/Watching/Rating/Completed/error/read-only. | [Session family](_docs/design/prototypes/session-detail-nomination.html) | Approved | Done | Not checked |
 | Invite ticket/popover | Review Club/Session invitations. | Multiple/empty/accept/decline/expired/forbidden. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
-| Notification popover | Review recent in-app events. | Read/unread/empty/loading/error/mobile. | [Settings](_docs/design/prototypes/settings.html) | Approved | Not started | Not checked |
+| Notification popover | Review recent in-app events. | Read/unread/empty/loading/error/mobile. | [Settings](_docs/design/prototypes/settings.html) | Approved | Partial | Shell overlay behavior passed; feature states pending |
 | Dialog / confirmation | Phase moves, edits, participant removal, cancellation, destructive admin actions. | Standard/destructive/typed-name/loading/error. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Partial | Not checked |
 | Stat / leaderboard / table | Summaries, histories, rankings, usage, admin lists. | Populated/empty/sorted/filtered/loading/read-only/mobile scroll. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Partial | Not checked |
 | Achievement card/filter | Show earned/progress/locked personal or Club goals. | Unlocked/in progress/not started/filtered. | [Library](_docs/design/prototypes/library.html) | Approved | Not started | Not checked |
@@ -247,12 +251,12 @@ Every production data surface implements applicable states rather than shipping 
 
 | Check | Target / coverage | Evidence | Status |
 | --- | --- | --- | --- |
-| Source parity | Every canonical screen and shared component compared against package source. | Four committed component-preview baselines; exact-SHA owner review and product screens remain pending. | In progress |
-| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Component preview checks 390, 640, 768, 900, 1024, 1200, and 1440 with four visual baselines; shells remain pending. | In progress |
-| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Automated component-preview smoke covers shared tabs, menus, dialogs, forms, and score controls; feature flows remain pending. | In progress |
-| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Default axe scans at 390 and 1440 plus component interaction, target-size, and reduced-motion checks; manual review remains pending. | In progress |
+| Source parity | Every canonical screen and shared component compared against package source. | Four component-preview and 28 shell baselines are committed; exact-SHA owner review and feature screens remain pending. | In progress |
+| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Component and shell previews check 390, 640, 768, 900, 1024, 1200, and 1440. All seven shells have S/M/L/XL captures. | In progress |
+| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Automation covers shared controls plus shell search, notifications, account and sign-out actions, distinct subsection routes, mobile and section menus, mutual exclusion, focus entry/return, and Escape dismissal. Feature flows remain pending. | In progress |
+| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Axe scans all seven shells at 390 and 1440. Automated checks cover visible focus, 44px shell targets, bounded scrolling, and reduced motion; manual review remains pending. | In progress |
 | Dynamic content | Empty/loading/error/read-only/offline, long Club/Movie/user text, large nomination/member lists, provider failures. | Fixture matrix and captures required; none yet. | Not checked |
 | Localization readiness | English expansion, locale-safe dates/numbers/currency, no newly embedded copy in images. | Phase 2 foundation plus Phase 22/24 review; none yet. | Not checked |
-| Browser and input support | Final supported modern-browser/device matrix, mouse/keyboard/touch. | Chromium component automation is active; the final browser/device and UAT matrix remains pending. | In progress |
+| Browser and input support | Final supported modern-browser/device matrix, mouse/keyboard/touch. | Chromium component and shell automation is active; the final browser/device and UAT matrix remains pending. | In progress |
 
 Update this document whenever an authoritative design changes, visible behavior is clarified, a surface/component is added, implementation status changes, or QA changes accepted behavior. Do not mark production QA passed because a static prototype looks correct.

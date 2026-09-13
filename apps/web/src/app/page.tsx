@@ -11,6 +11,7 @@ export default function HomePage() {
     <ScaffoldPanel eyebrow={`Runtime · ${status.status}`} title="PickFlick">
       <p>The web workspace is ready for its first product slice.</p>
       <ActionLink href="/ui-preview">Open the Projector Noir preview</ActionLink>
+      <ActionLink href="/shell-preview" variant="ghost">Open the responsive shell preview</ActionLink>
     </ScaffoldPanel>
   );
 }
