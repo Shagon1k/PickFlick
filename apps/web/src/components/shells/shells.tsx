@@ -112,7 +112,9 @@ function mobileNavigation(
         ...(settingsItems ?? [
           { href: routes.settings, label: "Profile" },
           { href: sectionHref(routes.settings, "notifications"), label: "Notifications" },
+          { href: sectionHref(routes.settings, "subscription"), label: "Subscription" },
           { href: routes.privacy, label: "Privacy" },
+          { href: sectionHref(routes.settings, "import-export"), label: "Import & Export" },
         ]),
         signOutItem,
       ],
@@ -292,12 +294,19 @@ export function ProductShell({ admin = false, children, clubItems, currentArea, 
 }
 
 export function SessionShell({
+  admin = false,
   children,
   clubItems,
   routes,
-}: Readonly<{ children: ReactNode; clubItems: readonly ShellNavigationItem[]; routes?: ShellRouteMap }>) {
+}: Readonly<{
+  admin?: boolean;
+  children: ReactNode;
+  clubItems: readonly ShellNavigationItem[];
+  routes?: ShellRouteMap;
+}>) {
   return (
     <ProductChrome
+      admin={admin}
       clubItems={clubItems}
       currentArea="session"
       routes={routes}
@@ -325,6 +334,7 @@ export function SessionShell({
 }
 
 interface ControlShellProps {
+  readonly admin?: boolean;
   readonly children: ReactNode;
   readonly clubItems: readonly ShellNavigationItem[];
   readonly currentArea: "library" | "settings";
@@ -334,9 +344,10 @@ interface ControlShellProps {
   readonly title: string;
 }
 
-export function ControlShell({ children, clubItems, currentArea, description, items, routes, title }: ControlShellProps) {
+export function ControlShell({ admin = false, children, clubItems, currentArea, description, items, routes, title }: ControlShellProps) {
   return (
     <ProductChrome
+      admin={admin}
       clubItems={clubItems}
       currentArea={currentArea}
       libraryItems={currentArea === "library" ? items : undefined}

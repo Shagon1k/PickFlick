@@ -207,7 +207,10 @@ export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavi
             className={styles.filmMenu}
             id="public-mobile-navigation"
             onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) {setOpen(false);}
+              if (
+                event.relatedTarget !== triggerRef.current &&
+                !event.currentTarget.contains(event.relatedTarget)
+              ) {setOpen(false);}
             }}
             ref={menuRef}
           >
@@ -242,8 +245,29 @@ export function ProductHeaderActions({
     if (activeOverlay === "search") {searchRef.current?.focus();}
     else {containerRef.current?.querySelector<HTMLElement>("[data-shell-overlay] a, [data-shell-overlay] button")?.focus();}
 
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {closeOverlay();}
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeOverlay();
+        return;
+      }
+      if (event.key !== "Tab") {return;}
+
+      const overlay = containerRef.current?.querySelector<HTMLElement>("[data-shell-overlay]");
+      const focusable = overlay ? [...overlay.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+      )] : [];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!overlay || !first || !last) {return;}
+
+      const activeElement = document.activeElement;
+      if (event.shiftKey && (activeElement === first || !overlay.contains(activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeElement === last || !overlay.contains(activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     const closeOnPointer = (event: PointerEvent) => {
       const target = event.target;
@@ -253,10 +277,10 @@ export function ProductHeaderActions({
         !target.closest("[data-product-overlay-control]")
       ) {closeOverlay(false);}
     };
-    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleKeyboard);
     document.addEventListener("pointerdown", closeOnPointer);
     return () => {
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", handleKeyboard);
       document.removeEventListener("pointerdown", closeOnPointer);
     };
   }, [activeOverlay, closeOverlay]);

@@ -17,6 +17,9 @@ import styles from "./page.module.css";
 
 const shellNames = ["public", "setup", "product", "session", "settings", "library", "admin"] as const;
 type ShellName = (typeof shellNames)[number];
+const adminShellNames = ["session-admin", "settings-admin", "library-admin"] as const;
+type AdminShellName = (typeof adminShellNames)[number];
+type PreviewShellName = ShellName | AdminShellName;
 const previewRoutes: ShellRouteMap = {
   admin: "/shell-preview/admin",
   contact: "/shell-preview/public",
@@ -49,19 +52,29 @@ const previewAdminItems = [
   { href: "/shell-preview/admin#application", label: "Application settings" },
 ] as const;
 
-function isShellName(value: string): value is ShellName {
-  return shellNames.some((name) => name === value);
+function isPreviewShellName(value: string): value is PreviewShellName {
+  return [...shellNames, ...adminShellNames].some((name) => name === value);
+}
+
+function shellVariant(shell: PreviewShellName): Readonly<{ admin: boolean; shell: ShellName }> {
+  switch (shell) {
+    case "session-admin": return { admin: true, shell: "session" };
+    case "settings-admin": return { admin: true, shell: "settings" };
+    case "library-admin": return { admin: true, shell: "library" };
+    default: return { admin: false, shell };
+  }
 }
 
 export function generateStaticParams() {
-  return shellNames.map((shell) => ({ shell }));
+  return [...shellNames, ...adminShellNames].map((shell) => ({ shell }));
 }
 
 export default async function ShellPreviewPage({
   params,
 }: Readonly<{ params: Promise<{ shell: string }> }>) {
-  const { shell } = await params;
-  if (!isShellName(shell)) {notFound();}
+  const { shell: previewShell } = await params;
+  if (!isPreviewShellName(previewShell)) {notFound();}
+  const { admin, shell } = shellVariant(previewShell);
 
   switch (shell) {
     case "public":
@@ -101,7 +114,7 @@ export default async function ShellPreviewPage({
       );
     case "session":
       return (
-        <SessionShell clubItems={previewClubItems} routes={previewRoutes}>
+        <SessionShell admin={admin} clubItems={previewClubItems} routes={previewRoutes}>
           <div className={styles.sessionGrid}>
             <ShellPlaceholder title="Phase content"><p>Nomination, Selection, Watching, Rating, or Completed behavior replaces this slot without changing the outer Session shell.</p></ShellPlaceholder>
             <ShellPlaceholder title="Session details"><p id="session-details">Metrics and detail rows retain one geometry across every Session phase.</p></ShellPlaceholder>
@@ -111,6 +124,7 @@ export default async function ShellPreviewPage({
     case "settings":
       return (
         <ControlShell
+          admin={admin}
           clubItems={previewClubItems}
           currentArea="settings"
           description="Personal controls keep a stable reading width and move section navigation into a mobile menu."
@@ -130,6 +144,7 @@ export default async function ShellPreviewPage({
     case "library":
       return (
         <ControlShell
+          admin={admin}
           clubItems={previewClubItems}
           currentArea="library"
           description="Personal film memory uses the product chrome, local views, and bounded dense regions."

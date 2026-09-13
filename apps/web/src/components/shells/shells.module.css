@@ -687,7 +687,11 @@
   bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   left: 8px;
   width: min(174px, calc(100vw - 16px));
+  max-height: calc(100dvh - 80px - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
   margin-inline: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
 }
 
 @keyframes shell-menu-reveal {
@@ -910,7 +914,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .filmMenu {
+  .filmMenu,
+  .searchOverlay {
     animation-duration: 0.01ms;
   }
 }

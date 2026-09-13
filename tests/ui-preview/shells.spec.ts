@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 const shellRoutes = ["public", "setup", "product", "session", "settings", "library", "admin"] as const;
+type PreviewShellRoute = (typeof shellRoutes)[number] | "session-admin" | "settings-admin" | "library-admin";
 const canonicalViewports = [
   { height: 844, name: "s-390", width: 390 },
   { height: 1024, name: "m-768", width: 768 },
@@ -14,7 +15,11 @@ const gapViewports = [
   { height: 900, name: "l-to-xl-1200", width: 1200 },
 ] as const;
 
-async function openShell(page: Page, shell: (typeof shellRoutes)[number], viewport: { height: number; width: number }) {
+async function openShell(
+  page: Page,
+  shell: PreviewShellRoute,
+  viewport: { height: number; width: number },
+) {
   await page.setViewportSize(viewport);
   await page.goto(`/shell-preview/${shell}`, { waitUntil: "networkidle" });
   await page.evaluate(async () => {
@@ -86,17 +91,39 @@ test("header overlays are mutually exclusive and return focus", async ({ page })
   await searchTrigger.click();
   await expect(page.locator("#shell-search-overlay")).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search films" })).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.getByRole("button", { name: "Close search" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("searchbox", { name: "Search films" })).toBeFocused();
   await page.getByRole("button", { name: "Close search" }).click();
   await expect(searchTrigger).toBeFocused();
 
   await alertsTrigger.click();
   await expect(page.locator("#shell-search-overlay")).toHaveCount(0);
   await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Mark all as read" })).toBeFocused();
+  const alertAction = page.getByRole("button", { name: "Mark all as read" });
+  await expect(alertAction).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(alertAction).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(alertAction).toBeFocused();
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
   await expect(alertsTrigger).toBeFocused();
+
+  const accountTrigger = page.getByRole("button", { name: "Account menu" });
+  await accountTrigger.click();
+  const accountNavigation = page.getByRole("navigation", { name: "Account navigation" });
+  const firstAccountItem = accountNavigation.getByRole("link", { name: "Admin Panel" });
+  const lastAccountItem = accountNavigation.getByRole("button", { name: "Sign out" });
+  await expect(firstAccountItem).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(lastAccountItem).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(firstAccountItem).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(accountTrigger).toBeFocused();
 
   await searchTrigger.click();
   const searchOverlay = page.locator("#shell-search-overlay");
@@ -155,6 +182,29 @@ test("mobile product menus stay in view, dismiss outside, and share the Alerts o
   expect(new Set(mobileIcons).size).toBe(mobileIcons.length);
 });
 
+test("mobile product menus remain scrollable in a short landscape viewport", async ({ page }) => {
+  const landscapeViewport = { height: 390, width: 844 };
+  await openShell(page, "settings", landscapeViewport);
+
+  const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
+  await mobileNavigation.getByRole("button", { name: "Settings" }).click();
+  const menu = page.locator("[data-mobile-menu=settings]");
+  const menuBox = await menu.boundingBox();
+  const dimensions = await menu.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    overflowY: globalThis.getComputedStyle(element).overflowY,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(menuBox?.y).toBeGreaterThanOrEqual(0);
+  expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(landscapeViewport.height);
+  expect(dimensions.overflowY).toBe("auto");
+  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+
+  const signOut = page.getByRole("navigation", { name: "Settings sections" }).getByRole("button", { name: "Sign out" });
+  await signOut.scrollIntoViewIfNeeded();
+  await expect(signOut).toBeInViewport();
+});
+
 test("public legal links use distinct canonical destinations", async ({ page }) => {
   await openShell(page, "public", canonicalViewports[2]);
   await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" }).getByRole("link", { name: "How it works" })).toHaveAttribute(
@@ -187,9 +237,11 @@ test("Library and Settings menus expose distinct subsection destinations", async
   await mobileNavigation.getByRole("button", { name: "Settings" }).click();
   const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
   const settingsLinks = settingsNavigation.getByRole("link");
-  await expect(settingsLinks).toHaveCount(3);
-  expect(new Set(await settingsLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(3);
+  await expect(settingsLinks).toHaveCount(5);
+  expect(new Set(await settingsLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(5);
+  await expect(settingsNavigation.getByRole("link", { name: "Subscription" })).toHaveAttribute("href", "/shell-preview/settings?tab=subscription");
   await expect(settingsNavigation.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/shell-preview/settings?tab=privacy");
+  await expect(settingsNavigation.getByRole("link", { name: "Import & Export" })).toHaveAttribute("href", "/shell-preview/settings?tab=import-export");
 });
 
 test("Club and Admin section navigation exposes distinct destinations and current state", async ({ page }) => {
@@ -236,6 +288,18 @@ test("App Admin capability is preserved on admin and non-admin shells", async ({
     "href",
     "/shell-preview/admin",
   );
+
+  for (const shell of ["session", "settings", "library"] as const) {
+    await openShell(page, `${shell}-admin`, canonicalViewports[2]);
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toBeVisible();
+
+    await openShell(page, `${shell}-admin`, canonicalViewports[0]);
+    await expect(page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("link", { name: "Admin" })).toHaveAttribute(
+      "href",
+      "/shell-preview/admin",
+    );
+  }
 });
 
 test("authenticated shells expose Sign out as an action on desktop and mobile", async ({ page }) => {
@@ -292,6 +356,10 @@ test("public and section mobile menus focus their first item and return focus", 
   const publicTrigger = page.getByRole("button", { name: "Menu" });
   await publicTrigger.click();
   await expect(page.getByRole("navigation", { name: "Public mobile navigation" }).getByRole("link").first()).toBeFocused();
+  await publicTrigger.click();
+  await expect(page.getByRole("navigation", { name: "Public mobile navigation" })).toHaveCount(0);
+  await expect(publicTrigger).toBeFocused();
+  await publicTrigger.click();
   await page.keyboard.press("Escape");
   await expect(publicTrigger).toBeFocused();
 
@@ -342,4 +410,10 @@ test("shell motion collapses under reduced motion", async ({ page }) => {
     Number.parseFloat(element.parentElement ? globalThis.getComputedStyle(element.parentElement).animationDuration : "0"),
   );
   expect(duration).toBeLessThanOrEqual(0.001);
+
+  await page.getByRole("button", { name: "Search films" }).click();
+  const searchDuration = await page.locator("#shell-search-overlay").evaluate((element) =>
+    Number.parseFloat(globalThis.getComputedStyle(element).animationDuration),
+  );
+  expect(searchDuration).toBeLessThanOrEqual(0.001);
 });
