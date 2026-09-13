@@ -20,6 +20,14 @@ async function assertVisibleFocus(locator, label) {
   );
 }
 
+async function waitForAnimations(locator) {
+  await locator.evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
+}
+
 const baseUrl = process.argv.slice(2).find((argument) => argument !== "--") ?? "http://127.0.0.1:3000";
 const previewUrl = new URL("/ui-preview", baseUrl).toString();
 const browser = await chromium.launch({ headless: true });
@@ -86,7 +94,9 @@ try {
   await select.focus();
   await page.keyboard.press("Enter");
   await assertVisibleFocus(select, "select");
-  await expect(page.getByRole("listbox")).toBeVisible();
+  const listbox = page.getByRole("listbox");
+  await expect(listbox).toBeVisible();
+  await waitForAnimations(listbox);
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(select).toHaveValue("1 to 5");
@@ -110,6 +120,8 @@ try {
   await expect(requiredSelect).toHaveAttribute("aria-invalid", "true");
   assert.equal(await constraintInput.evaluate((element) => element.matches(":invalid")), true);
   await requiredSelect.click();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await waitForAnimations(page.getByRole("listbox"));
   await page.getByRole("option", { name: "0 to 4" }).click();
   await requiredForm.getByRole("button", { name: "Submit required select" }).click();
   await expect(requiredForm.locator("[data-submitted-value]")).toHaveText("0-4");
@@ -169,11 +181,7 @@ try {
 
   await clubTrigger.click();
   const leaveClubAction = page.getByRole("menuitem", { name: "Leave Club" });
-  await page.getByRole("menu", { name: "Club menu" }).evaluate(async (element) => {
-    await Promise.all(
-      element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined)),
-    );
-  });
+  await waitForAnimations(page.getByRole("menu", { name: "Club menu" }));
   assert.equal(await leaveClubAction.evaluate((element) => element.tagName), "BUTTON");
   await leaveClubAction.click();
   await expect(page.locator("[data-menu-action]")).toHaveText("Leave Club selected");

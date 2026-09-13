@@ -41,5 +41,5 @@ export default defineConfig({
     timeout: 180_000,
     url: `${baseURL}/ui-preview`,
   },
-  workers: process.env.CI ? 2 : undefined,
+  workers: 1,
 });
