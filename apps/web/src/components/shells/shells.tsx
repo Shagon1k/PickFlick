@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BrandImage, Pill, StatusBanner } from "@pickflick/ui";
 
 import {
+  BoundedScrollRegion,
   MobileProductNavigation,
   ProductHeaderActions,
   PublicNavigation,
@@ -342,11 +343,11 @@ export function ShellPlaceholder({
 
 export function DenseRegion({ label }: Readonly<{ label: string }>) {
   return (
-    <div aria-label={label} className={styles.denseRegion} role="region" tabIndex={0}>
+    <BoundedScrollRegion label={label}>
       <div className={styles.denseGrid}>
         {["Column one", "Column two", "Column three", "Column four"].map((heading) => <strong key={heading}>{heading}</strong>)}
         {Array.from({ length: 8 }, (_, index) => <span key={index}>Content</span>)}
       </div>
-    </div>
+    </BoundedScrollRegion>
   );
 }

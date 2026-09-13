@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import styles from "./shells.module.css";
 
@@ -327,5 +327,28 @@ export function SectionNavigation({
         ) : null}
       </div>
     </>
+  );
+}
+
+export function BoundedScrollRegion({
+  children,
+  label,
+}: Readonly<{ children: ReactNode; label: string }>) {
+  return (
+    <div
+      aria-label={label}
+      className={styles.denseRegion}
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+          return;
+        }
+        event.preventDefault();
+        event.currentTarget.scrollLeft += event.key === "ArrowRight" ? 80 : -80;
+      }}
+      role="region"
+      tabIndex={0}
+    >
+      {children}
+    </div>
   );
 }
