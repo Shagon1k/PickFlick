@@ -39,6 +39,10 @@ and worker together. Run the complete workspace gate with `pnpm verify`. See the
 [environment and local data services reference](_docs/environment.md) for configuration, database
 safety, health endpoints, runtime logs, and service commands.
 
+Run `pnpm ui:test` for the component accessibility, interaction, viewport, reduced-motion, and
+visual-regression gate. See the [UI quality guide](_docs/ui-quality.md) for browser setup, focused
+commands, failure artifacts, and the controlled baseline-update workflow.
+
 ## Build deployment artifacts
 
 Build the immutable web, API, worker, and release image targets from the current revision:
