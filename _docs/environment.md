@@ -227,13 +227,17 @@ isolated runner, and removes the containers and volumes even after a failed chec
 uses the disabled local Resend placeholder and does not read UAT or production environment files,
 data, or provider credentials.
 
-CI runs static checks, integration/runtime checks, and production image builds as separate parallel
-jobs. The integration job applies the committed migrations, loads deterministic fixtures, verifies
+CI runs static checks, UI quality checks, integration/runtime checks, and production image builds as
+separate parallel jobs. The UI job runs `pnpm ui:test` against the production component preview and
+uploads screenshots, visual diffs, axe output, traces, video, and the HTML report when it fails. See
+the [UI quality guide](ui-quality.md) for its viewport and interaction coverage.
+
+The integration job applies the committed migrations, loads deterministic fixtures, verifies
 database constraints and dependency connectivity, and runs `pnpm e2e:smoke`. The smoke command
 starts the built web, API, and worker entrypoints; checks web rendering, API liveness/readiness, and
 worker readiness; then stops all three processes. CI also validates the deployment definitions and
 runs the repository secret scan. The terminal `Delivery gate` fails unless the secret scan and all
-three quality jobs pass. Any future delivery workflow must require that terminal gate.
+four quality jobs pass. Any future delivery workflow must require that terminal gate.
 
 ## Runtime health, errors, and logs
 

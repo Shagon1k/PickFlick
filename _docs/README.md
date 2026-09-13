@@ -25,6 +25,7 @@ phase-level acceptance record; do not copy issue status into it.
 | [Environment and runtime operations](environment.md) | Runtime variables, local services, image/Compose delivery, migration/release safety, health probes, logging, correlation, shutdown, and API errors. | Active local/runtime and image/topology foundation; provisioned environments extend it later. |
 | [UAT provisioning and delivery](uat-operations.md) | GitHub, Dokploy, Cloudflare, exact-revision delivery, smoke, failure-preservation, and rollback procedure. | Repository automation ready; live UAT provisioning and evidence require owner execution. |
 | [Production preparation and promotion](production-operations.md) | Dormant production provisioning, guarded SemVer promotion, migration compatibility, activation, failure recovery, and rollback. | Repository workflow and runbook ready; production guard remains false and no cutover is authorized. |
+| [UI quality checks](ui-quality.md) | Local and CI accessibility, interaction, viewport, reduced-motion, and visual-regression commands. | Active against the production component preview; exact-SHA owner visual review remains required. |
 
 ## Agent entrypoints
 

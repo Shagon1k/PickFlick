@@ -141,6 +141,44 @@ jobs:
         if: ${{ always() }}
         run: docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml down --volumes
 
+  ui-quality:
+    name: UI accessibility and visual regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run UI accessibility, interaction, viewport, and visual checks
+        run: pnpm ui:test
+
+      - name: Upload UI failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          name: ui-quality-${{ github.sha }}
+          path: test-results/
+          retention-days: 14
+
   images:
     name: Production images
     runs-on: ubuntu-latest
@@ -168,7 +206,7 @@ jobs:
   delivery-gate:
     name: Delivery gate
     if: ${{ always() }}
-    needs: [secret-scan, static, integration, images]
+    needs: [secret-scan, static, integration, images, ui-quality]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -179,9 +217,11 @@ jobs:
           INTEGRATION_RESULT: ${{ needs.integration.result }}
           SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
           STATIC_RESULT: ${{ needs.static.result }}
+          UI_QUALITY_RESULT: ${{ needs.ui-quality.result }}
         shell: bash
         run: |
           test "$IMAGES_RESULT" = "success"
           test "$INTEGRATION_RESULT" = "success"
           test "$SECRET_SCAN_RESULT" = "success"
           test "$STATIC_RESULT" = "success"
+          test "$UI_QUALITY_RESULT" = "success"

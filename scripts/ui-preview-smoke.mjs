@@ -169,6 +169,11 @@ try {
 
   await clubTrigger.click();
   const leaveClubAction = page.getByRole("menuitem", { name: "Leave Club" });
+  await page.getByRole("menu", { name: "Club menu" }).evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
   assert.equal(await leaveClubAction.evaluate((element) => element.tagName), "BUTTON");
   await leaveClubAction.click();
   await expect(page.locator("[data-menu-action]")).toHaveText("Leave Club selected");

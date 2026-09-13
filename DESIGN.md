@@ -81,11 +81,11 @@ token sets into feature files.
 | Color and themes | Dark-only MVP; `#0c0c0c` family for structure, neutral text/borders, ivory and connected gold `#C89B55` for warm semantic emphasis. | [DESIGN.md foundations](_docs/design/prototypes/DESIGN.md#1-foundations) | Approved | Done | Not checked |
 | Typography | Iowan/Charter/Georgia-style editorial display, system sans for readable product copy, mono for metadata/status. | [DESIGN.md typography](_docs/design/prototypes/DESIGN.md#2-typography) | Approved | Done | Not checked |
 | Spacing and layout | Shared scale, content containers, gutters, sectional rhythm, flat hierarchy, and deliberate negative space. | [DESIGN.md layout](_docs/design/prototypes/DESIGN.md#3-spacing--layout) | Approved | Done | Not checked |
-| Breakpoints and responsive behavior | Four named modes: S below 576, M from 768, L from 1024, XL from 1400; test the gaps between named pivots too. | [Responsive baseline](_docs/design/prototypes/responsive-baselines.html) | Approved | Not started | Not checked |
+| Breakpoints and responsive behavior | Four named modes: S below 576, M from 768, L from 1024, XL from 1400; test the gaps between named pivots too. | [Responsive baseline](_docs/design/prototypes/responsive-baselines.html) | Approved | Partial | Component preview automated; shells pending |
 | Radii, borders, and elevation | Restrained radii and low-contrast borders; elevation belongs to overlays, tickets, and focused cinematic scenes. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Done | Not checked |
 | Iconography | Fine-line, consistent stroke treatment with accessible names on actions; decorative sprockets/film glyphs remain non-semantic. | [DESIGN.md components](_docs/design/prototypes/DESIGN.md#4-components) | Approved | Not started | Not checked |
 | Imagery and illustration | Transparent noir panda assets provide emotional/scene cues; film-provider imagery is data, not brand chrome. | [Brand assets](assets/brand/README.md) | Approved | Done | Not checked |
-| Motion | Short feedback and reveal motion; no layout-jolting decoration; honor reduced motion and preserve focus. | [DESIGN.md interaction contract](_docs/design/prototypes/DESIGN.md#5-interaction-contract) | Approved | Done | Not checked |
+| Motion | Short feedback and reveal motion; no layout-jolting decoration; honor reduced motion and preserve focus. | [DESIGN.md interaction contract](_docs/design/prototypes/DESIGN.md#5-interaction-contract) | Approved | Done | Component preview automated; owner review pending |
 
 ### Experience baselines
 
@@ -247,12 +247,12 @@ Every production data surface implements applicable states rather than shipping 
 
 | Check | Target / coverage | Evidence | Status |
 | --- | --- | --- | --- |
-| Source parity | Every canonical screen and shared component compared against package source. | Required per implementation phase; none yet. | Not checked |
-| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Required screenshots/visual tests; none yet. | Not checked |
-| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Manual and E2E evidence required; none yet. | Not checked |
-| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Automated plus manual review required; none yet. | Not checked |
+| Source parity | Every canonical screen and shared component compared against package source. | Four committed component-preview baselines; exact-SHA owner review and product screens remain pending. | In progress |
+| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Component preview checks 390, 640, 768, 900, 1024, 1200, and 1440 with four visual baselines; shells remain pending. | In progress |
+| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Automated component-preview smoke covers shared tabs, menus, dialogs, forms, and score controls; feature flows remain pending. | In progress |
+| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Default axe scans at 390 and 1440 plus component interaction, target-size, and reduced-motion checks; manual review remains pending. | In progress |
 | Dynamic content | Empty/loading/error/read-only/offline, long Club/Movie/user text, large nomination/member lists, provider failures. | Fixture matrix and captures required; none yet. | Not checked |
 | Localization readiness | English expansion, locale-safe dates/numbers/currency, no newly embedded copy in images. | Phase 2 foundation plus Phase 22/24 review; none yet. | Not checked |
-| Browser and input support | Final supported modern-browser/device matrix, mouse/keyboard/touch. | Decision and UAT matrix required; none yet. | Not checked |
+| Browser and input support | Final supported modern-browser/device matrix, mouse/keyboard/touch. | Chromium component automation is active; the final browser/device and UAT matrix remains pending. | In progress |
 
 Update this document whenever an authoritative design changes, visible behavior is clarified, a surface/component is added, implementation status changes, or QA changes accepted behavior. Do not mark production QA passed because a static prototype looks correct.
