@@ -25,9 +25,12 @@ export interface ConstraintSelectProps
 }
 
 export function ConstraintSelect({
+  "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
+  attributes,
   disabled,
   error,
+  id,
   onChange,
   readOnly,
   required,
@@ -43,6 +46,7 @@ export function ConstraintSelect({
     constraintError ||
     Boolean(error) ||
     (ariaInvalid !== undefined && ariaInvalid !== false && ariaInvalid !== "false");
+  const renderedAriaInvalid = constraintError || Boolean(error) ? true : ariaInvalid;
 
   useEffect(() => {
     if (!effectiveRequired || disabled || value) {
@@ -53,6 +57,15 @@ export function ConstraintSelect({
   return (
     <MantineSelect
       {...props}
+      attributes={{
+        ...attributes,
+        input: {
+          ...attributes?.input,
+          ...(ariaDescribedBy !== undefined ? { "aria-describedby": ariaDescribedBy } : {}),
+          ...(renderedAriaInvalid !== undefined ? { "aria-invalid": renderedAriaInvalid } : {}),
+          ...(id !== undefined ? { id } : {}),
+        },
+      }}
       {...(dataState !== undefined ? { "data-state": dataState } : {})}
       {...(disabled !== undefined ? { disabled } : {})}
       {...(invalid ? { error: true } : {})}
@@ -76,6 +89,7 @@ export function ConstraintSelect({
         setConstraintInvalid(false);
         onChange?.(nextValue);
       }}
+      id={id}
       ref={inputRef}
       {...(readOnly !== undefined ? { readOnly } : {})}
       {...(effectiveRequired ? { required: true } : {})}
@@ -337,6 +351,18 @@ export function ScaleControl({
     }
   }, [constraintRequired, selectedValue]);
 
+  if (submitted) {
+    return (
+      <fieldset className="pf-scale" data-submitted="true">
+        <legend>{label}</legend>
+        <div className="pf-scale__submitted">
+          <span>Submitted</span>
+          <strong>{selectedValue === undefined ? "Not selected" : `${selectedValue} of ${max}`}</strong>
+        </div>
+      </fieldset>
+    );
+  }
+
   function select(nextValue: number): void {
     if (locked) {
       return;
@@ -373,7 +399,7 @@ export function ScaleControl({
         aria-describedby={feedbackId}
         aria-invalid={constraintInvalid || undefined}
         aria-label={label}
-        aria-readonly={readOnly || submitted || undefined}
+        aria-readonly={readOnly || undefined}
         aria-required={constraintRequired || undefined}
         className="pf-scale__rail"
         data-presentation={presentation}

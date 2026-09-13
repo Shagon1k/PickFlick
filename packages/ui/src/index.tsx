@@ -50,7 +50,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
   readonly loading?: boolean;
-  readonly success?: boolean;
+  readonly success?: string;
 }
 
 export function Button({
@@ -59,23 +59,30 @@ export function Button({
   disabled,
   loading = false,
   size = "default",
-  success = false,
+  success,
   type = "button",
   variant = "primary",
   ...props
 }: ButtonProps) {
   return (
-    <button
-      {...props}
-      aria-busy={loading || undefined}
-      className={classes("pf-button", `pf-button--${variant}`, size === "small" && "pf-button--small", className)}
-      data-state={success ? "success" : loading ? "loading" : undefined}
-      disabled={disabled || loading}
-      type={type}
-    >
-      {loading ? <span aria-hidden="true" className="pf-spinner" /> : null}
-      <span className="pf-button__label">{children}</span>
-    </button>
+    <>
+      <button
+        {...props}
+        aria-busy={loading || undefined}
+        className={classes("pf-button", `pf-button--${variant}`, size === "small" && "pf-button--small", className)}
+        data-state={success ? "success" : loading ? "loading" : undefined}
+        disabled={disabled || loading}
+        type={type}
+      >
+        {loading ? <span aria-hidden="true" className="pf-spinner" /> : null}
+        <span className="pf-button__label">{children}</span>
+      </button>
+      {success ? (
+        <span aria-atomic="true" aria-live="polite" className="pf-visually-hidden" role="status">
+          {success}
+        </span>
+      ) : null}
+    </>
   );
 }
 

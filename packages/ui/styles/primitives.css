@@ -799,6 +799,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+.pf-scale__submitted {
+  display: flex;
+  min-height: var(--hit);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  padding: 10px 14px;
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius);
+  color: #dcebd6;
+  background: var(--success-soft);
+  font-size: var(--fs-body-sm);
+}
+
+.pf-scale__submitted strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .pf-table-scroll {
   max-width: 100%;
   overflow-x: auto;

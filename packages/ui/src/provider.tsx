@@ -35,7 +35,7 @@ export const projectorNoirHtmlProps = {
 } as const;
 
 export function ProjectorNoirColorSchemeScript() {
-  return <ColorSchemeScript defaultColorScheme="dark" />;
+  return <ColorSchemeScript defaultColorScheme="dark" forceColorScheme="dark" />;
 }
 
 export function ProjectorNoirProvider({ children }: Readonly<{ children: ReactNode }>) {

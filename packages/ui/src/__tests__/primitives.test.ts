@@ -10,7 +10,9 @@ import {
   DataTable,
   Dialog,
   ProgressFilmStrip,
+  ProjectorNoirColorSchemeScript,
   ProjectorNoirProvider,
+  ScoreControl,
   SelectField,
   Tabs,
   TextAreaField,
@@ -37,13 +39,26 @@ function descendants(node: ReactNode): ReactElement<ElementProps>[] {
 
 describe("Projector Noir primitives", () => {
   it("keeps loading actions native, named, and non-repeatable", () => {
-    const button = Button({ children: "Create Session", loading: true });
+    const component = Button({ children: "Create Session", loading: true });
+    const button = descendants(component).find((element) => element.type === "button");
 
-    expect(button.type).toBe("button");
-    expect(button.props.type).toBe("button");
-    expect(button.props.disabled).toBe(true);
-    expect(button.props["aria-busy"]).toBe(true);
-    expect(descendants(button).some((element) => element.props.children === "Create Session")).toBe(true);
+    expect(button?.props.type).toBe("button");
+    expect(button?.props.disabled).toBe(true);
+    expect(button?.props["aria-busy"]).toBe(true);
+    expect(descendants(component).some((element) => element.props.children === "Create Session")).toBe(true);
+  });
+
+  it("announces button success without replacing its action label", () => {
+    const component = Button({ children: "Save", success: "Changes saved." });
+    const nodes = descendants(component);
+    const button = nodes.find((element) => element.type === "button");
+    const status = nodes.find((element) => element.props.role === "status");
+
+    expect(button?.props["data-state"]).toBe("success");
+    expect(button?.props.children).not.toContain("Changes saved.");
+    expect(status?.props["aria-live"]).toBe("polite");
+    expect(status?.props["aria-atomic"]).toBe("true");
+    expect(status?.props.children).toBe("Changes saved.");
   });
 
   it("keeps field messages outside the control label", () => {
@@ -113,6 +128,31 @@ describe("Projector Noir primitives", () => {
     expect(controls[2]?.props["aria-invalid"]).toBe(true);
   });
 
+  it("renders select descriptions and caller invalid states on the combobox", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        ProjectorNoirProvider,
+        null,
+        createElement(
+          SelectField,
+          {
+            "aria-describedby": "external-instructions",
+            "aria-invalid": "spelling",
+            error: "Choose a supported range.",
+            id: "rendered-range",
+            label: "Rendered range",
+          },
+          createElement("option", { value: "0-4" }, "0 to 4"),
+        ),
+      ),
+    );
+    const combobox = markup.match(/<input[^>]*>/g)?.find((tag) => tag.includes('role="combobox"'));
+
+    expect(combobox).toContain('id="rendered-range"');
+    expect(combobox).toContain('aria-describedby="external-instructions rendered-range-message"');
+    expect(combobox).toContain('aria-invalid="spelling"');
+  });
+
   it("merges caller-provided and generated toggle descriptions", () => {
     const toggle = Toggle({
       "aria-describedby": "privacy-policy",
@@ -180,6 +220,32 @@ describe("Projector Noir primitives", () => {
     expect(dialog.props.returnFocus).toBe(true);
     expect(dialog.props.closeOnEscape).toBe(true);
     expect(dialog.props.classNames).toMatchObject({ content: "pf-dialog", overlay: "pf-dialog__overlay" });
+  });
+
+  it("forces dark mode before hydration", () => {
+    const script = ProjectorNoirColorSchemeScript();
+
+    expect(script.props.defaultColorScheme).toBe("dark");
+    expect(script.props.forceColorScheme).toBe("dark");
+  });
+
+  it("replaces a submitted scale with a non-interactive value summary", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ScoreControl, {
+        defaultValue: 3,
+        label: "Submitted score",
+        max: 5,
+        name: "submitted-score",
+        submitted: true,
+      }),
+    );
+
+    expect(markup).toContain('data-submitted="true"');
+    expect(markup).toContain("Submitted");
+    expect(markup).toContain("3 of 5");
+    expect(markup).not.toContain('role="radiogroup"');
+    expect(markup).not.toContain('role="radio"');
+    expect(markup).not.toContain("<button");
   });
 
   it("uses explicit live-region semantics for feedback", () => {

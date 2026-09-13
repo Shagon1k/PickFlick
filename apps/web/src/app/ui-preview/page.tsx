@@ -73,7 +73,7 @@ export default function UiPreviewPage() {
           <StateCell label="Default"><Button>Create Session</Button></StateCell>
           <StateCell label="Secondary"><Button variant="secondary">Invite</Button></StateCell>
           <StateCell label="Loading"><Button loading>Creating</Button></StateCell>
-          <StateCell label="Success"><Button success>Saved</Button></StateCell>
+          <StateCell label="Success"><Button success="Changes saved.">Save</Button></StateCell>
           <StateCell label="Disabled"><Button disabled>Create</Button></StateCell>
           <StateCell label="Ghost"><Button variant="ghost">Back to Hub</Button></StateCell>
           <StateCell label="Danger trigger"><Button variant="secondary-danger">Cancel Session</Button></StateCell>
@@ -90,7 +90,7 @@ export default function UiPreviewPage() {
             <TextField disabled id="provider-email" label="Email" defaultValue="alexey@example.com" />
           </div>
           <div className={`${styles.panel} ${styles.formStack}`}>
-            <SelectField id="score-range" label="Selection range" name="score-range" defaultValue="0-4">
+            <SelectField id="score-range" label="Selection range" name="score-range" defaultValue="0-4" hint="Choose the Club scoring range.">
               <option value="0-4">0 to 4</option>
               <option value="1-5">1 to 5</option>
             </SelectField>

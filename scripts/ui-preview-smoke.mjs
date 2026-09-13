@@ -81,6 +81,8 @@ try {
   await expect(successAnnouncement).toHaveText("Club name saved.");
 
   const select = page.getByRole("combobox", { name: "Selection range", exact: true });
+  await expect(select).toHaveAttribute("aria-describedby", "score-range-message");
+  await expect(page.locator("#score-range-message")).toHaveText("Choose the Club scoring range.");
   await select.focus();
   await page.keyboard.press("Enter");
   await assertVisibleFocus(select, "select");
@@ -89,6 +91,13 @@ try {
   await page.keyboard.press("Enter");
   await expect(select).toHaveValue("1 to 5");
   await expect(page.locator('input[type="hidden"][name="score-range"]')).toHaveValue("1-5");
+
+  await expect(page.locator('.pf-button[data-state="success"] + [role="status"]')).toHaveText("Changes saved.");
+
+  const submittedScale = page.locator('[data-submitted="true"]');
+  await expect(submittedScale).toContainText("Submitted");
+  await expect(submittedScale).toContainText("3 of 5");
+  await expect(page.getByRole("radiogroup", { name: "Submitted score" })).toHaveCount(0);
 
   const requiredForm = page.getByRole("form", { name: "Required select form" });
   const requiredSelect = page.getByRole("combobox", { name: "Required selection range" });

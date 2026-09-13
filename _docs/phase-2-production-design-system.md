@@ -54,9 +54,10 @@ domain data, authentication, provider integrations, and production copy remain o
 | --- | --- | --- |
 | Workspace boundaries | `pnpm check:workspace` | Passed locally: 8 workspaces valid. |
 | Static quality | `pnpm lint` and `pnpm typecheck` | Passed locally. |
-| Component behavior | `pnpm test` | Passed locally: 20 files, 179 tests. |
+| Component behavior | `pnpm test` | Passed locally: 20 files, 183 tests. |
 | Production compilation | `pnpm build` | Passed locally; `/ui-preview` prerendered. |
-| Mantine wrapper behavior | `pnpm ui:smoke -- http://127.0.0.1:<port>` against the production web build | Passed locally in Chromium: required Select and scale constraints, read-only Select submission, concise toggle names, link/action menu semantics, changing-tab fallback, persistent live feedback, keyboard behavior, mutually exclusive menu dismissal, modal focus trap/return, scale-range normalization, preview clearing, 44px targets, Projector Noir styling, and reduced motion. |
+| Mantine wrapper behavior | `pnpm ui:smoke -- http://127.0.0.1:<port>` against the production web build | Passed locally in Chromium: rendered Select descriptions, required Select and scale constraints, read-only Select submission, submitted-scale replacement, semantic button success, concise toggle names, link/action menu semantics, changing-tab fallback, persistent live feedback, keyboard behavior, mutually exclusive menu dismissal, modal focus trap/return, scale-range normalization, preview clearing, 44px targets, Projector Noir styling, and reduced motion. |
+| Preview configuration | `docker compose -f compose.preview.yaml config --format json` with reserved characters in synthetic credentials | Passed locally: PostgreSQL receives the raw password while application and release services receive a separately percent-encoded `DATABASE_URL`. |
 | Built runtime | `pnpm e2e:smoke` | Passed locally against disposable PostgreSQL, Redis, and object-storage services; test containers and volumes were removed afterward. |
 | Component preview | `/ui-preview` at the exact branch revision | Local production-browser audit passed with the default axe ruleset and no actionable violations; the existing 390, 768, 1024, and 1440 pixel checks also found no page overflow, unnamed controls, undersized controls, broken images, or keyboard/focus failures. Exact-SHA hosting remains pending. |
 | Visual review | Owner acknowledgement of the exact-SHA preview | Pending external review |
