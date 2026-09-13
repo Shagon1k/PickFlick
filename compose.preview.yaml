@@ -20,7 +20,7 @@ x-application-service: &application-service
 x-runtime-environment: &runtime-environment
   APP_ENV: uat
   SHUTDOWN_TIMEOUT_MS: "10000"
-  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://pickflick:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/pickflick}
   REDIS_URL: redis://redis:6379/0
   STORAGE_ENDPOINT: http://minio:9000
   STORAGE_REGION: us-east-1
@@ -96,7 +96,7 @@ services:
       target: release
     environment:
       APP_ENV: uat
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pickflick:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/pickflick}
     depends_on:
       postgres:
         condition: service_healthy
