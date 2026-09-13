@@ -39,16 +39,16 @@
 
 .brand {
   display: inline-flex;
-  gap: var(--gap-xs);
+  gap: 0;
   align-items: center;
   min-height: var(--hit);
-  font-weight: 720;
+  font: 600 19px/1 var(--font-display);
   letter-spacing: var(--tracking-tight);
 }
 
 .brand img {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
 }
 
 .publicDesktopNav,
@@ -243,8 +243,16 @@
   justify-self: end;
 }
 
+.productHeaderControls {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+  justify-self: end;
+}
+
 .headerIconButton,
 .avatarButton {
+  position: relative;
   width: var(--hit);
   padding: 0;
 }
@@ -261,8 +269,22 @@
 }
 
 .icon {
-  font-size: 24px;
-  line-height: 1;
+  width: 20px;
+  height: 20px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.alertBadge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
 }
 
 .headerOverlay {
@@ -279,14 +301,34 @@
 }
 
 .searchOverlay {
-  display: grid;
-  gap: var(--gap-sm);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  min-height: 69px;
+  align-items: center;
+  padding: 8px var(--gutter);
+  border-width: 0 0 1px;
+  border-radius: 0;
+  animation: shell-search-reveal var(--motion-menu) var(--ease-menu);
 }
 
 .searchRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--gap-xs);
+  width: min(100%, 600px);
+  margin-inline: auto;
+}
+
+.searchOverlay > :is(.overlayLabel, .overlayHint) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
 .searchRow .headerButton {
@@ -318,10 +360,16 @@
 }
 
 .accountOverlay {
-  padding: 14px 22px;
+  width: 174px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .filmMenu {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--border-lit);
   border-radius: 7px;
@@ -354,11 +402,17 @@
   position: relative;
   z-index: 2;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
   align-items: center;
-  min-height: var(--hit);
-  padding: 10px 14px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px 0;
   color: var(--fg-secondary);
-  font-size: var(--fs-body-sm);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: var(--lh-caption);
+  text-align: center;
 }
 
 .filmMenu a:hover,
@@ -372,12 +426,44 @@
   box-shadow: inset 2px 0 var(--gold);
 }
 
+.filmMenu a + a {
+  border-top: 1px solid var(--border);
+}
+
+.menuIcon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
 .publicMobileNav .filmMenu {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
   width: min(260px, calc(100vw - 32px));
   padding: 14px 22px;
+}
+
+.filmTail {
+  display: block;
+  width: 42px;
+  height: 10px;
+  margin: -1px auto 0;
+  border: 1px solid var(--border-lit);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: var(--bg);
+}
+
+.accountOverlay .filmTail {
+  margin: 0 auto -1px;
+  border-top: 1px solid var(--border-lit);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
 }
 
 .productMain,
@@ -557,6 +643,7 @@
 
 .mobileNavigationGroup > button,
 .mobileNavigationGroup > a {
+  position: relative;
   display: grid;
   width: 100%;
   min-height: 64px;
@@ -576,21 +663,38 @@
 }
 
 .mobileNavGlyph {
+  width: 22px;
+  height: 22px;
   margin-bottom: 3px;
-  font-size: 18px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.mobileNavigation .icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 3px;
 }
 
 .mobileMenu {
-  position: absolute;
-  right: 4px;
-  bottom: calc(100% + 8px);
-  width: min(250px, calc(100vw - 16px));
-  padding: 14px 22px;
+  position: fixed;
+  right: 8px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  left: 8px;
+  width: min(174px, calc(100vw - 16px));
+  margin-inline: auto;
 }
 
 @keyframes shell-menu-reveal {
   from { opacity: 0; clip-path: inset(100% 0 0); transform: translateY(6px); }
   to { opacity: 1; clip-path: inset(0); transform: translateY(0); }
+}
+
+@keyframes shell-search-reveal {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (min-width: 576px) {
@@ -628,9 +732,6 @@
     grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
   }
 
-  .desktopHeaderAction {
-    display: inline-flex;
-  }
 }
 
 @media (min-width: 1024px) {
@@ -641,6 +742,10 @@
   .productDesktopNav,
   .contextTabs {
     display: flex;
+  }
+
+  .desktopHeaderAction {
+    display: inline-flex;
   }
 
   .mobileNavigation {
@@ -666,12 +771,23 @@
     position: sticky;
     top: 100px;
     display: grid;
-    border-left: 1px solid var(--border);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
 
   .sectionSidebar a {
     display: flex;
+    gap: var(--gap-sm);
     align-items: center;
+  }
+
+  .sectionSidebar a + a {
+    border-top: 1px solid var(--border);
+  }
+
+  .sectionSidebar a[aria-current="page"] {
+    box-shadow: inset 2px 0 var(--gold);
   }
 
   .sectionMobileNavigation {
@@ -705,14 +821,6 @@
     gap: var(--gap-xs);
   }
 
-  .brand span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-
   .publicHeader .brand {
     justify-self: start;
   }
@@ -732,8 +840,8 @@
 
   .publicHeader .brand img,
   .productHeader .brand img {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
   }
 
   .headerCta,
@@ -761,6 +869,40 @@
 
   .actionRow > * {
     width: 100%;
+  }
+}
+
+@media (max-width: 1023px) {
+  .productHeader .headerInner {
+    display: flex;
+    justify-content: center;
+    min-height: 60px;
+    padding-block: 4px;
+  }
+
+  .productHeader .brand {
+    flex-direction: column;
+    font-size: var(--fs-body);
+    line-height: 14px;
+    text-align: center;
+  }
+
+  .productHeader .brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .productHeader .productHeaderControls {
+    position: absolute;
+    right: 0;
+  }
+
+  .productHeader .headerActions {
+    position: static;
+  }
+
+  .sessionHeaderBack {
+    display: none;
   }
 }
 

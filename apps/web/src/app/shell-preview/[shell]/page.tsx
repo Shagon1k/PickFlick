@@ -22,6 +22,8 @@ const previewRoutes: ShellRouteMap = {
   contact: "/shell-preview/public",
   home: "/shell-preview",
   library: "/shell-preview/library",
+  legalPrivacy: "/legal/privacy",
+  legalTerms: "/legal/terms",
   pricing: "/shell-preview/public",
   privacy: "/shell-preview/settings",
   product: "/shell-preview/product",
@@ -29,6 +31,22 @@ const previewRoutes: ShellRouteMap = {
   settings: "/shell-preview/settings",
   setup: "/shell-preview/setup",
 };
+
+const previewClubItems = [
+  { href: "/shell-preview/product#overview", label: "Overview", current: true },
+  { href: "/shell-preview/product#sessions", label: "Sessions" },
+  { href: "/shell-preview/product#ratings", label: "Ratings" },
+  { href: "/shell-preview/product#members", label: "Members" },
+  { href: "/shell-preview/product#achievements", label: "Achievements" },
+  { href: "/shell-preview/product#manage", label: "Manage Club" },
+] as const;
+
+const previewAdminItems = [
+  { href: "/shell-preview/admin#overview", label: "Overview", current: true },
+  { href: "/shell-preview/admin#users", label: "Users" },
+  { href: "/shell-preview/admin#clubs", label: "Clubs" },
+  { href: "/shell-preview/admin#application", label: "Application settings" },
+] as const;
 
 function isShellName(value: string): value is ShellName {
   return shellNames.some((name) => name === value);
@@ -73,7 +91,7 @@ export default async function ShellPreviewPage({
       );
     case "product":
       return (
-        <ProductShell currentArea="hub" eyebrow="Authenticated product shell" routes={previewRoutes} title="Club context">
+        <ProductShell clubItems={previewClubItems} currentArea="hub" eyebrow="Authenticated product shell" routes={previewRoutes} title="Club context">
           <div className={styles.productGrid}>
             <ShellPlaceholder title="Primary Club region"><p>The current Club, Session, phase, progress, and next action render here.</p></ShellPlaceholder>
             <ShellPlaceholder title="Supporting region"><p>Authorized summaries keep their own loading, empty, error, and read-only states.</p></ShellPlaceholder>
@@ -82,7 +100,7 @@ export default async function ShellPreviewPage({
       );
     case "session":
       return (
-        <SessionShell routes={previewRoutes}>
+        <SessionShell clubItems={previewClubItems} routes={previewRoutes}>
           <div className={styles.sessionGrid}>
             <ShellPlaceholder title="Phase content"><p>Nomination, Selection, Watching, Rating, or Completed behavior replaces this slot without changing the outer Session shell.</p></ShellPlaceholder>
             <ShellPlaceholder title="Session details"><p id="session-details">Metrics and detail rows retain one geometry across every Session phase.</p></ShellPlaceholder>
@@ -92,6 +110,7 @@ export default async function ShellPreviewPage({
     case "settings":
       return (
         <ControlShell
+          clubItems={previewClubItems}
           currentArea="settings"
           description="Personal controls keep a stable reading width and move section navigation into a mobile menu."
           items={[
@@ -110,6 +129,7 @@ export default async function ShellPreviewPage({
     case "library":
       return (
         <ControlShell
+          clubItems={previewClubItems}
           currentArea="library"
           description="Personal film memory uses the product chrome, local views, and bounded dense regions."
           items={[
@@ -128,7 +148,7 @@ export default async function ShellPreviewPage({
       );
     case "admin":
       return (
-        <AdminShell routes={previewRoutes}>
+        <AdminShell clubItems={previewClubItems} items={previewAdminItems} routes={previewRoutes}>
           <div className={styles.adminGrid}>
             <ShellPlaceholder title="Operational overview"><p>Privacy-safe metrics and activity summaries render here after the App Admin boundary is enforced.</p></ShellPlaceholder>
             <ShellPlaceholder title="Administration table">

@@ -86,6 +86,8 @@ test("header overlays are mutually exclusive and return focus", async ({ page })
   await searchTrigger.click();
   await expect(page.locator("#shell-search-overlay")).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search films" })).toBeFocused();
+  await page.getByRole("button", { name: "Close search" }).click();
+  await expect(searchTrigger).toBeFocused();
 
   await alertsTrigger.click();
   await expect(page.locator("#shell-search-overlay")).toHaveCount(0);
@@ -95,28 +97,123 @@ test("header overlays are mutually exclusive and return focus", async ({ page })
   await page.keyboard.press("Escape");
   await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
   await expect(alertsTrigger).toBeFocused();
+
+  await searchTrigger.click();
+  const searchOverlay = page.locator("#shell-search-overlay");
+  await searchOverlay.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+  const searchBox = await searchOverlay.boundingBox();
+  expect(searchBox?.x).toBe(0);
+  expect(searchBox?.y).toBe(0);
+  expect(searchBox?.width).toBe(canonicalViewports[2].width);
 });
 
-test("mobile product menus are exclusive, keyboard dismissible, and touch sized", async ({ page }) => {
+test("mobile product menus stay in view, dismiss outside, and share the Alerts overlay", async ({ page }) => {
   await openShell(page, "product", canonicalViewports[0]);
 
   const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
   const hubTrigger = mobileNavigation.getByRole("button", { name: "Hub" });
   const libraryTrigger = mobileNavigation.getByRole("button", { name: "Library" });
+  const alertsTrigger = mobileNavigation.getByRole("button", { name: "Alerts" });
+  const settingsTrigger = mobileNavigation.getByRole("button", { name: "Settings" });
   await hubTrigger.click();
   await expect(page.getByRole("navigation", { name: "Hub sections" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Overview" })).toBeFocused();
 
-  await libraryTrigger.click();
+  const hubBox = await page.locator("[data-mobile-menu=hub]").boundingBox();
+  expect(hubBox?.x).toBeGreaterThanOrEqual(0);
+  expect((hubBox?.x ?? 0) + (hubBox?.width ?? 0)).toBeLessThanOrEqual(canonicalViewports[0].width);
+
+  await page.getByRole("heading", { name: "Club context" }).click();
   await expect(page.getByRole("navigation", { name: "Hub sections" })).toHaveCount(0);
+
+  await libraryTrigger.click();
   await expect(page.getByRole("navigation", { name: "Library sections" })).toBeVisible();
   await expect(page.getByRole("link", { name: "My Ratings" })).toBeFocused();
+
+  await alertsTrigger.click();
+  await expect(page.getByRole("navigation", { name: "Library sections" })).toHaveCount(0);
+  await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark all as read" })).toBeFocused();
+
+  await settingsTrigger.click();
+  await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Settings sections" })).toBeVisible();
+  const settingsBox = await page.locator("[data-mobile-menu=settings]").boundingBox();
+  expect(settingsBox?.x).toBeGreaterThanOrEqual(0);
+  expect((settingsBox?.x ?? 0) + (settingsBox?.width ?? 0)).toBeLessThanOrEqual(canonicalViewports[0].width);
+
   await page.keyboard.press("Escape");
-  await expect(libraryTrigger).toBeFocused();
+  await expect(settingsTrigger).toBeFocused();
 
   for (const control of await mobileNavigation.locator(":scope > div > button, :scope > div > a").all()) {
     expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
+
+  const mobileIcons = await mobileNavigation.locator(":scope > div > button svg").evaluateAll((icons) =>
+    icons.map((icon) => icon.innerHTML),
+  );
+  expect(new Set(mobileIcons).size).toBe(mobileIcons.length);
+});
+
+test("public legal links use distinct canonical destinations", async ({ page }) => {
+  await openShell(page, "public", canonicalViewports[2]);
+  const footer = page.getByRole("navigation", { name: "Footer navigation" });
+  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/legal/privacy");
+  await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/legal/terms");
+});
+
+test("Club and Admin section navigation exposes distinct destinations and current state", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[2]);
+  const clubNavigation = page.getByRole("navigation", { name: "Club sections" });
+  const clubLinks = clubNavigation.getByRole("link");
+  await expect(clubLinks).toHaveCount(6);
+  expect(new Set(await clubLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(6);
+  await expect(clubNavigation.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+
+  await openShell(page, "product", canonicalViewports[0]);
+  const hubTrigger = page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Hub" });
+  await hubTrigger.click();
+  const hubLinks = page.getByRole("navigation", { name: "Hub sections" }).getByRole("link");
+  await expect(hubLinks).toHaveCount(6);
+  await expect(page.getByRole("link", { name: "Achievements" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Manage Club" })).toBeVisible();
+
+  await openShell(page, "admin", canonicalViewports[2]);
+  const adminNavigation = page.getByRole("complementary", { name: "Admin sections" }).getByRole("navigation");
+  const adminLinks = adminNavigation.getByRole("link");
+  await expect(adminLinks).toHaveCount(4);
+  expect(new Set(await adminLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(4);
+  await expect(adminNavigation.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+
+  await openShell(page, "admin", canonicalViewports[0]);
+  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Admin" }).click();
+  const mobileAdminLinks = page.getByRole("navigation", { name: "Admin sections" }).getByRole("link");
+  await expect(mobileAdminLinks).toHaveCount(4);
+  expect(new Set(await mobileAdminLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(4);
+});
+
+test("ordinary account navigation hides Admin while the Admin shell exposes it", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toHaveCount(0);
+
+  await openShell(page, "admin", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toBeVisible();
+});
+
+test("compact and Session headers match their canonical navigation variants", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[1]);
+  await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" })).toBeHidden();
+  const compactHeader = page.locator("header");
+  await expect(compactHeader.getByRole("button", { name: "Alerts" })).toBeHidden();
+  await expect(compactHeader.getByRole("button", { name: "Account menu" })).toBeHidden();
+  await expect(page.getByRole("link", { name: "PickFlick home" })).toContainText("PickFlick");
+
+  await openShell(page, "session", canonicalViewports[2]);
+  await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" }).getByRole("link")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Back to Hub" })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Back to Hub" })).toHaveAttribute("href", "/shell-preview/product");
 });
 
 test("visible shell controls keep 44px targets and a visible keyboard focus", async ({ page }) => {
