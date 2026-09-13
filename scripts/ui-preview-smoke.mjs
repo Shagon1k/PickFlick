@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, expect } from "@playwright/test";
@@ -30,11 +32,29 @@ async function waitForAnimations(locator) {
 
 const baseUrl = process.argv.slice(2).find((argument) => argument !== "--") ?? "http://127.0.0.1:3000";
 const previewUrl = new URL("/ui-preview", baseUrl).toString();
+const artifactDirectory = process.env.UI_SMOKE_ARTIFACT_DIR?.trim()
+  ? resolve(process.env.UI_SMOKE_ARTIFACT_DIR)
+  : undefined;
+if (artifactDirectory) {
+  await mkdir(artifactDirectory, { recursive: true });
+}
 const browser = await chromium.launch({ headless: true });
+let context;
+let page;
+let traceStarted = false;
 
 try {
-  const context = await browser.newContext({ viewport: { width: 1024, height: 900 } });
-  const page = await context.newPage();
+  context = await browser.newContext({
+    viewport: { width: 1024, height: 900 },
+    ...(artifactDirectory
+      ? { recordVideo: { dir: artifactDirectory, size: { width: 1024, height: 900 } } }
+      : {}),
+  });
+  if (artifactDirectory) {
+    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+    traceStarted = true;
+  }
+  page = await context.newPage();
   const browserErrors = [];
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -257,22 +277,61 @@ try {
     "rgb(12, 12, 12)",
   );
 
-  const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const reducedPage = await reducedContext.newPage();
-  await reducedPage.emulateMedia({ reducedMotion: "reduce" });
-  await reducedPage.goto(previewUrl, { waitUntil: "networkidle" });
-  await reducedPage.getByRole("button", { name: "Open Club menu" }).click();
-  const animationDuration = await reducedPage
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(previewUrl, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Open Club menu" }).click();
+  const animationDuration = await page
     .getByRole("menu", { name: "Club menu" })
     .evaluate((element) =>
       Number.parseFloat(element.ownerDocument.defaultView?.getComputedStyle(element).animationDuration ?? "0"),
     );
   assert.ok(animationDuration <= 0.001, "reduced motion must collapse menu animation duration");
-  await reducedContext.close();
 
   assert.deepEqual(browserErrors, [], `browser errors: ${browserErrors.join(" | ")}`);
   console.log("UI preview smoke passed: axe, form constraints, live feedback, dynamic tabs, keyboard, overlays, targets, theme, and motion.");
+  if (traceStarted) {
+    await context.tracing.stop();
+    traceStarted = false;
+  }
   await context.close();
+  context = undefined;
+} catch (error) {
+  if (artifactDirectory && page && context) {
+    try {
+      await page.screenshot({ fullPage: true, path: join(artifactDirectory, "interaction-smoke.png") });
+    } catch (artifactError) {
+      console.error("Could not capture the interaction smoke screenshot.", artifactError);
+    }
+
+    if (traceStarted) {
+      try {
+        await context.tracing.stop({ path: join(artifactDirectory, "interaction-smoke-trace.zip") });
+      } catch (artifactError) {
+        console.error("Could not capture the interaction smoke trace.", artifactError);
+      } finally {
+        traceStarted = false;
+      }
+    }
+
+    const video = page.video();
+    try {
+      await context.close();
+      context = undefined;
+      await video?.saveAs(join(artifactDirectory, "interaction-smoke.webm"));
+      await video?.delete();
+    } catch (artifactError) {
+      console.error("Could not capture the interaction smoke video.", artifactError);
+    }
+  }
+
+  throw error;
 } finally {
+  if (traceStarted && context) {
+    await context.tracing.stop().catch(() => undefined);
+  }
+  if (context) {
+    await context.close().catch(() => undefined);
+  }
   await browser.close();
 }

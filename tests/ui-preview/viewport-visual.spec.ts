@@ -15,7 +15,6 @@ const fluidGapViewports = [
 
 async function openStablePreview(page: Page, viewport: { height: number; width: number }) {
   await page.setViewportSize(viewport);
-  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/ui-preview", { waitUntil: "networkidle" });
   await page.evaluate(async () => {
     await globalThis.document.fonts.ready;
@@ -65,6 +64,7 @@ for (const profile of canonicalViewports) {
 }
 
 test("collapses decorative motion when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await openStablePreview(page, canonicalViewports[0]);
   await page.getByRole("button", { name: "Open Club menu" }).click();
 
