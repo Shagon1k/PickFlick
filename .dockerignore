@@ -16,6 +16,10 @@
 **/*.tsbuildinfo
 _docs
 assets
+!assets/
+assets/*
+!assets/brand/
+!assets/brand/**
 coverage
 packages/database/src/generated
 *.md

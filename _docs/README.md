@@ -67,3 +67,4 @@ The retired blueprint was intentionally removed after synthesis; this repository
 | Plan | Purpose | Lifecycle |
 | --- | --- | --- |
 | [Phase 1 — Infrastructure, Repository & Deployment Foundation](phase-1-infrastructure-foundation.md) | Cross-issue sequence, inherited contracts, edge cases, commands, and evidence in progress for the Phase 1 slices and deployment follow-ups. | Consolidate durable knowledge and remove this temporary plan/link when Phase 1 completes. |
+| [Phase 2 — Production Design System & App Shells](phase-2-production-design-system.md) | Implementation sequence, component boundaries, responsive rules, and evidence in progress for Projector Noir foundations and shells. | Consolidate durable knowledge and remove this temporary plan/link when Phase 2 completes. |

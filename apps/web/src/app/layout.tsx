@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import "@pickflick/ui/tokens.css";
+import {
+  ProjectorNoirColorSchemeScript,
+  ProjectorNoirProvider,
+  projectorNoirHtmlProps,
+} from "@pickflick/ui";
+import "@pickflick/ui/styles.css";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -11,8 +16,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" {...projectorNoirHtmlProps}>
+      <head>
+        <ProjectorNoirColorSchemeScript />
+      </head>
+      <body>
+        <ProjectorNoirProvider>{children}</ProjectorNoirProvider>
+      </body>
     </html>
   );
 }

@@ -1,7 +1,8 @@
 # PickFlick — Design Reference
 
 > Current UI/UX direction, source authority, screen behavior, and design QA contract.
-> Exact visual values remain in the self-contained canonical design package until production tokens exist.
+> Exact approved visual values are implemented in `packages/ui/styles/tokens.css`; the self-contained
+> canonical design package remains their visual and interaction source.
 
 | Document owner | Last reviewed |
 | --- | --- |
@@ -13,7 +14,7 @@
 - **Roadmap owns:** product scope, routes, business rules, delivery phases, backlog, and unresolved product decisions.
 - **Architecture owns:** system boundaries, data, APIs, authorization, infrastructure, and operational contracts.
 - **Canonical design sources own:** exact approved tokens, responsive compositions, component appearance, and the latest inspectable visual state.
-- **Production code will own:** implemented tokens/components after Phase 2, while remaining traceable to the source package.
+- **Production code owns:** implemented tokens/components, while remaining traceable to the source package.
 
 When sources conflict:
 
@@ -45,7 +46,9 @@ When sources conflict:
 | Build | `Not started` / `Partial` / `Done` | `Done` means the documented contract is implemented. |
 | QA | `Not checked` / `Passed` / `Issues` | `Passed` requires recorded comparison and applicable baseline evidence. |
 
-The design package is **detailed and approved as direction**. Application build is **not started**. Prototype quality is not production QA.
+The design package is **detailed and approved as direction**. Phase 2 tokens, semantic brand assets,
+and the issue #17 primitive set are built; shared shells and product screens are **not started**.
+Prototype quality is not production QA.
 
 ## 2. Experience Direction
 
@@ -69,18 +72,20 @@ The design package is **detailed and approved as direction**. Application build 
 
 ## 3. Foundations
 
-Exact values live in the [canonical design contract](_docs/design/prototypes/DESIGN.md). Do not copy partial token sets into feature files.
+Production values live in [`packages/ui/styles/tokens.css`](packages/ui/styles/tokens.css) and remain
+traceable to the [canonical design contract](_docs/design/prototypes/DESIGN.md). Do not copy partial
+token sets into feature files.
 
 | Area | Intent / usage contract | Canonical source | Design | Build | QA |
 | --- | --- | --- | --- | --- | --- |
-| Color and themes | Dark-only MVP; `#0c0c0c` family for structure, neutral text/borders, ivory and connected gold `#C89B55` for warm semantic emphasis. | [DESIGN.md foundations](_docs/design/prototypes/DESIGN.md#1-foundations) | Approved | Not started | Not checked |
-| Typography | Iowan/Charter/Georgia-style editorial display, system sans for readable product copy, mono for metadata/status. | [DESIGN.md typography](_docs/design/prototypes/DESIGN.md#2-typography) | Approved | Not started | Not checked |
-| Spacing and layout | Shared scale, content containers, gutters, sectional rhythm, flat hierarchy, and deliberate negative space. | [DESIGN.md layout](_docs/design/prototypes/DESIGN.md#3-spacing--layout) | Approved | Not started | Not checked |
+| Color and themes | Dark-only MVP; `#0c0c0c` family for structure, neutral text/borders, ivory and connected gold `#C89B55` for warm semantic emphasis. | [DESIGN.md foundations](_docs/design/prototypes/DESIGN.md#1-foundations) | Approved | Done | Not checked |
+| Typography | Iowan/Charter/Georgia-style editorial display, system sans for readable product copy, mono for metadata/status. | [DESIGN.md typography](_docs/design/prototypes/DESIGN.md#2-typography) | Approved | Done | Not checked |
+| Spacing and layout | Shared scale, content containers, gutters, sectional rhythm, flat hierarchy, and deliberate negative space. | [DESIGN.md layout](_docs/design/prototypes/DESIGN.md#3-spacing--layout) | Approved | Done | Not checked |
 | Breakpoints and responsive behavior | Four named modes: S below 576, M from 768, L from 1024, XL from 1400; test the gaps between named pivots too. | [Responsive baseline](_docs/design/prototypes/responsive-baselines.html) | Approved | Not started | Not checked |
-| Radii, borders, and elevation | Restrained radii and low-contrast borders; elevation belongs to overlays, tickets, and focused cinematic scenes. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
+| Radii, borders, and elevation | Restrained radii and low-contrast borders; elevation belongs to overlays, tickets, and focused cinematic scenes. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Done | Not checked |
 | Iconography | Fine-line, consistent stroke treatment with accessible names on actions; decorative sprockets/film glyphs remain non-semantic. | [DESIGN.md components](_docs/design/prototypes/DESIGN.md#4-components) | Approved | Not started | Not checked |
-| Imagery and illustration | Transparent noir panda assets provide emotional/scene cues; film-provider imagery is data, not brand chrome. | [Brand assets](assets/brand/README.md) | Approved | Not started | Not checked |
-| Motion | Short feedback and reveal motion; no layout-jolting decoration; honor reduced motion and preserve focus. | [DESIGN.md interaction contract](_docs/design/prototypes/DESIGN.md#5-interaction-contract) | Approved | Not started | Not checked |
+| Imagery and illustration | Transparent noir panda assets provide emotional/scene cues; film-provider imagery is data, not brand chrome. | [Brand assets](assets/brand/README.md) | Approved | Done | Not checked |
+| Motion | Short feedback and reveal motion; no layout-jolting decoration; honor reduced motion and preserve focus. | [DESIGN.md interaction contract](_docs/design/prototypes/DESIGN.md#5-interaction-contract) | Approved | Done | Not checked |
 
 ### Experience baselines
 
@@ -195,20 +200,20 @@ Every production data surface implements applicable states rather than shipping 
 | Component | Purpose | Variants / states | Design source | Design | Build | QA |
 | --- | --- | --- | --- | --- | --- | --- |
 | Public/App header | Brand, global entry/navigation, search, notifications, account. | Public, authenticated, admin; desktop/mobile. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
-| Film-strip menu / mobile bar | Compact cinematic secondary navigation. | Hub, Library, Settings, Admin; open/closed/active. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Not started | Not checked |
+| Film-strip menu / mobile bar | Compact cinematic secondary navigation. | Hub, Library, Settings, Admin; open/closed/active. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Partial | Not checked |
 | Club switcher / Call Sheet | Preserve Club and current-screening context. | Multiple Clubs, no Session, each phase, image/no image. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
-| Tabs / vertical tabs | Switch local views without losing shell context. | Horizontal/vertical/mobile menu; active/focus/disabled. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
-| Buttons | Primary, secondary, danger, secondary-danger, icon. | Default/hover/focus/pressed/loading/disabled/success. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Not started | Not checked |
-| Form controls | Text, textarea, select, date/time, toggle, file, segmented mode. | Empty/filled/focus/error/disabled/read-only/help/success. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
+| Tabs / vertical tabs | Switch local views without losing shell context. | Horizontal/vertical/mobile menu; active/focus/disabled. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Partial | Not checked |
+| Buttons | Primary, secondary, danger, secondary-danger, icon. | Default/hover/focus/pressed/loading/disabled/success. | [DESIGN.md](_docs/design/prototypes/DESIGN.md) | Approved | Done | Not checked |
+| Form controls | Text, textarea, select, date/time, toggle, file, segmented mode. | Empty/filled/focus/error/disabled/read-only/help/success. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Partial | Not checked |
 | Movie search result/card | TMDB discovery and selection. | Loading/results/empty/error/selected/removed. | [Create Session](_docs/design/prototypes/create-session.html) | Approved | Not started | Not checked |
-| Score selector | Score every nomination on configured scale. | Generated range, incomplete, submitted/locked, keyboard/touch. | [Selection](_docs/design/prototypes/session-detail-selection.html) | Approved | Not started | Not checked |
-| Rating control | Submit/edit 1–10 personal or Session score. | Empty/hover/focus/selected/submitted/locked. | [Rating](_docs/design/prototypes/session-detail-rating.html) | Approved | Not started | Not checked |
-| Progress film strip | Show `N/N` phase participation. | Compact/full, determinate, complete. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
-| Status banner / phase stamp | Make lifecycle and recovery explicit. | Nomination/Selection/Watching/Rating/Completed/error/read-only. | [Session family](_docs/design/prototypes/session-detail-nomination.html) | Approved | Not started | Not checked |
+| Score selector | Score every nomination on configured scale. | Generated range, incomplete, submitted/locked, keyboard/touch. | [Selection](_docs/design/prototypes/session-detail-selection.html) | Approved | Done | Not checked |
+| Rating control | Submit/edit 1–10 personal or Session score. | Empty/hover/focus/selected/submitted/locked. | [Rating](_docs/design/prototypes/session-detail-rating.html) | Approved | Done | Not checked |
+| Progress film strip | Show `N/N` phase participation. | Compact/full, determinate, complete. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Done | Not checked |
+| Status banner / phase stamp | Make lifecycle and recovery explicit. | Nomination/Selection/Watching/Rating/Completed/error/read-only. | [Session family](_docs/design/prototypes/session-detail-nomination.html) | Approved | Done | Not checked |
 | Invite ticket/popover | Review Club/Session invitations. | Multiple/empty/accept/decline/expired/forbidden. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
 | Notification popover | Review recent in-app events. | Read/unread/empty/loading/error/mobile. | [Settings](_docs/design/prototypes/settings.html) | Approved | Not started | Not checked |
-| Dialog / confirmation | Phase moves, edits, participant removal, cancellation, destructive admin actions. | Standard/destructive/typed-name/loading/error. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Not started | Not checked |
-| Stat / leaderboard / table | Summaries, histories, rankings, usage, admin lists. | Populated/empty/sorted/filtered/loading/read-only/mobile scroll. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Not started | Not checked |
+| Dialog / confirmation | Phase moves, edits, participant removal, cancellation, destructive admin actions. | Standard/destructive/typed-name/loading/error. | [Design system](_docs/design/prototypes/design-system.html) | Approved | Partial | Not checked |
+| Stat / leaderboard / table | Summaries, histories, rankings, usage, admin lists. | Populated/empty/sorted/filtered/loading/read-only/mobile scroll. | [Club Hub](_docs/design/prototypes/app.html) | Approved | Partial | Not checked |
 | Achievement card/filter | Show earned/progress/locked personal or Club goals. | Unlocked/in progress/not started/filtered. | [Library](_docs/design/prototypes/library.html) | Approved | Not started | Not checked |
 | Privacy accordion | Explain data behavior and expose rights actions. | Open/closed/focus/loading/action error. | [Settings](_docs/design/prototypes/settings.html) | Approved | Not started | Not checked |
 
