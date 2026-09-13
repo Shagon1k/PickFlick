@@ -55,13 +55,13 @@ domain data, authentication, provider integrations, and production copy remain o
 | Workspace boundaries | `pnpm check:workspace` | Passed locally: 8 workspaces valid. |
 | Static quality | `pnpm lint` and `pnpm typecheck` | Passed locally. |
 | Component behavior | `pnpm test` | Passed locally: 20 files, 183 tests. |
-| Production compilation | `pnpm build` | Passed locally; `/ui-preview` prerendered. |
+| Production compilation | `pnpm build` | Passed locally; `/ui-preview`, `/shell-preview`, and all seven shell routes prerendered. |
 | Mantine wrapper behavior | `pnpm ui:smoke -- http://127.0.0.1:<port>` against the production web build | Passed locally in Chromium: rendered Select descriptions, required Select and scale constraints, read-only Select submission, submitted-scale replacement, semantic button success, concise toggle names, link/action menu semantics, changing-tab fallback, persistent live feedback, keyboard behavior, mutually exclusive menu dismissal, modal focus trap/return, scale-range normalization, preview clearing, 44px targets, Projector Noir styling, and reduced motion. |
-| Reusable UI quality gate | `pnpm ui:test` | Passed locally: 16 Chromium checks cover axe at 390/1440, controlled a11y-defect diagnostics, component interaction, overflow at 390/640/768/900/1024/1200/1440, four full-page visual baselines, and reduced motion. CI runs the same command and retains failure artifacts. |
+| Reusable UI quality gate | `pnpm ui:test` | Passed locally: 64 Chromium checks cover the existing component contract and all seven shells. Shell evidence includes axe at 390/1440, navigation and overlay behavior, visible focus, 44px targets, local dense-region scrolling, overflow at 390/640/768/900/1024/1200/1440, 28 S/M/L/XL captures, and reduced motion. CI runs the same command and retains failure artifacts. |
 | Failure diagnostics | Controlled unnamed-button fixture and temporary preview-only visual drift | The a11y detector reported the rule and target. Visual assertions failed at all four canonical widths and emitted expected, actual, and diff PNGs with screenshot, video, trace, and HTML context; the temporary drift was removed before the passing run. |
 | Preview configuration | `docker compose -f compose.preview.yaml config --format json` with reserved characters in synthetic credentials | Passed locally: PostgreSQL receives the raw password while application and release services receive a separately percent-encoded `DATABASE_URL`. |
 | Built runtime | `pnpm e2e:smoke` | Passed locally against disposable PostgreSQL, Redis, and object-storage services; test containers and volumes were removed afterward. |
-| Component preview | `/ui-preview` at the exact branch revision | Local production-browser audit and committed S/M/L/XL baselines passed. Exact-SHA hosting remains pending. |
+| Component and shell previews | `/ui-preview` and `/shell-preview` at the exact branch revision | Local production-browser audit and 32 committed S/M/L/XL baselines passed. Exact-SHA hosting remains pending. |
 | Visual review | Owner acknowledgement of the exact-SHA preview | Pending external review |
 
 Update this table with concise evidence as each issue proceeds. At the Phase 2 boundary, move
