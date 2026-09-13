@@ -21,11 +21,12 @@ const previewRoutes: ShellRouteMap = {
   admin: "/shell-preview/admin",
   contact: "/shell-preview/public",
   home: "/shell-preview",
+  howItWorks: "/shell-preview/public#public-content",
   library: "/shell-preview/library",
   legalPrivacy: "/legal/privacy",
   legalTerms: "/legal/terms",
   pricing: "/shell-preview/public",
-  privacy: "/shell-preview/settings",
+  privacy: "/shell-preview/settings?tab=privacy",
   product: "/shell-preview/product",
   session: "/shell-preview/session",
   settings: "/shell-preview/settings",
@@ -91,7 +92,7 @@ export default async function ShellPreviewPage({
       );
     case "product":
       return (
-        <ProductShell clubItems={previewClubItems} currentArea="hub" eyebrow="Authenticated product shell" routes={previewRoutes} title="Club context">
+        <ProductShell admin clubItems={previewClubItems} currentArea="hub" eyebrow="Authenticated product shell" routes={previewRoutes} title="Club context">
           <div className={styles.productGrid}>
             <ShellPlaceholder title="Primary Club region"><p>The current Club, Session, phase, progress, and next action render here.</p></ShellPlaceholder>
             <ShellPlaceholder title="Supporting region"><p>Authorized summaries keep their own loading, empty, error, and read-only states.</p></ShellPlaceholder>
@@ -115,10 +116,10 @@ export default async function ShellPreviewPage({
           description="Personal controls keep a stable reading width and move section navigation into a mobile menu."
           items={[
             { href: "/shell-preview/settings", label: "Profile", current: true },
-            { href: "/shell-preview/settings", label: "Notifications" },
-            { href: "/shell-preview/settings", label: "Subscription" },
-            { href: "/shell-preview/settings", label: "Privacy" },
-            { href: "/shell-preview/settings", label: "Import & Export" },
+            { href: "/shell-preview/settings?tab=notifications", label: "Notifications" },
+            { href: "/shell-preview/settings?tab=subscription", label: "Subscription" },
+            { href: "/shell-preview/settings?tab=privacy", label: "Privacy" },
+            { href: "/shell-preview/settings?tab=import-export", label: "Import & Export" },
           ]}
           routes={previewRoutes}
           title="Settings"
@@ -133,9 +134,9 @@ export default async function ShellPreviewPage({
           currentArea="library"
           description="Personal film memory uses the product chrome, local views, and bounded dense regions."
           items={[
-            { href: "/shell-preview/library", label: "My Ratings", current: true },
-            { href: "/shell-preview/library", label: "Watchlist" },
-            { href: "/shell-preview/library", label: "Achievements" },
+            { href: "/shell-preview/library?tab=my-ratings", label: "My Ratings", current: true },
+            { href: "/shell-preview/library?tab=watchlist", label: "Watchlist" },
+            { href: "/shell-preview/library?tab=achievements", label: "Achievements" },
           ]}
           routes={previewRoutes}
           title="My Library"

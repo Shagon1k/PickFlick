@@ -398,7 +398,7 @@
   display: grid;
 }
 
-.filmMenu a {
+.filmMenu :is(a, button) {
   position: relative;
   z-index: 2;
   display: flex;
@@ -408,15 +408,18 @@
   justify-content: center;
   min-height: 48px;
   padding: 8px 0;
+  border: 0;
   color: var(--fg-secondary);
+  background: transparent;
   font-size: var(--fs-caption);
   font-weight: 600;
   line-height: var(--lh-caption);
   text-align: center;
+  cursor: pointer;
 }
 
-.filmMenu a:hover,
-.filmMenu a:focus-visible {
+.filmMenu :is(a, button):hover,
+.filmMenu :is(a, button):focus-visible {
   color: var(--fg);
   background: var(--accent-soft);
 }
@@ -426,7 +429,7 @@
   box-shadow: inset 2px 0 var(--gold);
 }
 
-.filmMenu a + a {
+.filmMenu :is(a, button) + :is(a, button) {
   border-top: 1px solid var(--border);
 }
 

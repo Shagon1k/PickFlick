@@ -19,13 +19,21 @@ export interface ShellNavigationItem {
   readonly current?: boolean;
 }
 
+export interface ShellActionItem {
+  readonly action: "sign-out";
+  readonly label: string;
+  readonly current?: never;
+}
+
+export type ShellMenuItem = ShellActionItem | ShellNavigationItem;
+
 export interface MobileNavigationGroup extends ShellNavigationItem {
-  readonly items?: readonly ShellNavigationItem[];
+  readonly items?: readonly ShellMenuItem[];
   readonly overlay?: "notifications";
 }
 
 type HeaderOverlay = "account" | "notifications" | "search";
-type ProductOverlay = HeaderOverlay | `mobile:${string}`;
+type ProductOverlay = HeaderOverlay | `mobile:${string}` | `section:${string}`;
 
 interface ProductOverlayContextValue {
   readonly activeOverlay: ProductOverlay | null;
@@ -134,6 +142,8 @@ function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
       return <svg {...common}><path d="M12 3l8 4v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V7z" /><path d="m9 12 2 2 4-4" /></svg>;
     case "Contact Us":
       return <svg {...common}><rect height="16" rx="2" width="20" x="2" y="4" /><path d="m2 6 10 7 10-7" /></svg>;
+    case "Sign out":
+      return <svg {...common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9" /></svg>;
     case "Manage Club":
     case "Application settings":
     case "Settings":
@@ -141,6 +151,16 @@ function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
     default:
       return <svg {...common}><circle cx="12" cy="12" r="7" /></svg>;
   }
+}
+
+function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
+  const content = <><NavigationItemIcon label={item.label} />{item.label}</>;
+
+  return "href" in item ? (
+    <a aria-current={item.current ? "page" : undefined} href={item.href}>{content}</a>
+  ) : (
+    <button data-shell-action={item.action} type="button">{content}</button>
+  );
 }
 
 export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavigationItem[] }>) {
@@ -207,13 +227,17 @@ export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavi
 
 export function ProductHeaderActions({
   accountItems,
-}: Readonly<{ accountItems: readonly ShellNavigationItem[] }>) {
+}: Readonly<{ accountItems: readonly ShellMenuItem[] }>) {
   const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!activeOverlay || activeOverlay.startsWith("mobile:")) {return;}
+    if (
+      activeOverlay !== "account" &&
+      activeOverlay !== "notifications" &&
+      activeOverlay !== "search"
+    ) {return;}
 
     if (activeOverlay === "search") {searchRef.current?.focus();}
     else {containerRef.current?.querySelector<HTMLElement>("[data-shell-overlay] a, [data-shell-overlay] button")?.focus();}
@@ -314,7 +338,7 @@ export function ProductHeaderActions({
           <span aria-hidden="true" className={styles.filmTail} />
           <div className={styles.filmMenu}>
             <nav aria-label="Account navigation">
-              {accountItems.map((item) => <a href={item.href} key={item.label}><NavigationItemIcon label={item.label} />{item.label}</a>)}
+              {accountItems.map((item) => <FilmMenuItem item={item} key={item.label} />)}
             </nav>
           </div>
         </div>
@@ -332,7 +356,7 @@ export function MobileProductNavigation({
 
   useEffect(() => {
     if (!activeGroup) {return;}
-    navigationRef.current?.querySelector<HTMLElement>(`[data-mobile-menu="${activeGroup}"] a`)?.focus();
+    navigationRef.current?.querySelector<HTMLElement>(`[data-mobile-menu="${activeGroup}"] a, [data-mobile-menu="${activeGroup}"] button`)?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeOverlay();
@@ -387,10 +411,7 @@ export function MobileProductNavigation({
                 <div className={styles.filmMenu}>
                   <nav aria-label={`${group.label} sections`}>
                     {group.items?.map((item) => (
-                      <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
-                        <NavigationItemIcon label={item.label} />
-                        {item.label}
-                      </a>
+                      <FilmMenuItem item={item} key={item.label} />
                     ))}
                   </nav>
                 </div>
@@ -408,7 +429,11 @@ export function SectionNavigation({
   items,
   label,
 }: Readonly<{ items: readonly ShellNavigationItem[]; label: string }>) {
-  const [open, setOpen] = useState(false);
+  const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
+  const sectionId = label.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-");
+  const overlay = `section:${sectionId}` as const;
+  const open = activeOverlay === overlay;
+  const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -419,13 +444,24 @@ export function SectionNavigation({
     menuRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
+        closeOverlay();
       }
     };
+    const closeOnPointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        !containerRef.current?.contains(target) &&
+        !target.closest("[data-product-overlay-control]")
+      ) {closeOverlay(false);}
+    };
     document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [open]);
+    document.addEventListener("pointerdown", closeOnPointer);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnPointer);
+    };
+  }, [closeOverlay, open]);
 
   return (
     <>
@@ -436,12 +472,13 @@ export function SectionNavigation({
           ))}
         </nav>
       </aside>
-      <div className={styles.sectionMobileNavigation}>
+      <div className={styles.sectionMobileNavigation} ref={containerRef}>
         <button
-          aria-controls="section-mobile-menu"
+          aria-controls={`section-${sectionId}-menu`}
           aria-expanded={open}
           className={styles.sectionMenuTrigger}
-          onClick={() => setOpen((current) => !current)}
+          data-product-overlay-control
+          onClick={(event) => toggleOverlay(overlay, event.currentTarget)}
           ref={triggerRef}
           type="button"
         >
@@ -451,7 +488,7 @@ export function SectionNavigation({
         {open ? (
           <div
             className={`${styles.sectionMobileMenu} ${styles.filmMenu}`}
-            id="section-mobile-menu"
+            id={`section-${sectionId}-menu`}
             ref={menuRef}
           >
             <nav aria-label={`${label} mobile`}>

@@ -157,9 +157,39 @@ test("mobile product menus stay in view, dismiss outside, and share the Alerts o
 
 test("public legal links use distinct canonical destinations", async ({ page }) => {
   await openShell(page, "public", canonicalViewports[2]);
+  await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" }).getByRole("link", { name: "How it works" })).toHaveAttribute(
+    "href",
+    "/shell-preview/public#public-content",
+  );
   const footer = page.getByRole("navigation", { name: "Footer navigation" });
   await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/legal/privacy");
   await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/legal/terms");
+});
+
+test("product primary action opens the Session destination", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[2]);
+  const primaryAction = page.getByRole("link", { name: "Primary action" });
+  await expect(primaryAction).toHaveAttribute("href", "/shell-preview/session");
+  await primaryAction.click();
+  await expect(page).toHaveURL(/\/shell-preview\/session$/);
+  await expect(page.getByRole("heading", { name: "Film and Session context" })).toBeVisible();
+});
+
+test("Library and Settings menus expose distinct subsection destinations", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[0]);
+  const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
+
+  await mobileNavigation.getByRole("button", { name: "Library" }).click();
+  const libraryLinks = page.getByRole("navigation", { name: "Library sections" }).getByRole("link");
+  await expect(libraryLinks).toHaveCount(3);
+  expect(new Set(await libraryLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(3);
+
+  await mobileNavigation.getByRole("button", { name: "Settings" }).click();
+  const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
+  const settingsLinks = settingsNavigation.getByRole("link");
+  await expect(settingsLinks).toHaveCount(3);
+  expect(new Set(await settingsLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(3);
+  await expect(settingsNavigation.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/shell-preview/settings?tab=privacy");
 });
 
 test("Club and Admin section navigation exposes distinct destinations and current state", async ({ page }) => {
@@ -192,14 +222,32 @@ test("Club and Admin section navigation exposes distinct destinations and curren
   expect(new Set(await mobileAdminLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(4);
 });
 
-test("ordinary account navigation hides Admin while the Admin shell exposes it", async ({ page }) => {
-  await openShell(page, "product", canonicalViewports[2]);
+test("App Admin capability is preserved on admin and non-admin shells", async ({ page }) => {
+  await openShell(page, "session", canonicalViewports[2]);
   await page.getByRole("button", { name: "Account menu" }).click();
   await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toHaveCount(0);
 
-  await openShell(page, "admin", canonicalViewports[2]);
+  await openShell(page, "product", canonicalViewports[2]);
   await page.getByRole("button", { name: "Account menu" }).click();
   await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toBeVisible();
+
+  await openShell(page, "product", canonicalViewports[0]);
+  await expect(page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("link", { name: "Admin" })).toHaveAttribute(
+    "href",
+    "/shell-preview/admin",
+  );
+});
+
+test("authenticated shells expose Sign out as an action on desktop and mobile", async ({ page }) => {
+  await openShell(page, "product", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  const desktopAction = page.getByRole("navigation", { name: "Account navigation" }).getByRole("button", { name: "Sign out" });
+  await expect(desktopAction).toHaveAttribute("data-shell-action", "sign-out");
+
+  await openShell(page, "settings", canonicalViewports[0]);
+  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Settings" }).click();
+  const mobileAction = page.getByRole("navigation", { name: "Settings sections" }).getByRole("button", { name: "Sign out" });
+  await expect(mobileAction).toHaveAttribute("data-shell-action", "sign-out");
 });
 
 test("compact and Session headers match their canonical navigation variants", async ({ page }) => {
@@ -253,6 +301,25 @@ test("public and section mobile menus focus their first item and return focus", 
   await expect(page.getByRole("navigation", { name: "Settings sections mobile" }).getByRole("link").first()).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(sectionTrigger).toBeFocused();
+});
+
+test("section menus share the product overlay state", async ({ page }) => {
+  await openShell(page, "settings", canonicalViewports[0]);
+  const sectionTrigger = page.getByRole("button", { name: /Settings sections Profile/ });
+  const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
+
+  await sectionTrigger.click();
+  await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toBeVisible();
+  await mobileNavigation.getByRole("button", { name: "Alerts" }).click();
+  await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toHaveCount(0);
+  await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
+
+  await sectionTrigger.click();
+  await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toBeVisible();
+  await mobileNavigation.getByRole("button", { name: "Library" }).click();
+  await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Library sections" })).toBeVisible();
 });
 
 test("dense regions scroll locally without widening the page", async ({ page }) => {

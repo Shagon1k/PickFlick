@@ -10,6 +10,8 @@ import {
   PublicNavigation,
   SectionNavigation,
   type MobileNavigationGroup,
+  type ShellActionItem,
+  type ShellMenuItem,
   type ShellNavigationItem,
 } from "./shell-interactions";
 import styles from "./shells.module.css";
@@ -18,6 +20,7 @@ export interface ShellRouteMap {
   readonly admin: string;
   readonly contact: string;
   readonly home: string;
+  readonly howItWorks: string;
   readonly library: string;
   readonly legalPrivacy: string;
   readonly legalTerms: string;
@@ -33,11 +36,12 @@ const canonicalRoutes: ShellRouteMap = {
   admin: "/admin",
   contact: "/contact",
   home: "/",
+  howItWorks: "/#how",
   library: "/library",
   legalPrivacy: "/legal/privacy",
   legalTerms: "/legal/terms",
   pricing: "/pricing",
-  privacy: "/settings/privacy",
+  privacy: "/settings?tab=privacy",
   product: "/app",
   session: "/app",
   settings: "/settings",
@@ -46,7 +50,7 @@ const canonicalRoutes: ShellRouteMap = {
 
 function publicNavigation(routes: ShellRouteMap): readonly ShellNavigationItem[] {
   return [
-    { href: routes.home, label: "How it works" },
+    { href: routes.howItWorks, label: "How it works" },
     { href: routes.pricing, label: "Pricing" },
     { href: routes.contact, label: "Contact" },
   ];
@@ -59,13 +63,20 @@ function productNavigation(routes: ShellRouteMap): readonly ShellNavigationItem[
   ];
 }
 
-function accountNavigation(routes: ShellRouteMap, admin: boolean): readonly ShellNavigationItem[] {
+const signOutItem: ShellActionItem = { action: "sign-out", label: "Sign out" };
+
+function sectionHref(route: string, tab: string): string {
+  return `${route}${route.includes("?") ? "&" : "?"}tab=${tab}`;
+}
+
+function accountNavigation(routes: ShellRouteMap, admin: boolean): readonly ShellMenuItem[] {
   return [
     ...(admin ? [{ href: routes.admin, label: "Admin Panel" }] : []),
     { href: routes.settings, label: "Settings" },
     { href: routes.privacy, label: "Privacy" },
     { href: routes.pricing, label: "Pricing" },
     { href: routes.contact, label: "Contact Us" },
+    signOutItem,
   ];
 }
 
@@ -84,9 +95,9 @@ function mobileNavigation(
     {
       href: routes.library,
       items: libraryItems ?? [
-        { href: routes.library, label: "My Ratings" },
-        { href: routes.library, label: "Watchlist" },
-        { href: routes.library, label: "Achievements" },
+        { href: sectionHref(routes.library, "my-ratings"), label: "My Ratings" },
+        { href: sectionHref(routes.library, "watchlist"), label: "Watchlist" },
+        { href: sectionHref(routes.library, "achievements"), label: "Achievements" },
       ],
       label: "Library",
     },
@@ -97,10 +108,13 @@ function mobileNavigation(
     },
     {
       href: routes.settings,
-      items: settingsItems ?? [
-        { href: routes.settings, label: "Profile" },
-        { href: routes.settings, label: "Notifications" },
-        { href: routes.privacy, label: "Privacy" },
+      items: [
+        ...(settingsItems ?? [
+          { href: routes.settings, label: "Profile" },
+          { href: sectionHref(routes.settings, "notifications"), label: "Notifications" },
+          { href: routes.privacy, label: "Privacy" },
+        ]),
+        signOutItem,
       ],
       label: "Settings",
     },
@@ -255,16 +269,16 @@ function ProductChrome({
   );
 }
 
-export function ProductShell({ children, clubItems, currentArea, eyebrow, routes, title }: ProductShellProps) {
+export function ProductShell({ admin = false, children, clubItems, currentArea, eyebrow, routes, title }: ProductShellProps) {
   return (
-    <ProductChrome clubItems={clubItems} currentArea={currentArea} routes={routes}>
+    <ProductChrome admin={admin} clubItems={clubItems} currentArea={currentArea} routes={routes}>
       <main className={styles.productMain}>
         <header className={styles.pageHeading}>
           <div>
             <p className={styles.eyebrow}>{eyebrow}</p>
             <h1>{title}</h1>
           </div>
-          <a className={styles.headerCta} href={routes?.setup ?? canonicalRoutes.setup}>Primary action</a>
+          <a className={styles.headerCta} href={routes?.session ?? canonicalRoutes.session}>Primary action</a>
         </header>
         <nav aria-label="Club sections" className={styles.contextTabs}>
           {clubItems.map((item) => (
