@@ -37,8 +37,10 @@ workflow never creates tags, changes the Compose branch, or saves its environmen
 2. Ensure the Compose resource and managed data resources attach to Dokploy's shared
    `dokploy-network`. The repository fixes this name in `compose.deploy.yaml`; do not add a
    `DOKPLOY_NETWORK` environment variable.
-3. Create a UAT-only MinIO bucket and application access key. Configure a domain-restricted Resend
-   sending key and verified UAT sender. Use only synthetic data.
+3. Create a UAT-only MinIO bucket and application access key. Configure a sending-only Resend key
+   restricted to `uat.pick-flick.app` and verify the approved
+   `PickFlick UAT <notifications@uat.pick-flick.app>` sender. Use only synthetic data and approved
+   test recipients.
 4. Create a Docker Compose resource with this immutable configuration:
 
 | Setting | Value |
@@ -64,7 +66,7 @@ APP_ENV=uat
 DATABASE_URL
 REDIS_URL
 RESEND_API_KEY
-RESEND_FROM
+RESEND_FROM="PickFlick UAT <notifications@uat.pick-flick.app>"
 STORAGE_ENDPOINT=https://storage-uat.pick-flick.app
 STORAGE_FORCE_PATH_STYLE=true
 STORAGE_REGION=us-east-1
@@ -75,7 +77,9 @@ STORAGE_BUCKET
 
 Use a dedicated bucket and application credentials; do not give the application the MinIO root
 identity. Route only the MinIO S3 API port `9000` through Dokploy and Cloudflare. Keep its console
-private. `RESEND_API_KEY` is server-only and should be restricted to the verified sender domain.
+private. `RESEND_API_KEY` is server-only and must have sending-only access restricted to
+`uat.pick-flick.app`. Do not reuse the production key or sender, send to product users, or fall back
+to production or personal SMTP. UAT does not need a Google Workspace mailbox for the sender address.
 
 Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
 `worker`, and `web` exist and none has a host-published port.

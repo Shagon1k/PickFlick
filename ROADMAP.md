@@ -521,11 +521,13 @@ review.
 
 **Out of scope:** Complete page content or business mutations.
 
-### Phase 3 — Public Site & System States · Not started
+### Phase 3 — Public Site & System States · In progress
 
 **Goal:** Deliver the complete public-facing PickFlick story and safe recovery surfaces.
 
-**Dependencies:** Phase 2 public shell and primitives; production domain/contact values may remain environment-configured until confirmed.
+**Dependencies:** Phase 2 public shell and primitives; the production contact and environment-specific
+sender identities are fixed by
+[ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders).
 
 **Tickets:**
 
@@ -1326,6 +1328,7 @@ review.
 | Canonical UAT and production domains | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases. | Developer decision, 2026-08-24. |
 | Proportional MVP deployment baseline | Developer | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07. |
 | Source-built production promotion | Developer | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement. | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11. |
+| Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13. |
 
 ### Open Questions
 
@@ -1335,7 +1338,7 @@ These do not block guidance creation; each has an explicit decision point.
 | --- | --- | --- | --- |
 | Which auth/session library best supports Google + Apple, the accepted API-owned session boundary, and self-hosting? | Developer + implementation agent | Phase 4 | Compare maintained official integrations in issue #25 and accept the implementation ADR before auth work. |
 | Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
-| What are the final sender domain and contact address, and how will external crawler caches be refreshed after cutover? | Product owner | Phase 3 / 23 | The production domain is confirmed as `pick-flick.app`; resolve the remaining email identity and cache-refresh procedure before final metadata, email DNS, legal copy, and production validation. |
+| How will external crawler caches be refreshed after production cutover? | Product owner | Phase 23 | Define and rehearse the cache-refresh procedure before final production metadata validation. |
 | What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
 | Which PWA service-worker approach and supported browser/device matrix will be maintained? | Developer + implementation agent | Phase 1 / 22 | Verify current framework compatibility during foundation work and finalize before PWA implementation. |
 | Who is the release owner and rollback authority, and what exact revision/readiness/smoke evidence is required before and after production cutover? | Product owner + release owner | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal. |
@@ -1389,7 +1392,7 @@ These do not block guidance creation; each has an explicit decision point.
 | 0 — Guidance Baseline | Done | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22. | No application code was created. |
 | 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
 | 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
-| 3 — Public Site & System States | Not started |  |  |
+| 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; public feature delivery remains pending. |
 | 4 — Authentication & Account Onboarding | Not started |  |  |
 | 5 — Clubs, Membership & Roles | Not started |  |  |
 | 6 — Human Verification & Bug Fixing I | Not started |  | Stabilization gate for Phases 1–5. |

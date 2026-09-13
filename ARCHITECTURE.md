@@ -237,7 +237,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | TMDB | API/worker -> TMDB | HTTPS API | Provider adapter with integration tests | Server-held API credential; provider data untrusted. | Timeout, bounded retry, cached stale detail where safe, explicit unavailable state. | Proposed |
 | Paddle checkout/portal | Web/API -> Paddle | Hosted provider flow | Billing adapter and return-state contract | Authenticated Admin; server creates provider session. | Safe cancel/failure return and server-side entitlement recheck. | Proposed |
 | Paddle webhook | Paddle -> API | Signed HTTPS webhook | Raw-body verification + versioned handler | Public endpoint, signature/timestamp/replay validation. | Fast reject invalid; store valid idempotently; async processing/retry. | Proposed |
-| Email | Worker -> Resend | HTTPS API | Notification template registry | Server credential; minimum personal data. | Bounded retry/backoff, delivery status, alert persistent failure. | Proposed |
+| Email | Worker -> Resend | HTTPS API | Notification template registry plus [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Environment-specific, domain-restricted server credential; minimum personal data. | Bounded retry/backoff, delivery status, alert persistent failure; never fall back across environments or to personal SMTP. | Proposed |
 | Upload | Web -> object storage via API policy | Presigned HTTPS | Upload intent + completion contract | Authenticated owner; MIME/size/key allowlist. | Reject unsafe files, verify object, clean abandoned uploads. | Proposed |
 | CSV import/export | Web and API/worker | Multipart upload / signed download | Versioned CSV schema and export manifest | Requesting User only; formula-injection and parser limits. | Row-level validation summary; no partial silent import; expiring private download. | Proposed |
 
@@ -249,7 +249,8 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | Apple Sign in | OAuth registration/sign-in. | Provider subject, relay/verified email, initial profile when supplied. | Persist first-return fields safely; safe auth failure; account-link policy. | Identity env schema. | Proposed |
 | TMDB | Film discovery/metadata/images/credits/related titles. | Search text and provider IDs; cached public movie metadata. | Debounce, cache with refresh age, respect rate limits, stale-safe details, observable refresh queue. | Movies env/app settings. | Proposed |
 | Paddle | Merchant of record and subscription lifecycle. | Admin identity/customer reference, plan/checkout data, signed billing events. | Idempotent webhook ledger, provider-state reconciliation, alert failed processing. | Billing env schema. | Proposed |
-| Resend | Transactional and opted-in emails. | Recipient address and minimum rendered event content. | Queue retry/backoff; suppression/bounce handling; delivery audit without full-body logging. | Notifications env schema. | Proposed |
+| Google Workspace Mail | Receive public Contact, legal, and direct sender replies at the owner-controlled PickFlick mailbox. | Sender address, recipient alias, headers, and message content supplied by the correspondent. | Keep `hello@pick-flick.app` stable while private routing changes; provider failure never redirects mail to a published personal address. | Alex-owned Google Workspace and Cloudflare DNS. | Active — owner confirmed root-domain inbound mail; live mailbox delivery was not exercised in issue #20. |
+| Resend | Send transactional and opted-in application email as `PickFlick <notifications@pick-flick.app>` in production and `PickFlick UAT <notifications@uat.pick-flick.app>` in UAT. Production replies go to `hello@pick-flick.app`. | Recipient address and minimum rendered event content. | Separate domain-restricted keys; queue retry/backoff; suppression/bounce handling; delivery audit without full-body logging; no cross-environment or personal-SMTP fallback. | Alex-owned Resend account; Notifications env schema. | Proposed — sender identities and DNS ownership are approved; the application adapter remains unimplemented. |
 | S3-compatible storage | Avatar/export objects. | User-uploaded image or generated private archive. | Signed URLs, validation, cleanup jobs, availability error. | Storage env schema. | Proposed |
 | Sentry | Errors/performance. | Sanitized error/trace context; no secrets or unnecessary personal content. | Sampling and scrubbing; app remains functional if telemetry fails. | Observability env schema. | Proposed |
 | IMDb/Wikipedia | Optional outbound film references. | Browser navigation to trusted ID-derived URL. | Omit link when trusted identifier is unavailable. | Movies module. | Proposed |
@@ -298,6 +299,10 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 - Fail startup on missing/invalid required configuration. Distinguish build-time public values from runtime secrets.
 - Store production secrets in the deployment platform’s secret mechanism and scope them by deployable/provider.
 - Rotate webhook/OAuth/email/storage secrets through documented procedures without committing values.
+- Keep `hello@pick-flick.app` as the only public contact. Cloudflare DNS, Google Workspace, and
+  Resend remain under Alex's administrative control. Use separate domain-restricted Resend keys and
+  sender identities for UAT and production as defined by
+  [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders).
 
 ### Delivery and operations
 
