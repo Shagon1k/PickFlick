@@ -1,9 +1,9 @@
 # UI quality checks
 
-The Playwright suite checks the production `/ui-preview` route and seven `/shell-preview/*` routes
-in Chromium. It builds the internal packages and web app, starts the standalone web server on
-loopback, and then runs accessibility, interaction, viewport, reduced-motion, and screenshot
-checks.
+The Playwright suite checks the production `/ui-preview`, Landing, Pricing, and seven
+`/shell-preview/*` routes in Chromium. It builds the internal packages and web app, starts the
+standalone web server on loopback, and then runs accessibility, interaction, viewport,
+reduced-motion, and screenshot checks.
 
 ## Run the suite
 
@@ -22,18 +22,20 @@ pnpm ui:test
 
 The suite verifies:
 
-- default axe rules for the component preview and every shell at 390px and 1440px widths;
+- default axe rules for the component preview, every shell, Landing, and Pricing at 390px and
+  1440px widths;
 - keyboard, focus, native constraint, live-region, menu, tab, score, dialog, and mutually exclusive
-  shell-overlay behavior;
-- 44px shell targets and bounded Library/App Admin dense regions;
-- no horizontal page overflow at 390, 640, 768, 900, 1024, 1200, and 1440px widths;
-- exact matching against four component and 28 shell full-page baselines at 390, 768, 1024, and
-  1440px widths; and
-- immediate menu feedback when the browser requests reduced motion.
+  shell-overlay behavior, plus Pricing FAQ and unavailable-checkout behavior;
+- 44px shell targets and bounded Library/App Admin/Pricing dense regions;
+- no horizontal page overflow for the component preview, shells, Landing, and Pricing at 390, 640,
+  768, 900, 1024, 1200, and 1440px widths;
+- exact matching against four component, 28 shell, and eight public-page full-page baselines at
+  390, 768, 1024, and 1440px widths; and
+- immediate menu and FAQ behavior when the browser requests reduced motion.
 
-Run the component-preview viewport and screenshot checks with `pnpm ui:visual`. Shell captures run
-as part of `pnpm ui:test`. To exercise the interaction smoke against an already-running production
-web build, run:
+Run the component-preview viewport and screenshot checks with `pnpm ui:visual`. Shell and public
+page captures run as part of `pnpm ui:test`. To exercise the interaction smoke against an
+already-running production web build, run:
 
 ```bash
 pnpm ui:smoke -- http://127.0.0.1:<port>

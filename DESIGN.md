@@ -138,12 +138,13 @@ The [UX flow map](_docs/design/prototypes/ux-flow-map.html) is the visual source
 
 ### Screen coverage
 
-All canonical screens are MVP. Their design direction is approved; build and production QA have not started.
+All canonical screens are MVP. Their design direction is approved; implementation and QA status are
+recorded per surface.
 
 | Route / view | Purpose | Primary design source | Design | Build | QA |
 | --- | --- | --- | --- | --- | --- |
-| `/` | Explain the ritual and move visitors toward registration. | [landing.html](_docs/design/prototypes/landing.html) | Approved | Not started | Not checked |
-| `/pricing` | Compare Free/Pro and enter checkout. | [pricing.html](_docs/design/prototypes/pricing.html) | Approved with clarifications | Not started | Not checked |
+| `/` | Explain the ritual and move visitors toward registration. | [landing.html](_docs/design/prototypes/landing.html) | Approved | Done | Passed locally |
+| `/pricing` | Compare Free/Pro and enter checkout. | [pricing.html](_docs/design/prototypes/pricing.html) | Approved with clarifications | Done; checkout disabled until billing | Passed locally |
 | `/contact` | Send a concise message with stable validation/success feedback. | [contact.html](_docs/design/prototypes/contact.html) | Approved | Not started | Not checked |
 | `/login` | Register/sign in with Google or Apple and continue intent. | [login.html](_docs/design/prototypes/login.html) | Approved | Not started | Not checked |
 | `/invite/club/[token]` | Preview and accept/decline a Club invitation; handle expiry/auth. | [invite.html](_docs/design/prototypes/invite.html) | Approved | Not started | Not checked |
@@ -251,10 +252,10 @@ Every production data surface implements applicable states rather than shipping 
 
 | Check | Target / coverage | Evidence | Status |
 | --- | --- | --- | --- |
-| Source parity | Every canonical screen and shared component compared against package source. | Four component-preview and 28 shell baselines are committed; exact-SHA owner review and feature screens remain pending. | In progress |
-| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Component and shell previews check 390, 640, 768, 900, 1024, 1200, and 1440. All seven shells have S/M/L/XL captures. | In progress |
-| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Automation covers shared controls plus shell search, notifications, account and sign-out actions, distinct subsection routes, mobile and section menus, mutual exclusion, focus entry/return, and Escape dismissal. Feature flows remain pending. | In progress |
-| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Axe scans all seven shells at 390 and 1440. Automated checks cover visible focus, 44px shell targets, bounded scrolling, and reduced motion; manual review remains pending. | In progress |
+| Source parity | Every canonical screen and shared component compared against package source. | Four component-preview, 28 shell, and eight Landing/Pricing S/M/L/XL baselines are committed. The new page captures were compared locally with their canonical sources; other feature screens remain pending. | In progress |
+| Responsive layout | Continuous widths plus representative 390, 768, 1024, and 1440 modes; portrait/landscape where material. | Component, shell, Landing, and Pricing checks cover 390, 640, 768, 900, 1024, 1200, and 1440. All seven shells and both implemented public pages have S/M/L/XL captures. | In progress |
+| Keyboard and focus | Auth, Club creation, Session lifecycle, search, menus, dialogs, rating/score controls, settings, admin confirmations. | Automation covers shared and shell controls plus Pricing FAQ expansion, focus preservation, public destinations, and the unavailable checkout control. Other feature flows remain pending. | In progress |
+| Accessibility | Semantic structure, names, focus, contrast, live regions, target sizes, reduced motion, automated checks. | Axe scans all seven shells, Landing, and Pricing at 390 and 1440. Automated checks cover visible focus, 44px shell targets, local table scrolling, and reduced motion; manual review remains pending. | In progress |
 | Dynamic content | Empty/loading/error/read-only/offline, long Club/Movie/user text, large nomination/member lists, provider failures. | Fixture matrix and captures required; none yet. | Not checked |
 | Localization readiness | English expansion, locale-safe dates/numbers/currency, no newly embedded copy in images. | Phase 2 foundation plus Phase 22/24 review; none yet. | Not checked |
 | Browser and input support | Final supported modern-browser/device matrix, mouse/keyboard/touch. | Chromium component and shell automation is active; the final browser/device and UAT matrix remains pending. | In progress |

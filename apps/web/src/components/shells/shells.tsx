@@ -48,10 +48,13 @@ const canonicalRoutes: ShellRouteMap = {
   setup: "/login",
 };
 
-function publicNavigation(routes: ShellRouteMap): readonly ShellNavigationItem[] {
+function publicNavigation(
+  routes: ShellRouteMap,
+  currentPage?: "home" | "pricing",
+): readonly ShellNavigationItem[] {
   return [
     { href: routes.howItWorks, label: "How it works" },
-    { href: routes.pricing, label: "Pricing" },
+    { href: routes.pricing, label: "Pricing", current: currentPage === "pricing" },
     { href: routes.contact, label: "Contact" },
   ];
 }
@@ -134,14 +137,19 @@ function Brand({ href = "/" }: Readonly<{ href?: string }>) {
 
 export function PublicShell({
   children,
+  currentPage,
   routes = canonicalRoutes,
-}: Readonly<{ children: ReactNode; routes?: ShellRouteMap }>) {
+}: Readonly<{
+  children: ReactNode;
+  currentPage?: "home" | "pricing";
+  routes?: ShellRouteMap;
+}>) {
   return (
     <div className={`${styles.shell} ${styles.publicShell}`} data-shell="public">
       <header className={styles.publicHeader}>
         <div className={styles.headerInner}>
           <Brand href={routes.home} />
-          <PublicNavigation items={publicNavigation(routes)} />
+          <PublicNavigation items={publicNavigation(routes, currentPage)} />
           <a className={styles.headerCta} href={routes.setup}>Get started</a>
         </div>
       </header>
