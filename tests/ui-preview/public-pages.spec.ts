@@ -54,6 +54,10 @@ for (const publicPage of pages) {
   test(`${publicPage.name} has no automated accessibility violations`, async ({ page }) => {
     for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
       await openPage(page, publicPage.route, viewport);
+      if (publicPage.name === "landing") {
+        const heroContent = page.locator("main section").first().locator(":scope > div:last-child");
+        await expect.poll(() => heroContent.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("1");
+      }
       const results = await new AxeBuilder({ page }).analyze();
       expect(
         results.violations,
@@ -104,17 +108,55 @@ test("landing calls to action and public navigation use canonical destinations",
   await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" }).getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing");
 });
 
+test("public navigation stays fixed at the viewport bottom through tablet", async ({ page }) => {
+  for (const viewport of [canonicalViewports[0], canonicalViewports[1]]) {
+    await openPage(page, "/", viewport);
+    const menuButton = page.getByRole("button", { name: "Menu" });
+    const menuBar = menuButton.locator("..");
+    const menuBox = await menuButton.boundingBox();
+
+    expect(await menuBar.evaluate((element) => globalThis.getComputedStyle(element).position)).toBe("fixed");
+    expect(menuBox?.y).toBeGreaterThanOrEqual(viewport.height - 64);
+
+    await menuButton.click();
+    const mobileNavigation = page.getByRole("navigation", { name: "Public mobile navigation" });
+    await expect(mobileNavigation).toBeVisible();
+    expect((await mobileNavigation.boundingBox())?.y).toBeLessThan(menuBox?.y ?? 0);
+  }
+
+  await openPage(page, "/", { height: 900, width: 821 });
+  await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
+  await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" })).toBeVisible();
+});
+
+test("landing content remains visible when JavaScript is unavailable", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: canonicalViewports[3] });
+  const page = await context.newPage();
+
+  try {
+    await page.goto("/", { waitUntil: "networkidle" });
+    const revealState = await page.locator("main > div").getAttribute("data-reveal");
+    const opacity = await page.locator("#features").evaluate((element) => globalThis.getComputedStyle(element).opacity);
+
+    expect(revealState).toBeNull();
+    expect(opacity).toBe("1");
+  } finally {
+    await context.close();
+  }
+});
+
 test("landing reveals scene sections on scroll and removes reveal motion when requested", async ({ page }) => {
   await openPage(page, "/", canonicalViewports[3]);
-  const features = page.locator("#features");
+  const promise = page.getByRole("region", { name: "PickFlick promise" });
 
-  expect(await features.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("0");
-  await features.scrollIntoViewIfNeeded();
-  await expect.poll(() => features.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("1");
+  await expect(page.locator('main > div[data-reveal="enabled"]')).toHaveCount(1);
+  await expect.poll(() => promise.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("0");
+  await promise.scrollIntoViewIfNeeded();
+  await expect.poll(() => promise.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("1");
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openPage(page, "/", canonicalViewports[3]);
-  const reducedMotionStyles = await features.evaluate((element) => {
+  const reducedMotionStyles = await promise.evaluate((element) => {
     const style = globalThis.getComputedStyle(element);
     return {
       opacity: style.opacity,

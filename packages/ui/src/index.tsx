@@ -12,6 +12,7 @@ import {
 import { ConstraintSelect } from "./interactive.js";
 
 export { BRAND_ASSETS, BrandImage, type BrandAssetKey, type BrandImageProps } from "./brand-assets.js";
+export { Icon, type IconName, type IconProps } from "./icon.js";
 export {
   ProjectorNoirColorSchemeScript,
   ProjectorNoirProvider,

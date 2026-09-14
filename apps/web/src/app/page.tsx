@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { ActionLink, BrandImage } from "@pickflick/ui";
+import { ActionLink, BrandImage, Icon } from "@pickflick/ui";
 
 import { LandingRevealRoot } from "../components/marketing/landing-reveal";
 import { landingFeatures, landingSteps } from "../components/marketing/marketing-content";
@@ -12,29 +12,8 @@ export const metadata: Metadata = {
   description: "Plan film nights with your Club, from nominations and scoring to shared history.",
 };
 
-type FeatureIconName = (typeof landingFeatures)[number]["icon"];
-
-function FeatureIcon({ name }: Readonly<{ name: FeatureIconName }>) {
-  const common = { "aria-hidden": true, fill: "none", viewBox: "0 0 24 24" } as const;
-
-  switch (name) {
-    case "catalog":
-      return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM8 7h8M8 10h6" /></svg>;
-    case "pulse":
-      return <svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>;
-    case "clock":
-      return <svg {...common}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
-    case "clubs":
-      return <svg {...common}><rect height="18" rx="2" width="18" x="3" y="3" /><path d="M9 3v18M14 8h4M14 12h4" /></svg>;
-    case "chart":
-      return <svg {...common}><path d="M6 20v-4M12 20V10M18 20V4" /></svg>;
-    case "device":
-      return <svg {...common}><rect height="20" rx="3" width="14" x="5" y="2" /><path d="M10 18h4" /></svg>;
-  }
-}
-
 function SprocketDivider() {
-  return <div aria-hidden="true" className={styles.divider}><i /><i /><i /></div>;
+  return <div aria-hidden="true" className={styles.divider} />;
 }
 
 export default function HomePage() {
@@ -95,7 +74,7 @@ export default function HomePage() {
             <div className={styles.featureGrid}>
               {landingFeatures.map((feature) => (
                 <article className={styles.feature} key={feature.title}>
-                  <div className={styles.featureMark}><FeatureIcon name={feature.icon} /></div>
+                  <div className={styles.featureMark}><Icon name={feature.icon} /></div>
                   <h3>{feature.title}</h3>
                   <p>{feature.description}</p>
                 </article>

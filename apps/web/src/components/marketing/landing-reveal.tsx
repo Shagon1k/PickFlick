@@ -25,14 +25,14 @@ export function LandingRevealRoot({ children }: Readonly<{ children: ReactNode }
     const reveal = (section: HTMLElement) => section.classList.add(revealedClass);
 
     if (globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      sections.forEach(reveal);
       return;
     }
 
     if (!("IntersectionObserver" in globalThis)) {
-      sections.forEach(reveal);
       return;
     }
+
+    root.dataset.reveal = "enabled";
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,7 +48,10 @@ export function LandingRevealRoot({ children }: Readonly<{ children: ReactNode }
 
     sections.forEach((section) => observer.observe(section));
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      delete root.dataset.reveal;
+    };
   }, []);
 
   return <div className={styles.page} ref={rootRef}>{children}</div>;

@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { Icon, type IconName } from "@pickflick/ui";
+
 import styles from "./shells.module.css";
 
 export interface ShellNavigationItem {
@@ -73,84 +75,52 @@ function useProductOverlay() {
 }
 
 function Magnifier() {
-  return (
-    <svg aria-hidden="true" className={styles.icon} fill="none" viewBox="0 0 24 24">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
+  return <Icon className={styles.icon} name="search" />;
 }
 
 function Bell() {
-  return (
-    <svg aria-hidden="true" className={styles.icon} fill="none" viewBox="0 0 24 24">
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-    </svg>
-  );
+  return <Icon className={styles.icon} name="bell" />;
 }
 
 function MobileNavigationIcon({ label }: Readonly<{ label: string }>) {
-  const common = { "aria-hidden": true, className: styles.mobileNavGlyph, fill: "none", viewBox: "0 0 24 24" } as const;
-  switch (label) {
-    case "Hub":
-      return <svg {...common}><path d="M4 6h16v14H4zM4 10h16M8 3l2 3m4-3 2 3" /></svg>;
-    case "Library":
-      return <svg {...common}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="2" /><path d="M12 4v3m0 10v3m8-8h-3M7 12H4" /></svg>;
-    case "Alerts":
-      return <Bell />;
-    case "Settings":
-      return <svg {...common}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21h-4v-.1a1.7 1.7 0 0 0-2.8-1.2l-.1.1-2.9-2.9.1-.1A1.7 1.7 0 0 0 4.6 14H4v-4h.1a1.7 1.7 0 0 0 1.2-2.8l-.1-.1 2.9-2.9.1.1A1.7 1.7 0 0 0 11 3.1V3h4v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0 1.2 2.8h.1v4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>;
-    case "Admin":
-      return <svg {...common}><path d="M12 3l8 4v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V7z" /><path d="m9 12 2 2 4-4" /></svg>;
-    default:
-      return <svg {...common}><circle cx="12" cy="12" r="8" /></svg>;
-  }
+  const iconByLabel: Readonly<Record<string, IconName>> = {
+    Admin: "admin",
+    Alerts: "bell",
+    Hub: "hub",
+    Library: "library",
+    Settings: "settings",
+  };
+
+  return <Icon className={styles.mobileNavGlyph} name={iconByLabel[label] ?? "circle"} />;
 }
 
 function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
-  const common = { "aria-hidden": true, className: styles.menuIcon, fill: "none", viewBox: "0 0 24 24" } as const;
-  switch (label) {
-    case "Overview":
-      return <svg {...common}><rect height="7" width="7" x="3" y="3" /><rect height="7" width="7" x="14" y="3" /><rect height="7" width="7" x="3" y="14" /><rect height="7" width="7" x="14" y="14" /></svg>;
-    case "Sessions":
-      return <svg {...common}><path d="M4 6h16v14H4zM4 10h16M8 3l2 3m4-3 2 3" /></svg>;
-    case "Ratings":
-    case "My Ratings":
-      return <svg {...common}><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z" /></svg>;
-    case "Members":
-    case "Users":
-      return <svg {...common}><circle cx="9" cy="8" r="4" /><path d="M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2m1-11a4 4 0 0 1 4 4v2" /></svg>;
-    case "Achievements":
-      return <svg {...common}><circle cx="12" cy="9" r="6" /><path d="m8 14-1 7 5-3 5 3-1-7" /></svg>;
-    case "Watchlist":
-      return <svg {...common}><path d="M6 3h12v18l-6-4-6 4z" /></svg>;
-    case "Profile":
-      return <svg {...common}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>;
-    case "Notifications":
-      return <svg {...common}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>;
-    case "Privacy":
-      return <svg {...common}><rect height="10" rx="2" width="18" x="3" y="11" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
-    case "Subscription":
-    case "Pricing":
-      return <svg {...common}><path d="M12 2v20m5-16H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7" /></svg>;
-    case "Import & Export":
-      return <svg {...common}><path d="M8 3H4v16h4m8-16h4v16h-4M7 8l5-5 5 5m-5-5v13m5 0-5 5-5-5" /></svg>;
-    case "Clubs":
-      return <svg {...common}><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></svg>;
-    case "Admin Panel":
-      return <svg {...common}><path d="M12 3l8 4v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V7z" /><path d="m9 12 2 2 4-4" /></svg>;
-    case "Contact Us":
-      return <svg {...common}><rect height="16" rx="2" width="20" x="2" y="4" /><path d="m2 6 10 7 10-7" /></svg>;
-    case "Sign out":
-      return <svg {...common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9" /></svg>;
-    case "Manage Club":
-    case "Application settings":
-    case "Settings":
-      return <svg {...common}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21h-4v-.1a1.7 1.7 0 0 0-2.8-1.2l-.1.1-2.9-2.9.1-.1A1.7 1.7 0 0 0 4.6 14H4v-4h.1a1.7 1.7 0 0 0 1.2-2.8l-.1-.1 2.9-2.9.1.1A1.7 1.7 0 0 0 11 3.1V3h4v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0 1.2 2.8h.1v4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>;
-    default:
-      return <svg {...common}><circle cx="12" cy="12" r="7" /></svg>;
-  }
+  const iconByLabel: Readonly<Record<string, IconName>> = {
+    "Admin Panel": "admin",
+    "Application settings": "settings",
+    "Contact Us": "contact",
+    "Import & Export": "import-export",
+    "My Ratings": "ratings",
+    Achievements: "achievements",
+    Clubs: "club-building",
+    Manage: "settings",
+    "Manage Club": "settings",
+    Members: "members",
+    Notifications: "bell",
+    Overview: "overview",
+    Pricing: "pricing",
+    Privacy: "privacy",
+    Profile: "profile",
+    Ratings: "ratings",
+    Sessions: "sessions",
+    Settings: "settings",
+    "Sign out": "sign-out",
+    Subscription: "pricing",
+    Users: "members",
+    Watchlist: "watchlist",
+  };
+
+  return <Icon className={styles.menuIcon} name={iconByLabel[label] ?? "circle"} />;
 }
 
 function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
@@ -163,7 +133,13 @@ function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
   );
 }
 
-export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavigationItem[] }>) {
+export function PublicNavigation({
+  items,
+  variant,
+}: Readonly<{
+  items: readonly ShellNavigationItem[];
+  variant: "desktop" | "mobile";
+}>) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -184,14 +160,16 @@ export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavi
 
   return (
     <>
-      <nav aria-label="Public navigation" className={styles.publicDesktopNav}>
-        {items.map((item) => (
-          <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
-            {item.label}
-          </a>
-        ))}
-      </nav>
-      <div className={styles.publicMobileNav}>
+      {variant === "desktop" ? (
+        <nav aria-label="Public navigation" className={styles.publicDesktopNav}>
+          {items.map((item) => (
+            <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      ) : (
+        <div className={styles.publicMobileNav}>
         <button
           aria-controls="public-mobile-navigation"
           aria-expanded={open}
@@ -200,7 +178,8 @@ export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavi
           ref={triggerRef}
           type="button"
         >
-          Menu
+          <Icon className={styles.publicMenuIcon} name="menu" />
+          <span>Menu</span>
         </button>
         {open ? (
           <div
@@ -223,7 +202,8 @@ export function PublicNavigation({ items }: Readonly<{ items: readonly ShellNavi
             </nav>
           </div>
         ) : null}
-      </div>
+        </div>
+      )}
     </>
   );
 }

@@ -81,36 +81,36 @@
   text-wrap: balance;
 }
 
-.reveal {
+.page[data-reveal="enabled"] .reveal {
   opacity: 0;
   transform: translateY(32px);
+}
+
+.page[data-reveal="enabled"] .reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
   transition:
     opacity 600ms ease,
     transform 600ms ease;
 }
 
-.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.hero.reveal {
+.page[data-reveal="enabled"] .hero.reveal {
   opacity: 1;
   transform: none;
   transition: none;
 }
 
-.hero.reveal .heroInner {
+.page[data-reveal="enabled"] .hero.reveal .heroInner {
   opacity: 0;
   transform: translateY(32px);
+}
+
+.page[data-reveal="enabled"] .hero.reveal.revealed .heroInner {
+  opacity: 1;
+  transform: translateY(0);
   transition:
     opacity 600ms ease,
     transform 600ms ease;
-}
-
-.hero.reveal.revealed .heroInner {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .warmLine {
@@ -153,11 +153,15 @@
 .divider {
   display: flex;
   width: min(360px, calc(100% - 48px));
-  gap: 6px;
+  gap: 42px;
   align-items: center;
   justify-content: center;
   margin-inline: auto;
   padding-block: var(--gap-lg);
+  background:
+    radial-gradient(circle, var(--border-lit) 0 3px, transparent 3.5px) calc(50% - 12px) 50% / 7px 7px no-repeat,
+    radial-gradient(circle, var(--border-lit) 0 3px, transparent 3.5px) 50% 50% / 7px 7px no-repeat,
+    radial-gradient(circle, var(--border-lit) 0 3px, transparent 3.5px) calc(50% + 12px) 50% / 7px 7px no-repeat;
 }
 
 .divider::before,
@@ -172,14 +176,6 @@
     transparent 6px,
     transparent 12px
   );
-}
-
-.divider i {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--border-lit);
 }
 
 .steps {

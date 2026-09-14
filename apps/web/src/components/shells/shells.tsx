@@ -149,10 +149,11 @@ export function PublicShell({
       <header className={styles.publicHeader}>
         <div className={styles.headerInner}>
           <Brand href={routes.home} />
-          <PublicNavigation items={publicNavigation(routes, currentPage)} />
+          <PublicNavigation items={publicNavigation(routes, currentPage)} variant="desktop" />
           <a className={styles.headerCta} href={routes.setup}>Get started</a>
         </div>
       </header>
+      <PublicNavigation items={publicNavigation(routes, currentPage)} variant="mobile" />
       <main>{children}</main>
       <footer className={styles.publicFooter}>
         <Brand href={routes.home} />
