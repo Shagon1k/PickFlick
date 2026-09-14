@@ -14,6 +14,7 @@ async function bootstrap(): Promise<void> {
 
   try {
     const app = await NestFactory.create(AppModule.register(environment, logger), { logger: false });
+    app.getHttpAdapter().getInstance().set("trust proxy", 1);
     app.use(createRequestContextMiddleware(logger));
     app.useGlobalFilters(new ApiExceptionFilter(logger));
     await app.listen(environment.apiPort, environment.apiHost);

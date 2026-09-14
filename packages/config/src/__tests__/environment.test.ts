@@ -23,6 +23,8 @@ const validEnvironment = {
   STORAGE_FORCE_PATH_STYLE: "true",
   RESEND_API_KEY: "local-disabled",
   RESEND_FROM: "PickFlick <pickflick@example.invalid>",
+  CONTACT_DELIVERY_TO: "contact@example.invalid",
+  CONTACT_HASH_SECRET: "local-contact-hash-secret-for-tests",
 } as const;
 
 describe("environment validation", () => {
@@ -48,6 +50,7 @@ describe("environment validation", () => {
       shutdownTimeoutMilliseconds: 10_000,
       storage: { forcePathStyle: true },
       resend: { from: "PickFlick <pickflick@example.invalid>" },
+      contact: { deliveryTo: "contact@example.invalid" },
     });
   });
 
@@ -80,8 +83,19 @@ describe("environment validation", () => {
         ...validEnvironment,
         RESEND_API_KEY: undefined,
         STORAGE_ACCESS_KEY: undefined,
+        CONTACT_HASH_SECRET: undefined,
       }),
-    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required/);
+    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required; CONTACT_HASH_SECRET is required/);
+  });
+
+  it("rejects unsafe Contact delivery configuration without echoing the secret", () => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        CONTACT_DELIVERY_TO: "not-an-email",
+        CONTACT_HASH_SECRET: "too-short",
+      }),
+    ).toThrow(/CONTACT_DELIVERY_TO must be an email address; CONTACT_HASH_SECRET must contain at least 32 characters/);
   });
 
   it("accepts the worker inventory without API bind settings", () => {

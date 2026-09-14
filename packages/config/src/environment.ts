@@ -24,6 +24,10 @@ export interface RuntimeEnvironment {
     readonly apiKey: string;
     readonly from: string;
   };
+  readonly contact: {
+    readonly deliveryTo: string;
+    readonly hashSecret: string;
+  };
 }
 
 export type WorkerEnvironment = Omit<RuntimeEnvironment, "apiHost" | "apiPort">;
@@ -170,6 +174,8 @@ function parseWorkerValues(
   const forcePathStyle = boolean(source, "STORAGE_FORCE_PATH_STYLE", failures);
   const resendApiKey = required(source, "RESEND_API_KEY", failures);
   const from = required(source, "RESEND_FROM", failures);
+  const contactDeliveryTo = required(source, "CONTACT_DELIVERY_TO", failures);
+  const contactHashSecret = required(source, "CONTACT_HASH_SECRET", failures);
 
   if (
     bucket &&
@@ -182,6 +188,12 @@ function parseWorkerValues(
   if (from && !/^(?:[^@\s]+@[^@\s]+\.[^@\s]+|[^@<>\r\n]+ <[^@\s]+@[^@\s]+\.[^@\s]+>)$/.test(from)) {
     failures.push({ name: "RESEND_FROM", reason: "must be an email address or a name plus email address" });
   }
+  if (contactDeliveryTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactDeliveryTo)) {
+    failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be an email address" });
+  }
+  if (contactHashSecret && contactHashSecret.length < 32) {
+    failures.push({ name: "CONTACT_HASH_SECRET", reason: "must contain at least 32 characters" });
+  }
   return {
     appEnvironment,
     ...(sourceRevision ? { sourceRevision } : {}),
@@ -190,6 +202,7 @@ function parseWorkerValues(
     redisUrl,
     storage: { endpoint, region, bucket, accessKey, secretKey, forcePathStyle },
     resend: { apiKey: resendApiKey, from },
+    contact: { deliveryTo: contactDeliveryTo, hashSecret: contactHashSecret },
   };
 }
 

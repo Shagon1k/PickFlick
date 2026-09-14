@@ -99,6 +99,9 @@ restricted to `pick-flick.app`. Application email sets `Reply-To` to the public
 `hello@pick-flick.app` address. Google Workspace receives public mail, Cloudflare owns authoritative
 DNS, Resend sends application mail, and Alex retains administrative ownership and recovery control
 for all three providers. Do not configure a personal, UAT, or cross-environment fallback.
+Set `CONTACT_DELIVERY_TO=hello@pick-flick.app` and supply a production-only
+`CONTACT_HASH_SECRET` of at least 32 characters through Dokploy. Never copy the UAT hash secret or
+record either value in deployment evidence.
 
 Before activation, check these boundaries:
 
@@ -106,6 +109,8 @@ Before activation, check these boundaries:
 - Managed PostgreSQL and Redis have no externally published port.
 - The storage bucket contains no UAT or local data.
 - `RESEND_FROM` exactly matches `PickFlick <notifications@pick-flick.app>`.
+- `CONTACT_DELIVERY_TO` exactly matches `hello@pick-flick.app`, and `CONTACT_HASH_SECRET` is present
+  only in the runtime secret environment.
 - Google Workspace receives `hello@pick-flick.app` and direct mail to the production sender before
   public release.
 - The notification adapter directs replies to `hello@pick-flick.app`.

@@ -63,6 +63,8 @@ block is the source of truth and must not be replaced by CI. At minimum it requi
 
 ```text
 APP_ENV=uat
+CONTACT_DELIVERY_TO
+CONTACT_HASH_SECRET
 DATABASE_URL
 REDIS_URL
 RESEND_API_KEY
@@ -80,6 +82,9 @@ identity. Route only the MinIO S3 API port `9000` through Dokploy and Cloudflare
 private. `RESEND_API_KEY` is server-only and must have sending-only access restricted to
 `uat.pick-flick.app`. Do not reuse the production key or sender, send to product users, or fall back
 to production or personal SMTP. UAT does not need a Google Workspace mailbox for the sender address.
+Set `CONTACT_DELIVERY_TO` to one explicitly approved test recipient and use synthetic Contact
+content only. Keep `CONTACT_HASH_SECRET` in the Dokploy secret environment; it must differ from the
+production value and contain at least 32 characters.
 
 Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
 `worker`, and `web` exist and none has a host-published port.

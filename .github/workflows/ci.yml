@@ -134,6 +134,9 @@ jobs:
       - name: Check migrations and database constraints
         run: pnpm db:check
 
+      - name: Check Contact persistence and abuse controls
+        run: pnpm contact:check
+
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke
 

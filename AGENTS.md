@@ -33,8 +33,9 @@
   promotion workflow and runbook are also implemented; the production guard remains false, and no
   production provisioning, deployment, or traffic cutover is authorized.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
-  two reviewed migrations, deterministic synthetic fixtures, and guarded local/test seed and reset
-  commands. Remaining product entities arrive with their owning phases.
+  the Contact delivery intent, three reviewed migrations, deterministic synthetic fixtures, and
+  guarded local/test seed and reset commands. Remaining product entities arrive with their owning
+  phases.
 - Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.
 - The HTML prototypes are inspectable design specifications and disposable implementation examples; do not copy their inline JavaScript, fixture data, or page-local CSS into production uncritically.
 
@@ -68,6 +69,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Apply database migrations | `pnpm migrate` |
 | Run the database seed | `pnpm seed` |
 | Verify migrations, fixtures, and database constraints | `pnpm db:check` |
+| Verify Contact persistence, duplicate handling, and rate limits | `pnpm contact:check` |
 | Reset a positively identified local/test database | `pnpm db:reset` |
 
 Copy `.env.example` to `.env` before running services or runtime commands. See

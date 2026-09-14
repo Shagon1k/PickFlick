@@ -1,5 +1,5 @@
 import { loadWorkerEnvironment, safeEnvironmentValidationFailures } from "@pickflick/config/environment";
-import { checkDatabaseReadiness } from "@pickflick/database";
+import { checkDatabaseReadiness, createDatabaseClient } from "@pickflick/database";
 import {
   checkReadiness,
   createLogger,
@@ -8,6 +8,11 @@ import {
 } from "@pickflick/observability";
 
 import { runWorker } from "./worker.js";
+import {
+  PrismaContactDeliveryStore,
+  ResendContactSender,
+  runContactDeliveryLoop,
+} from "./contact-delivery.js";
 
 const controller = new AbortController();
 const drain = new DrainController();
@@ -22,16 +27,22 @@ process.once("SIGTERM", stop);
 async function bootstrap(): Promise<void> {
   const environment = loadWorkerEnvironment();
   const logger = createLogger({ service: "worker", environment: environment.appEnvironment });
+  const database = createDatabaseClient(environment.databaseUrl);
   const probes = createRuntimeDependencyProbes(environment, (timeoutMilliseconds) =>
     checkDatabaseReadiness(environment.databaseUrl, timeoutMilliseconds),
   );
 
   try {
+    const store = new PrismaContactDeliveryStore(database, logger);
+    const sender = new ResendContactSender(environment);
     await runWorker(controller.signal, {
       logger,
       readiness: () => checkReadiness(probes),
       drain,
       shutdownTimeoutMilliseconds: environment.shutdownTimeoutMilliseconds,
+      ...(environment.resend.apiKey === "local-disabled"
+        ? {}
+        : { work: (signal: AbortSignal) => runContactDeliveryLoop(signal, store, sender, logger, drain) }),
     });
   } catch {
     const shutdownFailed = controller.signal.aborted;
@@ -43,6 +54,8 @@ async function bootstrap(): Promise<void> {
       process.exit(1);
     }
     process.exitCode = 1;
+  } finally {
+    await database.$disconnect();
   }
 }
 

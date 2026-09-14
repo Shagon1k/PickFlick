@@ -3,6 +3,12 @@ import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import type { ApplicationLogger } from "@pickflick/observability";
 
 import { AppController } from "./app.controller.js";
+import { ContactController } from "./contact/contact.controller.js";
+import {
+  ContactMessageRepository,
+  ContactService,
+  PrismaContactMessageRepository,
+} from "./contact/contact.service.js";
 import { HealthController } from "./health.controller.js";
 import { HealthService } from "./health.service.js";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";
@@ -17,11 +23,13 @@ export class AppModule {
   static register(environment: RuntimeEnvironment, logger: ApplicationLogger): DynamicModule {
     return {
       module: AppModule,
-      controllers: [AppController, HealthController],
+      controllers: [AppController, HealthController, ContactController],
       providers: [
         { provide: RUNTIME_ENVIRONMENT, useValue: environment },
         { provide: APPLICATION_LOGGER, useValue: logger },
         HealthService,
+        ContactService,
+        { provide: ContactMessageRepository, useClass: PrismaContactMessageRepository },
       ],
     };
   }

@@ -17,6 +17,7 @@
     "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/ui --filter @pickflick/web --filter @pickflick/api --filter @pickflick/worker dev",
     "e2e:smoke": "node scripts/e2e-smoke.mjs",
     "compose:check": "node scripts/check-deployment.mjs",
+    "contact:check": "pnpm --filter @pickflick/api contact:check",
     "images:build": "node scripts/build-images.mjs",
     "build:packages": "pnpm -r --filter './packages/*' --if-present build",
     "lint": "eslint .",

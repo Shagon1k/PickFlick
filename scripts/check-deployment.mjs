@@ -22,6 +22,8 @@ const intendedHealthChecks = {
 };
 const runtimeEnvironmentVariables = [
   "APP_ENV",
+  "CONTACT_DELIVERY_TO",
+  "CONTACT_HASH_SECRET",
   "DATABASE_URL",
   "REDIS_URL",
   "RESEND_API_KEY",
@@ -46,6 +48,8 @@ function assert(condition, message) {
 function environmentFor(appEnvironment) {
   const environment = {
     APP_ENV: appEnvironment,
+    CONTACT_DELIVERY_TO: "contact@example.invalid",
+    CONTACT_HASH_SECRET: "synthetic-contact-hash-secret-at-least-32-characters",
     DATABASE_URL: `postgresql://pickflick:synthetic@pickflick-${appEnvironment}-postgres:5432/pickflick_${appEnvironment}`,
 
     REDIS_URL: `redis://:synthetic@pickflick-${appEnvironment}-redis:6379/0`,

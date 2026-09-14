@@ -157,6 +157,12 @@ owner-controlled queue. UAT does not need a Google Workspace mailbox for its sen
 provider failure must remain inside its environment: preserve retryable intent and report persistent
 failure instead of selecting personal SMTP, UAT credentials, or another sender.
 
+Contact delivery uses `CONTACT_DELIVERY_TO` for the environment-approved inbox and
+`CONTACT_HASH_SECRET` to create non-reversible source and duplicate hashes. Production fixes the
+destination to `hello@pick-flick.app`; UAT uses one explicitly approved synthetic-test recipient;
+local and test use `example.invalid` and keep Resend disabled. Rotate the hash secret as a server
+credential, understanding that rotation starts a new rate-limit and duplicate-detection window.
+
 The exact From values and public address are safe to document. `RESEND_API_KEY`, provider recovery
 material, and generated DNS verification values are not. Store each key only in its environment's
 secret store and never save a rendered Compose environment as evidence.
@@ -189,10 +195,11 @@ volumes only when you intentionally want to discard all local service data.
 
 ## Run migrations and seeds
 
-`pnpm migrate` uses `prisma migrate deploy`; it never uses `db push`. The two initial migrations
-create the `User`, `Club`, `Membership`, and `Session` foundation, then add reviewed PostgreSQL
-constraints. The second migration is backward compatible with the first application schema because
-it changes no columns or types.
+`pnpm migrate` uses `prisma migrate deploy`; it never uses `db push`. The first two migrations
+create the `User`, `Club`, `Membership`, and `Session` foundation and its reviewed constraints. The
+third adds `ContactMessage` with duplicate, delivery-state, payload-lifecycle, and lookup
+constraints. All three migrations are additive and backward compatible with the preceding
+application schema.
 
 `pnpm seed` is idempotent and uses stable identifiers plus `example.invalid` email addresses. It
 refuses every environment except `local` and `test`. A local seed also requires a loopback database
@@ -223,6 +230,8 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
 | `RESEND_API_KEY` | Non-empty server-side Resend API key or the local disabled placeholder | API, worker | Yes |
 | `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
+| `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
+| `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |
 
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as
@@ -230,10 +239,12 @@ not remove the bucket or credential requirements. For UAT, use the public MinIO 
 the future presigned-URL shape. AWS S3 production configuration will use its regional endpoint and
 set `STORAGE_FORCE_PATH_STYLE=false`.
 
-The runtime validates the Resend values at startup but does not call Resend from readiness.
+The runtime validates Resend and Contact values at startup but does not call Resend from readiness.
 Readiness must not consume provider rate limits or require a full-access key when the application
-only needs a domain-restricted sending key. Phase 17 adds the sending adapter, retries, and
-delivery observability with the first email use case.
+only needs a domain-restricted sending key. Contact delivery provides the first plain-text adapter,
+provider-idempotent bounded retries, durable failure state, and body-free logging. Phase 17 extends
+that boundary with notification templates, preferences, bounce/suppression handling, and shared
+BullMQ dispatch.
 
 By default, processes load `.env` from the repository root without replacing variables already in
 the process environment. Set `PICKFLICK_ENV_FILE` to an absolute path or a repository-relative path
@@ -258,7 +269,8 @@ uploads screenshots, visual diffs, axe output, traces, video, and the HTML repor
 the [UI quality guide](ui-quality.md) for its viewport and interaction coverage.
 
 The integration job applies the committed migrations, loads deterministic fixtures, verifies
-database constraints and dependency connectivity, and runs `pnpm e2e:smoke`. The smoke command
+database constraints and dependency connectivity, runs the serialized Contact persistence probe,
+and runs `pnpm e2e:smoke`. The smoke command
 starts the built web, API, and worker entrypoints; checks web rendering, API liveness/readiness, and
 worker readiness; then stops all three processes. CI also validates the deployment definitions and
 runs the repository secret scan. The terminal `Delivery gate` fails unless the secret scan and all
@@ -277,8 +289,9 @@ Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, and authent
 `HeadBucket` request. Each probe enforces its two-second deadline through its database driver,
 abort signal, or socket and cancels timed-out work. The worker runs the same checks before it
 reports `service.ready`. If a dependency is unavailable, the worker logs only its stable dependency
-name and exits unsuccessfully. Resend is not a readiness dependency; queued delivery and provider
-failure handling arrive with the notification implementation.
+name and exits unsuccessfully. Resend is not a readiness dependency. Contact delivery preserves
+intent in PostgreSQL, applies provider idempotency and bounded retry in the worker, and records a
+safe persistent-failure signal without making API readiness depend on the provider.
 
 API responses include `x-request-id`. The API keeps a valid UUIDv4 supplied in `x-request-id` and
 generates a new UUIDv4 for missing or invalid input. Boundary failures use this envelope:
@@ -304,6 +317,11 @@ the route template, method, status, and duration. They omit request headers, bod
 strings. Job logs omit handler payloads and raw errors. The logger redacts common credential keys as
 a backstop; callers must still log allowlisted operational metadata instead of raw browser,
 provider, job, or configuration objects.
+
+Contact logs contain route, status, duration, request ID, Contact record ID, attempt count, and
+fixed error codes only. They never contain message, name, email, raw source address, provider body,
+or configuration values. A successful provider acceptance clears message, name, and email from
+PostgreSQL; retryable and exhausted failures retain content so the owner can recover delivery.
 
 ## Local Compose variables
 
