@@ -121,11 +121,6 @@
   color: #a9c39d;
 }
 
-.submitZone[data-success] .submitButton {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .emailAlternative {
   margin: var(--gap-md) 0 0;
   color: var(--muted);

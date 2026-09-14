@@ -279,12 +279,47 @@ test("contact accepts both new and duplicate submissions through one stable feed
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
   await expect(page.getByRole("textbox", { name: "Message — required" })).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Message sent" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Message sent" })).toBeDisabled();
+
+  await page.getByRole("textbox", { name: "Message — required" }).fill("Start another message");
+  await expect(page.getByRole("button", { name: "Send message" })).toBeEnabled();
 
   duplicate = true;
   await page.reload({ waitUntil: "networkidle" });
   await page.getByRole("textbox", { name: "Message — required" }).fill("A concise note");
   await page.getByRole("textbox", { name: "Your email" }).fill("jane@example.com");
   await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+});
+
+test("contact prevents edits while a submission is in flight", async ({ page }) => {
+  let releaseResponse: (() => void) | undefined;
+  const responseGate = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  await page.route("**/api/contact", async (route) => {
+    await responseGate;
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ id: "contact-1", status: "accepted" }),
+    });
+  });
+  await openPage(page, "/contact", canonicalViewports[0]);
+
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  const name = page.getByRole("textbox", { name: "Your name" });
+  const email = page.getByRole("textbox", { name: "Your email" });
+  await message.fill("Keep this submitted snapshot");
+  await page.getByRole("button", { name: "Send message" }).click();
+
+  await expect(message).toBeDisabled();
+  await expect(name).toBeDisabled();
+  await expect(email).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Send message" })).toBeDisabled();
+
+  releaseResponse?.();
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
 });
 

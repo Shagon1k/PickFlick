@@ -98,6 +98,34 @@ describe("environment validation", () => {
     ).toThrow(/CONTACT_DELIVERY_TO must be an email address; CONTACT_HASH_SECRET must contain at least 32 characters/);
   });
 
+  it("requires the approved Contact destination in production", () => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        RESEND_API_KEY: "production-key",
+        CONTACT_DELIVERY_TO: "other@example.com",
+      }),
+    ).toThrow(/CONTACT_DELIVERY_TO must be hello@pick-flick.app in production/);
+  });
+
+  it.each(["uat", "production"])("rejects disabled Resend delivery in %s", (appEnvironment) => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        APP_ENV: appEnvironment,
+        CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
+      }),
+    ).toThrow(/RESEND_API_KEY must not be local-disabled outside local or test/);
+  });
+
+  it.each(["local", "test"])("allows disabled Resend delivery in %s", (appEnvironment) => {
+    expect(parseWorkerEnvironment({ ...validEnvironment, APP_ENV: appEnvironment })).toMatchObject({
+      appEnvironment,
+      resend: { apiKey: "local-disabled" },
+    });
+  });
+
   it("accepts the worker inventory without API bind settings", () => {
     expect(parseWorkerEnvironment({ ...validEnvironment, API_HOST: undefined, API_PORT: undefined })).toMatchObject({
       appEnvironment: "local",
@@ -113,9 +141,16 @@ describe("environment validation", () => {
   });
 
   it("allows deployed environments without a source revision", () => {
-    expect(parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat" })).toMatchObject({ appEnvironment: "uat" });
+    expect(parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat", RESEND_API_KEY: "uat-key" })).toMatchObject({
+      appEnvironment: "uat",
+    });
     expect(
-      parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) }),
+      parseRuntimeEnvironment({
+        ...validEnvironment,
+        APP_ENV: "uat",
+        RESEND_API_KEY: "uat-key",
+        SOURCE_REVISION: "a".repeat(40),
+      }),
     ).toMatchObject({ sourceRevision: "a".repeat(40) });
     expect(() => parseRuntimeEnvironment({ ...validEnvironment, SOURCE_REVISION: "main" })).toThrow(
       /SOURCE_REVISION must be a full hexadecimal source revision/,

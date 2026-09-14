@@ -191,6 +191,12 @@ function parseWorkerValues(
   if (contactDeliveryTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactDeliveryTo)) {
     failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be an email address" });
   }
+  if (appEnvironment === "production" && contactDeliveryTo !== "hello@pick-flick.app") {
+    failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be hello@pick-flick.app in production" });
+  }
+  if (resendApiKey === "local-disabled" && appEnvironment !== "local" && appEnvironment !== "test") {
+    failures.push({ name: "RESEND_API_KEY", reason: "must not be local-disabled outside local or test" });
+  }
   if (contactHashSecret && contactHashSecret.length < 32) {
     failures.push({ name: "CONTACT_HASH_SECRET", reason: "must contain at least 32 characters" });
   }

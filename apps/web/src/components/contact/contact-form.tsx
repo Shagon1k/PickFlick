@@ -67,9 +67,7 @@ export function ContactForm() {
       delete next[field];
       return next;
     });
-    if (feedback.tone !== "success") {
-      setFeedback({ message: "", tone: "neutral" });
-    }
+    setFeedback({ message: "", tone: "neutral" });
   }
 
   function focusFirstError(): void {
@@ -150,6 +148,7 @@ export function ContactForm() {
         label="Message — required"
         maxLength={CONTACT_MESSAGE_MAX_LENGTH}
         name="message"
+        disabled={pending}
         onChange={(event) => update("message", event.currentTarget.value)}
         placeholder="Tell us what's on your mind…"
         required
@@ -163,6 +162,7 @@ export function ContactForm() {
         label="Your name"
         maxLength={CONTACT_NAME_MAX_LENGTH}
         name="name"
+        disabled={pending}
         onChange={(event) => update("name", event.currentTarget.value)}
         placeholder="e.g. Jane Doe"
         value={values.name}
@@ -175,14 +175,22 @@ export function ContactForm() {
         label="Your email"
         maxLength={CONTACT_EMAIL_MAX_LENGTH}
         name="email"
+        disabled={pending}
         onChange={(event) => update("email", event.currentTarget.value)}
         placeholder="e.g. jane@example.com"
         type="email"
         value={values.email}
       />
 
-      <div className={styles.submitZone} data-success={feedback.tone === "success" || undefined}>
-        <Button className={styles.submitButton} loading={pending} type="submit">Send message</Button>
+      <div className={styles.submitZone}>
+        <Button
+          className={styles.submitButton}
+          disabled={feedback.tone === "success"}
+          loading={pending}
+          type="submit"
+        >
+          {feedback.tone === "success" ? "Message sent" : "Send message"}
+        </Button>
         <p
           aria-atomic="true"
           aria-live="polite"
