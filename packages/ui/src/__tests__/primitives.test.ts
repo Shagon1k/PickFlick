@@ -9,6 +9,7 @@ import {
   Button,
   DataTable,
   Dialog,
+  Icon,
   ProgressFilmStrip,
   ProjectorNoirColorSchemeScript,
   ProjectorNoirProvider,
@@ -38,6 +39,15 @@ function descendants(node: ReactNode): ReactElement<ElementProps>[] {
 }
 
 describe("Projector Noir primitives", () => {
+  it("renders shared icons as decorative, unfocusable SVGs", () => {
+    const markup = renderToStaticMarkup(Icon({ className: "feature-icon", name: "catalog" }));
+
+    expect(markup).toContain('class="feature-icon"');
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain('focusable="false"');
+    expect(markup).toContain('viewBox="0 0 24 24"');
+  });
+
   it("keeps loading actions native, named, and non-repeatable", () => {
     const component = Button({ children: "Create Session", loading: true });
     const button = descendants(component).find((element) => element.type === "button");

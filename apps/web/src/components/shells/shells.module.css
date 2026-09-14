@@ -8,6 +8,10 @@
   text-decoration: none;
 }
 
+.publicShell {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
 .publicHeader,
 .compactHeader,
 .productHeader {
@@ -118,14 +122,39 @@
 }
 
 .publicMobileNav {
-  position: relative;
-  justify-self: end;
-  grid-column: 2;
-  grid-row: 1;
+  position: fixed;
+  z-index: 45;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: calc(64px + env(safe-area-inset-bottom, 0px));
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--border);
+  background: rgba(12, 12, 12, 0.94);
+  backdrop-filter: blur(18px);
 }
 
 .publicMobileNav .headerButton {
-  padding-inline: 14px;
+  width: min(100%, 320px);
+  min-height: 64px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 0;
+  color: var(--fg-secondary);
+  font: 500 10px/1.15 var(--font-body);
+}
+
+.publicMenuIcon {
+  width: 22px;
+  height: 22px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
 }
 
 .compactLink,
@@ -445,9 +474,11 @@
 
 .publicMobileNav .filmMenu {
   position: absolute;
-  top: calc(100% + 12px);
   right: 0;
+  bottom: calc(100% + 12px);
+  left: 0;
   width: min(260px, calc(100vw - 32px));
+  margin-inline: auto;
   padding: 14px 22px;
 }
 
@@ -715,14 +746,6 @@
 }
 
 @media (min-width: 768px) {
-  .publicDesktopNav {
-    display: flex;
-  }
-
-  .publicMobileNav {
-    display: none;
-  }
-
   .setupPanel {
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   }
@@ -739,6 +762,20 @@
     grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
   }
 
+}
+
+@media (min-width: 821px) {
+  .publicShell {
+    padding-bottom: 0;
+  }
+
+  .publicDesktopNav {
+    display: flex;
+  }
+
+  .publicMobileNav {
+    display: none;
+  }
 }
 
 @media (min-width: 1024px) {
