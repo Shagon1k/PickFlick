@@ -22,7 +22,7 @@ const environment = {
 } as RuntimeEnvironment;
 
 const validSubmission = {
-  submissionKey: "123e4567-e89b-42d3-a456-426614174000",
+  submissionKey: "123e4567-e89b-42d3-a456-426614174000", // gitleaks:allow -- synthetic UUID fixture
   message: "A concise message.",
   name: "Jane Doe",
   email: "JANE@example.invalid",
