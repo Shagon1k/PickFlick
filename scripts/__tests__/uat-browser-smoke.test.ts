@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { browserSmokeConfiguration } from "../uat-browser-smoke.mjs";
+import { browserSmokeConfiguration, isPickFlickDocumentTitle } from "../uat-browser-smoke.mjs";
 
 describe("UAT browser smoke configuration", () => {
   it("resolves the artifact directory without a deployment revision", () => {
@@ -10,6 +10,12 @@ describe("UAT browser smoke configuration", () => {
     });
 
     expect(configuration.artifactDirectory).toMatch(/artifacts\/uat$/);
+  });
+
+  it("accepts branded page titles with route-specific metadata", () => {
+    expect(isPickFlickDocumentTitle("PickFlick")).toBe(true);
+    expect(isPickFlickDocumentTitle("PickFlick — Pick a film. Watch together. Remember everything.")).toBe(true);
+    expect(isPickFlickDocumentTitle("A different product")).toBe(false);
   });
 
   it("rejects a non-canonical preview URL", () => {
