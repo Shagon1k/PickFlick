@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ActionLink, BrandImage } from "@pickflick/ui";
 
+import { LandingRevealRoot } from "../components/marketing/landing-reveal";
 import { landingFeatures, landingSteps } from "../components/marketing/marketing-content";
 import styles from "../components/marketing/marketing.module.css";
 import { PublicShell } from "../components/shells/shells";
@@ -39,8 +40,8 @@ function SprocketDivider() {
 export default function HomePage() {
   return (
     <PublicShell>
-      <div className={styles.page}>
-        <section aria-labelledby="landing-title" className={styles.hero}>
+      <LandingRevealRoot>
+        <section aria-labelledby="landing-title" className={`${styles.hero} ${styles.reveal}`}>
           <div aria-hidden="true" className={styles.spotlight} />
           <div className={`${styles.container} ${styles.heroInner}`}>
             <h1 id="landing-title">
@@ -60,7 +61,7 @@ export default function HomePage() {
 
         <SprocketDivider />
 
-        <section aria-labelledby="journey-title" className={styles.section} id="how">
+        <section aria-labelledby="journey-title" className={`${styles.section} ${styles.reveal}`} id="how">
           <div className={`${styles.container} ${styles.steps}`}>
             <h2 className="pf-visually-hidden" id="journey-title">How PickFlick works</h2>
             <p className={styles.eyebrow}>The four-act structure</p>
@@ -80,7 +81,7 @@ export default function HomePage() {
 
         <SprocketDivider />
 
-        <section aria-labelledby="features-title" className={styles.section} id="features">
+        <section aria-labelledby="features-title" className={`${styles.section} ${styles.reveal}`} id="features">
           <div className={styles.container}>
             <div className={styles.featureHeader}>
               <div>
@@ -105,13 +106,13 @@ export default function HomePage() {
 
         <SprocketDivider />
 
-        <section aria-label="PickFlick promise" className={styles.statementSection}>
+        <section aria-label="PickFlick promise" className={`${styles.statementSection} ${styles.reveal}`}>
           <p className={`${styles.container} ${styles.statement}`}>
             No more group-chat chaos. One round of nominations, one scored Selection, and your next film is decided.
           </p>
         </section>
 
-        <section aria-labelledby="landing-handoff-title" className={styles.handoff}>
+        <section aria-labelledby="landing-handoff-title" className={`${styles.handoff} ${styles.reveal}`}>
           <div className={styles.handoffInner}>
             <div>
               <h2 id="landing-handoff-title">Stop arguing. <span className={styles.warmLine}>Start watching.</span></h2>
@@ -128,7 +129,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-      </div>
+      </LandingRevealRoot>
     </PublicShell>
   );
 }

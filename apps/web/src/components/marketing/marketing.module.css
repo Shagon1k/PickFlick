@@ -76,9 +76,41 @@
 .pricingHero h1 {
   max-width: 900px;
   margin: 0;
-  font: 600 var(--fs-hero)/var(--lh-tight) var(--font-display);
+  font: 600 clamp(42px, max(6vw, min(13vw, 58px)), 76px)/var(--lh-tight) var(--font-display);
   letter-spacing: var(--tracking-tight);
   text-wrap: balance;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 600ms ease,
+    transform 600ms ease;
+}
+
+.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero.reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.hero.reveal .heroInner {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 600ms ease,
+    transform 600ms ease;
+}
+
+.hero.reveal.revealed .heroInner {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .warmLine {
@@ -523,7 +555,7 @@
   text-align: left;
 }
 
-.comparisonTable tr:last-child td {
+.comparisonTable tr:last-child :is(th, td) {
   border-bottom: 0;
 }
 
@@ -542,8 +574,12 @@
   color: var(--gold);
 }
 
-.comparisonTable td:first-child {
+.comparisonTable tbody th:first-child {
+  color: var(--fg);
+  font: inherit;
   font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .comparisonTable td:not(:first-child) {
@@ -743,14 +779,15 @@
   }
 }
 
+@media (max-width: 767px) {
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 575px) {
   .container {
     width: calc(100% - 32px);
-  }
-
-  .hero h1,
-  .pricingHero h1 {
-    font-size: clamp(42px, 13vw, 58px);
   }
 
   .heroMascot {
@@ -775,10 +812,6 @@
     font-size: 27px;
   }
 
-  .featureGrid {
-    grid-template-columns: 1fr;
-  }
-
   .feature {
     padding: 24px;
   }
@@ -793,6 +826,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .hero.reveal .heroInner {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
   .faqPanel {
     animation: none;
   }

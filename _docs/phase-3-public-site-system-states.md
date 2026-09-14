@@ -99,7 +99,7 @@ provider configuration.
 | Documentation consistency | `git diff --check`, focused identity scan, relative-link check, and repository lint | Passed: diff and identity checks, 197 relative links across nine files, and `pnpm lint`. |
 | Live mailbox and provider behavior | Google Workspace routing test, Resend dashboard verification, authenticated delivery, reply, SPF/DKIM/DMARC inspection | Owner-run and not authorized in issue #20. Required before dependent production release validation. |
 | Landing and Pricing implementation | Issue #21 production routes, shared marketing content/styles, FAQ interaction, and corrected plan contract | Passed locally: `/` and `/pricing` prerender statically; the €5 monthly offer matches the Roadmap; both plans keep one blocking Session per Club; open Rating Sessions remain unlimited; Pro checkout is disabled until the Paddle phase. |
-| Public-page quality gate | `pnpm ui:test`, focused plan-contract tests, source comparison, and production build | Passed locally: 90 Chromium checks include axe at 390/1440, overflow at seven widths, FAQ/focus/reduced-motion behavior, local comparison-table scrolling, and eight reviewed S/M/L/XL page captures. |
+| Public-page quality gate | `pnpm ui:test`, focused plan-contract tests, source comparison, and production build | Passed locally: 92 Chromium checks include axe at 390/1440, overflow at seven widths, semantic comparison row headers, FAQ/focus/reduced-motion behavior, landing scroll reveals, the 576–767px composition bridge, local comparison-table scrolling, and eight reviewed S/M/L/XL page captures. |
 
 At the Phase 3 boundary, move durable implementation facts into canonical guidance, record phase
 evidence in `ROADMAP.md`, and delete this file plus its docs-map link.

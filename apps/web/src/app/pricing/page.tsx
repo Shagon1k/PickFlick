@@ -89,7 +89,7 @@ export default function PricingPage() {
                 <tbody>
                   {comparisonRows.map((row) => (
                     <tr key={row.feature}>
-                      <td>{row.feature}</td>
+                      <th scope="row">{row.feature}</th>
                       <td>{row.free}</td>
                       <td>{row.pro}</td>
                     </tr>

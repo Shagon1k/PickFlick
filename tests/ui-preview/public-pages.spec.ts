@@ -78,6 +78,14 @@ for (const publicPage of pages) {
   for (const viewport of canonicalViewports) {
     test(`${publicPage.name} matches the ${viewport.name} source-comparison capture`, async ({ page }) => {
       await openPage(page, publicPage.route, viewport);
+
+      if (publicPage.name === "landing") {
+        for (const section of await page.locator("main section").all()) {
+          await section.scrollIntoViewIfNeeded();
+        }
+        await page.evaluate(() => globalThis.scrollTo(0, 0));
+      }
+
       await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
         animations: "disabled",
         caret: "hide",
@@ -96,6 +104,51 @@ test("landing calls to action and public navigation use canonical destinations",
   await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" }).getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing");
 });
 
+test("landing reveals scene sections on scroll and removes reveal motion when requested", async ({ page }) => {
+  await openPage(page, "/", canonicalViewports[3]);
+  const features = page.locator("#features");
+
+  expect(await features.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("0");
+  await features.scrollIntoViewIfNeeded();
+  await expect.poll(() => features.evaluate((element) => globalThis.getComputedStyle(element).opacity)).toBe("1");
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openPage(page, "/", canonicalViewports[3]);
+  const reducedMotionStyles = await features.evaluate((element) => {
+    const style = globalThis.getComputedStyle(element);
+    return {
+      opacity: style.opacity,
+      transform: style.transform,
+      transitionDuration: Number.parseFloat(style.transitionDuration),
+    };
+  });
+  expect(reducedMotionStyles).toMatchObject({ opacity: "1", transform: "none" });
+  expect(reducedMotionStyles.transitionDuration).toBeLessThanOrEqual(0.001);
+});
+
+test("landing preserves heading scale and the S feature composition through the responsive bridge", async ({ page }) => {
+  await openPage(page, "/", { height: 900, width: 575 });
+  const headingAt575 = await page.getByRole("heading", { level: 1 }).evaluate((element) =>
+    Number.parseFloat(globalThis.getComputedStyle(element).fontSize),
+  );
+
+  await openPage(page, "/", { height: 900, width: 576 });
+  const headingAt576 = await page.getByRole("heading", { level: 1 }).evaluate((element) =>
+    Number.parseFloat(globalThis.getComputedStyle(element).fontSize),
+  );
+  expect(Math.abs(headingAt576 - headingAt575)).toBeLessThan(1);
+
+  await openPage(page, "/", gapViewports[0]);
+  expect(await page.locator("#features > div > div:last-child").evaluate((element) =>
+    globalThis.getComputedStyle(element).gridTemplateColumns.split(" ").length,
+  )).toBe(1);
+
+  await openPage(page, "/", canonicalViewports[1]);
+  expect(await page.locator("#features > div > div:last-child").evaluate((element) =>
+    globalThis.getComputedStyle(element).gridTemplateColumns.split(" ").length,
+  )).toBe(2);
+});
+
 test("pricing publishes corrected limits and keeps checkout unavailable", async ({ page }) => {
   await openPage(page, "/pricing", canonicalViewports[3]);
 
@@ -106,6 +159,7 @@ test("pricing publishes corrected limits and keeps checkout unavailable", async 
   await expect(upgrade).toBeDisabled();
   await expect(page.getByText("Pro checkout opens in the Paddle billing phase.")).toBeVisible();
   await expect(page.getByRole("row", { name: /Blocking Sessions per Club 1 1/ })).toBeVisible();
+  await expect(page.getByRole("rowheader", { name: "Blocking Sessions per Club" })).toBeVisible();
   await expect(page.getByRole("row", { name: /Price €0 €5 \/ month/ })).toBeVisible();
   await expect(page.getByText("Unlimited nomination rounds")).toHaveCount(0);
 });
