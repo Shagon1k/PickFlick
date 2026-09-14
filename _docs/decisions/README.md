@@ -28,6 +28,7 @@ separately.
 | [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively) | Own Projector Noir and use Mantine selectively | Accepted | 2026-09-05 |
 | [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | Use a proportional Dokploy deployment baseline | Accepted | 2026-09-07 |
 | [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags) | Promote source-built production from UAT-proven SemVer tags | Accepted | 2026-09-11 |
+| [ADR-009](#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Use one public contact and environment-specific Resend senders | Accepted | 2026-09-13 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -640,3 +641,108 @@ complete.
   human-control approval of the TailorTales-aligned production approach.
 - ADR-007's evidence list above, including the reviewed TailorTales Compose, deployment guide, UAT
   workflow, and production workflow revision.
+
+## ADR-009 — Use one public contact and environment-specific Resend senders
+
+- **Status:** Accepted
+- **Date:** 2026-09-13
+- **Decider:** Product owner (Alex)
+- **Owning issue:** [#20](https://github.com/Shagon1k/PickFlick/issues/20)
+
+### Context
+
+Public Contact and legal copy need one durable address that does not expose a personal mailbox.
+Application email also needs an authenticated sender identity without allowing UAT configuration to
+select the production sender or credentials.
+
+The product owner has configured Google Workspace to receive mail for `pick-flick.app` and controls
+the Cloudflare DNS zone, Google Workspace, and Resend account. A read-only public DNS inspection on
+2026-09-13 found Cloudflare nameservers, Google root-domain mail routing, and separate Resend
+authentication records for `pick-flick.app` and `uat.pick-flick.app`. No DMARC record was present.
+This ADR records neither provider-generated record values nor credentials.
+
+Resend supports sending from any address at a verified domain. Its sending Return-Path records use
+a subdomain and can coexist with a root-domain inbox provider. Resend recommends a dedicated sender
+subdomain to isolate reputation, but PickFlick's MVP sends transactional and opted-in application
+mail only. A new sender subdomain and receiving route would add configuration without a current
+marketing or high-volume isolation requirement.
+
+### Decision
+
+Publish `hello@pick-flick.app` as the only public Contact and legal address. Google Workspace
+receives that address. Keep the address stable when the responsible person or destination mailbox
+changes by updating private routing instead of public copy.
+
+Send production application email through Resend as
+`PickFlick <notifications@pick-flick.app>`. The notification adapter must set `Reply-To` to
+`hello@pick-flick.app`. Before production release, configure Google Workspace so direct mail to the
+sender address reaches the same owner-controlled contact queue.
+
+Send UAT application email through Resend as
+`PickFlick UAT <notifications@uat.pick-flick.app>`. UAT uses a separate sending-only API key
+restricted to `uat.pick-flick.app`, synthetic content, and explicitly approved test recipients. It
+does not need a Google Workspace mailbox for the sender address. Production uses a separate
+sending-only key restricted to `pick-flick.app`. Local development and CI keep the disabled Resend
+placeholder and an `example.invalid` sender.
+
+Do not enable Resend Inbound or replace Google Workspace with Cloudflare Email Routing for this
+decision. Do not fall back from Resend to personal SMTP, UAT credentials, or another environment.
+The owning Contact or notification workflow must preserve retryable intent, bound retries, record
+delivery state, and surface persistent failure without logging message content.
+
+Alex retains administrative ownership and recovery control for Cloudflare DNS, Google Workspace,
+and Resend. Provider access may be delegated with least privilege, but these resources must not
+depend on a contractor-owned account. Store Resend credentials only in the owning environment's
+secret store; never record them in repository source, rendered configuration, logs, or evidence.
+
+Before production email validation, publish DMARC in monitoring mode and confirm every legitimate
+Google Workspace and Resend sender passes. Move to `quarantine` or `reject` only after reviewing the
+reports. Issue #20 records this requirement but does not authorize or perform DNS or provider
+changes.
+
+### Consequences
+
+- Contact, notification, legal, and release work share one approved public identity.
+- Production and UAT have visibly distinct From addresses and cannot share a domain-restricted key.
+- Root-domain human and application email share domain reputation. Transactional-only use,
+  domain-restricted credentials, suppression handling, and staged DMARC reduce but do not remove
+  that coupling.
+- Direct replies remain useful through `Reply-To`; production provisioning must also route mail
+  addressed directly to `notifications@pick-flick.app`.
+- A future marketing or materially higher-volume email requirement must revisit sender-subdomain
+  isolation before it sends through the production identity.
+
+### Alternatives considered
+
+- **Use `mail.pick-flick.app` for production sending.** Deferred because it adds another verified
+  domain and direct-reply route before PickFlick has a marketing or high-volume reputation boundary.
+- **Use one sender for UAT and production.** Rejected because a credential or configuration mistake
+  could make UAT send with the production identity.
+- **Use Cloudflare Email Routing for the public address.** Rejected because Google Workspace already
+  owns root-domain inbound mail and supports a real owner-controlled mailbox and replies.
+- **Use Resend Inbound for the public address.** Rejected because webhook verification, message and
+  attachment processing, retention, and operational recovery expand the Contact scope without a
+  current need.
+- **Publish a personal fallback address.** Rejected because it leaks a replaceable operator identity
+  into permanent public and legal copy.
+
+### Verification
+
+Issue #20 must keep the exact public, production, UAT, and local identities consistent across the
+Roadmap, Design, Architecture, environment reference, and UAT/production runbooks. Repository
+verification may inspect only public DNS record presence and must not retain record values.
+
+Before dependent production release validation, the owner must separately prove that Google
+Workspace receives `hello@pick-flick.app` and direct sender mail, Resend reports both sender domains
+verified, the UAT and production keys are sending-only and domain-restricted, test messages pass
+SPF/DKIM, replies reach the public contact queue, and staged DMARC does not reject legitimate mail.
+
+### Evidence
+
+- Product-owner approval in issue #20's human-controlled engineering run on 2026-09-13.
+- [Resend domain verification and sender-subdomain guidance](https://resend.com/docs/dashboard/domains/introduction)
+- [Resend sender-address behavior](https://resend.com/docs/knowledge-base/how-do-I-create-an-email-address-or-sender-in-resend)
+- [Resend coexistence with an existing inbox provider](https://resend.com/docs/knowledge-base/how-do-i-avoid-conflicting-with-my-mx-records)
+- [Resend API-key permissions and domain restriction](https://resend.com/docs/dashboard/api-keys/introduction)
+- [Resend DMARC rollout guidance](https://resend.com/docs/dashboard/domains/dmarc)
+- [Google Workspace MX setup](https://knowledge.workspace.google.com/admin/domains/set-up-mx-records-for-google-workspace)

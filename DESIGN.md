@@ -245,7 +245,7 @@ Every production data surface implements applicable states rather than shipping 
 | DES-006 | Session invite privacy | Non-members see no details and must join the Club first. | Decided | Maintains the Club privacy boundary. | Developer decision 10 |
 | DES-007 | Ratings | Historical Session Rating and editable Personal Rating are separate concepts. | Decided | Preserves history while allowing personal opinion to change. | Developer decision 12 |
 | DES-008 | Legal copy | Layout is approved; numeric retention/deletion/cookie assertions are provisional until implementation and review agree. | Deferred | Policy accuracy is higher priority than prototype prose. | Phase 19 / 23 review |
-| DES-009 | Production contact identity | Domain/email strings vary in prototypes. | Open | Confirm production domain and sender/contact address before Phase 3/4 final configuration. | [Roadmap Decision Log](ROADMAP.md#open-questions) |
+| DES-009 | Production contact identity | Publish `hello@pick-flick.app`; send production application email as `PickFlick <notifications@pick-flick.app>` with replies directed to the public contact. Use `PickFlick UAT <notifications@uat.pick-flick.app>` only for UAT. | Decided | One stable public address supports Contact and legal copy while distinct sender identities keep UAT out of production delivery. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) |
 
 ## 8. Design QA & Maintenance
 

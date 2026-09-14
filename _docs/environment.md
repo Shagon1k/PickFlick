@@ -136,6 +136,31 @@ required for a guard-disabled validation run. `GITHUB_REPOSITORY`, `GITHUB_API_U
 `GITHUB_TOKEN` are ephemeral workflow inputs. They identify the trusted repository and let the
 promotion controller read UAT workflow evidence; they are never saved to Dokploy.
 
+## Email identities and ownership
+
+[ADR-009](decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders)
+fixes the non-secret email identity contract:
+
+| Environment | Public contact | `RESEND_FROM` | Boundary |
+| --- | --- | --- | --- |
+| Local and test | None | `PickFlick <pickflick@example.invalid>` | `RESEND_API_KEY=local-disabled`; never call Resend. |
+| UAT | None | `PickFlick UAT <notifications@uat.pick-flick.app>` | Separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
+| Production | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>` | Separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue. |
+
+Google Workspace receives public mail for `pick-flick.app`. Cloudflare owns authoritative DNS, and
+Resend sends application email. Alex retains administrative ownership and recovery control for all
+three providers. Do not publish or configure a personal fallback address.
+
+The production notification adapter must set `Reply-To` to `hello@pick-flick.app`. Before release,
+configure Google Workspace so direct mail to `notifications@pick-flick.app` reaches the same
+owner-controlled queue. UAT does not need a Google Workspace mailbox for its sender address. A
+provider failure must remain inside its environment: preserve retryable intent and report persistent
+failure instead of selecting personal SMTP, UAT credentials, or another sender.
+
+The exact From values and public address are safe to document. `RESEND_API_KEY`, provider recovery
+material, and generated DNS verification values are not. Store each key only in its environment's
+secret store and never save a rendered Compose environment as evidence.
+
 ## Start the local stack
 
 Use the pinned Node and pnpm versions from the repository root. The checked-in values are synthetic
@@ -197,7 +222,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `STORAGE_SECRET_KEY` | Non-empty application secret access key | API, worker | Yes |
 | `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
 | `RESEND_API_KEY` | Non-empty server-side Resend API key or the local disabled placeholder | API, worker | Yes |
-| `RESEND_FROM` | Email address, optionally with a display name | API, worker | No |
+| `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
 
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as

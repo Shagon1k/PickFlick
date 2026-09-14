@@ -94,12 +94,25 @@ Supply a production-specific value for every input required by `compose.deploy.y
 credentials or scopes. The [environment reference](environment.md#runtime-variables) defines the
 full runtime inventory and marks sensitive values.
 
+Use `RESEND_FROM="PickFlick <notifications@pick-flick.app>"` with a production sending-only key
+restricted to `pick-flick.app`. Application email sets `Reply-To` to the public
+`hello@pick-flick.app` address. Google Workspace receives public mail, Cloudflare owns authoritative
+DNS, Resend sends application mail, and Alex retains administrative ownership and recovery control
+for all three providers. Do not configure a personal, UAT, or cross-environment fallback.
+
 Before activation, check these boundaries:
 
 - PostgreSQL, Redis, and object-storage credentials select only production resources.
 - Managed PostgreSQL and Redis have no externally published port.
 - The storage bucket contains no UAT or local data.
-- `RESEND_FROM` belongs to the approved production sender identity.
+- `RESEND_FROM` exactly matches `PickFlick <notifications@pick-flick.app>`.
+- Google Workspace receives `hello@pick-flick.app` and direct mail to the production sender before
+  public release.
+- The notification adapter directs replies to `hello@pick-flick.app`.
+- The Resend key has sending-only access restricted to `pick-flick.app`; no UAT key or sender is
+  present.
+- SPF and DKIM pass for both Google Workspace and Resend. Stage DMARC in monitoring mode before
+  moving to `quarantine` or `reject` after all legitimate senders pass.
 - No secret appears in browser build arguments, Compose source, workflow output, or saved preview
   output.
 
