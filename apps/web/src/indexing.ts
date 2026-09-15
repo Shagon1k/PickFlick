@@ -19,7 +19,7 @@ export const NON_PUBLIC_INDEXING_BOUNDARIES = [
   { headerSource: "/settings/:path*", robotsPath: "/settings" },
   { headerSource: "/admin/:path*", robotsPath: "/admin" },
   { headerSource: "/shell-preview/:path*", robotsPath: "/shell-preview" },
-  { headerSource: "/ui-preview", robotsPath: "/ui-preview" },
+  { headerSource: "/ui-preview/:path*", robotsPath: "/ui-preview" },
 ] as const;
 
 export const NOINDEX_HEADER = {

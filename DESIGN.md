@@ -165,7 +165,7 @@ recorded per surface.
 | `/movies/[tmdbId]` | Inspect a film, edit Personal Rating/Watchlist, and discover related films. | [movie-details.html](_docs/design/prototypes/movie-details.html) | Approved | Not started | Not checked |
 | `/settings` | Control profile, notifications, subscription, privacy, and import/export. | [settings.html](_docs/design/prototypes/settings.html) | Approved with policy clarification | Not started | Not checked |
 | `/admin` | Operate PickFlick users, Clubs, metrics, and service settings. | [admin-panel.html](_docs/design/prototypes/admin-panel.html) | Approved with role/billing fixture clarification | Not started | Not checked |
-| `not-found` / `error` | Recover from missing routes and application failure. | [error.html](_docs/design/prototypes/error.html) | Approved | Not started | Not checked |
+| `not-found` / `error` | Recover from missing routes and application failure. | [error.html](_docs/design/prototypes/error.html) | Approved | Done | Passed locally; owner preview review pending |
 
 ### Source clarifications that implementation must preserve
 
