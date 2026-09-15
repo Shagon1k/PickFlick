@@ -24,6 +24,7 @@ type FieldErrors = Partial<Record<keyof FormValues, string>>;
 type FeedbackTone = "neutral" | "success" | "danger" | "warning";
 
 const emptyValues: FormValues = { message: "", name: "", email: "" };
+const CONTACT_SUBMISSION_TIMEOUT_MILLISECONDS = 10_000;
 
 function validate(values: FormValues): FieldErrors {
   const errors: FieldErrors = {};
@@ -102,11 +103,14 @@ export function ContactForm() {
 
     setPending(true);
     setFeedback({ message: "Sending your message…", tone: "neutral" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), CONTACT_SUBMISSION_TIMEOUT_MILLISECONDS);
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...payload, submissionKey: attemptRef.current.key }),
+        signal: controller.signal,
       });
       if (response.ok) {
         const body = await response.json() as ContactSubmissionResponse;
@@ -135,6 +139,7 @@ export function ContactForm() {
     } catch {
       setFeedback({ message: "We couldn't reach PickFlick. Your text is still here — try again.", tone: "danger" });
     } finally {
+      clearTimeout(timeout);
       setPending(false);
     }
   }

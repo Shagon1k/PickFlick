@@ -20,9 +20,11 @@ import { createRequestContextMiddleware } from "../request-context.js";
 
 const privateBodyMarker = "private-contact-body-marker";
 let submittedSourceAddress: string | undefined;
+let submissionCount = 0;
 
 class StubContactService {
   async submit(body: unknown, sourceAddress: string) {
+    submissionCount += 1;
     submittedSourceAddress = sourceAddress;
     const state = (body as { state?: string }).state;
     if (state === "invalid") {
@@ -103,6 +105,19 @@ describe("ContactController HTTP boundary", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("600");
     await expect(response.json()).resolves.toMatchObject({ error: { code: "RATE_LIMITED" } });
+  });
+
+  it("rejects form-compatible bodies before they reach the Contact service", async () => {
+    const countBeforeRequest = submissionCount;
+    const response = await fetch(`${baseUrl}/contact`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ state: "valid", message: privateBodyMarker }),
+    });
+
+    expect(response.status).toBe(415);
+    await expect(response.json()).resolves.toMatchObject({ error: { code: "UNSUPPORTED_MEDIA_TYPE" } });
+    expect(submissionCount).toBe(countBeforeRequest);
   });
 
   it("resolves the visitor address through the production proxy sequence", async () => {

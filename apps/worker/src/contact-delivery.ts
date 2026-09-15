@@ -17,8 +17,8 @@ export interface ContactDeliveryRecord {
 
 export abstract class ContactDeliveryStore {
   abstract claim(now: Date): Promise<ContactDeliveryRecord | undefined>;
-  abstract complete(id: string, providerMessageId: string, now: Date): Promise<void>;
-  abstract fail(id: string, errorCode: string, nextAttemptAt: Date | undefined): Promise<void>;
+  abstract complete(id: string, attemptCount: number, providerMessageId: string, now: Date): Promise<void>;
+  abstract fail(id: string, attemptCount: number, errorCode: string, nextAttemptAt: Date | undefined): Promise<void>;
 }
 
 export abstract class ContactSender {
@@ -32,6 +32,13 @@ export class ContactProviderError extends Error {
   ) {
     super("Contact delivery provider request failed.");
     this.name = "ContactProviderError";
+  }
+}
+
+export class ContactDeliveryClaimLostError extends Error {
+  constructor() {
+    super("Contact delivery claim is no longer owned by this worker.");
+    this.name = "ContactDeliveryClaimLostError";
   }
 }
 
@@ -95,9 +102,9 @@ export class PrismaContactDeliveryStore extends ContactDeliveryStore {
     return record;
   }
 
-  async complete(id: string, providerMessageId: string, now: Date): Promise<void> {
+  async complete(id: string, attemptCount: number, providerMessageId: string, now: Date): Promise<void> {
     const result = await this.database.contactMessage.updateMany({
-      where: { id, deliveryState: "PROCESSING" },
+      where: { id, deliveryState: "PROCESSING", attemptCount },
       data: {
         deliveryState: "DELIVERED",
         providerMessageId,
@@ -110,13 +117,13 @@ export class PrismaContactDeliveryStore extends ContactDeliveryStore {
       },
     });
     if (result.count !== 1) {
-      throw new Error("Claimed Contact message was not available for completion.");
+      throw new ContactDeliveryClaimLostError();
     }
   }
 
-  async fail(id: string, errorCode: string, nextAttemptAt: Date | undefined): Promise<void> {
+  async fail(id: string, attemptCount: number, errorCode: string, nextAttemptAt: Date | undefined): Promise<void> {
     const result = await this.database.contactMessage.updateMany({
-      where: { id, deliveryState: "PROCESSING" },
+      where: { id, deliveryState: "PROCESSING", attemptCount },
       data: {
         deliveryState: nextAttemptAt ? "PENDING" : "FAILED",
         deliveryErrorCode: errorCode,
@@ -125,7 +132,7 @@ export class PrismaContactDeliveryStore extends ContactDeliveryStore {
       },
     });
     if (result.count !== 1) {
-      throw new Error("Claimed Contact message was not available for failure recording.");
+      throw new ContactDeliveryClaimLostError();
     }
   }
 }
@@ -210,17 +217,35 @@ export async function deliverNextContactMessage(
 
   try {
     const providerMessageId = await sender.send(message);
-    await store.complete(message.id, providerMessageId, now);
+    await store.complete(message.id, message.attemptCount, providerMessageId, now);
     logger.info(
       { event: "contact.delivery.completed", contactMessageId: message.id, attemptCount: message.attemptCount },
       "Contact message delivered.",
     );
   } catch (error) {
+    if (error instanceof ContactDeliveryClaimLostError) {
+      logger.warn(
+        { event: "contact.delivery.claim_lost", contactMessageId: message.id, attemptCount: message.attemptCount },
+        "Contact delivery claim expired before completion.",
+      );
+      return true;
+    }
     const providerError = error instanceof ContactProviderError
       ? error
       : new ContactProviderError("DELIVERY_FAILED", true);
     const nextAttemptAt = providerError.retryable ? retryAt(message.attemptCount, now) : undefined;
-    await store.fail(message.id, providerError.code, nextAttemptAt);
+    try {
+      await store.fail(message.id, message.attemptCount, providerError.code, nextAttemptAt);
+    } catch (failureError) {
+      if (failureError instanceof ContactDeliveryClaimLostError) {
+        logger.warn(
+          { event: "contact.delivery.claim_lost", contactMessageId: message.id, attemptCount: message.attemptCount },
+          "Contact delivery claim expired before failure recording.",
+        );
+        return true;
+      }
+      throw failureError;
+    }
     logger.error(
       {
         event: "contact.delivery.failed",
@@ -241,11 +266,15 @@ function waitForPoll(signal: AbortSignal): Promise<void> {
       resolve();
       return;
     }
-    const timer = setTimeout(resolve, CONTACT_DELIVERY_POLL_MILLISECONDS);
-    signal.addEventListener("abort", () => {
+    const onAbort = () => {
       clearTimeout(timer);
       resolve();
-    }, { once: true });
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, CONTACT_DELIVERY_POLL_MILLISECONDS);
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }
 

@@ -323,6 +323,50 @@ test("contact prevents edits while a submission is in flight", async ({ page }) 
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
 });
 
+test("contact restores editing after a submission request times out", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[0]);
+  await page.clock.install();
+  await page.evaluate(() => {
+    const originalFetch = globalThis.fetch.bind(globalThis);
+    const submissionKeys: string[] = [];
+    (globalThis as typeof globalThis & { contactSubmissionKeys?: string[] }).contactSubmissionKeys = submissionKeys;
+    globalThis.fetch = (input, init) => {
+      if (String(input) !== "/api/contact") {
+        return originalFetch(input, init);
+      }
+      const payload = JSON.parse(String(init?.body)) as { submissionKey: string };
+      submissionKeys.push(payload.submissionKey);
+      if (submissionKeys.length > 1) {
+        return Promise.resolve(new Response(JSON.stringify({ id: "contact-1", status: "accepted" }), {
+          status: 202,
+          headers: { "content-type": "application/json" },
+        }));
+      }
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+      });
+    };
+  });
+
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  await message.fill("Keep this message after timeout");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(message).toBeDisabled();
+
+  await page.clock.fastForward(10_000);
+  await expect(page.getByRole("status")).toContainText("Your text is still here");
+  await expect(message).toBeEnabled();
+  await expect(message).toHaveValue("Keep this message after timeout");
+
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+  const submissionKeys = await page.evaluate(
+    () => (globalThis as typeof globalThis & { contactSubmissionKeys?: string[] }).contactSubmissionKeys,
+  );
+  expect(submissionKeys).toHaveLength(2);
+  expect(submissionKeys?.[1]).toBe(submissionKeys?.[0]);
+});
+
 test("contact preserves input across rate-limit, service, and offline recovery", async ({ page }) => {
   await openPage(page, "/contact", canonicalViewports[0]);
   const message = page.getByRole("textbox", { name: "Message — required" });

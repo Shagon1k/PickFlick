@@ -1,15 +1,18 @@
 import { Writable } from "node:stream";
 
 import type { WorkerEnvironment } from "@pickflick/config/environment";
-import { createLogger } from "@pickflick/observability";
+import { createLogger, DrainController } from "@pickflick/observability";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   ContactDeliveryStore,
+  ContactDeliveryClaimLostError,
   ContactProviderError,
   ContactSender,
   deliverNextContactMessage,
+  PrismaContactDeliveryStore,
   ResendContactSender,
+  runContactDeliveryLoop,
   type ContactDeliveryRecord,
 } from "../contact-delivery.js";
 
@@ -33,19 +36,27 @@ const environment = {
 
 class FakeStore extends ContactDeliveryStore {
   message: ContactDeliveryRecord | undefined = record;
-  readonly completed: Array<{ id: string; providerMessageId: string }> = [];
-  readonly failed: Array<{ id: string; errorCode: string; nextAttemptAt?: Date }> = [];
+  completeError?: Error;
+  failError?: Error;
+  readonly completed: Array<{ id: string; attemptCount: number; providerMessageId: string }> = [];
+  readonly failed: Array<{ id: string; attemptCount: number; errorCode: string; nextAttemptAt?: Date }> = [];
 
   async claim() {
     return this.message;
   }
 
-  async complete(id: string, providerMessageId: string) {
-    this.completed.push({ id, providerMessageId });
+  async complete(id: string, attemptCount: number, providerMessageId: string) {
+    if (this.completeError) {
+      throw this.completeError;
+    }
+    this.completed.push({ id, attemptCount, providerMessageId });
   }
 
-  async fail(id: string, errorCode: string, nextAttemptAt: Date | undefined) {
-    this.failed.push({ id, errorCode, ...(nextAttemptAt ? { nextAttemptAt } : {}) });
+  async fail(id: string, attemptCount: number, errorCode: string, nextAttemptAt: Date | undefined) {
+    if (this.failError) {
+      throw this.failError;
+    }
+    this.failed.push({ id, attemptCount, errorCode, ...(nextAttemptAt ? { nextAttemptAt } : {}) });
   }
 }
 
@@ -122,7 +133,11 @@ describe("Contact delivery", () => {
     const logs = captureLogger();
 
     await expect(deliverNextContactMessage(store, new FakeSender(), logs.logger)).resolves.toBe(true);
-    expect(store.completed).toEqual([{ id: record.id, providerMessageId: "provider-message-id" }]);
+    expect(store.completed).toEqual([{
+      id: record.id,
+      attemptCount: record.attemptCount,
+      providerMessageId: "provider-message-id",
+    }]);
     expect(store.failed).toEqual([]);
     expect(logs.output()).toContain('"event":"contact.delivery.completed"');
     expect(logs.output()).not.toContain(privateMessage);
@@ -138,6 +153,7 @@ describe("Contact delivery", () => {
     await deliverNextContactMessage(store, sender, logs.logger, now);
     expect(store.failed).toEqual([{
       id: record.id,
+      attemptCount: record.attemptCount,
       errorCode: "HTTP_503",
       nextAttemptAt: new Date("2026-09-14T12:01:00.000Z"),
     }]);
@@ -150,19 +166,100 @@ describe("Contact delivery", () => {
     const permanentSender = new FakeSender();
     permanentSender.error = new ContactProviderError("HTTP_422", false);
     await deliverNextContactMessage(permanentStore, permanentSender, captureLogger().logger);
-    expect(permanentStore.failed[0]).toEqual({ id: record.id, errorCode: "HTTP_422" });
+    expect(permanentStore.failed[0]).toEqual({
+      id: record.id,
+      attemptCount: record.attemptCount,
+      errorCode: "HTTP_422",
+    });
 
     const exhaustedStore = new FakeStore();
     exhaustedStore.message = { ...record, attemptCount: 5 };
     const exhaustedSender = new FakeSender();
     exhaustedSender.error = new ContactProviderError("HTTP_503", true);
     await deliverNextContactMessage(exhaustedStore, exhaustedSender, captureLogger().logger);
-    expect(exhaustedStore.failed[0]).toEqual({ id: record.id, errorCode: "HTTP_503" });
+    expect(exhaustedStore.failed[0]).toEqual({ id: record.id, attemptCount: 5, errorCode: "HTTP_503" });
+  });
+
+  it("does not overwrite a replacement worker after losing its claim", async () => {
+    const completionStore = new FakeStore();
+    const completionLogs = captureLogger();
+    completionStore.completeError = new ContactDeliveryClaimLostError();
+
+    await expect(deliverNextContactMessage(completionStore, new FakeSender(), completionLogs.logger)).resolves.toBe(true);
+    expect(completionStore.failed).toEqual([]);
+    expect(completionLogs.output()).toContain('"event":"contact.delivery.claim_lost"');
+    expect(completionLogs.output()).not.toContain('"event":"contact.delivery.failed"');
+
+    const failureStore = new FakeStore();
+    const failureLogs = captureLogger();
+    const sender = new FakeSender();
+    sender.error = new ContactProviderError("HTTP_503", true);
+    failureStore.failError = new ContactDeliveryClaimLostError();
+
+    await expect(deliverNextContactMessage(failureStore, sender, failureLogs.logger)).resolves.toBe(true);
+    expect(failureLogs.output()).toContain('"event":"contact.delivery.claim_lost"');
+    expect(failureLogs.output()).not.toContain('"event":"contact.delivery.failed"');
+  });
+
+  it("fences persisted completion and failure updates by claim attempt", async () => {
+    const updateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const store = new PrismaContactDeliveryStore({ contactMessage: { updateMany } } as never);
+    const now = new Date("2026-09-14T12:00:00.000Z");
+
+    await store.complete(record.id, 2, "provider-message-id", now);
+    await store.fail(record.id, 3, "HTTP_503", new Date("2026-09-14T12:05:00.000Z"));
+    await expect(store.complete(record.id, 4, "late-provider-message-id", now)).rejects.toThrow(
+      ContactDeliveryClaimLostError,
+    );
+
+    expect(updateMany).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      where: { id: record.id, deliveryState: "PROCESSING", attemptCount: 2 },
+    }));
+    expect(updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: { id: record.id, deliveryState: "PROCESSING", attemptCount: 3 },
+    }));
   });
 
   it("does no work when no retryable Contact message is due", async () => {
     const store = new FakeStore();
     store.message = undefined;
     await expect(deliverNextContactMessage(store, new FakeSender(), captureLogger().logger)).resolves.toBe(false);
+  });
+
+  it("removes the shutdown listener after an idle poll finishes", async () => {
+    vi.useFakeTimers();
+    try {
+      const controller = new AbortController();
+      const addListener = vi.spyOn(controller.signal, "addEventListener");
+      const removeListener = vi.spyOn(controller.signal, "removeEventListener");
+      const store = new FakeStore();
+      let claimCount = 0;
+      store.message = undefined;
+      store.claim = async () => {
+        claimCount += 1;
+        if (claimCount === 2) {
+          controller.abort();
+        }
+        return undefined;
+      };
+
+      const running = runContactDeliveryLoop(
+        controller.signal,
+        store,
+        new FakeSender(),
+        captureLogger().logger,
+        new DrainController(),
+      );
+      await vi.advanceTimersByTimeAsync(5_000);
+      await running;
+
+      expect(addListener).toHaveBeenCalledOnce();
+      expect(removeListener).toHaveBeenCalledWith("abort", addListener.mock.calls[0]?.[1]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
