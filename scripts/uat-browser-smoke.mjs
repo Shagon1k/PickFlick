@@ -20,8 +20,8 @@ export function browserSmokeConfiguration(source = process.env) {
   };
 }
 
-export function isBrandedDocumentTitle(title) {
-  return title.startsWith("PickFlick");
+export function isPickFlickDocumentTitle(value) {
+  return value.startsWith("PickFlick");
 }
 
 async function inspectViewport(browser, configuration, profile) {
@@ -45,8 +45,8 @@ async function inspectViewport(browser, configuration, profile) {
     if (!response?.ok()) {
       throw new Error(`${profile.name} navigation returned HTTP ${response?.status() ?? "unknown"}.`);
     }
-    await page.locator("main h1").first().waitFor({ state: "visible" });
-    if (!isBrandedDocumentTitle(await page.title())) {
+    await page.getByRole("main").getByRole("heading", { level: 1 }).waitFor({ state: "visible" });
+    if (!isPickFlickDocumentTitle(await page.title())) {
       throw new Error(`${profile.name} document title did not start with PickFlick.`);
     }
     const hasHorizontalOverflow = await page.evaluate(
