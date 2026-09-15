@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
-
 import { BrandImage } from "@pickflick/ui";
 
 import { ContactForm } from "../../components/contact/contact-form";
 import styles from "../../components/contact/contact.module.css";
 import { PublicShell } from "../../components/shells/shells";
+import { createPublicMetadata } from "../../public-metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPublicMetadata({
   title: "Contact Us — PickFlick",
   description: "Send PickFlick a concise message or write to the public contact address.",
-};
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

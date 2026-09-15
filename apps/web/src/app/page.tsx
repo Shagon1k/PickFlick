@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
-
 import { ActionLink, BrandImage, Icon } from "@pickflick/ui";
 
 import { LandingRevealRoot } from "../components/marketing/landing-reveal";
 import { landingFeatures, landingSteps } from "../components/marketing/marketing-content";
 import styles from "../components/marketing/marketing.module.css";
 import { PublicShell } from "../components/shells/shells";
+import { createPublicMetadata } from "../public-metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPublicMetadata({
   title: "PickFlick — Pick a film. Watch together. Remember everything.",
   description: "Plan film nights with your Club, from nominations and scoring to shared history.",
-};
+  path: "/",
+});
 
 function SprocketDivider() {
   return <div aria-hidden="true" className={styles.divider} />;

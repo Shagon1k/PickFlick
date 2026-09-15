@@ -1392,7 +1392,7 @@ These do not block guidance creation; each has an explicit decision point.
 | 0 — Guidance Baseline | Done | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22. | No application code was created. |
 | 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
 | 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
-| 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing and Pricing are implemented and locally verified; Contact, legal/indexing, and recovery surfaces remain. |
+| 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing, Pricing, Contact, provisional legal entry, and indexing boundaries are implemented and locally verified. Recovery surfaces and required exact-SHA visual acknowledgements remain. |
 | 4 — Authentication & Account Onboarding | Not started |  |  |
 | 5 — Clubs, Membership & Roles | Not started |  |  |
 | 6 — Human Verification & Bug Fixing I | Not started |  | Stabilization gate for Phases 1–5. |

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import {
@@ -7,12 +6,10 @@ import {
   projectorNoirHtmlProps,
 } from "@pickflick/ui";
 import "@pickflick/ui/styles.css";
+import { rootMetadata } from "../public-metadata";
 import "./styles.css";
 
-export const metadata: Metadata = {
-  title: "PickFlick",
-  description: "Pick a film together.",
-};
+export const metadata = rootMetadata;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
