@@ -82,6 +82,7 @@ jobs:
     timeout-minutes: 45
     env:
       APP_ENV: test
+      RESEND_DELIVERY_MODE: disabled
       CI_COMPOSE_PROJECT_NAME: pickflick-ci-${{ github.run_id }}-${{ github.run_attempt }}
       DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:5432/pickflick_test
       MINIO_ROOT_PASSWORD: synthetic-ci-password
@@ -134,6 +135,9 @@ jobs:
 
       - name: Check migrations and database constraints
         run: pnpm db:check
+
+      - name: Check Contact persistence and abuse controls
+        run: pnpm contact:check
 
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke

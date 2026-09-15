@@ -50,12 +50,12 @@ const canonicalRoutes: ShellRouteMap = {
 
 function publicNavigation(
   routes: ShellRouteMap,
-  currentPage?: "home" | "pricing",
+  currentPage?: "home" | "pricing" | "contact",
 ): readonly ShellNavigationItem[] {
   return [
     { href: routes.howItWorks, label: "How it works" },
     { href: routes.pricing, label: "Pricing", current: currentPage === "pricing" },
-    { href: routes.contact, label: "Contact" },
+    { href: routes.contact, label: "Contact", current: currentPage === "contact" },
   ];
 }
 
@@ -141,7 +141,7 @@ export function PublicShell({
   routes = canonicalRoutes,
 }: Readonly<{
   children: ReactNode;
-  currentPage?: "home" | "pricing";
+  currentPage?: "home" | "pricing" | "contact";
   routes?: ShellRouteMap;
 }>) {
   return (

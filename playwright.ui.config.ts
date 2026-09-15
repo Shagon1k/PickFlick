@@ -37,7 +37,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "pnpm build:packages && pnpm --filter @pickflick/web build && cp -R apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static && HOSTNAME=127.0.0.1 PORT=41730 node apps/web/.next/standalone/apps/web/server.js",
+      "pnpm build:packages && pnpm --filter @pickflick/web build && cp -R apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static && node tests/ui-preview/start-web-with-contact-api.mjs",
     reuseExistingServer: false,
     timeout: 180_000,
     url: `${baseURL}/ui-preview`,

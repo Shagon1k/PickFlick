@@ -54,6 +54,10 @@ async function verifyMigrationUpgrade(): Promise<void> {
     new URL("../prisma/migrations/20260906000200_enforce_club_session_invariants/migration.sql", import.meta.url),
     "utf8",
   );
+  const contactSql = await readFile(
+    new URL("../prisma/migrations/20260914000100_add_contact_messages/migration.sql", import.meta.url),
+    "utf8",
+  );
   await client.connect();
   try {
     for (const schema of schemas) {
@@ -62,6 +66,7 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(`SET search_path TO "${schemas[0]}"`);
     await client.query(initialSql);
     await client.query(invariantSql);
+    await client.query(contactSql);
 
     await client.query(`SET search_path TO "${schemas[1]}"`);
     await client.query(initialSql);
@@ -69,6 +74,7 @@ async function verifyMigrationUpgrade(): Promise<void> {
       `INSERT INTO "Club" ("id", "name", "updatedAt") VALUES ('90000000-0000-4000-8000-000000000001', 'Upgrade fixture', NOW())`,
     );
     await client.query(invariantSql);
+    await client.query(contactSql);
     const upgraded = await client.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM "Club"`);
     if (upgraded.rows[0]?.count !== "1") {
       throw new Error("Upgrade migration did not preserve the existing Club row.");
@@ -86,8 +92,8 @@ try {
   const migrationCount = await database.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint AS count FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL
   `;
-  if (migrationCount[0]?.count !== 2n) {
-    throw new Error("Expected exactly two completed database migrations.");
+  if (migrationCount[0]?.count !== 3n) {
+    throw new Error("Expected exactly three completed database migrations.");
   }
 
   const fixtureCount = await database.user.count({
@@ -156,6 +162,33 @@ try {
         data: { role: "ADMIN" },
       }),
     "Membership_one_active_admin_per_club_key",
+  );
+  await expectConstraint(
+    (transaction) =>
+      transaction.contactMessage.create({
+        data: {
+          id: "50000000-0000-4000-8000-000000000001",
+          submissionKey: "50000000-0000-4000-8000-000000000002",
+          sourceHash: "a".repeat(64),
+          contentHash: "b".repeat(64),
+          message: "x".repeat(501),
+        },
+      }),
+    "ContactMessage_message_length_check",
+  );
+  await expectConstraint(
+    (transaction) =>
+      transaction.contactMessage.create({
+        data: {
+          id: "50000000-0000-4000-8000-000000000003",
+          submissionKey: "50000000-0000-4000-8000-000000000004",
+          sourceHash: "a".repeat(64),
+          contentHash: "b".repeat(64),
+          deliveryState: "FAILED",
+          message: "terminal content must be removed",
+        },
+      }),
+    "ContactMessage_payload_lifecycle_check",
   );
   await verifyMigrationUpgrade();
   console.log("Database checks passed: migrations, upgrade compatibility, deterministic fixtures, and PostgreSQL invariants.");

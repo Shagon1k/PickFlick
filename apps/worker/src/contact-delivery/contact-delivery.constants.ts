@@ -1,0 +1,9 @@
+export const CONTACT_DELIVERY_MAX_ATTEMPTS = 5;
+export const CONTACT_DELIVERY_POLL_MILLISECONDS = 5_000;
+
+export const CONTACT_RETRY_DELAYS_MILLISECONDS = [
+  60_000,
+  5 * 60_000,
+  30 * 60_000,
+  2 * 60 * 60_000,
+] as const;

@@ -24,4 +24,9 @@ describe("UAT browser smoke configuration", () => {
       SOURCE_REVISION: "a".repeat(40),
     })).toThrow(/must be https:\/\/uat\.pick-flick\.app/);
   });
+
+  it("accepts the landing page's branded metadata title", () => {
+    expect(isPickFlickDocumentTitle("PickFlick — Pick a film. Watch together. Remember everything.")).toBe(true);
+    expect(isPickFlickDocumentTitle("A different product")).toBe(false);
+  });
 });

@@ -52,7 +52,12 @@ describe("structured logging", () => {
         {
           event: "job.started",
           authorization: "Bearer exposed",
-          nested: { password: "exposed-password", databaseUrl: "postgresql://exposed" },
+          nested: {
+            password: "exposed-password",
+            databaseUrl: "postgresql://exposed",
+            apiKey: "exposed-api-key",
+            hashSecret: "exposed-hash-secret",
+          },
         },
         "Job started.",
       );
@@ -72,11 +77,18 @@ describe("structured logging", () => {
       correlationId: requestId,
       jobId: "job-42",
       authorization: "[Redacted]",
-      nested: { password: "[Redacted]", databaseUrl: "[Redacted]" },
+      nested: {
+        password: "[Redacted]",
+        databaseUrl: "[Redacted]",
+        apiKey: "[Redacted]",
+        hashSecret: "[Redacted]",
+      },
     });
     expect(output).not.toContain("Bearer exposed");
     expect(output).not.toContain("exposed-password");
     expect(output).not.toContain("postgresql://exposed");
+    expect(output).not.toContain("exposed-api-key");
+    expect(output).not.toContain("exposed-hash-secret");
     expect(records[1]).not.toHaveProperty("authorization");
     expect(records[1]).not.toHaveProperty("nested");
   });

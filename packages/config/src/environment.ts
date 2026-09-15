@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 export const DEPLOYMENT_ENVIRONMENTS = ["local", "test", "uat", "production"] as const;
 export type DeploymentEnvironment = (typeof DEPLOYMENT_ENVIRONMENTS)[number];
+export const RESEND_DELIVERY_MODES = ["disabled", "preview", "live"] as const;
+export type ResendDeliveryMode = (typeof RESEND_DELIVERY_MODES)[number];
 
 export interface RuntimeEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
@@ -23,6 +25,12 @@ export interface RuntimeEnvironment {
   readonly resend: {
     readonly apiKey: string;
     readonly from: string;
+    readonly deliveryMode: ResendDeliveryMode;
+    readonly deliveryEnabled: boolean;
+  };
+  readonly contact: {
+    readonly deliveryTo: string;
+    readonly hashSecret: string;
   };
 }
 
@@ -168,8 +176,11 @@ function parseWorkerValues(
   const accessKey = required(source, "STORAGE_ACCESS_KEY", failures);
   const secretKey = required(source, "STORAGE_SECRET_KEY", failures);
   const forcePathStyle = boolean(source, "STORAGE_FORCE_PATH_STYLE", failures);
+  const resendDeliveryMode = oneOf(source, "RESEND_DELIVERY_MODE", RESEND_DELIVERY_MODES, failures);
   const resendApiKey = required(source, "RESEND_API_KEY", failures);
   const from = required(source, "RESEND_FROM", failures);
+  const contactDeliveryTo = required(source, "CONTACT_DELIVERY_TO", failures);
+  const contactHashSecret = required(source, "CONTACT_HASH_SECRET", failures);
 
   if (
     bucket &&
@@ -182,6 +193,49 @@ function parseWorkerValues(
   if (from && !/^(?:[^@\s]+@[^@\s]+\.[^@\s]+|[^@<>\r\n]+ <[^@\s]+@[^@\s]+\.[^@\s]+>)$/.test(from)) {
     failures.push({ name: "RESEND_FROM", reason: "must be an email address or a name plus email address" });
   }
+  if (appEnvironment === "uat" && from !== "PickFlick UAT <notifications@uat.pick-flick.app>") {
+    failures.push({
+      name: "RESEND_FROM",
+      reason: "must be PickFlick UAT <notifications@uat.pick-flick.app> in uat",
+    });
+  }
+  if (appEnvironment === "production" && from !== "PickFlick <notifications@pick-flick.app>") {
+    failures.push({
+      name: "RESEND_FROM",
+      reason: "must be PickFlick <notifications@pick-flick.app> in production",
+    });
+  }
+  if (contactDeliveryTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactDeliveryTo)) {
+    failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be an email address" });
+  }
+  if (appEnvironment === "production" && contactDeliveryTo !== "hello@pick-flick.app") {
+    failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be hello@pick-flick.app in production" });
+  }
+  const localOrTest = appEnvironment === "local" || appEnvironment === "test";
+  if (localOrTest && resendDeliveryMode !== "disabled") {
+    failures.push({ name: "RESEND_DELIVERY_MODE", reason: "must be disabled in local or test" });
+  }
+  if (localOrTest && resendApiKey !== "local-disabled") {
+    failures.push({ name: "RESEND_API_KEY", reason: "must be local-disabled in local or test" });
+  }
+  if (resendDeliveryMode === "disabled" && !localOrTest) {
+    failures.push({ name: "RESEND_DELIVERY_MODE", reason: "may be disabled only in local or test" });
+  }
+  if (resendDeliveryMode === "preview" && appEnvironment !== "uat") {
+    failures.push({ name: "RESEND_DELIVERY_MODE", reason: "may be preview only in uat" });
+  }
+  if (resendDeliveryMode === "preview" && resendApiKey !== "preview-disabled") {
+    failures.push({ name: "RESEND_API_KEY", reason: "must be preview-disabled in preview mode" });
+  }
+  if (resendDeliveryMode === "live" && (resendApiKey === "local-disabled" || resendApiKey === "preview-disabled")) {
+    failures.push({ name: "RESEND_API_KEY", reason: "must be a live environment key in live mode" });
+  }
+  if (appEnvironment === "production" && resendDeliveryMode !== "live") {
+    failures.push({ name: "RESEND_DELIVERY_MODE", reason: "must be live in production" });
+  }
+  if (contactHashSecret && contactHashSecret.length < 32) {
+    failures.push({ name: "CONTACT_HASH_SECRET", reason: "must contain at least 32 characters" });
+  }
   return {
     appEnvironment,
     ...(sourceRevision ? { sourceRevision } : {}),
@@ -189,7 +243,13 @@ function parseWorkerValues(
     shutdownTimeoutMilliseconds,
     redisUrl,
     storage: { endpoint, region, bucket, accessKey, secretKey, forcePathStyle },
-    resend: { apiKey: resendApiKey, from },
+    resend: {
+      apiKey: resendApiKey,
+      from,
+      deliveryMode: resendDeliveryMode,
+      deliveryEnabled: resendDeliveryMode === "live",
+    },
+    contact: { deliveryTo: contactDeliveryTo, hashSecret: contactHashSecret },
   };
 }
 

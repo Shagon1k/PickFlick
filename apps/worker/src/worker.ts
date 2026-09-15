@@ -11,6 +11,7 @@ export interface WorkerRuntime {
   readonly readiness: () => Promise<ReadinessReport>;
   readonly drain: DrainController;
   readonly shutdownTimeoutMilliseconds: number;
+  readonly work?: (signal: AbortSignal) => Promise<void>;
 }
 
 export interface CorrelatedJob {
@@ -75,18 +76,29 @@ export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Pr
 
   runtime.logger.info({ event: "service.ready" }, "Worker ready.");
 
-  await new Promise<void>((resolve) => {
-    const keepAlive = setInterval(() => undefined, 60_000);
-    signal.addEventListener(
-      "abort",
-      () => {
-        runtime.drain.stopAccepting();
-        clearInterval(keepAlive);
-        resolve();
-      },
-      { once: true },
-    );
+  let resolveAbort!: () => void;
+  const aborted = new Promise<void>((resolve) => {
+    resolveAbort = resolve;
   });
+  const onAbort = () => {
+    runtime.drain.stopAccepting();
+    resolveAbort();
+  };
+  signal.addEventListener("abort", onAbort, { once: true });
+  if (signal.aborted) {
+    onAbort();
+  }
+  const keepAlive = runtime.work ? undefined : setInterval(() => undefined, 60_000);
+  const work = runtime.work ? runtime.work(signal) : aborted;
+
+  try {
+    await Promise.race([work, aborted]);
+  } finally {
+    signal.removeEventListener("abort", onAbort);
+    if (keepAlive) {
+      clearInterval(keepAlive);
+    }
+  }
 
   runtime.logger.info(
     { event: "service.draining", activeWork: runtime.drain.activeWorkCount },
@@ -99,5 +111,6 @@ export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Pr
     );
     throw new WorkerDrainTimeoutError();
   }
+  await work;
   runtime.logger.info({ event: "service.stopped" }, "Worker stopped.");
 }

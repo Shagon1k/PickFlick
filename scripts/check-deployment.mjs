@@ -22,6 +22,9 @@ const intendedHealthChecks = {
 };
 const runtimeEnvironmentVariables = [
   "APP_ENV",
+  "RESEND_DELIVERY_MODE",
+  "CONTACT_DELIVERY_TO",
+  "CONTACT_HASH_SECRET",
   "DATABASE_URL",
   "REDIS_URL",
   "RESEND_API_KEY",
@@ -46,6 +49,9 @@ function assert(condition, message) {
 function environmentFor(appEnvironment) {
   const environment = {
     APP_ENV: appEnvironment,
+    RESEND_DELIVERY_MODE: "live",
+    CONTACT_DELIVERY_TO: "contact@example.invalid",
+    CONTACT_HASH_SECRET: "synthetic-contact-hash-secret-at-least-32-characters",
     DATABASE_URL: `postgresql://pickflick:synthetic@pickflick-${appEnvironment}-postgres:5432/pickflick_${appEnvironment}`,
 
     REDIS_URL: `redis://:synthetic@pickflick-${appEnvironment}-redis:6379/0`,
@@ -192,6 +198,8 @@ export function validateDeployments({ production, uat }) {
     assert(deployment.services.release.environment.APP_ENV === appEnvironment, "Release must use the selected environment.");
     assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
+    assert(deployment.services.api.environment.RESEND_DELIVERY_MODE === "live", "API must use live Resend delivery.");
+    assert(deployment.services.worker.environment.RESEND_DELIVERY_MODE === "live", "Worker must use live Resend delivery.");
     assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");
     assert(hasEnabledHealthCheck(deployment.services.web), "Web must define an enabled health check.");
     assert(

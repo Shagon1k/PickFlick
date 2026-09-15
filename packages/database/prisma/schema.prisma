@@ -52,6 +52,13 @@ enum SessionPhase {
   CANCELLED
 }
 
+enum ContactDeliveryState {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
 model User {
   id          String       @id @db.Uuid
   email       String       @unique
@@ -108,4 +115,26 @@ model Session {
   club         Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
 
   @@index([clubId, phase])
+}
+
+model ContactMessage {
+  id                   String               @id @db.Uuid
+  submissionKey        String               @unique @db.Uuid
+  sourceHash           String               @db.Char(64)
+  contentHash          String               @db.Char(64)
+  message              String?
+  name                 String?
+  email                String?
+  deliveryState        ContactDeliveryState @default(PENDING)
+  attemptCount         Int                  @default(0)
+  nextAttemptAt        DateTime             @default(now()) @db.Timestamptz(3)
+  processingLeaseUntil DateTime?            @db.Timestamptz(3)
+  providerMessageId    String?              @unique
+  deliveryErrorCode    String?
+  deliveredAt          DateTime?            @db.Timestamptz(3)
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
+
+  @@index([sourceHash, createdAt])
+  @@index([deliveryState, nextAttemptAt])
 }

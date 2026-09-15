@@ -54,3 +54,19 @@ export interface ApiErrorEnvelope {
     readonly requestId: string;
   };
 }
+
+export const CONTACT_MESSAGE_MAX_LENGTH = 500;
+export const CONTACT_NAME_MAX_LENGTH = 100;
+export const CONTACT_EMAIL_MAX_LENGTH = 254;
+
+export interface ContactSubmissionRequest {
+  readonly submissionKey: string;
+  readonly message: string;
+  readonly name?: string;
+  readonly email?: string;
+}
+
+export interface ContactSubmissionResponse {
+  readonly id: string;
+  readonly status: "accepted" | "duplicate";
+}

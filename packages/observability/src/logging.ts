@@ -13,6 +13,8 @@ const sensitiveKeys = [
   "password",
   "token",
   "accessToken",
+  "apiKey",
+  "hashSecret",
   "refreshToken",
   "secret",
   "secretAccessKey",

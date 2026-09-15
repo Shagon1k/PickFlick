@@ -21,8 +21,11 @@ const validEnvironment = {
   STORAGE_ACCESS_KEY: "local-access-key",
   STORAGE_SECRET_KEY: "local-secret-key",
   STORAGE_FORCE_PATH_STYLE: "true",
+  RESEND_DELIVERY_MODE: "disabled",
   RESEND_API_KEY: "local-disabled",
   RESEND_FROM: "PickFlick <pickflick@example.invalid>",
+  CONTACT_DELIVERY_TO: "contact@example.invalid",
+  CONTACT_HASH_SECRET: "local-contact-hash-secret-for-tests",
 } as const;
 
 describe("environment validation", () => {
@@ -47,7 +50,12 @@ describe("environment validation", () => {
       apiPort: 3001,
       shutdownTimeoutMilliseconds: 10_000,
       storage: { forcePathStyle: true },
-      resend: { from: "PickFlick <pickflick@example.invalid>" },
+      resend: {
+        deliveryMode: "disabled",
+        deliveryEnabled: false,
+        from: "PickFlick <pickflick@example.invalid>",
+      },
+      contact: { deliveryTo: "contact@example.invalid" },
     });
   });
 
@@ -80,8 +88,99 @@ describe("environment validation", () => {
         ...validEnvironment,
         RESEND_API_KEY: undefined,
         STORAGE_ACCESS_KEY: undefined,
+        CONTACT_HASH_SECRET: undefined,
       }),
-    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required/);
+    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required; CONTACT_HASH_SECRET is required/);
+  });
+
+  it("rejects unsafe Contact delivery configuration without echoing the secret", () => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        CONTACT_DELIVERY_TO: "not-an-email",
+        CONTACT_HASH_SECRET: "too-short",
+      }),
+    ).toThrow(/CONTACT_DELIVERY_TO must be an email address; CONTACT_HASH_SECRET must contain at least 32 characters/);
+  });
+
+  it("requires the approved Contact destination in production", () => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        RESEND_API_KEY: "production-key",
+        CONTACT_DELIVERY_TO: "other@example.com",
+      }),
+    ).toThrow(/CONTACT_DELIVERY_TO must be hello@pick-flick.app in production/);
+  });
+
+  it.each(["uat", "production"])("rejects disabled Resend delivery in %s", (appEnvironment) => {
+    expect(() =>
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        APP_ENV: appEnvironment,
+        CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
+      }),
+    ).toThrow(/RESEND_DELIVERY_MODE may be disabled only in local or test/);
+  });
+
+  it.each(["local", "test"])("allows disabled Resend delivery in %s", (appEnvironment) => {
+    expect(parseWorkerEnvironment({ ...validEnvironment, APP_ENV: appEnvironment })).toMatchObject({
+      appEnvironment,
+      resend: { apiKey: "local-disabled", deliveryEnabled: false },
+    });
+  });
+
+  it("keeps the synthetic UAT-shaped preview delivery disabled", () => {
+    expect(parseWorkerEnvironment({
+      ...validEnvironment,
+      APP_ENV: "uat",
+      RESEND_DELIVERY_MODE: "preview",
+      RESEND_API_KEY: "preview-disabled",
+      RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
+    })).toMatchObject({
+      appEnvironment: "uat",
+      resend: { apiKey: "preview-disabled", deliveryMode: "preview", deliveryEnabled: false },
+    });
+  });
+
+  it("rejects the preview-disabled mode outside uat", () => {
+    expect(() => parseWorkerEnvironment({
+      ...validEnvironment,
+      APP_ENV: "production",
+      CONTACT_DELIVERY_TO: "hello@pick-flick.app",
+      RESEND_DELIVERY_MODE: "preview",
+      RESEND_API_KEY: "preview-disabled",
+      RESEND_FROM: "PickFlick <notifications@pick-flick.app>",
+    })).toThrow(/RESEND_DELIVERY_MODE may be preview only in uat/);
+  });
+
+  it.each([
+    ["uat", "PickFlick <notifications@pick-flick.app>", "PickFlick UAT <notifications@uat.pick-flick.app> in uat"],
+    ["production", "PickFlick UAT <notifications@uat.pick-flick.app>", "PickFlick <notifications@pick-flick.app> in production"],
+  ] as const)("rejects the wrong sender identity in %s", (appEnvironment, from, reason) => {
+    expect(() => parseWorkerEnvironment({
+      ...validEnvironment,
+      APP_ENV: appEnvironment,
+      CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
+      RESEND_DELIVERY_MODE: "live",
+      RESEND_API_KEY: `${appEnvironment}-key`,
+      RESEND_FROM: from,
+    })).toThrow(`RESEND_FROM must be ${reason}`);
+  });
+
+  it.each([
+    ["uat", "contact@example.invalid", "PickFlick UAT <notifications@uat.pick-flick.app>"],
+    ["production", "hello@pick-flick.app", "PickFlick <notifications@pick-flick.app>"],
+  ] as const)("accepts the exact sender identity in %s", (appEnvironment, deliveryTo, from) => {
+    expect(parseWorkerEnvironment({
+      ...validEnvironment,
+      APP_ENV: appEnvironment,
+      CONTACT_DELIVERY_TO: deliveryTo,
+      RESEND_DELIVERY_MODE: "live",
+      RESEND_API_KEY: `${appEnvironment}-key`,
+      RESEND_FROM: from,
+    })).toMatchObject({ appEnvironment, resend: { deliveryEnabled: true, from } });
   });
 
   it("accepts the worker inventory without API bind settings", () => {
@@ -99,9 +198,22 @@ describe("environment validation", () => {
   });
 
   it("allows deployed environments without a source revision", () => {
-    expect(parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat" })).toMatchObject({ appEnvironment: "uat" });
+    expect(parseRuntimeEnvironment({
+      ...validEnvironment,
+      APP_ENV: "uat",
+      RESEND_DELIVERY_MODE: "live",
+      RESEND_API_KEY: "uat-key",
+      RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
+    })).toMatchObject({ appEnvironment: "uat", resend: { deliveryEnabled: true } });
     expect(
-      parseRuntimeEnvironment({ ...validEnvironment, APP_ENV: "uat", SOURCE_REVISION: "a".repeat(40) }),
+      parseRuntimeEnvironment({
+        ...validEnvironment,
+        APP_ENV: "uat",
+        RESEND_DELIVERY_MODE: "live",
+        RESEND_API_KEY: "uat-key",
+        RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
+        SOURCE_REVISION: "a".repeat(40),
+      }),
     ).toMatchObject({ sourceRevision: "a".repeat(40) });
     expect(() => parseRuntimeEnvironment({ ...validEnvironment, SOURCE_REVISION: "main" })).toThrow(
       /SOURCE_REVISION must be a full hexadecimal source revision/,

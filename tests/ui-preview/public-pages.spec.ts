@@ -4,6 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 const pages = [
   { name: "landing", route: "/" },
   { name: "pricing", route: "/pricing" },
+  { name: "contact", route: "/contact" },
 ] as const;
 const canonicalViewports = [
   { height: 844, name: "s-390", width: 390 },
@@ -243,4 +244,90 @@ test("pricing FAQ removes decorative motion when reduced motion is requested", a
   const answer = page.getByRole("region", { name: "What happens when I downgrade?" });
 
   expect(await answer.evaluate((element) => globalThis.getComputedStyle(element).animationName)).toBe("none");
+});
+
+test("contact validates fields, focuses the first error, and reports its message limit", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[0]);
+  await page.getByRole("button", { name: "Send message" }).click();
+
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  await expect(message).toBeFocused();
+  await expect(message).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#contact-message-message")).toHaveText("Enter a message.");
+  await message.fill("A concise note");
+  await expect(page.getByText("14/500 characters")).toBeVisible();
+});
+
+test("contact accepts both new and duplicate submissions through one stable feedback region", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[3]);
+
+  const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
+  await expect(publicNavigation.getByRole("link", { name: "Contact" })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("textbox", { name: "Message — required" }).fill("A concise note");
+  await page.getByRole("textbox", { name: "Your email" }).fill("jane@example.com");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+  await expect(page.getByRole("textbox", { name: "Message — required" })).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Message sent" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Message sent" })).toBeDisabled();
+
+  await page.getByRole("textbox", { name: "Message — required" }).fill("Start another message");
+  await expect(page.getByRole("button", { name: "Send message" })).toBeEnabled();
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("textbox", { name: "Message — required" }).fill("Duplicate message");
+  await page.getByRole("textbox", { name: "Your email" }).fill("jane@example.com");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+});
+
+test("contact prevents edits while a submission is in flight", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[0]);
+
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  const name = page.getByRole("textbox", { name: "Your name" });
+  const email = page.getByRole("textbox", { name: "Your email" });
+  await message.fill("Slow Contact response");
+  await page.getByRole("button", { name: "Send message" }).click();
+
+  await expect(message).toBeDisabled();
+  await expect(name).toBeDisabled();
+  await expect(email).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Send message" })).toBeDisabled();
+
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+});
+
+test("contact reuses its submission key after a recoverable service failure", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[0]);
+
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  await message.fill("Retry this exact message");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toContainText("Your text is still here");
+  await expect(message).toBeEnabled();
+  await expect(message).toHaveValue("Retry this exact message");
+
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
+});
+
+test("contact preserves input across rate-limit, service, and offline recovery", async ({ page }) => {
+  await openPage(page, "/contact", canonicalViewports[0]);
+  const message = page.getByRole("textbox", { name: "Message — required" });
+  await message.fill("Rate limited message");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toContainText("Try again in 10 minutes");
+  await expect(message).toHaveValue("Rate limited message");
+
+  await message.fill("Service unavailable message");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toContainText("Your text is still here");
+  await expect(message).toHaveValue("Service unavailable message");
+
+  await page.context().setOffline(true);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("status")).toContainText("Reconnect, then send again");
+  await expect(message).toHaveValue("Service unavailable message");
+  await page.context().setOffline(false);
 });
