@@ -20,6 +20,10 @@ export function browserSmokeConfiguration(source = process.env) {
   };
 }
 
+export function isBrandedDocumentTitle(title) {
+  return title.startsWith("PickFlick");
+}
+
 async function inspectViewport(browser, configuration, profile) {
   const context = await browser.newContext({
     colorScheme: "dark",
@@ -41,9 +45,9 @@ async function inspectViewport(browser, configuration, profile) {
     if (!response?.ok()) {
       throw new Error(`${profile.name} navigation returned HTTP ${response?.status() ?? "unknown"}.`);
     }
-    await page.getByRole("heading", { level: 1, name: "PickFlick" }).waitFor({ state: "visible" });
-    if ((await page.title()) !== "PickFlick") {
-      throw new Error(`${profile.name} document title did not match PickFlick.`);
+    await page.locator("main h1").first().waitFor({ state: "visible" });
+    if (!isBrandedDocumentTitle(await page.title())) {
+      throw new Error(`${profile.name} document title did not start with PickFlick.`);
     }
     const hasHorizontalOverflow = await page.evaluate(
       () => globalThis.document.documentElement.scrollWidth > globalThis.document.documentElement.clientWidth,

@@ -6,6 +6,7 @@ import { completeWithin, createLogger } from "@pickflick/observability";
 
 import { ApiExceptionFilter } from "./api-exception.filter.js";
 import { AppModule } from "./app.module.js";
+import { configureProxyTrust } from "./proxy-trust.js";
 import { createRequestContextMiddleware } from "./request-context.js";
 
 async function bootstrap(): Promise<void> {
@@ -14,7 +15,7 @@ async function bootstrap(): Promise<void> {
 
   try {
     const app = await NestFactory.create(AppModule.register(environment, logger), { logger: false });
-    app.getHttpAdapter().getInstance().set("trust proxy", 1);
+    configureProxyTrust(app);
     app.use(createRequestContextMiddleware(logger));
     app.useGlobalFilters(new ApiExceptionFilter(logger));
     await app.listen(environment.apiPort, environment.apiHost);

@@ -147,6 +147,11 @@ fixes the non-secret email identity contract:
 | UAT | None | `PickFlick UAT <notifications@uat.pick-flick.app>` | Separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
 | Production | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>` | Separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue. |
 
+Startup validation requires the exact UAT and production sender values. The checked-in
+`compose.preview.yaml` keeps its UAT-shaped sender but uses the non-secret `preview-disabled`
+placeholder, which the worker treats as an explicit no-delivery mode. Live UAT must use its
+environment-scoped Resend key; `preview-disabled` is only for the local synthetic preview stack.
+
 Google Workspace receives public mail for `pick-flick.app`. Cloudflare owns authoritative DNS, and
 Resend sends application email. Alex retains administrative ownership and recovery control for all
 three providers. Do not publish or configure a personal fallback address.
@@ -228,7 +233,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `STORAGE_ACCESS_KEY` | Non-empty application access-key identifier | API, worker | Yes |
 | `STORAGE_SECRET_KEY` | Non-empty application secret access key | API, worker | Yes |
 | `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
-| `RESEND_API_KEY` | Non-empty server-side Resend API key or the local disabled placeholder | API, worker | Yes |
+| `RESEND_API_KEY` | Non-empty server-side Resend API key, `local-disabled` for local/test, or `preview-disabled` for the synthetic UAT-shaped preview | API, worker | Yes, except documented disabled placeholders |
 | `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
 | `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
 | `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |

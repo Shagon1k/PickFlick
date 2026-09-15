@@ -96,6 +96,11 @@ to the private API alias, so API needs no public Dokploy domain. Add
 `storage-uat.pick-flick.app` to MinIO API port `9000`; do not expose the console, PostgreSQL,
 Redis, or raw application ports.
 
+Traefik appends the Cloudflare hop to `X-Forwarded-For`, and the Next.js rewrite preserves that
+header. The API trusts the two represented proxy hops (its Next.js peer and the Cloudflare entry)
+so Contact rate limiting resolves the visitor address rather than a shared proxy address. Keep the
+API private; this trust boundary depends on the documented ingress path being the only public path.
+
 ## Verify the first deployment
 
 After the workflow is explicitly re-enabled and CI succeeds for a push to `main`:

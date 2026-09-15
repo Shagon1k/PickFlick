@@ -40,7 +40,7 @@ async function bootstrap(): Promise<void> {
       readiness: () => checkReadiness(probes),
       drain,
       shutdownTimeoutMilliseconds: environment.shutdownTimeoutMilliseconds,
-      ...(environment.resend.apiKey === "local-disabled"
+      ...(!environment.resend.deliveryEnabled
         ? {}
         : { work: (signal: AbortSignal) => runContactDeliveryLoop(signal, store, sender, logger, drain) }),
     });

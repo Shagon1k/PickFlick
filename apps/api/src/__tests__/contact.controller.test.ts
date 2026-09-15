@@ -15,12 +15,15 @@ import {
   ContactService,
   ContactValidationError,
 } from "../contact/contact.service.js";
+import { configureProxyTrust } from "../proxy-trust.js";
 import { createRequestContextMiddleware } from "../request-context.js";
 
 const privateBodyMarker = "private-contact-body-marker";
+let submittedSourceAddress: string | undefined;
 
 class StubContactService {
-  async submit(body: unknown) {
+  async submit(body: unknown, sourceAddress: string) {
+    submittedSourceAddress = sourceAddress;
     const state = (body as { state?: string }).state;
     if (state === "invalid") {
       throw new ContactValidationError();
@@ -58,6 +61,7 @@ describe("ContactController HTTP boundary", () => {
     });
     const logger = createLogger({ service: "api", environment: "test", destination });
     app = await NestFactory.create(TestModule, { logger: false });
+    configureProxyTrust(app);
     app.use(createRequestContextMiddleware(logger));
     app.useGlobalFilters(new ApiExceptionFilter(logger));
     await app.listen(0, "127.0.0.1");
@@ -99,6 +103,20 @@ describe("ContactController HTTP boundary", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("600");
     await expect(response.json()).resolves.toMatchObject({ error: { code: "RATE_LIMITED" } });
+  });
+
+  it("resolves the visitor address through the production proxy sequence", async () => {
+    const response = await fetch(`${baseUrl}/contact`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": "203.0.113.42, 198.51.100.8",
+      },
+      body: JSON.stringify({ state: "valid", message: privateBodyMarker }),
+    });
+
+    expect(response.status).toBe(202);
+    expect(submittedSourceAddress).toBe("203.0.113.42");
   });
 
   it("never writes a Contact body to request or failure logs", () => {

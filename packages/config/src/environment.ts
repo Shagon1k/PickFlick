@@ -23,6 +23,7 @@ export interface RuntimeEnvironment {
   readonly resend: {
     readonly apiKey: string;
     readonly from: string;
+    readonly deliveryEnabled: boolean;
   };
   readonly contact: {
     readonly deliveryTo: string;
@@ -188,6 +189,18 @@ function parseWorkerValues(
   if (from && !/^(?:[^@\s]+@[^@\s]+\.[^@\s]+|[^@<>\r\n]+ <[^@\s]+@[^@\s]+\.[^@\s]+>)$/.test(from)) {
     failures.push({ name: "RESEND_FROM", reason: "must be an email address or a name plus email address" });
   }
+  if (appEnvironment === "uat" && from !== "PickFlick UAT <notifications@uat.pick-flick.app>") {
+    failures.push({
+      name: "RESEND_FROM",
+      reason: "must be PickFlick UAT <notifications@uat.pick-flick.app> in uat",
+    });
+  }
+  if (appEnvironment === "production" && from !== "PickFlick <notifications@pick-flick.app>") {
+    failures.push({
+      name: "RESEND_FROM",
+      reason: "must be PickFlick <notifications@pick-flick.app> in production",
+    });
+  }
   if (contactDeliveryTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactDeliveryTo)) {
     failures.push({ name: "CONTACT_DELIVERY_TO", reason: "must be an email address" });
   }
@@ -196,6 +209,9 @@ function parseWorkerValues(
   }
   if (resendApiKey === "local-disabled" && appEnvironment !== "local" && appEnvironment !== "test") {
     failures.push({ name: "RESEND_API_KEY", reason: "must not be local-disabled outside local or test" });
+  }
+  if (resendApiKey === "preview-disabled" && appEnvironment !== "uat") {
+    failures.push({ name: "RESEND_API_KEY", reason: "may use preview-disabled only in uat" });
   }
   if (contactHashSecret && contactHashSecret.length < 32) {
     failures.push({ name: "CONTACT_HASH_SECRET", reason: "must contain at least 32 characters" });
@@ -207,7 +223,11 @@ function parseWorkerValues(
     shutdownTimeoutMilliseconds,
     redisUrl,
     storage: { endpoint, region, bucket, accessKey, secretKey, forcePathStyle },
-    resend: { apiKey: resendApiKey, from },
+    resend: {
+      apiKey: resendApiKey,
+      from,
+      deliveryEnabled: resendApiKey !== "local-disabled" && resendApiKey !== "preview-disabled",
+    },
     contact: { deliveryTo: contactDeliveryTo, hashSecret: contactHashSecret },
   };
 }

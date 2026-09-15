@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { browserSmokeConfiguration } from "../uat-browser-smoke.mjs";
+import { browserSmokeConfiguration, isBrandedDocumentTitle } from "../uat-browser-smoke.mjs";
 
 describe("UAT browser smoke configuration", () => {
   it("resolves the artifact directory without a deployment revision", () => {
@@ -17,5 +17,10 @@ describe("UAT browser smoke configuration", () => {
       PLAYWRIGHT_BASE_URL: "https://preview.example.invalid",
       SOURCE_REVISION: "a".repeat(40),
     })).toThrow(/must be https:\/\/uat\.pick-flick\.app/);
+  });
+
+  it("accepts the landing page's branded metadata title", () => {
+    expect(isBrandedDocumentTitle("PickFlick — Pick a film. Watch together. Remember everything.")).toBe(true);
+    expect(isBrandedDocumentTitle("A different product")).toBe(false);
   });
 });
