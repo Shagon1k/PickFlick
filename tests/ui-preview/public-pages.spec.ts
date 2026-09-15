@@ -5,6 +5,8 @@ const pages = [
   { name: "landing", route: "/" },
   { name: "pricing", route: "/pricing" },
   { name: "contact", route: "/contact" },
+  { name: "privacy", route: "/legal/privacy" },
+  { name: "terms", route: "/legal/terms" },
 ] as const;
 const canonicalViewports = [
   { height: 844, name: "s-390", width: 390 },
@@ -128,6 +130,23 @@ test("public navigation stays fixed at the viewport bottom through tablet", asyn
   await openPage(page, "/", { height: 900, width: 821 });
   await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
   await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" })).toBeVisible();
+});
+
+test("legal entries expose distinct provisional documents and public contact", async ({ page }) => {
+  for (const legalPage of [
+    { heading: "Privacy Notice", route: "/legal/privacy" },
+    { heading: "Terms of Service", route: "/legal/terms" },
+  ]) {
+    await openPage(page, legalPage.route, canonicalViewports[3]);
+
+    await expect(page.getByRole("heading", { level: 1, name: legalPage.heading })).toBeVisible();
+    await expect(page.getByText("Draft for review")).toBeVisible();
+    await expect(page.getByText(/final production policy are still pending/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: "hello@pick-flick.app" })).toHaveAttribute(
+      "href",
+      "mailto:hello@pick-flick.app",
+    );
+  }
 });
 
 test("landing content remains visible when JavaScript is unavailable", async ({ browser }) => {

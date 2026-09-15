@@ -1,9 +1,9 @@
 # UI quality checks
 
-The Playwright suite checks the production `/ui-preview`, Landing, Pricing, and seven
-`/shell-preview/*` routes in Chromium. It builds the internal packages and web app, starts the
-standalone web server on loopback, and then runs accessibility, interaction, viewport,
-reduced-motion, and screenshot checks.
+The Playwright suite checks the production `/ui-preview`, Landing, Pricing, Contact, Privacy,
+Terms, and seven `/shell-preview/*` routes in Chromium. It builds the internal packages and web
+app, starts the standalone web server on loopback, and then runs accessibility, interaction,
+viewport, reduced-motion, and screenshot checks.
 
 ## Run the suite
 
@@ -22,14 +22,14 @@ pnpm ui:test
 
 The suite verifies:
 
-- default axe rules for the component preview, every shell, Landing, and Pricing at 390px and
+- default axe rules for the component preview, every shell, and each public page at 390px and
   1440px widths;
 - keyboard, focus, native constraint, live-region, menu, tab, score, dialog, and mutually exclusive
   shell-overlay behavior, plus Pricing FAQ and unavailable-checkout behavior;
 - 44px shell targets and bounded Library/App Admin/Pricing dense regions;
-- no horizontal page overflow for the component preview, shells, Landing, and Pricing at 390, 640,
+- no horizontal page overflow for the component preview, shells, and public pages at 390, 640,
   768, 900, 1024, 1200, and 1440px widths;
-- exact matching against four component, 28 shell, and eight public-page full-page baselines at
+- exact matching against four component, 28 shell, and 20 public-page full-page baselines at
   390, 768, 1024, and 1440px widths; and
 - immediate menu and FAQ behavior when the browser requests reduced motion.
 

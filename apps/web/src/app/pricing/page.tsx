@@ -1,5 +1,3 @@
-import type { Metadata } from "next";
-
 import { ActionLink, BrandImage, Button } from "@pickflick/ui";
 
 import {
@@ -10,11 +8,13 @@ import {
 import styles from "../../components/marketing/marketing.module.css";
 import { PricingFaq } from "../../components/marketing/pricing-faq";
 import { PublicShell } from "../../components/shells/shells";
+import { createPublicMetadata } from "../../public-metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPublicMetadata({
   title: "Pricing — PickFlick",
   description: "Compare PickFlick Free and monthly Pro plans for your film Clubs.",
-};
+  path: "/pricing",
+});
 
 function SprocketDivider() {
   return <div aria-hidden="true" className={styles.divider}><i /><i /><i /></div>;

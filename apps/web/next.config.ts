@@ -2,6 +2,8 @@ import { resolve } from "node:path";
 
 import type { NextConfig } from "next";
 
+import { NOINDEX_HEADER, NON_PUBLIC_INDEXING_BOUNDARIES } from "./src/indexing";
+
 const sourceRevision = process.env.SOURCE_REVISION;
 const backendInternalUrl = new URL(process.env.BACKEND_INTERNAL_URL ?? "http://127.0.0.1:3001");
 
@@ -16,6 +18,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   poweredByHeader: false,
+  headers: async () =>
+    NON_PUBLIC_INDEXING_BOUNDARIES.map(({ headerSource }) => ({
+      headers: [NOINDEX_HEADER],
+      source: headerSource,
+    })),
   rewrites: async () => [
     {
       source: "/api/:path*",
