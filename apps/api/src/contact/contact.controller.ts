@@ -16,9 +16,9 @@ import type { ContactSubmissionResponse } from "@pickflick/contracts";
 import {
   ContactConflictError,
   ContactRateLimitError,
-  ContactService,
   ContactValidationError,
-} from "./contact.service.js";
+} from "./contact.errors.js";
+import { ContactService } from "./contact.service.js";
 
 interface ContactHttpRequest {
   readonly headers?: Readonly<Record<string, string | string[] | undefined>>;

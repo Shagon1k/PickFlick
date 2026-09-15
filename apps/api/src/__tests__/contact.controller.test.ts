@@ -12,9 +12,9 @@ import { ContactController } from "../contact/contact.controller.js";
 import {
   ContactConflictError,
   ContactRateLimitError,
-  ContactService,
   ContactValidationError,
-} from "../contact/contact.service.js";
+} from "../contact/contact.errors.js";
+import { ContactService } from "../contact/contact.service.js";
 import { configureProxyTrust } from "../proxy-trust.js";
 import { createRequestContextMiddleware } from "../request-context.js";
 

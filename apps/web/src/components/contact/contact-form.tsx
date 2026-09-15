@@ -1,67 +1,55 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   CONTACT_EMAIL_MAX_LENGTH,
   CONTACT_MESSAGE_MAX_LENGTH,
   CONTACT_NAME_MAX_LENGTH,
-  type ApiErrorEnvelope,
-  type ContactSubmissionResponse,
 } from "@pickflick/contracts";
 import { Button, TextAreaField, TextField } from "@pickflick/ui";
 
+import { submitContact } from "../../app/contact/actions";
+import { initialFormActionState } from "../forms/form-action.types";
+import { useFormAction } from "../forms/use-form-action";
+import type { ContactFieldErrors, ContactFieldName, ContactFormValues } from "./contact-form.types";
+import { validateContactValues } from "./contact-form.validation";
 import styles from "./contact.module.css";
 
-interface FormValues {
-  readonly message: string;
-  readonly name: string;
-  readonly email: string;
-}
-
-type FieldErrors = Partial<Record<keyof FormValues, string>>;
 type FeedbackTone = "neutral" | "success" | "danger" | "warning";
 
-const emptyValues: FormValues = { message: "", name: "", email: "" };
-const CONTACT_SUBMISSION_TIMEOUT_MILLISECONDS = 10_000;
-
-function validate(values: FormValues): FieldErrors {
-  const errors: FieldErrors = {};
-  const message = values.message.trim();
-  if (!message) {
-    errors.message = "Enter a message.";
-  } else if (values.message.length > CONTACT_MESSAGE_MAX_LENGTH) {
-    errors.message = `Keep the message to ${CONTACT_MESSAGE_MAX_LENGTH} characters.`;
-  }
-  if (values.name.trim().length > CONTACT_NAME_MAX_LENGTH) {
-    errors.name = `Keep your name to ${CONTACT_NAME_MAX_LENGTH} characters.`;
-  }
-  const email = values.email.trim();
-  if (email.length > CONTACT_EMAIL_MAX_LENGTH || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
-    errors.email = "Enter a valid email address or leave this blank.";
-  }
-  return errors;
-}
-
-async function responseCode(response: Response): Promise<string | undefined> {
-  try {
-    const body = await response.json() as ApiErrorEnvelope | ContactSubmissionResponse;
-    return "error" in body ? body.error.code : undefined;
-  } catch {
-    return undefined;
-  }
-}
+const emptyValues: ContactFormValues = { message: "", name: "", email: "" };
+const initialActionState = initialFormActionState<ContactFieldName>();
 
 export function ContactForm() {
-  const [values, setValues] = useState<FormValues>(emptyValues);
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [pending, setPending] = useState(false);
+  const [values, setValues] = useState<ContactFormValues>(emptyValues);
+  const [errors, setErrors] = useState<ContactFieldErrors>({});
   const [feedback, setFeedback] = useState<{ message: string; tone: FeedbackTone }>({ message: "", tone: "neutral" });
   const formRef = useRef<HTMLFormElement>(null);
+  const submissionKeyInputRef = useRef<HTMLInputElement>(null);
   const attemptRef = useRef<{ signature: string; key: string } | undefined>(undefined);
+  const [actionState, formAction, pending] = useFormAction(
+    submitContact,
+    initialActionState,
+    "We couldn't reach PickFlick. Your text is still here — try again.",
+  );
 
-  function update(field: keyof FormValues, value: string): void {
+  useEffect(() => {
+    if (actionState.revision === 0) {
+      return;
+    }
+    setErrors(actionState.fieldErrors ?? {});
+    setFeedback({ message: actionState.message, tone: actionState.tone });
+    if (actionState.status === "success") {
+      setValues(emptyValues);
+      attemptRef.current = undefined;
+    } else if (actionState.fieldErrors) {
+      focusFirstError();
+    }
+  }, [actionState]);
+
+  function update(field: ContactFieldName, value: string): void {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => {
       const next = { ...current };
@@ -77,16 +65,17 @@ export function ContactForm() {
     });
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    const nextErrors = validate(values);
+  function submit(event: FormEvent<HTMLFormElement>): void {
+    const nextErrors = validateContactValues(values);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
       setFeedback({ message: "Review the highlighted field and try again.", tone: "danger" });
       focusFirstError();
       return;
     }
     if (!navigator.onLine) {
+      event.preventDefault();
       setFeedback({ message: "You appear to be offline. Reconnect, then send again; your message is still here.", tone: "warning" });
       return;
     }
@@ -100,52 +89,15 @@ export function ContactForm() {
     if (!attemptRef.current || attemptRef.current.signature !== signature) {
       attemptRef.current = { signature, key: crypto.randomUUID() };
     }
-
-    setPending(true);
-    setFeedback({ message: "Sending your message…", tone: "neutral" });
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CONTACT_SUBMISSION_TIMEOUT_MILLISECONDS);
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...payload, submissionKey: attemptRef.current.key }),
-        signal: controller.signal,
-      });
-      if (response.ok) {
-        const body = await response.json() as ContactSubmissionResponse;
-        if (body.status !== "accepted" && body.status !== "duplicate") {
-          throw new Error("Unexpected Contact response.");
-        }
-        setValues(emptyValues);
-        setErrors({});
-        attemptRef.current = undefined;
-        setFeedback({ message: "Message received — we'll get back to you soon.", tone: "success" });
-        return;
-      }
-
-      const code = await responseCode(response);
-      if (response.status === 429 || code === "RATE_LIMITED") {
-        setFeedback({ message: "Too many messages were sent from this connection. Try again in 10 minutes.", tone: "warning" });
-      } else if (response.status === 409 || code === "CONFLICT") {
-        attemptRef.current = undefined;
-        setFeedback({ message: "This message changed after an earlier attempt. Review it, then send again.", tone: "warning" });
-      } else if (response.status === 400 || code === "VALIDATION_FAILED") {
-        setFeedback({ message: "The message could not be accepted. Review the fields and try again.", tone: "danger" });
-        focusFirstError();
-      } else {
-        setFeedback({ message: "We couldn't save your message. Your text is still here — try again.", tone: "danger" });
-      }
-    } catch {
-      setFeedback({ message: "We couldn't reach PickFlick. Your text is still here — try again.", tone: "danger" });
-    } finally {
-      clearTimeout(timeout);
-      setPending(false);
+    if (submissionKeyInputRef.current) {
+      submissionKeyInputRef.current.value = attemptRef.current.key;
     }
+    setFeedback({ message: "Sending your message…", tone: "neutral" });
   }
 
   return (
-    <form className={styles.form} noValidate onSubmit={submit} ref={formRef}>
+    <form action={formAction} className={styles.form} noValidate onSubmit={submit} ref={formRef}>
+      <input name="submissionKey" ref={submissionKeyInputRef} type="hidden" />
       <TextAreaField
         {...(errors.message ? { error: errors.message } : {})}
         hint={`${values.message.length}/${CONTACT_MESSAGE_MAX_LENGTH} characters`}

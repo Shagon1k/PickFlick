@@ -129,6 +129,8 @@ These rules are high-risk and require database/server enforcement plus focused t
 ## Code, Data & Safety Rules
 
 - Match surrounding conventions once code exists; write minimal, typed, readable code.
+- Keep growing modules readable by separating reusable types, errors, validation, persistence, and
+  provider adapters when those concerns would otherwise obscure the owning workflow.
 - Names carry meaning. Do not use one term for different concepts or multiple terms for the same concept.
 - Validate untrusted browser/provider/file/webhook input at boundaries and encode user/provider output contextually.
 - Enforce authorization at the server/data boundary; hidden UI is never a permission boundary.

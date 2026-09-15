@@ -14,7 +14,7 @@ import {
   ResendContactSender,
   runContactDeliveryLoop,
   type ContactDeliveryRecord,
-} from "../contact-delivery.js";
+} from "../contact-delivery/index.js";
 
 const privateMessage = "private-contact-message-marker";
 const record: ContactDeliveryRecord = {
@@ -220,6 +220,23 @@ describe("Contact delivery", () => {
     }));
     expect(updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
       where: { id: record.id, deliveryState: "PROCESSING", attemptCount: 3 },
+      data: expect.objectContaining({ deliveryState: "PENDING" }),
+    }));
+  });
+
+  it("removes personal content when a delivery becomes terminal", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const store = new PrismaContactDeliveryStore({ contactMessage: { updateMany } } as never);
+
+    await store.fail(record.id, 5, "HTTP_422", undefined);
+
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        deliveryState: "FAILED",
+        message: null,
+        name: null,
+        email: null,
+      }),
     }));
   });
 

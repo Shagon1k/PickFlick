@@ -12,7 +12,7 @@ import {
   PrismaContactDeliveryStore,
   ResendContactSender,
   runContactDeliveryLoop,
-} from "./contact-delivery.js";
+} from "./contact-delivery/index.js";
 
 const controller = new AbortController();
 const drain = new DrainController();

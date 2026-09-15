@@ -132,4 +132,31 @@ describe("worker scaffold", () => {
     await expect(running).rejects.toThrow(WorkerDrainTimeoutError);
     expect(logs.output()).toContain('"event":"service.shutdown.timeout"');
   });
+
+  it("starts the shutdown deadline while the Contact loop has in-flight work", async () => {
+    const logs = captureLogger();
+    const controller = new AbortController();
+    const drain = new DrainController();
+    let workStarted!: () => void;
+    const started = new Promise<void>((resolve) => (workStarted = resolve));
+    const running = runWorker(controller.signal, {
+      logger: logs.logger,
+      readiness: async () => ({ status: "ready", checks: [] }),
+      drain,
+      shutdownTimeoutMilliseconds: 5,
+      work: async () => {
+        await drain.run(async () => {
+          workStarted();
+          await new Promise(() => undefined);
+        });
+      },
+    });
+
+    await started;
+    controller.abort();
+
+    await expect(running).rejects.toThrow(WorkerDrainTimeoutError);
+    expect(logs.output()).toContain('"event":"service.draining"');
+    expect(logs.output()).toContain('"event":"service.shutdown.timeout"');
+  });
 });

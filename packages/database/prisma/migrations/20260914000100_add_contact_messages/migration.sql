@@ -25,7 +25,9 @@ CREATE TABLE "ContactMessage" (
     CONSTRAINT "ContactMessage_payload_lifecycle_check" CHECK (
       ("deliveryState" = 'DELIVERED' AND "message" IS NULL AND "name" IS NULL AND "email" IS NULL AND "deliveredAt" IS NOT NULL)
       OR
-      ("deliveryState" <> 'DELIVERED' AND "message" IS NOT NULL AND "deliveredAt" IS NULL)
+      ("deliveryState" = 'FAILED' AND "message" IS NULL AND "name" IS NULL AND "email" IS NULL AND "deliveredAt" IS NULL)
+      OR
+      ("deliveryState" IN ('PENDING', 'PROCESSING') AND "message" IS NOT NULL AND "deliveredAt" IS NULL)
     )
 );
 

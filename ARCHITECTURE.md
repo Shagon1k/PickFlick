@@ -213,8 +213,9 @@ Confirmed deletion request
 | Bundled static assets | Logo/mascot PWA and UI artwork. | Web build. | Versioned application brand imagery. | Source controlled and deployed immutably. | Proposed |
 
 The schema under `packages/database` implements `User`, `Club`, `Membership`, `Session`, and
-`ContactMessage`. Contact content remains only while delivery can be retried; successful delivery
-clears the message, name, and email while retaining keyed hashes and operational delivery metadata.
+`ContactMessage`. Contact content remains only while delivery can be retried. Successful delivery
+and terminal failure clear the message, name, and email while retaining keyed hashes and operational
+delivery metadata.
 Remaining product-level entities listed in [ROADMAP.md](ROADMAP.md#domain-model) remain Proposed.
 
 | Entity / state machine | Owner | Key invariant or lifecycle | Canonical source |
@@ -233,7 +234,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 
 | Interface | Direction | Protocol | Contract source / workflow | Auth / trust boundary | Failure behavior | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| Browser API | Web -> API | Same-origin HTTPS JSON REST under `/api/*` | Shared typed contracts; future APIs add generated OpenAPI/client | Public Contact uses no session and trusts the proxy-derived source only for keyed rate limiting; authenticated routes still require the proposed session/CSRF boundary. | Structured safe errors; Contact UUID makes retries idempotent and conflicts explicit. | Partial — Contact command active; authenticated API contract generation remains Proposed. |
+| Browser API | Browser -> Next Server Action -> API | Same-origin Server Action, then internal HTTPS/HTTP JSON REST | Reusable web form-action state plus shared typed contracts; future APIs add generated OpenAPI/client | Public Contact uses no session; the Server Action validates input and preserves the proxy-derived source for API rate limiting. Authenticated routes still require the proposed session/CSRF boundary. | Structured safe action results; Contact UUID makes retries idempotent and conflicts explicit. | Partial — Contact command active; authenticated API contract generation remains Proposed. |
 | Live progress | Web -> API | HTTPS SSE | Versioned event envelope generated with API contract | Authenticated, Club/Session-authorized stream. | Reconnect with last event/version; re-fetch authoritative projection after gaps. | Proposed |
 | OAuth | API/browser -> Google/Apple | OIDC/OAuth over HTTPS | API-owned provider adapter; library selected in issue #25 | State/nonce/PKCE as applicable; callback allowlist; server-held provider tokens. | Deny and return to safe login state; never expose provider tokens to browser storage or logs. | Proposed |
 | TMDB | API/worker -> TMDB | HTTPS API | Provider adapter with integration tests | Server-held API credential; provider data untrusted. | Timeout, bounded retry, cached stale detail where safe, explicit unavailable state. | Proposed |
@@ -317,7 +318,7 @@ Default API workflow: implement validated NestJS DTO/controller contracts, gener
 | Database migrations | Committed, reviewed Prisma/manual SQL migrations; `migrate deploy` release gate; pre-deploy compatibility check; no destructive production change without backup/rollback plan. | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) + [environment reference](_docs/environment.md). | Partial — local fresh/upgrade migrations, compatibility statement, seed, guarded reset, and ordered one-shot release gating are active; deployed migration and rollback drills remain Proposed. |
 | Rollback | Redeploy a previously verified immutable SemVer tag only when the applied database schema remains compatible; use a forward fix for incompatible data/schema changes. | [Production operations guide](_docs/production-operations.md#roll-back-an-application-release). | Partial — procedure documented; no production rollback is authorized or exercised. |
 | Backup and restore | Automated PostgreSQL backups, durable avatar backup, documented retention, and restore drill before launch; exports are regenerable/expiring. | Future backup runbook. | Proposed |
-| Scheduled/background work | BullMQ delayed/repeatable jobs with stable IDs, idempotent handlers, retry/dead-letter visibility, and deadline reconciliation. Contact uses its PostgreSQL row as durable intent plus `SKIP LOCKED` reconciliation until the shared BullMQ/outbox substrate arrives; reconciliation remains as repair after queue dispatch is added. | Worker implementation/runbook. | Partial — Contact reconciliation active; shared BullMQ/outbox execution remains Proposed. |
+| Scheduled/background work | BullMQ delayed/repeatable jobs with stable IDs, idempotent handlers, retry/dead-letter visibility, and deadline reconciliation. Contact uses its PostgreSQL row as durable intent plus a fenced Prisma claim until the shared BullMQ/outbox substrate arrives; reconciliation remains as repair after queue dispatch is added. | Worker implementation/runbook. | Partial — Contact reconciliation active; shared BullMQ/outbox execution remains Proposed. |
 
 ### Initial operational signals
 

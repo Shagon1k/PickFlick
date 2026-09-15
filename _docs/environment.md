@@ -143,14 +143,14 @@ fixes the non-secret email identity contract:
 
 | Environment | Public contact | `RESEND_FROM` | Boundary |
 | --- | --- | --- | --- |
-| Local and test | None | `PickFlick <pickflick@example.invalid>` | `RESEND_API_KEY=local-disabled`; never call Resend. |
-| UAT | None | `PickFlick UAT <notifications@uat.pick-flick.app>` | Separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
-| Production | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>` | Separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue. |
+| Local and test | None | `PickFlick <pickflick@example.invalid>` | `RESEND_DELIVERY_MODE=disabled` with `RESEND_API_KEY=local-disabled`; never call Resend. |
+| UAT | None | `PickFlick UAT <notifications@uat.pick-flick.app>` | Deployed UAT fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
+| Production | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>` | Production fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue. |
 
 Startup validation requires the exact UAT and production sender values. The checked-in
-`compose.preview.yaml` keeps its UAT-shaped sender but uses the non-secret `preview-disabled`
-placeholder, which the worker treats as an explicit no-delivery mode. Live UAT must use its
-environment-scoped Resend key; `preview-disabled` is only for the local synthetic preview stack.
+`compose.preview.yaml` fixes `RESEND_DELIVERY_MODE=preview`, keeps its UAT-shaped sender, and uses
+the non-secret `preview-disabled` placeholder. Deployed UAT and production fix the mode to `live`,
+so their startup validation rejects disabled placeholders even when a key is inherited incorrectly.
 
 Google Workspace receives public mail for `pick-flick.app`. Cloudflare owns authoritative DNS, and
 Resend sends application email. Alex retains administrative ownership and recovery control for all
@@ -233,6 +233,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `STORAGE_ACCESS_KEY` | Non-empty application access-key identifier | API, worker | Yes |
 | `STORAGE_SECRET_KEY` | Non-empty application secret access key | API, worker | Yes |
 | `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
+| `RESEND_DELIVERY_MODE` | `disabled` for local/test, `preview` for the synthetic preview, or `live` for deployed UAT/production | API, worker | No |
 | `RESEND_API_KEY` | Non-empty server-side Resend API key, `local-disabled` for local/test, or `preview-disabled` for the synthetic UAT-shaped preview | API, worker | Yes, except documented disabled placeholders |
 | `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
 | `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
@@ -244,7 +245,8 @@ not remove the bucket or credential requirements. For UAT, use the public MinIO 
 the future presigned-URL shape. AWS S3 production configuration will use its regional endpoint and
 set `STORAGE_FORCE_PATH_STYLE=false`.
 
-The runtime validates Resend and Contact values at startup but does not call Resend from readiness.
+The runtime validates the declared Resend delivery mode, environment, key kind, and Contact values
+at startup but does not call Resend from readiness.
 Readiness must not consume provider rate limits or require a full-access key when the application
 only needs a domain-restricted sending key. Contact delivery provides the first plain-text adapter,
 provider-idempotent bounded retries, durable failure state, and body-free logging. Phase 17 extends

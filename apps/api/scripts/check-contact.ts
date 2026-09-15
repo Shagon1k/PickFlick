@@ -5,11 +5,11 @@ import { createDatabaseClient } from "@pickflick/database";
 
 import {
   ContactConflictError,
-  PrismaContactMessageRepository,
   ContactRateLimitError,
-  ContactService,
   ContactValidationError,
-} from "./contact/contact.service.js";
+} from "../src/contact/contact.errors.js";
+import { PrismaContactMessageRepository } from "../src/contact/contact.repository.js";
+import { ContactService } from "../src/contact/contact.service.js";
 
 const environment = loadRuntimeEnvironment();
 if (environment.appEnvironment !== "local" && environment.appEnvironment !== "test") {

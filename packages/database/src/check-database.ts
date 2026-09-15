@@ -176,6 +176,20 @@ try {
       }),
     "ContactMessage_message_length_check",
   );
+  await expectConstraint(
+    (transaction) =>
+      transaction.contactMessage.create({
+        data: {
+          id: "50000000-0000-4000-8000-000000000003",
+          submissionKey: "50000000-0000-4000-8000-000000000004",
+          sourceHash: "a".repeat(64),
+          contentHash: "b".repeat(64),
+          deliveryState: "FAILED",
+          message: "terminal content must be removed",
+        },
+      }),
+    "ContactMessage_payload_lifecycle_check",
+  );
   await verifyMigrationUpgrade();
   console.log("Database checks passed: migrations, upgrade compatibility, deterministic fixtures, and PostgreSQL invariants.");
 } finally {

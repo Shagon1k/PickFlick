@@ -4,15 +4,19 @@ import { describe, expect, it } from "vitest";
 import {
   CONTACT_RATE_LIMIT_MAX,
   CONTACT_RATE_LIMIT_WINDOW_SECONDS,
-  type AcceptContactMessageInput,
-  type ContactAcceptance,
+} from "../contact/contact.constants.js";
+import {
   ContactConflictError,
-  ContactMessageRepository,
   ContactRateLimitError,
-  ContactService,
   ContactValidationError,
-  parseContactSubmission,
-} from "../contact/contact.service.js";
+} from "../contact/contact.errors.js";
+import { ContactMessageRepository } from "../contact/contact.repository.js";
+import { ContactService } from "../contact/contact.service.js";
+import type {
+  AcceptContactMessageInput,
+  ContactAcceptance,
+} from "../contact/contact.types.js";
+import { parseContactSubmission } from "../contact/contact.validation.js";
 
 const environment = {
   contact: {

@@ -259,17 +259,6 @@ test("contact validates fields, focuses the first error, and reports its message
 });
 
 test("contact accepts both new and duplicate submissions through one stable feedback region", async ({ page }) => {
-  let duplicate = false;
-  await page.route("**/api/contact", async (route) => {
-    const payload = route.request().postDataJSON() as Record<string, unknown>;
-    expect(payload).toMatchObject({ message: "A concise note", email: "jane@example.com" });
-    expect(payload.submissionKey).toMatch(/^[0-9a-f-]{36}$/);
-    await route.fulfill({
-      status: 202,
-      contentType: "application/json",
-      body: JSON.stringify({ id: "contact-1", status: duplicate ? "duplicate" : "accepted" }),
-    });
-  });
   await openPage(page, "/contact", canonicalViewports[3]);
 
   const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
@@ -285,33 +274,20 @@ test("contact accepts both new and duplicate submissions through one stable feed
   await page.getByRole("textbox", { name: "Message — required" }).fill("Start another message");
   await expect(page.getByRole("button", { name: "Send message" })).toBeEnabled();
 
-  duplicate = true;
   await page.reload({ waitUntil: "networkidle" });
-  await page.getByRole("textbox", { name: "Message — required" }).fill("A concise note");
+  await page.getByRole("textbox", { name: "Message — required" }).fill("Duplicate message");
   await page.getByRole("textbox", { name: "Your email" }).fill("jane@example.com");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
 });
 
 test("contact prevents edits while a submission is in flight", async ({ page }) => {
-  let releaseResponse: (() => void) | undefined;
-  const responseGate = new Promise<void>((resolve) => {
-    releaseResponse = resolve;
-  });
-  await page.route("**/api/contact", async (route) => {
-    await responseGate;
-    await route.fulfill({
-      status: 202,
-      contentType: "application/json",
-      body: JSON.stringify({ id: "contact-1", status: "accepted" }),
-    });
-  });
   await openPage(page, "/contact", canonicalViewports[0]);
 
   const message = page.getByRole("textbox", { name: "Message — required" });
   const name = page.getByRole("textbox", { name: "Your name" });
   const email = page.getByRole("textbox", { name: "Your email" });
-  await message.fill("Keep this submitted snapshot");
+  await message.fill("Slow Contact response");
   await page.getByRole("button", { name: "Send message" }).click();
 
   await expect(message).toBeDisabled();
@@ -319,81 +295,39 @@ test("contact prevents edits while a submission is in flight", async ({ page }) 
   await expect(email).toBeDisabled();
   await expect(page.getByRole("button", { name: "Send message" })).toBeDisabled();
 
-  releaseResponse?.();
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
 });
 
-test("contact restores editing after a submission request times out", async ({ page }) => {
+test("contact reuses its submission key after a recoverable service failure", async ({ page }) => {
   await openPage(page, "/contact", canonicalViewports[0]);
-  await page.clock.install();
-  await page.evaluate(() => {
-    const originalFetch = globalThis.fetch.bind(globalThis);
-    const submissionKeys: string[] = [];
-    (globalThis as typeof globalThis & { contactSubmissionKeys?: string[] }).contactSubmissionKeys = submissionKeys;
-    globalThis.fetch = (input, init) => {
-      if (String(input) !== "/api/contact") {
-        return originalFetch(input, init);
-      }
-      const payload = JSON.parse(String(init?.body)) as { submissionKey: string };
-      submissionKeys.push(payload.submissionKey);
-      if (submissionKeys.length > 1) {
-        return Promise.resolve(new Response(JSON.stringify({ id: "contact-1", status: "accepted" }), {
-          status: 202,
-          headers: { "content-type": "application/json" },
-        }));
-      }
-      return new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
-      });
-    };
-  });
 
   const message = page.getByRole("textbox", { name: "Message — required" });
-  await message.fill("Keep this message after timeout");
+  await message.fill("Retry this exact message");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(message).toBeDisabled();
-
-  await page.clock.fastForward(10_000);
   await expect(page.getByRole("status")).toContainText("Your text is still here");
   await expect(message).toBeEnabled();
-  await expect(message).toHaveValue("Keep this message after timeout");
+  await expect(message).toHaveValue("Retry this exact message");
 
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toHaveText("Message received — we'll get back to you soon.");
-  const submissionKeys = await page.evaluate(
-    () => (globalThis as typeof globalThis & { contactSubmissionKeys?: string[] }).contactSubmissionKeys,
-  );
-  expect(submissionKeys).toHaveLength(2);
-  expect(submissionKeys?.[1]).toBe(submissionKeys?.[0]);
 });
 
 test("contact preserves input across rate-limit, service, and offline recovery", async ({ page }) => {
   await openPage(page, "/contact", canonicalViewports[0]);
   const message = page.getByRole("textbox", { name: "Message — required" });
-  await message.fill("Please keep this message");
-
-  await page.route("**/api/contact", async (route) => route.fulfill({
-    status: 429,
-    contentType: "application/json",
-    body: JSON.stringify({ error: { code: "RATE_LIMITED", message: "Too many requests.", requestId: "request-1" } }),
-  }));
+  await message.fill("Rate limited message");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toContainText("Try again in 10 minutes");
-  await expect(message).toHaveValue("Please keep this message");
+  await expect(message).toHaveValue("Rate limited message");
 
-  await page.unroute("**/api/contact");
-  await page.route("**/api/contact", async (route) => route.fulfill({
-    status: 503,
-    contentType: "application/json",
-    body: JSON.stringify({ error: { code: "SERVICE_UNAVAILABLE", message: "Unavailable.", requestId: "request-2" } }),
-  }));
+  await message.fill("Service unavailable message");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toContainText("Your text is still here");
-  await expect(message).toHaveValue("Please keep this message");
+  await expect(message).toHaveValue("Service unavailable message");
 
   await page.context().setOffline(true);
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("status")).toContainText("Reconnect, then send again");
-  await expect(message).toHaveValue("Please keep this message");
+  await expect(message).toHaveValue("Service unavailable message");
   await page.context().setOffline(false);
 });

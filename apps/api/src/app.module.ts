@@ -4,11 +4,8 @@ import type { ApplicationLogger } from "@pickflick/observability";
 
 import { AppController } from "./app.controller.js";
 import { ContactController } from "./contact/contact.controller.js";
-import {
-  ContactMessageRepository,
-  ContactService,
-  PrismaContactMessageRepository,
-} from "./contact/contact.service.js";
+import { ContactMessageRepository, PrismaContactMessageRepository } from "./contact/contact.repository.js";
+import { ContactService } from "./contact/contact.service.js";
 import { HealthController } from "./health.controller.js";
 import { HealthService } from "./health.service.js";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";

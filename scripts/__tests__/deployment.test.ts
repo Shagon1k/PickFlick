@@ -95,6 +95,13 @@ describe("deployment Compose", () => {
     );
   });
 
+  it("fixes deployed API and worker delivery to live mode", () => {
+    for (const deployment of Object.values(validDeployments)) {
+      expect(deployment.services.api.environment.RESEND_DELIVERY_MODE).toBe("live");
+      expect(deployment.services.worker.environment.RESEND_DELIVERY_MODE).toBe("live");
+    }
+  });
+
   it("rejects release services that replace the release image behavior", () => {
     expectRejected(
       (deployments) => (deployments.uat.services.release.build.target = "api"),
