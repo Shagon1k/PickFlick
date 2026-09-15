@@ -70,6 +70,7 @@ test("application failures hide diagnostics and recover through retry", async ({
 
   await expect(page.getByText(PRIVATE_DIAGNOSTIC, { exact: false })).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1, name: "Projector Malfunction" })).toBeFocused();
+  expect(await page.evaluate(() => globalThis.scrollY)).toBe(0);
   const recovery = page.getByRole("region", { name: "Projector Malfunction" });
   await expect(recovery.getByRole("link", { name: "Back to Hub" })).toHaveAttribute("href", "/app");
   await expect(recovery.getByRole("link", { name: "PickFlick home" })).toHaveAttribute("href", "/");

@@ -11,7 +11,7 @@ export default function ApplicationError({
   retry: () => void;
 }>) {
   useEffect(() => {
-    globalThis.document.getElementById("system-state-title")?.focus();
+    globalThis.document.getElementById("system-state-title")?.focus({ preventScroll: true });
   }, []);
 
   return <SystemState onRetry={retry} variant="application-error" />;
