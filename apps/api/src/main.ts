@@ -1,23 +1,23 @@
 import "reflect-metadata";
 
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { loadRuntimeEnvironment, safeEnvironmentValidationFailures } from "@pickflick/config/environment";
 import { completeWithin, createLogger } from "@pickflick/observability";
 
-import { ApiExceptionFilter } from "./api-exception.filter.js";
 import { AppModule } from "./app.module.js";
-import { configureProxyTrust } from "./proxy-trust.js";
-import { createRequestContextMiddleware } from "./request-context.js";
+import { configureApplication } from "./configure-application.js";
 
 async function bootstrap(): Promise<void> {
   const environment = loadRuntimeEnvironment();
   const logger = createLogger({ service: "api", environment: environment.appEnvironment });
 
   try {
-    const app = await NestFactory.create(AppModule.register(environment, logger), { logger: false });
-    configureProxyTrust(app);
-    app.use(createRequestContextMiddleware(logger));
-    app.useGlobalFilters(new ApiExceptionFilter(logger));
+    const app = await NestFactory.create<NestExpressApplication>(AppModule.register(environment, logger), {
+      bodyParser: false,
+      logger: false,
+    });
+    configureApplication(app, logger);
     await app.listen(environment.apiPort, environment.apiHost);
     logger.info(
       { event: "service.started", host: environment.apiHost, port: environment.apiPort },

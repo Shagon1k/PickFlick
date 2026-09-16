@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
     })),
   rewrites: async () => [
     {
+      source: "/api/auth/:path*",
+      destination: `${backendInternalUrl.origin}/api/auth/:path*`,
+    },
+    {
       source: "/api/:path*",
       destination: `${backendInternalUrl.origin}/:path*`,
     },

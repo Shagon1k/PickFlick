@@ -48,6 +48,11 @@ describe("Projector Noir primitives", () => {
     expect(markup).toContain('viewBox="0 0 24 24"');
   });
 
+  it("keeps provider marks in the shared icon catalog", () => {
+    expect(renderToStaticMarkup(Icon({ name: "google" }))).toContain('fill="currentColor"');
+    expect(renderToStaticMarkup(Icon({ name: "apple" }))).toContain('fill="currentColor"');
+  });
+
   it("keeps loading actions native, named, and non-repeatable", () => {
     const component = Button({ children: "Create Session", loading: true });
     const button = descendants(component).find((element) => element.type === "button");

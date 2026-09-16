@@ -70,3 +70,24 @@ export interface ContactSubmissionResponse {
   readonly id: string;
   readonly status: "accepted" | "duplicate";
 }
+
+export const DEFAULT_AUTH_RETURN_TARGET = "/app";
+
+const invitationAuthReturnTarget = /^\/invite\/(?:club|session)\/[A-Za-z0-9_-]{1,512}$/;
+
+export function isAllowedAuthReturnTarget(value: unknown): value is string {
+  if (typeof value !== "string" || value.length > 600 || !value.startsWith("/") || value.startsWith("//")) {
+    return false;
+  }
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (character === "\\" || codePoint <= 31 || codePoint === 127) {
+      return false;
+    }
+  }
+  return value === DEFAULT_AUTH_RETURN_TARGET || invitationAuthReturnTarget.test(value);
+}
+
+export function resolveAuthReturnTarget(value: unknown): string {
+  return isAllowedAuthReturnTarget(value) ? value : DEFAULT_AUTH_RETURN_TARGET;
+}

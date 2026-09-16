@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { checkDeployment, renderDeployment, validateDeployments } from "../check-deployment.mjs";
+import {
+  checkDeployment,
+  renderDeployment,
+  validateDeployments,
+  validatePreviewAuthContract,
+} from "../check-deployment.mjs";
 
 type Deployments = ReturnType<typeof checkDeployment>;
 
@@ -18,6 +23,21 @@ function expectRejected(mutate: (deployments: Deployments) => void, message: Reg
 }
 
 describe("deployment Compose", () => {
+  it("requires every managed-preview authentication input without rendering secret values", () => {
+    validatePreviewAuthContract();
+
+    for (const variableName of [
+      "AUTH_BASE_URL",
+      "AUTH_SECRET",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+    ]) {
+      expect(() => validatePreviewAuthContract({ [variableName]: "" })).toThrow(
+        new RegExp(`${variableName} is required`),
+      );
+    }
+  });
+
   it("renders isolated UAT and production topologies", () => {
     expect(validDeployments.uat.name).toBe("pickflick-uat");
     expect(validDeployments.production.name).toBe("pickflick-production");
@@ -77,6 +97,8 @@ describe("deployment Compose", () => {
       ["api", "SHUTDOWN_TIMEOUT_MS"],
       ["api", "API_HOST"],
       ["api", "API_PORT"],
+      ["api", "AUTH_SECRET"],
+      ["api", "GOOGLE_CLIENT_SECRET"],
       ["worker", "SHUTDOWN_TIMEOUT_MS"],
     ] as const) {
       expectRejected(
@@ -84,6 +106,13 @@ describe("deployment Compose", () => {
         new RegExp(`${serviceName} must receive ${variableName}`),
       );
     }
+  });
+
+  it("keeps OAuth credentials in the API service and pins canonical callback origins", () => {
+    expect(validDeployments.uat.services.api.environment.AUTH_BASE_URL).toBe("https://uat.pick-flick.app");
+    expect(validDeployments.production.services.api.environment.AUTH_BASE_URL).toBe("https://pick-flick.app");
+    expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("AUTH_SECRET");
+    expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("GOOGLE_CLIENT_SECRET");
   });
 
   it("routes the public API path through web to the environment-specific API alias", () => {

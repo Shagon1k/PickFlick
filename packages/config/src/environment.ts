@@ -32,9 +32,16 @@ export interface RuntimeEnvironment {
     readonly deliveryTo: string;
     readonly hashSecret: string;
   };
+  readonly auth: {
+    readonly baseUrl: string;
+    readonly secret: string;
+    readonly googleClientId: string;
+    readonly googleClientSecret: string;
+    readonly secureCookies: boolean;
+  };
 }
 
-export type WorkerEnvironment = Omit<RuntimeEnvironment, "apiHost" | "apiPort">;
+export type WorkerEnvironment = Omit<RuntimeEnvironment, "apiHost" | "apiPort" | "auth">;
 
 export interface DatabaseEnvironment {
   readonly appEnvironment: DeploymentEnvironment;
@@ -143,6 +150,30 @@ function url(
     failures.push({ name, reason: "must be a valid URL" });
   }
   return value;
+}
+
+function originUrl(
+  source: EnvironmentSource,
+  name: string,
+  appEnvironment: DeploymentEnvironment,
+  failures: ValidationFailure[],
+): string {
+  const value = url(source, name, ["http:", "https:"], failures, "host");
+  if (!value) {
+    return value;
+  }
+  try {
+    const parsed = new URL(value);
+    if (parsed.pathname !== "/" || parsed.search || parsed.hash || parsed.username || parsed.password) {
+      failures.push({ name, reason: "must be an origin without credentials, path, query, or fragment" });
+    }
+    if ((appEnvironment === "uat" || appEnvironment === "production") && parsed.protocol !== "https:") {
+      failures.push({ name, reason: "must use https in uat or production" });
+    }
+    return parsed.origin;
+  } catch {
+    return value;
+  }
 }
 
 export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnvironment {
@@ -269,15 +300,33 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const apiHost = required(source, "API_HOST", failures);
   const apiPort = integer(source, "API_PORT", failures);
   const workerEnvironment = parseWorkerValues(source, appEnvironment, failures);
+  const authBaseUrl = originUrl(source, "AUTH_BASE_URL", appEnvironment, failures);
+  const authSecret = required(source, "AUTH_SECRET", failures);
+  const googleClientId = required(source, "GOOGLE_CLIENT_ID", failures);
+  const googleClientSecret = required(source, "GOOGLE_CLIENT_SECRET", failures);
 
   if (apiHost && /\s/.test(apiHost)) {
     failures.push({ name: "API_HOST", reason: "must not contain whitespace" });
+  }
+  if (authSecret && authSecret.length < 32) {
+    failures.push({ name: "AUTH_SECRET", reason: "must contain at least 32 characters" });
   }
   if (failures.length > 0) {
     throw new EnvironmentValidationError(failures);
   }
 
-  return { ...workerEnvironment, apiHost, apiPort };
+  return {
+    ...workerEnvironment,
+    apiHost,
+    apiPort,
+    auth: {
+      baseUrl: authBaseUrl,
+      secret: authSecret,
+      googleClientId,
+      googleClientSecret,
+      secureCookies: appEnvironment === "uat" || appEnvironment === "production",
+    },
+  };
 }
 
 export function loadRepositoryEnvironmentFile(source: EnvironmentSource = process.env): void {

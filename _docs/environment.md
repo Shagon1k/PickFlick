@@ -56,8 +56,9 @@ pnpm compose:check
 docker compose -f compose.deploy.yaml config --format json
 ```
 
-`pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
-contract. It checks the exact application service set, runtime-required environment inputs,
+`pnpm compose:check` validates managed-preview authentication inputs with
+`docker compose config -q`, then renders synthetic UAT and production configurations and verifies
+their static contract. It checks the exact application service set, runtime-required environment inputs,
 source-revision build/runtime reporting, native release-to-runtime dependency ordering, the release
 image target plus command/entrypoint inheritance, intended API/web health checks, web's API-health
 dependency, private ports, environment-specific project names, uniquely owned service aliases that
@@ -185,6 +186,7 @@ pnpm migrate
 pnpm seed
 pnpm services:check
 pnpm db:check
+pnpm auth:check
 pnpm dev
 ```
 
@@ -193,7 +195,12 @@ MinIO bucket if it does not exist. `pnpm services:check` checks each service fro
 the runtime storage credentials to verify access to the configured bucket. Local configuration uses
 the non-secret `RESEND_API_KEY=local-disabled` placeholder and does not call Resend.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
-fixtures, and PostgreSQL constraints.
+fixtures, and PostgreSQL constraints. `pnpm auth:check` uses a deterministic local provider double
+to prove new and returning Google identity handling, fixed identity-only permissions,
+provider-credential discard, email-conflict denial, distinct Cloudflare client rate-limit keys,
+database session resolution, sign-out/revocation, state/nonce/PKCE binding, atomic state
+consumption, origin and return-target rejection, and safe expiry, replay, denial, invitation retry,
+and forged-callback handling. It does not call Google or validate a real provider credential.
 
 Stop the containers with `pnpm services:down`. That command retains the named volumes. Delete the
 volumes only when you intentionally want to discard all local service data.
@@ -203,8 +210,9 @@ volumes only when you intentionally want to discard all local service data.
 `pnpm migrate` uses `prisma migrate deploy`; it never uses `db push`. The first two migrations
 create the `User`, `Club`, `Membership`, and `Session` foundation and its reviewed constraints. The
 third adds `ContactMessage` with duplicate, delivery-state, payload-lifecycle, and lookup
-constraints. All three migrations are additive and backward compatible with the preceding
-application schema.
+constraints. The fourth adds Google identity, database-session, verification-state, and auth
+rate-limit records plus the provider-subject uniqueness constraint. All four migrations are
+additive and backward compatible with the preceding application schema.
 
 `pnpm seed` is idempotent and uses stable identifiers plus `example.invalid` email addresses. It
 refuses every environment except `local` and `test`. A local seed also requires a loopback database
@@ -213,6 +221,33 @@ host, no driver-level host override, and the database name `pickflick_local`; a 
 
 `pnpm db:reset` is destructive. It applies the same positive environment, host, and database-name
 guards before invoking `prisma migrate reset`. Never use it against shared, UAT, or production data.
+
+## Managed preview authentication
+
+Managed previews use the dedicated **PickFlick Preview** Google OAuth web client. Supply these four
+values through the managed preview environment or secret mechanism before Compose validation:
+
+```text
+AUTH_BASE_URL=https://preview-N.shagon1k.win
+AUTH_SECRET
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+```
+
+Set `AUTH_BASE_URL` to the preview's canonical public origin. The Google client's authorized
+redirect URI must exactly equal `${AUTH_BASE_URL}/api/auth/callback/google`. Keep Authorized
+JavaScript origins empty: PickFlick performs the Google OAuth exchange on the server and does not
+load Google's browser SDK. Add an origin only if a later approved direct browser-SDK flow requires
+one.
+
+`compose.preview.yaml` requires all four inputs; it contains no fallback authentication values.
+`pnpm compose:check` validates the contract with synthetic values and `docker compose config -q`,
+which emits no resolved configuration. Never save a rendered preview configuration, logs, or
+screenshots containing `AUTH_SECRET` or `GOOGLE_CLIENT_SECRET`. Keep the client ID at the same
+server-only configuration boundary.
+
+Preview, UAT, and production use separate Google OAuth clients and secrets. Never copy preview
+credentials into UAT or production.
 
 ## Runtime variables
 
@@ -224,6 +259,10 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, database commands | No |
 | `API_HOST` | Non-empty host without whitespace | API | No |
 | `API_PORT` | Integer from 1 through 65535 | API | No |
+| `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
+| `AUTH_SECRET` | At least 32 characters used to protect authentication state and encrypted provider-token fields | API | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth web-client identifier for the current environment | API | Yes |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth web-client secret for the current environment | API | Yes |
 | `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
 | `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
 | `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
@@ -238,6 +277,22 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
 | `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
 | `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |
+
+Authentication configuration is API-only: do not expose it to the worker, web client, browser
+environment, logs, screenshots, or rendered Compose evidence. Configure a separate Google OAuth web
+client for each deployed environment. Its authorized redirect URI must exactly equal
+`AUTH_BASE_URL` followed by `/api/auth/callback/google`. Authorized JavaScript origins remain empty
+for the server-side flow. The checked-in local values are synthetic and make deterministic checks
+possible, but they cannot complete a live Google sign-in. Store deployed secrets only in the
+environment's secret system and rotate them through a controlled provider and deployment change.
+
+Better Auth 1.7.5 exposes the upstream atomic verification-consumption primitive added in
+[better-auth#9568](https://github.com/better-auth/better-auth/pull/9568), but its social OAuth
+database-state callback still performs separate lookup and deletion. PickFlick temporarily
+backports the atomic call in `patches/better-auth@1.7.5.patch` so concurrent callbacks cannot both
+reach provider code exchange. Keep `pnpm auth:check` coverage until a compatible stable release
+contains the call-site fix; [issue #147](https://github.com/Shagon1k/PickFlick/issues/147) tracks
+the bounded upgrade and patch removal.
 
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as
@@ -276,9 +331,10 @@ uploads screenshots, visual diffs, axe output, traces, video, and the HTML repor
 the [UI quality guide](ui-quality.md) for its viewport and interaction coverage.
 
 The integration job applies the committed migrations, loads deterministic fixtures, verifies
-database constraints and dependency connectivity, runs the serialized Contact persistence probe,
-and runs `pnpm e2e:smoke`. The smoke command
-starts the built web, API, and worker entrypoints; checks web rendering, API liveness/readiness, and
+database constraints and dependency connectivity, runs the serialized Contact and authentication
+probes, and runs `pnpm e2e:smoke`. The smoke command also proves that the built API mounts the raw
+authentication handler at `/api/auth/*`. It starts the built web, API, and worker entrypoints;
+checks web rendering, API liveness/readiness, and
 worker readiness; then stops all three processes. CI also validates the deployment definitions and
 runs the repository secret scan. The terminal `Delivery gate` fails unless the secret scan and all
 four quality jobs pass. Any future delivery workflow must require that terminal gate.

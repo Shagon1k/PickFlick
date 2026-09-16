@@ -83,6 +83,9 @@ Configure Better Auth with implicit linking disabled. Allow different provider e
 the explicit, fresh-session linking workflow needed for Apple relay addresses. Do not expose a
 generic email-match merge path. Trust only the configured Google and Apple providers for explicit
 linking, keep `allowUnlinkingAll` false, and keep provider profile updates on link disabled.
+Issue #26 keeps explicit linking disabled and exposes only the reviewed Google sign-in, callback,
+session-read, and sign-out routes. Issue #27 enables linking only after it adds the fresh-session
+intent and callback checks.
 
 For linking, a fresh session means the User authenticated with an already linked provider no more
 than 15 minutes earlier. A stale session must reauthenticate before PickFlick creates the one-time
@@ -149,8 +152,8 @@ secret into fixtures, screenshots, logs, or pull-request evidence.
 | Trust boundary | ADR-002 and issue #25 review | Passed: Alex reaffirmed API-owned auth; Next.js remains UI/presentation, not the session authority. |
 | Library comparison | Better Auth, Auth.js, NestJS Passport, and SuperTokens official documentation | Passed: Better Auth best fits the accepted API-owned boundary without adding a separate auth service; alternatives and trade-offs are recorded in ADR-010. |
 | Provider contract | Issue #25 human-control approval on 2026-09-16 | Passed: explicit linking, conflict, callback, cookie, revocation, and ownership behavior approved. |
-| Better Auth/Nest/Prisma compatibility | Issue #26 focused integration, migration review, tests, and build | Pending implementation. |
-| Google sandbox and Login | Issue #26 provider run, integration/E2E, preview, and log review | Pending implementation and owner provider configuration. |
+| Better Auth/Nest/Prisma compatibility | Issue #26 focused integration, migration review, tests, and build | Passed locally: the 100 KB body cap precedes the auth handler; only reviewed auth routes are exposed; mixed-case email upgrades/conflicts fail safely; fixed identity-only permissions, provider-credential discard, database sessions, cookie behavior, origin/return rejection, state/nonce/PKCE, atomic state consumption before code exchange, safe callback errors, sign-out, and immediate revocation are covered. Better Auth 1.7.5 still needs the temporary state-consumption backport; deferred issue #147 removes it after a compatible upstream release. |
+| Google sandbox and Login | Issue #26 provider run, integration/E2E, preview, and log review | Partial: Login responsive/accessibility/interaction checks, visible sign-out failure feedback, and deterministic OAuth integration pass locally; owner Google sandbox configuration, exact-SHA hosted preview, and visual acknowledgment remain pending. |
 | Apple and linking | Issue #27 provider run, conflict tests, preview, and log review | Pending implementation and owner provider configuration. |
 | Boundary authorization | Issue #28 negative authorization, revocation, SSE/file, and security-log suites | Pending implementation. |
 

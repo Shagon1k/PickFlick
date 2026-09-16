@@ -1,0 +1,235 @@
+.page {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  overflow: hidden;
+  padding: 88px 24px 48px;
+  background: #090909;
+}
+
+.page::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 8%, color-mix(in srgb, var(--gold-soft) 32%, transparent), transparent 34rem),
+    linear-gradient(180deg, var(--bg), #090909);
+  content: "";
+  pointer-events: none;
+}
+
+.backLink {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 20px;
+  display: inline-flex;
+  min-height: var(--hit);
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 0 8px;
+  border-radius: var(--radius);
+  color: var(--fg-secondary);
+  font-size: var(--fs-body-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--motion-local) var(--ease-standard), background-color var(--motion-local) var(--ease-standard);
+}
+
+.backLink:hover {
+  color: var(--fg);
+  background: var(--accent-soft);
+}
+
+.backLink svg {
+  width: 18px;
+  height: 18px;
+}
+
+.scene {
+  position: relative;
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.spotlight {
+  position: absolute;
+  z-index: -1;
+  top: -20%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.mascot {
+  position: relative;
+  z-index: 0;
+  width: 200px;
+  height: auto;
+  margin: 25px auto -35px;
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 40px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 20px 52px rgb(0 0 0 / 28%);
+}
+
+.card h1 {
+  margin: 0 0 var(--gap-xs);
+  font: var(--fs-app-section)/var(--lh-title) var(--font-display);
+  letter-spacing: var(--tracking-tight);
+}
+
+.lead {
+  margin: 0 0 var(--gap-lg);
+  color: var(--fg-secondary);
+  line-height: var(--lh-body);
+}
+
+.errorBanner {
+  margin: calc(-1 * var(--gap-sm)) 0 var(--gap-md);
+  padding: var(--gap-sm);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  color: var(--danger-text);
+  background: var(--danger-soft);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body);
+}
+
+.actionArea,
+.oauthStack {
+  display: grid;
+  gap: var(--gap-sm);
+}
+
+.oauthButton {
+  width: 100%;
+  padding-block: 14px;
+}
+
+.oauthIcon {
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  transform: translateY(-50%);
+}
+
+.oauthIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.appleIcon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.availability {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+.feedback {
+  min-height: 20px;
+  margin: 0;
+  color: var(--danger-text);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body);
+  opacity: 0;
+}
+
+.feedback[data-visible="true"] {
+  opacity: 1;
+}
+
+.legal {
+  margin: var(--gap-md) 0 0;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+}
+
+.legal a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal a:hover {
+  color: var(--fg);
+}
+
+.divider {
+  display: flex;
+  max-width: 240px;
+  align-items: center;
+  gap: var(--gap-sm);
+  margin: var(--gap-xl) auto 0;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  flex: 1;
+  background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
+  content: "";
+}
+
+.divider i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.ornament {
+  margin: var(--gap-lg) 0 0;
+  color: var(--accent-dim);
+  font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding-inline: 16px;
+  }
+
+  .backLink {
+    top: 12px;
+    left: 8px;
+  }
+
+  .mascot {
+    width: 140px;
+    margin-bottom: -25px;
+  }
+
+  .card {
+    padding: 32px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backLink {
+    transition: none;
+  }
+}

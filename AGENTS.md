@@ -33,7 +33,7 @@
   promotion workflow and runbook are also implemented; the production guard remains false, and no
   production provisioning, deployment, or traffic cutover is authorized.
 - `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
-  the Contact delivery intent, three reviewed migrations, deterministic synthetic fixtures, and
+  the Contact delivery intent, four reviewed migrations, deterministic synthetic fixtures, and
   guarded local/test seed and reset commands. Remaining product entities arrive with their owning
   phases.
 - Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.

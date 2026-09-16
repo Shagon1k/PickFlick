@@ -38,7 +38,24 @@ const runtimeEnvironmentVariables = [
   "STORAGE_REGION",
   "STORAGE_SECRET_KEY",
 ];
-const apiEnvironmentVariables = [...runtimeEnvironmentVariables, "API_HOST", "API_PORT"];
+const authenticationEnvironmentVariables = [
+  "AUTH_BASE_URL",
+  "AUTH_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+];
+const previewAuthenticationEnvironment = {
+  AUTH_BASE_URL: "https://preview-3.shagon1k.win",
+  AUTH_SECRET: "synthetic-preview-auth-secret-at-least-32-characters",
+  GOOGLE_CLIENT_ID: "synthetic-preview-google-client-id",
+  GOOGLE_CLIENT_SECRET: "synthetic-preview-google-client-secret",
+};
+const apiEnvironmentVariables = [
+  ...runtimeEnvironmentVariables,
+  ...authenticationEnvironmentVariables,
+  "API_HOST",
+  "API_PORT",
+];
 
 function assert(condition, message) {
   if (!condition) {
@@ -60,6 +77,11 @@ function environmentFor(appEnvironment) {
     SHUTDOWN_TIMEOUT_MS: "10000",
     SOURCE_REVISION: deploymentSourceRevision,
 
+    AUTH_BASE_URL: appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app",
+    AUTH_SECRET: "synthetic-auth-secret-at-least-32-characters",
+    GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+    GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
+
     STORAGE_ACCESS_KEY: `pickflick-${appEnvironment}`,
     STORAGE_BUCKET: `pickflick-${appEnvironment}`,
     STORAGE_ENDPOINT: `https://objects-${appEnvironment}.example.invalid`,
@@ -69,6 +91,39 @@ function environmentFor(appEnvironment) {
   };
 
   return environment;
+}
+
+export function validatePreviewAuthContract(overrides = {}) {
+  const result = spawnSync(
+    "docker",
+    ["compose", "-f", "compose.preview.yaml", "config", "-q"],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        BACKEND_PORT: "13001",
+        DATABASE_URL: "postgresql://pickflick:synthetic@postgres:5432/pickflick",
+        FRONTEND_PORT: "13000",
+        MINIO_API_PORT: "19000",
+        MINIO_CONSOLE_PORT: "19001",
+        MINIO_ROOT_PASSWORD: "synthetic-preview-minio-password",
+        MINIO_ROOT_USER: "synthetic-preview-minio-user",
+        POSTGRES_PASSWORD: "synthetic-preview-postgres-password",
+        POSTGRES_PORT: "15432",
+        REDIS_PORT: "16379",
+        SOURCE_REVISION: deploymentSourceRevision,
+        ...previewAuthenticationEnvironment,
+        ...overrides,
+      },
+    },
+  );
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(`Preview authentication Compose contract failed: ${result.stderr.trim()}`);
+  }
 }
 
 export function renderDeployment(appEnvironment) {
@@ -195,9 +250,20 @@ export function validateDeployments({ production, uat }) {
 
     validateRequiredEnvironment(deployment.services.api, apiEnvironmentVariables, "api");
     validateRequiredEnvironment(deployment.services.worker, runtimeEnvironmentVariables, "worker");
+    for (const name of authenticationEnvironmentVariables) {
+      assert(
+        deployment.services.worker.environment?.[name] === undefined,
+        `worker must not receive API-owned ${name}.`,
+      );
+    }
     assert(deployment.services.release.environment.APP_ENV === appEnvironment, "Release must use the selected environment.");
     assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
+    assert(
+      deployment.services.api.environment.AUTH_BASE_URL ===
+        (appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app"),
+      "API must use the canonical authentication origin for its environment.",
+    );
     assert(deployment.services.api.environment.RESEND_DELIVERY_MODE === "live", "API must use live Resend delivery.");
     assert(deployment.services.worker.environment.RESEND_DELIVERY_MODE === "live", "Worker must use live Resend delivery.");
     assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");
@@ -240,6 +306,7 @@ export function validateDeployments({ production, uat }) {
 }
 
 export function checkDeployment() {
+  validatePreviewAuthContract();
   const deployments = {
     production: renderDeployment("production", {}),
     uat: renderDeployment("uat", {}),
@@ -250,5 +317,5 @@ export function checkDeployment() {
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   checkDeployment();
-  console.log("Deployment Compose valid for proportional UAT and production scopes.");
+  console.log("Deployment Compose valid for authenticated preview and proportional UAT/production scopes.");
 }

@@ -26,6 +26,10 @@ const validEnvironment = {
   RESEND_FROM: "PickFlick <pickflick@example.invalid>",
   CONTACT_DELIVERY_TO: "contact@example.invalid",
   CONTACT_HASH_SECRET: "local-contact-hash-secret-for-tests",
+  AUTH_BASE_URL: "http://127.0.0.1:3000",
+  AUTH_SECRET: "local-auth-secret-for-tests-change-me",
+  GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+  GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
 } as const;
 
 describe("environment validation", () => {
@@ -56,6 +60,7 @@ describe("environment validation", () => {
         from: "PickFlick <pickflick@example.invalid>",
       },
       contact: { deliveryTo: "contact@example.invalid" },
+      auth: { baseUrl: "http://127.0.0.1:3000", secureCookies: false },
     });
   });
 
@@ -191,6 +196,55 @@ describe("environment validation", () => {
     });
   });
 
+  it("does not require API-owned authentication settings for workers", () => {
+    expect(
+      parseWorkerEnvironment({
+        ...validEnvironment,
+        AUTH_BASE_URL: undefined,
+        AUTH_SECRET: undefined,
+        GOOGLE_CLIENT_ID: undefined,
+        GOOGLE_CLIENT_SECRET: undefined,
+      }),
+    ).not.toHaveProperty("auth");
+  });
+
+  it("requires and validates the authentication inventory without exposing secret values", () => {
+    const unsafeSecret = "short";
+    expect(() =>
+      parseRuntimeEnvironment({
+        ...validEnvironment,
+        AUTH_BASE_URL: "https://pick-flick.app/login?next=unsafe",
+        AUTH_SECRET: unsafeSecret,
+        GOOGLE_CLIENT_ID: undefined,
+      }),
+    ).toThrow(
+      /AUTH_BASE_URL must be an origin without credentials, path, query, or fragment; GOOGLE_CLIENT_ID is required; AUTH_SECRET must contain at least 32 characters/,
+    );
+
+    try {
+      parseRuntimeEnvironment({ ...validEnvironment, AUTH_SECRET: unsafeSecret });
+    } catch (error) {
+      expect(String(error)).not.toContain(unsafeSecret);
+    }
+  });
+
+  it.each([
+    ["uat", "PickFlick UAT <notifications@uat.pick-flick.app>", "contact@example.invalid"],
+    ["production", "PickFlick <notifications@pick-flick.app>", "hello@pick-flick.app"],
+  ] as const)("requires an https authentication origin in %s", (appEnvironment, from, deliveryTo) => {
+    expect(() =>
+      parseRuntimeEnvironment({
+        ...validEnvironment,
+        APP_ENV: appEnvironment,
+        AUTH_BASE_URL: "http://pick-flick.app",
+        RESEND_DELIVERY_MODE: "live",
+        RESEND_API_KEY: `${appEnvironment}-key`,
+        RESEND_FROM: from,
+        CONTACT_DELIVERY_TO: deliveryTo,
+      }),
+    ).toThrow(/AUTH_BASE_URL must use https in uat or production/);
+  });
+
   it("accepts a shutdown drain longer than the port-number range", () => {
     expect(parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "120000" })).toMatchObject({
       shutdownTimeoutMilliseconds: 120_000,
@@ -201,6 +255,7 @@ describe("environment validation", () => {
     expect(parseRuntimeEnvironment({
       ...validEnvironment,
       APP_ENV: "uat",
+      AUTH_BASE_URL: "https://uat.pick-flick.app",
       RESEND_DELIVERY_MODE: "live",
       RESEND_API_KEY: "uat-key",
       RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
@@ -209,6 +264,7 @@ describe("environment validation", () => {
       parseRuntimeEnvironment({
         ...validEnvironment,
         APP_ENV: "uat",
+        AUTH_BASE_URL: "https://uat.pick-flick.app",
         RESEND_DELIVERY_MODE: "live",
         RESEND_API_KEY: "uat-key",
         RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",

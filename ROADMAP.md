@@ -371,7 +371,7 @@ not frozen in planning prose.
 | --- | --- | --- | --- |
 | Repository | pnpm modular monorepo with separate web, API, and worker entrypoints. | Accepted direction; Proposed implementation | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) |
 | Frontend | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state. | Accepted direction; Proposed implementation | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
-| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Proposed implementation | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
+| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Partial implementation — Google sign-in and database sessions are active; Apple, explicit linking, and protected-boundary enforcement remain Proposed | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
 | Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
 | Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
@@ -381,7 +381,7 @@ not frozen in planning prose.
 
 | Provider / capability | Purpose | MVP status | Architecture reference |
 | --- | --- | --- | --- |
-| Google OAuth | Registered identity. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Google OAuth | Registered identity. | Implemented locally; owner sandbox/UAT evidence pending | [External integrations](ARCHITECTURE.md#external-integrations) |
 | Apple Sign in | Registered identity. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
 | TMDB | Film search, metadata, credits, images, and related titles. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
 | Paddle | Merchant of record, checkout, recurring subscription state, invoices, portal, tax handling. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |

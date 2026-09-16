@@ -462,6 +462,19 @@
   border-top: 1px solid var(--border);
 }
 
+.signOutError {
+  position: relative;
+  z-index: 2;
+  display: block;
+  padding: 8px 18px 12px;
+  border-top: 1px solid var(--danger-border);
+  color: var(--danger-text);
+  background: var(--danger-soft);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+  text-align: center;
+}
+
 .menuIcon {
   width: 18px;
   height: 18px;

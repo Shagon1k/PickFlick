@@ -9,6 +9,7 @@
     "pnpm": "11.25.0"
   },
   "scripts": {
+    "auth:check": "pnpm --filter @pickflick/api auth:check",
     "build": "pnpm check:workspace && pnpm -r --if-present build",
     "check:workspace": "node scripts/check-workspace.mjs",
     "db:check": "pnpm --filter @pickflick/database check",

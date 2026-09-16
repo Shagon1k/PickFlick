@@ -44,7 +44,7 @@ async function expectConstraint(
 
 async function verifyMigrationUpgrade(): Promise<void> {
   const suffix = `${process.pid}_${Date.now()}`;
-  const schemas = [`pf11_fresh_${suffix}`, `pf11_upgrade_${suffix}`];
+  const schemas = [`pf11_fresh_${suffix}`, `pf11_upgrade_${suffix}`, `pf11_email_collision_${suffix}`];
   const client = new Client({ connectionString: environment.databaseUrl });
   const initialSql = await readFile(
     new URL("../prisma/migrations/20260906000100_initial_domain_foundation/migration.sql", import.meta.url),
@@ -58,6 +58,10 @@ async function verifyMigrationUpgrade(): Promise<void> {
     new URL("../prisma/migrations/20260914000100_add_contact_messages/migration.sql", import.meta.url),
     "utf8",
   );
+  const authenticationSql = await readFile(
+    new URL("../prisma/migrations/20260916000100_add_google_authentication/migration.sql", import.meta.url),
+    "utf8",
+  );
   await client.connect();
   try {
     for (const schema of schemas) {
@@ -67,17 +71,51 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(initialSql);
     await client.query(invariantSql);
     await client.query(contactSql);
+    await client.query(authenticationSql);
 
     await client.query(`SET search_path TO "${schemas[1]}"`);
     await client.query(initialSql);
     await client.query(
       `INSERT INTO "Club" ("id", "name", "updatedAt") VALUES ('90000000-0000-4000-8000-000000000001', 'Upgrade fixture', NOW())`,
     );
+    await client.query(
+      `INSERT INTO "User" ("id", "email", "displayName", "updatedAt") VALUES ('90000000-0000-4000-8000-000000000002', 'Alice@Example.invalid', 'Alice', NOW())`,
+    );
     await client.query(invariantSql);
     await client.query(contactSql);
+    await client.query(authenticationSql);
     const upgraded = await client.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM "Club"`);
     if (upgraded.rows[0]?.count !== "1") {
       throw new Error("Upgrade migration did not preserve the existing Club row.");
+    }
+    const normalizedUser = await client.query<{ email: string }>(
+      `SELECT "email" FROM "User" WHERE "id" = '90000000-0000-4000-8000-000000000002'`,
+    );
+    if (normalizedUser.rows[0]?.email !== "alice@example.invalid") {
+      throw new Error("Authentication migration did not normalize an existing mixed-case email.");
+    }
+
+    await client.query(`SET search_path TO "${schemas[2]}"`);
+    await client.query(initialSql);
+    await client.query(invariantSql);
+    await client.query(contactSql);
+    await client.query(
+      `INSERT INTO "User" ("id", "email", "displayName", "updatedAt") VALUES
+        ('90000000-0000-4000-8000-000000000003', 'Alice@Example.invalid', 'Alice One', NOW()),
+        ('90000000-0000-4000-8000-000000000004', 'alice@example.invalid', 'Alice Two', NOW())`,
+    );
+    let rejectedCaseCollision = false;
+    try {
+      await client.query(authenticationSql);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("Existing User emails conflict after case normalization")) {
+        rejectedCaseCollision = true;
+      } else {
+        throw error;
+      }
+    }
+    if (!rejectedCaseCollision) {
+      throw new Error("Authentication migration accepted case-colliding existing User emails.");
     }
   } finally {
     await client.query("SET search_path TO public");
@@ -92,8 +130,8 @@ try {
   const migrationCount = await database.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint AS count FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL
   `;
-  if (migrationCount[0]?.count !== 3n) {
-    throw new Error("Expected exactly three completed database migrations.");
+  if (migrationCount[0]?.count !== 4n) {
+    throw new Error("Expected exactly four completed database migrations.");
   }
 
   const fixtureCount = await database.user.count({
@@ -111,6 +149,17 @@ try {
     throw new Error("The deterministic Past Session must be in the Completed phase.");
   }
 
+  await expectConstraint(
+    (transaction) =>
+      transaction.user.create({
+        data: {
+          id: "60000000-0000-4000-8000-000000000005",
+          displayName: "Case Collision",
+          email: SYNTHETIC_FIXTURES.users[0].email.toUpperCase(),
+        },
+      }),
+    "User_email_normalized_key",
+  );
   await expectConstraint(
     async (transaction) => {
       await transaction.session.create({
@@ -189,6 +238,48 @@ try {
         },
       }),
     "ContactMessage_payload_lifecycle_check",
+  );
+  await expectConstraint(
+    async (transaction) => {
+      await transaction.providerAccount.createMany({
+        data: [
+          {
+            id: "60000000-0000-4000-8000-000000000001",
+            provider: "google",
+            providerSubject: "same-google-subject",
+            userId: SYNTHETIC_FIXTURES.users[0].id,
+          },
+          {
+            id: "60000000-0000-4000-8000-000000000002",
+            provider: "google",
+            providerSubject: "same-google-subject",
+            userId: SYNTHETIC_FIXTURES.users[1].id,
+          },
+        ],
+      });
+    },
+    "ProviderAccount_provider_providerSubject_key",
+  );
+  await expectConstraint(
+    async (transaction) => {
+      await transaction.authSession.createMany({
+        data: [
+          {
+            id: "60000000-0000-4000-8000-000000000003",
+            expiresAt: new Date(Date.now() + 60_000),
+            token: "duplicate-opaque-session-token",
+            userId: SYNTHETIC_FIXTURES.users[0].id,
+          },
+          {
+            id: "60000000-0000-4000-8000-000000000004",
+            expiresAt: new Date(Date.now() + 60_000),
+            token: "duplicate-opaque-session-token",
+            userId: SYNTHETIC_FIXTURES.users[1].id,
+          },
+        ],
+      });
+    },
+    "AuthSession_token_key",
   );
   await verifyMigrationUpgrade();
   console.log("Database checks passed: migrations, upgrade compatibility, deterministic fixtures, and PostgreSQL invariants.");

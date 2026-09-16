@@ -314,6 +314,38 @@ test("authenticated shells expose Sign out as an action on desktop and mobile", 
   await expect(mobileAction).toHaveAttribute("data-shell-action", "sign-out");
 });
 
+test("Sign out revokes the browser session before returning to Login", async ({ page }) => {
+  let signOutMethod = "";
+  await page.route("**/api/auth/sign-out", async (route) => {
+    signOutMethod = route.request().method();
+    await route.fulfill({ contentType: "application/json", json: { success: true }, status: 200 });
+  });
+
+  await openShell(page, "product", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await page.getByRole("navigation", { name: "Account navigation" }).getByRole("button", { name: "Sign out" }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  expect(signOutMethod).toBe("POST");
+});
+
+test("a failed Sign out keeps the session UI and shows a visible error", async ({ page }) => {
+  await page.route("**/api/auth/sign-out", async (route) => {
+    await route.fulfill({ contentType: "application/json", json: { message: "failed" }, status: 500 });
+  });
+
+  await openShell(page, "product", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  const accountNavigation = page.getByRole("navigation", { name: "Account navigation" });
+  const signOut = accountNavigation.getByRole("button", { name: "Sign out" });
+  await signOut.click();
+
+  await expect(accountNavigation.getByRole("alert")).toHaveText("Sign out failed. Please try again.");
+  await expect(accountNavigation.getByRole("alert")).toBeVisible();
+  await expect(signOut).toBeEnabled();
+  await expect(page).toHaveURL(/\/shell-preview\/product$/);
+});
+
 test("compact and Session headers match their canonical navigation variants", async ({ page }) => {
   await openShell(page, "product", canonicalViewports[1]);
   await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" })).toBeHidden();
