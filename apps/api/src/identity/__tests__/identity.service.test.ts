@@ -51,7 +51,7 @@ describe("identity configuration", () => {
       updateAccountOnSignIn: false,
       storeAccountCookie: false,
       storeStateStrategy: "database",
-      accountLinking: { disableImplicitLinking: true },
+      accountLinking: { disableImplicitLinking: true, enabled: false },
     });
     expect(auth.options.session).toMatchObject({
       cookieCache: { enabled: false },

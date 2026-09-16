@@ -44,6 +44,12 @@ const authenticationEnvironmentVariables = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
 ];
+const previewAuthenticationEnvironment = {
+  AUTH_BASE_URL: "https://preview-3.shagon1k.win",
+  AUTH_SECRET: "synthetic-preview-auth-secret-at-least-32-characters",
+  GOOGLE_CLIENT_ID: "synthetic-preview-google-client-id",
+  GOOGLE_CLIENT_SECRET: "synthetic-preview-google-client-secret",
+};
 const apiEnvironmentVariables = [
   ...runtimeEnvironmentVariables,
   ...authenticationEnvironmentVariables,
@@ -85,6 +91,39 @@ function environmentFor(appEnvironment) {
   };
 
   return environment;
+}
+
+export function validatePreviewAuthContract(overrides = {}) {
+  const result = spawnSync(
+    "docker",
+    ["compose", "-f", "compose.preview.yaml", "config", "-q"],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        BACKEND_PORT: "13001",
+        DATABASE_URL: "postgresql://pickflick:synthetic@postgres:5432/pickflick",
+        FRONTEND_PORT: "13000",
+        MINIO_API_PORT: "19000",
+        MINIO_CONSOLE_PORT: "19001",
+        MINIO_ROOT_PASSWORD: "synthetic-preview-minio-password",
+        MINIO_ROOT_USER: "synthetic-preview-minio-user",
+        POSTGRES_PASSWORD: "synthetic-preview-postgres-password",
+        POSTGRES_PORT: "15432",
+        REDIS_PORT: "16379",
+        SOURCE_REVISION: deploymentSourceRevision,
+        ...previewAuthenticationEnvironment,
+        ...overrides,
+      },
+    },
+  );
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(`Preview authentication Compose contract failed: ${result.stderr.trim()}`);
+  }
 }
 
 export function renderDeployment(appEnvironment) {
@@ -267,6 +306,7 @@ export function validateDeployments({ production, uat }) {
 }
 
 export function checkDeployment() {
+  validatePreviewAuthContract();
   const deployments = {
     production: renderDeployment("production", {}),
     uat: renderDeployment("uat", {}),
@@ -277,5 +317,5 @@ export function checkDeployment() {
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   checkDeployment();
-  console.log("Deployment Compose valid for proportional UAT and production scopes.");
+  console.log("Deployment Compose valid for authenticated preview and proportional UAT/production scopes.");
 }

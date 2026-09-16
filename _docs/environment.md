@@ -56,8 +56,9 @@ pnpm compose:check
 docker compose -f compose.deploy.yaml config --format json
 ```
 
-`pnpm compose:check` renders synthetic UAT and production configurations and verifies their static
-contract. It checks the exact application service set, runtime-required environment inputs,
+`pnpm compose:check` validates managed-preview authentication inputs with
+`docker compose config -q`, then renders synthetic UAT and production configurations and verifies
+their static contract. It checks the exact application service set, runtime-required environment inputs,
 source-revision build/runtime reporting, native release-to-runtime dependency ordering, the release
 image target plus command/entrypoint inheritance, intended API/web health checks, web's API-health
 dependency, private ports, environment-specific project names, uniquely owned service aliases that
@@ -221,6 +222,33 @@ host, no driver-level host override, and the database name `pickflick_local`; a 
 `pnpm db:reset` is destructive. It applies the same positive environment, host, and database-name
 guards before invoking `prisma migrate reset`. Never use it against shared, UAT, or production data.
 
+## Managed preview authentication
+
+Managed previews use the dedicated **PickFlick Preview** Google OAuth web client. Supply these four
+values through the managed preview environment or secret mechanism before Compose validation:
+
+```text
+AUTH_BASE_URL=https://preview-N.shagon1k.win
+AUTH_SECRET
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+```
+
+Set `AUTH_BASE_URL` to the preview's canonical public origin. The Google client's authorized
+redirect URI must exactly equal `${AUTH_BASE_URL}/api/auth/callback/google`. Keep Authorized
+JavaScript origins empty: PickFlick performs the Google OAuth exchange on the server and does not
+load Google's browser SDK. Add an origin only if a later approved direct browser-SDK flow requires
+one.
+
+`compose.preview.yaml` requires all four inputs; it contains no fallback authentication values.
+`pnpm compose:check` validates the contract with synthetic values and `docker compose config -q`,
+which emits no resolved configuration. Never save a rendered preview configuration, logs, or
+screenshots containing `AUTH_SECRET` or `GOOGLE_CLIENT_SECRET`. Keep the client ID at the same
+server-only configuration boundary.
+
+Preview, UAT, and production use separate Google OAuth clients and secrets. Never copy preview
+credentials into UAT or production.
+
 ## Runtime variables
 
 The API and worker validate their runtime variables before starting. The worker does not require
@@ -253,10 +281,18 @@ the API-only bind settings. Validation errors name invalid variables but never e
 Authentication configuration is API-only: do not expose it to the worker, web client, browser
 environment, logs, screenshots, or rendered Compose evidence. Configure a separate Google OAuth web
 client for each deployed environment. Its authorized redirect URI must exactly equal
-`AUTH_BASE_URL` followed by `/api/auth/callback/google`; its authorized origin must exactly equal
-`AUTH_BASE_URL`. The checked-in local values are synthetic and make deterministic checks possible,
-but they cannot complete a live Google sign-in. Store deployed secrets only in the environment's
-secret system and rotate them through a controlled provider and deployment change.
+`AUTH_BASE_URL` followed by `/api/auth/callback/google`. Authorized JavaScript origins remain empty
+for the server-side flow. The checked-in local values are synthetic and make deterministic checks
+possible, but they cannot complete a live Google sign-in. Store deployed secrets only in the
+environment's secret system and rotate them through a controlled provider and deployment change.
+
+Better Auth 1.7.5 exposes the upstream atomic verification-consumption primitive added in
+[better-auth#9568](https://github.com/better-auth/better-auth/pull/9568), but its social OAuth
+database-state callback still performs separate lookup and deletion. PickFlick temporarily
+backports the atomic call in `patches/better-auth@1.7.5.patch` so concurrent callbacks cannot both
+reach provider code exchange. Keep `pnpm auth:check` coverage until a compatible stable release
+contains the call-site fix; [issue #147](https://github.com/Shagon1k/PickFlick/issues/147) tracks
+the bounded upgrade and patch removal.
 
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as

@@ -114,10 +114,10 @@ services:
       <<: *runtime-environment
       API_HOST: 0.0.0.0
       API_PORT: 3001
-      AUTH_BASE_URL: https://uat.pick-flick.app
-      AUTH_SECRET: preview-only-auth-secret-not-for-live-use
-      GOOGLE_CLIENT_ID: preview-synthetic-google-client-id
-      GOOGLE_CLIENT_SECRET: preview-synthetic-google-client-secret
+      AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
     depends_on:
       postgres:
         condition: service_healthy

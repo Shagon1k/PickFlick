@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { checkDeployment, renderDeployment, validateDeployments } from "../check-deployment.mjs";
+import {
+  checkDeployment,
+  renderDeployment,
+  validateDeployments,
+  validatePreviewAuthContract,
+} from "../check-deployment.mjs";
 
 type Deployments = ReturnType<typeof checkDeployment>;
 
@@ -18,6 +23,21 @@ function expectRejected(mutate: (deployments: Deployments) => void, message: Reg
 }
 
 describe("deployment Compose", () => {
+  it("requires every managed-preview authentication input without rendering secret values", () => {
+    validatePreviewAuthContract();
+
+    for (const variableName of [
+      "AUTH_BASE_URL",
+      "AUTH_SECRET",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+    ]) {
+      expect(() => validatePreviewAuthContract({ [variableName]: "" })).toThrow(
+        new RegExp(`${variableName} is required`),
+      );
+    }
+  });
+
   it("renders isolated UAT and production topologies", () => {
     expect(validDeployments.uat.name).toBe("pickflick-uat");
     expect(validDeployments.production.name).toBe("pickflick-production");

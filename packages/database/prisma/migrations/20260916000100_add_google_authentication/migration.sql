@@ -1,3 +1,22 @@
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT LOWER("email")
+        FROM "User"
+        GROUP BY LOWER("email")
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'Existing User emails conflict after case normalization'
+            USING ERRCODE = '23505', CONSTRAINT = 'User_email_normalized_key';
+    END IF;
+END $$;
+
+UPDATE "User"
+SET "email" = LOWER("email")
+WHERE "email" <> LOWER("email");
+
+CREATE UNIQUE INDEX "User_email_normalized_key" ON "User"(LOWER("email"));
+
 ALTER TABLE "User"
 ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT false,
 ADD COLUMN "image" TEXT;

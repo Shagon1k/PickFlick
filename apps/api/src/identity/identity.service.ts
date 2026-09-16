@@ -9,6 +9,7 @@ import { createAuthMiddleware } from "better-auth/api";
 import { toNodeHandler } from "better-auth/node";
 
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
+import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
 import { googleOidcProvider } from "./google-provider.js";
 
@@ -85,7 +86,7 @@ export function createIdentityAuth(
       storeAccountCookie: false,
       storeStateStrategy: "database",
       accountLinking: {
-        enabled: true,
+        enabled: false,
         disableImplicitLinking: true,
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
@@ -198,7 +199,7 @@ export class IdentityService implements OnModuleDestroy {
   ) {
     this.database = createDatabaseClient(environment.databaseUrl);
     this.auth = createIdentityAuth(environment, this.database, logger);
-    this.handler = toNodeHandler(this.auth);
+    this.handler = restrictAuthHandler(toNodeHandler(this.auth));
   }
 
   async onModuleDestroy(): Promise<void> {

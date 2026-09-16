@@ -65,7 +65,7 @@ function deterministicGoogleProvider(): BetterAuthPlugin {
       const conflict = tokens.idToken === "email-conflict";
       const user = {
         sub: conflict ? "google-conflict-subject" : "google-auth-check-subject",
-        email: conflict ? conflictEmail : returning ? `changed-${email}` : email,
+        email: conflict ? conflictEmail.toUpperCase() : returning ? `changed-${email}` : email,
         email_verified: !returning,
         name: "Auth Check User",
         picture: "https://images.example.invalid/auth-check.png",
@@ -427,7 +427,7 @@ try {
     data: { id: conflictingUserId, displayName: "Conflict User", email: conflictEmail, emailVerified: true },
   });
   const conflict = await completeGoogleSignIn("email-conflict");
-  assertSafeLoginFailure(conflict.response, "An unlinked Google identity matched an existing email unsafely.");
+  assertSafeLoginFailure(conflict.response, "A case-insensitive unlinked Google identity matched an existing email unsafely.");
   const conflictLocation = new URL(conflict.response.headers.get("location") ?? "", environment.auth.baseUrl);
   if (conflictLocation.searchParams.get("error") !== "account_not_linked") {
     throw new Error("An email conflict did not return the stable account-not-linked error.");

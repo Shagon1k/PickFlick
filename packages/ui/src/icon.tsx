@@ -3,6 +3,7 @@ import type { SVGAttributes } from "react";
 export type IconName =
   | "achievements"
   | "admin"
+  | "apple"
   | "bell"
   | "catalog"
   | "chart"
@@ -12,6 +13,7 @@ export type IconName =
   | "clubs"
   | "contact"
   | "device"
+  | "google"
   | "hub"
   | "import-export"
   | "library"
@@ -47,6 +49,8 @@ export function Icon({ name, ...props }: IconProps) {
       return <svg {...common}><circle cx="12" cy="9" r="6" /><path d="m8 14-1 7 5-3 5 3-1-7" /></svg>;
     case "admin":
       return <svg {...common}><path d="M12 3l8 4v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V7z" /><path d="m9 12 2 2 4-4" /></svg>;
+    case "apple":
+      return <svg {...common}><path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" /></svg>;
     case "bell":
       return <svg {...common}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>;
     case "catalog":
@@ -65,6 +69,13 @@ export function Icon({ name, ...props }: IconProps) {
       return <svg {...common}><rect height="16" rx="2" width="20" x="2" y="4" /><path d="m2 6 10 7 10-7" /></svg>;
     case "device":
       return <svg {...common}><rect height="20" rx="3" width="14" x="5" y="2" /><path d="M10 18h4" /></svg>;
+    case "google":
+      return <svg {...common}>
+        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32l3.57 2.76a12 12 0 0 0 3.27-8.09Z" />
+        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76A6.95 6.95 0 0 1 12 19.14c-3.15 0-5.82-2.13-6.77-5L1.53 17A11.04 11.04 0 0 0 12 23Z" />
+        <path fill="currentColor" d="M5.23 14.14a7.12 7.12 0 0 1 0-4.28L1.53 7A11.04 11.04 0 0 0 1 12c0 1.78.42 3.46 1.22 4.99l3.7-2.86Z" />
+        <path fill="currentColor" d="M12 4.86c1.6 0 3.04.55 4.17 1.63l3.12-3.12A11.04 11.04 0 0 0 12 1C8.1 1 4.68 2.83 2.53 5.7l3.7 2.86A7.13 7.13 0 0 1 12 4.86Z" />
+      </svg>;
     case "hub":
     case "sessions":
       return <svg {...common}><path d="M4 6h16v14H4zM4 10h16M8 3l2 3m4-3 2 3" /></svg>;

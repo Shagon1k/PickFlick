@@ -4,6 +4,8 @@ import { resolveAuthReturnTarget } from "@pickflick/contracts";
 import { BrandImage } from "@pickflick/ui";
 
 import { LoginActions } from "../../components/auth/login-actions";
+import { resolveLoginErrorMessage } from "../../components/auth/login-errors";
+import { firstSearchValue } from "../../components/auth/login.utils";
 import styles from "../../components/auth/login.module.css";
 
 export const metadata: Metadata = {
@@ -11,28 +13,12 @@ export const metadata: Metadata = {
   description: "Sign in to PickFlick with an approved identity provider.",
 };
 
-const safeErrorMessages: Readonly<Record<string, string>> = {
-  access_denied: "Google sign-in was cancelled. You can try again when you are ready.",
-  account_not_linked: "This email is already connected to another sign-in method.",
-  authentication_failed: "Sign-in could not be completed safely. Please try again.",
-  google_email_not_verified: "Google must verify your email before you can use it with PickFlick.",
-  state_mismatch: "That sign-in request expired or was already used. Please start again.",
-  state_not_found: "That sign-in request expired or was already used. Please start again.",
-};
-
-function firstSearchValue(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
 export default async function LoginPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
   const parameters = await searchParams;
   const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
-  const providerError = firstSearchValue(parameters.error);
-  const errorMessage = providerError
-    ? (safeErrorMessages[providerError] ?? "Sign-in could not be completed safely. Please try again.")
-    : undefined;
+  const errorMessage = resolveLoginErrorMessage(firstSearchValue(parameters.error));
 
   return (
     <main className={styles.page}>

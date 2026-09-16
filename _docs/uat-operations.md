@@ -63,9 +63,13 @@ block is the source of truth and must not be replaced by CI. At minimum it requi
 
 ```text
 APP_ENV=uat
+AUTH_BASE_URL=https://uat.pick-flick.app
+AUTH_SECRET
 CONTACT_DELIVERY_TO
 CONTACT_HASH_SECRET
 DATABASE_URL
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
 REDIS_URL
 RESEND_API_KEY
 RESEND_FROM="PickFlick UAT <notifications@uat.pick-flick.app>"
@@ -85,6 +89,12 @@ to production or personal SMTP. UAT does not need a Google Workspace mailbox for
 Set `CONTACT_DELIVERY_TO` to one explicitly approved test recipient and use synthetic Contact
 content only. Keep `CONTACT_HASH_SECRET` in the Dokploy secret environment; it must differ from the
 production value and contain at least 32 characters.
+
+Use a UAT-only Google OAuth web client. Set its only redirect URI for this application to
+`https://uat.pick-flick.app/api/auth/callback/google`, and leave Authorized JavaScript origins
+empty because the OAuth exchange is server-side. Never reuse the managed-preview or production
+OAuth client or credentials. Keep `AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret
+environment, and do not save a rendered Compose configuration as deployment evidence.
 
 Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
 `worker`, and `web` exist and none has a host-published port.
