@@ -21,6 +21,21 @@ describe("authentication response sanitization", () => {
     ).toBe("http://127.0.0.1:3000/login?error=authentication_failed");
   });
 
+  it("preserves only an allowlisted return target on an error redirect", () => {
+    expect(
+      sanitizeAuthenticationRedirect(
+        "http://127.0.0.1:3000/login?returnTo=%2Finvite%2Fclub%2Fsafe_token&error=access_denied",
+        "http://127.0.0.1:3000",
+      ),
+    ).toBe("http://127.0.0.1:3000/login?returnTo=%2Finvite%2Fclub%2Fsafe_token&error=access_denied");
+    expect(
+      sanitizeAuthenticationRedirect(
+        "http://127.0.0.1:3000/login?returnTo=https%3A%2F%2Funtrusted.example.invalid&error=access_denied",
+        "http://127.0.0.1:3000",
+      ),
+    ).toBe("http://127.0.0.1:3000/login?error=access_denied");
+  });
+
   it("does not alter non-error or non-Login redirects", () => {
     expect(sanitizeAuthenticationRedirect("/login", "http://127.0.0.1:3000")).toBe("/login");
     expect(sanitizeAuthenticationRedirect("/app", "http://127.0.0.1:3000")).toBe("/app");

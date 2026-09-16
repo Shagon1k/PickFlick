@@ -160,7 +160,7 @@ function SignOutMenuItem({ content }: Readonly<{ content: ReactNode }>) {
       <button aria-busy={pending || undefined} data-shell-action="sign-out" disabled={pending} onClick={signOut} type="button">
         {content}
       </button>
-      {error ? <span aria-live="assertive" className="pf-visually-hidden" role="alert">{error}</span> : null}
+      {error ? <span aria-live="assertive" className={styles.signOutError} role="alert">{error}</span> : null}
     </>
   );
 }

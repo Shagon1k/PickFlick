@@ -110,6 +110,9 @@ describe("identity configuration", () => {
       attributes: { httpOnly: true, path: "/", sameSite: "lax", secure: true },
     });
     expect(context.authCookies.sessionToken.attributes).not.toHaveProperty("domain");
+    expect(deployedAuth.options.advanced?.ipAddress).toEqual({
+      ipAddressHeaders: ["cf-connecting-ip"],
+    });
   });
 
   it("accepts only verified Google email for first-time profile bootstrap", async () => {

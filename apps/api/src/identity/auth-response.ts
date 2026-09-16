@@ -1,4 +1,5 @@
 import type { BetterAuthPlugin } from "better-auth";
+import { isAllowedAuthReturnTarget } from "@pickflick/contracts";
 
 const safeAuthenticationErrors = new Set([
   "access_denied",
@@ -20,6 +21,10 @@ export function sanitizeAuthenticationRedirect(location: string, baseUrl: string
     return location;
   }
 
+  const returnTo = redirectUrl.searchParams.get("returnTo");
+  if (isAllowedAuthReturnTarget(returnTo)) {
+    loginUrl.searchParams.set("returnTo", returnTo);
+  }
   loginUrl.searchParams.set("error", safeAuthenticationErrors.has(error) ? error : "authentication_failed");
   return loginUrl.toString();
 }

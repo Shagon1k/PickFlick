@@ -18,6 +18,7 @@ const database = createDatabaseClient(environment.databaseUrl);
 const logger = createLogger({ environment: environment.appEnvironment, service: "api" });
 const email = `auth-check-${randomUUID()}@example.invalid`;
 const conflictEmail = `auth-check-conflict-${randomUUID()}@example.invalid`;
+const authorizationCodeExchanges: string[] = [];
 
 function deterministicGoogleProvider(): BetterAuthPlugin {
   const provider = {
@@ -46,6 +47,7 @@ function deterministicGoogleProvider(): BetterAuthPlugin {
       return url;
     },
     async validateAuthorizationCode({ code }: { code: string }) {
+      authorizationCodeExchanges.push(code);
       return {
         accessToken: `access-${code}`,
         accessTokenExpiresAt: new Date(Date.now() + 60_000),
@@ -99,11 +101,25 @@ const oauthStateIdentifiers = new Set<string>();
 
 async function startGoogleSignIn(
   identityAuth = auth,
+  options: {
+    additionalBody?: Readonly<Record<string, unknown>>;
+    forwardedHeaders?: Readonly<Record<string, string>>;
+    returnTo?: string;
+  } = {},
 ): Promise<{ cookie: string; state: string; url: URL }> {
   const response = await identityAuth.handler(
     new Request(`${environment.auth.baseUrl}/api/auth/sign-in/social`, {
-      body: JSON.stringify({ callbackURL: "/app", disableRedirect: true, provider: "google" }),
-      headers: { "content-type": "application/json", origin: environment.auth.baseUrl },
+      body: JSON.stringify({
+        callbackURL: options.returnTo ?? "/app",
+        disableRedirect: true,
+        provider: "google",
+        ...options.additionalBody,
+      }),
+      headers: {
+        "content-type": "application/json",
+        origin: environment.auth.baseUrl,
+        ...options.forwardedHeaders,
+      },
       method: "POST",
     }),
   );
@@ -146,13 +162,20 @@ function responseCookieHeader(response: Response): string {
 
 async function completeGoogleSignIn(code: string) {
   const attempt = await startGoogleSignIn(deterministicAuth);
+  const response = await submitGoogleCallback(attempt, code);
+  return { response, sessionCookie: responseCookieHeader(response) };
+}
+
+async function submitGoogleCallback(
+  attempt: { cookie: string; state: string },
+  code: string,
+): Promise<Response> {
   const callbackUrl = new URL("/api/auth/callback/google", environment.auth.baseUrl);
   callbackUrl.searchParams.set("code", code);
   callbackUrl.searchParams.set("state", attempt.state);
-  const response = await deterministicAuth.handler(
+  return deterministicAuth.handler(
     new Request(callbackUrl, { headers: { cookie: attempt.cookie } }),
   );
-  return { response, sessionCookie: responseCookieHeader(response) };
 }
 
 try {
@@ -237,6 +260,45 @@ try {
     throw new Error("An unsafe authentication return target was accepted.");
   }
 
+  const restrictedAttempt = await startGoogleSignIn(auth, {
+    additionalBody: {
+      additionalParams: { access_type: "offline", prompt: "consent" },
+      scopes: ["https://www.googleapis.com/auth/drive"],
+    },
+  });
+  if (
+    restrictedAttempt.url.searchParams.get("scope") !== "openid email profile" ||
+    restrictedAttempt.url.searchParams.get("access_type") !== "online" ||
+    restrictedAttempt.url.searchParams.has("prompt")
+  ) {
+    throw new Error("Caller-controlled Google permissions or authorization parameters reached the provider URL.");
+  }
+
+  const deployedAuth = createIdentityAuth(
+    {
+      ...environment,
+      appEnvironment: "uat",
+      auth: { ...environment.auth, secureCookies: true },
+    },
+    database,
+    logger,
+  );
+  const forwardedChain = "203.0.113.42, 198.51.100.8";
+  for (const clientAddress of ["192.0.2.21", "192.0.2.22"]) {
+    await startGoogleSignIn(deployedAuth, {
+      forwardedHeaders: {
+        "cf-connecting-ip": clientAddress,
+        "x-forwarded-for": forwardedChain,
+      },
+    });
+  }
+  const productionRateLimitKeys = await database.authRateLimit.findMany({
+    where: { key: { in: ["192.0.2.21|/sign-in/social", "192.0.2.22|/sign-in/social"] } },
+  });
+  if (productionRateLimitKeys.length !== 2) {
+    throw new Error("Production-shaped forwarded requests did not retain distinct Cloudflare client identities.");
+  }
+
   const expiringAttempt = await startGoogleSignIn();
   await database.authVerification.updateMany({
     data: { expiresAt: new Date(Date.now() - 1_000) },
@@ -255,7 +317,8 @@ try {
   );
   assertSafeLoginFailure(replayedCallback, "A replayed OAuth state did not fail safely.");
 
-  const deniedAttempt = await startGoogleSignIn();
+  const invitationReturnTarget = "/invite/club/review-round-token";
+  const deniedAttempt = await startGoogleSignIn(auth, { returnTo: invitationReturnTarget });
   const deniedCallbackUrl = new URL("/api/auth/callback/google", environment.auth.baseUrl);
   deniedCallbackUrl.searchParams.set("error", "access_denied");
   deniedCallbackUrl.searchParams.set("error_description", "provider-secret-detail");
@@ -264,6 +327,10 @@ try {
     new Request(deniedCallbackUrl, { headers: { cookie: deniedAttempt.cookie } }),
   );
   assertSafeLoginFailure(deniedCallback, "A provider denial did not return a safe Login failure.");
+  const deniedRedirect = new URL(deniedCallback.headers.get("location") ?? "", environment.auth.baseUrl);
+  if (deniedRedirect.searchParams.get("returnTo") !== invitationReturnTarget) {
+    throw new Error("A provider denial discarded the validated invitation return target.");
+  }
 
   const forgedCallback = await auth.handler(
     new Request(`${environment.auth.baseUrl}/api/auth/callback/google?code=synthetic&state=forged`),
@@ -325,6 +392,35 @@ try {
     throw new Error("A returning Google subject did not resolve to exactly one existing User.");
   }
 
+  const concurrentAttempt = await startGoogleSignIn(deterministicAuth);
+  const sessionsBeforeConcurrentCallbacks = await database.authSession.count({
+    where: { userId: registeredUser.id },
+  });
+  const exchangesBeforeConcurrentCallbacks = authorizationCodeExchanges.length;
+  const concurrentResponses = await Promise.all([
+    submitGoogleCallback(concurrentAttempt, "concurrent-one"),
+    submitGoogleCallback(concurrentAttempt, "concurrent-two"),
+  ]);
+  const successfulConcurrentResponses = concurrentResponses.filter(
+    (response) => response.status === 302 && response.headers.get("location") === "/app",
+  );
+  const rejectedConcurrentResponses = concurrentResponses.filter(
+    (response) => !successfulConcurrentResponses.includes(response),
+  );
+  if (successfulConcurrentResponses.length !== 1 || rejectedConcurrentResponses.length !== 1) {
+    throw new Error("Concurrent callbacks did not enforce one successful use of the OAuth state.");
+  }
+  assertSafeLoginFailure(rejectedConcurrentResponses[0]!, "A concurrent OAuth-state replay did not fail safely.");
+  if (authorizationCodeExchanges.length - exchangesBeforeConcurrentCallbacks !== 1) {
+    throw new Error("A concurrent OAuth-state replay reached the provider code exchange.");
+  }
+  const sessionsAfterConcurrentCallbacks = await database.authSession.count({
+    where: { userId: registeredUser.id },
+  });
+  if (sessionsAfterConcurrentCallbacks !== sessionsBeforeConcurrentCallbacks + 1) {
+    throw new Error("Concurrent callbacks issued more than one database session from one OAuth state.");
+  }
+
   const conflictingUserId = randomUUID();
   userIds.add(conflictingUserId);
   await database.user.create({
@@ -350,7 +446,7 @@ try {
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google identity, no provider credential retention, conflict denial, origin/return rejection, state/nonce/PKCE, expiry/replay/denial safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google identity, fixed Google permissions, proxy client separation, no provider credential retention, conflict denial, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   if (userIds.size > 0) {

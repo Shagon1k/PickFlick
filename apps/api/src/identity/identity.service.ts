@@ -51,6 +51,11 @@ export function createIdentityAuth(
       database: { generateId: "uuid", validateSchema: true },
       disableCSRFCheck: false,
       disableOriginCheck: false,
+      ipAddress: {
+        ipAddressHeaders: environment.appEnvironment === "uat" || environment.appEnvironment === "production"
+          ? ["cf-connecting-ip"]
+          : ["x-forwarded-for"],
+      },
       // The durable cookie supplies the stricter __Host- prefix itself.
       // Attributes remain explicitly Secure in deployed environments.
       useSecureCookies: false,
@@ -135,8 +140,13 @@ export function createIdentityAuth(
               message: "The sign-in destination is not allowed.",
             });
           }
-          context.body.errorCallbackURL = "/login";
-          context.body.newUserCallbackURL = context.body.callbackURL;
+          const callbackURL = context.body.callbackURL;
+          const errorCallbackURL = new URL("/login", environment.auth.baseUrl);
+          errorCallbackURL.searchParams.set("returnTo", callbackURL);
+          context.body.scopes = undefined;
+          context.body.additionalParams = undefined;
+          context.body.errorCallbackURL = `${errorCallbackURL.pathname}${errorCallbackURL.search}`;
+          context.body.newUserCallbackURL = callbackURL;
         }
         if (context.path === "/sign-out" && context.body?.callbackURL) {
           context.body.callbackURL = "/login";

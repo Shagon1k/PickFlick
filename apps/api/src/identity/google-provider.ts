@@ -21,13 +21,11 @@ export function googleOidcProvider(environment: RuntimeEnvironment): BetterAuthP
     requiresIdTokenNonce: true,
     async createAuthorizationURL({
       state,
-      scopes,
       codeVerifier,
       redirectURI,
       loginHint,
       display,
       idTokenNonce,
-      additionalParams,
     }: Parameters<typeof baseProvider.createAuthorizationURL>[0]) {
       return createAuthorizationURL({
         id: "google",
@@ -36,12 +34,11 @@ export function googleOidcProvider(environment: RuntimeEnvironment): BetterAuthP
         state,
         codeVerifier,
         redirectURI,
-        scopes: scopes ?? options.scopes,
+        scopes: options.scopes,
         loginHint,
         display,
         nonce: idTokenNonce,
         accessType: options.accessType,
-        additionalParams,
       });
     },
     async getUserInfo(tokens: Parameters<typeof baseProvider.getUserInfo>[0]) {

@@ -195,10 +195,11 @@ the runtime storage credentials to verify access to the configured bucket. Local
 the non-secret `RESEND_API_KEY=local-disabled` placeholder and does not call Resend.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
 fixtures, and PostgreSQL constraints. `pnpm auth:check` uses a deterministic local provider double
-to prove new and returning Google identity handling, email-conflict denial, provider-credential
-discard, database session resolution, sign-out/revocation, state/nonce/PKCE binding, origin and
-return-target rejection, and safe expiry, replay, denial, and forged-callback handling. It does not
-call Google or validate a real provider credential.
+to prove new and returning Google identity handling, fixed identity-only permissions,
+provider-credential discard, email-conflict denial, distinct Cloudflare client rate-limit keys,
+database session resolution, sign-out/revocation, state/nonce/PKCE binding, atomic state
+consumption, origin and return-target rejection, and safe expiry, replay, denial, invitation retry,
+and forged-callback handling. It does not call Google or validate a real provider credential.
 
 Stop the containers with `pnpm services:down`. That command retains the named volumes. Delete the
 volumes only when you intentionally want to discard all local service data.
