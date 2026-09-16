@@ -8,6 +8,7 @@ import { ContactMessageRepository, PrismaContactMessageRepository } from "./cont
 import { ContactService } from "./contact/contact.service.js";
 import { HealthController } from "./health.controller.js";
 import { HealthService } from "./health.service.js";
+import { IdentityService } from "./identity/identity.service.js";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";
 
 @Module({})
@@ -25,6 +26,7 @@ export class AppModule {
         { provide: RUNTIME_ENVIRONMENT, useValue: environment },
         { provide: APPLICATION_LOGGER, useValue: logger },
         HealthService,
+        IdentityService,
         ContactService,
         { provide: ContactMessageRepository, useClass: PrismaContactMessageRepository },
       ],

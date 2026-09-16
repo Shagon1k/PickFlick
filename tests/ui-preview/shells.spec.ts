@@ -314,6 +314,21 @@ test("authenticated shells expose Sign out as an action on desktop and mobile", 
   await expect(mobileAction).toHaveAttribute("data-shell-action", "sign-out");
 });
 
+test("Sign out revokes the browser session before returning to Login", async ({ page }) => {
+  let signOutMethod = "";
+  await page.route("**/api/auth/sign-out", async (route) => {
+    signOutMethod = route.request().method();
+    await route.fulfill({ contentType: "application/json", json: { success: true }, status: 200 });
+  });
+
+  await openShell(page, "product", canonicalViewports[2]);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await page.getByRole("navigation", { name: "Account navigation" }).getByRole("button", { name: "Sign out" }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  expect(signOutMethod).toBe("POST");
+});
+
 test("compact and Session headers match their canonical navigation variants", async ({ page }) => {
   await openShell(page, "product", canonicalViewports[1]);
   await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" })).toBeHidden();

@@ -1,12 +1,14 @@
 import "reflect-metadata";
 
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { loadRuntimeEnvironment, safeEnvironmentValidationFailures } from "@pickflick/config/environment";
 import { completeWithin, createLogger } from "@pickflick/observability";
 
 import { ApiExceptionFilter } from "./api-exception.filter.js";
 import { AppModule } from "./app.module.js";
 import { configureProxyTrust } from "./proxy-trust.js";
+import { IdentityService } from "./identity/identity.service.js";
 import { createRequestContextMiddleware } from "./request-context.js";
 
 async function bootstrap(): Promise<void> {
@@ -14,9 +16,15 @@ async function bootstrap(): Promise<void> {
   const logger = createLogger({ service: "api", environment: environment.appEnvironment });
 
   try {
-    const app = await NestFactory.create(AppModule.register(environment, logger), { logger: false });
+    const app = await NestFactory.create<NestExpressApplication>(AppModule.register(environment, logger), {
+      bodyParser: false,
+      logger: false,
+    });
     configureProxyTrust(app);
     app.use(createRequestContextMiddleware(logger));
+    app.getHttpAdapter().getInstance().all("/api/auth/*splat", app.get(IdentityService).handler);
+    app.useBodyParser("json", { limit: "100kb" });
+    app.useBodyParser("urlencoded", { extended: true, limit: "100kb" });
     app.useGlobalFilters(new ApiExceptionFilter(logger));
     await app.listen(environment.apiPort, environment.apiHost);
     logger.info(

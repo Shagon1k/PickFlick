@@ -82,6 +82,10 @@ jobs:
     timeout-minutes: 45
     env:
       APP_ENV: test
+      AUTH_BASE_URL: http://127.0.0.1:3000
+      AUTH_SECRET: synthetic-ci-auth-secret-at-least-32-characters
+      GOOGLE_CLIENT_ID: synthetic-ci-google-client-id
+      GOOGLE_CLIENT_SECRET: synthetic-ci-google-client-secret
       RESEND_DELIVERY_MODE: disabled
       CI_COMPOSE_PROJECT_NAME: pickflick-ci-${{ github.run_id }}-${{ github.run_attempt }}
       DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:5432/pickflick_test
@@ -138,6 +142,9 @@ jobs:
 
       - name: Check Contact persistence and abuse controls
         run: pnpm contact:check
+
+      - name: Check OAuth state and session revocation
+        run: pnpm auth:check
 
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke

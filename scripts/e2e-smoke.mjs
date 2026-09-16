@@ -35,7 +35,13 @@ async function availablePort(configuredPort, excludedPorts = []) {
 
 const webPort = await availablePort(process.env.E2E_WEB_PORT);
 const apiPort = await availablePort(process.env.E2E_API_PORT, [webPort]);
-const runtimeEnvironment = { ...process.env, API_HOST: "127.0.0.1", API_PORT: String(apiPort) };
+const apiOrigin = `http://127.0.0.1:${apiPort}`;
+const runtimeEnvironment = {
+  ...process.env,
+  API_HOST: "127.0.0.1",
+  API_PORT: String(apiPort),
+  AUTH_BASE_URL: apiOrigin,
+};
 
 function startRuntime(name, arguments_, onOutput = () => undefined) {
   const child = spawn("pnpm", arguments_, {
@@ -148,7 +154,17 @@ try {
     ),
     waitFor("worker readiness", async () => workerReady, runtimes),
   ]);
-  console.log("E2E smoke passed: built web, API, and worker entrypoints are ready against isolated dependencies.");
+  const authResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
+    body: JSON.stringify({ callbackURL: "/app", provider: "apple" }),
+    headers: { "content-type": "application/json", origin: apiOrigin },
+    method: "POST",
+    signal: AbortSignal.timeout(2_000),
+  });
+  const authFailure = await authResponse.json();
+  if (authResponse.status !== 400 || authFailure.code !== "UNSUPPORTED_IDENTITY_PROVIDER") {
+    throw new Error("The built API authentication handler is not mounted at the reviewed raw-request boundary.");
+  }
+  console.log("E2E smoke passed: built web, API, worker, and raw authentication handler are ready against isolated dependencies.");
 } finally {
   await Promise.all(runtimes.map(stopRuntime));
 }

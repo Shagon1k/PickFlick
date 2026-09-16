@@ -38,7 +38,18 @@ const runtimeEnvironmentVariables = [
   "STORAGE_REGION",
   "STORAGE_SECRET_KEY",
 ];
-const apiEnvironmentVariables = [...runtimeEnvironmentVariables, "API_HOST", "API_PORT"];
+const authenticationEnvironmentVariables = [
+  "AUTH_BASE_URL",
+  "AUTH_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+];
+const apiEnvironmentVariables = [
+  ...runtimeEnvironmentVariables,
+  ...authenticationEnvironmentVariables,
+  "API_HOST",
+  "API_PORT",
+];
 
 function assert(condition, message) {
   if (!condition) {
@@ -59,6 +70,11 @@ function environmentFor(appEnvironment) {
     RESEND_FROM: "PickFlick <pickflick@example.invalid>",
     SHUTDOWN_TIMEOUT_MS: "10000",
     SOURCE_REVISION: deploymentSourceRevision,
+
+    AUTH_BASE_URL: appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app",
+    AUTH_SECRET: "synthetic-auth-secret-at-least-32-characters",
+    GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+    GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
 
     STORAGE_ACCESS_KEY: `pickflick-${appEnvironment}`,
     STORAGE_BUCKET: `pickflick-${appEnvironment}`,
@@ -195,9 +211,20 @@ export function validateDeployments({ production, uat }) {
 
     validateRequiredEnvironment(deployment.services.api, apiEnvironmentVariables, "api");
     validateRequiredEnvironment(deployment.services.worker, runtimeEnvironmentVariables, "worker");
+    for (const name of authenticationEnvironmentVariables) {
+      assert(
+        deployment.services.worker.environment?.[name] === undefined,
+        `worker must not receive API-owned ${name}.`,
+      );
+    }
     assert(deployment.services.release.environment.APP_ENV === appEnvironment, "Release must use the selected environment.");
     assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
+    assert(
+      deployment.services.api.environment.AUTH_BASE_URL ===
+        (appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app"),
+      "API must use the canonical authentication origin for its environment.",
+    );
     assert(deployment.services.api.environment.RESEND_DELIVERY_MODE === "live", "API must use live Resend delivery.");
     assert(deployment.services.worker.environment.RESEND_DELIVERY_MODE === "live", "Worker must use live Resend delivery.");
     assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");

@@ -13,6 +13,7 @@ import {
 
 import { Icon, type IconName } from "@pickflick/ui";
 
+import { authClient } from "../auth/auth-client";
 import styles from "./shells.module.css";
 
 export interface ShellNavigationItem {
@@ -129,7 +130,38 @@ function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
   return "href" in item ? (
     <a aria-current={item.current ? "page" : undefined} href={item.href}>{content}</a>
   ) : (
-    <button data-shell-action={item.action} type="button">{content}</button>
+    <SignOutMenuItem content={content} />
+  );
+}
+
+function SignOutMenuItem({ content }: Readonly<{ content: ReactNode }>) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  async function signOut() {
+    setPending(true);
+    setError("");
+    try {
+      const result = await authClient.signOut();
+      if (result.error) {
+        setError("Sign out failed. Please try again.");
+        setPending(false);
+        return;
+      }
+      window.location.assign("/login");
+    } catch {
+      setError("Sign out failed. Please try again.");
+      setPending(false);
+    }
+  }
+
+  return (
+    <>
+      <button aria-busy={pending || undefined} data-shell-action="sign-out" disabled={pending} onClick={signOut} type="button">
+        {content}
+      </button>
+      {error ? <span aria-live="assertive" className="pf-visually-hidden" role="alert">{error}</span> : null}
+    </>
   );
 }
 

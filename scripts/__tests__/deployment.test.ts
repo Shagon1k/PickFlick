@@ -77,6 +77,8 @@ describe("deployment Compose", () => {
       ["api", "SHUTDOWN_TIMEOUT_MS"],
       ["api", "API_HOST"],
       ["api", "API_PORT"],
+      ["api", "AUTH_SECRET"],
+      ["api", "GOOGLE_CLIENT_SECRET"],
       ["worker", "SHUTDOWN_TIMEOUT_MS"],
     ] as const) {
       expectRejected(
@@ -84,6 +86,13 @@ describe("deployment Compose", () => {
         new RegExp(`${serviceName} must receive ${variableName}`),
       );
     }
+  });
+
+  it("keeps OAuth credentials in the API service and pins canonical callback origins", () => {
+    expect(validDeployments.uat.services.api.environment.AUTH_BASE_URL).toBe("https://uat.pick-flick.app");
+    expect(validDeployments.production.services.api.environment.AUTH_BASE_URL).toBe("https://pick-flick.app");
+    expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("AUTH_SECRET");
+    expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("GOOGLE_CLIENT_SECRET");
   });
 
   it("routes the public API path through web to the environment-specific API alias", () => {
