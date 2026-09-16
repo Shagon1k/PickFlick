@@ -360,8 +360,9 @@ stateDiagram-v2
 ## 9. Architecture Decisions
 
 The developer accepted the foundational direction in ADR-001 through ADR-006 on 2026-09-05,
-the proportional deployment baseline in ADR-007 on 2026-09-07, and the source-built SemVer
-production-promotion amendment in ADR-008 on 2026-09-11.
+the proportional deployment baseline in ADR-007 on 2026-09-07, the source-built SemVer
+production-promotion amendment in ADR-008 on 2026-09-11, the production email identity in ADR-009
+on 2026-09-13, and the API-owned Better Auth implementation direction in ADR-010 on 2026-09-16.
 Accepted direction is not implemented state: each runtime row remains Proposed until the owning
 phase provides verification. Exact dependency versions are selected and pinned during scaffolding,
 not frozen in planning prose.
@@ -370,7 +371,7 @@ not frozen in planning prose.
 | --- | --- | --- | --- |
 | Repository | pnpm modular monorepo with separate web, API, and worker entrypoints. | Accepted direction; Proposed implementation | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) |
 | Frontend | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state. | Accepted direction; Proposed implementation | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
-| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin OAuth and opaque server sessions; issue #25 selects the library. | Accepted direction; Proposed implementation | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary) |
+| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Proposed implementation | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
 | Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
 | Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
@@ -559,7 +560,7 @@ sender identities are fixed by
 
 **Out of scope:** Registration, authenticated pages, live billing checkout, and final legal approval.
 
-### Phase 4 — Authentication & Account Onboarding · Not started
+### Phase 4 — Authentication & Account Onboarding · In progress
 
 **Goal:** Let a person become a registered PickFlick User through Google or Apple and safely retain intended navigation.
 
@@ -574,7 +575,8 @@ sender identities are fixed by
 
 **Scope:**
 
-- [ ] Choose/record the auth/session implementation and implement Google and Apple OAuth.
+- [x] Choose and record the auth/session implementation and account-linking contract.
+- [ ] Implement Google and Apple OAuth against the accepted API-owned contract.
 - [ ] Implement secure server-managed sessions, callback validation, sign-out, session revocation, and account linking rules.
 - [ ] Implement Login and initial account/profile bootstrap from provider-safe fields.
 - [ ] Preserve and validate return-to-intent for app, Club invitation, and safe fallback routes.
@@ -1329,6 +1331,7 @@ sender identities are fixed by
 | Proportional MVP deployment baseline | Developer | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07. |
 | Source-built production promotion | Developer | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement. | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11. |
 | Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13. |
+| Authentication and account linking | Developer | Run Better Auth inside the NestJS API with database-backed opaque sessions. Identify external accounts by provider subject, disable implicit email linking, and require an explicit fresh-session flow to link Google or Apple identities. Next.js remains presentation rather than session authority. | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16. |
 
 ### Open Questions
 
@@ -1336,7 +1339,6 @@ These do not block guidance creation; each has an explicit decision point.
 
 | Question | Owner | Needed by | Next check |
 | --- | --- | --- | --- |
-| Which auth/session library best supports Google + Apple, the accepted API-owned session boundary, and self-hosting? | Developer + implementation agent | Phase 4 | Compare maintained official integrations in issue #25 and accept the implementation ADR before auth work. |
 | Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
 | How will external crawler caches be refreshed after production cutover? | Product owner | Phase 23 | Define and rehearse the cache-refresh procedure before final production metadata validation. |
 | What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
@@ -1393,7 +1395,7 @@ These do not block guidance creation; each has an explicit decision point.
 | 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
 | 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
 | 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing, Pricing, Contact, provisional legal entry, indexing boundaries, and recovery surfaces are implemented and locally verified. Required exact-SHA visual acknowledgements remain. |
-| 4 — Authentication & Account Onboarding | Not started |  |  |
+| 4 — Authentication & Account Onboarding | In progress | [Active Phase 4 plan](_docs/phase-4-authentication-account-onboarding.md) and [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) | The auth/session implementation and account-linking contract are approved; provider and boundary implementation remains. |
 | 5 — Clubs, Membership & Roles | Not started |  |  |
 | 6 — Human Verification & Bug Fixing I | Not started |  | Stabilization gate for Phases 1–5. |
 | 7 — Club Hub & Club Invitations | Not started |  |  |

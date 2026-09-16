@@ -29,6 +29,7 @@ separately.
 | [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | Use a proportional Dokploy deployment baseline | Accepted | 2026-09-07 |
 | [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags) | Promote source-built production from UAT-proven SemVer tags | Accepted | 2026-09-11 |
 | [ADR-009](#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Use one public contact and environment-specific Resend senders | Accepted | 2026-09-13 |
+| [ADR-010](#adr-010--use-better-auth-at-the-api-boundary) | Use Better Auth at the API boundary | Accepted | 2026-09-16 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -746,3 +747,133 @@ SPF/DKIM, replies reach the public contact queue, and staged DMARC does not reje
 - [Resend API-key permissions and domain restriction](https://resend.com/docs/dashboard/api-keys/introduction)
 - [Resend DMARC rollout guidance](https://resend.com/docs/dashboard/domains/dmarc)
 - [Google Workspace MX setup](https://knowledge.workspace.google.com/admin/domains/set-up-mx-records-for-google-workspace)
+
+## ADR-010 — Use Better Auth at the API boundary
+
+- **Status:** Accepted
+- **Date:** 2026-09-16
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#25](https://github.com/Shagon1k/PickFlick/issues/25)
+
+### Context
+
+ADR-002 places OAuth callbacks, identity linking, server sessions, revocation, and authorization in
+the NestJS API. PickFlick now needs a maintained implementation for Google and Apple that preserves
+that boundary, stores opaque sessions server-side, supports immediate revocation, and prevents an
+email match from silently merging or hijacking Users.
+
+Auth.js remains a valid choice for an application where Next.js owns the authenticated server
+boundary. Its current documentation says an existing working installation does not need an urgent
+migration, but recommends Better Auth for new projects. Putting NextAuth in `apps/web` here would
+either split authentication from NestJS authorization or require Next.js to become the mandatory
+BFF for REST, SSE, and file access. That is a coherent alternative architecture, but it would
+supersede ADR-002 rather than implement it. Auth.js exposes an Express integration, but its security
+guidance currently describes non-adapter `@auth/*` packages as under development and not generally
+production-ready.
+
+NestJS Passport integrates naturally with guards and provider strategies, but it does not supply
+the complete account-linking, database-session, revocation, and provider-token contract. PickFlick
+would own more security-critical code. SuperTokens supplies NestJS integration and self-hosting but
+adds a separate trusted Core service, and its documented account-linking feature requires a paid
+plan. Neither trade-off is proportional to this modular-monolith MVP.
+
+Better Auth provides built-in Google and Apple providers, a Prisma 7 adapter, database-backed
+sessions, session revocation, configurable account linking, OAuth callback checks, trusted-origin
+checks, and custom cookie attributes. Its core handler is framework-agnostic and can run at the
+API's Express boundary without moving session authority to Next.js.
+
+### Decision
+
+Use the supported stable Better Auth line as the OAuth and session engine inside `apps/api`. Mount
+its handler on the same-origin API boundary and integrate its Prisma adapter with the repository's
+PostgreSQL client. Review and commit every auth schema change through the existing Prisma/manual-SQL
+migration workflow; generated schema never authorizes an automatic migration.
+
+Keep `User` as the PickFlick product identity. Identify provider accounts by the unique pair
+`(provider, providerSubject)`. Disable implicit account linking. A signed-out OAuth attempt whose
+email matches an existing User fails with a safe account-not-linked result. Link another provider
+only through an explicit, single-use flow bound to a fresh authenticated session. That flow may
+accept a different provider email for Apple relay support, but it never overwrites the User's email
+or reassigns a provider identity already owned by another User. Do not allow a User to unlink their
+last provider identity.
+
+Use database-backed sessions with Better Auth's stateless mode and session cookie cache disabled.
+The browser receives only an opaque identifier in a host-only production cookie whose name begins
+with `__Host-` and whose attributes include `Secure`, `HttpOnly`, and `Path=/` without `Domain`.
+Keep durable session meaning, provider tokens, roles, and permissions server-side. Preserve
+ADR-002's explicit CSRF and Origin checks, deny credentialed cross-origin browser access, rotate the
+session after authentication and privilege changes, and revoke all sessions on suspension or
+account deletion.
+
+Next.js may render auth state, start same-origin auth actions, and redirect optimistically. It must
+not parse the session cookie or become an authorization authority. Every REST, SSE, file, and
+administrative boundary resolves the session and current permissions through the API-owned Identity
+module.
+
+Pin the concrete Better Auth version in the workspace manifest and lockfile rather than in this ADR.
+Better Auth supports only its current release, so dependency maintenance must track the supported
+stable line and prioritize security updates. Provider issues add exact environment variables,
+typed startup validation, migration changes, and tests when those values and schemas become active.
+
+The implementation-ready provider, conflict, callback, return-to-intent, cookie, and verification
+contract lives in the active
+[Phase 4 plan](../phase-4-authentication-account-onboarding.md#accepted-implementation-contract).
+
+### Consequences
+
+- Authentication and authorization keep one API-owned trust boundary.
+- Google and Apple use one session representation and one provider-identity model.
+- Explicit linking handles Apple relay addresses without trusting email as an identity key.
+- Immediate revocation requires a database session lookup on protected requests; issue #28 may
+  optimize only after preserving that guarantee.
+- Better Auth owns protocol mechanics, while PickFlick still owns authorization, linking policy,
+  schema review, safe recovery, configuration, and provider lifecycle tests.
+- The NestJS/Express handler order and Prisma schema fit are integration risks that issue #26 must
+  prove before broader auth implementation proceeds.
+- A future move to Next.js-owned auth or a separate identity service requires a superseding ADR.
+
+### Alternatives considered
+
+- **NextAuth/Auth.js in Next.js.** Rejected for the current architecture because it splits session
+  ownership from the API or requires Next.js to become the mandatory BFF. Revisit only with a
+  superseding trust-boundary decision.
+- **Auth.js at the Express API boundary.** Rejected because the current Express package is still
+  documented as under development, while the Auth.js project recommends Better Auth for new work.
+- **NestJS Passport plus custom sessions and linking.** Rejected because PickFlick would own more
+  callback, linking, revocation, and session-security behavior without a product requirement for
+  that control.
+- **Self-hosted SuperTokens.** Rejected because a separate Core service expands deployment and
+  operations, while account linking adds a paid dependency.
+- **JWT sessions.** Rejected because immediate server-side suspension and revocation are product
+  requirements and ADR-002 already rejects browser-managed bearer credentials.
+
+### Verification
+
+Issue #26 must prove the Better Auth/NestJS mount, reviewed Prisma migration, Google callback,
+cookie attributes, CSRF/Origin rejection, immediate session revocation, return-target validation,
+and absence of provider tokens in browser storage and logs. Issue #27 must prove Apple first-return
+handling, relay email, explicit linking, duplicate/conflict denial, and provider-identity uniqueness.
+Issue #28 must prove unauthenticated, forged, suspended, expired, and revoked denial across REST,
+SSE, files, and App Admin operations.
+
+Until those issues provide named code and runtime evidence, authentication remains `Proposed` in
+`ARCHITECTURE.md`.
+
+### Evidence
+
+- Alex's approval of the API-owned Better Auth direction in issue #25's human-controlled run on
+  2026-09-16.
+- [Better Auth OAuth and provider behavior](https://better-auth.com/docs/concepts/oauth)
+- [Better Auth Apple provider](https://better-auth.com/docs/authentication/apple)
+- [Better Auth session management](https://better-auth.com/docs/concepts/session-management)
+- [Better Auth account linking](https://better-auth.com/docs/concepts/users-accounts)
+- [Better Auth security controls](https://better-auth.com/docs/reference/security)
+- [Better Auth configuration options](https://better-auth.com/docs/reference/options)
+- [Better Auth Prisma adapter](https://better-auth.com/docs/adapters/prisma)
+- [Better Auth cookie behavior](https://better-auth.com/docs/concepts/cookies)
+- [Better Auth Express integration](https://better-auth.com/docs/integrations/express)
+- [Auth.js migration guidance](https://authjs.dev/getting-started/migrate-to-better-auth)
+- [Auth.js security and package status](https://authjs.dev/security)
+- [NestJS Passport integration](https://docs.nestjs.com/recipes/passport)
+- [SuperTokens NestJS integration](https://supertokens.com/docs/quickstart/integrations/nestjs)
+- [SuperTokens account-linking availability](https://supertokens.com/docs/post-authentication/account-linking/introduction)
