@@ -36,12 +36,12 @@ function acceptsJsonBody(request: ContactHttpRequest): boolean {
   return typeof contentType === "string" && contentType.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
-@Public()
 @Controller("contact")
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
   @Post()
+  @Public()
   @HttpCode(HttpStatus.ACCEPTED)
   async submit(
     @Body() body: unknown,

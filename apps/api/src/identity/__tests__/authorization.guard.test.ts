@@ -11,8 +11,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { APPLICATION_LOGGER } from "../../runtime.tokens.js";
 import { ApiExceptionFilter } from "../../api-exception.filter.js";
+import { AppController } from "../../app.controller.js";
+import { ContactController } from "../../contact/contact.controller.js";
+import { HealthController } from "../../health.controller.js";
 import { AuthenticationGuard } from "../authorization.guard.js";
-import { Public, RequireAppRole } from "../authorization.decorators.js";
+import {
+  AUTHORIZATION_PUBLIC,
+  Public,
+  RequireAppRole,
+} from "../authorization.decorators.js";
 import {
   IDENTITY_AUTHORIZATION,
   type AppRole,
@@ -162,5 +169,15 @@ describe("deny-by-default authentication guard", () => {
     expect(logOutput).not.toContain("forged-private-token");
     expect(logOutput).not.toContain("user-user");
     expect(logOutput).not.toContain("session-user");
+  });
+
+  it("marks only the existing public controller methods as public", () => {
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, AppController)).toBeUndefined();
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, ContactController)).toBeUndefined();
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, HealthController)).toBeUndefined();
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, AppController.prototype.status)).toBe(true);
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, ContactController.prototype.submit)).toBe(true);
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, HealthController.prototype.liveness)).toBe(true);
+    expect(Reflect.getMetadata(AUTHORIZATION_PUBLIC, HealthController.prototype.readiness)).toBe(true);
   });
 });

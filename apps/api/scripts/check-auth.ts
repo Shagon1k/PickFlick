@@ -228,7 +228,10 @@ const deterministicAuth = createIdentityAuth(environment, database, logger, [
 const deterministicAuthorization = new IdentityAuthorizationService(
   database,
   logger,
-  (headers) => deterministicAuth.api.getSession({ headers: fromNodeHeaders(headers) }),
+  (headers) => deterministicAuth.api.getSession({
+    headers: fromNodeHeaders(headers),
+    query: { disableRefresh: true },
+  }),
 );
 const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(deterministicAuth), {
   appleSignInEnabled: true,
@@ -514,6 +517,25 @@ try {
     throw new Error("The shared session resolver accepted an expired session.");
   }
 
+  const rollingLogin = await helpers.login({ userId });
+  const preRefreshExpiry = new Date(Date.now() + 5 * 24 * 60 * 60 * 1_000);
+  await database.authSession.update({
+    data: { expiresAt: preRefreshExpiry },
+    where: { token: rollingLogin.token },
+  });
+  const rollingResponse = await fetch(`${deterministicHttpBaseUrl}/api/auth/get-session`, {
+    headers: rollingLogin.headers,
+  });
+  const rolledSession = await database.authSession.findUnique({ where: { token: rollingLogin.token } });
+  if (
+    !rollingResponse.ok ||
+    !rollingResponse.headers.getSetCookie().some((cookie) => cookie.startsWith("pickflick.session_token=")) ||
+    !rolledSession ||
+    rolledSession.expiresAt <= preRefreshExpiry
+  ) {
+    throw new Error("The session boundary discarded a rolling session cookie update.");
+  }
+
   const signOutHeaders = new Headers(login.headers);
   signOutHeaders.set("content-type", "application/json");
   signOutHeaders.set("origin", environment.auth.baseUrl);
@@ -528,11 +550,17 @@ try {
     throw new Error("Sign-out did not revoke the current database session immediately.");
   }
 
-  const afterRevocation = await auth.handler(
-    new Request(`${environment.auth.baseUrl}/api/auth/get-session`, { headers: login.headers }),
-  );
-  if (!afterRevocation.ok || await afterRevocation.json() !== null) {
-    throw new Error("A revoked session remained usable.");
+  const afterRevocation = await fetch(`${deterministicHttpBaseUrl}/api/auth/get-session`, {
+    headers: login.headers,
+  });
+  if (
+    !afterRevocation.ok ||
+    await afterRevocation.json() !== null ||
+    !afterRevocation.headers.getSetCookie().some(
+      (cookie) => cookie.startsWith("pickflick.session_token=") && /Max-Age=0/i.test(cookie),
+    )
+  ) {
+    throw new Error("A revoked session remained usable or its browser cookie was not cleared.");
   }
   const revokedSession = await deterministicAuthorization.resolveSession(
     Object.fromEntries(login.headers.entries()),
@@ -942,6 +970,16 @@ try {
     throw new Error("A later Apple callback erased first-return profile fields or moved the identity by email.");
   }
 
+  await deterministicAuthorization.suspendUser(adminPrincipal, appleUser.id);
+  const suspendedAppleReturn = await completeAppleSignIn("apple-returning");
+  assertSafeLoginFailure(
+    suspendedAppleReturn.response,
+    "A suspended User received a fresh session from a returning provider sign-in.",
+  );
+  if (await database.authSession.count({ where: { userId: appleUser.id } }) !== 0) {
+    throw new Error("A returning provider sign-in persisted a session for a suspended User.");
+  }
+
   const appleConflict = await completeAppleSignIn("apple-conflict", {
     name: { firstName: "Conflict", lastName: "Apple" },
   });
@@ -1113,7 +1151,7 @@ try {
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, authoritative role/status resolution, forged/expired/revoked/suspended denial, transactional suspension and role-change revocation, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, authoritative role/status resolution, rolling session cookies, forged/expired/revoked/suspended denial, suspended provider sign-in rejection, transactional suspension and role-change revocation, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   await new Promise<void>((resolve, reject) => {

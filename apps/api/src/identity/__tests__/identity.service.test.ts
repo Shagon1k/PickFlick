@@ -1,7 +1,7 @@
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import { createDatabaseClient } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { createIdentityAuth } from "../identity.service.js";
 
@@ -119,6 +119,25 @@ describe("identity configuration", () => {
         "/sign-in/social": { max: 10, window: 60 },
         "/unlink-account": { max: 10, window: 60 },
       },
+    });
+  });
+
+  it("rejects session creation for a suspended User", async () => {
+    const findUnique = vi.fn(async () => ({ status: "SUSPENDED" as const }));
+    const suspendedAuth = createIdentityAuth(
+      environment,
+      { user: { findUnique } } as never,
+      logger,
+    );
+    const beforeSessionCreate = suspendedAuth.options.databaseHooks?.session?.create?.before;
+
+    await expect(beforeSessionCreate?.({ userId: "suspended-user" } as never)).rejects.toMatchObject({
+      body: { code: "ACCOUNT_INACTIVE" },
+      status: "FORBIDDEN",
+    });
+    expect(findUnique).toHaveBeenCalledWith({
+      select: { status: true },
+      where: { id: "suspended-user" },
     });
   });
 

@@ -250,8 +250,8 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
     const requestKey = `${request.method?.toUpperCase()} ${path}`;
     if (request.method === "GET" && path === "/api/auth/get-session") {
       const resolution = await options.resolveSession(request);
-      if (!resolution.authorized) {
-        writeJson(response, resolution.reason === "service_unavailable" ? 503 : 200, null);
+      if (!resolution.authorized && resolution.reason === "service_unavailable") {
+        writeJson(response, 503, null);
         return;
       }
     } else if (protectedAuthRequests.has(requestKey)) {
