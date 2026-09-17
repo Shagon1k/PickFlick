@@ -84,6 +84,10 @@ jobs:
       APP_ENV: test
       AUTH_BASE_URL: http://127.0.0.1:3000
       AUTH_SECRET: synthetic-ci-auth-secret-at-least-32-characters
+      APPLE_CLIENT_ID: synthetic-ci-apple-client-id
+      APPLE_KEY_ID: SYNTHKEY1
+      APPLE_PRIVATE_KEY: local-synthetic-apple-private-key
+      APPLE_TEAM_ID: SYNTHTEAM1
       GOOGLE_CLIENT_ID: synthetic-ci-google-client-id
       GOOGLE_CLIENT_SECRET: synthetic-ci-google-client-secret
       RESEND_DELIVERY_MODE: disabled

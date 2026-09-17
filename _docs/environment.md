@@ -211,7 +211,8 @@ volumes only when you intentionally want to discard all local service data.
 create the `User`, `Club`, `Membership`, and `Session` foundation and its reviewed constraints. The
 third adds `ContactMessage` with duplicate, delivery-state, payload-lifecycle, and lookup
 constraints. The fourth adds Google identity, database-session, verification-state, and auth
-rate-limit records plus the provider-subject uniqueness constraint. All four migrations are
+rate-limit records plus the provider-subject uniqueness constraint. The fifth adds optional Apple
+email and first-return display-name fields to the provider-owned account row. All five migrations are
 additive and backward compatible with the preceding application schema.
 
 `pnpm seed` is idempotent and uses stable identifiers plus `example.invalid` email addresses. It
@@ -224,12 +225,16 @@ guards before invoking `prisma migrate reset`. Never use it against shared, UAT,
 
 ## Managed preview authentication
 
-Managed previews use the dedicated **PickFlick Preview** Google OAuth web client. Supply these four
-values through the managed preview environment or secret mechanism before Compose validation:
+Managed previews use dedicated **PickFlick Preview** Google and Apple OAuth clients. Supply these
+eight values through the managed preview environment or secret mechanism before Compose validation:
 
 ```text
 AUTH_BASE_URL=https://preview-N.shagon1k.win
 AUTH_SECRET
+APPLE_CLIENT_ID
+APPLE_KEY_ID
+APPLE_PRIVATE_KEY
+APPLE_TEAM_ID
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
 ```
@@ -240,14 +245,19 @@ JavaScript origins empty: PickFlick performs the Google OAuth exchange on the se
 load Google's browser SDK. Add an origin only if a later approved direct browser-SDK flow requires
 one.
 
-`compose.preview.yaml` requires all four inputs; it contains no fallback authentication values.
+Register the preview origin and `${AUTH_BASE_URL}/api/auth/callback/apple` with the Apple Services
+ID. Supply the Apple `.p8` key as PKCS#8 PEM; an environment editor may encode its line breaks as
+`\n`. PickFlick signs a five-minute Apple client secret for each token exchange and does not store
+the generated assertion.
+
+`compose.preview.yaml` requires all eight inputs; it contains no fallback authentication values.
 `pnpm compose:check` validates the contract with synthetic values and `docker compose config -q`,
 which emits no resolved configuration. Never save a rendered preview configuration, logs, or
-screenshots containing `AUTH_SECRET` or `GOOGLE_CLIENT_SECRET`. Keep the client ID at the same
-server-only configuration boundary.
+screenshots containing `AUTH_SECRET`, `APPLE_PRIVATE_KEY`, or `GOOGLE_CLIENT_SECRET`. Keep provider
+identifiers at the same server-only configuration boundary.
 
-Preview, UAT, and production use separate Google OAuth clients and secrets. Never copy preview
-credentials into UAT or production.
+Preview, UAT, and production use separate Google and Apple OAuth clients and keys. Never copy
+preview credentials into UAT or production.
 
 ## Runtime variables
 
@@ -261,6 +271,10 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `API_PORT` | Integer from 1 through 65535 | API | No |
 | `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
 | `AUTH_SECRET` | At least 32 characters used to protect authentication state and encrypted provider-token fields | API | Yes |
+| `APPLE_CLIENT_ID` | Apple Services ID for the current environment | API | Yes |
+| `APPLE_KEY_ID` | Identifier of the Apple Sign in private key | API | Yes |
+| `APPLE_PRIVATE_KEY` | Apple EC P-256 `.p8` key as PKCS#8 PEM; `\n`-encoded line breaks are accepted | API | Yes |
+| `APPLE_TEAM_ID` | Apple Developer team identifier used to issue client assertions | API | Yes |
 | `GOOGLE_CLIENT_ID` | Google OAuth web-client identifier for the current environment | API | Yes |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth web-client secret for the current environment | API | Yes |
 | `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
@@ -279,11 +293,12 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |
 
 Authentication configuration is API-only: do not expose it to the worker, web client, browser
-environment, logs, screenshots, or rendered Compose evidence. Configure a separate Google OAuth web
-client for each deployed environment. Its authorized redirect URI must exactly equal
+environment, logs, screenshots, or rendered Compose evidence. Configure separate Google and Apple
+OAuth clients for each deployed environment. The Google authorized redirect URI must exactly equal
 `AUTH_BASE_URL` followed by `/api/auth/callback/google`. Authorized JavaScript origins remain empty
-for the server-side flow. The checked-in local values are synthetic and make deterministic checks
-possible, but they cannot complete a live Google sign-in. Store deployed secrets only in the
+for the server-side flow. Register `AUTH_BASE_URL` and the `/api/auth/callback/apple` return URL with
+the Apple Services ID. The checked-in local values are synthetic and make deterministic checks
+possible, but they cannot complete a live provider sign-in. Store deployed secrets only in the
 environment's secret system and rotate them through a controlled provider and deployment change.
 
 Better Auth 1.7.5 exposes the upstream atomic verification-consumption primitive added in

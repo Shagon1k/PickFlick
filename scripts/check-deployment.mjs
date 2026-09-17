@@ -41,12 +41,20 @@ const runtimeEnvironmentVariables = [
 const authenticationEnvironmentVariables = [
   "AUTH_BASE_URL",
   "AUTH_SECRET",
+  "APPLE_CLIENT_ID",
+  "APPLE_KEY_ID",
+  "APPLE_PRIVATE_KEY",
+  "APPLE_TEAM_ID",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
 ];
 const previewAuthenticationEnvironment = {
   AUTH_BASE_URL: "https://preview-3.shagon1k.win",
   AUTH_SECRET: "synthetic-preview-auth-secret-at-least-32-characters",
+  APPLE_CLIENT_ID: "synthetic-preview-apple-client-id",
+  APPLE_KEY_ID: "SYNTHKEY1",
+  APPLE_PRIVATE_KEY: "local-synthetic-apple-private-key",
+  APPLE_TEAM_ID: "SYNTHTEAM1",
   GOOGLE_CLIENT_ID: "synthetic-preview-google-client-id",
   GOOGLE_CLIENT_SECRET: "synthetic-preview-google-client-secret",
 };
@@ -79,6 +87,10 @@ function environmentFor(appEnvironment) {
 
     AUTH_BASE_URL: appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app",
     AUTH_SECRET: "synthetic-auth-secret-at-least-32-characters",
+    APPLE_CLIENT_ID: "synthetic-apple-client-id",
+    APPLE_KEY_ID: "SYNTHKEY1",
+    APPLE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\\nsynthetic\\n-----END PRIVATE KEY-----",
+    APPLE_TEAM_ID: "SYNTHTEAM1",
     GOOGLE_CLIENT_ID: "synthetic-google-client-id",
     GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
 

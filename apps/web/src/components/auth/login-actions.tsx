@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button, Icon } from "@pickflick/ui";
 
-import { startGoogleSignIn } from "./auth.service";
+import { startSocialSignIn, type IdentityProvider } from "./auth.service";
 import styles from "./login.module.css";
 
 interface LoginActionsProps {
@@ -12,36 +12,48 @@ interface LoginActionsProps {
 }
 
 export function LoginActions({ returnTo }: LoginActionsProps) {
-  const [pending, setPending] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<IdentityProvider>();
   const [error, setError] = useState("");
 
-  async function signInWithGoogle() {
-    setPending(true);
+  async function signIn(provider: IdentityProvider) {
+    const providerName = provider === "apple" ? "Apple" : "Google";
+    setPendingProvider(provider);
     setError("");
     try {
-      if (!await startGoogleSignIn(returnTo)) {
-        setError("Google sign-in could not be started. Please try again.");
-        setPending(false);
+      if (!await startSocialSignIn(provider, returnTo)) {
+        setError(`${providerName} sign-in could not be started. Please try again.`);
+        setPendingProvider(undefined);
       }
     } catch {
-      setError("Google sign-in could not be started. Please try again.");
-      setPending(false);
+      setError(`${providerName} sign-in could not be started. Please try again.`);
+      setPendingProvider(undefined);
     }
   }
 
   return (
     <div className={styles.actionArea}>
       <div className={styles.oauthStack}>
-        <Button className={styles.oauthButton} loading={pending} onClick={signInWithGoogle} variant="secondary">
+        <Button
+          className={styles.oauthButton}
+          disabled={pendingProvider === "apple"}
+          loading={pendingProvider === "google"}
+          onClick={() => signIn("google")}
+          variant="secondary"
+        >
           <span className={styles.oauthIcon}><Icon name="google" /></span>
           Continue with Google
         </Button>
-        <Button aria-describedby="apple-availability" className={styles.oauthButton} disabled variant="secondary">
+        <Button
+          className={styles.oauthButton}
+          disabled={pendingProvider === "google"}
+          loading={pendingProvider === "apple"}
+          onClick={() => signIn("apple")}
+          variant="secondary"
+        >
           <span className={`${styles.oauthIcon} ${styles.appleIcon}`}><Icon name="apple" /></span>
           Continue with Apple
         </Button>
       </div>
-      <p className={styles.availability} id="apple-availability">Apple sign-in is coming next.</p>
       <p aria-live="polite" className={styles.feedback} data-visible={Boolean(error)} role="status">{error}</p>
     </div>
   );

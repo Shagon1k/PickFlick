@@ -5,13 +5,14 @@ import { isAllowedAuthReturnTarget } from "@pickflick/contracts";
 import { createDatabaseClient } from "@pickflick/database";
 import type { ApplicationLogger } from "@pickflick/observability";
 import { APIError, betterAuth, type BetterAuthPlugin } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
+import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { toNodeHandler } from "better-auth/node";
 
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
+import { appleProviderAccountProfile } from "./apple-profile.js";
 import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
-import { googleOidcProvider } from "./google-provider.js";
+import { identityProviders } from "./identity-providers.js";
 
 const sevenDaysInSeconds = 60 * 60 * 24 * 7;
 const oneDayInSeconds = 60 * 60 * 24;
@@ -25,6 +26,14 @@ const discardedProviderCredentialData = {
   refreshTokenExpiresAt: null,
   scope: null,
 } as const;
+
+const supportedProviders = new Set(["apple", "google"]);
+
+function authenticationErrorCallback(baseUrl: string, returnTo: string): string {
+  const errorCallbackURL = new URL("/login", baseUrl);
+  errorCallbackURL.searchParams.set("returnTo", returnTo);
+  return `${errorCallbackURL.pathname}${errorCallbackURL.search}`;
+}
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
 
@@ -81,21 +90,29 @@ export function createIdentityAuth(
     account: {
       modelName: "providerAccount",
       fields: { accountId: "providerSubject", providerId: "provider" },
+      additionalFields: {
+        providerDisplayName: { type: "string", required: false, returned: false, input: false },
+        providerEmail: { type: "string", required: false, returned: false, input: false },
+      },
       encryptOAuthTokens: true,
       updateAccountOnSignIn: false,
       storeAccountCookie: false,
       storeStateStrategy: "database",
       accountLinking: {
-        enabled: false,
+        enabled: true,
         disableImplicitLinking: true,
-        allowDifferentEmails: false,
+        allowDifferentEmails: true,
         allowUnlinkingAll: false,
-        trustedProviders: ["google"],
+        trustedProviders: ["apple", "google"],
         updateUserInfoOnLink: false,
       },
     },
     emailAndPassword: { enabled: false },
-    plugins: [googleOidcProvider(environment), ...plugins, safeAuthenticationResponsePlugin(environment.auth.baseUrl)],
+    plugins: [
+      identityProviders(environment, database),
+      ...plugins,
+      safeAuthenticationResponsePlugin(environment.auth.baseUrl),
+    ],
     session: {
       modelName: "authSession",
       expiresIn: sevenDaysInSeconds,
@@ -110,6 +127,9 @@ export function createIdentityAuth(
         if (source.action === "create-user" && source.oauth?.providerId === "google" && user.emailVerified !== true) {
           return { error: "google_email_not_verified" };
         }
+        if (source.action === "create-user" && source.oauth?.providerId === "apple" && user.emailVerified !== true) {
+          return { error: "apple_email_not_verified" };
+        }
       },
     },
     verification: { modelName: "authVerification" },
@@ -121,13 +141,15 @@ export function createIdentityAuth(
       max: 60,
       customRules: {
         "/sign-in/social": { window: 60, max: 10 },
+        "/link-social": { window: 60, max: 10 },
+        "/unlink-account": { window: 60, max: 10 },
         "/callback/*": { window: 60, max: 30 },
       },
     },
     hooks: {
       before: createAuthMiddleware(async (context) => {
         if (context.path === "/sign-in/social") {
-          if (context.body?.provider !== "google") {
+          if (!supportedProviders.has(context.body?.provider)) {
             logger.warn({ event: "auth.provider.rejected" }, "Unsupported identity provider rejected.");
             throw APIError.from("BAD_REQUEST", {
               code: "UNSUPPORTED_IDENTITY_PROVIDER",
@@ -142,12 +164,42 @@ export function createIdentityAuth(
             });
           }
           const callbackURL = context.body.callbackURL;
-          const errorCallbackURL = new URL("/login", environment.auth.baseUrl);
-          errorCallbackURL.searchParams.set("returnTo", callbackURL);
           context.body.scopes = undefined;
           context.body.additionalParams = undefined;
-          context.body.errorCallbackURL = `${errorCallbackURL.pathname}${errorCallbackURL.search}`;
+          context.body.errorCallbackURL = authenticationErrorCallback(environment.auth.baseUrl, callbackURL);
           context.body.newUserCallbackURL = callbackURL;
+        }
+        if (context.path === "/link-social") {
+          if (!supportedProviders.has(context.body?.provider) || context.body?.idToken) {
+            logger.warn({ event: "auth.link.rejected" }, "Unsupported identity-link request rejected.");
+            throw APIError.from("BAD_REQUEST", {
+              code: "UNSUPPORTED_IDENTITY_LINK",
+              message: "This sign-in method cannot be linked.",
+            });
+          }
+          if (!isAllowedAuthReturnTarget(context.body.callbackURL)) {
+            logger.warn({ event: "auth.return_target.rejected" }, "Unsafe identity-link return target rejected.");
+            throw APIError.from("BAD_REQUEST", {
+              code: "INVALID_RETURN_TARGET",
+              message: "The linking destination is not allowed.",
+            });
+          }
+          const session = await getSessionFromCtx(context);
+          if (!session?.session) {
+            throw APIError.from("UNAUTHORIZED", { code: "UNAUTHORIZED", message: "Unauthorized" });
+          }
+          const sessionAge = Date.now() - new Date(session.session.createdAt).getTime();
+          if (sessionAge >= fifteenMinutesInSeconds * 1_000) {
+            throw APIError.from("FORBIDDEN", {
+              code: "SESSION_NOT_FRESH",
+              message: "The session is not fresh enough.",
+            });
+          }
+          const callbackURL = context.body.callbackURL;
+          context.body.scopes = undefined;
+          context.body.additionalParams = undefined;
+          context.body.additionalData = undefined;
+          context.body.errorCallbackURL = authenticationErrorCallback(environment.auth.baseUrl, callbackURL);
         }
         if (context.path === "/sign-out" && context.body?.callbackURL) {
           context.body.callbackURL = "/login";
@@ -157,10 +209,20 @@ export function createIdentityAuth(
     databaseHooks: {
       account: {
         create: {
-          before: async () => ({ data: discardedProviderCredentialData }),
+          before: async (account, context) => ({
+            data: {
+              ...discardedProviderCredentialData,
+              ...appleProviderAccountProfile(account, context?.query?.user ?? context?.body?.user),
+            },
+          }),
         },
         update: {
-          before: async () => ({ data: discardedProviderCredentialData }),
+          before: async (account, context) => ({
+            data: {
+              ...discardedProviderCredentialData,
+              ...appleProviderAccountProfile(account, context?.query?.user ?? context?.body?.user),
+            },
+          }),
         },
       },
       session: {

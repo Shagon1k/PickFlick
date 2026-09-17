@@ -21,6 +21,15 @@ describe("authentication response sanitization", () => {
     ).toBe("http://127.0.0.1:3000/login?error=authentication_failed");
   });
 
+  it("maps provider-ownership detail to the stable account recovery", () => {
+    expect(
+      sanitizeAuthenticationRedirect(
+        "http://127.0.0.1:3000/login?error=account_already_linked_to_different_user",
+        "http://127.0.0.1:3000",
+      ),
+    ).toBe("http://127.0.0.1:3000/login?error=account_not_linked");
+  });
+
   it("preserves only an allowlisted return target on an error redirect", () => {
     expect(
       sanitizeAuthenticationRedirect(

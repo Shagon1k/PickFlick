@@ -62,6 +62,10 @@ async function verifyMigrationUpgrade(): Promise<void> {
     new URL("../prisma/migrations/20260916000100_add_google_authentication/migration.sql", import.meta.url),
     "utf8",
   );
+  const appleProfileSql = await readFile(
+    new URL("../prisma/migrations/20260917000100_add_apple_provider_profile/migration.sql", import.meta.url),
+    "utf8",
+  );
   await client.connect();
   try {
     for (const schema of schemas) {
@@ -72,6 +76,7 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(invariantSql);
     await client.query(contactSql);
     await client.query(authenticationSql);
+    await client.query(appleProfileSql);
 
     await client.query(`SET search_path TO "${schemas[1]}"`);
     await client.query(initialSql);
@@ -84,6 +89,7 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(invariantSql);
     await client.query(contactSql);
     await client.query(authenticationSql);
+    await client.query(appleProfileSql);
     const upgraded = await client.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM "Club"`);
     if (upgraded.rows[0]?.count !== "1") {
       throw new Error("Upgrade migration did not preserve the existing Club row.");
@@ -130,8 +136,8 @@ try {
   const migrationCount = await database.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint AS count FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL
   `;
-  if (migrationCount[0]?.count !== 4n) {
-    throw new Error("Expected exactly four completed database migrations.");
+  if (migrationCount[0]?.count !== 5n) {
+    throw new Error("Expected exactly five completed database migrations.");
   }
 
   const fixtureCount = await database.user.count({

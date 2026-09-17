@@ -29,6 +29,10 @@ describe("deployment Compose", () => {
     for (const variableName of [
       "AUTH_BASE_URL",
       "AUTH_SECRET",
+      "APPLE_CLIENT_ID",
+      "APPLE_KEY_ID",
+      "APPLE_PRIVATE_KEY",
+      "APPLE_TEAM_ID",
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
     ]) {
@@ -98,6 +102,7 @@ describe("deployment Compose", () => {
       ["api", "API_HOST"],
       ["api", "API_PORT"],
       ["api", "AUTH_SECRET"],
+      ["api", "APPLE_PRIVATE_KEY"],
       ["api", "GOOGLE_CLIENT_SECRET"],
       ["worker", "SHUTDOWN_TIMEOUT_MS"],
     ] as const) {
@@ -112,6 +117,7 @@ describe("deployment Compose", () => {
     expect(validDeployments.uat.services.api.environment.AUTH_BASE_URL).toBe("https://uat.pick-flick.app");
     expect(validDeployments.production.services.api.environment.AUTH_BASE_URL).toBe("https://pick-flick.app");
     expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("AUTH_SECRET");
+    expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("APPLE_PRIVATE_KEY");
     expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("GOOGLE_CLIENT_SECRET");
   });
 

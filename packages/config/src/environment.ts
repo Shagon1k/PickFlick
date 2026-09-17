@@ -1,3 +1,4 @@
+import { createPrivateKey } from "node:crypto";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,6 +36,10 @@ export interface RuntimeEnvironment {
   readonly auth: {
     readonly baseUrl: string;
     readonly secret: string;
+    readonly appleClientId: string;
+    readonly appleKeyId: string;
+    readonly applePrivateKey: string;
+    readonly appleTeamId: string;
     readonly googleClientId: string;
     readonly googleClientSecret: string;
     readonly secureCookies: boolean;
@@ -302,6 +307,10 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const workerEnvironment = parseWorkerValues(source, appEnvironment, failures);
   const authBaseUrl = originUrl(source, "AUTH_BASE_URL", appEnvironment, failures);
   const authSecret = required(source, "AUTH_SECRET", failures);
+  const appleClientId = required(source, "APPLE_CLIENT_ID", failures);
+  const appleKeyId = required(source, "APPLE_KEY_ID", failures);
+  const applePrivateKey = required(source, "APPLE_PRIVATE_KEY", failures);
+  const appleTeamId = required(source, "APPLE_TEAM_ID", failures);
   const googleClientId = required(source, "GOOGLE_CLIENT_ID", failures);
   const googleClientSecret = required(source, "GOOGLE_CLIENT_SECRET", failures);
 
@@ -310,6 +319,26 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   }
   if (authSecret && authSecret.length < 32) {
     failures.push({ name: "AUTH_SECRET", reason: "must contain at least 32 characters" });
+  }
+  if ((appEnvironment === "uat" || appEnvironment === "production") && applePrivateKey) {
+    try {
+      const normalizedPrivateKey = applePrivateKey.replaceAll("\\n", "\n");
+      if (!normalizedPrivateKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
+        throw new Error("Not PKCS#8 PEM.");
+      }
+      const privateKey = createPrivateKey(normalizedPrivateKey);
+      if (
+        privateKey.asymmetricKeyType !== "ec" ||
+        privateKey.asymmetricKeyDetails?.namedCurve !== "prime256v1"
+      ) {
+        throw new Error("Not an EC P-256 key.");
+      }
+    } catch {
+      failures.push({
+        name: "APPLE_PRIVATE_KEY",
+        reason: "must be a valid EC P-256 PKCS#8 PEM private key in uat or production",
+      });
+    }
   }
   if (failures.length > 0) {
     throw new EnvironmentValidationError(failures);
@@ -322,6 +351,10 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
     auth: {
       baseUrl: authBaseUrl,
       secret: authSecret,
+      appleClientId,
+      appleKeyId,
+      applePrivateKey,
+      appleTeamId,
       googleClientId,
       googleClientSecret,
       secureCookies: appEnvironment === "uat" || appEnvironment === "production",

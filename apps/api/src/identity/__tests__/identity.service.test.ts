@@ -32,6 +32,10 @@ const environment = {
   auth: {
     baseUrl: "http://127.0.0.1:3000",
     secret: "synthetic-auth-secret-at-least-32-characters",
+    appleClientId: "synthetic-apple-client-id",
+    appleKeyId: "SYNTHKEY1",
+    applePrivateKey: "local-synthetic-apple-private-key",
+    appleTeamId: "SYNTHTEAM1",
     googleClientId: "synthetic-google-client-id",
     googleClientSecret: "synthetic-google-client-secret",
     secureCookies: false,
@@ -51,7 +55,13 @@ describe("identity configuration", () => {
       updateAccountOnSignIn: false,
       storeAccountCookie: false,
       storeStateStrategy: "database",
-      accountLinking: { disableImplicitLinking: true, enabled: false },
+      accountLinking: {
+        allowDifferentEmails: true,
+        allowUnlinkingAll: false,
+        disableImplicitLinking: true,
+        enabled: true,
+        updateUserInfoOnLink: false,
+      },
     });
     expect(auth.options.session).toMatchObject({
       cookieCache: { enabled: false },
@@ -63,15 +73,15 @@ describe("identity configuration", () => {
       name: "pickflick.session_token",
       attributes: { httpOnly: true, path: "/", sameSite: "lax", secure: false },
     });
-    expect(auth.options.plugins?.[0]?.id).toBe("pickflick-google-oidc");
-    expect(auth.options.account?.accountLinking?.trustedProviders).toEqual(["google"]);
+    expect(auth.options.plugins?.[0]?.id).toBe("pickflick-oidc-providers");
+    expect(auth.options.account?.accountLinking?.trustedProviders).toEqual(["apple", "google"]);
   });
 
-  it("discards provider credentials because Google sign-in needs only the provider subject", async () => {
+  it("discards provider credentials because sign-in needs only the provider subject", async () => {
     const createHook = auth.options.databaseHooks?.account?.create?.before;
     const updateHook = auth.options.databaseHooks?.account?.update?.before;
 
-    expect(await createHook?.()).toEqual({
+    expect(await createHook?.({ providerId: "google" } as never, null)).toEqual({
       data: {
         accessToken: null,
         refreshToken: null,
@@ -81,7 +91,7 @@ describe("identity configuration", () => {
         scope: null,
       },
     });
-    expect(await updateHook?.()).toEqual({
+    expect(await updateHook?.({ providerId: "google" }, null)).toEqual({
       data: {
         accessToken: null,
         refreshToken: null,
@@ -133,6 +143,22 @@ describe("identity configuration", () => {
           user: { email: "person@example.invalid", emailVerified: true },
         },
       ),
+    ).toBeUndefined();
+  });
+
+  it("accepts only verified Apple email for first-time profile bootstrap", async () => {
+    const validate = auth.options.user?.validateUserInfo;
+    expect(
+      await validate?.({
+        source: { action: "create-user", method: "oauth", oauth: { providerId: "apple" } },
+        user: { email: "relay@privaterelay.appleid.com", emailVerified: false },
+      }),
+    ).toEqual({ error: "apple_email_not_verified" });
+    expect(
+      await validate?.({
+        source: { action: "create-user", method: "oauth", oauth: { providerId: "apple" } },
+        user: { email: "relay@privaterelay.appleid.com", emailVerified: true },
+      }),
     ).toBeUndefined();
   });
 });

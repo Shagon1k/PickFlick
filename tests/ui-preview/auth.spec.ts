@@ -26,13 +26,12 @@ async function openLogin(page: Page, viewport = viewports[0], route = "/login") 
   });
 }
 
-test("Login is accessible and keeps Apple visibly unavailable", async ({ page }) => {
+test("Login is accessible with both approved identity providers", async ({ page }) => {
   for (const viewport of [viewports[0], viewports[3]]) {
     await openLogin(page, viewport);
     await expect(page.getByRole("heading", { level: 1, name: "Welcome to PickFlick" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Continue with Google" })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "Continue with Apple" })).toBeDisabled();
-    await expect(page.getByText("Apple sign-in is coming next.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Continue with Apple" })).toBeEnabled();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   }
 });
@@ -84,6 +83,24 @@ test("Google sign-in sends only an allowlisted return target and stores no token
     session: Object.keys(globalThis.sessionStorage),
   }));
   expect(storage).toEqual({ local: [], session: [] });
+});
+
+test("Apple sign-in starts the approved server-side provider flow", async ({ page }) => {
+  let requestBody: Record<string, unknown> | undefined;
+  await page.route("**/api/auth/sign-in/social", async (route) => {
+    requestBody = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirect: true, url: "/login?oauth_started=apple" }),
+      status: 200,
+    });
+  });
+
+  await openLogin(page, viewports[0]);
+  await page.getByRole("button", { name: "Continue with Apple" }).click();
+  await expect(page).toHaveURL(/oauth_started=apple/);
+  expect(requestBody).toMatchObject({ callbackURL: "/app", provider: "apple" });
+  expect(JSON.stringify(requestBody)).not.toMatch(/token|secret/i);
 });
 
 test("Login preserves a supported invitation and never reflects raw provider errors", async ({ page }) => {

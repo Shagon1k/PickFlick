@@ -1,5 +1,4 @@
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
-import type { BetterAuthPlugin } from "better-auth";
 import { createAuthorizationURL, verifyProviderIdToken } from "better-auth/oauth2";
 import { google } from "better-auth/social-providers";
 
@@ -7,7 +6,7 @@ import { google } from "better-auth/social-providers";
  * Wraps Better Auth's Google adapter so redirect sign-in binds the verified
  * ID token to the browser's one-time OAuth attempt with an OIDC nonce.
  */
-export function googleOidcProvider(environment: RuntimeEnvironment): BetterAuthPlugin {
+export function createGoogleOidcProvider(environment: RuntimeEnvironment) {
   const options = {
     accessType: "online" as const,
     clientId: environment.auth.googleClientId,
@@ -53,8 +52,5 @@ export function googleOidcProvider(environment: RuntimeEnvironment): BetterAuthP
     },
   };
 
-  return {
-    id: "pickflick-google-oidc",
-    init: () => ({ context: { socialProviders: [provider] } }),
-  };
+  return provider;
 }

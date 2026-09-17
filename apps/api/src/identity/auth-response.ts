@@ -1,13 +1,17 @@
 import type { BetterAuthPlugin } from "better-auth";
 import { isAllowedAuthReturnTarget } from "@pickflick/contracts";
 
-const safeAuthenticationErrors = new Set([
-  "access_denied",
-  "account_not_linked",
-  "google_email_not_verified",
-  "state_mismatch",
-  "state_not_found",
-]);
+const safeAuthenticationErrors: Readonly<Record<string, string>> = {
+  access_denied: "access_denied",
+  account_already_linked_to_different_user: "account_not_linked",
+  account_not_linked: "account_not_linked",
+  apple_email_not_verified: "apple_email_not_verified",
+  email_not_found: "apple_email_not_verified",
+  google_email_not_verified: "google_email_not_verified",
+  state_mismatch: "state_mismatch",
+  state_not_found: "state_not_found",
+  unable_to_link_account: "account_not_linked",
+};
 
 export function sanitizeAuthenticationRedirect(location: string, baseUrl: string): string {
   const loginUrl = new URL("/login", baseUrl);
@@ -25,7 +29,7 @@ export function sanitizeAuthenticationRedirect(location: string, baseUrl: string
   if (isAllowedAuthReturnTarget(returnTo)) {
     loginUrl.searchParams.set("returnTo", returnTo);
   }
-  loginUrl.searchParams.set("error", safeAuthenticationErrors.has(error) ? error : "authentication_failed");
+  loginUrl.searchParams.set("error", safeAuthenticationErrors[error] ?? "authentication_failed");
   return loginUrl.toString();
 }
 
