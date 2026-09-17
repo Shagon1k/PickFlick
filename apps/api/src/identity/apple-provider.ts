@@ -4,6 +4,7 @@ import { createAuthorizationURL, verifyProviderIdToken } from "better-auth/oauth
 import { apple } from "better-auth/social-providers";
 
 import { createAppleClientSecret } from "./apple-client-secret.js";
+import { normalizeAppleDisplayName } from "./apple-profile.js";
 
 const appleAuthorizationEndpoint = "https://appleid.apple.com/auth/authorize";
 
@@ -16,8 +17,12 @@ export function createAppleOidcProvider(
   environment: RuntimeEnvironment,
   database: ReturnType<typeof createDatabaseClient>,
 ) {
+  if (!environment.auth.appleSignInEnabled) {
+    throw new Error("Apple Sign In is disabled.");
+  }
+  const appleAuth = environment.auth;
   const options = {
-    clientId: environment.auth.appleClientId,
+    clientId: appleAuth.appleClientId,
     // Authorization only checks that this value exists. Token exchange is
     // overridden below and receives a newly signed secret for every request.
     clientSecret: "generated-per-token-exchange",
@@ -48,7 +53,7 @@ export function createAppleOidcProvider(
     async validateAuthorizationCode(input: Parameters<typeof baseProvider.validateAuthorizationCode>[0]) {
       return apple({
         ...options,
-        clientSecret: createAppleClientSecret(environment.auth),
+        clientSecret: createAppleClientSecret(appleAuth),
       }).validateAuthorizationCode(input);
     },
     async getUserInfo(tokens: Parameters<typeof baseProvider.getUserInfo>[0]) {
@@ -61,8 +66,19 @@ export function createAppleOidcProvider(
       }
 
       const result = await baseProvider.getUserInfo(tokens);
-      if (!result || (result.user.email && result.user.emailVerified)) {
+      if (!result) {
         return result;
+      }
+
+      const sanitizedResult = {
+        ...result,
+        user: {
+          ...result.user,
+          name: normalizeAppleDisplayName(result.user.name) ?? "",
+        },
+      };
+      if (result.user.email && result.user.emailVerified) {
+        return sanitizedResult;
       }
 
       const existingAccount = await database.providerAccount.findUnique({
@@ -78,13 +94,13 @@ export function createAppleOidcProvider(
         },
       });
       if (!existingAccount) {
-        return result;
+        return sanitizedResult;
       }
 
       return {
-        ...result,
+        ...sanitizedResult,
         user: {
-          ...result.user,
+          ...sanitizedResult.user,
           email: existingAccount.providerEmail ?? existingAccount.user.email,
           emailVerified: true,
         },

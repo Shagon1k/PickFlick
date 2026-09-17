@@ -9,14 +9,18 @@ export function identityProviders(
   environment: RuntimeEnvironment,
   database: ReturnType<typeof createDatabaseClient>,
 ): BetterAuthPlugin {
+  const socialProviders: Array<
+    ReturnType<typeof createGoogleOidcProvider> | ReturnType<typeof createAppleOidcProvider>
+  > = [createGoogleOidcProvider(environment)];
+  if (environment.auth.appleSignInEnabled) {
+    socialProviders.push(createAppleOidcProvider(environment, database));
+  }
+
   return {
     id: "pickflick-oidc-providers",
     init: () => ({
       context: {
-        socialProviders: [
-          createGoogleOidcProvider(environment),
-          createAppleOidcProvider(environment, database),
-        ],
+        socialProviders,
       },
     }),
   };

@@ -35,6 +35,7 @@ const environment = {
   auth: {
     baseUrl: "http://127.0.0.1:3000",
     secret: "synthetic-auth-secret-at-least-32-characters",
+    appleSignInEnabled: false,
     appleClientId: "synthetic-apple-client-id",
     appleKeyId: "SYNTHKEY1",
     applePrivateKey: "local-synthetic-apple-private-key",
@@ -108,6 +109,18 @@ describe("authentication HTTP boundary", () => {
     expect(isAllowedAuthRequest("POST", "/api/auth/link-social")).toBe(true);
     expect(isAllowedAuthRequest("GET", "/api/auth/list-accounts")).toBe(true);
     expect(isAllowedAuthRequest("POST", "/api/auth/unlink-account")).toBe(true);
+  });
+
+  it("exposes the Apple callback only when Apple Sign In is enabled", async () => {
+    expect(isAllowedAuthRequest("POST", "/api/auth/callback/apple")).toBe(false);
+    expect(isAllowedAuthRequest("GET", "/api/auth/callback/apple", true)).toBe(true);
+
+    const response = await fetch(new URL("/api/auth/callback/apple", baseUrl), {
+      body: new URLSearchParams({ code: "synthetic", state: "synthetic" }),
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      method: "POST",
+    });
+    expect(response.status).toBe(404);
   });
 
   it("returns 404 for an unsupported account mutation", async () => {

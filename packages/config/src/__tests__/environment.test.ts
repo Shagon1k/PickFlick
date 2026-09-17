@@ -39,6 +39,7 @@ const validEnvironment = {
   CONTACT_HASH_SECRET: "local-contact-hash-secret-for-tests",
   AUTH_BASE_URL: "http://127.0.0.1:3000",
   AUTH_SECRET: "local-auth-secret-for-tests-change-me",
+  APPLE_SIGN_IN_ENABLED: "false",
   APPLE_CLIENT_ID: "synthetic-apple-client-id",
   APPLE_KEY_ID: "SYNTHKEY1",
   APPLE_PRIVATE_KEY: validApplePrivateKey,
@@ -75,7 +76,7 @@ describe("environment validation", () => {
         from: "PickFlick <pickflick@example.invalid>",
       },
       contact: { deliveryTo: "contact@example.invalid" },
-      auth: { baseUrl: "http://127.0.0.1:3000", secureCookies: false },
+      auth: { appleSignInEnabled: false, baseUrl: "http://127.0.0.1:3000", secureCookies: false },
     });
   });
 
@@ -227,13 +228,14 @@ describe("environment validation", () => {
     ).not.toHaveProperty("auth");
   });
 
-  it("requires and validates the authentication inventory without exposing secret values", () => {
+  it("requires and validates the enabled authentication inventory without exposing secret values", () => {
     const unsafeSecret = "short";
     expect(() =>
       parseRuntimeEnvironment({
         ...validEnvironment,
         AUTH_BASE_URL: "https://pick-flick.app/login?next=unsafe",
         AUTH_SECRET: unsafeSecret,
+        APPLE_SIGN_IN_ENABLED: "true",
         APPLE_CLIENT_ID: undefined,
         GOOGLE_CLIENT_ID: undefined,
       }),
@@ -248,12 +250,36 @@ describe("environment validation", () => {
     }
   });
 
+  it("does not require Apple credentials while Apple Sign In is disabled", () => {
+    expect(parseRuntimeEnvironment({
+      ...validEnvironment,
+      APPLE_CLIENT_ID: undefined,
+      APPLE_KEY_ID: undefined,
+      APPLE_PRIVATE_KEY: undefined,
+      APPLE_TEAM_ID: undefined,
+    })).toMatchObject({ auth: { appleSignInEnabled: false } });
+  });
+
+  it("fails closed when Apple Sign In is enabled without its provider configuration", () => {
+    expect(() => parseRuntimeEnvironment({
+      ...validEnvironment,
+      APPLE_SIGN_IN_ENABLED: "true",
+      APPLE_CLIENT_ID: undefined,
+      APPLE_KEY_ID: undefined,
+      APPLE_PRIVATE_KEY: undefined,
+      APPLE_TEAM_ID: undefined,
+    })).toThrow(
+      /APPLE_CLIENT_ID is required; APPLE_KEY_ID is required; APPLE_PRIVATE_KEY is required; APPLE_TEAM_ID is required/,
+    );
+  });
+
   it.each(["uat", "production"])("requires an Apple EC P-256 PKCS#8 private key in %s", (appEnvironment) => {
     for (const applePrivateKey of ["local-synthetic-apple-private-key", invalidAppleRsaPrivateKey]) {
       expect(() =>
         parseRuntimeEnvironment({
           ...validEnvironment,
           APP_ENV: appEnvironment,
+          APPLE_SIGN_IN_ENABLED: "true",
           APPLE_PRIVATE_KEY: applePrivateKey,
           AUTH_BASE_URL: `https://${appEnvironment}.pick-flick.app`,
           CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",

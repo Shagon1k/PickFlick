@@ -28,6 +28,16 @@ function parseJson(value: unknown): unknown {
   }
 }
 
+export function sanitizeAppleCallbackProfile(value: unknown): string | undefined {
+  const firstReturn = parseJson(value) as AppleFirstReturn | undefined;
+  const firstName = normalizeAppleDisplayName(firstReturn?.name?.firstName);
+  const lastName = normalizeAppleDisplayName(firstReturn?.name?.lastName);
+  if (!firstName && !lastName) {
+    return undefined;
+  }
+  return JSON.stringify({ name: { ...(firstName ? { firstName } : {}), ...(lastName ? { lastName } : {}) } });
+}
+
 function parseIdTokenClaims(idToken: string): AppleIdTokenClaims | undefined {
   try {
     const encodedPayload = idToken.split(".")[1];
@@ -40,12 +50,16 @@ function parseIdTokenClaims(idToken: string): AppleIdTokenClaims | undefined {
   }
 }
 
-function normalizedName(value: unknown): string | undefined {
+export function normalizeAppleDisplayName(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
-  const result = value.trim().replace(/\s+/g, " ");
-  return result ? result.slice(0, 200) : undefined;
+  const result = value
+    .normalize("NFC")
+    .replace(/[\p{Cc}\p{Cf}]+/gu, " ")
+    .trim()
+    .replace(/\s+/gu, " ");
+  return result ? [...result].slice(0, 200).join("") : undefined;
 }
 
 export function appleProviderAccountProfile(
@@ -74,8 +88,8 @@ export function appleProviderAccountProfile(
   }
 
   const firstReturn = parseJson(callbackUser) as AppleFirstReturn | undefined;
-  const firstName = normalizedName(firstReturn?.name?.firstName);
-  const lastName = normalizedName(firstReturn?.name?.lastName);
+  const firstName = normalizeAppleDisplayName(firstReturn?.name?.firstName);
+  const lastName = normalizeAppleDisplayName(firstReturn?.name?.lastName);
   const displayName = [firstName, lastName].filter(Boolean).join(" ");
   if (displayName) {
     profile.providerDisplayName = displayName.slice(0, 200);

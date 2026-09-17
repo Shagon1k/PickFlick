@@ -65,10 +65,7 @@ block is the source of truth and must not be replaced by CI. At minimum it requi
 APP_ENV=uat
 AUTH_BASE_URL=https://uat.pick-flick.app
 AUTH_SECRET
-APPLE_CLIENT_ID
-APPLE_KEY_ID
-APPLE_PRIVATE_KEY
-APPLE_TEAM_ID
+APPLE_SIGN_IN_ENABLED=false
 CONTACT_DELIVERY_TO
 CONTACT_HASH_SECRET
 DATABASE_URL
@@ -99,13 +96,17 @@ Use a UAT-only Google OAuth web client. Set its only redirect URI for this appli
 empty because the OAuth exchange is server-side. Never reuse the managed-preview or production
 OAuth client or credentials.
 
-Use a UAT-only Apple Services ID and Sign in with Apple key. Register
-`https://uat.pick-flick.app` and `https://uat.pick-flick.app/api/auth/callback/apple` with Apple.
-Enter the EC P-256 `.p8` key as PKCS#8 PEM in `APPLE_PRIVATE_KEY`; encode line breaks as `\n` if Dokploy's
-environment editor requires one line. Never reuse the preview or production Services ID or key.
+Keep Apple Sign In disabled in UAT. Do not configure Apple callback registration or `APPLE_*`
+credentials until the owner separately approves Apple Developer Program membership and an Apple
+sandbox/UAT verification run. For that future run, use a UAT-only Apple Services ID and Sign in
+with Apple key, register `https://uat.pick-flick.app` and
+`https://uat.pick-flick.app/api/auth/callback/apple`, set `APPLE_SIGN_IN_ENABLED=true`, and enter the
+EC P-256 `.p8` key as PKCS#8 PEM. Encode line breaks as `\n` if Dokploy requires one line. Never
+reuse preview or production Apple credentials.
 
-Keep `AUTH_SECRET`, `APPLE_PRIVATE_KEY`, and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret
-environment. Do not save a rendered Compose configuration as deployment evidence.
+Keep `AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret environment. If Apple is
+enabled later, apply the same rule to `APPLE_PRIVATE_KEY`. Do not save a rendered Compose
+configuration as deployment evidence.
 
 Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
 `worker`, and `web` exist and none has a host-published port.

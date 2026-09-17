@@ -6,7 +6,7 @@ const safeAuthenticationErrors: Readonly<Record<string, string>> = {
   account_already_linked_to_different_user: "account_not_linked",
   account_not_linked: "account_not_linked",
   apple_email_not_verified: "apple_email_not_verified",
-  email_not_found: "apple_email_not_verified",
+  email_not_found: "email_not_found",
   google_email_not_verified: "google_email_not_verified",
   state_mismatch: "state_mismatch",
   state_not_found: "state_not_found",

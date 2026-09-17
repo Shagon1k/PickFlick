@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { resolveAuthReturnTarget } from "@pickflick/contracts";
 import { BrandImage } from "@pickflick/ui";
@@ -16,7 +17,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
+  await connection();
   const parameters = await searchParams;
+  const appleSignInEnabled = process.env.APPLE_SIGN_IN_ENABLED === "true";
   const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
   const errorMessage = resolveLoginErrorMessage(firstSearchValue(parameters.error));
 
@@ -35,7 +38,7 @@ export default async function LoginPage({
           <h1 id="login-title">Welcome to PickFlick</h1>
           <p className={styles.lead}>Sign in to join your group&apos;s screening room.</p>
           {errorMessage ? <p className={styles.errorBanner} role="alert">{errorMessage}</p> : null}
-          <LoginActions returnTo={returnTo} />
+          <LoginActions appleSignInEnabled={appleSignInEnabled} returnTo={returnTo} />
           <p className={styles.legal}>
             By continuing, you agree to PickFlick&apos;s <a href="/legal/terms">Terms of Service</a> and {" "}
             <a href="/legal/privacy">Privacy Policy</a>.

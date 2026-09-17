@@ -30,6 +30,15 @@ describe("authentication response sanitization", () => {
     ).toBe("http://127.0.0.1:3000/login?error=account_not_linked");
   });
 
+  it("keeps a missing provider email generic", () => {
+    expect(
+      sanitizeAuthenticationRedirect(
+        "http://127.0.0.1:3000/login?error=email_not_found",
+        "http://127.0.0.1:3000",
+      ),
+    ).toBe("http://127.0.0.1:3000/login?error=email_not_found");
+  });
+
   it("preserves only an allowlisted return target on an error redirect", () => {
     expect(
       sanitizeAuthenticationRedirect(

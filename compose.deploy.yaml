@@ -62,10 +62,11 @@ services:
       API_PORT: 3001
       AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
-      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:?APPLE_CLIENT_ID is required}
-      APPLE_KEY_ID: ${APPLE_KEY_ID:?APPLE_KEY_ID is required}
-      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:?APPLE_PRIVATE_KEY is required}
-      APPLE_TEAM_ID: ${APPLE_TEAM_ID:?APPLE_TEAM_ID is required}
+      APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
+      APPLE_CLIENT_ID: "${APPLE_CLIENT_ID:-}"
+      APPLE_KEY_ID: "${APPLE_KEY_ID:-}"
+      APPLE_PRIVATE_KEY: "${APPLE_PRIVATE_KEY:-}"
+      APPLE_TEAM_ID: "${APPLE_TEAM_ID:-}"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
     depends_on:
@@ -108,6 +109,7 @@ services:
         BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
         SOURCE_REVISION: ${SOURCE_REVISION:-}
     environment:
+      APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
       BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
       NODE_ENV: production
     depends_on:

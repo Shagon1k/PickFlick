@@ -1,16 +1,23 @@
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 
 import { loadRuntimeEnvironment } from "@pickflick/config/environment";
 import { assertSafeSeedOrResetTarget, createDatabaseClient } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
 import type { BetterAuthPlugin } from "better-auth";
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { testUtils } from "better-auth/plugins";
 
+import { restrictAuthHandler } from "../src/identity/auth-http.js";
+import { normalizeAppleDisplayName } from "../src/identity/apple-profile.js";
 import { createIdentityAuth } from "../src/identity/identity.service.js";
 
 const environment = loadRuntimeEnvironment();
 if (environment.appEnvironment !== "local" && environment.appEnvironment !== "test") {
   throw new Error("The authentication integration check may run only against local or test data.");
+}
+if (!environment.auth.appleSignInEnabled) {
+  throw new Error("Set APPLE_SIGN_IN_ENABLED=true with deterministic local/test Apple configuration for auth:check.");
 }
 assertSafeSeedOrResetTarget(environment);
 
@@ -176,7 +183,9 @@ function deterministicAppleProvider() {
         select: { providerEmail: true, user: { select: { email: true } } },
       });
       const emailVerified = profile.email_verified === true || profile.email_verified === "true";
-      const name = [tokens.user?.name?.firstName, tokens.user?.name?.lastName].filter(Boolean).join(" ");
+      const name = normalizeAppleDisplayName(
+        [tokens.user?.name?.firstName, tokens.user?.name?.lastName].filter(Boolean).join(" "),
+      ) ?? "";
       return {
         data: { ...profile, name },
         user: {
@@ -207,6 +216,23 @@ const deterministicAuth = createIdentityAuth(environment, database, logger, [
   deterministicProviders(),
   testUtils(),
 ]);
+const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(deterministicAuth), {
+  appleSignInEnabled: true,
+  database,
+  listAccounts: (request) => deterministicAuth.api.listUserAccounts({
+    asResponse: true,
+    headers: fromNodeHeaders(request.headers),
+  }),
+}));
+await new Promise<void>((resolve, reject) => {
+  deterministicHttpServer.once("error", reject);
+  deterministicHttpServer.listen(0, "127.0.0.1", resolve);
+});
+const deterministicHttpAddress = deterministicHttpServer.address();
+if (!deterministicHttpAddress || typeof deterministicHttpAddress === "string") {
+  throw new Error("The deterministic authentication HTTP server did not expose a local port.");
+}
+const deterministicHttpBaseUrl = `http://127.0.0.1:${deterministicHttpAddress.port}`;
 const existingRateLimitIds = new Set(
   (await database.authRateLimit.findMany({ select: { id: true } })).map(({ id }) => id),
 );
@@ -346,13 +372,34 @@ async function submitAppleCallback(
   code: string,
   user?: Readonly<Record<string, unknown>>,
 ): Promise<Response> {
-  const callbackUrl = new URL("/api/auth/callback/apple", environment.auth.baseUrl);
-  callbackUrl.searchParams.set("code", code);
-  callbackUrl.searchParams.set("state", attempt.state);
+  const body = new URLSearchParams({ code, state: attempt.state });
   if (user) {
-    callbackUrl.searchParams.set("user", JSON.stringify(user));
+    body.set("user", JSON.stringify(user));
   }
-  return deterministicAuth.handler(new Request(callbackUrl, { headers: { cookie: attempt.cookie } }));
+  const postResponse = await fetch(`${deterministicHttpBaseUrl}/api/auth/callback/apple`, {
+    body,
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      cookie: attempt.cookie,
+    },
+    method: "POST",
+    redirect: "manual",
+  });
+  const location = postResponse.headers.get("location");
+  const redirect = location ? new URL(location, deterministicHttpBaseUrl) : undefined;
+  if (
+    postResponse.status !== 303 ||
+    !redirect ||
+    redirect.searchParams.get("code") !== code ||
+    redirect.searchParams.get("state") !== attempt.state ||
+    [...redirect.searchParams.keys()].some((key) => key !== "code" && key !== "state")
+  ) {
+    throw new Error("The Apple form POST did not use the profile-free server-side callback handoff.");
+  }
+  return fetch(redirect, {
+    headers: { cookie: attempt.cookie },
+    redirect: "manual",
+  });
 }
 
 async function completeAppleSignIn(code: string, user?: Readonly<Record<string, unknown>>) {
@@ -650,16 +697,18 @@ try {
     throw new Error("An unverified Apple email did not return the stable provider error.");
   }
 
+  const longAppleLastName = `First ${"Return ".repeat(50)}`;
+  const expectedAppleDisplayName = normalizeAppleDisplayName(`Apple ${longAppleLastName}`);
   const registeredApple = await completeAppleSignIn("apple-new-user", {
     email: appleEmail,
-    name: { firstName: "Apple", lastName: "First Return" },
+    name: { firstName: "\u0000Apple\u200b", lastName: longAppleLastName },
   });
   if (registeredApple.response.status !== 302 || registeredApple.response.headers.get("location") !== "/app") {
     throw new Error("A new Apple User did not reach the validated application return target.");
   }
   const appleUser = await database.user.findUnique({ where: { email: appleEmail } });
-  if (!appleUser || appleUser.displayName !== "Apple First Return") {
-    throw new Error("Apple first-return profile fields did not bootstrap the new User.");
+  if (!appleUser || appleUser.displayName !== expectedAppleDisplayName || [...appleUser.displayName].length > 200) {
+    throw new Error("Apple first-return profile fields did not safely bootstrap the new User.");
   }
   userIds.add(appleUser.id);
   const appleAccount = await database.providerAccount.findUnique({
@@ -669,7 +718,7 @@ try {
     !appleAccount ||
     appleAccount.userId !== appleUser.id ||
     appleAccount.providerEmail !== appleEmail ||
-    appleAccount.providerDisplayName !== "Apple First Return" ||
+    appleAccount.providerDisplayName !== expectedAppleDisplayName ||
     appleAccount.accessToken ||
     appleAccount.refreshToken ||
     appleAccount.idToken ||
@@ -683,7 +732,7 @@ try {
     throw new Error("A known Apple subject could not sign in after Apple omitted later profile fields.");
   }
   const appleUserAfterReturn = await database.user.findUnique({ where: { id: appleUser.id } });
-  if (appleUserAfterReturn?.displayName !== "Apple First Return" || appleUserAfterReturn.email !== appleEmail) {
+  if (appleUserAfterReturn?.displayName !== expectedAppleDisplayName || appleUserAfterReturn.email !== appleEmail) {
     throw new Error("A later Apple callback erased first-return profile fields or moved the identity by email.");
   }
 
@@ -744,16 +793,14 @@ try {
     throw new Error("Explicit Apple relay linking changed the User profile or lost provider-owned fields.");
   }
 
-  const listedAccounts = await deterministicAuth.handler(
-    new Request(`${environment.auth.baseUrl}/api/auth/list-accounts`, {
-      headers: { cookie: registered.sessionCookie },
-    }),
-  );
+  const listedAccounts = await fetch(`${deterministicHttpBaseUrl}/api/auth/list-accounts`, {
+    headers: { cookie: registered.sessionCookie },
+  });
   const listedAccountBody = await listedAccounts.text();
   if (
     !listedAccounts.ok ||
-    !listedAccountBody.includes('"providerId":"apple"') ||
-    /providerEmail|providerDisplayName|accessToken|refreshToken|idToken/.test(listedAccountBody)
+    !listedAccountBody.includes('"provider":"apple"') ||
+    /accountId|providerSubject|providerEmail|providerDisplayName|accessToken|refreshToken|idToken/.test(listedAccountBody)
   ) {
     throw new Error("Linked-account listing exposed provider profile or credential fields.");
   }
@@ -806,9 +853,12 @@ try {
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, Apple first-return and relay fields, fixed provider permissions, fresh explicit linking, duplicate/conflict denial, last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, profile-free Apple POST handoff, bounded first-return and relay fields, filtered account listings, fixed provider permissions, fresh explicit linking, duplicate/conflict denial, last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
+  await new Promise<void>((resolve, reject) => {
+    deterministicHttpServer.close((error) => error ? reject(error) : resolve());
+  });
   if (userIds.size > 0) {
     await database.user.deleteMany({ where: { id: { in: [...userIds] } } });
   }

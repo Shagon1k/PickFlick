@@ -225,16 +225,14 @@ guards before invoking `prisma migrate reset`. Never use it against shared, UAT,
 
 ## Managed preview authentication
 
-Managed previews use dedicated **PickFlick Preview** Google and Apple OAuth clients. Supply these
-eight values through the managed preview environment or secret mechanism before Compose validation:
+Managed previews use a dedicated **PickFlick Preview** Google OAuth client. Apple Sign In is
+intentionally dormant. Supply these values through the managed preview environment or secret
+mechanism before Compose validation:
 
 ```text
 AUTH_BASE_URL=https://preview-N.shagon1k.win
 AUTH_SECRET
-APPLE_CLIENT_ID
-APPLE_KEY_ID
-APPLE_PRIVATE_KEY
-APPLE_TEAM_ID
+APPLE_SIGN_IN_ENABLED=false
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
 ```
@@ -245,19 +243,23 @@ JavaScript origins empty: PickFlick performs the Google OAuth exchange on the se
 load Google's browser SDK. Add an origin only if a later approved direct browser-SDK flow requires
 one.
 
-Register the preview origin and `${AUTH_BASE_URL}/api/auth/callback/apple` with the Apple Services
-ID. Supply the Apple `.p8` key as PKCS#8 PEM; an environment editor may encode its line breaks as
-`\n`. PickFlick signs a five-minute Apple client secret for each token exchange and does not store
-the generated assertion.
+Do not supply `APPLE_CLIENT_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, or `APPLE_TEAM_ID` while the
+gate is false. `compose.preview.yaml` defaults the gate to false and does not require Apple
+credentials in that state. Enabling the gate without all four values makes API startup fail.
 
-`compose.preview.yaml` requires all eight inputs; it contains no fallback authentication values.
+Apple activation requires a separate owner-approved Apple Developer Program and provider-sandbox
+step. After that approval, register the preview origin and `${AUTH_BASE_URL}/api/auth/callback/apple`
+with the Apple Services ID, set `APPLE_SIGN_IN_ENABLED=true`, and supply the four Apple values. The
+`.p8` key must be EC P-256 PKCS#8 PEM; an environment editor may encode line breaks as `\n`.
+PickFlick signs a five-minute client secret for each token exchange and does not store it.
+
 `pnpm compose:check` validates the contract with synthetic values and `docker compose config -q`,
 which emits no resolved configuration. Never save a rendered preview configuration, logs, or
 screenshots containing `AUTH_SECRET`, `APPLE_PRIVATE_KEY`, or `GOOGLE_CLIENT_SECRET`. Keep provider
 identifiers at the same server-only configuration boundary.
 
-Preview, UAT, and production use separate Google and Apple OAuth clients and keys. Never copy
-preview credentials into UAT or production.
+Preview, UAT, and production use separate Google OAuth clients. If Apple is approved and enabled
+later, each environment must also use a separate Apple OAuth client and key.
 
 ## Runtime variables
 
@@ -271,10 +273,11 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `API_PORT` | Integer from 1 through 65535 | API | No |
 | `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
 | `AUTH_SECRET` | At least 32 characters used to protect authentication state and encrypted provider-token fields | API | Yes |
-| `APPLE_CLIENT_ID` | Apple Services ID for the current environment | API | Yes |
-| `APPLE_KEY_ID` | Identifier of the Apple Sign in private key | API | Yes |
-| `APPLE_PRIVATE_KEY` | Apple EC P-256 `.p8` key as PKCS#8 PEM; `\n`-encoded line breaks are accepted | API | Yes |
-| `APPLE_TEAM_ID` | Apple Developer team identifier used to issue client assertions | API | Yes |
+| `APPLE_SIGN_IN_ENABLED` | Optional boolean; defaults to `false`. The API registers Apple and the web renders Apple actions only when `true` | API, web server | No |
+| `APPLE_CLIENT_ID` | Apple Services ID; required only when `APPLE_SIGN_IN_ENABLED=true` | API | Yes |
+| `APPLE_KEY_ID` | Apple Sign In private-key identifier; required only when enabled | API | Yes |
+| `APPLE_PRIVATE_KEY` | Apple EC P-256 `.p8` key as PKCS#8 PEM; required only when enabled; `\n`-encoded line breaks are accepted | API | Yes |
+| `APPLE_TEAM_ID` | Apple Developer team identifier; required only when enabled | API | Yes |
 | `GOOGLE_CLIENT_ID` | Google OAuth web-client identifier for the current environment | API | Yes |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth web-client secret for the current environment | API | Yes |
 | `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
@@ -292,14 +295,14 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
 | `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |
 
-Authentication configuration is API-only: do not expose it to the worker, web client, browser
-environment, logs, screenshots, or rendered Compose evidence. Configure separate Google and Apple
-OAuth clients for each deployed environment. The Google authorized redirect URI must exactly equal
+Authentication credentials are API-only: do not expose them to the worker, web client, browser
+environment, logs, screenshots, or rendered Compose evidence. The non-secret Apple gate also
+reaches the Next.js server so it can omit dormant actions. Configure a separate Google OAuth client
+for each deployed environment. The Google authorized redirect URI must exactly equal
 `AUTH_BASE_URL` followed by `/api/auth/callback/google`. Authorized JavaScript origins remain empty
-for the server-side flow. Register `AUTH_BASE_URL` and the `/api/auth/callback/apple` return URL with
-the Apple Services ID. The checked-in local values are synthetic and make deterministic checks
-possible, but they cannot complete a live provider sign-in. Store deployed secrets only in the
-environment's secret system and rotate them through a controlled provider and deployment change.
+for the server-side flow. Apple callback registration and credentials are unnecessary while its
+gate is false. Store deployed secrets only in the environment's secret system and rotate them
+through a controlled provider and deployment change.
 
 Better Auth 1.7.5 exposes the upstream atomic verification-consumption primitive added in
 [better-auth#9568](https://github.com/better-auth/better-auth/pull/9568), but its social OAuth

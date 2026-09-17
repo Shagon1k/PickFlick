@@ -23,16 +23,12 @@ function expectRejected(mutate: (deployments: Deployments) => void, message: Reg
 }
 
 describe("deployment Compose", () => {
-  it("requires every managed-preview authentication input without rendering secret values", () => {
+  it("requires active managed-preview authentication inputs without requiring dormant Apple credentials", () => {
     validatePreviewAuthContract();
 
     for (const variableName of [
       "AUTH_BASE_URL",
       "AUTH_SECRET",
-      "APPLE_CLIENT_ID",
-      "APPLE_KEY_ID",
-      "APPLE_PRIVATE_KEY",
-      "APPLE_TEAM_ID",
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
     ]) {
@@ -102,7 +98,7 @@ describe("deployment Compose", () => {
       ["api", "API_HOST"],
       ["api", "API_PORT"],
       ["api", "AUTH_SECRET"],
-      ["api", "APPLE_PRIVATE_KEY"],
+      ["api", "APPLE_SIGN_IN_ENABLED"],
       ["api", "GOOGLE_CLIENT_SECRET"],
       ["worker", "SHUTDOWN_TIMEOUT_MS"],
     ] as const) {
@@ -119,6 +115,8 @@ describe("deployment Compose", () => {
     expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("AUTH_SECRET");
     expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("APPLE_PRIVATE_KEY");
     expect(validDeployments.uat.services.worker.environment).not.toHaveProperty("GOOGLE_CLIENT_SECRET");
+    expect(validDeployments.uat.services.api.environment.APPLE_SIGN_IN_ENABLED).toBe("false");
+    expect(validDeployments.uat.services.web.environment.APPLE_SIGN_IN_ENABLED).toBe("false");
   });
 
   it("routes the public API path through web to the environment-specific API alias", () => {

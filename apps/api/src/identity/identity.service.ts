@@ -6,9 +6,10 @@ import { createDatabaseClient } from "@pickflick/database";
 import type { ApplicationLogger } from "@pickflick/observability";
 import { APIError, betterAuth, type BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import { toNodeHandler } from "better-auth/node";
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
+import { appleCallbackProfileHandoffPlugin } from "./apple-callback-handoff.js";
 import { appleProviderAccountProfile } from "./apple-profile.js";
 import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
@@ -27,8 +28,6 @@ const discardedProviderCredentialData = {
   scope: null,
 } as const;
 
-const supportedProviders = new Set(["apple", "google"]);
-
 function authenticationErrorCallback(baseUrl: string, returnTo: string): string {
   const errorCallbackURL = new URL("/login", baseUrl);
   errorCallbackURL.searchParams.set("returnTo", returnTo);
@@ -43,6 +42,7 @@ export function createIdentityAuth(
   logger: ApplicationLogger,
   plugins: BetterAuthPlugin[] = [],
 ) {
+  const supportedProviders = new Set(environment.auth.appleSignInEnabled ? ["apple", "google"] : ["google"]);
   const sessionCookieName = environment.auth.secureCookies
     ? "__Host-pickflick.session_token"
     : "pickflick.session_token";
@@ -103,13 +103,14 @@ export function createIdentityAuth(
         disableImplicitLinking: true,
         allowDifferentEmails: true,
         allowUnlinkingAll: false,
-        trustedProviders: ["apple", "google"],
+        trustedProviders: [...supportedProviders],
         updateUserInfoOnLink: false,
       },
     },
     emailAndPassword: { enabled: false },
     plugins: [
       identityProviders(environment, database),
+      ...(environment.auth.appleSignInEnabled ? [appleCallbackProfileHandoffPlugin(database)] : []),
       ...plugins,
       safeAuthenticationResponsePlugin(environment.auth.baseUrl),
     ],
@@ -127,7 +128,12 @@ export function createIdentityAuth(
         if (source.action === "create-user" && source.oauth?.providerId === "google" && user.emailVerified !== true) {
           return { error: "google_email_not_verified" };
         }
-        if (source.action === "create-user" && source.oauth?.providerId === "apple" && user.emailVerified !== true) {
+        if (
+          environment.auth.appleSignInEnabled &&
+          source.action === "create-user" &&
+          source.oauth?.providerId === "apple" &&
+          user.emailVerified !== true
+        ) {
           return { error: "apple_email_not_verified" };
         }
       },
@@ -261,7 +267,14 @@ export class IdentityService implements OnModuleDestroy {
   ) {
     this.database = createDatabaseClient(environment.databaseUrl);
     this.auth = createIdentityAuth(environment, this.database, logger);
-    this.handler = restrictAuthHandler(toNodeHandler(this.auth));
+    this.handler = restrictAuthHandler(toNodeHandler(this.auth), {
+      appleSignInEnabled: environment.auth.appleSignInEnabled,
+      database: this.database,
+      listAccounts: (request) => this.auth.api.listUserAccounts({
+        asResponse: true,
+        headers: fromNodeHeaders(request.headers),
+      }),
+    });
   }
 
   async onModuleDestroy(): Promise<void> {

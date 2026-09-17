@@ -8,10 +8,11 @@ import { startSocialSignIn, type IdentityProvider } from "./auth.service";
 import styles from "./login.module.css";
 
 interface LoginActionsProps {
+  readonly appleSignInEnabled: boolean;
   readonly returnTo: string;
 }
 
-export function LoginActions({ returnTo }: LoginActionsProps) {
+export function LoginActions({ appleSignInEnabled, returnTo }: LoginActionsProps) {
   const [pendingProvider, setPendingProvider] = useState<IdentityProvider>();
   const [error, setError] = useState("");
 
@@ -43,16 +44,18 @@ export function LoginActions({ returnTo }: LoginActionsProps) {
           <span className={styles.oauthIcon}><Icon name="google" /></span>
           Continue with Google
         </Button>
-        <Button
-          className={styles.oauthButton}
-          disabled={pendingProvider === "google"}
-          loading={pendingProvider === "apple"}
-          onClick={() => signIn("apple")}
-          variant="secondary"
-        >
-          <span className={`${styles.oauthIcon} ${styles.appleIcon}`}><Icon name="apple" /></span>
-          Continue with Apple
-        </Button>
+        {appleSignInEnabled ? (
+          <Button
+            className={styles.oauthButton}
+            disabled={pendingProvider === "google"}
+            loading={pendingProvider === "apple"}
+            onClick={() => signIn("apple")}
+            variant="secondary"
+          >
+            <span className={`${styles.oauthIcon} ${styles.appleIcon}`}><Icon name="apple" /></span>
+            Continue with Apple
+          </Button>
+        ) : null}
       </div>
       <p aria-live="polite" className={styles.feedback} data-visible={Boolean(error)} role="status">{error}</p>
     </div>

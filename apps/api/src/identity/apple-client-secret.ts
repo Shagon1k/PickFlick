@@ -10,7 +10,7 @@ function encodeJson(value: Readonly<Record<string, string | number>>): string {
 }
 
 export function createAppleClientSecret(
-  auth: RuntimeEnvironment["auth"],
+  auth: Extract<RuntimeEnvironment["auth"], { appleSignInEnabled: true }>,
   now: Date = new Date(),
 ): string {
   const issuedAt = Math.floor(now.getTime() / 1_000);

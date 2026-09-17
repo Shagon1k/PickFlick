@@ -32,6 +32,7 @@ const environment = {
   auth: {
     baseUrl: "http://127.0.0.1:3000",
     secret: "synthetic-auth-secret-at-least-32-characters",
+    appleSignInEnabled: true,
     appleClientId: "synthetic-apple-client-id",
     appleKeyId: "SYNTHKEY1",
     applePrivateKey: "local-synthetic-apple-private-key",
@@ -49,6 +50,34 @@ afterAll(async () => {
 });
 
 describe("identity configuration", () => {
+  it("keeps Apple unregistered and rejects direct Apple actions when the gate is disabled", async () => {
+    const disabledAuth = createIdentityAuth(
+      {
+        ...environment,
+        auth: { ...environment.auth, appleSignInEnabled: false },
+      },
+      database,
+      logger,
+    );
+    const context = await disabledAuth.$context;
+    expect(context.socialProviders.map(({ id }) => id)).toEqual(["google"]);
+    expect(disabledAuth.options.account?.accountLinking?.trustedProviders).toEqual(["google"]);
+
+    const before = disabledAuth.options.hooks?.before;
+    await expect(before?.({
+      body: { callbackURL: "/app", provider: "apple" },
+      path: "/sign-in/social",
+    } as never)).rejects.toMatchObject({ body: { code: "UNSUPPORTED_IDENTITY_PROVIDER" } });
+    await expect(before?.({
+      body: { callbackURL: "/app", provider: "apple" },
+      path: "/link-social",
+    } as never)).rejects.toMatchObject({ body: { code: "UNSUPPORTED_IDENTITY_LINK" } });
+    await expect(before?.({
+      body: { callbackURL: "/app", provider: "google" },
+      path: "/sign-in/social",
+    } as never)).resolves.toBeUndefined();
+  });
+
   it("uses database-backed, encrypted OAuth state and database-only sessions", () => {
     expect(auth.options.account).toMatchObject({
       encryptOAuthTokens: true,
