@@ -44,6 +44,13 @@ async function openApplicationError(page: Page, viewport: { height: number; widt
   await page.goto(ERROR_PREVIEW_ROUTE, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Simulate provider failure" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Projector Malfunction" })).toBeVisible();
+  await page.locator('[data-system-state="application-error"] .visual, [data-system-state="application-error"] .body').evaluateAll(
+    async (elements) => {
+      await Promise.all(
+        elements.flatMap((element) => element.getAnimations().map((animation) => animation.finished.catch(() => undefined))),
+      );
+    },
+  );
   await waitForAssets(page);
 }
 

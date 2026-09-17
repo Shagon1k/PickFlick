@@ -34,6 +34,13 @@ Phase 4 does not implement Club membership, password authentication, anonymous s
 settings, account deletion, or production provider provisioning. Alex supplies provider
 configuration through approved secret systems; repository evidence never records credentials.
 
+Apple Sign In remains dormant in every deployed environment. `APPLE_SIGN_IN_ENABLED` defaults to
+`false`; in that state the API does not register Apple, rejects direct Apple sign-in/link attempts,
+does not expose the Apple callback, and does not require Apple credentials. Login omits the Apple
+action. Enabling Apple requires a separate owner-approved Apple Developer Program decision plus
+sandbox/UAT configuration and verification. Startup fails if the gate is true without valid Apple
+configuration.
+
 ## Accepted implementation contract
 
 ### Library and ownership
@@ -81,8 +88,9 @@ configuration through approved secret systems; repository evidence never records
 
 Configure Better Auth with implicit linking disabled. Allow different provider emails only inside
 the explicit, fresh-session linking workflow needed for Apple relay addresses. Do not expose a
-generic email-match merge path. Trust only the configured Google and Apple providers for explicit
-linking, keep `allowUnlinkingAll` false, and keep provider profile updates on link disabled.
+generic email-match merge path. Trust only registered providers for explicit linking: Google while
+Apple is dormant, and Google plus Apple after approved activation. Keep `allowUnlinkingAll` false
+and keep provider profile updates on link disabled.
 Issue #26 keeps explicit linking disabled and exposes only the reviewed Google sign-in, callback,
 session-read, and sign-out routes. Issue #27 enables linking only after it adds the fresh-session
 intent and callback checks.
@@ -119,6 +127,9 @@ Issue #27 must not erase an existing display name merely because Apple does not 
 
 - Validate exact provider callback URLs, OAuth `state`, OIDC `nonce`, and PKCE where the provider
   flow supports it. OAuth state and link intent are single-use and expire after a bounded flow.
+- Keep Apple's first-return profile in a bounded server-side handoff keyed to the live state and
+  authorization code. The form POST redirect may contain only callback protocol fields, never the
+  Apple `user` payload.
 - Keep Better Auth CSRF, Origin, redirect, and host checks enabled. Deny credentialed cross-origin
   browser requests; do not enable permissive CORS for auth endpoints.
 - Protect non-auth API mutations with the explicit CSRF mechanism and Origin validation required
@@ -154,7 +165,7 @@ secret into fixtures, screenshots, logs, or pull-request evidence.
 | Provider contract | Issue #25 human-control approval on 2026-09-16 | Passed: explicit linking, conflict, callback, cookie, revocation, and ownership behavior approved. |
 | Better Auth/Nest/Prisma compatibility | Issue #26 focused integration, migration review, tests, and build | Passed locally: the 100 KB body cap precedes the auth handler; only reviewed auth routes are exposed; mixed-case email upgrades/conflicts fail safely; fixed identity-only permissions, provider-credential discard, database sessions, cookie behavior, origin/return rejection, state/nonce/PKCE, atomic state consumption before code exchange, safe callback errors, sign-out, and immediate revocation are covered. Better Auth 1.7.5 still needs the temporary state-consumption backport; deferred issue #147 removes it after a compatible upstream release. |
 | Google sandbox and Login | Issue #26 provider run, integration/E2E, preview, and log review | Partial: Login responsive/accessibility/interaction checks, visible sign-out failure feedback, and deterministic OAuth integration pass locally; owner Google sandbox configuration, exact-SHA hosted preview, and visual acknowledgment remain pending. |
-| Apple and linking | Issue #27 provider run, conflict tests, preview, and log review | Pending implementation and owner provider configuration. |
+| Apple and linking | Issue #27 provider run, conflict tests, preview, and log review | Passed locally behind the default-off gate: deterministic new/returning Apple sign-in, rate-limited one-per-state callback handoff with expiry cleanup, bounded canonical/provider names, relay metadata, generated five-minute client secrets, fresh explicit linking with caller parameters stripped, filtered account listings, duplicate/conflict denial, and serialized last-provider protection. Login reads the shared root gate and redirects authenticated Users. Owner Apple Developer Program approval, configuration, sandbox/UAT run, and enabled-state preview review are separate prerequisites. |
 | Boundary authorization | Issue #28 negative authorization, revocation, SSE/file, and security-log suites | Pending implementation. |
 
 At the Phase 4 boundary, move durable implementation facts into canonical guidance, record phase

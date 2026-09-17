@@ -1,26 +1,50 @@
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 
-import { loadRuntimeEnvironment } from "@pickflick/config/environment";
+import { loadRuntimeEnvironment, type RuntimeEnvironment } from "@pickflick/config/environment";
 import { assertSafeSeedOrResetTarget, createDatabaseClient } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
 import type { BetterAuthPlugin } from "better-auth";
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { testUtils } from "better-auth/plugins";
 
+import { restrictAuthHandler } from "../src/identity/auth-http.js";
+import { normalizeAppleDisplayName } from "../src/identity/apple-profile.js";
 import { createIdentityAuth } from "../src/identity/identity.service.js";
 
-const environment = loadRuntimeEnvironment();
-if (environment.appEnvironment !== "local" && environment.appEnvironment !== "test") {
+const configuredEnvironment = loadRuntimeEnvironment();
+if (configuredEnvironment.appEnvironment !== "local" && configuredEnvironment.appEnvironment !== "test") {
   throw new Error("The authentication integration check may run only against local or test data.");
 }
+const environment: RuntimeEnvironment = {
+  ...configuredEnvironment,
+  auth: {
+    ...configuredEnvironment.auth,
+    appleSignInEnabled: true,
+    appleClientId: "local-synthetic-apple-client-id",
+    appleKeyId: "SYNTHKEY1",
+    applePrivateKey: "local-synthetic-apple-private-key",
+    appleTeamId: "SYNTHTEAM1",
+  },
+};
 assertSafeSeedOrResetTarget(environment);
 
 const database = createDatabaseClient(environment.databaseUrl);
 const logger = createLogger({ environment: environment.appEnvironment, service: "api" });
 const email = `auth-check-${randomUUID()}@example.invalid`;
 const conflictEmail = `auth-check-conflict-${randomUUID()}@example.invalid`;
+const appleEmail = `auth-check-${randomUUID()}@privaterelay.appleid.com`;
+const appleLinkEmail = `auth-link-${randomUUID()}@privaterelay.appleid.com`;
+const appleOwnedEmail = `auth-owned-${randomUUID()}@privaterelay.appleid.com`;
 const authorizationCodeExchanges: string[] = [];
+let syntheticClientSequence = Date.now() % 60_000;
 
-function deterministicGoogleProvider(): BetterAuthPlugin {
+function nextSyntheticClientAddress(): string {
+  syntheticClientSequence = (syntheticClientSequence + 1) % 60_000;
+  return `198.18.${Math.floor(syntheticClientSequence / 250)}.${syntheticClientSequence % 250 + 1}`;
+}
+
+function deterministicGoogleProvider() {
   const provider = {
     id: "google",
     name: "Google",
@@ -82,17 +106,142 @@ function deterministicGoogleProvider(): BetterAuthPlugin {
     },
   };
 
+  return provider;
+}
+
+function deterministicAppleIdToken(profile: Readonly<Record<string, unknown>>): string {
+  const header = Buffer.from(JSON.stringify({ alg: "ES256", kid: "synthetic" })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify(profile)).toString("base64url");
+  return `${header}.${payload}.synthetic-signature`;
+}
+
+function deterministicAppleProfile(code: string) {
+  if (code === "apple-conflict") {
+    return { code, email: conflictEmail.toUpperCase(), email_verified: true, sub: "apple-conflict-subject" };
+  }
+  if (code === "apple-link") {
+    return { code, email: appleLinkEmail, email_verified: "true", sub: "apple-linked-subject" };
+  }
+  if (code === "apple-owned") {
+    return { code, email: appleOwnedEmail, email_verified: true, sub: "apple-owned-subject" };
+  }
+  if (code === "apple-unverified") {
+    return { code, email: `unverified-${appleEmail}`, email_verified: false, sub: "apple-unverified-subject" };
+  }
+  if (code === "apple-returning") {
+    return { code, email_verified: false, sub: "apple-auth-check-subject" };
+  }
+  return { code, email: appleEmail, email_verified: "true", sub: "apple-auth-check-subject" };
+}
+
+function deterministicAppleProvider() {
+  const provider = {
+    id: "apple",
+    name: "Apple",
+    requiresIdTokenNonce: true,
+    accountSubject: ({ profile }: { profile: { sub?: string } }) => profile.sub ?? "",
+    async createAuthorizationURL({
+      state,
+      codeVerifier,
+      redirectURI,
+      idTokenNonce,
+    }: {
+      state: string;
+      codeVerifier: string;
+      redirectURI: string;
+      idTokenNonce?: string;
+    }) {
+      const url = new URL("https://appleid.apple.com/auth/authorize");
+      url.searchParams.set("state", state);
+      url.searchParams.set("redirect_uri", redirectURI);
+      url.searchParams.set("code_challenge", codeVerifier);
+      url.searchParams.set("response_mode", "form_post");
+      if (idTokenNonce) {
+        url.searchParams.set("nonce", idTokenNonce);
+      }
+      return url;
+    },
+    async validateAuthorizationCode({ code }: { code: string }) {
+      authorizationCodeExchanges.push(code);
+      const profile = deterministicAppleProfile(code);
+      return {
+        accessToken: `apple-access-${code}`,
+        idToken: deterministicAppleIdToken(profile),
+        refreshToken: `apple-refresh-${code}`,
+        scopes: ["openid", "email", "name"],
+      };
+    },
+    async getUserInfo(tokens: {
+      expectedIdTokenNonce?: string;
+      idToken?: string;
+      user?: { name?: { firstName?: string; lastName?: string } };
+    }) {
+      if (!tokens.expectedIdTokenNonce || !tokens.idToken) {
+        return null;
+      }
+      const payload = tokens.idToken.split(".")[1];
+      const profile = payload
+        ? JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as ReturnType<typeof deterministicAppleProfile>
+        : undefined;
+      if (!profile) {
+        return null;
+      }
+      const existingAccount = await database.providerAccount.findUnique({
+        where: { provider_providerSubject: { provider: "apple", providerSubject: profile.sub } },
+        select: { providerEmail: true, user: { select: { email: true } } },
+      });
+      const emailVerified = profile.email_verified === true || profile.email_verified === "true";
+      const name = normalizeAppleDisplayName(
+        [tokens.user?.name?.firstName, tokens.user?.name?.lastName].filter(Boolean).join(" "),
+      ) ?? "";
+      return {
+        data: { ...profile, name },
+        user: {
+          email: profile.email ?? existingAccount?.providerEmail ?? existingAccount?.user.email,
+          emailVerified: emailVerified || Boolean(existingAccount),
+          name,
+        },
+      };
+    },
+  };
+
+  return provider;
+}
+
+function deterministicProviders(): BetterAuthPlugin {
   return {
-    id: "pickflick-deterministic-google",
-    init: () => ({ context: { socialProviders: [provider] } }),
+    id: "pickflick-deterministic-providers",
+    init: () => ({
+      context: {
+        socialProviders: [deterministicGoogleProvider(), deterministicAppleProvider()],
+      },
+    }),
   };
 }
 
 const auth = createIdentityAuth(environment, database, logger, [testUtils()]);
 const deterministicAuth = createIdentityAuth(environment, database, logger, [
-  deterministicGoogleProvider(),
+  deterministicProviders(),
   testUtils(),
 ]);
+const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(deterministicAuth), {
+  appleSignInEnabled: true,
+  clientAddressHeader: "x-forwarded-for",
+  database,
+  listAccounts: (request) => deterministicAuth.api.listUserAccounts({
+    asResponse: true,
+    headers: fromNodeHeaders(request.headers),
+  }),
+}));
+await new Promise<void>((resolve, reject) => {
+  deterministicHttpServer.once("error", reject);
+  deterministicHttpServer.listen(0, "127.0.0.1", resolve);
+});
+const deterministicHttpAddress = deterministicHttpServer.address();
+if (!deterministicHttpAddress || typeof deterministicHttpAddress === "string") {
+  throw new Error("The deterministic authentication HTTP server did not expose a local port.");
+}
+const deterministicHttpBaseUrl = `http://127.0.0.1:${deterministicHttpAddress.port}`;
 const existingRateLimitIds = new Set(
   (await database.authRateLimit.findMany({ select: { id: true } })).map(({ id }) => id),
 );
@@ -118,6 +267,7 @@ async function startGoogleSignIn(
       headers: {
         "content-type": "application/json",
         origin: environment.auth.baseUrl,
+        "x-forwarded-for": nextSyntheticClientAddress(),
         ...options.forwardedHeaders,
       },
       method: "POST",
@@ -160,6 +310,19 @@ function responseCookieHeader(response: Response): string {
   return response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
 }
 
+function mergeCookieHeaders(...headers: Array<string | null>): string {
+  const cookies = new Map<string, string>();
+  for (const header of headers) {
+    for (const cookie of header?.split(/;\s*/) ?? []) {
+      const separator = cookie.indexOf("=");
+      if (separator > 0) {
+        cookies.set(cookie.slice(0, separator), cookie);
+      }
+    }
+  }
+  return [...cookies.values()].join("; ");
+}
+
 async function completeGoogleSignIn(code: string) {
   const attempt = await startGoogleSignIn(deterministicAuth);
   const response = await submitGoogleCallback(attempt, code);
@@ -176,6 +339,107 @@ async function submitGoogleCallback(
   return deterministicAuth.handler(
     new Request(callbackUrl, { headers: { cookie: attempt.cookie } }),
   );
+}
+
+async function startAppleSignIn(
+  identityAuth = auth,
+  options: {
+    headers?: HeadersInit;
+    link?: boolean;
+    returnTo?: string;
+  } = {},
+): Promise<{ cookie: string; state: string; url: URL }> {
+  const pathname = options.link ? "/api/auth/link-social" : "/api/auth/sign-in/social";
+  const response = await identityAuth.handler(
+    new Request(`${environment.auth.baseUrl}${pathname}`, {
+      body: JSON.stringify({
+        callbackURL: options.returnTo ?? "/app",
+        disableRedirect: true,
+        provider: "apple",
+      }),
+      headers: {
+        "content-type": "application/json",
+        origin: environment.auth.baseUrl,
+        "x-forwarded-for": nextSyntheticClientAddress(),
+        ...Object.fromEntries(new Headers(options.headers).entries()),
+      },
+      method: "POST",
+    }),
+  );
+  const body = await response.json() as { url?: string };
+  const url = body.url ? new URL(body.url) : undefined;
+  const state = url?.searchParams.get("state") ?? undefined;
+  const initiatingCookie = new Headers(options.headers).get("cookie");
+  const responseCookie = response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
+  const cookie = mergeCookieHeaders(initiatingCookie, responseCookie);
+
+  if (
+    !response.ok ||
+    url?.hostname !== "appleid.apple.com" ||
+    !state ||
+    !cookie ||
+    !url.searchParams.has("nonce") ||
+    !url.searchParams.has("code_challenge") ||
+    url.searchParams.get("response_mode") !== "form_post"
+  ) {
+    throw new Error(
+      `Apple authorization did not bind the browser attempt (status=${response.status}, host=${url?.hostname ?? "none"}, state=${Boolean(state)}, cookie=${Boolean(cookie)}, nonce=${Boolean(url?.searchParams.has("nonce"))}, pkce=${Boolean(url?.searchParams.has("code_challenge"))}, formPost=${url?.searchParams.get("response_mode") === "form_post"}).`,
+    );
+  }
+
+  oauthStateIdentifiers.add(state);
+  return { cookie, state, url };
+}
+
+async function submitAppleCallback(
+  attempt: { cookie: string; state: string },
+  code: string,
+  user?: Readonly<Record<string, unknown>>,
+): Promise<Response> {
+  const postResponse = await postAppleCallback(attempt, code, user);
+  const location = postResponse.headers.get("location");
+  const redirect = location ? new URL(location, deterministicHttpBaseUrl) : undefined;
+  if (
+    postResponse.status !== 303 ||
+    !redirect ||
+    redirect.searchParams.get("code") !== code ||
+    redirect.searchParams.get("state") !== attempt.state ||
+    [...redirect.searchParams.keys()].some((key) => key !== "code" && key !== "state")
+  ) {
+    throw new Error("The Apple form POST did not use the profile-free server-side callback handoff.");
+  }
+  return fetch(redirect, {
+    headers: { cookie: attempt.cookie },
+    redirect: "manual",
+  });
+}
+
+async function postAppleCallback(
+  attempt: { cookie: string; state: string },
+  code: string,
+  user?: Readonly<Record<string, unknown>>,
+  sourceAddress = nextSyntheticClientAddress(),
+): Promise<Response> {
+  const body = new URLSearchParams({ code, state: attempt.state });
+  if (user) {
+    body.set("user", JSON.stringify(user));
+  }
+  return fetch(`${deterministicHttpBaseUrl}/api/auth/callback/apple`, {
+    body,
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      cookie: attempt.cookie,
+      "x-forwarded-for": sourceAddress,
+    },
+    method: "POST",
+    redirect: "manual",
+  });
+}
+
+async function completeAppleSignIn(code: string, user?: Readonly<Record<string, unknown>>) {
+  const attempt = await startAppleSignIn(deterministicAuth);
+  const response = await submitAppleCallback(attempt, code, user);
+  return { response, sessionCookie: responseCookieHeader(response) };
 }
 
 try {
@@ -377,6 +641,32 @@ try {
     throw new Error("A new Google User did not receive a resolvable database session.");
   }
 
+  const googleLinkHeaders = new Headers({
+    "content-type": "application/json",
+    cookie: registered.sessionCookie,
+    origin: environment.auth.baseUrl,
+    "x-forwarded-for": nextSyntheticClientAddress(),
+  });
+  const googleLink = await auth.handler(
+    new Request(`${environment.auth.baseUrl}/api/auth/link-social`, {
+      body: JSON.stringify({
+        callbackURL: "/app",
+        disableRedirect: true,
+        loginHint: "caller-controlled@example.invalid",
+        provider: "google",
+      }),
+      headers: googleLinkHeaders,
+      method: "POST",
+    }),
+  );
+  const googleLinkBody = await googleLink.json() as { url?: string };
+  const googleLinkUrl = googleLinkBody.url ? new URL(googleLinkBody.url) : undefined;
+  const googleLinkState = googleLinkUrl?.searchParams.get("state");
+  if (!googleLink.ok || !googleLinkState || googleLinkUrl.searchParams.has("login_hint")) {
+    throw new Error("An explicit Google link retained a caller-controlled login hint.");
+  }
+  oauthStateIdentifiers.add(googleLinkState);
+
   const returning = await completeGoogleSignIn("returning-user");
   if (returning.response.status !== 302 || returning.response.headers.get("location") !== "/app") {
     throw new Error("A returning Google User did not reach the validated application return target.");
@@ -445,10 +735,287 @@ try {
     throw new Error("An email-conflicting Google identity was persisted despite linking being disabled.");
   }
 
+  const amplificationAttempt = await startAppleSignIn(deterministicAuth);
+  const amplificationAddress = nextSyntheticClientAddress();
+  const amplificationResponses: Response[] = [];
+  for (let index = 0; index < 11; index += 1) {
+    amplificationResponses.push(await postAppleCallback(
+      amplificationAttempt,
+      `amplification-${index}`,
+      { name: { firstName: `Attempt ${index}` } },
+      amplificationAddress,
+    ));
+  }
+  if (
+    amplificationResponses.slice(0, 10).some(({ status }) => status !== 303) ||
+    amplificationResponses[10]?.status !== 429
+  ) {
+    throw new Error("The Apple callback POST boundary did not enforce its request limit.");
+  }
+  const amplificationHandoffs = await database.authVerification.findMany({
+    where: { identifier: { startsWith: "apple-callback:" } },
+  });
+  if (amplificationHandoffs.length !== 1) {
+    throw new Error("One pending Apple state created more than one callback handoff.");
+  }
+  await database.authVerification.update({
+    data: { expiresAt: new Date(Date.now() - 1_000) },
+    where: { id: amplificationHandoffs[0]!.id },
+  });
+  const cleanupAttempt = await startAppleSignIn(deterministicAuth);
+  const cleanupPost = await postAppleCallback(
+    cleanupAttempt,
+    "cleanup-trigger",
+    { name: { firstName: "Cleanup" } },
+  );
+  if (
+    cleanupPost.status !== 303 ||
+    await database.authVerification.findUnique({ where: { id: amplificationHandoffs[0]!.id } })
+  ) {
+    throw new Error("An expired Apple callback handoff was not removed.");
+  }
+  await database.authVerification.deleteMany({
+    where: { identifier: { startsWith: "apple-callback:" } },
+  });
+
+  const appleDeniedAttempt = await startAppleSignIn(deterministicAuth);
+  const appleDeniedUrl = new URL("/api/auth/callback/apple", environment.auth.baseUrl);
+  appleDeniedUrl.searchParams.set("error", "access_denied");
+  appleDeniedUrl.searchParams.set("error_description", "provider-secret-detail");
+  appleDeniedUrl.searchParams.set("state", appleDeniedAttempt.state);
+  const appleDenied = await deterministicAuth.handler(
+    new Request(appleDeniedUrl, { headers: { cookie: appleDeniedAttempt.cookie } }),
+  );
+  assertSafeLoginFailure(appleDenied, "An Apple provider denial did not return a safe Login failure.");
+
+  const unverifiedApple = await completeAppleSignIn("apple-unverified", {
+    name: { firstName: "Unverified", lastName: "Apple" },
+  });
+  assertSafeLoginFailure(unverifiedApple.response, "An unverified new Apple email was accepted.");
+  const unverifiedLocation = new URL(
+    unverifiedApple.response.headers.get("location") ?? "",
+    environment.auth.baseUrl,
+  );
+  if (unverifiedLocation.searchParams.get("error") !== "apple_email_not_verified") {
+    throw new Error("An unverified Apple email did not return the stable provider error.");
+  }
+
+  const longAppleLastName = `First ${"Return ".repeat(50)}`;
+  const expectedAppleDisplayName = normalizeAppleDisplayName(`Apple ${longAppleLastName}`);
+  const registeredApple = await completeAppleSignIn("apple-new-user", {
+    email: appleEmail,
+    name: { firstName: "\u0000Apple\u200b", lastName: longAppleLastName },
+  });
+  if (registeredApple.response.status !== 302 || registeredApple.response.headers.get("location") !== "/app") {
+    throw new Error("A new Apple User did not reach the validated application return target.");
+  }
+  const appleUser = await database.user.findUnique({ where: { email: appleEmail } });
+  if (!appleUser || appleUser.displayName !== expectedAppleDisplayName || [...appleUser.displayName].length > 200) {
+    throw new Error("Apple first-return profile fields did not safely bootstrap the new User.");
+  }
+  userIds.add(appleUser.id);
+  const appleAccount = await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-auth-check-subject" } },
+  });
+  if (
+    !appleAccount ||
+    appleAccount.userId !== appleUser.id ||
+    appleAccount.providerEmail !== appleEmail ||
+    appleAccount.providerDisplayName !== expectedAppleDisplayName ||
+    appleAccount.accessToken ||
+    appleAccount.refreshToken ||
+    appleAccount.idToken ||
+    appleAccount.scope
+  ) {
+    throw new Error("Apple identity persistence lost first-return fields or retained provider credentials.");
+  }
+
+  const returningApple = await completeAppleSignIn("apple-returning");
+  if (returningApple.response.status !== 302 || returningApple.response.headers.get("location") !== "/app") {
+    throw new Error("A known Apple subject could not sign in after Apple omitted later profile fields.");
+  }
+  const appleUserAfterReturn = await database.user.findUnique({ where: { id: appleUser.id } });
+  if (appleUserAfterReturn?.displayName !== expectedAppleDisplayName || appleUserAfterReturn.email !== appleEmail) {
+    throw new Error("A later Apple callback erased first-return profile fields or moved the identity by email.");
+  }
+
+  const appleConflict = await completeAppleSignIn("apple-conflict", {
+    name: { firstName: "Conflict", lastName: "Apple" },
+  });
+  assertSafeLoginFailure(appleConflict.response, "An email-conflicting Apple identity matched an existing User.");
+  const appleConflictLocation = new URL(
+    appleConflict.response.headers.get("location") ?? "",
+    environment.auth.baseUrl,
+  );
+  if (appleConflictLocation.searchParams.get("error") !== "account_not_linked") {
+    throw new Error("An Apple email conflict did not return the stable account-not-linked error.");
+  }
+
+  const staleLogin = await helpers.login({ userId: registeredUser.id });
+  await database.authSession.update({
+    where: { token: staleLogin.token },
+    data: { createdAt: new Date(Date.now() - 16 * 60 * 1_000) },
+  });
+  const staleLinkHeaders = new Headers(staleLogin.headers);
+  staleLinkHeaders.set("content-type", "application/json");
+  staleLinkHeaders.set("origin", environment.auth.baseUrl);
+  const staleLink = await deterministicAuth.handler(
+    new Request(`${environment.auth.baseUrl}/api/auth/link-social`, {
+      body: JSON.stringify({ callbackURL: "/app", disableRedirect: true, provider: "apple" }),
+      headers: staleLinkHeaders,
+      method: "POST",
+    }),
+  );
+  const staleLinkBody = await staleLink.json() as { code?: string };
+  if (staleLink.status !== 403 || staleLinkBody.code !== "SESSION_NOT_FRESH") {
+    throw new Error("A stale session created an explicit identity-link intent.");
+  }
+
+  const revokedCallbackLogin = await helpers.login({ userId: registeredUser.id });
+  const revokedLinkAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: revokedCallbackLogin.headers,
+    link: true,
+  });
+  await database.authSession.delete({ where: { token: revokedCallbackLogin.token } });
+  const revokedLink = await submitAppleCallback(revokedLinkAttempt, "apple-link");
+  assertSafeLoginFailure(revokedLink, "A revoked initiating session completed an identity link.");
+  if (await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-linked-subject" } },
+  })) {
+    throw new Error("A revoked initiating session persisted an identity link.");
+  }
+
+  const staleCallbackLogin = await helpers.login({ userId: registeredUser.id });
+  const staleCallbackAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: staleCallbackLogin.headers,
+    link: true,
+  });
+  await database.authSession.update({
+    where: { token: staleCallbackLogin.token },
+    data: { createdAt: new Date(Date.now() - 16 * 60 * 1_000) },
+  });
+  const staleCallbackLink = await submitAppleCallback(staleCallbackAttempt, "apple-link");
+  assertSafeLoginFailure(staleCallbackLink, "A session that became stale completed an identity link.");
+  if (await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-linked-subject" } },
+  })) {
+    throw new Error("A session that became stale persisted an identity link.");
+  }
+
+  const appleLinkAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: { cookie: registered.sessionCookie },
+    link: true,
+  });
+  const linkedApple = await submitAppleCallback(appleLinkAttempt, "apple-link", {
+    email: appleLinkEmail,
+    name: { firstName: "Linked", lastName: "Apple" },
+  });
+  if (linkedApple.status !== 302 || linkedApple.headers.get("location") !== "/app") {
+    throw new Error("A fresh explicit Apple link did not complete.");
+  }
+  const linkedAccount = await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-linked-subject" } },
+  });
+  const googleUserAfterLink = await database.user.findUnique({ where: { id: registeredUser.id } });
+  if (
+    linkedAccount?.userId !== registeredUser.id ||
+    linkedAccount.providerEmail !== appleLinkEmail ||
+    linkedAccount.providerDisplayName !== "Linked Apple" ||
+    googleUserAfterLink?.email !== email ||
+    googleUserAfterLink.displayName !== registeredUser.displayName
+  ) {
+    throw new Error("Explicit Apple relay linking changed the User profile or lost provider-owned fields.");
+  }
+
+  const listedAccounts = await fetch(`${deterministicHttpBaseUrl}/api/auth/list-accounts`, {
+    headers: { cookie: registered.sessionCookie },
+  });
+  const listedAccountBody = await listedAccounts.text();
+  if (
+    !listedAccounts.ok ||
+    !listedAccountBody.includes('"provider":"apple"') ||
+    /accountId|providerSubject|providerEmail|providerDisplayName|accessToken|refreshToken|idToken/.test(listedAccountBody)
+  ) {
+    throw new Error("Linked-account listing exposed provider profile or credential fields.");
+  }
+
+  const ownedUserId = randomUUID();
+  userIds.add(ownedUserId);
+  const ownedAccount = await database.providerAccount.create({
+    data: {
+      provider: "apple",
+      providerEmail: appleOwnedEmail,
+      providerSubject: "apple-owned-subject",
+      user: {
+        create: {
+          id: ownedUserId,
+          displayName: "Owned Apple User",
+          email: appleOwnedEmail,
+          emailVerified: true,
+        },
+      },
+    },
+  });
+  const duplicateLinkAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: { cookie: registered.sessionCookie },
+    link: true,
+  });
+  const duplicateLink = await submitAppleCallback(duplicateLinkAttempt, "apple-owned");
+  assertSafeLoginFailure(duplicateLink, "An Apple identity linked to another User was reassigned.");
+  const duplicateLocation = new URL(duplicateLink.headers.get("location") ?? "", environment.auth.baseUrl);
+  if (duplicateLocation.searchParams.get("error") !== "account_not_linked") {
+    throw new Error("A duplicate Apple identity exposed an unsafe linking error.");
+  }
+  const ownedAccountAfterLink = await database.providerAccount.findUnique({ where: { id: ownedAccount.id } });
+  if (ownedAccountAfterLink?.userId !== ownedUserId) {
+    throw new Error("An Apple provider identity was reassigned to another User.");
+  }
+
+  const concurrentUnlink = (accountId: string) => fetch(
+    `${deterministicHttpBaseUrl}/api/auth/unlink-account`,
+    {
+      body: JSON.stringify({ accountId }),
+      headers: {
+        "content-type": "application/json",
+        cookie: registered.sessionCookie,
+        origin: environment.auth.baseUrl,
+        "x-forwarded-for": nextSyntheticClientAddress(),
+      },
+      method: "POST",
+    },
+  );
+  const concurrentUnlinks = await Promise.all([
+    concurrentUnlink(providerAccount.id),
+    concurrentUnlink(linkedAccount.id),
+  ]);
+  const remainingLinkedAccounts = await database.providerAccount.count({
+    where: { userId: registeredUser.id },
+  });
+  if (concurrentUnlinks.filter(({ ok }) => ok).length !== 1 || remainingLinkedAccounts !== 1) {
+    throw new Error("Concurrent unlink requests removed every supported provider identity.");
+  }
+
+  const ownedLogin = await helpers.login({ userId: ownedUserId });
+  const unlinkHeaders = new Headers(ownedLogin.headers);
+  unlinkHeaders.set("content-type", "application/json");
+  unlinkHeaders.set("origin", environment.auth.baseUrl);
+  unlinkHeaders.set("x-forwarded-for", nextSyntheticClientAddress());
+  const unlinkLast = await fetch(`${deterministicHttpBaseUrl}/api/auth/unlink-account`, {
+    body: JSON.stringify({ accountId: ownedAccount.id }),
+    headers: unlinkHeaders,
+    method: "POST",
+  });
+  if (unlinkLast.ok || !await database.providerAccount.findUnique({ where: { id: ownedAccount.id } })) {
+    throw new Error("A User was allowed to unlink their last supported provider identity.");
+  }
+
   console.log(
-    "Authentication checks passed: new/returning Google identity, fixed Google permissions, proxy client separation, no provider credential retention, conflict denial, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
+  await new Promise<void>((resolve, reject) => {
+    deterministicHttpServer.close((error) => error ? reject(error) : resolve());
+  });
   if (userIds.size > 0) {
     await database.user.deleteMany({ where: { id: { in: [...userIds] } } });
   }

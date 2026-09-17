@@ -1,3 +1,4 @@
+import { createPrivateKey } from "node:crypto";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,7 +39,22 @@ export interface RuntimeEnvironment {
     readonly googleClientId: string;
     readonly googleClientSecret: string;
     readonly secureCookies: boolean;
-  };
+  } & (
+    | {
+        readonly appleSignInEnabled: true;
+        readonly appleClientId: string;
+        readonly appleKeyId: string;
+        readonly applePrivateKey: string;
+        readonly appleTeamId: string;
+      }
+    | {
+        readonly appleSignInEnabled: false;
+        readonly appleClientId?: string;
+        readonly appleKeyId?: string;
+        readonly applePrivateKey?: string;
+        readonly appleTeamId?: string;
+      }
+  );
 }
 
 export type WorkerEnvironment = Omit<RuntimeEnvironment, "apiHost" | "apiPort" | "auth">;
@@ -119,6 +135,17 @@ function durationMilliseconds(source: EnvironmentSource, name: string, failures:
 function boolean(source: EnvironmentSource, name: string, failures: ValidationFailure[]): boolean {
   const value = required(source, name, failures);
   if (value && value !== "true" && value !== "false") {
+    failures.push({ name, reason: "must be true or false" });
+  }
+  return value === "true";
+}
+
+function optionalBoolean(source: EnvironmentSource, name: string, failures: ValidationFailure[]): boolean {
+  const value = source[name]?.trim();
+  if (!value) {
+    return false;
+  }
+  if (value !== "true" && value !== "false") {
     failures.push({ name, reason: "must be true or false" });
   }
   return value === "true";
@@ -302,6 +329,11 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   const workerEnvironment = parseWorkerValues(source, appEnvironment, failures);
   const authBaseUrl = originUrl(source, "AUTH_BASE_URL", appEnvironment, failures);
   const authSecret = required(source, "AUTH_SECRET", failures);
+  const appleSignInEnabled = optionalBoolean(source, "APPLE_SIGN_IN_ENABLED", failures);
+  const appleClientId = appleSignInEnabled ? required(source, "APPLE_CLIENT_ID", failures) : undefined;
+  const appleKeyId = appleSignInEnabled ? required(source, "APPLE_KEY_ID", failures) : undefined;
+  const applePrivateKey = appleSignInEnabled ? required(source, "APPLE_PRIVATE_KEY", failures) : undefined;
+  const appleTeamId = appleSignInEnabled ? required(source, "APPLE_TEAM_ID", failures) : undefined;
   const googleClientId = required(source, "GOOGLE_CLIENT_ID", failures);
   const googleClientSecret = required(source, "GOOGLE_CLIENT_SECRET", failures);
 
@@ -310,6 +342,26 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
   }
   if (authSecret && authSecret.length < 32) {
     failures.push({ name: "AUTH_SECRET", reason: "must contain at least 32 characters" });
+  }
+  if (appleSignInEnabled && (appEnvironment === "uat" || appEnvironment === "production") && applePrivateKey) {
+    try {
+      const normalizedPrivateKey = applePrivateKey.replaceAll("\\n", "\n");
+      if (!normalizedPrivateKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
+        throw new Error("Not PKCS#8 PEM.");
+      }
+      const privateKey = createPrivateKey(normalizedPrivateKey);
+      if (
+        privateKey.asymmetricKeyType !== "ec" ||
+        privateKey.asymmetricKeyDetails?.namedCurve !== "prime256v1"
+      ) {
+        throw new Error("Not an EC P-256 key.");
+      }
+    } catch {
+      failures.push({
+        name: "APPLE_PRIVATE_KEY",
+        reason: "must be a valid EC P-256 PKCS#8 PEM private key in uat or production",
+      });
+    }
   }
   if (failures.length > 0) {
     throw new EnvironmentValidationError(failures);
@@ -325,6 +377,15 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
       googleClientId,
       googleClientSecret,
       secureCookies: appEnvironment === "uat" || appEnvironment === "production",
+      ...(appleSignInEnabled
+        ? {
+            appleSignInEnabled: true as const,
+            appleClientId: appleClientId ?? "",
+            appleKeyId: appleKeyId ?? "",
+            applePrivateKey: applePrivateKey ?? "",
+            appleTeamId: appleTeamId ?? "",
+          }
+        : { appleSignInEnabled: false as const }),
     },
   };
 }

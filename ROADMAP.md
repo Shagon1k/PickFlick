@@ -67,7 +67,9 @@ Every canonical product surface in the design package is part of MVP. “Coming 
 #### Public, authentication, and setup
 
 - Responsive landing, pricing, contact, legal-entry, sign-in, Club invitation, and system error experiences.
-- Registered accounts only, using Google or Apple OAuth; no anonymous or password-based use in MVP.
+- Registered accounts only, with Google OAuth active. The reviewed Apple implementation remains
+  dormant until the owner approves Apple Developer Program membership and sandbox/UAT activation;
+  no anonymous or password-based use is in MVP.
 - Auth return-to-intended-destination, including Club invitation acceptance.
 - First-run no-Clubs state, Create Club, Join Club, and safe error/recovery states.
 
@@ -138,7 +140,7 @@ Every canonical product surface in the design package is part of MVP. “Coming 
 | Area | Default question | Status | Decision / note |
 | --- | --- | --- | --- |
 | Infrastructure & Foundation | How are repo layout, local dev, scripts, CI, containers, and base architecture handled? | Planned | pnpm TypeScript monorepo with web, API, worker, shared contracts, PostgreSQL, Redis, and containerized delivery; final choices are approved in Phase 1. |
-| Users & Authentication | Does the app need users, roles, sessions, OAuth, permissions, or anonymous mode? | Planned | Registered Google/Apple OAuth users only; App Admin/User globally; Admin/Moderator/Member per Club; server-side authorization is mandatory. |
+| Users & Authentication | Does the app need users, roles, sessions, OAuth, permissions, or anonymous mode? | Planned | Registered OAuth users only; Google is active and Apple is retained behind a default-off owner-controlled provisioning gate. App Admin/User globally; Admin/Moderator/Member per Club; server-side authorization is mandatory. |
 | Design System | How do UI primitives, layout, styling, tokens, and component rules stay consistent? | Planned | Canonical Projector Noir rules and prototypes live under `_docs/design/prototypes`; production tokens/components are established in Phase 2. |
 | Localization | Is the product single-language, multilingual now, or multilingual-ready later? | Deferred | English MVP with externalized copy, locale-safe date/number formatting, and layout tolerance; add Russian when localization becomes scheduled. |
 | Analytics & Monitoring | How will we know usage, errors, latency, job health, and outages? | Planned | Structured logs, error/performance monitoring, health checks, job metrics, and first-party aggregate product metrics; no undisclosed behavioral tracker. |
@@ -339,7 +341,7 @@ stateDiagram-v2
 | `/` | Public landing page. |
 | `/pricing` | Free/Pro comparison and billing entry. |
 | `/contact` | Public contact form. |
-| `/login` | Google/Apple sign-in and legal links. |
+| `/login` | Available provider sign-in and legal links; authenticated Users continue to `/app`, while Google is visible and dormant Apple is omitted. |
 | `/legal/privacy` | Launch-required privacy notice; final copy requires review. |
 | `/legal/terms` | Launch-required terms; final copy requires review. |
 | `/invite/club/[token]` | Club invitation preview, auth continuation, accept/decline, expired state. |
@@ -371,7 +373,7 @@ not frozen in planning prose.
 | --- | --- | --- | --- |
 | Repository | pnpm modular monorepo with separate web, API, and worker entrypoints. | Accepted direction; Proposed implementation | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) |
 | Frontend | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state. | Accepted direction; Proposed implementation | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
-| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Partial implementation — Google sign-in and database sessions are active; Apple, explicit linking, and protected-boundary enforcement remain Proposed | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
+| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Partial implementation — Google sign-in is active locally; the reviewed Apple implementation and linking safeguards are retained behind a default-off server gate; owner provider runs and protected-boundary enforcement remain Proposed | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
 | Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
 | Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
 | Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
@@ -382,7 +384,7 @@ not frozen in planning prose.
 | Provider / capability | Purpose | MVP status | Architecture reference |
 | --- | --- | --- | --- |
 | Google OAuth | Registered identity. | Implemented locally; owner sandbox/UAT evidence pending | [External integrations](ARCHITECTURE.md#external-integrations) |
-| Apple Sign in | Registered identity. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Apple Sign in | Registered identity after approved activation. | Implementation retained but dormant by default; owner Apple Developer Program approval and sandbox/UAT evidence required before enablement | [External integrations](ARCHITECTURE.md#external-integrations) |
 | TMDB | Film search, metadata, credits, images, and related titles. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
 | Paddle | Merchant of record, checkout, recurring subscription state, invoices, portal, tax handling. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
 | Resend | Transactional and opted-in email notifications. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
@@ -562,7 +564,7 @@ sender identities are fixed by
 
 ### Phase 4 — Authentication & Account Onboarding · In progress
 
-**Goal:** Let a person become a registered PickFlick User through Google or Apple and safely retain intended navigation.
+**Goal:** Let a person become a registered PickFlick User through an available approved provider and safely retain intended navigation. Apple remains dormant pending separate owner approval and provisioning.
 
 **Dependencies:** Phase 1 identity foundation; Phase 2 authenticated shell; confirmed OAuth callback configuration.
 
@@ -585,7 +587,7 @@ sender identities are fixed by
 
 **Acceptance Check:**
 
-- [ ] New and returning Google/Apple Users can sign in/out and reach the intended authorized destination.
+- [ ] New and returning Users can sign in/out through each enabled provider and reach the intended authorized destination; dormant providers are unavailable in UI and API.
 - [ ] Invalid state/nonce/callback, provider denial, duplicate identity, suspension, expiry, and revoked-session cases fail safely.
 - [ ] Protected routes and APIs reject unauthenticated/forged access independently of UI controls.
 - [ ] Auth integration/E2E/security checks pass without provider tokens in browser storage or logs.
@@ -1332,6 +1334,7 @@ sender identities are fixed by
 | Source-built production promotion | Developer | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement. | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11. |
 | Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13. |
 | Authentication and account linking | Developer | Run Better Auth inside the NestJS API with database-backed opaque sessions. Identify external accounts by provider subject, disable implicit email linking, and require an explicit fresh-session flow to link Google or Apple identities. Next.js remains presentation rather than session authority. | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16. |
+| Apple Sign In activation | Product owner | Retain the reviewed Apple implementation but keep it disabled in every deployed environment. Activation requires separate owner approval for Apple Developer Program membership, real provider configuration, and sandbox/UAT verification. | Issue #27 review decision, 2026-09-17. |
 
 ### Open Questions
 
@@ -1395,7 +1398,7 @@ These do not block guidance creation; each has an explicit decision point.
 | 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
 | 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
 | 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing, Pricing, Contact, provisional legal entry, indexing boundaries, and recovery surfaces are implemented and locally verified. Required exact-SHA visual acknowledgements remain. |
-| 4 — Authentication & Account Onboarding | In progress | [Active Phase 4 plan](_docs/phase-4-authentication-account-onboarding.md) and [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) | The auth/session implementation and account-linking contract are approved; provider and boundary implementation remains. |
+| 4 — Authentication & Account Onboarding | In progress | [Active Phase 4 plan](_docs/phase-4-authentication-account-onboarding.md) and [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) | The auth/session implementation and account-linking contract are approved. Google is active locally; Apple is implemented but dormant behind the owner-controlled provisioning gate; protected-boundary implementation remains. |
 | 5 — Clubs, Membership & Roles | Not started |  |  |
 | 6 — Human Verification & Bug Fixing I | Not started |  | Stabilization gate for Phases 1–5. |
 | 7 — Club Hub & Club Invitations | Not started |  |  |

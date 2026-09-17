@@ -154,17 +154,35 @@ try {
     ),
     waitFor("worker readiness", async () => workerReady, runtimes),
   ]);
-  const authResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
+  const appleAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
     body: JSON.stringify({ callbackURL: "/app", provider: "apple" }),
     headers: { "content-type": "application/json", origin: apiOrigin },
     method: "POST",
     signal: AbortSignal.timeout(2_000),
   });
-  const authFailure = await authResponse.json();
-  if (authResponse.status !== 400 || authFailure.code !== "UNSUPPORTED_IDENTITY_PROVIDER") {
+  const appleAuth = await appleAuthResponse.json();
+  if (
+    !appleAuthResponse.ok ||
+    typeof appleAuth.url !== "string" ||
+    new URL(appleAuth.url).hostname !== "appleid.apple.com"
+  ) {
+    throw new Error("The built API did not start the reviewed Apple authorization flow.");
+  }
+
+  const unsupportedAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
+    body: JSON.stringify({ callbackURL: "/app", provider: "github" }),
+    headers: { "content-type": "application/json", origin: apiOrigin },
+    method: "POST",
+    signal: AbortSignal.timeout(2_000),
+  });
+  const unsupportedAuthFailure = await unsupportedAuthResponse.json();
+  if (
+    unsupportedAuthResponse.status !== 400 ||
+    unsupportedAuthFailure.code !== "UNSUPPORTED_IDENTITY_PROVIDER"
+  ) {
     throw new Error("The built API authentication handler is not mounted at the reviewed raw-request boundary.");
   }
-  console.log("E2E smoke passed: built web, API, worker, and raw authentication handler are ready against isolated dependencies.");
+  console.log("E2E smoke passed: built web, API, worker, and Apple authentication boundary are ready against isolated dependencies.");
 } finally {
   await Promise.all(runtimes.map(stopRuntime));
 }

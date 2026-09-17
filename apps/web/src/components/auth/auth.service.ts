@@ -1,8 +1,10 @@
 import { authClient } from "./auth-client";
 
-export async function startGoogleSignIn(returnTo: string): Promise<boolean> {
+export type IdentityProvider = "apple" | "google";
+
+export async function startSocialSignIn(provider: IdentityProvider, returnTo: string): Promise<boolean> {
   const result = await authClient.signIn.social({
-    provider: "google",
+    provider,
     callbackURL: returnTo,
   });
 

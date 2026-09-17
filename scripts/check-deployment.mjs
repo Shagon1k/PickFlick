@@ -41,18 +41,31 @@ const runtimeEnvironmentVariables = [
 const authenticationEnvironmentVariables = [
   "AUTH_BASE_URL",
   "AUTH_SECRET",
+  "APPLE_SIGN_IN_ENABLED",
+  "APPLE_CLIENT_ID",
+  "APPLE_KEY_ID",
+  "APPLE_PRIVATE_KEY",
+  "APPLE_TEAM_ID",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+];
+const requiredAuthenticationEnvironmentVariables = [
+  "AUTH_BASE_URL",
+  "AUTH_SECRET",
+  "APPLE_SIGN_IN_ENABLED",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
 ];
 const previewAuthenticationEnvironment = {
   AUTH_BASE_URL: "https://preview-3.shagon1k.win",
   AUTH_SECRET: "synthetic-preview-auth-secret-at-least-32-characters",
+  APPLE_SIGN_IN_ENABLED: "false",
   GOOGLE_CLIENT_ID: "synthetic-preview-google-client-id",
   GOOGLE_CLIENT_SECRET: "synthetic-preview-google-client-secret",
 };
 const apiEnvironmentVariables = [
   ...runtimeEnvironmentVariables,
-  ...authenticationEnvironmentVariables,
+  ...requiredAuthenticationEnvironmentVariables,
   "API_HOST",
   "API_PORT",
 ];
@@ -79,6 +92,7 @@ function environmentFor(appEnvironment) {
 
     AUTH_BASE_URL: appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app",
     AUTH_SECRET: "synthetic-auth-secret-at-least-32-characters",
+    APPLE_SIGN_IN_ENABLED: "false",
     GOOGLE_CLIENT_ID: "synthetic-google-client-id",
     GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
 
@@ -264,6 +278,8 @@ export function validateDeployments({ production, uat }) {
         (appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app"),
       "API must use the canonical authentication origin for its environment.",
     );
+    assert(deployment.services.api.environment.APPLE_SIGN_IN_ENABLED === "false", "API must keep Apple disabled.");
+    assert(deployment.services.web.environment.APPLE_SIGN_IN_ENABLED === "false", "Web must keep Apple disabled.");
     assert(deployment.services.api.environment.RESEND_DELIVERY_MODE === "live", "API must use live Resend delivery.");
     assert(deployment.services.worker.environment.RESEND_DELIVERY_MODE === "live", "Worker must use live Resend delivery.");
     assert(hasEnabledHealthCheck(deployment.services.api), "API must define an enabled health check.");

@@ -65,6 +65,7 @@ block is the source of truth and must not be replaced by CI. At minimum it requi
 APP_ENV=uat
 AUTH_BASE_URL=https://uat.pick-flick.app
 AUTH_SECRET
+APPLE_SIGN_IN_ENABLED=false
 CONTACT_DELIVERY_TO
 CONTACT_HASH_SECRET
 DATABASE_URL
@@ -93,8 +94,19 @@ production value and contain at least 32 characters.
 Use a UAT-only Google OAuth web client. Set its only redirect URI for this application to
 `https://uat.pick-flick.app/api/auth/callback/google`, and leave Authorized JavaScript origins
 empty because the OAuth exchange is server-side. Never reuse the managed-preview or production
-OAuth client or credentials. Keep `AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret
-environment, and do not save a rendered Compose configuration as deployment evidence.
+OAuth client or credentials.
+
+Keep Apple Sign In disabled in UAT. Do not configure Apple callback registration or `APPLE_*`
+credentials until the owner separately approves Apple Developer Program membership and an Apple
+sandbox/UAT verification run. For that future run, use a UAT-only Apple Services ID and Sign in
+with Apple key, register `https://uat.pick-flick.app` and
+`https://uat.pick-flick.app/api/auth/callback/apple`, set `APPLE_SIGN_IN_ENABLED=true`, and enter the
+EC P-256 `.p8` key as PKCS#8 PEM. Encode line breaks as `\n` if Dokploy requires one line. Never
+reuse preview or production Apple credentials.
+
+Keep `AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret environment. If Apple is
+enabled later, apply the same rule to `APPLE_PRIVATE_KEY`. Do not save a rendered Compose
+configuration as deployment evidence.
 
 Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
 `worker`, and `web` exist and none has a host-published port.
