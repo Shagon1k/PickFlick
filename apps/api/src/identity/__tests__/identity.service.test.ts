@@ -163,6 +163,7 @@ describe("identity configuration", () => {
           source: { action: "create-user", method: "oauth", oauth: { providerId: "google" } },
           user: { email: "person@example.invalid", emailVerified: false },
         },
+        undefined as never,
       ),
     ).toEqual({ error: "google_email_not_verified" });
     expect(
@@ -171,6 +172,7 @@ describe("identity configuration", () => {
           source: { action: "create-user", method: "oauth", oauth: { providerId: "google" } },
           user: { email: "person@example.invalid", emailVerified: true },
         },
+        undefined as never,
       ),
     ).toBeUndefined();
   });
@@ -181,13 +183,13 @@ describe("identity configuration", () => {
       await validate?.({
         source: { action: "create-user", method: "oauth", oauth: { providerId: "apple" } },
         user: { email: "relay@privaterelay.appleid.com", emailVerified: false },
-      }),
+      }, undefined as never),
     ).toEqual({ error: "apple_email_not_verified" });
     expect(
       await validate?.({
         source: { action: "create-user", method: "oauth", oauth: { providerId: "apple" } },
         user: { email: "relay@privaterelay.appleid.com", emailVerified: true },
-      }),
+      }, undefined as never),
     ).toBeUndefined();
   });
 });

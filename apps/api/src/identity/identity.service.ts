@@ -5,7 +5,13 @@ import { isAllowedAuthReturnTarget } from "@pickflick/contracts";
 import { createDatabaseClient } from "@pickflick/database";
 import type { ApplicationLogger } from "@pickflick/observability";
 import { APIError, betterAuth, type BetterAuthPlugin } from "better-auth";
-import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import {
+  addOAuthServerContext,
+  createAuthMiddleware,
+  getAuthoritativeSessionFromCtx,
+  getOAuthState,
+  getSessionFromCtx,
+} from "better-auth/api";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
@@ -32,6 +38,11 @@ function authenticationErrorCallback(baseUrl: string, returnTo: string): string 
   const errorCallbackURL = new URL("/login", baseUrl);
   errorCallbackURL.searchParams.set("returnTo", returnTo);
   return `${errorCallbackURL.pathname}${errorCallbackURL.search}`;
+}
+
+function isFreshSession(createdAt: Date | string): boolean {
+  const age = Date.now() - new Date(createdAt).getTime();
+  return Number.isFinite(age) && age >= 0 && age < fifteenMinutesInSeconds * 1_000;
 }
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
@@ -124,7 +135,21 @@ export function createIdentityAuth(
     user: {
       modelName: "user",
       fields: { name: "displayName" },
-      validateUserInfo: ({ source, user }) => {
+      validateUserInfo: async ({ source, user }, context) => {
+        if (source.action === "link-account") {
+          const state = await getOAuthState();
+          const initiatingSessionId = state?.serverContext?.pickFlickLinkSessionId;
+          const session = await getAuthoritativeSessionFromCtx(context);
+          if (
+            typeof initiatingSessionId !== "string" ||
+            !session?.session ||
+            session.session.id !== initiatingSessionId ||
+            session.user.id !== user.id ||
+            !isFreshSession(session.session.createdAt)
+          ) {
+            return { error: "link_session_invalid" };
+          }
+        }
         if (source.action === "create-user" && source.oauth?.providerId === "google" && user.emailVerified !== true) {
           return { error: "google_email_not_verified" };
         }
@@ -194,13 +219,13 @@ export function createIdentityAuth(
           if (!session?.session) {
             throw APIError.from("UNAUTHORIZED", { code: "UNAUTHORIZED", message: "Unauthorized" });
           }
-          const sessionAge = Date.now() - new Date(session.session.createdAt).getTime();
-          if (sessionAge >= fifteenMinutesInSeconds * 1_000) {
+          if (!isFreshSession(session.session.createdAt)) {
             throw APIError.from("FORBIDDEN", {
               code: "SESSION_NOT_FRESH",
               message: "The session is not fresh enough.",
             });
           }
+          await addOAuthServerContext({ pickFlickLinkSessionId: session.session.id });
           const callbackURL = context.body.callbackURL;
           context.body.scopes = undefined;
           context.body.additionalParams = undefined;

@@ -310,6 +310,19 @@ function responseCookieHeader(response: Response): string {
   return response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
 }
 
+function mergeCookieHeaders(...headers: Array<string | null>): string {
+  const cookies = new Map<string, string>();
+  for (const header of headers) {
+    for (const cookie of header?.split(/;\s*/) ?? []) {
+      const separator = cookie.indexOf("=");
+      if (separator > 0) {
+        cookies.set(cookie.slice(0, separator), cookie);
+      }
+    }
+  }
+  return [...cookies.values()].join("; ");
+}
+
 async function completeGoogleSignIn(code: string) {
   const attempt = await startGoogleSignIn(deterministicAuth);
   const response = await submitGoogleCallback(attempt, code);
@@ -356,7 +369,9 @@ async function startAppleSignIn(
   const body = await response.json() as { url?: string };
   const url = body.url ? new URL(body.url) : undefined;
   const state = url?.searchParams.get("state") ?? undefined;
-  const cookie = response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
+  const initiatingCookie = new Headers(options.headers).get("cookie");
+  const responseCookie = response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
+  const cookie = mergeCookieHeaders(initiatingCookie, responseCookie);
 
   if (
     !response.ok ||
@@ -856,6 +871,37 @@ try {
     throw new Error("A stale session created an explicit identity-link intent.");
   }
 
+  const revokedCallbackLogin = await helpers.login({ userId: registeredUser.id });
+  const revokedLinkAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: revokedCallbackLogin.headers,
+    link: true,
+  });
+  await database.authSession.delete({ where: { token: revokedCallbackLogin.token } });
+  const revokedLink = await submitAppleCallback(revokedLinkAttempt, "apple-link");
+  assertSafeLoginFailure(revokedLink, "A revoked initiating session completed an identity link.");
+  if (await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-linked-subject" } },
+  })) {
+    throw new Error("A revoked initiating session persisted an identity link.");
+  }
+
+  const staleCallbackLogin = await helpers.login({ userId: registeredUser.id });
+  const staleCallbackAttempt = await startAppleSignIn(deterministicAuth, {
+    headers: staleCallbackLogin.headers,
+    link: true,
+  });
+  await database.authSession.update({
+    where: { token: staleCallbackLogin.token },
+    data: { createdAt: new Date(Date.now() - 16 * 60 * 1_000) },
+  });
+  const staleCallbackLink = await submitAppleCallback(staleCallbackAttempt, "apple-link");
+  assertSafeLoginFailure(staleCallbackLink, "A session that became stale completed an identity link.");
+  if (await database.providerAccount.findUnique({
+    where: { provider_providerSubject: { provider: "apple", providerSubject: "apple-linked-subject" } },
+  })) {
+    throw new Error("A session that became stale persisted an identity link.");
+  }
+
   const appleLinkAttempt = await startAppleSignIn(deterministicAuth, {
     headers: { cookie: registered.sessionCookie },
     link: true,
@@ -964,7 +1010,7 @@ try {
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, fresh explicit linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   await new Promise<void>((resolve, reject) => {

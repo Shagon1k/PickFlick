@@ -21,7 +21,7 @@ export default async function LoginPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
   await connection();
-  if (await hasAuthenticatedSession((await headers()).get("cookie"))) {
+  if (await hasAuthenticatedSession(await headers())) {
     redirect("/app");
   }
   const parameters = await searchParams;
