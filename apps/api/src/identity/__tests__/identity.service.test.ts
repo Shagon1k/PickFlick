@@ -115,11 +115,15 @@ describe("identity configuration", () => {
       window: 60,
       customRules: {
         "/callback/*": { max: 30, window: 60 },
-        "/link-social": { max: 10, window: 60 },
+        "/list-accounts": expect.any(Function),
+        "/link-social": expect.any(Function),
         "/sign-in/social": { max: 10, window: 60 },
-        "/unlink-account": { max: 10, window: 60 },
+        "/unlink-account": expect.any(Function),
       },
     });
+    expect(auth.options.rateLimit?.customRules?.["/list-accounts"]).toBeTypeOf("function");
+    expect(auth.options.rateLimit?.customRules?.["/link-social"]).toBeTypeOf("function");
+    expect(auth.options.rateLimit?.customRules?.["/unlink-account"]).toBeTypeOf("function");
   });
 
   it("rejects session creation for a suspended User", async () => {

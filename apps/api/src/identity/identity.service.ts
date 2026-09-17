@@ -27,6 +27,7 @@ import type {
 } from "./authorization.types.js";
 import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
+import { lockIdentityUser } from "./identity-lock.js";
 import { identityProviders } from "./identity-providers.js";
 
 const sevenDaysInSeconds = 60 * 60 * 24 * 7;
@@ -42,6 +43,11 @@ const discardedProviderCredentialData = {
   scope: null,
 } as const;
 
+const prismaAdapterOptions = {
+  provider: "postgresql",
+  transaction: true,
+} as const;
+
 function authenticationErrorCallback(baseUrl: string, returnTo: string): string {
   const errorCallbackURL = new URL("/login", baseUrl);
   errorCallbackURL.searchParams.set("returnTo", returnTo);
@@ -53,7 +59,59 @@ function isFreshSession(createdAt: Date | string): boolean {
   return Number.isFinite(age) && age >= 0 && age < fifteenMinutesInSeconds * 1_000;
 }
 
+function boundaryOwnsRateLimit(): false {
+  return false;
+}
+
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
+
+function serializedIdentityAdapter(
+  database: ReturnType<typeof createDatabaseClient>,
+  logger: ApplicationLogger,
+) {
+  const adapter = prismaAdapter(database, prismaAdapterOptions);
+
+  return ((options) => {
+    const configuredAdapter = adapter(options);
+    return {
+      ...configuredAdapter,
+      create: async (input) => {
+        if (input.model !== "session") {
+          return configuredAdapter.create(input);
+        }
+
+        const userId = input.data.userId;
+        if (typeof userId !== "string") {
+          throw new Error("An authentication session requires a User identifier.");
+        }
+
+        return database.$transaction(async (transaction) => {
+          await lockIdentityUser(transaction, userId);
+          const user = await transaction.user.findUnique({
+            select: { status: true },
+            where: { id: userId },
+          });
+          if (user?.status !== "ACTIVE") {
+            logger.warn(
+              { event: "auth.session.denied", reason: "inactive_user" },
+              "Authentication session creation denied.",
+            );
+            throw APIError.from("FORBIDDEN", {
+              code: "ACCOUNT_INACTIVE",
+              message: "Unable to sign in.",
+            });
+          }
+
+          const transactionAdapter = prismaAdapter(transaction as never, {
+            ...prismaAdapterOptions,
+            transaction: false,
+          })(options);
+          return transactionAdapter.create(input);
+        });
+      },
+    };
+  }) satisfies typeof adapter;
+}
 
 export function createIdentityAuth(
   environment: RuntimeEnvironment,
@@ -72,10 +130,7 @@ export function createIdentityAuth(
     basePath: "/api/auth",
     secret: environment.auth.secret,
     trustedOrigins: [environment.auth.baseUrl],
-    database: prismaAdapter(database, {
-      provider: "postgresql",
-      transaction: true,
-    }),
+    database: serializedIdentityAdapter(database, logger),
     advanced: {
       database: { generateId: "uuid", validateSchema: true },
       disableCSRFCheck: false,
@@ -180,8 +235,9 @@ export function createIdentityAuth(
       max: 60,
       customRules: {
         "/sign-in/social": { window: 60, max: 10 },
-        "/link-social": { window: 60, max: 10 },
-        "/unlink-account": { window: 60, max: 10 },
+        "/list-accounts": boundaryOwnsRateLimit,
+        "/link-social": boundaryOwnsRateLimit,
+        "/unlink-account": boundaryOwnsRateLimit,
         "/callback/*": { window: 60, max: 30 },
       },
     },

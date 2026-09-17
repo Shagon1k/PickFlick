@@ -18,6 +18,14 @@ interface AuthHandlerOptions {
 }
 
 const appleCallbackRateLimit = { maximum: 10, windowMilliseconds: 60_000 } as const;
+const protectedAuthRateLimits: ReadonlyMap<string, {
+  readonly maximum: number;
+  readonly windowMilliseconds: number;
+}> = new Map([
+  ["GET /api/auth/list-accounts", { maximum: 60, windowMilliseconds: 60_000 }],
+  ["POST /api/auth/link-social", { maximum: 10, windowMilliseconds: 60_000 }],
+  ["POST /api/auth/unlink-account", { maximum: 10, windowMilliseconds: 60_000 }],
+] as const);
 
 const allowedAuthRequests = new Set([
   "GET /api/auth/callback/google",
@@ -137,6 +145,49 @@ async function consumeAppleCallbackRateLimit(
   });
 }
 
+async function consumeProtectedAuthRateLimit(
+  request: IncomingMessage,
+  requestKey: string,
+  options: AuthHandlerOptions,
+): Promise<number | undefined> {
+  const rule = protectedAuthRateLimits.get(requestKey);
+  if (!rule) {
+    return undefined;
+  }
+
+  const path = requestKey.slice(requestKey.indexOf("/api/auth") + "/api/auth".length);
+  const key = `${clientAddress(request, options.clientAddressHeader)}|${path}`;
+  const lockKey = `auth-rate-limit:${key}`;
+
+  return options.database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+    const now = Date.now();
+    const existing = await transaction.authRateLimit.findUnique({ where: { key } });
+    if (!existing) {
+      await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
+      return undefined;
+    }
+
+    const lastRequest = Number(existing.lastRequest);
+    if (now - lastRequest >= rule.windowMilliseconds) {
+      await transaction.authRateLimit.update({
+        data: { count: 1, lastRequest: now },
+        where: { key },
+      });
+      return undefined;
+    }
+    if (existing.count >= rule.maximum) {
+      return Math.max(1, Math.ceil((lastRequest + rule.windowMilliseconds - now) / 1_000));
+    }
+
+    await transaction.authRateLimit.update({
+      data: { count: { increment: 1 }, lastRequest: now },
+      where: { key },
+    });
+    return undefined;
+  });
+}
+
 async function authenticatedUserId(
   request: IncomingMessage,
   options: AuthHandlerOptions,
@@ -248,6 +299,14 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
 
     const path = requestPath(request.url);
     const requestKey = `${request.method?.toUpperCase()} ${path}`;
+    if (protectedAuthRequests.has(requestKey)) {
+      const retryAfter = await consumeProtectedAuthRateLimit(request, requestKey, options);
+      if (retryAfter) {
+        response.setHeader("retry-after", String(retryAfter));
+        writeJson(response, 429, { statusCode: 429, message: "Too many requests." });
+        return;
+      }
+    }
     if (request.method === "GET" && path === "/api/auth/get-session") {
       const resolution = await options.resolveSession(request);
       if (!resolution.authorized && resolution.reason === "service_unavailable") {

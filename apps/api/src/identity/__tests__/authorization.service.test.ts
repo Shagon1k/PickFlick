@@ -27,6 +27,7 @@ function databaseDouble(user: { appRole: "USER" | "APP_ADMIN"; status: "ACTIVE" 
       findUnique: vi.fn(async () => user),
       update: vi.fn(async () => user),
     },
+    $executeRaw: vi.fn(async () => 1),
     $transaction: vi.fn(async (operation: (transaction: unknown) => Promise<void>) => operation(database)),
   };
   return database;
@@ -160,12 +161,22 @@ describe("IdentityAuthorizationService", () => {
     const database = databaseDouble({ appRole: "APP_ADMIN", status: "ACTIVE" });
     const authorization = new IdentityAuthorizationService(database as never, testLogger().logger, async () => null);
 
-    await authorization.setAppRole(admin, "target-user", "APP_ADMIN");
+    await authorization.setAppRole(admin, "target-user", "USER");
 
     expect(database.user.update).toHaveBeenCalledWith({
-      data: { appRole: "APP_ADMIN" },
+      data: { appRole: "USER" },
       where: { id: "target-user" },
     });
     expect(database.authSession.deleteMany).toHaveBeenCalledWith({ where: { userId: "target-user" } });
+  });
+
+  it("does not revoke sessions when the App role is unchanged", async () => {
+    const database = databaseDouble({ appRole: "APP_ADMIN", status: "ACTIVE" });
+    const authorization = new IdentityAuthorizationService(database as never, testLogger().logger, async () => null);
+
+    await authorization.setAppRole(admin, "target-user", "APP_ADMIN");
+
+    expect(database.user.update).not.toHaveBeenCalled();
+    expect(database.authSession.deleteMany).not.toHaveBeenCalled();
   });
 });

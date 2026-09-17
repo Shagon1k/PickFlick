@@ -11,6 +11,7 @@ import { testUtils } from "better-auth/plugins";
 import { restrictAuthHandler } from "../src/identity/auth-http.js";
 import { IdentityAuthorizationService } from "../src/identity/authorization.service.js";
 import { normalizeAppleDisplayName } from "../src/identity/apple-profile.js";
+import { identityUserLockKey } from "../src/identity/identity-lock.js";
 import { createIdentityAuth } from "../src/identity/identity.service.js";
 
 const configuredEnvironment = loadRuntimeEnvironment();
@@ -452,6 +453,24 @@ async function completeAppleSignIn(code: string, user?: Readonly<Record<string, 
   return { response, sessionCookie: responseCookieHeader(response) };
 }
 
+async function waitForBlockedIdentityLock(lockKey: string, expectedWaiters: number): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const rows = await database.$queryRaw<Array<{ waiting: bigint }>>`
+      SELECT COUNT(*) AS waiting
+      FROM pg_locks
+      WHERE locktype = 'advisory'
+        AND NOT granted
+        AND classid::bigint = ((hashtextextended(${lockKey}, 0) >> 32) & 4294967295)
+        AND objid::bigint = (hashtextextended(${lockKey}, 0) & 4294967295)
+    `;
+    if (Number(rows[0]?.waiting ?? 0) >= expectedWaiters) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`The identity lock did not serialize ${expectedWaiters} concurrent operations.`);
+}
+
 try {
   const context = await auth.$context;
   const helpers = (context as typeof context & {
@@ -503,6 +522,26 @@ try {
   });
   if (forgedAccountProjection.status !== 401) {
     throw new Error("A forged session reached a protected authentication projection.");
+  }
+  const deniedRequestAddress = nextSyntheticClientAddress();
+  const deniedProtectedResponses: Response[] = [];
+  for (let attempt = 0; attempt < 11; attempt += 1) {
+    deniedProtectedResponses.push(await fetch(`${deterministicHttpBaseUrl}/api/auth/link-social`, {
+      body: JSON.stringify({ callbackURL: "/app", provider: "google" }),
+      headers: {
+        "content-type": "application/json",
+        cookie: "pickflick.session_token=forged-private-token",
+        origin: environment.auth.baseUrl,
+        "x-forwarded-for": deniedRequestAddress,
+      },
+      method: "POST",
+    }));
+  }
+  if (
+    deniedProtectedResponses.slice(0, 10).some(({ status }) => status !== 401) ||
+    deniedProtectedResponses[10]?.status !== 429
+  ) {
+    throw new Error("Denied protected authentication requests did not consume the configured abuse limit.");
   }
 
   const expiredLogin = await helpers.login({ userId });
@@ -627,6 +666,11 @@ try {
     !await deterministicAuthorization.authorizeBackgroundUser(roleTargetUserId, ["APP_ADMIN"])
   ) {
     throw new Error("An App role change did not revoke sessions or update background authorization.");
+  }
+  const postRoleChangeLogin = await helpers.login({ userId: roleTargetUserId });
+  await deterministicAuthorization.setAppRole(adminPrincipal, roleTargetUserId, "APP_ADMIN");
+  if (!await database.authSession.findUnique({ where: { token: postRoleChangeLogin.token } })) {
+    throw new Error("An unchanged App role retry revoked a newly issued session.");
   }
 
   const crossOriginStart = await auth.handler(
@@ -1150,8 +1194,59 @@ try {
     throw new Error("A User was allowed to unlink their last supported provider identity.");
   }
 
+  const issuanceAttempt = await startGoogleSignIn(deterministicAuth);
+  const identityLockBlocker = createDatabaseClient(environment.databaseUrl);
+  const lockKey = identityUserLockKey(registeredUser.id);
+  let releaseIdentityLock: (() => void) | undefined;
+  let signalIdentityLockHeld: (() => void) | undefined;
+  const identityLockHeld = new Promise<void>((resolve) => {
+    signalIdentityLockHeld = resolve;
+  });
+  const holdIdentityLock = new Promise<void>((resolve) => {
+    releaseIdentityLock = resolve;
+  });
+  const blockingTransaction = identityLockBlocker.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+    signalIdentityLockHeld?.();
+    await holdIdentityLock;
+  }, { timeout: 30_000 });
+  try {
+    await identityLockHeld;
+    const callback = submitGoogleCallback(issuanceAttempt, "returning-user");
+    await waitForBlockedIdentityLock(lockKey, 1);
+    const suspension = deterministicAuthorization.suspendUser(adminPrincipal, registeredUser.id);
+    await waitForBlockedIdentityLock(lockKey, 2);
+    releaseIdentityLock?.();
+
+    const callbackResponse = await callback;
+    await suspension;
+    await blockingTransaction;
+    if (
+      callbackResponse.status !== 302 ||
+      callbackResponse.headers.get("location") !== "/app" ||
+      await database.authSession.count({ where: { userId: registeredUser.id } }) !== 0 ||
+      (await database.user.findUnique({ where: { id: registeredUser.id } }))?.status !== "SUSPENDED"
+    ) {
+      throw new Error("Concurrent callback and suspension left an active session or incorrect User status.");
+    }
+
+    await database.user.update({ data: { status: "ACTIVE" }, where: { id: registeredUser.id } });
+    const revokedConcurrentSession = await deterministicAuth.handler(
+      new Request(`${environment.auth.baseUrl}/api/auth/get-session`, {
+        headers: { cookie: responseCookieHeader(callbackResponse) },
+      }),
+    );
+    if (!revokedConcurrentSession.ok || await revokedConcurrentSession.json() !== null) {
+      throw new Error("A session revoked by concurrent suspension became valid after reinstatement.");
+    }
+  } finally {
+    releaseIdentityLock?.();
+    await blockingTransaction.catch(() => undefined);
+    await identityLockBlocker.$disconnect();
+  }
+
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, authoritative role/status resolution, rolling session cookies, forged/expired/revoked/suspended denial, suspended provider sign-in rejection, transactional suspension and role-change revocation, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, pre-resolution protected-auth abuse limits, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, authoritative role/status resolution, rolling session cookies, forged/expired/revoked/suspended denial, suspended provider sign-in rejection, serialized concurrent session issuance and suspension, idempotent App role changes, transactional suspension and role-change revocation, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   await new Promise<void>((resolve, reject) => {
