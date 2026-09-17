@@ -5,9 +5,25 @@ import type { BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 
 const handoffLifetimeMilliseconds = 10 * 60 * 1_000;
+const handoffPrefix = "apple-callback:";
 
-function handoffIdentifier(state: string, code: string): string {
-  return `apple-callback:${createHash("sha256").update(state).update("\0").update(code).digest("hex")}`;
+function handoffIdentifier(state: string): string {
+  return `${handoffPrefix}${createHash("sha256").update(state).digest("hex")}`;
+}
+
+function callbackCodeHash(state: string, code: string): string {
+  return createHash("sha256").update(state).update("\0").update(code).digest("hex");
+}
+
+function handoffProfile(value: string, state: string, code: string): string | undefined {
+  try {
+    const parsed = JSON.parse(value) as { codeHash?: unknown; profile?: unknown };
+    return parsed.codeHash === callbackCodeHash(state, code) && typeof parsed.profile === "string"
+      ? parsed.profile
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function storeAppleCallbackProfile(
@@ -16,24 +32,31 @@ export async function storeAppleCallbackProfile(
   code: string,
   profile: string,
 ): Promise<void> {
-  const pendingState = await database.authVerification.findFirst({
-    where: { expiresAt: { gt: new Date() }, identifier: state },
-    select: { id: true },
-  });
-  if (!pendingState) {
-    return;
-  }
-  const identifier = handoffIdentifier(state, code);
-  await database.$transaction([
-    database.authVerification.deleteMany({ where: { identifier } }),
-    database.authVerification.create({
+  const identifier = handoffIdentifier(state);
+  await database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${identifier}))`;
+    const now = new Date();
+    await transaction.authVerification.deleteMany({
+      where: { expiresAt: { lte: now }, identifier: { startsWith: handoffPrefix } },
+    });
+    const pendingState = await transaction.authVerification.findFirst({
+      where: { expiresAt: { gt: now }, identifier: state },
+      select: { id: true },
+    });
+    if (!pendingState || await transaction.authVerification.findFirst({
+      where: { expiresAt: { gt: now }, identifier },
+      select: { id: true },
+    })) {
+      return;
+    }
+    await transaction.authVerification.create({
       data: {
         expiresAt: new Date(Date.now() + handoffLifetimeMilliseconds),
         identifier,
-        value: profile,
+        value: JSON.stringify({ codeHash: callbackCodeHash(state, code), profile }),
       },
-    }),
-  ]);
+    });
+  });
 }
 
 function callbackCoordinates(context: {
@@ -63,15 +86,21 @@ export function appleCallbackProfileHandoffPlugin(
           if (!coordinates) {
             return;
           }
+          const identifier = handoffIdentifier(coordinates.state);
+          const now = new Date();
+          await database.authVerification.deleteMany({
+            where: { expiresAt: { lte: now }, identifier },
+          });
           const handoff = await database.authVerification.findFirst({
             where: {
-              expiresAt: { gt: new Date() },
-              identifier: handoffIdentifier(coordinates.state, coordinates.code),
+              expiresAt: { gt: now },
+              identifier,
             },
             orderBy: { createdAt: "desc" },
           });
-          if (handoff && context.query) {
-            (context.query as Record<string, unknown>).user = handoff.value;
+          const profile = handoff && handoffProfile(handoff.value, coordinates.state, coordinates.code);
+          if (profile && context.query) {
+            (context.query as Record<string, unknown>).user = profile;
           }
         }),
       }],
@@ -84,7 +113,7 @@ export function appleCallbackProfileHandoffPlugin(
           }
           try {
             await database.authVerification.deleteMany({
-              where: { identifier: handoffIdentifier(coordinates.state, coordinates.code) },
+              where: { identifier: handoffIdentifier(coordinates.state) },
             });
           } catch (error) {
             context.context.logger.error("Failed to remove an Apple callback profile handoff.", error);

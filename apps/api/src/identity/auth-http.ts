@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { createDatabaseClient } from "@pickflick/database";
 
@@ -9,9 +10,12 @@ type AccountListHandler = (request: IncomingMessage) => Promise<Response>;
 
 interface AuthHandlerOptions {
   readonly appleSignInEnabled: boolean;
+  readonly clientAddressHeader: "cf-connecting-ip" | "x-forwarded-for";
   readonly database: ReturnType<typeof createDatabaseClient>;
   readonly listAccounts: AccountListHandler;
 }
+
+const appleCallbackRateLimit = { maximum: 10, windowMilliseconds: 60_000 } as const;
 
 const allowedAuthRequests = new Set([
   "GET /api/auth/callback/google",
@@ -79,6 +83,99 @@ function writeJson(response: ServerResponse, statusCode: number, body: unknown):
   response.end(JSON.stringify(body));
 }
 
+function clientAddress(request: IncomingMessage, headerName: AuthHandlerOptions["clientAddressHeader"]): string {
+  const header = request.headers[headerName];
+  const value = Array.isArray(header) ? header[0] : header?.split(",", 1)[0];
+  return value?.trim() || request.socket.remoteAddress || "unknown";
+}
+
+async function consumeAppleCallbackRateLimit(
+  request: IncomingMessage,
+  options: AuthHandlerOptions,
+): Promise<number | undefined> {
+  const addressHash = createHash("sha256")
+    .update(clientAddress(request, options.clientAddressHeader))
+    .digest("hex");
+  const key = `apple-callback-post:${addressHash}`;
+
+  return options.database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+    const now = Date.now();
+    const existing = await transaction.authRateLimit.findUnique({ where: { key } });
+    if (!existing) {
+      await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
+      return undefined;
+    }
+
+    const windowStartedAt = Number(existing.lastRequest);
+    if (now - windowStartedAt >= appleCallbackRateLimit.windowMilliseconds) {
+      await transaction.authRateLimit.update({
+        data: { count: 1, lastRequest: now },
+        where: { key },
+      });
+      return undefined;
+    }
+    if (existing.count >= appleCallbackRateLimit.maximum) {
+      return Math.max(1, Math.ceil(
+        (windowStartedAt + appleCallbackRateLimit.windowMilliseconds - now) / 1_000,
+      ));
+    }
+
+    await transaction.authRateLimit.update({
+      data: { count: { increment: 1 } },
+      where: { key },
+    });
+    return undefined;
+  });
+}
+
+async function authenticatedUserId(
+  request: IncomingMessage,
+  options: AuthHandlerOptions,
+): Promise<string | undefined> {
+  const upstream = await options.listAccounts(request);
+  if (!upstream.ok) {
+    return undefined;
+  }
+  const body = await upstream.json() as unknown;
+  const accountIds = Array.isArray(body)
+    ? body.flatMap((account) => {
+        if (!account || typeof account !== "object") {
+          return [];
+        }
+        const id = (account as { id?: unknown }).id;
+        return typeof id === "string" ? [id] : [];
+      })
+    : [];
+  if (accountIds.length === 0) {
+    return undefined;
+  }
+
+  return (await options.database.providerAccount.findFirst({
+    where: { id: { in: accountIds } },
+    select: { userId: true },
+  }))?.userId;
+}
+
+async function handleSerializedUnlink(
+  request: IncomingMessage,
+  response: ServerResponse,
+  handler: NodeAuthHandler,
+  options: AuthHandlerOptions,
+): Promise<void> {
+  const userId = await authenticatedUserId(request, options);
+  if (!userId) {
+    await handler(request, response);
+    return;
+  }
+
+  const lockKey = `identity-unlink:${userId}`;
+  await options.database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+    await handler(request, response);
+  });
+}
+
 async function handleAppleCallbackPost(
   request: IncomingMessage,
   response: ServerResponse,
@@ -142,12 +239,23 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
     }
 
     if (request.method === "POST" && requestPath(request.url) === "/api/auth/callback/apple") {
+      const retryAfter = await consumeAppleCallbackRateLimit(request, options);
+      if (retryAfter) {
+        response.setHeader("retry-after", String(retryAfter));
+        writeJson(response, 429, { statusCode: 429, message: "Too many requests." });
+        return;
+      }
       await handleAppleCallbackPost(request, response, options.database);
       return;
     }
 
     if (request.method === "GET" && requestPath(request.url) === "/api/auth/list-accounts") {
       await writeFilteredAccounts(response, await options.listAccounts(request));
+      return;
+    }
+
+    if (request.method === "POST" && requestPath(request.url) === "/api/auth/unlink-account") {
+      await handleSerializedUnlink(request, response, handler, options);
       return;
     }
 

@@ -341,7 +341,7 @@ stateDiagram-v2
 | `/` | Public landing page. |
 | `/pricing` | Free/Pro comparison and billing entry. |
 | `/contact` | Public contact form. |
-| `/login` | Available provider sign-in and legal links; Google is visible while dormant Apple is omitted. |
+| `/login` | Available provider sign-in and legal links; authenticated Users continue to `/app`, while Google is visible and dormant Apple is omitted. |
 | `/legal/privacy` | Launch-required privacy notice; final copy requires review. |
 | `/legal/terms` | Launch-required terms; final copy requires review. |
 | `/invite/club/[token]` | Club invitation preview, auth continuation, accept/decline, expired state. |

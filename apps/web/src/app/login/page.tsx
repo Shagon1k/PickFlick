@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { resolveAuthReturnTarget } from "@pickflick/contracts";
 import { BrandImage } from "@pickflick/ui";
 
+import { hasAuthenticatedSession, isAppleSignInEnabled } from "../../auth-server";
 import { LoginActions } from "../../components/auth/login-actions";
 import { resolveLoginErrorMessage } from "../../components/auth/login-errors";
 import { firstSearchValue } from "../../components/auth/login.utils";
@@ -18,8 +21,11 @@ export default async function LoginPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
   await connection();
+  if (await hasAuthenticatedSession((await headers()).get("cookie"))) {
+    redirect("/app");
+  }
   const parameters = await searchParams;
-  const appleSignInEnabled = process.env.APPLE_SIGN_IN_ENABLED === "true";
+  const appleSignInEnabled = isAppleSignInEnabled();
   const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
   const errorMessage = resolveLoginErrorMessage(firstSearchValue(parameters.error));
 

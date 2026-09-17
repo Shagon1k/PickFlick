@@ -4,6 +4,12 @@ import { createServer } from "node:http";
 const retryKeys = new Map();
 
 const api = createServer((request, response) => {
+  if (request.method === "GET" && request.url === "/api/auth/get-session") {
+    const authenticated = request.headers.cookie?.includes("pickflick.session_token=valid") ?? false;
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify(authenticated ? { user: { id: "user-1" } } : null));
+    return;
+  }
   if (request.method !== "POST" || request.url !== "/contact") {
     response.writeHead(404).end();
     return;

@@ -195,12 +195,14 @@ MinIO bucket if it does not exist. `pnpm services:check` checks each service fro
 the runtime storage credentials to verify access to the configured bucket. Local configuration uses
 the non-secret `RESEND_API_KEY=local-disabled` placeholder and does not call Resend.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
-fixtures, and PostgreSQL constraints. `pnpm auth:check` uses a deterministic local provider double
-to prove new and returning Google identity handling, fixed identity-only permissions,
-provider-credential discard, email-conflict denial, distinct Cloudflare client rate-limit keys,
-database session resolution, sign-out/revocation, state/nonce/PKCE binding, atomic state
-consumption, origin and return-target rejection, and safe expiry, replay, denial, invitation retry,
-and forged-callback handling. It does not call Google or validate a real provider credential.
+fixtures, and PostgreSQL constraints. `pnpm auth:check` internally enables synthetic Apple settings
+for its local provider doubles, so the checked-in default-off product gate remains unchanged. It
+proves new and returning Google/Apple identity handling, fixed identity-only permissions,
+provider-credential discard, email-conflict denial, callback and unlink concurrency controls,
+distinct client rate-limit keys, database session resolution, sign-out/revocation,
+state/nonce/PKCE binding, atomic state consumption, origin and return-target rejection, and safe
+expiry, replay, denial, invitation retry, and forged-callback handling. It does not call either
+provider or validate a real provider credential.
 
 Stop the containers with `pnpm services:down`. That command retains the named volumes. Delete the
 volumes only when you intentionally want to discard all local service data.
@@ -273,7 +275,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 | `API_PORT` | Integer from 1 through 65535 | API | No |
 | `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
 | `AUTH_SECRET` | At least 32 characters used to protect authentication state and encrypted provider-token fields | API | Yes |
-| `APPLE_SIGN_IN_ENABLED` | Optional boolean; defaults to `false`. The API registers Apple and the web renders Apple actions only when `true` | API, web server | No |
+| `APPLE_SIGN_IN_ENABLED` | Optional boolean; defaults to `false`. The API registers Apple and the web renders Apple actions only when `true`; local `pnpm dev`/`pnpm start` load it from the repository-root `.env` | API, web server | No |
 | `APPLE_CLIENT_ID` | Apple Services ID; required only when `APPLE_SIGN_IN_ENABLED=true` | API | Yes |
 | `APPLE_KEY_ID` | Apple Sign In private-key identifier; required only when enabled | API | Yes |
 | `APPLE_PRIVATE_KEY` | Apple EC P-256 `.p8` key as PKCS#8 PEM; required only when enabled; `\n`-encoded line breaks are accepted | API | Yes |

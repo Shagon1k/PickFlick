@@ -205,6 +205,7 @@ export function createIdentityAuth(
           context.body.scopes = undefined;
           context.body.additionalParams = undefined;
           context.body.additionalData = undefined;
+          context.body.loginHint = undefined;
           context.body.errorCallbackURL = authenticationErrorCallback(environment.auth.baseUrl, callbackURL);
         }
         if (context.path === "/sign-out" && context.body?.callbackURL) {
@@ -269,6 +270,9 @@ export class IdentityService implements OnModuleDestroy {
     this.auth = createIdentityAuth(environment, this.database, logger);
     this.handler = restrictAuthHandler(toNodeHandler(this.auth), {
       appleSignInEnabled: environment.auth.appleSignInEnabled,
+      clientAddressHeader: environment.appEnvironment === "uat" || environment.appEnvironment === "production"
+        ? "cf-connecting-ip"
+        : "x-forwarded-for",
       database: this.database,
       listAccounts: (request) => this.auth.api.listUserAccounts({
         asResponse: true,

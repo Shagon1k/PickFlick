@@ -36,6 +36,28 @@ test("Login is accessible with Google while dormant Apple Sign In stays hidden",
   }
 });
 
+test("Login redirects an authenticated User to the app", async ({ context, page }) => {
+  await context.addCookies([{
+    name: "pickflick.session_token",
+    value: "valid",
+    url: "http://127.0.0.1:41730",
+  }]);
+
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/app$/);
+});
+
+test("Login remains available for a forged session cookie", async ({ context, page }) => {
+  await context.addCookies([{
+    name: "pickflick.session_token",
+    value: "forged",
+    url: "http://127.0.0.1:41730",
+  }]);
+
+  await openLogin(page);
+  await expect(page.getByRole("heading", { level: 1, name: "Welcome to PickFlick" })).toBeVisible();
+});
+
 test("Login has no horizontal overflow at canonical and bridge widths", async ({ page }) => {
   for (const viewport of [...viewports, { height: 900, name: "bridge-640", width: 640 }]) {
     await openLogin(page, viewport);

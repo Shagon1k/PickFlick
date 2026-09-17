@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
-import { loadRuntimeEnvironment } from "@pickflick/config/environment";
+import { loadRuntimeEnvironment, type RuntimeEnvironment } from "@pickflick/config/environment";
 import { assertSafeSeedOrResetTarget, createDatabaseClient } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
 import type { BetterAuthPlugin } from "better-auth";
@@ -12,13 +12,21 @@ import { restrictAuthHandler } from "../src/identity/auth-http.js";
 import { normalizeAppleDisplayName } from "../src/identity/apple-profile.js";
 import { createIdentityAuth } from "../src/identity/identity.service.js";
 
-const environment = loadRuntimeEnvironment();
-if (environment.appEnvironment !== "local" && environment.appEnvironment !== "test") {
+const configuredEnvironment = loadRuntimeEnvironment();
+if (configuredEnvironment.appEnvironment !== "local" && configuredEnvironment.appEnvironment !== "test") {
   throw new Error("The authentication integration check may run only against local or test data.");
 }
-if (!environment.auth.appleSignInEnabled) {
-  throw new Error("Set APPLE_SIGN_IN_ENABLED=true with deterministic local/test Apple configuration for auth:check.");
-}
+const environment: RuntimeEnvironment = {
+  ...configuredEnvironment,
+  auth: {
+    ...configuredEnvironment.auth,
+    appleSignInEnabled: true,
+    appleClientId: "local-synthetic-apple-client-id",
+    appleKeyId: "SYNTHKEY1",
+    applePrivateKey: "local-synthetic-apple-private-key",
+    appleTeamId: "SYNTHTEAM1",
+  },
+};
 assertSafeSeedOrResetTarget(environment);
 
 const database = createDatabaseClient(environment.databaseUrl);
@@ -218,6 +226,7 @@ const deterministicAuth = createIdentityAuth(environment, database, logger, [
 ]);
 const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(deterministicAuth), {
   appleSignInEnabled: true,
+  clientAddressHeader: "x-forwarded-for",
   database,
   listAccounts: (request) => deterministicAuth.api.listUserAccounts({
     asResponse: true,
@@ -372,19 +381,7 @@ async function submitAppleCallback(
   code: string,
   user?: Readonly<Record<string, unknown>>,
 ): Promise<Response> {
-  const body = new URLSearchParams({ code, state: attempt.state });
-  if (user) {
-    body.set("user", JSON.stringify(user));
-  }
-  const postResponse = await fetch(`${deterministicHttpBaseUrl}/api/auth/callback/apple`, {
-    body,
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      cookie: attempt.cookie,
-    },
-    method: "POST",
-    redirect: "manual",
-  });
+  const postResponse = await postAppleCallback(attempt, code, user);
   const location = postResponse.headers.get("location");
   const redirect = location ? new URL(location, deterministicHttpBaseUrl) : undefined;
   if (
@@ -398,6 +395,28 @@ async function submitAppleCallback(
   }
   return fetch(redirect, {
     headers: { cookie: attempt.cookie },
+    redirect: "manual",
+  });
+}
+
+async function postAppleCallback(
+  attempt: { cookie: string; state: string },
+  code: string,
+  user?: Readonly<Record<string, unknown>>,
+  sourceAddress = nextSyntheticClientAddress(),
+): Promise<Response> {
+  const body = new URLSearchParams({ code, state: attempt.state });
+  if (user) {
+    body.set("user", JSON.stringify(user));
+  }
+  return fetch(`${deterministicHttpBaseUrl}/api/auth/callback/apple`, {
+    body,
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      cookie: attempt.cookie,
+      "x-forwarded-for": sourceAddress,
+    },
+    method: "POST",
     redirect: "manual",
   });
 }
@@ -607,6 +626,32 @@ try {
     throw new Error("A new Google User did not receive a resolvable database session.");
   }
 
+  const googleLinkHeaders = new Headers({
+    "content-type": "application/json",
+    cookie: registered.sessionCookie,
+    origin: environment.auth.baseUrl,
+    "x-forwarded-for": nextSyntheticClientAddress(),
+  });
+  const googleLink = await auth.handler(
+    new Request(`${environment.auth.baseUrl}/api/auth/link-social`, {
+      body: JSON.stringify({
+        callbackURL: "/app",
+        disableRedirect: true,
+        loginHint: "caller-controlled@example.invalid",
+        provider: "google",
+      }),
+      headers: googleLinkHeaders,
+      method: "POST",
+    }),
+  );
+  const googleLinkBody = await googleLink.json() as { url?: string };
+  const googleLinkUrl = googleLinkBody.url ? new URL(googleLinkBody.url) : undefined;
+  const googleLinkState = googleLinkUrl?.searchParams.get("state");
+  if (!googleLink.ok || !googleLinkState || googleLinkUrl.searchParams.has("login_hint")) {
+    throw new Error("An explicit Google link retained a caller-controlled login hint.");
+  }
+  oauthStateIdentifiers.add(googleLinkState);
+
   const returning = await completeGoogleSignIn("returning-user");
   if (returning.response.status !== 302 || returning.response.headers.get("location") !== "/app") {
     throw new Error("A returning Google User did not reach the validated application return target.");
@@ -674,6 +719,49 @@ try {
   ) {
     throw new Error("An email-conflicting Google identity was persisted despite linking being disabled.");
   }
+
+  const amplificationAttempt = await startAppleSignIn(deterministicAuth);
+  const amplificationAddress = nextSyntheticClientAddress();
+  const amplificationResponses: Response[] = [];
+  for (let index = 0; index < 11; index += 1) {
+    amplificationResponses.push(await postAppleCallback(
+      amplificationAttempt,
+      `amplification-${index}`,
+      { name: { firstName: `Attempt ${index}` } },
+      amplificationAddress,
+    ));
+  }
+  if (
+    amplificationResponses.slice(0, 10).some(({ status }) => status !== 303) ||
+    amplificationResponses[10]?.status !== 429
+  ) {
+    throw new Error("The Apple callback POST boundary did not enforce its request limit.");
+  }
+  const amplificationHandoffs = await database.authVerification.findMany({
+    where: { identifier: { startsWith: "apple-callback:" } },
+  });
+  if (amplificationHandoffs.length !== 1) {
+    throw new Error("One pending Apple state created more than one callback handoff.");
+  }
+  await database.authVerification.update({
+    data: { expiresAt: new Date(Date.now() - 1_000) },
+    where: { id: amplificationHandoffs[0]!.id },
+  });
+  const cleanupAttempt = await startAppleSignIn(deterministicAuth);
+  const cleanupPost = await postAppleCallback(
+    cleanupAttempt,
+    "cleanup-trigger",
+    { name: { firstName: "Cleanup" } },
+  );
+  if (
+    cleanupPost.status !== 303 ||
+    await database.authVerification.findUnique({ where: { id: amplificationHandoffs[0]!.id } })
+  ) {
+    throw new Error("An expired Apple callback handoff was not removed.");
+  }
+  await database.authVerification.deleteMany({
+    where: { identifier: { startsWith: "apple-callback:" } },
+  });
 
   const appleDeniedAttempt = await startAppleSignIn(deterministicAuth);
   const appleDeniedUrl = new URL("/api/auth/callback/apple", environment.auth.baseUrl);
@@ -837,23 +925,46 @@ try {
     throw new Error("An Apple provider identity was reassigned to another User.");
   }
 
+  const concurrentUnlink = (accountId: string) => fetch(
+    `${deterministicHttpBaseUrl}/api/auth/unlink-account`,
+    {
+      body: JSON.stringify({ accountId }),
+      headers: {
+        "content-type": "application/json",
+        cookie: registered.sessionCookie,
+        origin: environment.auth.baseUrl,
+        "x-forwarded-for": nextSyntheticClientAddress(),
+      },
+      method: "POST",
+    },
+  );
+  const concurrentUnlinks = await Promise.all([
+    concurrentUnlink(providerAccount.id),
+    concurrentUnlink(linkedAccount.id),
+  ]);
+  const remainingLinkedAccounts = await database.providerAccount.count({
+    where: { userId: registeredUser.id },
+  });
+  if (concurrentUnlinks.filter(({ ok }) => ok).length !== 1 || remainingLinkedAccounts !== 1) {
+    throw new Error("Concurrent unlink requests removed every supported provider identity.");
+  }
+
   const ownedLogin = await helpers.login({ userId: ownedUserId });
   const unlinkHeaders = new Headers(ownedLogin.headers);
   unlinkHeaders.set("content-type", "application/json");
   unlinkHeaders.set("origin", environment.auth.baseUrl);
-  const unlinkLast = await deterministicAuth.handler(
-    new Request(`${environment.auth.baseUrl}/api/auth/unlink-account`, {
-      body: JSON.stringify({ accountId: ownedAccount.id }),
-      headers: unlinkHeaders,
-      method: "POST",
-    }),
-  );
+  unlinkHeaders.set("x-forwarded-for", nextSyntheticClientAddress());
+  const unlinkLast = await fetch(`${deterministicHttpBaseUrl}/api/auth/unlink-account`, {
+    body: JSON.stringify({ accountId: ownedAccount.id }),
+    headers: unlinkHeaders,
+    method: "POST",
+  });
   if (unlinkLast.ok || !await database.providerAccount.findUnique({ where: { id: ownedAccount.id } })) {
     throw new Error("A User was allowed to unlink their last supported provider identity.");
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, profile-free Apple POST handoff, bounded first-return and relay fields, filtered account listings, fixed provider permissions, fresh explicit linking, duplicate/conflict denial, last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, fresh explicit linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   await new Promise<void>((resolve, reject) => {
