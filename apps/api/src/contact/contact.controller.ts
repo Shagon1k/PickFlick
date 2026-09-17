@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import type { ContactSubmissionResponse } from "@pickflick/contracts";
 
+import { Public } from "../identity/authorization.decorators.js";
 import {
   ContactConflictError,
   ContactRateLimitError,
@@ -35,6 +36,7 @@ function acceptsJsonBody(request: ContactHttpRequest): boolean {
   return typeof contentType === "string" && contentType.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
+@Public()
 @Controller("contact")
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}

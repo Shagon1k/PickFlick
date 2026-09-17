@@ -9,6 +9,7 @@ import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { testUtils } from "better-auth/plugins";
 
 import { restrictAuthHandler } from "../src/identity/auth-http.js";
+import { IdentityAuthorizationService } from "../src/identity/authorization.service.js";
 import { normalizeAppleDisplayName } from "../src/identity/apple-profile.js";
 import { createIdentityAuth } from "../src/identity/identity.service.js";
 
@@ -224,6 +225,11 @@ const deterministicAuth = createIdentityAuth(environment, database, logger, [
   deterministicProviders(),
   testUtils(),
 ]);
+const deterministicAuthorization = new IdentityAuthorizationService(
+  database,
+  logger,
+  (headers) => deterministicAuth.api.getSession({ headers: fromNodeHeaders(headers) }),
+);
 const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(deterministicAuth), {
   appleSignInEnabled: true,
   clientAddressHeader: "x-forwarded-for",
@@ -232,6 +238,7 @@ const deterministicHttpServer = createServer(restrictAuthHandler(toNodeHandler(d
     asResponse: true,
     headers: fromNodeHeaders(request.headers),
   }),
+  resolveSession: (request) => deterministicAuthorization.resolveSession(request.headers),
 }));
 await new Promise<void>((resolve, reject) => {
   deterministicHttpServer.once("error", reject);
@@ -476,6 +483,36 @@ try {
   if (!authenticated.ok || authenticatedBody?.user?.id !== userId) {
     throw new Error("The database session did not resolve to its User.");
   }
+  const resolvedSession = await deterministicAuthorization.resolveSession(
+    Object.fromEntries(login.headers.entries()),
+  );
+  if (!resolvedSession.authorized || resolvedSession.principal.appRole !== "USER") {
+    throw new Error("The shared session resolver did not return current User authorization.");
+  }
+  const forgedSession = await deterministicAuthorization.resolveSession({
+    cookie: "pickflick.session_token=forged-private-token",
+  });
+  if (forgedSession.authorized || forgedSession.reason !== "invalid_session") {
+    throw new Error("The shared session resolver accepted a forged session.");
+  }
+  const forgedAccountProjection = await fetch(`${deterministicHttpBaseUrl}/api/auth/list-accounts`, {
+    headers: { cookie: "pickflick.session_token=forged-private-token" },
+  });
+  if (forgedAccountProjection.status !== 401) {
+    throw new Error("A forged session reached a protected authentication projection.");
+  }
+
+  const expiredLogin = await helpers.login({ userId });
+  await database.authSession.update({
+    data: { expiresAt: new Date(Date.now() - 1_000) },
+    where: { token: expiredLogin.token },
+  });
+  const expiredSession = await deterministicAuthorization.resolveSession(
+    Object.fromEntries(expiredLogin.headers.entries()),
+  );
+  if (expiredSession.authorized || expiredSession.reason !== "invalid_session") {
+    throw new Error("The shared session resolver accepted an expired session.");
+  }
 
   const signOutHeaders = new Headers(login.headers);
   signOutHeaders.set("content-type", "application/json");
@@ -496,6 +533,72 @@ try {
   );
   if (!afterRevocation.ok || await afterRevocation.json() !== null) {
     throw new Error("A revoked session remained usable.");
+  }
+  const revokedSession = await deterministicAuthorization.resolveSession(
+    Object.fromEntries(login.headers.entries()),
+  );
+  if (revokedSession.authorized || revokedSession.reason !== "invalid_session") {
+    throw new Error("The shared session resolver accepted a revoked session.");
+  }
+
+  const adminUserId = randomUUID();
+  const suspendedUserId = randomUUID();
+  const roleTargetUserId = randomUUID();
+  userIds.add(adminUserId);
+  userIds.add(suspendedUserId);
+  userIds.add(roleTargetUserId);
+  await database.user.createMany({
+    data: [
+      {
+        appRole: "APP_ADMIN",
+        displayName: "Auth Check Admin",
+        email: `auth-admin-${randomUUID()}@example.invalid`,
+        emailVerified: true,
+        id: adminUserId,
+      },
+      {
+        displayName: "Suspension Target",
+        email: `auth-suspended-${randomUUID()}@example.invalid`,
+        emailVerified: true,
+        id: suspendedUserId,
+      },
+      {
+        displayName: "Role Target",
+        email: `auth-role-${randomUUID()}@example.invalid`,
+        emailVerified: true,
+        id: roleTargetUserId,
+      },
+    ],
+  });
+  const adminPrincipal = { appRole: "APP_ADMIN", sessionId: "integration-admin", userId: adminUserId } as const;
+  const suspendedLogin = await helpers.login({ userId: suspendedUserId });
+  await helpers.login({ userId: suspendedUserId });
+  await deterministicAuthorization.suspendUser(adminPrincipal, suspendedUserId);
+  const suspendedSession = await deterministicAuthorization.resolveSession(
+    Object.fromEntries(suspendedLogin.headers.entries()),
+  );
+  if (
+    suspendedSession.authorized ||
+    suspendedSession.reason !== "invalid_session" ||
+    await database.authSession.count({ where: { userId: suspendedUserId } }) !== 0 ||
+    (await database.user.findUnique({ where: { id: suspendedUserId } }))?.status !== "SUSPENDED"
+  ) {
+    throw new Error("Suspension did not deny access and revoke every User session.");
+  }
+  const suspendedSessionProjection = await fetch(`${deterministicHttpBaseUrl}/api/auth/get-session`, {
+    headers: suspendedLogin.headers,
+  });
+  if (suspendedSessionProjection.status !== 200 || await suspendedSessionProjection.json() !== null) {
+    throw new Error("A suspended User received an authenticated session projection.");
+  }
+
+  const roleTargetLogin = await helpers.login({ userId: roleTargetUserId });
+  await deterministicAuthorization.setAppRole(adminPrincipal, roleTargetUserId, "APP_ADMIN");
+  if (
+    await database.authSession.findUnique({ where: { token: roleTargetLogin.token } }) ||
+    !await deterministicAuthorization.authorizeBackgroundUser(roleTargetUserId, ["APP_ADMIN"])
+  ) {
+    throw new Error("An App role change did not revoke sessions or update background authorization.");
   }
 
   const crossOriginStart = await auth.handler(
@@ -1010,7 +1113,7 @@ try {
   }
 
   console.log(
-    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, database sessions, sign-out, and immediate revocation.",
+    "Authentication checks passed: new/returning Google and Apple identity, rate-limited single-row Apple POST handoff with expiry cleanup, bounded first-return and relay fields, filtered account listings, fixed provider permissions and link parameters, callback-bound fresh-session linking, duplicate/conflict denial, serialized last-provider protection, no provider credential retention, origin/return rejection, state/nonce/PKCE, atomic state consumption, expiry/replay/denial intent safety, authoritative role/status resolution, forged/expired/revoked/suspended denial, transactional suspension and role-change revocation, database sessions, sign-out, and immediate revocation.",
   );
 } finally {
   await new Promise<void>((resolve, reject) => {

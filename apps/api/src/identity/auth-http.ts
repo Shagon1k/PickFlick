@@ -4,6 +4,7 @@ import type { createDatabaseClient } from "@pickflick/database";
 
 import { storeAppleCallbackProfile } from "./apple-callback-handoff.js";
 import { sanitizeAppleCallbackProfile } from "./apple-profile.js";
+import type { IdentitySessionResolution } from "./authorization.types.js";
 
 type NodeAuthHandler = (request: IncomingMessage, response: ServerResponse) => Promise<void>;
 type AccountListHandler = (request: IncomingMessage) => Promise<Response>;
@@ -13,6 +14,7 @@ interface AuthHandlerOptions {
   readonly clientAddressHeader: "cf-connecting-ip" | "x-forwarded-for";
   readonly database: ReturnType<typeof createDatabaseClient>;
   readonly listAccounts: AccountListHandler;
+  readonly resolveSession: (request: IncomingMessage) => Promise<IdentitySessionResolution>;
 }
 
 const appleCallbackRateLimit = { maximum: 10, windowMilliseconds: 60_000 } as const;
@@ -31,6 +33,12 @@ const allowedAuthRequests = new Set([
 const appleCallbackRequests = new Set([
   "GET /api/auth/callback/apple",
   "POST /api/auth/callback/apple",
+]);
+
+const protectedAuthRequests = new Set([
+  "GET /api/auth/list-accounts",
+  "POST /api/auth/link-social",
+  "POST /api/auth/unlink-account",
 ]);
 
 export function isAllowedAuthRequest(
@@ -238,7 +246,27 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
       return;
     }
 
-    if (request.method === "POST" && requestPath(request.url) === "/api/auth/callback/apple") {
+    const path = requestPath(request.url);
+    const requestKey = `${request.method?.toUpperCase()} ${path}`;
+    if (request.method === "GET" && path === "/api/auth/get-session") {
+      const resolution = await options.resolveSession(request);
+      if (!resolution.authorized) {
+        writeJson(response, resolution.reason === "service_unavailable" ? 503 : 200, null);
+        return;
+      }
+    } else if (protectedAuthRequests.has(requestKey)) {
+      const resolution = await options.resolveSession(request);
+      if (!resolution.authorized) {
+        writeJson(
+          response,
+          resolution.reason === "service_unavailable" ? 503 : 401,
+          { statusCode: resolution.reason === "service_unavailable" ? 503 : 401, message: "Unauthorized" },
+        );
+        return;
+      }
+    }
+
+    if (request.method === "POST" && path === "/api/auth/callback/apple") {
       const retryAfter = await consumeAppleCallbackRateLimit(request, options);
       if (retryAfter) {
         response.setHeader("retry-after", String(retryAfter));
@@ -249,12 +277,12 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
       return;
     }
 
-    if (request.method === "GET" && requestPath(request.url) === "/api/auth/list-accounts") {
+    if (request.method === "GET" && path === "/api/auth/list-accounts") {
       await writeFilteredAccounts(response, await options.listAccounts(request));
       return;
     }
 
-    if (request.method === "POST" && requestPath(request.url) === "/api/auth/unlink-account") {
+    if (request.method === "POST" && path === "/api/auth/unlink-account") {
       await handleSerializedUnlink(request, response, handler, options);
       return;
     }

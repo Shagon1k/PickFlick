@@ -4,9 +4,11 @@ import { Controller, Get, Inject, Res } from "@nestjs/common";
 import type { LivenessReport, ReadinessReport } from "@pickflick/contracts";
 import type { ApplicationLogger } from "@pickflick/observability";
 
+import { Public } from "./identity/authorization.decorators.js";
 import { HealthService } from "./health.service.js";
 import { APPLICATION_LOGGER } from "./runtime.tokens.js";
 
+@Public()
 @Controller("health")
 export class HealthController {
   constructor(

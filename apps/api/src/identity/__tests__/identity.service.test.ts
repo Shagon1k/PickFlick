@@ -106,6 +106,22 @@ describe("identity configuration", () => {
     expect(auth.options.account?.accountLinking?.trustedProviders).toEqual(["apple", "google"]);
   });
 
+  it("rate-limits authentication entrypoints with stricter sensitive-action rules", () => {
+    expect(auth.options.rateLimit).toMatchObject({
+      enabled: true,
+      max: 60,
+      modelName: "authRateLimit",
+      storage: "database",
+      window: 60,
+      customRules: {
+        "/callback/*": { max: 30, window: 60 },
+        "/link-social": { max: 10, window: 60 },
+        "/sign-in/social": { max: 10, window: 60 },
+        "/unlink-account": { max: 10, window: 60 },
+      },
+    });
+  });
+
   it("discards provider credentials because sign-in needs only the provider subject", async () => {
     const createHook = auth.options.databaseHooks?.account?.create?.before;
     const updateHook = auth.options.databaseHooks?.account?.update?.before;

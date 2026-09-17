@@ -1,3 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
+
 import { Inject, Injectable, type OnModuleDestroy } from "@nestjs/common";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
@@ -17,6 +19,12 @@ import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
 import { appleCallbackProfileHandoffPlugin } from "./apple-callback-handoff.js";
 import { appleProviderAccountProfile } from "./apple-profile.js";
+import { IdentityAuthorizationService } from "./authorization.service.js";
+import type {
+  AppRole,
+  AuthenticatedPrincipal,
+  IdentitySessionResolution,
+} from "./authorization.types.js";
 import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
 import { identityProviders } from "./identity-providers.js";
@@ -284,6 +292,7 @@ export function createIdentityAuth(
 @Injectable()
 export class IdentityService implements OnModuleDestroy {
   private readonly database;
+  private readonly authorization;
   readonly auth: IdentityAuth;
   readonly handler;
 
@@ -293,6 +302,11 @@ export class IdentityService implements OnModuleDestroy {
   ) {
     this.database = createDatabaseClient(environment.databaseUrl);
     this.auth = createIdentityAuth(environment, this.database, logger);
+    this.authorization = new IdentityAuthorizationService(
+      this.database,
+      logger,
+      (headers) => this.auth.api.getSession({ headers: fromNodeHeaders(headers) }),
+    );
     this.handler = restrictAuthHandler(toNodeHandler(this.auth), {
       appleSignInEnabled: environment.auth.appleSignInEnabled,
       clientAddressHeader: environment.appEnvironment === "uat" || environment.appEnvironment === "production"
@@ -303,7 +317,28 @@ export class IdentityService implements OnModuleDestroy {
         asResponse: true,
         headers: fromNodeHeaders(request.headers),
       }),
+      resolveSession: (request) => this.authorization.resolveSession(request.headers),
     });
+  }
+
+  resolveSession(headers: IncomingHttpHeaders): Promise<IdentitySessionResolution> {
+    return this.authorization.resolveSession(headers);
+  }
+
+  authorizeBackgroundUser(userId: string, requiredRoles?: readonly AppRole[]): Promise<boolean> {
+    return this.authorization.authorizeBackgroundUser(userId, requiredRoles);
+  }
+
+  revokeAllSessions(actor: AuthenticatedPrincipal, userId: string): Promise<void> {
+    return this.authorization.revokeAllSessions(actor, userId);
+  }
+
+  setAppRole(actor: AuthenticatedPrincipal, userId: string, appRole: AppRole): Promise<void> {
+    return this.authorization.setAppRole(actor, userId, appRole);
+  }
+
+  suspendUser(actor: AuthenticatedPrincipal, userId: string): Promise<void> {
+    return this.authorization.suspendUser(actor, userId);
   }
 
   async onModuleDestroy(): Promise<void> {
