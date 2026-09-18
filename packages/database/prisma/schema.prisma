@@ -37,6 +37,11 @@ enum MembershipStatus {
   REMOVED
 }
 
+enum ClubAuditAction {
+  MEMBERSHIP_ROLE_CHANGED
+  ADMIN_TRANSFERRED
+}
+
 enum SessionType {
   FULL_CYCLE
   PRE_SELECTED
@@ -60,19 +65,22 @@ enum ContactDeliveryState {
 }
 
 model User {
-  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String            @unique
-  emailVerified    Boolean           @default(false)
-  displayName      String
-  image            String?
-  appRole          AppRole           @default(USER)
-  status           UserStatus        @default(ACTIVE)
-  locale           String            @default("en")
-  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime          @updatedAt @db.Timestamptz(3)
-  memberships      Membership[]
-  authSessions     AuthSession[]
-  providerAccounts ProviderAccount[]
+  id                             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                          String            @unique
+  emailVerified                  Boolean           @default(false)
+  displayName                    String
+  image                          String?
+  appRole                        AppRole           @default(USER)
+  status                         UserStatus        @default(ACTIVE)
+  locale                         String            @default("en")
+  createdAt                      DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt                      DateTime          @updatedAt @db.Timestamptz(3)
+  memberships                    Membership[]
+  authSessions                   AuthSession[]
+  providerAccounts               ProviderAccount[]
+  clubAuditEventsAsActor         ClubAuditEvent[]  @relation("ClubAuditActor")
+  clubAuditEventsAsSubject       ClubAuditEvent[]  @relation("ClubAuditSubject")
+  clubAuditEventsAsPreviousAdmin ClubAuditEvent[]  @relation("ClubAuditPreviousAdmin")
 }
 
 model AuthSession {
@@ -130,31 +138,61 @@ model AuthRateLimit {
 }
 
 model Club {
-  id                String        @id @db.Uuid
+  id                String           @id @db.Uuid
   name              String
   description       String?
-  lifecycle         ClubLifecycle @default(ACTIVE)
-  selectionScaleMin Int           @default(1)
-  selectionScaleMax Int           @default(5)
-  createdAt         DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime      @updatedAt @db.Timestamptz(3)
+  lifecycle         ClubLifecycle    @default(ACTIVE)
+  selectionScaleMin Int              @default(1)
+  selectionScaleMax Int              @default(5)
+  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
   memberships       Membership[]
   sessions          Session[]
+  auditEvents       ClubAuditEvent[]
 }
 
 model Membership {
-  id       String           @id @db.Uuid
-  clubId   String           @db.Uuid
-  userId   String           @db.Uuid
-  role     ClubRole         @default(MEMBER)
-  status   MembershipStatus @default(ACTIVE)
-  joinedAt DateTime         @default(now()) @db.Timestamptz(3)
-  leftAt   DateTime?        @db.Timestamptz(3)
-  club     Club             @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  user     User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id          String           @id @db.Uuid
+  clubId      String           @db.Uuid
+  userId      String           @db.Uuid
+  role        ClubRole         @default(MEMBER)
+  status      MembershipStatus @default(ACTIVE)
+  joinedAt    DateTime         @default(now()) @db.Timestamptz(3)
+  leftAt      DateTime?        @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
+  club        Club             @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  auditEvents ClubAuditEvent[]
 
-  @@unique([clubId, userId])
+  // PostgreSQL migration owns the partial unique index for one ACTIVE row per User/Club.
+  @@index([clubId, userId])
   @@index([userId, status])
+}
+
+model ClubAuditEvent {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operationId           String          @unique @db.Uuid
+  clubId                String          @db.Uuid
+  actorUserId           String          @db.Uuid
+  subjectUserId         String          @db.Uuid
+  subjectMembershipId   String          @db.Uuid
+  action                ClubAuditAction
+  changed               Boolean
+  previousRole          ClubRole
+  nextRole              ClubRole
+  previousAdminUserId   String?         @db.Uuid
+  previousAdminNextRole ClubRole?
+  createdAt             DateTime        @default(now()) @db.Timestamptz(3)
+  club                  Club            @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  actor                 User            @relation("ClubAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  subject               User            @relation("ClubAuditSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  subjectMembership     Membership      @relation(fields: [subjectMembershipId], references: [id], onDelete: Restrict)
+  previousAdmin         User?           @relation("ClubAuditPreviousAdmin", fields: [previousAdminUserId], references: [id], onDelete: Restrict)
+
+  @@index([clubId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([subjectUserId, createdAt])
+  @@index([subjectMembershipId, createdAt])
 }
 
 model Session {

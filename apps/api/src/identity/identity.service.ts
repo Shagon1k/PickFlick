@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders } from "node:http";
 
-import { Inject, Injectable, type OnModuleDestroy } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import { isAllowedAuthReturnTarget } from "@pickflick/contracts";
@@ -16,6 +16,7 @@ import {
 } from "better-auth/api";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 
+import { DatabaseService } from "../database/database.service.js";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
 import { appleCallbackProfileHandoffPlugin } from "./apple-callback-handoff.js";
 import { appleProviderAccountProfile } from "./apple-profile.js";
@@ -362,7 +363,7 @@ export function createIdentityAuth(
 }
 
 @Injectable()
-export class IdentityService implements OnModuleDestroy {
+export class IdentityService {
   private readonly database;
   private readonly authorization;
   readonly auth: IdentityAuth;
@@ -371,8 +372,9 @@ export class IdentityService implements OnModuleDestroy {
   constructor(
     @Inject(RUNTIME_ENVIRONMENT) environment: RuntimeEnvironment,
     @Inject(APPLICATION_LOGGER) logger: ApplicationLogger,
+    databaseService: DatabaseService,
   ) {
-    this.database = createDatabaseClient(environment.databaseUrl);
+    this.database = databaseService.client;
     this.auth = createIdentityAuth(environment, this.database, logger);
     this.authorization = new IdentityAuthorizationService(
       this.database,
@@ -414,9 +416,5 @@ export class IdentityService implements OnModuleDestroy {
 
   suspendUser(actor: AuthenticatedPrincipal, userId: string): Promise<void> {
     return this.authorization.suspendUser(actor, userId);
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.database.$disconnect();
   }
 }

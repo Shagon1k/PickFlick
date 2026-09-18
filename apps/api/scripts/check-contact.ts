@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import { loadRuntimeEnvironment } from "@pickflick/config/environment";
-import { createDatabaseClient } from "@pickflick/database";
 
 import {
   ContactConflictError,
@@ -10,14 +9,16 @@ import {
 } from "../src/contact/contact.errors.js";
 import { PrismaContactMessageRepository } from "../src/contact/contact.repository.js";
 import { ContactService } from "../src/contact/contact.service.js";
+import { DatabaseService } from "../src/database/database.service.js";
 
 const environment = loadRuntimeEnvironment();
 if (environment.appEnvironment !== "local" && environment.appEnvironment !== "test") {
   throw new Error("The Contact integration check may run only against local or test data.");
 }
 
-const repository = new PrismaContactMessageRepository(environment);
-const database = createDatabaseClient(environment.databaseUrl);
+const databaseService = new DatabaseService(environment);
+const repository = new PrismaContactMessageRepository(databaseService);
+const database = databaseService.client;
 const createdIds: string[] = [];
 const source = `contact-integration-${randomUUID()}`;
 
@@ -71,6 +72,5 @@ try {
   if (createdIds.length > 0) {
     await database.contactMessage.deleteMany({ where: { id: { in: createdIds } } });
   }
-  await database.$disconnect();
-  await repository.onModuleDestroy();
+  await databaseService.onModuleDestroy();
 }
