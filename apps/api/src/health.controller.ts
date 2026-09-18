@@ -4,6 +4,7 @@ import { Controller, Get, Inject, Res } from "@nestjs/common";
 import type { LivenessReport, ReadinessReport } from "@pickflick/contracts";
 import type { ApplicationLogger } from "@pickflick/observability";
 
+import { Public } from "./identity/authorization.decorators.js";
 import { HealthService } from "./health.service.js";
 import { APPLICATION_LOGGER } from "./runtime.tokens.js";
 
@@ -15,11 +16,13 @@ export class HealthController {
   ) {}
 
   @Get("live")
+  @Public()
   liveness(): LivenessReport {
     return this.health.liveness();
   }
 
   @Get("ready")
+  @Public()
   async readiness(@Res({ passthrough: true }) response: ServerResponse): Promise<ReadinessReport> {
     const report = await this.health.readiness();
     if (report.status === "not_ready") {

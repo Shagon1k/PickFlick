@@ -1,7 +1,7 @@
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import { createDatabaseClient } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { createIdentityAuth } from "../identity.service.js";
 
@@ -104,6 +104,45 @@ describe("identity configuration", () => {
     });
     expect(auth.options.plugins?.[0]?.id).toBe("pickflick-oidc-providers");
     expect(auth.options.account?.accountLinking?.trustedProviders).toEqual(["apple", "google"]);
+  });
+
+  it("rate-limits authentication entrypoints with stricter sensitive-action rules", () => {
+    expect(auth.options.rateLimit).toMatchObject({
+      enabled: true,
+      max: 60,
+      modelName: "authRateLimit",
+      storage: "database",
+      window: 60,
+      customRules: {
+        "/callback/*": { max: 30, window: 60 },
+        "/list-accounts": expect.any(Function),
+        "/link-social": expect.any(Function),
+        "/sign-in/social": { max: 10, window: 60 },
+        "/unlink-account": expect.any(Function),
+      },
+    });
+    expect(auth.options.rateLimit?.customRules?.["/list-accounts"]).toBeTypeOf("function");
+    expect(auth.options.rateLimit?.customRules?.["/link-social"]).toBeTypeOf("function");
+    expect(auth.options.rateLimit?.customRules?.["/unlink-account"]).toBeTypeOf("function");
+  });
+
+  it("rejects session creation for a suspended User", async () => {
+    const findUnique = vi.fn(async () => ({ status: "SUSPENDED" as const }));
+    const suspendedAuth = createIdentityAuth(
+      environment,
+      { user: { findUnique } } as never,
+      logger,
+    );
+    const beforeSessionCreate = suspendedAuth.options.databaseHooks?.session?.create?.before;
+
+    await expect(beforeSessionCreate?.({ userId: "suspended-user" } as never)).rejects.toMatchObject({
+      body: { code: "ACCOUNT_INACTIVE" },
+      status: "FORBIDDEN",
+    });
+    expect(findUnique).toHaveBeenCalledWith({
+      select: { status: true },
+      where: { id: "suspended-user" },
+    });
   });
 
   it("discards provider credentials because sign-in needs only the provider subject", async () => {

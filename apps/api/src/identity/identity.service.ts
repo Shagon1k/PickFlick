@@ -1,3 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
+
 import { Inject, Injectable, type OnModuleDestroy } from "@nestjs/common";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import type { RuntimeEnvironment } from "@pickflick/config/environment";
@@ -17,8 +19,15 @@ import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
 import { appleCallbackProfileHandoffPlugin } from "./apple-callback-handoff.js";
 import { appleProviderAccountProfile } from "./apple-profile.js";
+import { IdentityAuthorizationService } from "./authorization.service.js";
+import type {
+  AppRole,
+  AuthenticatedPrincipal,
+  IdentitySessionResolution,
+} from "./authorization.types.js";
 import { restrictAuthHandler } from "./auth-http.js";
 import { safeAuthenticationResponsePlugin } from "./auth-response.js";
+import { lockIdentityUser } from "./identity-lock.js";
 import { identityProviders } from "./identity-providers.js";
 
 const sevenDaysInSeconds = 60 * 60 * 24 * 7;
@@ -34,6 +43,11 @@ const discardedProviderCredentialData = {
   scope: null,
 } as const;
 
+const prismaAdapterOptions = {
+  provider: "postgresql",
+  transaction: true,
+} as const;
+
 function authenticationErrorCallback(baseUrl: string, returnTo: string): string {
   const errorCallbackURL = new URL("/login", baseUrl);
   errorCallbackURL.searchParams.set("returnTo", returnTo);
@@ -45,7 +59,59 @@ function isFreshSession(createdAt: Date | string): boolean {
   return Number.isFinite(age) && age >= 0 && age < fifteenMinutesInSeconds * 1_000;
 }
 
+function boundaryOwnsRateLimit(): false {
+  return false;
+}
+
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
+
+function serializedIdentityAdapter(
+  database: ReturnType<typeof createDatabaseClient>,
+  logger: ApplicationLogger,
+) {
+  const adapter = prismaAdapter(database, prismaAdapterOptions);
+
+  return ((options) => {
+    const configuredAdapter = adapter(options);
+    return {
+      ...configuredAdapter,
+      create: async (input) => {
+        if (input.model !== "session") {
+          return configuredAdapter.create(input);
+        }
+
+        const userId = input.data.userId;
+        if (typeof userId !== "string") {
+          throw new Error("An authentication session requires a User identifier.");
+        }
+
+        return database.$transaction(async (transaction) => {
+          await lockIdentityUser(transaction, userId);
+          const user = await transaction.user.findUnique({
+            select: { status: true },
+            where: { id: userId },
+          });
+          if (user?.status !== "ACTIVE") {
+            logger.warn(
+              { event: "auth.session.denied", reason: "inactive_user" },
+              "Authentication session creation denied.",
+            );
+            throw APIError.from("FORBIDDEN", {
+              code: "ACCOUNT_INACTIVE",
+              message: "Unable to sign in.",
+            });
+          }
+
+          const transactionAdapter = prismaAdapter(transaction as never, {
+            ...prismaAdapterOptions,
+            transaction: false,
+          })(options);
+          return transactionAdapter.create(input);
+        });
+      },
+    };
+  }) satisfies typeof adapter;
+}
 
 export function createIdentityAuth(
   environment: RuntimeEnvironment,
@@ -64,10 +130,7 @@ export function createIdentityAuth(
     basePath: "/api/auth",
     secret: environment.auth.secret,
     trustedOrigins: [environment.auth.baseUrl],
-    database: prismaAdapter(database, {
-      provider: "postgresql",
-      transaction: true,
-    }),
+    database: serializedIdentityAdapter(database, logger),
     advanced: {
       database: { generateId: "uuid", validateSchema: true },
       disableCSRFCheck: false,
@@ -172,8 +235,9 @@ export function createIdentityAuth(
       max: 60,
       customRules: {
         "/sign-in/social": { window: 60, max: 10 },
-        "/link-social": { window: 60, max: 10 },
-        "/unlink-account": { window: 60, max: 10 },
+        "/list-accounts": boundaryOwnsRateLimit,
+        "/link-social": boundaryOwnsRateLimit,
+        "/unlink-account": boundaryOwnsRateLimit,
         "/callback/*": { window: 60, max: 30 },
       },
     },
@@ -259,6 +323,22 @@ export function createIdentityAuth(
       },
       session: {
         create: {
+          before: async (session) => {
+            const user = await database.user.findUnique({
+              select: { status: true },
+              where: { id: session.userId },
+            });
+            if (user?.status !== "ACTIVE") {
+              logger.warn(
+                { event: "auth.session.denied", reason: "inactive_user" },
+                "Authentication session creation denied.",
+              );
+              throw APIError.from("FORBIDDEN", {
+                code: "ACCOUNT_INACTIVE",
+                message: "Unable to sign in.",
+              });
+            }
+          },
           after: async () => {
             logger.info({ event: "auth.session.issued" }, "Authentication session issued.");
           },
@@ -284,6 +364,7 @@ export function createIdentityAuth(
 @Injectable()
 export class IdentityService implements OnModuleDestroy {
   private readonly database;
+  private readonly authorization;
   readonly auth: IdentityAuth;
   readonly handler;
 
@@ -293,6 +374,14 @@ export class IdentityService implements OnModuleDestroy {
   ) {
     this.database = createDatabaseClient(environment.databaseUrl);
     this.auth = createIdentityAuth(environment, this.database, logger);
+    this.authorization = new IdentityAuthorizationService(
+      this.database,
+      logger,
+      (headers) => this.auth.api.getSession({
+        headers: fromNodeHeaders(headers),
+        query: { disableRefresh: true },
+      }),
+    );
     this.handler = restrictAuthHandler(toNodeHandler(this.auth), {
       appleSignInEnabled: environment.auth.appleSignInEnabled,
       clientAddressHeader: environment.appEnvironment === "uat" || environment.appEnvironment === "production"
@@ -303,7 +392,28 @@ export class IdentityService implements OnModuleDestroy {
         asResponse: true,
         headers: fromNodeHeaders(request.headers),
       }),
+      resolveSession: (request) => this.authorization.resolveSession(request.headers),
     });
+  }
+
+  resolveSession(headers: IncomingHttpHeaders): Promise<IdentitySessionResolution> {
+    return this.authorization.resolveSession(headers);
+  }
+
+  authorizeBackgroundUser(userId: string, requiredRoles?: readonly AppRole[]): Promise<boolean> {
+    return this.authorization.authorizeBackgroundUser(userId, requiredRoles);
+  }
+
+  revokeAllSessions(actor: AuthenticatedPrincipal, userId: string): Promise<void> {
+    return this.authorization.revokeAllSessions(actor, userId);
+  }
+
+  setAppRole(actor: AuthenticatedPrincipal, userId: string, appRole: AppRole): Promise<void> {
+    return this.authorization.setAppRole(actor, userId, appRole);
+  }
+
+  suspendUser(actor: AuthenticatedPrincipal, userId: string): Promise<void> {
+    return this.authorization.suspendUser(actor, userId);
   }
 
   async onModuleDestroy(): Promise<void> {

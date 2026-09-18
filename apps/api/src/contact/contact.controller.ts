@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import type { ContactSubmissionResponse } from "@pickflick/contracts";
 
+import { Public } from "../identity/authorization.decorators.js";
 import {
   ContactConflictError,
   ContactRateLimitError,
@@ -40,6 +41,7 @@ export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
   @Post()
+  @Public()
   @HttpCode(HttpStatus.ACCEPTED)
   async submit(
     @Body() body: unknown,

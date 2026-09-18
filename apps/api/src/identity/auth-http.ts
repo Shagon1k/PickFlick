@@ -4,6 +4,7 @@ import type { createDatabaseClient } from "@pickflick/database";
 
 import { storeAppleCallbackProfile } from "./apple-callback-handoff.js";
 import { sanitizeAppleCallbackProfile } from "./apple-profile.js";
+import type { IdentitySessionResolution } from "./authorization.types.js";
 
 type NodeAuthHandler = (request: IncomingMessage, response: ServerResponse) => Promise<void>;
 type AccountListHandler = (request: IncomingMessage) => Promise<Response>;
@@ -13,9 +14,23 @@ interface AuthHandlerOptions {
   readonly clientAddressHeader: "cf-connecting-ip" | "x-forwarded-for";
   readonly database: ReturnType<typeof createDatabaseClient>;
   readonly listAccounts: AccountListHandler;
+  readonly resolveSession: (request: IncomingMessage) => Promise<IdentitySessionResolution>;
 }
 
 const appleCallbackRateLimit = { maximum: 10, windowMilliseconds: 60_000 } as const;
+const protectedAuthRateLimits: ReadonlyMap<string, {
+  readonly maximum: number;
+  readonly windowMilliseconds: number;
+}> = new Map([
+  ["GET /api/auth/get-session", { maximum: 60, windowMilliseconds: 60_000 }],
+  ["GET /api/auth/list-accounts", { maximum: 60, windowMilliseconds: 60_000 }],
+  ["POST /api/auth/link-social", { maximum: 10, windowMilliseconds: 60_000 }],
+  ["POST /api/auth/unlink-account", { maximum: 10, windowMilliseconds: 60_000 }],
+] as const);
+const longestAuthRateLimitWindowMilliseconds = Math.max(
+  appleCallbackRateLimit.windowMilliseconds,
+  ...[...protectedAuthRateLimits.values()].map(({ windowMilliseconds }) => windowMilliseconds),
+);
 
 const allowedAuthRequests = new Set([
   "GET /api/auth/callback/google",
@@ -31,6 +46,12 @@ const allowedAuthRequests = new Set([
 const appleCallbackRequests = new Set([
   "GET /api/auth/callback/apple",
   "POST /api/auth/callback/apple",
+]);
+
+const protectedAuthRequests = new Set([
+  "GET /api/auth/list-accounts",
+  "POST /api/auth/link-social",
+  "POST /api/auth/unlink-account",
 ]);
 
 export function isAllowedAuthRequest(
@@ -89,6 +110,15 @@ function clientAddress(request: IncomingMessage, headerName: AuthHandlerOptions[
   return value?.trim() || request.socket.remoteAddress || "unknown";
 }
 
+async function pruneExpiredRateLimits(
+  database: Pick<AuthHandlerOptions["database"], "authRateLimit">,
+  now: number,
+): Promise<void> {
+  await database.authRateLimit.deleteMany({
+    where: { lastRequest: { lt: BigInt(now - longestAuthRateLimitWindowMilliseconds) } },
+  });
+}
+
 async function consumeAppleCallbackRateLimit(
   request: IncomingMessage,
   options: AuthHandlerOptions,
@@ -103,6 +133,7 @@ async function consumeAppleCallbackRateLimit(
     const now = Date.now();
     const existing = await transaction.authRateLimit.findUnique({ where: { key } });
     if (!existing) {
+      await pruneExpiredRateLimits(transaction, now);
       await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
       return undefined;
     }
@@ -113,6 +144,7 @@ async function consumeAppleCallbackRateLimit(
         data: { count: 1, lastRequest: now },
         where: { key },
       });
+      await pruneExpiredRateLimits(transaction, now);
       return undefined;
     }
     if (existing.count >= appleCallbackRateLimit.maximum) {
@@ -123,6 +155,51 @@ async function consumeAppleCallbackRateLimit(
 
     await transaction.authRateLimit.update({
       data: { count: { increment: 1 } },
+      where: { key },
+    });
+    return undefined;
+  });
+}
+
+async function consumeProtectedAuthRateLimit(
+  request: IncomingMessage,
+  requestKey: string,
+  options: AuthHandlerOptions,
+): Promise<number | undefined> {
+  const rule = protectedAuthRateLimits.get(requestKey);
+  if (!rule) {
+    return undefined;
+  }
+
+  const path = requestKey.slice(requestKey.indexOf("/api/auth") + "/api/auth".length);
+  const key = `${clientAddress(request, options.clientAddressHeader)}|${path}`;
+  const lockKey = `auth-rate-limit:${key}`;
+
+  return options.database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+    const now = Date.now();
+    const existing = await transaction.authRateLimit.findUnique({ where: { key } });
+    if (!existing) {
+      await pruneExpiredRateLimits(transaction, now);
+      await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
+      return undefined;
+    }
+
+    const lastRequest = Number(existing.lastRequest);
+    if (now - lastRequest >= rule.windowMilliseconds) {
+      await transaction.authRateLimit.update({
+        data: { count: 1, lastRequest: now },
+        where: { key },
+      });
+      await pruneExpiredRateLimits(transaction, now);
+      return undefined;
+    }
+    if (existing.count >= rule.maximum) {
+      return Math.max(1, Math.ceil((lastRequest + rule.windowMilliseconds - now) / 1_000));
+    }
+
+    await transaction.authRateLimit.update({
+      data: { count: { increment: 1 }, lastRequest: now },
       where: { key },
     });
     return undefined;
@@ -238,7 +315,35 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
       return;
     }
 
-    if (request.method === "POST" && requestPath(request.url) === "/api/auth/callback/apple") {
+    const path = requestPath(request.url);
+    const requestKey = `${request.method?.toUpperCase()} ${path}`;
+    if (protectedAuthRateLimits.has(requestKey)) {
+      const retryAfter = await consumeProtectedAuthRateLimit(request, requestKey, options);
+      if (retryAfter) {
+        response.setHeader("retry-after", String(retryAfter));
+        writeJson(response, 429, { statusCode: 429, message: "Too many requests." });
+        return;
+      }
+    }
+    if (request.method === "GET" && path === "/api/auth/get-session") {
+      const resolution = await options.resolveSession(request);
+      if (!resolution.authorized && resolution.reason === "service_unavailable") {
+        writeJson(response, 503, null);
+        return;
+      }
+    } else if (protectedAuthRequests.has(requestKey)) {
+      const resolution = await options.resolveSession(request);
+      if (!resolution.authorized) {
+        writeJson(
+          response,
+          resolution.reason === "service_unavailable" ? 503 : 401,
+          { statusCode: resolution.reason === "service_unavailable" ? 503 : 401, message: "Unauthorized" },
+        );
+        return;
+      }
+    }
+
+    if (request.method === "POST" && path === "/api/auth/callback/apple") {
       const retryAfter = await consumeAppleCallbackRateLimit(request, options);
       if (retryAfter) {
         response.setHeader("retry-after", String(retryAfter));
@@ -249,12 +354,12 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
       return;
     }
 
-    if (request.method === "GET" && requestPath(request.url) === "/api/auth/list-accounts") {
+    if (request.method === "GET" && path === "/api/auth/list-accounts") {
       await writeFilteredAccounts(response, await options.listAccounts(request));
       return;
     }
 
-    if (request.method === "POST" && requestPath(request.url) === "/api/auth/unlink-account") {
+    if (request.method === "POST" && path === "/api/auth/unlink-account") {
       await handleSerializedUnlink(request, response, handler, options);
       return;
     }
