@@ -1,12 +1,12 @@
 import type { AddressInfo } from "node:net";
-import type { Server } from "node:http";
+import { request, type IncomingMessage, type Server } from "node:http";
 import { Writable } from "node:stream";
 
 import { Controller, Get, Header, Module, Sse } from "@nestjs/common";
 import { APP_GUARD, NestFactory } from "@nestjs/core";
 import type { ApplicationLogger } from "@pickflick/observability";
 import { createLogger } from "@pickflick/observability";
-import { of } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { APPLICATION_LOGGER } from "../../runtime.tokens.js";
@@ -22,6 +22,7 @@ import {
 } from "../authorization.decorators.js";
 import {
   IDENTITY_AUTHORIZATION,
+  SSE_AUTHORIZATION_RECHECK_MILLISECONDS,
   type AppRole,
   type IdentityAuthorizationBoundary,
   type IdentitySessionResolution,
@@ -31,6 +32,8 @@ const principals: Readonly<Record<string, AppRole>> = {
   admin: "APP_ADMIN",
   user: "USER",
 };
+const suspendedCredentials = new Set<string>();
+const boundaryEvents = new BehaviorSubject({ data: "ready" });
 
 let logOutput = "";
 const logDestination = new Writable({
@@ -44,6 +47,9 @@ const logger = createLogger({ environment: "test", service: "api", destination: 
 const identity: IdentityAuthorizationBoundary = {
   async resolveSession(headers): Promise<IdentitySessionResolution> {
     const credential = headers.authorization?.replace("Bearer ", "") ?? "";
+    if (suspendedCredentials.has(credential)) {
+      return { authorized: false, reason: "inactive_user" };
+    }
     const appRole = principals[credential];
     if (appRole) {
       return {
@@ -71,7 +77,7 @@ class BoundaryController {
 
   @Sse("events")
   events() {
-    return of({ data: "ready" });
+    return boundaryEvents;
   }
 
   @Get("files/:fileId")
@@ -98,10 +104,21 @@ class BoundaryController {
   providers: [
     { provide: APPLICATION_LOGGER, useValue: logger satisfies ApplicationLogger },
     { provide: IDENTITY_AUTHORIZATION, useValue: identity },
+    { provide: SSE_AUTHORIZATION_RECHECK_MILLISECONDS, useValue: 20 },
     { provide: APP_GUARD, useClass: AuthenticationGuard },
   ],
 })
 class BoundaryModule {}
+
+function openEventStream(baseUrl: string, credential: string): Promise<IncomingMessage> {
+  return new Promise((resolve, reject) => {
+    const outgoing = request(`${baseUrl}/boundary/events`, {
+      headers: { authorization: `Bearer ${credential}` },
+    }, resolve);
+    outgoing.once("error", reject);
+    outgoing.end();
+  });
+}
 
 describe("deny-by-default authentication guard", () => {
   let app: Awaited<ReturnType<typeof NestFactory.create>>;
@@ -116,6 +133,7 @@ describe("deny-by-default authentication guard", () => {
   });
 
   afterAll(async () => {
+    boundaryEvents.complete();
     await app.close();
   });
 
@@ -159,6 +177,27 @@ describe("deny-by-default authentication guard", () => {
     expect(await denied.text()).not.toContain("admin");
     expect(allowed.status).toBe(200);
     await expect(allowed.json()).resolves.toEqual({ projection: "admin" });
+  });
+
+  it("disconnects an established SSE stream after its User is suspended", async () => {
+    const stream = await openEventStream(baseUrl, "user");
+    expect(stream.statusCode).toBe(200);
+    stream.resume();
+
+    const disconnected = new Promise<void>((resolve) => {
+      stream.once("end", resolve);
+      stream.once("close", resolve);
+    });
+    suspendedCredentials.add("user");
+    try {
+      await expect(Promise.race([
+        disconnected.then(() => true),
+        new Promise<false>((resolve) => setTimeout(() => resolve(false), 500)),
+      ])).resolves.toBe(true);
+    } finally {
+      suspendedCredentials.delete("user");
+      stream.destroy();
+    }
   });
 
   it("requires an explicit public marker and keeps denial logs credential-free", async () => {

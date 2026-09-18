@@ -20,9 +20,19 @@ function testLogger() {
   };
 }
 
-function databaseDouble(user: { appRole: "USER" | "APP_ADMIN"; status: "ACTIVE" | "SUSPENDED" } | null) {
+function databaseDouble(
+  user: { appRole: "USER" | "APP_ADMIN"; status: "ACTIVE" | "SUSPENDED" } | null,
+  userId = "user-id",
+) {
   const database = {
-    authSession: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    authSession: {
+      deleteMany: vi.fn(async () => ({ count: 1 })),
+      findUnique: vi.fn(async ({ where }: { where: { id: string } }) => user ? ({
+        expiresAt: new Date(Date.now() + 60_000),
+        id: where.id,
+        user: { ...user, id: userId },
+      }) : null),
+    },
     user: {
       findUnique: vi.fn(async () => user),
       update: vi.fn(async () => user),
@@ -70,7 +80,7 @@ describe("IdentityAuthorizationService", () => {
       authorized: false,
       reason: "invalid_session",
     });
-    expect(database.user.findUnique).not.toHaveBeenCalled();
+    expect(database.authSession.findUnique).not.toHaveBeenCalled();
   });
 
   it("fails closed without logging resolver error details", async () => {
@@ -93,7 +103,7 @@ describe("IdentityAuthorizationService", () => {
   });
 
   it("denies a suspended User, revokes all sessions, and logs no identifiers", async () => {
-    const database = databaseDouble({ appRole: "USER", status: "SUSPENDED" });
+    const database = databaseDouble({ appRole: "USER", status: "SUSPENDED" }, "private-user-id");
     const logs = testLogger();
     const authorization = new IdentityAuthorizationService(
       database as never,
@@ -113,6 +123,25 @@ describe("IdentityAuthorizationService", () => {
     expect(logs.output()).not.toContain("private-session-id");
     expect(logs.output()).not.toContain("private-user-id");
     expect(logs.output()).not.toContain("private-cookie");
+  });
+
+  it("denies a session revoked between preliminary parsing and the atomic authorization snapshot", async () => {
+    const database = databaseDouble({ appRole: "APP_ADMIN", status: "ACTIVE" });
+    database.authSession.findUnique.mockResolvedValueOnce(null);
+    const authorization = new IdentityAuthorizationService(
+      database as never,
+      testLogger().logger,
+      async () => ({
+        session: { expiresAt: new Date(Date.now() + 60_000), id: "revoked-session" },
+        user: { id: "user-id" },
+      }),
+    );
+
+    await expect(authorization.resolveSession({})).resolves.toEqual({
+      authorized: false,
+      reason: "invalid_session",
+    });
+    expect(database.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("rechecks status and role before a background-sensitive action", async () => {

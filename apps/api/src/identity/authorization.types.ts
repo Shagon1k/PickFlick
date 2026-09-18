@@ -5,6 +5,7 @@ export type { AppRole } from "@pickflick/database";
 
 export const IDENTITY_AUTHORIZATION = Symbol("IDENTITY_AUTHORIZATION");
 export const AUTHENTICATED_PRINCIPAL = Symbol("AUTHENTICATED_PRINCIPAL");
+export const SSE_AUTHORIZATION_RECHECK_MILLISECONDS = Symbol("SSE_AUTHORIZATION_RECHECK_MILLISECONDS");
 
 export interface AuthenticatedPrincipal {
   readonly appRole: AppRole;

@@ -57,14 +57,19 @@ export class IdentityAuthorizationService implements IdentityAuthorizationBounda
         return { authorized: false, reason: "invalid_session" };
       }
 
-      const user = await this.database.user.findUnique({
-        select: { appRole: true, status: true },
-        where: { id: authenticated.user.id },
+      const session = await this.database.authSession.findUnique({
+        select: {
+          expiresAt: true,
+          id: true,
+          user: { select: { appRole: true, id: true, status: true } },
+        },
+        where: { id: authenticated.session.id },
       });
-      if (!user || user.status !== "ACTIVE") {
-        if (user) {
-          await this.database.authSession.deleteMany({ where: { userId: authenticated.user.id } });
-        }
+      if (!session || isExpired(session.expiresAt)) {
+        return { authorized: false, reason: "invalid_session" };
+      }
+      if (session.user.status !== "ACTIVE") {
+        await this.database.authSession.deleteMany({ where: { userId: session.user.id } });
         this.logger.warn(
           { event: "auth.access.denied", reason: "inactive_user" },
           "Inactive User session denied.",
@@ -75,9 +80,9 @@ export class IdentityAuthorizationService implements IdentityAuthorizationBounda
       return {
         authorized: true,
         principal: {
-          appRole: user.appRole,
-          sessionId: authenticated.session.id,
-          userId: authenticated.user.id,
+          appRole: session.user.appRole,
+          sessionId: session.id,
+          userId: session.user.id,
         },
       };
     } catch {

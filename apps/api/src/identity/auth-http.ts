@@ -22,10 +22,15 @@ const protectedAuthRateLimits: ReadonlyMap<string, {
   readonly maximum: number;
   readonly windowMilliseconds: number;
 }> = new Map([
+  ["GET /api/auth/get-session", { maximum: 60, windowMilliseconds: 60_000 }],
   ["GET /api/auth/list-accounts", { maximum: 60, windowMilliseconds: 60_000 }],
   ["POST /api/auth/link-social", { maximum: 10, windowMilliseconds: 60_000 }],
   ["POST /api/auth/unlink-account", { maximum: 10, windowMilliseconds: 60_000 }],
 ] as const);
+const longestAuthRateLimitWindowMilliseconds = Math.max(
+  appleCallbackRateLimit.windowMilliseconds,
+  ...[...protectedAuthRateLimits.values()].map(({ windowMilliseconds }) => windowMilliseconds),
+);
 
 const allowedAuthRequests = new Set([
   "GET /api/auth/callback/google",
@@ -105,6 +110,15 @@ function clientAddress(request: IncomingMessage, headerName: AuthHandlerOptions[
   return value?.trim() || request.socket.remoteAddress || "unknown";
 }
 
+async function pruneExpiredRateLimits(
+  database: Pick<AuthHandlerOptions["database"], "authRateLimit">,
+  now: number,
+): Promise<void> {
+  await database.authRateLimit.deleteMany({
+    where: { lastRequest: { lt: BigInt(now - longestAuthRateLimitWindowMilliseconds) } },
+  });
+}
+
 async function consumeAppleCallbackRateLimit(
   request: IncomingMessage,
   options: AuthHandlerOptions,
@@ -119,6 +133,7 @@ async function consumeAppleCallbackRateLimit(
     const now = Date.now();
     const existing = await transaction.authRateLimit.findUnique({ where: { key } });
     if (!existing) {
+      await pruneExpiredRateLimits(transaction, now);
       await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
       return undefined;
     }
@@ -129,6 +144,7 @@ async function consumeAppleCallbackRateLimit(
         data: { count: 1, lastRequest: now },
         where: { key },
       });
+      await pruneExpiredRateLimits(transaction, now);
       return undefined;
     }
     if (existing.count >= appleCallbackRateLimit.maximum) {
@@ -164,6 +180,7 @@ async function consumeProtectedAuthRateLimit(
     const now = Date.now();
     const existing = await transaction.authRateLimit.findUnique({ where: { key } });
     if (!existing) {
+      await pruneExpiredRateLimits(transaction, now);
       await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
       return undefined;
     }
@@ -174,6 +191,7 @@ async function consumeProtectedAuthRateLimit(
         data: { count: 1, lastRequest: now },
         where: { key },
       });
+      await pruneExpiredRateLimits(transaction, now);
       return undefined;
     }
     if (existing.count >= rule.maximum) {
@@ -299,7 +317,7 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
 
     const path = requestPath(request.url);
     const requestKey = `${request.method?.toUpperCase()} ${path}`;
-    if (protectedAuthRequests.has(requestKey)) {
+    if (protectedAuthRateLimits.has(requestKey)) {
       const retryAfter = await consumeProtectedAuthRateLimit(request, requestKey, options);
       if (retryAfter) {
         response.setHeader("retry-after", String(retryAfter));
