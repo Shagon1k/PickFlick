@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import type { ClubEntitlementProjection } from "@pickflick/contracts";
+import type { ClubTierProjection } from "@pickflick/contracts";
 import { SYNTHETIC_FIXTURES } from "@pickflick/database";
 
-export type ClubTier = ClubEntitlementProjection["tier"];
+export type ClubTier = ClubTierProjection["tier"];
 
-const CLUB_TIER_LIMITS: Readonly<Record<ClubTier, ClubEntitlementProjection>> = {
+const CLUB_TIER_LIMITS: Readonly<Record<ClubTier, ClubTierProjection>> = {
   FREE: {
     tier: "FREE",
     adminClubLimit: 1,
@@ -25,18 +25,18 @@ const CLUB_TIER_LIMITS: Readonly<Record<ClubTier, ClubEntitlementProjection>> = 
   },
 };
 
-export function clubTierLimits(tier: ClubTier): ClubEntitlementProjection {
+export function clubTierLimits(tier: ClubTier): ClubTierProjection {
   return CLUB_TIER_LIMITS[tier];
 }
 
 export abstract class ClubTierResolver {
-  abstract resolve(clubId: string): Promise<ClubEntitlementProjection>;
+  abstract resolve(clubId: string): Promise<ClubTierProjection>;
 }
 
 /** Phase 20 replaces this static seed mapping with subscription-derived tier state. */
 @Injectable()
 export class StaticClubTierResolver extends ClubTierResolver {
-  async resolve(clubId: string): Promise<ClubEntitlementProjection> {
-    return clubTierLimits(clubId === SYNTHETIC_FIXTURES.club.id ? "PRO" : "FREE");
+  async resolve(clubId: string): Promise<ClubTierProjection> {
+    return clubTierLimits(clubId.toLowerCase() === SYNTHETIC_FIXTURES.club.id ? "PRO" : "FREE");
   }
 }

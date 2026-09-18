@@ -53,7 +53,7 @@ replaces that resolver with subscription-derived state.
 | --- | --- | --- |
 | Database invariants and migration upgrade | `pnpm db:check` | Passed locally against a fresh six-migration PostgreSQL database, including upgrade compatibility, active Membership uniqueness, single/adminless Admin states, departure consistency, and audit constraints. |
 | Role/action and forged-request matrix | `pnpm test` | Passed locally: Admin, Moderator, Member, App Admin, suspended, non-member, archived, and caller-forged role cases are covered. |
-| Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, archived-Club denial, suspended/anonymized transfer-target denial, Free/Pro tier projection, per-Club serialization, retry deduplication, single-Admin transfer, categorical logs, and durable audit fields are covered. |
+| Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, archived-Club denial, App Admin-only ownership transfer, suspended/anonymized transfer-target denial, mixed-case UUID retries, Free/Pro tier projection, durable no-op results, per-Club serialization, retry deduplication, categorical logs, and audit fields are covered. |
 | Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 341 tests, workspace-boundary validation, and all production builds. |
 
 At the Phase 5 boundary, move durable implementation facts into canonical guidance, record phase

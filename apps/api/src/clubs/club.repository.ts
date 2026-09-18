@@ -24,6 +24,10 @@ export type ClubTransitionResult =
   | { readonly changed: false }
   | { readonly changed: true; readonly auditEventId: string; readonly replayed: boolean };
 
+function canonicalUuid(value: string): string {
+  return value.toLowerCase();
+}
+
 export abstract class ClubRepository {
   abstract readPolicySubject(userId: string, clubId: string): Promise<ClubPolicySubject>;
   abstract changeMembershipRole(input: ChangeMembershipRoleInput): Promise<ClubTransitionResult>;
@@ -37,13 +41,15 @@ export class PrismaClubRepository extends ClubRepository {
   }
 
   async readPolicySubject(userId: string, clubId: string): Promise<ClubPolicySubject> {
+    const canonicalUserId = canonicalUuid(userId);
+    const canonicalClubId = canonicalUuid(clubId);
     const user = await this.database.client.user.findUnique({
-      where: { id: userId },
+      where: { id: canonicalUserId },
       select: {
         appRole: true,
         status: true,
         memberships: {
-          where: { clubId, status: "ACTIVE" },
+          where: { clubId: canonicalClubId, status: "ACTIVE" },
           take: 1,
           select: { role: true, club: { select: { lifecycle: true } } },
         },
@@ -59,20 +65,24 @@ export class PrismaClubRepository extends ClubRepository {
   }
 
   async changeMembershipRole(input: ChangeMembershipRoleInput): Promise<ClubTransitionResult> {
+    const actorUserId = canonicalUuid(input.actorUserId);
+    const clubId = canonicalUuid(input.clubId);
+    const operationId = canonicalUuid(input.operationId);
+    const targetMembershipId = canonicalUuid(input.targetMembershipId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${input.operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${input.clubId}`}, 0))`;
+      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
+      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
 
       const target = await transaction.membership.findUnique({
-        where: { id: input.targetMembershipId },
+        where: { id: targetMembershipId },
         select: { clubId: true, id: true, role: true, status: true, userId: true },
       });
       const existing = await transaction.clubAuditEvent.findUnique({
-        where: { operationId: input.operationId },
+        where: { operationId },
       });
       if (existing) {
         const replayActor = await transaction.user.findUnique({
-          where: { id: input.actorUserId },
+          where: { id: actorUserId },
           select: { status: true },
         });
         if (replayActor?.status !== "ACTIVE") {
@@ -80,22 +90,24 @@ export class PrismaClubRepository extends ClubRepository {
         }
         if (
           existing.action === "MEMBERSHIP_ROLE_CHANGED" &&
-          existing.actorUserId === input.actorUserId &&
-          existing.clubId === input.clubId &&
-          existing.subjectMembershipId === input.targetMembershipId &&
+          existing.actorUserId === actorUserId &&
+          existing.clubId === clubId &&
+          existing.subjectMembershipId === targetMembershipId &&
           existing.nextRole === input.nextRole
         ) {
-          return { changed: true, auditEventId: existing.id, replayed: true };
+          return existing.changed
+            ? { changed: true, auditEventId: existing.id, replayed: true }
+            : { changed: false };
         }
         throw new ClubConflictError("The operation identifier was already used for another transition.");
       }
 
       const actor = await transaction.user.findUnique({
-        where: { id: input.actorUserId },
+        where: { id: actorUserId },
         select: {
           status: true,
           memberships: {
-            where: { clubId: input.clubId, status: "ACTIVE" },
+            where: { clubId, status: "ACTIVE" },
             take: 1,
             select: { role: true, club: { select: { lifecycle: true } } },
           },
@@ -107,10 +119,23 @@ export class PrismaClubRepository extends ClubRepository {
       if (actor.memberships[0].club.lifecycle !== "ACTIVE") {
         throw new ClubConflictError("Archived Clubs do not allow Membership role changes.");
       }
-      if (!target || target.clubId !== input.clubId || target.status !== "ACTIVE" || target.role === "ADMIN") {
+      if (!target || target.clubId !== clubId || target.status !== "ACTIVE" || target.role === "ADMIN") {
         throw new ClubConflictError("The target is not an eligible active non-Admin Membership.");
       }
       if (target.role === input.nextRole) {
+        await transaction.clubAuditEvent.create({
+          data: {
+            operationId,
+            clubId,
+            actorUserId,
+            subjectUserId: target.userId,
+            subjectMembershipId: target.id,
+            action: "MEMBERSHIP_ROLE_CHANGED",
+            changed: false,
+            previousRole: target.role,
+            nextRole: input.nextRole,
+          },
+        });
         return { changed: false };
       }
 
@@ -120,12 +145,13 @@ export class PrismaClubRepository extends ClubRepository {
       });
       const audit = await transaction.clubAuditEvent.create({
         data: {
-          operationId: input.operationId,
-          clubId: input.clubId,
-          actorUserId: input.actorUserId,
+          operationId,
+          clubId,
+          actorUserId,
           subjectUserId: target.userId,
           subjectMembershipId: target.id,
           action: "MEMBERSHIP_ROLE_CHANGED",
+          changed: true,
           previousRole: target.role,
           nextRole: input.nextRole,
         },
@@ -136,12 +162,16 @@ export class PrismaClubRepository extends ClubRepository {
   }
 
   async transferAdministration(input: TransferAdministrationInput): Promise<ClubTransitionResult> {
+    const actorUserId = canonicalUuid(input.actorUserId);
+    const clubId = canonicalUuid(input.clubId);
+    const operationId = canonicalUuid(input.operationId);
+    const targetMembershipId = canonicalUuid(input.targetMembershipId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${input.operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${input.clubId}`}, 0))`;
+      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
+      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
 
       const target = await transaction.membership.findUnique({
-        where: { id: input.targetMembershipId },
+        where: { id: targetMembershipId },
         select: {
           clubId: true,
           id: true,
@@ -152,21 +182,21 @@ export class PrismaClubRepository extends ClubRepository {
         },
       });
       const existing = await transaction.clubAuditEvent.findUnique({
-        where: { operationId: input.operationId },
+        where: { operationId },
       });
       if (existing) {
         const replayActor = await transaction.user.findUnique({
-          where: { id: input.actorUserId },
-          select: { status: true },
+          where: { id: actorUserId },
+          select: { appRole: true, status: true },
         });
-        if (replayActor?.status !== "ACTIVE") {
+        if (replayActor?.status !== "ACTIVE" || replayActor.appRole !== "APP_ADMIN") {
           throw new ClubAuthorizationError("The current User cannot transfer Club administration.");
         }
         if (
           existing.action === "ADMIN_TRANSFERRED" &&
-          existing.actorUserId === input.actorUserId &&
-          existing.clubId === input.clubId &&
-          existing.subjectMembershipId === input.targetMembershipId &&
+          existing.actorUserId === actorUserId &&
+          existing.clubId === clubId &&
+          existing.subjectMembershipId === targetMembershipId &&
           existing.previousAdminNextRole === input.previousAdminNextRole
         ) {
           return { changed: true, auditEventId: existing.id, replayed: true };
@@ -175,33 +205,29 @@ export class PrismaClubRepository extends ClubRepository {
       }
 
       const actor = await transaction.user.findUnique({
-        where: { id: input.actorUserId },
-        select: {
-          status: true,
-          memberships: {
-            where: { clubId: input.clubId, status: "ACTIVE" },
-            take: 1,
-            select: { id: true, role: true },
-          },
-        },
+        where: { id: actorUserId },
+        select: { appRole: true, status: true },
       });
-      const actorMembership = actor?.memberships[0];
-      if (actor?.status !== "ACTIVE" || actorMembership?.role !== "ADMIN") {
+      if (actor?.status !== "ACTIVE" || actor.appRole !== "APP_ADMIN") {
         throw new ClubAuthorizationError("The current User cannot transfer Club administration.");
       }
+      const currentAdmin = await transaction.membership.findFirst({
+        where: { clubId, role: "ADMIN", status: "ACTIVE" },
+        select: { id: true, userId: true },
+      });
       if (
+        !currentAdmin ||
         !target ||
-        target.clubId !== input.clubId ||
+        target.clubId !== clubId ||
         target.status !== "ACTIVE" ||
         target.user.status !== "ACTIVE" ||
-        target.role === "ADMIN" ||
-        target.id === actorMembership.id
+        target.role === "ADMIN"
       ) {
         throw new ClubConflictError("The target is not an eligible active non-Admin Membership.");
       }
 
       await transaction.membership.update({
-        where: { id: actorMembership.id },
+        where: { id: currentAdmin.id },
         data: { role: input.previousAdminNextRole },
       });
       await transaction.membership.update({
@@ -210,15 +236,16 @@ export class PrismaClubRepository extends ClubRepository {
       });
       const audit = await transaction.clubAuditEvent.create({
         data: {
-          operationId: input.operationId,
-          clubId: input.clubId,
-          actorUserId: input.actorUserId,
+          operationId,
+          clubId,
+          actorUserId,
           subjectUserId: target.userId,
           subjectMembershipId: target.id,
           action: "ADMIN_TRANSFERRED",
+          changed: true,
           previousRole: target.role,
           nextRole: "ADMIN",
-          previousAdminUserId: input.actorUserId,
+          previousAdminUserId: currentAdmin.userId,
           previousAdminNextRole: input.previousAdminNextRole,
         },
         select: { id: true },

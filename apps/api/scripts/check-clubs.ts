@@ -34,6 +34,7 @@ const transitions = new ClubRoleTransitionService(repository, logger);
 const ids = {
   club: randomUUID(),
   admin: randomUUID(),
+  appAdmin: randomUUID(),
   moderator: randomUUID(),
   member: randomUUID(),
   outsider: randomUUID(),
@@ -55,6 +56,12 @@ try {
     await transaction.user.createMany({
       data: [
         { id: ids.admin, email: `${ids.admin}@example.invalid`, displayName: "Club Admin" },
+        {
+          id: ids.appAdmin,
+          email: `${ids.appAdmin}@example.invalid`,
+          displayName: "App Admin",
+          appRole: "APP_ADMIN",
+        },
         { id: ids.moderator, email: `${ids.moderator}@example.invalid`, displayName: "Club Moderator" },
         { id: ids.member, email: `${ids.member}@example.invalid`, displayName: "Club Member" },
         { id: ids.outsider, email: `${ids.outsider}@example.invalid`, displayName: "Non-member" },
@@ -95,10 +102,17 @@ try {
   const [adminPolicy, moderatorPolicy, memberPolicy, seededProPolicy] = await Promise.all([
     policy.project(principal(ids.admin), ids.club),
     policy.project(principal(ids.moderator), ids.club),
-    policy.project(principal(ids.member), ids.club),
-    policy.project(principal(SYNTHETIC_FIXTURES.users[0].id), SYNTHETIC_FIXTURES.club.id),
+    policy.project(principal(ids.member.toUpperCase()), ids.club.toUpperCase()),
+    policy.project(
+      principal(SYNTHETIC_FIXTURES.users[0].id.toUpperCase()),
+      SYNTHETIC_FIXTURES.club.id.toUpperCase(),
+    ),
   ]);
-  if (!adminPolicy.permissions.manageRoles || !moderatorPolicy.permissions.manageSessions) {
+  if (
+    !adminPolicy.permissions.manageRoles ||
+    "transferAdministration" in adminPolicy.permissions ||
+    !moderatorPolicy.permissions.manageSessions
+  ) {
     throw new Error("Admin or Moderator policy projection is missing an allowed action.");
   }
   if (memberPolicy.permissions.manageSessions || memberPolicy.entitlements.tier !== "FREE") {
@@ -125,7 +139,13 @@ try {
     targetMembershipId: ids.memberMembership,
   };
   const roleChange = await transitions.changeMembershipRole(roleInput);
-  const roleRetry = await transitions.changeMembershipRole(roleInput);
+  const roleRetry = await transitions.changeMembershipRole({
+    ...roleInput,
+    actorUserId: roleInput.actorUserId.toUpperCase(),
+    clubId: roleInput.clubId.toUpperCase(),
+    operationId: roleInput.operationId.toUpperCase(),
+    targetMembershipId: roleInput.targetMembershipId.toUpperCase(),
+  });
   if (
     !roleChange.changed ||
     roleChange.replayed ||
@@ -137,6 +157,27 @@ try {
   }
   if (await database.clubAuditEvent.count({ where: { operationId: roleOperationId } }) !== 1) {
     throw new Error("Membership role retry emitted more than one audit event.");
+  }
+
+  const noOpOperationId = randomUUID();
+  const noOpInput = { ...roleInput, operationId: noOpOperationId };
+  const noOp = await transitions.changeMembershipRole(noOpInput);
+  const noOpReceipt = await database.clubAuditEvent.findUnique({ where: { operationId: noOpOperationId } });
+  if (noOp.changed || noOpReceipt?.changed !== false) {
+    throw new Error("An accepted no-op Membership role change did not persist its result.");
+  }
+  await transitions.changeMembershipRole({ ...roleInput, nextRole: "MEMBER", operationId: randomUUID() });
+  const noOpRetry = await transitions.changeMembershipRole({
+    ...noOpInput,
+    operationId: noOpInput.operationId.toUpperCase(),
+    targetMembershipId: noOpInput.targetMembershipId.toUpperCase(),
+  });
+  const roleAfterNoOpRetry = await database.membership.findUnique({
+    where: { id: ids.memberMembership },
+    select: { role: true },
+  });
+  if (noOpRetry.changed || roleAfterNoOpRetry?.role !== "MEMBER") {
+    throw new Error("A retried no-op Membership role operation changed a later role state.");
   }
 
   await transitions.changeMembershipRole({ ...roleInput, actorUserId: ids.moderator, operationId: randomUUID() }).then(
@@ -159,12 +200,27 @@ try {
   );
   await database.club.update({ where: { id: ids.club }, data: { lifecycle: "ACTIVE" } });
 
+  await transitions.transferAdministration({
+    actorUserId: ids.admin,
+    clubId: ids.club,
+    operationId: randomUUID(),
+    previousAdminNextRole: "MEMBER",
+    targetMembershipId: ids.moderatorMembership,
+  }).then(
+    () => { throw new Error("A Club Admin used the App Admin ownership-transfer path."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubAuthorizationError)) {
+        throw error;
+      }
+    },
+  );
+
   for (const [status, targetMembershipId] of [
     ["suspended", ids.suspendedMembership],
     ["anonymized", ids.anonymizedMembership],
   ] as const) {
     await transitions.transferAdministration({
-      actorUserId: ids.admin,
+      actorUserId: ids.appAdmin,
       clubId: ids.club,
       operationId: randomUUID(),
       previousAdminNextRole: "MEMBER",
@@ -181,14 +237,20 @@ try {
 
   const transferOperationId = randomUUID();
   const transferInput = {
-    actorUserId: ids.admin,
+    actorUserId: ids.appAdmin,
     clubId: ids.club,
     operationId: transferOperationId,
     previousAdminNextRole: "MEMBER" as const,
     targetMembershipId: ids.moderatorMembership,
   };
   const transfer = await transitions.transferAdministration(transferInput);
-  const transferRetry = await transitions.transferAdministration(transferInput);
+  const transferRetry = await transitions.transferAdministration({
+    ...transferInput,
+    actorUserId: transferInput.actorUserId.toUpperCase(),
+    clubId: transferInput.clubId.toUpperCase(),
+    operationId: transferInput.operationId.toUpperCase(),
+    targetMembershipId: transferInput.targetMembershipId.toUpperCase(),
+  });
   if (
     !transfer.changed ||
     transfer.replayed ||
@@ -216,6 +278,7 @@ try {
   if (
     logOutput.includes(ids.club) ||
     logOutput.includes(ids.admin) ||
+    logOutput.includes(ids.appAdmin) ||
     logOutput.includes(ids.moderator) ||
     logOutput.includes(ids.member)
   ) {
@@ -223,14 +286,18 @@ try {
   }
 
   console.log(
-    "Club checks passed: private policy projections, static Free/Pro tiers, archived-Club denial, active-User administration transfer, serialized role changes, idempotent transfer, and audit-safe records.",
+    "Club checks passed: private policy projections, static Free/Pro tiers, archived-Club denial, App Admin ownership transfer, UUID canonicalization, durable no-op receipts, serialized role changes, idempotent transfer, and audit-safe records.",
   );
 } finally {
   await database.clubAuditEvent.deleteMany({ where: { clubId: ids.club } });
   await database.membership.deleteMany({ where: { clubId: ids.club } });
   await database.club.deleteMany({ where: { id: ids.club } });
   await database.user.deleteMany({
-    where: { id: { in: [ids.admin, ids.moderator, ids.member, ids.outsider, ids.suspended, ids.anonymized] } },
+    where: {
+      id: {
+        in: [ids.admin, ids.appAdmin, ids.moderator, ids.member, ids.outsider, ids.suspended, ids.anonymized],
+      },
+    },
   });
   await databaseService.onModuleDestroy();
 }

@@ -26,7 +26,6 @@ describe("service contracts", () => {
       "manageRoles",
       "manageSettings",
       "manageLifecycle",
-      "transferAdministration",
       "viewAudit",
     ]);
   });

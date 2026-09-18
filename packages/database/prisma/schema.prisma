@@ -177,6 +177,7 @@ model ClubAuditEvent {
   subjectUserId         String          @db.Uuid
   subjectMembershipId   String          @db.Uuid
   action                ClubAuditAction
+  changed               Boolean
   previousRole          ClubRole
   nextRole              ClubRole
   previousAdminUserId   String?         @db.Uuid

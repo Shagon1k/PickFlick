@@ -29,13 +29,17 @@ CREATE TABLE "ClubAuditEvent" (
   "subjectUserId" UUID NOT NULL,
   "subjectMembershipId" UUID NOT NULL,
   "action" "ClubAuditAction" NOT NULL,
+  "changed" BOOLEAN NOT NULL,
   "previousRole" "ClubRole" NOT NULL,
   "nextRole" "ClubRole" NOT NULL,
   "previousAdminUserId" UUID,
   "previousAdminNextRole" "ClubRole",
   "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "ClubAuditEvent_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "ClubAuditEvent_changed_role_check" CHECK ("previousRole" <> "nextRole"),
+  CONSTRAINT "ClubAuditEvent_changed_role_check" CHECK (
+    ("changed" AND "previousRole" <> "nextRole")
+    OR (NOT "changed" AND "previousRole" = "nextRole")
+  ),
   CONSTRAINT "ClubAuditEvent_shape_check" CHECK (
     (
       "action" = 'MEMBERSHIP_ROLE_CHANGED'
@@ -45,8 +49,10 @@ CREATE TABLE "ClubAuditEvent" (
     )
     OR (
       "action" = 'ADMIN_TRANSFERRED'
+      AND "changed"
       AND "nextRole" = 'ADMIN'
       AND "previousAdminUserId" IS NOT NULL
+      AND "previousAdminNextRole" IS NOT NULL
       AND "previousAdminNextRole" IN ('MODERATOR', 'MEMBER')
     )
   )

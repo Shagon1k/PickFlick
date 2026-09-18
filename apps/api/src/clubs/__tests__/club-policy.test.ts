@@ -39,7 +39,6 @@ describe("Club policy", () => {
         "manageRoles",
         "manageSettings",
         "manageLifecycle",
-        "transferAdministration",
         "viewAudit",
       ],
     },
@@ -82,7 +81,7 @@ describe("Club policy", () => {
   });
 
   it.each([
-    ["ADMIN", ["viewClub", "manageLifecycle", "transferAdministration", "viewAudit"]],
+    ["ADMIN", ["viewClub", "manageLifecycle", "viewAudit"]],
     ["MODERATOR", ["viewClub", "leaveClub"]],
     ["MEMBER", ["viewClub", "leaveClub"]],
   ] as const)("keeps archived Clubs read-only for %s", (clubRole, allowed) => {
@@ -100,7 +99,7 @@ describe("Club policy", () => {
     };
     const [freePolicy, proPolicy] = await Promise.all([
       policy.project(principal, "10000000-0000-4000-8000-000000000002"),
-      policy.project(principal, SYNTHETIC_FIXTURES.club.id),
+      policy.project(principal, SYNTHETIC_FIXTURES.club.id.toUpperCase()),
     ]);
 
     expect(freePolicy.entitlements).toEqual({

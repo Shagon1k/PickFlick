@@ -80,14 +80,13 @@ export const CLUB_POLICY_ACTIONS = [
   "manageRoles",
   "manageSettings",
   "manageLifecycle",
-  "transferAdministration",
   "viewAudit",
 ] as const;
 
 export type ClubPolicyAction = (typeof CLUB_POLICY_ACTIONS)[number];
 export type ClubPolicyPermissions = Readonly<Record<ClubPolicyAction, boolean>>;
 
-export interface ClubEntitlementProjection {
+export interface ClubTierProjection {
   readonly tier: "FREE" | "PRO";
   readonly adminClubLimit: number;
   readonly memberLimit: number;
@@ -102,7 +101,7 @@ export interface ClubPolicyProjection {
   readonly lifecycle: "ACTIVE" | "ARCHIVED";
   readonly membershipRole: "ADMIN" | "MODERATOR" | "MEMBER";
   readonly permissions: ClubPolicyPermissions;
-  readonly entitlements: ClubEntitlementProjection;
+  readonly entitlements: ClubTierProjection;
 }
 
 export const DEFAULT_AUTH_RETURN_TARGET = "/app";

@@ -22,7 +22,6 @@ function deniedPermissions(): MutableClubPolicyPermissions {
     manageRoles: false,
     manageSettings: false,
     manageLifecycle: false,
-    transferAdministration: false,
     viewAudit: false,
   };
 }
@@ -42,7 +41,6 @@ export function projectClubPermissions(subject: ClubPolicySubject): ClubPolicyPe
 
   if (subject.clubRole === "ADMIN") {
     permissions.manageLifecycle = true;
-    permissions.transferAdministration = true;
     permissions.viewAudit = true;
   }
 

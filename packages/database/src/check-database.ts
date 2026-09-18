@@ -284,11 +284,46 @@ try {
           subjectUserId: SYNTHETIC_FIXTURES.users[1].id,
           subjectMembershipId: SYNTHETIC_FIXTURES.memberships.member,
           action: "MEMBERSHIP_ROLE_CHANGED",
+          changed: true,
           previousRole: "MEMBER",
           nextRole: "MEMBER",
         },
       }),
     "ClubAuditEvent_changed_role_check",
+  );
+  await runRollbackProbe((transaction) =>
+    transaction.clubAuditEvent.create({
+      data: {
+        operationId: "40000000-0000-4000-8000-000000000008",
+        clubId: SYNTHETIC_FIXTURES.club.id,
+        actorUserId: SYNTHETIC_FIXTURES.users[0].id,
+        subjectUserId: SYNTHETIC_FIXTURES.users[1].id,
+        subjectMembershipId: SYNTHETIC_FIXTURES.memberships.member,
+        action: "MEMBERSHIP_ROLE_CHANGED",
+        changed: false,
+        previousRole: "MEMBER",
+        nextRole: "MEMBER",
+      },
+    }),
+  );
+  await expectConstraint(
+    (transaction) =>
+      transaction.clubAuditEvent.create({
+        data: {
+          operationId: "40000000-0000-4000-8000-000000000009",
+          clubId: SYNTHETIC_FIXTURES.club.id,
+          actorUserId: SYNTHETIC_FIXTURES.users[0].id,
+          subjectUserId: SYNTHETIC_FIXTURES.users[1].id,
+          subjectMembershipId: SYNTHETIC_FIXTURES.memberships.member,
+          action: "ADMIN_TRANSFERRED",
+          changed: true,
+          previousRole: "MEMBER",
+          nextRole: "ADMIN",
+          previousAdminUserId: SYNTHETIC_FIXTURES.users[0].id,
+          previousAdminNextRole: null,
+        },
+      }),
+    "ClubAuditEvent_shape_check",
   );
   await expectConstraint(
     (transaction) =>
