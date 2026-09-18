@@ -104,6 +104,36 @@ export interface ClubPolicyProjection {
   readonly entitlements: ClubTierProjection;
 }
 
+export const CLUB_NAME_MIN_LENGTH = 3;
+export const CLUB_NAME_MAX_LENGTH = 100;
+export const CLUB_DESCRIPTION_MAX_LENGTH = 500;
+
+export interface ClubSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly lifecycle: "ACTIVE" | "ARCHIVED";
+  readonly membershipRole: "ADMIN" | "MODERATOR" | "MEMBER";
+  readonly selectionScaleMin: 0 | 1;
+  readonly selectionScaleMax: number;
+  readonly tier: "FREE" | "PRO";
+}
+
+export interface ClubCollectionResponse {
+  readonly clubs: readonly ClubSummary[];
+}
+
+export interface CreateClubRequest {
+  readonly name: string;
+  readonly description?: string;
+  readonly selectionScaleMin: 0 | 1;
+  readonly selectionScaleMax: number;
+}
+
+export interface CreateClubResponse {
+  readonly club: ClubSummary;
+}
+
 export const DEFAULT_AUTH_RETURN_TARGET = "/app";
 
 const invitationAuthReturnTarget = /^\/invite\/(?:club|session)\/[A-Za-z0-9_-]{1,512}$/;

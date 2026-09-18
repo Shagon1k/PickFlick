@@ -8,7 +8,11 @@ import { createLogger } from "@pickflick/observability";
 import { ClubAuthorizationError, ClubConflictError } from "../src/clubs/club.errors.js";
 import { PrismaClubRepository } from "../src/clubs/club.repository.js";
 import { StaticClubTierResolver } from "../src/clubs/club-tiers.js";
-import { ClubPolicyService, ClubRoleTransitionService } from "../src/clubs/clubs.service.js";
+import {
+  ClubOnboardingService,
+  ClubPolicyService,
+  ClubRoleTransitionService,
+} from "../src/clubs/clubs.service.js";
 import { DatabaseService } from "../src/database/database.service.js";
 
 const environment = loadDatabaseEnvironment();
@@ -29,6 +33,7 @@ const logger = createLogger({
   }),
 });
 const policy = new ClubPolicyService(repository, new StaticClubTierResolver());
+const onboarding = new ClubOnboardingService(repository, new StaticClubTierResolver(), logger);
 const transitions = new ClubRoleTransitionService(repository, logger);
 
 const ids = {
@@ -38,6 +43,7 @@ const ids = {
   moderator: randomUUID(),
   member: randomUUID(),
   outsider: randomUUID(),
+  creator: randomUUID(),
   suspended: randomUUID(),
   anonymized: randomUUID(),
   adminMembership: randomUUID(),
@@ -46,6 +52,8 @@ const ids = {
   suspendedMembership: randomUUID(),
   anonymizedMembership: randomUUID(),
 };
+
+let createdClubId: string | undefined;
 
 function principal(userId: string) {
   return { appRole: "USER" as const, sessionId: randomUUID(), userId };
@@ -65,6 +73,7 @@ try {
         { id: ids.moderator, email: `${ids.moderator}@example.invalid`, displayName: "Club Moderator" },
         { id: ids.member, email: `${ids.member}@example.invalid`, displayName: "Club Member" },
         { id: ids.outsider, email: `${ids.outsider}@example.invalid`, displayName: "Non-member" },
+        { id: ids.creator, email: `${ids.creator}@example.invalid`, displayName: "First Club Creator" },
         {
           id: ids.suspended,
           email: `${ids.suspended}@example.invalid`,
@@ -91,6 +100,63 @@ try {
       skipDuplicates: true,
     });
   });
+
+  const creationAttempts = await Promise.allSettled([
+    onboarding.create(principal(ids.creator), {
+      name: "  Midnight Society  ",
+      description: "  Noir, classics, and arguments.  ",
+      selectionScaleMin: 0,
+      selectionScaleMax: 7,
+    }),
+    onboarding.create(principal(ids.creator), {
+      name: "Second Club",
+      selectionScaleMin: 1,
+      selectionScaleMax: 5,
+    }),
+  ]);
+  const fulfilledCreations = creationAttempts.filter(
+    (attempt): attempt is PromiseFulfilledResult<Awaited<ReturnType<typeof onboarding.create>>> =>
+      attempt.status === "fulfilled",
+  );
+  const rejectedCreations = creationAttempts.filter(
+    (attempt): attempt is PromiseRejectedResult => attempt.status === "rejected",
+  );
+  if (
+    fulfilledCreations.length !== 1 ||
+    rejectedCreations.length !== 1 ||
+    !(rejectedCreations[0]?.reason instanceof ClubConflictError)
+  ) {
+    throw new Error("Concurrent first-Club creation did not enforce the Free Admin Club limit.");
+  }
+  const createdClub = fulfilledCreations[0]?.value.club;
+  createdClubId = createdClub?.id;
+  if (
+    !createdClub ||
+    createdClub.name !== "Midnight Society" ||
+    createdClub.description !== "Noir, classics, and arguments." ||
+    createdClub.membershipRole !== "ADMIN" ||
+    createdClub.tier !== "FREE" ||
+    createdClub.selectionScaleMin !== 0 ||
+    createdClub.selectionScaleMax !== 7
+  ) {
+    throw new Error("First-Club creation did not preserve the validated Free defaults and scale.");
+  }
+  const createdMemberships = await database.membership.findMany({
+    where: { clubId: createdClub.id },
+    select: { role: true, status: true, userId: true },
+  });
+  if (
+    createdMemberships.length !== 1 ||
+    createdMemberships[0]?.userId !== ids.creator ||
+    createdMemberships[0].role !== "ADMIN" ||
+    createdMemberships[0].status !== "ACTIVE"
+  ) {
+    throw new Error("First-Club creation did not atomically create the sole active Admin Membership.");
+  }
+  const creatorClubs = await onboarding.list(principal(ids.creator));
+  if (creatorClubs.clubs.length !== 1 || creatorClubs.clubs[0]?.id !== createdClub.id) {
+    throw new Error("The creator's Club collection did not include the new Club.");
+  }
 
   const adminCount = await database.membership.count({
     where: { clubId: ids.club, role: "ADMIN", status: "ACTIVE" },
@@ -286,16 +352,20 @@ try {
   }
 
   console.log(
-    "Club checks passed: private policy projections, static Free/Pro tiers, archived-Club denial, App Admin ownership transfer, UUID canonicalization, durable no-op receipts, serialized role changes, idempotent transfer, and audit-safe records.",
+    "Club checks passed: transactional first-Club creation, serialized Free limits, private policy projections, static Free/Pro tiers, archived-Club denial, App Admin ownership transfer, UUID canonicalization, durable no-op receipts, serialized role changes, idempotent transfer, and audit-safe records.",
   );
 } finally {
+  if (createdClubId) {
+    await database.membership.deleteMany({ where: { clubId: createdClubId } });
+    await database.club.deleteMany({ where: { id: createdClubId } });
+  }
   await database.clubAuditEvent.deleteMany({ where: { clubId: ids.club } });
   await database.membership.deleteMany({ where: { clubId: ids.club } });
   await database.club.deleteMany({ where: { id: ids.club } });
   await database.user.deleteMany({
     where: {
       id: {
-        in: [ids.admin, ids.appAdmin, ids.moderator, ids.member, ids.outsider, ids.suspended, ids.anonymized],
+        in: [ids.admin, ids.appAdmin, ids.moderator, ids.member, ids.outsider, ids.creator, ids.suspended, ids.anonymized],
       },
     },
   });

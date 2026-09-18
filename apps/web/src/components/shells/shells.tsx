@@ -280,6 +280,24 @@ function ProductChrome({
   );
 }
 
+export function ProductFrame({
+  admin = false,
+  children,
+  clubItems = [],
+  routes,
+}: Readonly<{
+  admin?: boolean;
+  children: ReactNode;
+  clubItems?: readonly ShellNavigationItem[];
+  routes?: ShellRouteMap;
+}>) {
+  return (
+    <ProductChrome admin={admin} clubItems={clubItems} currentArea="hub" routes={routes}>
+      {children}
+    </ProductChrome>
+  );
+}
+
 export function ProductShell({ admin = false, children, clubItems, currentArea, eyebrow, routes, title }: ProductShellProps) {
   return (
     <ProductChrome admin={admin} clubItems={clubItems} currentArea={currentArea} routes={routes}>
