@@ -69,6 +69,7 @@ const ids = {
   member: randomUUID(),
   outsider: randomUUID(),
   creator: randomUUID(),
+  reactivationAdmin: randomUUID(),
   suspended: randomUUID(),
   anonymized: randomUUID(),
   adminMembership: randomUUID(),
@@ -78,10 +79,13 @@ const ids = {
   anonymizedMembership: randomUUID(),
   adminlessClub: randomUUID(),
   adminlessMembership: randomUUID(),
+  reactivationClub: randomUUID(),
+  reactivationMembership: randomUUID(),
   historicalSession: randomUUID(),
 };
 
 let createdClubId: string | undefined;
+let reactivationCreatedClubId: string | undefined;
 
 function principal(userId: string) {
   return { appRole: "USER" as const, sessionId: randomUUID(), userId };
@@ -103,6 +107,11 @@ try {
         { id: ids.outsider, email: `${ids.outsider}@example.invalid`, displayName: "Non-member" },
         { id: ids.creator, email: `${ids.creator}@example.invalid`, displayName: "First Club Creator" },
         {
+          id: ids.reactivationAdmin,
+          email: `${ids.reactivationAdmin}@example.invalid`,
+          displayName: "Reactivation Admin",
+        },
+        {
           id: ids.suspended,
           email: `${ids.suspended}@example.invalid`,
           displayName: "Suspended Admin",
@@ -118,6 +127,9 @@ try {
     });
     await transaction.club.create({ data: { id: ids.club, name: "Club boundary check" } });
     await transaction.club.create({ data: { id: ids.adminlessClub, name: "Adminless boundary check" } });
+    await transaction.club.create({
+      data: { id: ids.reactivationClub, lifecycle: "ARCHIVED", name: "Archived limit check" },
+    });
     await transaction.membership.createMany({
       data: [
         { id: ids.adminMembership, clubId: ids.club, userId: ids.admin, role: "ADMIN" },
@@ -126,6 +138,12 @@ try {
         { id: ids.suspendedMembership, clubId: ids.club, userId: ids.suspended, role: "MODERATOR" },
         { id: ids.anonymizedMembership, clubId: ids.club, userId: ids.anonymized, role: "MEMBER" },
         { id: ids.adminlessMembership, clubId: ids.adminlessClub, userId: ids.member, role: "MEMBER" },
+        {
+          id: ids.reactivationMembership,
+          clubId: ids.reactivationClub,
+          userId: ids.reactivationAdmin,
+          role: "ADMIN",
+        },
       ],
       skipDuplicates: true,
     });
@@ -189,6 +207,37 @@ try {
   const creatorClubs = await onboarding.list(principal(ids.creator));
   if (creatorClubs.clubs.length !== 1 || creatorClubs.clubs[0]?.id !== createdClub.id) {
     throw new Error("The creator's Club collection did not include the new Club.");
+  }
+
+  const [reactivationAttempt, competingCreationAttempt] = await Promise.allSettled([
+    management.changeLifecycle(principal(ids.reactivationAdmin), ids.reactivationClub, "reactivate", {
+      operationId: randomUUID(),
+    }),
+    onboarding.create(principal(ids.reactivationAdmin), {
+      name: "Competing active Club",
+      selectionScaleMin: 0,
+      selectionScaleMax: 7,
+    }),
+  ]);
+  if (competingCreationAttempt.status === "fulfilled") {
+    reactivationCreatedClubId = competingCreationAttempt.value.club.id;
+  }
+  const limitAttempts = [reactivationAttempt, competingCreationAttempt];
+  const limitSuccesses = limitAttempts.filter((attempt) => attempt.status === "fulfilled");
+  const limitConflicts = limitAttempts.filter(
+    (attempt): attempt is PromiseRejectedResult =>
+      attempt.status === "rejected" && attempt.reason instanceof ClubConflictError,
+  );
+  const activeAdminClubCount = await database.membership.count({
+    where: {
+      userId: ids.reactivationAdmin,
+      role: "ADMIN",
+      status: "ACTIVE",
+      club: { deletedAt: null, lifecycle: "ACTIVE" },
+    },
+  });
+  if (limitSuccesses.length !== 1 || limitConflicts.length !== 1 || activeAdminClubCount !== 1) {
+    throw new Error("Concurrent Club creation and reactivation did not enforce the Free Admin Club limit.");
   }
 
   const adminless = await management.project(principal(ids.member), ids.adminlessClub);
@@ -521,9 +570,17 @@ try {
   }
 
   console.log(
-    "Club checks passed: transactional creation, private role projections, adminless handling, audited settings/avatar changes, archive/reactivate, leave, empty-Club deletion tombstones, static tiers, serialized role changes, App Admin transfer, and idempotent receipts.",
+    "Club checks passed: transactional creation/reactivation limits, private role projections, adminless handling, audited settings/avatar changes, archive/reactivate, leave, empty-Club deletion tombstones, static tiers, serialized role changes, App Admin transfer, and idempotent receipts.",
   );
 } finally {
+  if (reactivationCreatedClubId) {
+    await database.clubAuditEvent.deleteMany({ where: { clubId: reactivationCreatedClubId } });
+    await database.membership.deleteMany({ where: { clubId: reactivationCreatedClubId } });
+    await database.club.deleteMany({ where: { id: reactivationCreatedClubId } });
+  }
+  await database.clubAuditEvent.deleteMany({ where: { clubId: ids.reactivationClub } });
+  await database.membership.deleteMany({ where: { clubId: ids.reactivationClub } });
+  await database.club.deleteMany({ where: { id: ids.reactivationClub } });
   if (createdClubId) {
     await database.clubAuditEvent.deleteMany({ where: { clubId: createdClubId } });
     await database.membership.deleteMany({ where: { clubId: createdClubId } });
@@ -539,7 +596,17 @@ try {
   await database.user.deleteMany({
     where: {
       id: {
-        in: [ids.admin, ids.appAdmin, ids.moderator, ids.member, ids.outsider, ids.creator, ids.suspended, ids.anonymized],
+        in: [
+          ids.admin,
+          ids.appAdmin,
+          ids.moderator,
+          ids.member,
+          ids.outsider,
+          ids.creator,
+          ids.reactivationAdmin,
+          ids.suspended,
+          ids.anonymized,
+        ],
       },
     },
   });

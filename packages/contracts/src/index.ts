@@ -113,6 +113,7 @@ export interface ClubSummary {
   readonly name: string;
   readonly description?: string;
   readonly hasAvatar: boolean;
+  readonly avatarVersion?: string;
   readonly lifecycle: "ACTIVE" | "ARCHIVED";
   readonly membershipRole: "ADMIN" | "MODERATOR" | "MEMBER";
   readonly selectionScaleMin: 0 | 1;
@@ -168,7 +169,6 @@ export interface ClubAuditProjection {
   readonly action: ClubAuditAction;
   readonly changed: boolean;
   readonly createdAt: string;
-  readonly subjectMembershipId: string;
 }
 
 export interface ClubSettingsProjection {

@@ -131,13 +131,19 @@ export class ClubManagementService {
       throw new ClubConflictError("Archive confirmation does not match.");
     }
     const requestHash = operationRequestHash(action, { confirmation: parsed.confirmation });
-    const receipt = await this.repository.changeLifecycle({
-      action,
+    const input = {
       actorUserId: principal.userId,
       clubId,
       operationId: parsed.operationId,
       requestHash,
-    });
+    };
+    const receipt = action === "reactivate"
+      ? await this.repository.changeLifecycle({
+          ...input,
+          action,
+          adminClubLimit: (await this.tiers.resolve(clubId)).adminClubLimit,
+        })
+      : await this.repository.changeLifecycle({ ...input, action });
     this.logChange(receipt, `club.${action}d`, `Club ${action}d.`);
     return receipt;
   }
@@ -198,7 +204,7 @@ export class ClubManagementService {
       });
     } catch (error) {
       if (objectKey !== current.avatarObjectKey) {
-        await this.avatars.delete(objectKey).catch(() => undefined);
+        await this.deleteRetiredAvatar(objectKey);
       }
       throw error;
     }
@@ -273,7 +279,13 @@ export class ClubManagementService {
     try {
       await this.avatars.delete(objectKey);
     } catch {
-      this.logger.error({ event: "club.avatar.cleanup_failed" }, "Retired Club avatar cleanup failed.");
+      this.logger.error(
+        {
+          event: "club.avatar.cleanup_failed",
+          objectKeyDigest: createHash("sha256").update(objectKey).digest("hex"),
+        },
+        "Retired Club avatar cleanup failed.",
+      );
     }
   }
 }

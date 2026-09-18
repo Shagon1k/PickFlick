@@ -50,6 +50,7 @@ function isClubSummary(value: unknown): value is ClubSummary {
     typeof club.name === "string" &&
     (club.description === undefined || typeof club.description === "string") &&
     typeof club.hasAvatar === "boolean" &&
+    (club.avatarVersion === undefined || typeof club.avatarVersion === "string") &&
     (club.lifecycle === "ACTIVE" || club.lifecycle === "ARCHIVED") &&
     ["ADMIN", "MODERATOR", "MEMBER"].includes(String(club.membershipRole)) &&
     (club.selectionScaleMin === 0 || club.selectionScaleMin === 1) &&
@@ -98,8 +99,7 @@ function isClubSettings(value: unknown): value is ClubSettingsProjection {
       }
       const item = event as Record<string, unknown>;
       return typeof item.id === "string" && typeof item.action === "string" &&
-        typeof item.changed === "boolean" && typeof item.createdAt === "string" &&
-        typeof item.subjectMembershipId === "string";
+        typeof item.changed === "boolean" && typeof item.createdAt === "string";
     })
   );
 }

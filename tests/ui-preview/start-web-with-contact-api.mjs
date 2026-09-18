@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 
 const retryKeys = new Map();
 const clubsBySession = new Map();
+const avatarVersionsBySession = new Map();
 const settingsClubId = "10000000-0000-4000-8000-000000000031";
 
 function settingsProjection(token) {
@@ -10,12 +11,14 @@ function settingsProjection(token) {
   const lifecycle = token?.includes("archived") ? "ARCHIVED" : "ACTIVE";
   const admin = role === "ADMIN";
   const active = lifecycle === "ACTIVE";
+  const avatarVersion = avatarVersionsBySession.get(token);
   return {
     club: {
       id: settingsClubId,
       name: "Midnight Society",
       description: "Noir, classics, and arguments.",
-      hasAvatar: false,
+      hasAvatar: Boolean(avatarVersion),
+      ...(avatarVersion ? { avatarVersion } : {}),
       lifecycle,
       membershipRole: role,
       selectionScaleMin: 0,
@@ -58,7 +61,6 @@ function settingsProjection(token) {
       action: "CLUB_SETTINGS_UPDATED",
       changed: true,
       createdAt: "2026-09-18T12:00:00.000Z",
-      subjectMembershipId: "20000000-0000-4000-8000-000000000031",
     }] : [],
   };
 }
@@ -145,6 +147,19 @@ const api = createServer((request, response) => {
     }
     if (request.method === "POST" && /\/(archive|reactivate|leave|delete)$/u.test(request.url)) {
       sendJson(response, 200, { changed: true, replayed: false });
+      return;
+    }
+    if (request.method === "PUT" && request.url.endsWith("/avatar")) {
+      const nextVersion = `avatar-${Number(avatarVersionsBySession.get(token)?.split("-")[1] ?? 0) + 1}`;
+      avatarVersionsBySession.set(token, nextVersion);
+      request.resume();
+      sendJson(response, 200, { changed: true, hasAvatar: true, replayed: false });
+      return;
+    }
+    if (request.method === "DELETE" && request.url.endsWith("/avatar")) {
+      avatarVersionsBySession.delete(token);
+      request.resume();
+      sendJson(response, 200, { changed: true, hasAvatar: false, replayed: false });
       return;
     }
     response.writeHead(404).end();

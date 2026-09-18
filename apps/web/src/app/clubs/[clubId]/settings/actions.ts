@@ -12,6 +12,7 @@ import {
   submitClubOperation,
   submitClubSettings,
   uploadClubAvatar,
+  type ClubApiResult,
 } from "../../../../components/clubs/club-api";
 import { clubValues, validateClubValues } from "../../../../components/clubs/club-form.validation";
 import type { ClubManagementActionState } from "../../../../components/clubs/club-management.types";
@@ -41,6 +42,18 @@ function apiFailure(previous: ClubManagementActionState, status: number): ClubMa
   return state(previous, "error", "The Club could not be updated. Nothing unsafe was applied; try again.");
 }
 
+async function submitMutation<T>(
+  previous: ClubManagementActionState,
+  request: () => Promise<ClubApiResult<T>>,
+): Promise<{ readonly failure: ClubManagementActionState } | { readonly response: ClubApiResult<T> }> {
+  try {
+    const response = await request();
+    return response.ok ? { response } : { failure: apiFailure(previous, response.status) };
+  } catch {
+    return { failure: apiFailure(previous, 503) };
+  }
+}
+
 export async function updateClubSettingsAction(
   clubId: string,
   previous: ClubManagementActionState,
@@ -62,10 +75,11 @@ export async function updateClubSettingsAction(
     showRatingResults: formData.get("showRatingResults") === "on",
     useMonochromeMedia: formData.get("useMonochromeMedia") === "on",
   };
-  const response = await submitClubSettings(await headers(), clubId, payload);
-  if (!response.ok) {
-    return apiFailure(previous, response.status);
+  const result = await submitMutation(previous, async () => submitClubSettings(await headers(), clubId, payload));
+  if ("failure" in result) {
+    return result.failure;
   }
+  const { response } = result;
   revalidatePath(`/clubs/${clubId}/settings`);
   revalidatePath("/app");
   return state(previous, "success", response.body?.changed ? "Club settings saved." : "Club settings were already current.");
@@ -81,13 +95,14 @@ export async function changeClubMemberRoleAction(
   if (nextRole !== "MODERATOR" && nextRole !== "MEMBER") {
     return state(previous, "error", "Choose Moderator or Member.");
   }
-  const response = await submitClubMemberRole(await headers(), clubId, membershipId, {
+  const result = await submitMutation(previous, async () => submitClubMemberRole(await headers(), clubId, membershipId, {
     operationId: operationId(formData),
     nextRole,
-  });
-  if (!response.ok) {
-    return apiFailure(previous, response.status);
+  }));
+  if ("failure" in result) {
+    return result.failure;
   }
+  const { response } = result;
   revalidatePath(`/clubs/${clubId}/settings`);
   return state(previous, "success", response.body?.changed ? "Member role updated." : "That member already has this role.");
 }
@@ -99,12 +114,12 @@ export async function clubLifecycleAction(
   formData: FormData,
 ): Promise<ClubManagementActionState> {
   const confirmation = String(formData.get("confirmation") ?? "");
-  const response = await submitClubOperation(await headers(), clubId, action, {
+  const result = await submitMutation(previous, async () => submitClubOperation(await headers(), clubId, action, {
     operationId: operationId(formData),
     ...(confirmation ? { confirmation } : {}),
-  });
-  if (!response.ok) {
-    return apiFailure(previous, response.status);
+  }));
+  if ("failure" in result) {
+    return result.failure;
   }
   revalidatePath("/app");
   if (action === "delete" || action === "leave") {
@@ -124,9 +139,10 @@ export async function uploadClubAvatarAction(
     !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     return state(previous, "error", "Choose a PNG, JPEG, or WebP image no larger than 512 KiB.");
   }
-  const response = await uploadClubAvatar(await headers(), clubId, operationId(formData), file);
-  if (!response.ok) {
-    return apiFailure(previous, response.status);
+  const result = await submitMutation(previous, async () =>
+    uploadClubAvatar(await headers(), clubId, operationId(formData), file));
+  if ("failure" in result) {
+    return result.failure;
   }
   revalidatePath(`/clubs/${clubId}/settings`);
   return state(previous, "success", "Club avatar updated.");
@@ -137,10 +153,12 @@ export async function removeClubAvatarAction(
   previous: ClubManagementActionState,
   formData: FormData,
 ): Promise<ClubManagementActionState> {
-  const response = await removeClubAvatar(await headers(), clubId, { operationId: operationId(formData) });
-  if (!response.ok) {
-    return apiFailure(previous, response.status);
+  const result = await submitMutation(previous, async () =>
+    removeClubAvatar(await headers(), clubId, { operationId: operationId(formData) }));
+  if ("failure" in result) {
+    return result.failure;
   }
+  const { response } = result;
   revalidatePath(`/clubs/${clubId}/settings`);
   return state(previous, "success", response.body?.changed ? "Club avatar removed." : "The Club has no avatar to remove.");
 }

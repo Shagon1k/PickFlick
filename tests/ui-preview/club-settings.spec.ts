@@ -87,6 +87,33 @@ test("Admin can submit settings, change a role, and confirm archive", async ({ c
   await expect(dialog.getByText("Club archived.")).toBeVisible();
 });
 
+test("avatar replacements refresh the image and removal keeps the latest status", async ({ context, page }) => {
+  await authenticate(context, "valid-settings-admin-avatar-actions");
+  await open(page, canonicalViewports[2]);
+
+  const avatarInput = page.getByLabel("Club avatar");
+  const upload = async () => {
+    await avatarInput.setInputFiles({
+      name: "avatar.png",
+      mimeType: "image/png",
+      buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    });
+    await page.getByRole("button", { name: "Upload" }).click();
+    await expect(page.getByText("Club avatar updated.")).toBeVisible();
+  };
+
+  await upload();
+  const avatar = page.getByRole("img", { name: "Midnight Society avatar" });
+  await expect(avatar).toHaveAttribute("src", /\?v=avatar-1$/u);
+
+  await upload();
+  await expect(avatar).toHaveAttribute("src", /\?v=avatar-2$/u);
+
+  await page.getByRole("button", { name: "Remove avatar" }).click();
+  await expect(page.getByText("Club avatar removed.")).toBeVisible();
+  await expect(avatar).toHaveCount(0);
+});
+
 test("Member sees read-only controls and can confirm leaving", async ({ context, page }) => {
   await authenticate(context, "valid-settings-member-actions");
   await open(page);

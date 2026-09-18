@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { ForbiddenException } from "@nestjs/common";
-import { createLogger } from "@pickflick/observability";
+import type { ApplicationLogger } from "@pickflick/observability";
 import { describe, expect, it, vi } from "vitest";
 
 import { ClubAvatarStorage } from "../club-avatar.storage.js";
@@ -54,7 +54,6 @@ function stored(role: "ADMIN" | "MODERATOR" | "MEMBER"): StoredClubManagementVie
       action: "CLUB_SETTINGS_UPDATED",
       changed: true,
       createdAt: new Date(0).toISOString(),
-      subjectMembershipId: ids.membership,
     }] : [],
   };
 }
@@ -118,6 +117,8 @@ function principal(userId: string) {
 function service() {
   const repository = new ManagementRepository();
   const avatars = new AvatarStorage();
+  const errorLog = vi.fn();
+  const logger = { error: errorLog, info: vi.fn() } as unknown as ApplicationLogger;
   const roles = {
     changeMembershipRole: vi.fn(async () => ({ changed: true, replayed: false })),
   } as unknown as ClubRoleTransitionService;
@@ -129,8 +130,9 @@ function service() {
       roles,
       new StaticClubTierResolver(),
       avatars,
-      createLogger({ environment: "test", service: "api" }),
+      logger,
     ),
+    errorLog,
   };
 }
 
@@ -187,6 +189,18 @@ describe("Club management service", () => {
     }));
   });
 
+  it("passes the current tier Admin Club limit to reactivation persistence", async () => {
+    const fixture = service();
+    await fixture.service.changeLifecycle(principal(ids.admin), ids.club, "reactivate", {
+      operationId: randomUUID(),
+    });
+
+    expect(fixture.repository.lifecycleCall).toHaveBeenCalledWith(expect.objectContaining({
+      action: "reactivate",
+      adminClubLimit: 1,
+    }));
+  });
+
   it("validates avatar bytes before writing private object storage", async () => {
     const fixture = service();
     await expect(fixture.service.putAvatar(
@@ -225,5 +239,28 @@ describe("Club management service", () => {
 
     expect(fixture.avatars.putCall).toHaveBeenCalledOnce();
     expect(fixture.avatars.deleteCall).toHaveBeenCalledOnce();
+  });
+
+  it("logs a safe reconciliation digest when failed persistence cleanup also fails", async () => {
+    const fixture = service();
+    const persistenceFailure = new Error("database unavailable");
+    fixture.repository.avatarCall.mockRejectedValueOnce(persistenceFailure);
+    fixture.avatars.deleteCall.mockRejectedValueOnce(new Error("object storage unavailable"));
+    const operationId = randomUUID();
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+
+    await expect(fixture.service.putAvatar(
+      principal(ids.admin),
+      ids.club,
+      operationId,
+      png,
+      "image/png",
+    )).rejects.toBe(persistenceFailure);
+
+    expect(fixture.errorLog).toHaveBeenCalledWith({
+      event: "club.avatar.cleanup_failed",
+      objectKeyDigest: expect.stringMatching(/^[0-9a-f]{64}$/u),
+    }, "Retired Club avatar cleanup failed.");
+    expect(JSON.stringify(fixture.errorLog.mock.calls)).not.toContain(operationId);
   });
 });

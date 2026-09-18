@@ -139,18 +139,22 @@ function AvatarForm({ projection }: Readonly<{ projection: ClubSettingsProjectio
   const [removeState, removeAction, removePending] = useActionState(remove, initialClubManagementState);
   const uploadOperationId = useOperationId(uploadState);
   const removeOperationId = useOperationId(removeState);
+  const [latestAction, setLatestAction] = useState<"remove" | "upload">("upload");
   const writable = projection.permissions.manageSettings && projection.club.lifecycle === "ACTIVE";
-  const state = removeState.revision > uploadState.revision ? removeState : uploadState;
+  const state = latestAction === "remove" ? removeState : uploadState;
+  const avatarVersion = projection.club.avatarVersion
+    ? `?v=${encodeURIComponent(projection.club.avatarVersion)}`
+    : "";
   return (
     <div className={styles.avatarLayout}>
       <div className={styles.avatar}>
         {projection.club.hasAvatar ? (
           // The authenticated API route performs the membership check before streaming the image.
-          <img alt={`${projection.club.name} avatar`} src={`/api/clubs/${projection.club.id}/avatar`} />
+          <img alt={`${projection.club.name} avatar`} src={`/api/clubs/${projection.club.id}/avatar${avatarVersion}`} />
         ) : <span aria-hidden="true">{projection.club.name.slice(0, 2).toUpperCase()}</span>}
       </div>
       <div className={styles.stack}>
-        <form action={uploadAction} className={styles.inlineForm}>
+        <form action={uploadAction} className={styles.inlineForm} onSubmit={() => setLatestAction("upload")}>
           <input name="operationId" type="hidden" value={uploadOperationId} />
           <label className={styles.fileLabel}>
             <span>Club avatar</span>
@@ -159,7 +163,7 @@ function AvatarForm({ projection }: Readonly<{ projection: ClubSettingsProjectio
           <Button disabled={!writable || !uploadOperationId} loading={uploadPending} size="small" type="submit">Upload</Button>
         </form>
         {projection.club.hasAvatar ? (
-          <form action={removeAction}>
+          <form action={removeAction} onSubmit={() => setLatestAction("remove")}>
             <input name="operationId" type="hidden" value={removeOperationId} />
             <Button disabled={!writable || !removeOperationId} loading={removePending} size="small" type="submit" variant="secondary">Remove avatar</Button>
           </form>

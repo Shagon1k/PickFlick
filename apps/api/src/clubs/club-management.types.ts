@@ -24,13 +24,19 @@ export interface PersistClubSettingsInput extends NormalizedClubSettings {
   readonly requestHash: string;
 }
 
-export interface ClubLifecycleInput {
-  readonly action: "archive" | "reactivate";
+interface ClubLifecycleInputBase {
   readonly actorUserId: string;
   readonly clubId: string;
   readonly operationId: string;
   readonly requestHash: string;
 }
+
+export type ClubLifecycleInput = ClubLifecycleInputBase & ({
+  readonly action: "archive";
+} | {
+  readonly action: "reactivate";
+  readonly adminClubLimit: number;
+});
 
 export interface LeaveClubInput {
   readonly actorUserId: string;

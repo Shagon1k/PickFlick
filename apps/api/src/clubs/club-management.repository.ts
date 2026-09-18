@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@pickflick/database";
 
@@ -33,6 +35,10 @@ export abstract class ClubManagementRepository {
 
 function canonicalUuid(value: string): string {
   return value.toLowerCase();
+}
+
+function avatarVersion(objectKey: string): string {
+  return createHash("sha256").update(objectKey).digest("hex").slice(0, 16);
 }
 
 @Injectable()
@@ -99,7 +105,6 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
             action: true,
             changed: true,
             createdAt: true,
-            subjectMembershipId: true,
           },
         })
       : [];
@@ -115,6 +120,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         name: club.name,
         ...(club.description ? { description: club.description } : {}),
         hasAvatar: Boolean(club.avatarObjectKey),
+        ...(club.avatarObjectKey ? { avatarVersion: avatarVersion(club.avatarObjectKey) } : {}),
         lifecycle: club.lifecycle,
         membershipRole: membership.role,
         selectionScaleMin: club.selectionScaleMin as 0 | 1,
@@ -205,6 +211,9 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const nextLifecycle = input.action === "archive" ? "ARCHIVED" : "ACTIVE";
     return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
+      if (input.action === "reactivate") {
+        await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-creation:${actorUserId}`}, 0))`;
+      }
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
@@ -214,6 +223,19 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, false);
       const previousLifecycle = actor.club.lifecycle;
       const changed = previousLifecycle !== nextLifecycle;
+      if (changed && input.action === "reactivate") {
+        const activeAdminClubCount = await transaction.membership.count({
+          where: {
+            userId: actorUserId,
+            role: "ADMIN",
+            status: "ACTIVE",
+            club: { deletedAt: null, lifecycle: "ACTIVE" },
+          },
+        });
+        if (activeAdminClubCount >= input.adminClubLimit) {
+          throw new ClubConflictError("The current User has reached the administered Club limit.");
+        }
+      }
       if (changed) {
         await transaction.club.update({ where: { id: clubId }, data: { lifecycle: nextLifecycle } });
       }
