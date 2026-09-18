@@ -44,7 +44,7 @@ async function expectConstraint(
 
 async function verifyMigrationUpgrade(): Promise<void> {
   const suffix = `${process.pid}_${Date.now()}`;
-  const schemas = [`pf11_fresh_${suffix}`, `pf11_upgrade_${suffix}`, `pf11_email_collision_${suffix}`];
+  const schemas = [`pf12_fresh_${suffix}`, `pf12_upgrade_${suffix}`, `pf12_email_collision_${suffix}`];
   const client = new Client({ connectionString: environment.databaseUrl });
   const initialSql = await readFile(
     new URL("../prisma/migrations/20260906000100_initial_domain_foundation/migration.sql", import.meta.url),
@@ -66,6 +66,10 @@ async function verifyMigrationUpgrade(): Promise<void> {
     new URL("../prisma/migrations/20260917000100_add_apple_provider_profile/migration.sql", import.meta.url),
     "utf8",
   );
+  const clubMembershipSql = await readFile(
+    new URL("../prisma/migrations/20260918000100_harden_club_membership_roles/migration.sql", import.meta.url),
+    "utf8",
+  );
   await client.connect();
   try {
     for (const schema of schemas) {
@@ -77,6 +81,7 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(contactSql);
     await client.query(authenticationSql);
     await client.query(appleProfileSql);
+    await client.query(clubMembershipSql);
 
     await client.query(`SET search_path TO "${schemas[1]}"`);
     await client.query(initialSql);
@@ -90,6 +95,11 @@ async function verifyMigrationUpgrade(): Promise<void> {
     await client.query(contactSql);
     await client.query(authenticationSql);
     await client.query(appleProfileSql);
+    await client.query(
+      `INSERT INTO "Membership" ("id", "clubId", "userId", "role") VALUES
+        ('90000000-0000-4000-8000-000000000005', '90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002', 'ADMIN')`,
+    );
+    await client.query(clubMembershipSql);
     const upgraded = await client.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM "Club"`);
     if (upgraded.rows[0]?.count !== "1") {
       throw new Error("Upgrade migration did not preserve the existing Club row.");
@@ -99,6 +109,12 @@ async function verifyMigrationUpgrade(): Promise<void> {
     );
     if (normalizedUser.rows[0]?.email !== "alice@example.invalid") {
       throw new Error("Authentication migration did not normalize an existing mixed-case email.");
+    }
+    const upgradedMembership = await client.query<{ updatedAt: Date }>(
+      `SELECT "updatedAt" FROM "Membership" WHERE "id" = '90000000-0000-4000-8000-000000000005'`,
+    );
+    if (!upgradedMembership.rows[0]?.updatedAt) {
+      throw new Error("Club membership migration did not preserve and timestamp an existing Membership row.");
     }
 
     await client.query(`SET search_path TO "${schemas[2]}"`);
@@ -136,8 +152,8 @@ try {
   const migrationCount = await database.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint AS count FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL
   `;
-  if (migrationCount[0]?.count !== 5n) {
-    throw new Error("Expected exactly five completed database migrations.");
+  if (migrationCount[0]?.count !== 6n) {
+    throw new Error("Expected exactly six completed database migrations.");
   }
 
   const fixtureCount = await database.user.count({
@@ -217,6 +233,62 @@ try {
         data: { role: "ADMIN" },
       }),
     "Membership_one_active_admin_per_club_key",
+  );
+  await expectConstraint(
+    (transaction) =>
+      transaction.membership.create({
+        data: {
+          id: "40000000-0000-4000-8000-000000000005",
+          clubId: SYNTHETIC_FIXTURES.club.id,
+          userId: SYNTHETIC_FIXTURES.users[1].id,
+          role: "MEMBER",
+        },
+      }),
+    "Membership_one_active_per_user_club_key",
+  );
+  await runRollbackProbe(async (transaction) => {
+    await transaction.membership.update({
+      where: { id: SYNTHETIC_FIXTURES.memberships.member },
+      data: { status: "LEFT", leftAt: new Date() },
+    });
+    await transaction.membership.create({
+      data: {
+        id: "40000000-0000-4000-8000-000000000006",
+        clubId: SYNTHETIC_FIXTURES.club.id,
+        userId: SYNTHETIC_FIXTURES.users[1].id,
+        role: "MEMBER",
+      },
+    });
+  });
+  await expectConstraint(
+    (transaction) =>
+      transaction.membership.update({
+        where: { id: SYNTHETIC_FIXTURES.memberships.member },
+        data: { status: "LEFT", leftAt: null },
+      }),
+    "Membership_status_departure_check",
+  );
+  await runRollbackProbe((transaction) =>
+    transaction.membership.update({
+      where: { id: SYNTHETIC_FIXTURES.memberships.admin },
+      data: { role: "MODERATOR" },
+    }),
+  );
+  await expectConstraint(
+    (transaction) =>
+      transaction.clubAuditEvent.create({
+        data: {
+          operationId: "40000000-0000-4000-8000-000000000007",
+          clubId: SYNTHETIC_FIXTURES.club.id,
+          actorUserId: SYNTHETIC_FIXTURES.users[0].id,
+          subjectUserId: SYNTHETIC_FIXTURES.users[1].id,
+          subjectMembershipId: SYNTHETIC_FIXTURES.memberships.member,
+          action: "MEMBERSHIP_ROLE_CHANGED",
+          previousRole: "MEMBER",
+          nextRole: "MEMBER",
+        },
+      }),
+    "ClubAuditEvent_changed_role_check",
   );
   await expectConstraint(
     (transaction) =>

@@ -6,6 +6,7 @@
   "scripts": {
     "auth:check": "tsx scripts/check-auth.ts",
     "build": "tsc -p tsconfig.build.json",
+    "club:check": "tsx scripts/check-clubs.ts",
     "contact:check": "tsx scripts/check-contact.ts",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",

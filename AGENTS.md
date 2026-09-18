@@ -70,6 +70,7 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Run the database seed | `pnpm seed` |
 | Verify migrations, fixtures, and database constraints | `pnpm db:check` |
 | Verify Contact persistence, duplicate handling, and rate limits | `pnpm contact:check` |
+| Verify Club policies, role transitions, entitlements, and audit records | `pnpm club:check` |
 | Reset a positively identified local/test database | `pnpm db:reset` |
 
 Copy `.env.example` to `.env` before running services or runtime commands. See

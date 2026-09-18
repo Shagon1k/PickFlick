@@ -7,6 +7,10 @@ import { AppController } from "./app.controller.js";
 import { ContactController } from "./contact/contact.controller.js";
 import { ContactMessageRepository, PrismaContactMessageRepository } from "./contact/contact.repository.js";
 import { ContactService } from "./contact/contact.service.js";
+import { ClubEntitlementResolver, FixtureClubEntitlementResolver } from "./clubs/club-entitlements.js";
+import { ClubRepository, PrismaClubRepository } from "./clubs/club.repository.js";
+import { ClubsController } from "./clubs/clubs.controller.js";
+import { ClubPolicyService, ClubRoleTransitionService } from "./clubs/clubs.service.js";
 import { HealthController } from "./health.controller.js";
 import { HealthService } from "./health.service.js";
 import { AuthenticationGuard } from "./identity/authorization.guard.js";
@@ -27,7 +31,7 @@ export class AppModule {
   static register(environment: RuntimeEnvironment, logger: ApplicationLogger): DynamicModule {
     return {
       module: AppModule,
-      controllers: [AppController, HealthController, ContactController],
+      controllers: [AppController, HealthController, ContactController, ClubsController],
       providers: [
         { provide: RUNTIME_ENVIRONMENT, useValue: environment },
         { provide: APPLICATION_LOGGER, useValue: logger },
@@ -38,6 +42,10 @@ export class AppModule {
         { provide: APP_GUARD, useClass: AuthenticationGuard },
         ContactService,
         { provide: ContactMessageRepository, useClass: PrismaContactMessageRepository },
+        ClubPolicyService,
+        ClubRoleTransitionService,
+        { provide: ClubRepository, useClass: PrismaClubRepository },
+        { provide: ClubEntitlementResolver, useClass: FixtureClubEntitlementResolver },
       ],
     };
   }

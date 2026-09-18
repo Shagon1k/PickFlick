@@ -71,6 +71,40 @@ export interface ContactSubmissionResponse {
   readonly status: "accepted" | "duplicate";
 }
 
+export const CLUB_POLICY_ACTIONS = [
+  "viewClub",
+  "participate",
+  "leaveClub",
+  "manageSessions",
+  "manageMembers",
+  "manageRoles",
+  "manageSettings",
+  "manageLifecycle",
+  "transferAdministration",
+  "viewAudit",
+] as const;
+
+export type ClubPolicyAction = (typeof CLUB_POLICY_ACTIONS)[number];
+export type ClubPolicyPermissions = Readonly<Record<ClubPolicyAction, boolean>>;
+
+export interface ClubEntitlementProjection {
+  readonly tier: "FREE" | "PRO";
+  readonly adminClubLimit: number;
+  readonly memberLimit: number;
+  readonly blockingSessionLimit: 1;
+  readonly inactivityGraceDays: number;
+  readonly voteResultVisibility: "ADMIN_HIDDEN" | "ADMIN_CONFIGURABLE";
+  readonly analyticsTier: "BASIC" | "EXTENDED";
+}
+
+export interface ClubPolicyProjection {
+  readonly clubId: string;
+  readonly lifecycle: "ACTIVE" | "ARCHIVED";
+  readonly membershipRole: "ADMIN" | "MODERATOR" | "MEMBER";
+  readonly permissions: ClubPolicyPermissions;
+  readonly entitlements: ClubEntitlementProjection;
+}
+
 export const DEFAULT_AUTH_RETURN_TARGET = "/app";
 
 const invitationAuthReturnTarget = /^\/invite\/(?:club|session)\/[A-Za-z0-9_-]{1,512}$/;
