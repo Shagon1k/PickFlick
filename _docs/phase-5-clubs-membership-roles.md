@@ -47,6 +47,23 @@ replaces that resolver with subscription-derived state.
   `HealthModule`; `AppModule` composes them without owning feature providers. One imported
   `DatabaseModule` owns the application-scoped Prisma client and its shutdown lifecycle.
 
+## Issue #30 implementation contract
+
+- `GET /clubs` returns only the authenticated User's active Membership projections. `POST /clubs`
+  accepts a bounded name, optional description, and one inclusive `0..N` or `1..N` Selection
+  scale whose upper bound is at most 10.
+- First-Club creation serializes by creator, re-reads the active User and current administered
+  Clubs inside the transaction, enforces the temporary Free limit, and creates the Club plus its
+  sole Admin Membership atomically.
+- `/app` redirects unauthenticated requests to Login, renders the canonical no-Clubs state only
+  after an authoritative empty collection response, and shows a safe recovery state when the API
+  is unavailable.
+- `/clubs/new` validates in the browser and server action before the API repeats validation at the
+  trust boundary. Validation, conflict, offline, and service failures preserve entered values and
+  use field-linked messages plus a stable live status region.
+- The post-create `/app` projection confirms the Club, role, tier, lifecycle, and Selection scale.
+  The full Club Hub, invitations, and Session creation remain with later issues.
+
 ## Verification in progress
 
 | Evidence | Command or source | Status |
@@ -54,7 +71,10 @@ replaces that resolver with subscription-derived state.
 | Database invariants and migration upgrade | `pnpm db:check` | Passed locally against a fresh six-migration PostgreSQL database, including upgrade compatibility, active Membership uniqueness, single/adminless Admin states, departure consistency, and audit constraints. |
 | Role/action and forged-request matrix | `pnpm test` | Passed locally: Admin, Moderator, Member, App Admin, suspended, non-member, archived, and caller-forged role cases are covered. |
 | Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, archived-Club denial, App Admin-only ownership transfer, suspended/anonymized transfer-target denial, mixed-case UUID retries, Free/Pro tier projection, durable no-op results, per-Club serialization, retry deduplication, categorical logs, and audit fields are covered. |
-| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 341 tests, workspace-boundary validation, and all production builds. |
+| Club onboarding unit and HTTP matrix | `pnpm test` | Passed locally: 360 tests cover authenticated collection/creation, invalid names and scale bounds, unsupported fields/media, forged and expired sessions, Free-limit conflict, preserved browser values, and response-shape validation. |
+| Club onboarding responsive and interaction QA | `pnpm ui:test` | Passed locally: all 158 checks, including 14 onboarding tests at S/M/L/XL and bridge widths for axe, overflow, focus/validation, touch targets, creation, and eight reviewed captures. |
+| Club creation PostgreSQL check | `pnpm club:check` | Extended with concurrent first-Club creation, sole-Admin, Free-limit, normalized values, collection, and scale assertions. Local execution is pending because this worktree has no `.env`; no secret file was created or copied. |
+| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 360 tests, workspace-boundary validation, and all production builds. |
 
 At the Phase 5 boundary, move durable implementation facts into canonical guidance, record phase
 evidence in `ROADMAP.md`, and delete this file plus its docs-map link.

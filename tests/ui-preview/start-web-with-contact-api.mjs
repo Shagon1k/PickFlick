@@ -2,12 +2,61 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 
 const retryKeys = new Map();
+const clubsBySession = new Map();
+
+function sessionToken(request) {
+  return request.headers.cookie?.match(/(?:^|;\s*)pickflick\.session_token=([^;]+)/)?.[1];
+}
+
+function sendJson(response, status, body) {
+  response.writeHead(status, { "content-type": "application/json" });
+  response.end(JSON.stringify(body));
+}
 
 const api = createServer((request, response) => {
   if (request.method === "GET" && request.url === "/api/auth/get-session") {
-    const authenticated = request.headers.cookie?.includes("pickflick.session_token=valid") ?? false;
-    response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify(authenticated ? { user: { id: "user-1" } } : null));
+    const token = sessionToken(request);
+    const authenticated = token?.startsWith("valid") ?? false;
+    sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
+    return;
+  }
+  if (request.url === "/clubs") {
+    const token = sessionToken(request);
+    if (!token?.startsWith("valid")) {
+      sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required.", requestId: "request-club-auth" } });
+      return;
+    }
+    if (request.method === "GET") {
+      sendJson(response, 200, { clubs: clubsBySession.get(token) ?? [] });
+      return;
+    }
+    if (request.method === "POST") {
+      let body = "";
+      request.setEncoding("utf8");
+      request.on("data", (chunk) => (body += chunk));
+      request.on("end", () => {
+        if ((clubsBySession.get(token) ?? []).length > 0) {
+          sendJson(response, 409, { error: { code: "CONFLICT", message: "Conflict.", requestId: "request-club-limit" } });
+          return;
+        }
+        const payload = JSON.parse(body);
+        const description = String(payload.description ?? "").trim();
+        const club = {
+          id: "10000000-0000-4000-8000-000000000099",
+          name: String(payload.name).trim(),
+          ...(description ? { description } : {}),
+          lifecycle: "ACTIVE",
+          membershipRole: "ADMIN",
+          selectionScaleMin: payload.selectionScaleMin,
+          selectionScaleMax: payload.selectionScaleMax,
+          tier: "FREE",
+        };
+        clubsBySession.set(token, [club]);
+        sendJson(response, 201, { club });
+      });
+      return;
+    }
+    response.writeHead(405).end();
     return;
   }
   if (request.method !== "POST" || request.url !== "/contact") {

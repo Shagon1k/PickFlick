@@ -17,10 +17,12 @@ import {
 } from "../../identity/authorization.types.js";
 import { APPLICATION_LOGGER } from "../../runtime.tokens.js";
 import type { ClubPolicySubject } from "../club-policy.js";
+import type { PersistClubInput, StoredClubSummary } from "../club-onboarding.types.js";
+import { ClubConflictError } from "../club.errors.js";
 import { ClubRepository } from "../club.repository.js";
 import { ClubTierResolver, StaticClubTierResolver } from "../club-tiers.js";
 import { ClubsController } from "../clubs.controller.js";
-import { ClubPolicyService } from "../clubs.service.js";
+import { ClubOnboardingService, ClubPolicyService } from "../clubs.service.js";
 
 const clubId = "10000000-0000-4000-8000-000000000001";
 const users = {
@@ -40,6 +42,30 @@ const roles = new Map<string, ClubPolicySubject>([
 ]);
 
 class StubClubRepository extends ClubRepository {
+  readonly created = new Map<string, StoredClubSummary[]>();
+
+  async create(input: PersistClubInput, adminClubLimit: number): Promise<StoredClubSummary> {
+    const current = this.created.get(input.creatorUserId) ?? [];
+    if (current.length >= adminClubLimit) {
+      throw new ClubConflictError("Admin Club limit reached.");
+    }
+    const club: StoredClubSummary = {
+      id: input.clubId,
+      name: input.name,
+      ...(input.description ? { description: input.description } : {}),
+      lifecycle: "ACTIVE",
+      membershipRole: "ADMIN",
+      selectionScaleMin: input.selectionScaleMin,
+      selectionScaleMax: input.selectionScaleMax,
+    };
+    this.created.set(input.creatorUserId, [...current, club]);
+    return club;
+  }
+
+  async listForUser(userId: string): Promise<readonly StoredClubSummary[]> {
+    return this.created.get(userId) ?? [];
+  }
+
   async readPolicySubject(userId: string): Promise<ClubPolicySubject> {
     return roles.get(userId) ?? { appRole: "USER", clubRole: null, lifecycle: null, userStatus: "ANONYMIZED" };
   }
@@ -79,6 +105,7 @@ const logger = createLogger({ environment: "test", service: "api" });
 @Module({
   controllers: [ClubsController],
   providers: [
+    ClubOnboardingService,
     ClubPolicyService,
     { provide: ClubRepository, useClass: StubClubRepository },
     { provide: ClubTierResolver, useClass: StaticClubTierResolver },
@@ -109,6 +136,78 @@ describe("Club policy HTTP boundary", () => {
       headers: { authorization: `Bearer ${token}`, ...extraHeaders },
     });
   }
+
+  async function clubs(token: string, init?: RequestInit) {
+    return fetch(`${baseUrl}/clubs`, {
+      ...init,
+      headers: { authorization: `Bearer ${token}`, ...init?.headers },
+    });
+  }
+
+  it("creates and lists a Free Club with the authenticated User as Admin", async () => {
+    const response = await clubs("nonMember", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "  Midnight Society  ",
+        description: "  Noir, classics, and arguments.  ",
+        selectionScaleMin: 0,
+        selectionScaleMax: 7,
+      }),
+    });
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      club: {
+        name: "Midnight Society",
+        description: "Noir, classics, and arguments.",
+        lifecycle: "ACTIVE",
+        membershipRole: "ADMIN",
+        selectionScaleMin: 0,
+        selectionScaleMax: 7,
+        tier: "FREE",
+      },
+    });
+
+    const listResponse = await clubs("nonMember");
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toMatchObject({
+      clubs: [{ name: "Midnight Society", membershipRole: "ADMIN", tier: "FREE" }],
+    });
+
+    const limitedResponse = await clubs("nonMember", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Second Club", selectionScaleMin: 1, selectionScaleMax: 5 }),
+    });
+    expect(limitedResponse.status).toBe(409);
+    await expect(limitedResponse.json()).resolves.toMatchObject({ error: { code: "CONFLICT" } });
+  });
+
+  it.each([
+    { name: "", selectionScaleMin: 0, selectionScaleMax: 5 },
+    { name: "No", selectionScaleMin: 0, selectionScaleMax: 5 },
+    { name: "Valid Club", selectionScaleMin: 2, selectionScaleMax: 5 },
+    { name: "Valid Club", selectionScaleMin: 1, selectionScaleMax: 1 },
+    { name: "Valid Club", selectionScaleMin: 0, selectionScaleMax: 11 },
+    { name: "Valid Club", selectionScaleMin: 0, selectionScaleMax: 5, forgedRole: "ADMIN" },
+  ])("rejects invalid Club creation input %#", async (payload) => {
+    const response = await clubs("member", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: { code: "VALIDATION_FAILED" } });
+  });
+
+  it("rejects non-JSON and unauthenticated Club creation", async () => {
+    expect((await clubs("member", { method: "POST", body: "name=Club" })).status).toBe(415);
+    expect((await clubs("forged", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Valid Club", selectionScaleMin: 0, selectionScaleMax: 5 }),
+    })).status).toBe(401);
+  });
 
   it.each([
     ["admin", "ADMIN", { manageRoles: true, manageSessions: true, participate: true }],

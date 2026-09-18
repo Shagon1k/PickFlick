@@ -3,11 +3,20 @@ import { SYNTHETIC_FIXTURES } from "@pickflick/database";
 import { describe, expect, it } from "vitest";
 
 import { projectClubPermissions, type ClubPolicySubject } from "../club-policy.js";
+import type { StoredClubSummary } from "../club-onboarding.types.js";
 import { ClubRepository } from "../club.repository.js";
 import { StaticClubTierResolver } from "../club-tiers.js";
 import { ClubPolicyService } from "../clubs.service.js";
 
 class PolicyRepository extends ClubRepository {
+  async create(): Promise<StoredClubSummary> {
+    throw new Error("Not used by this test.");
+  }
+
+  async listForUser(): Promise<readonly StoredClubSummary[]> {
+    return [];
+  }
+
   async readPolicySubject(): Promise<ClubPolicySubject> {
     return { appRole: "USER", clubRole: "ADMIN", lifecycle: "ACTIVE", userStatus: "ACTIVE" };
   }
