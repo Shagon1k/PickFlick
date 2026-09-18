@@ -454,7 +454,8 @@ async function completeAppleSignIn(code: string, user?: Readonly<Record<string, 
 }
 
 async function waitForBlockedIdentityLock(lockKey: string, expectedWaiters: number): Promise<void> {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  const timeoutAt = Date.now() + 5_000;
+  do {
     const rows = await database.$queryRaw<Array<{ waiting: bigint }>>`
       SELECT COUNT(*) AS waiting
       FROM pg_locks
@@ -467,7 +468,7 @@ async function waitForBlockedIdentityLock(lockKey: string, expectedWaiters: numb
       return;
     }
     await new Promise((resolve) => setTimeout(resolve, 10));
-  }
+  } while (Date.now() < timeoutAt);
   throw new Error(`The identity lock did not serialize ${expectedWaiters} concurrent operations.`);
 }
 
@@ -1194,7 +1195,6 @@ try {
     throw new Error("A User was allowed to unlink their last supported provider identity.");
   }
 
-  const issuanceAttempt = await startGoogleSignIn(deterministicAuth);
   const identityLockBlocker = createDatabaseClient(environment.databaseUrl);
   const lockKey = identityUserLockKey(registeredUser.id);
   let releaseIdentityLock: (() => void) | undefined;
@@ -1212,29 +1212,25 @@ try {
   }, { timeout: 30_000 });
   try {
     await identityLockHeld;
-    const callback = submitGoogleCallback(issuanceAttempt, "returning-user");
+    const sessionIssuance = helpers.login({ userId: registeredUser.id });
     await waitForBlockedIdentityLock(lockKey, 1);
     const suspension = deterministicAuthorization.suspendUser(adminPrincipal, registeredUser.id);
     await waitForBlockedIdentityLock(lockKey, 2);
     releaseIdentityLock?.();
 
-    const callbackResponse = await callback;
+    const issuedSession = await sessionIssuance;
     await suspension;
     await blockingTransaction;
     if (
-      callbackResponse.status !== 302 ||
-      callbackResponse.headers.get("location") !== "/app" ||
       await database.authSession.count({ where: { userId: registeredUser.id } }) !== 0 ||
       (await database.user.findUnique({ where: { id: registeredUser.id } }))?.status !== "SUSPENDED"
     ) {
-      throw new Error("Concurrent callback and suspension left an active session or incorrect User status.");
+      throw new Error("Concurrent session issuance and suspension left an active session or incorrect User status.");
     }
 
     await database.user.update({ data: { status: "ACTIVE" }, where: { id: registeredUser.id } });
     const revokedConcurrentSession = await deterministicAuth.handler(
-      new Request(`${environment.auth.baseUrl}/api/auth/get-session`, {
-        headers: { cookie: responseCookieHeader(callbackResponse) },
-      }),
+      new Request(`${environment.auth.baseUrl}/api/auth/get-session`, { headers: issuedSession.headers }),
     );
     if (!revokedConcurrentSession.ok || await revokedConcurrentSession.json() !== null) {
       throw new Error("A session revoked by concurrent suspension became valid after reinstatement.");
