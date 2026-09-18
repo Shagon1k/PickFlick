@@ -4,22 +4,13 @@ import type { RuntimeEnvironment } from "@pickflick/config/environment";
 import type { ApplicationLogger } from "@pickflick/observability";
 
 import { AppController } from "./app.controller.js";
-import { ContactController } from "./contact/contact.controller.js";
-import { ContactMessageRepository, PrismaContactMessageRepository } from "./contact/contact.repository.js";
-import { ContactService } from "./contact/contact.service.js";
-import { ClubEntitlementResolver, FixtureClubEntitlementResolver } from "./clubs/club-entitlements.js";
-import { ClubRepository, PrismaClubRepository } from "./clubs/club.repository.js";
-import { ClubsController } from "./clubs/clubs.controller.js";
-import { ClubPolicyService, ClubRoleTransitionService } from "./clubs/clubs.service.js";
-import { HealthController } from "./health.controller.js";
-import { HealthService } from "./health.service.js";
+import { ClubsModule } from "./clubs/clubs.module.js";
+import { ContactModule } from "./contact/contact.module.js";
+import { HealthModule } from "./health.module.js";
 import { AuthenticationGuard } from "./identity/authorization.guard.js";
-import {
-  IDENTITY_AUTHORIZATION,
-  SSE_AUTHORIZATION_RECHECK_MILLISECONDS,
-} from "./identity/authorization.types.js";
-import { IdentityService } from "./identity/identity.service.js";
-import { APPLICATION_LOGGER, RUNTIME_ENVIRONMENT } from "./runtime.tokens.js";
+import { SSE_AUTHORIZATION_RECHECK_MILLISECONDS } from "./identity/authorization.types.js";
+import { IdentityModule } from "./identity/identity.module.js";
+import { RuntimeModule } from "./runtime.module.js";
 
 @Module({})
 export class AppModule {
@@ -31,21 +22,17 @@ export class AppModule {
   static register(environment: RuntimeEnvironment, logger: ApplicationLogger): DynamicModule {
     return {
       module: AppModule,
-      controllers: [AppController, HealthController, ContactController, ClubsController],
+      imports: [
+        RuntimeModule.register(environment, logger),
+        IdentityModule,
+        ClubsModule,
+        ContactModule,
+        HealthModule,
+      ],
+      controllers: [AppController],
       providers: [
-        { provide: RUNTIME_ENVIRONMENT, useValue: environment },
-        { provide: APPLICATION_LOGGER, useValue: logger },
-        HealthService,
-        IdentityService,
-        { provide: IDENTITY_AUTHORIZATION, useExisting: IdentityService },
         { provide: SSE_AUTHORIZATION_RECHECK_MILLISECONDS, useValue: 30_000 },
         { provide: APP_GUARD, useClass: AuthenticationGuard },
-        ContactService,
-        { provide: ContactMessageRepository, useClass: PrismaContactMessageRepository },
-        ClubPolicyService,
-        ClubRoleTransitionService,
-        { provide: ClubRepository, useClass: PrismaClubRepository },
-        { provide: ClubEntitlementResolver, useClass: FixtureClubEntitlementResolver },
       ],
     };
   }

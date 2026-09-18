@@ -1,8 +1,6 @@
-import { Inject, OnModuleDestroy } from "@nestjs/common";
-import type { RuntimeEnvironment } from "@pickflick/config/environment";
-import { createDatabaseClient } from "@pickflick/database";
+import { Injectable } from "@nestjs/common";
 
-import { RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
+import { DatabaseService } from "../database/database.service.js";
 import type { AcceptContactMessageInput, ContactAcceptance } from "./contact.types.js";
 
 export abstract class ContactMessageRepository {
@@ -13,12 +11,10 @@ export abstract class ContactMessageRepository {
   ): Promise<ContactAcceptance>;
 }
 
-export class PrismaContactMessageRepository extends ContactMessageRepository implements OnModuleDestroy {
-  private readonly database;
-
-  constructor(@Inject(RUNTIME_ENVIRONMENT) environment: RuntimeEnvironment) {
+@Injectable()
+export class PrismaContactMessageRepository extends ContactMessageRepository {
+  constructor(private readonly database: DatabaseService) {
     super();
-    this.database = createDatabaseClient(environment.databaseUrl);
   }
 
   async accept(
@@ -26,7 +22,7 @@ export class PrismaContactMessageRepository extends ContactMessageRepository imp
     recentSince: Date,
     limit: number,
   ): Promise<ContactAcceptance> {
-    return this.database.$transaction(async (transaction) => {
+    return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`contact-key:${input.submissionKey}`}, 0))`;
       const existing = await transaction.contactMessage.findUnique({
         where: { submissionKey: input.submissionKey },
@@ -62,7 +58,4 @@ export class PrismaContactMessageRepository extends ContactMessageRepository imp
     });
   }
 
-  async onModuleDestroy(): Promise<void> {
-    await this.database.$disconnect();
-  }
 }

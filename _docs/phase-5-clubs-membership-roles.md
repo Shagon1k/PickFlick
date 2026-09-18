@@ -8,7 +8,7 @@ own visible behavior, and GitHub Project 3 owns live issue status.
 
 | Slice | Issue | Outcome |
 | --- | --- | --- |
-| 5.1 | [#29 — Implement Club membership, roles, constraints, and policy projections](https://github.com/Shagon1k/PickFlick/issues/29) | Establish the private Club boundary, role invariants, fixture entitlements, transactional role changes, and audit records. |
+| 5.1 | [#29 — Implement Club membership, roles, constraints, and policy projections](https://github.com/Shagon1k/PickFlick/issues/29) | Establish the private Club boundary, role invariants, temporary Free/Pro tier limits, transactional role changes, and audit records. |
 | 5.2 | [#30 — Deliver no-Clubs and Create Club onboarding with Selection-scale setup](https://github.com/Shagon1k/PickFlick/issues/30) | Add transactional Club creation and the responsive first-Club experience. |
 | 5.3 | [#31 — Add Club settings, lifecycle, role management, and destructive safeguards](https://github.com/Shagon1k/PickFlick/issues/31) | Expose settings, membership administration, lifecycle actions, and confirmed destructive flows. |
 
@@ -26,9 +26,9 @@ browser-supplied role, hidden control, cached projection, or App Admin role alon
 ordinary Club access. App Admin operational actions require their own explicit policy and audit
 path; they do not inherit Club Admin permissions.
 
-Phase 5 does not implement invitations, Sessions, live Paddle state, or the full Club Hub. Fixture
-entitlements model the approved Free and Pro limits behind a replaceable resolver; Phase 20 replaces
-that resolver with subscription-derived state.
+Phase 5 does not implement invitations, Sessions, live Paddle state, or the full Club Hub. A static
+tier resolver maps the synthetic seeded Club to Pro and defaults every other Club to Free; Phase 20
+replaces that resolver with subscription-derived state.
 
 ## Issue #29 implementation contract
 
@@ -43,6 +43,9 @@ that resolver with subscription-derived state.
 - Return only a current User's own Club role, lifecycle, action booleans, and bounded entitlement
   values from the policy projection. Non-members receive the generic forbidden response.
 - Treat archived Clubs as read-only except for permitted ownership/lifecycle recovery actions.
+- Keep API feature internals inside `IdentityModule`, `ClubsModule`, `ContactModule`, and
+  `HealthModule`; `AppModule` composes them without owning feature providers. One imported
+  `DatabaseModule` owns the application-scoped Prisma client and its shutdown lifecycle.
 
 ## Verification in progress
 
@@ -50,8 +53,8 @@ that resolver with subscription-derived state.
 | --- | --- | --- |
 | Database invariants and migration upgrade | `pnpm db:check` | Passed locally against a fresh six-migration PostgreSQL database, including upgrade compatibility, active Membership uniqueness, single/adminless Admin states, departure consistency, and audit constraints. |
 | Role/action and forged-request matrix | `pnpm test` | Passed locally: Admin, Moderator, Member, App Admin, suspended, non-member, archived, and caller-forged role cases are covered. |
-| Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against isolated PostgreSQL: current-state authorization, per-Club serialization, retry deduplication, single-Admin transfer, categorical logs, and durable audit fields are covered. |
-| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 340 tests, workspace-boundary validation, and all production builds. |
+| Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, archived-Club denial, suspended/anonymized transfer-target denial, Free/Pro tier projection, per-Club serialization, retry deduplication, single-Admin transfer, categorical logs, and durable audit fields are covered. |
+| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 341 tests, workspace-boundary validation, and all production builds. |
 
 At the Phase 5 boundary, move durable implementation facts into canonical guidance, record phase
 evidence in `ROADMAP.md`, and delete this file plus its docs-map link.

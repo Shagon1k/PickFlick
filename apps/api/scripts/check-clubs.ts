@@ -2,18 +2,20 @@ import { randomUUID } from "node:crypto";
 import { Writable } from "node:stream";
 
 import { loadDatabaseEnvironment } from "@pickflick/config/environment";
-import { assertSafeSeedOrResetTarget, createDatabaseClient } from "@pickflick/database";
+import { SYNTHETIC_FIXTURES, assertSafeSeedOrResetTarget } from "@pickflick/database";
 import { createLogger } from "@pickflick/observability";
 
-import { FixtureClubEntitlementResolver } from "../src/clubs/club-entitlements.js";
-import { ClubAuthorizationError } from "../src/clubs/club.errors.js";
+import { ClubAuthorizationError, ClubConflictError } from "../src/clubs/club.errors.js";
 import { PrismaClubRepository } from "../src/clubs/club.repository.js";
+import { StaticClubTierResolver } from "../src/clubs/club-tiers.js";
 import { ClubPolicyService, ClubRoleTransitionService } from "../src/clubs/clubs.service.js";
+import { DatabaseService } from "../src/database/database.service.js";
 
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);
-const database = createDatabaseClient(environment.databaseUrl);
-const repository = new PrismaClubRepository(environment);
+const databaseService = new DatabaseService(environment);
+const database = databaseService.client;
+const repository = new PrismaClubRepository(databaseService);
 
 let logOutput = "";
 const logger = createLogger({
@@ -26,7 +28,7 @@ const logger = createLogger({
     },
   }),
 });
-const policy = new ClubPolicyService(repository, new FixtureClubEntitlementResolver());
+const policy = new ClubPolicyService(repository, new StaticClubTierResolver());
 const transitions = new ClubRoleTransitionService(repository, logger);
 
 const ids = {
@@ -36,10 +38,12 @@ const ids = {
   member: randomUUID(),
   outsider: randomUUID(),
   suspended: randomUUID(),
+  anonymized: randomUUID(),
   adminMembership: randomUUID(),
   moderatorMembership: randomUUID(),
   memberMembership: randomUUID(),
   suspendedMembership: randomUUID(),
+  anonymizedMembership: randomUUID(),
 };
 
 function principal(userId: string) {
@@ -60,6 +64,12 @@ try {
           displayName: "Suspended Admin",
           status: "SUSPENDED",
         },
+        {
+          id: ids.anonymized,
+          email: `${ids.anonymized}@example.invalid`,
+          displayName: "Anonymized Member",
+          status: "ANONYMIZED",
+        },
       ],
     });
     await transaction.club.create({ data: { id: ids.club, name: "Club boundary check" } });
@@ -69,6 +79,7 @@ try {
         { id: ids.moderatorMembership, clubId: ids.club, userId: ids.moderator, role: "MODERATOR" },
         { id: ids.memberMembership, clubId: ids.club, userId: ids.member, role: "MEMBER" },
         { id: ids.suspendedMembership, clubId: ids.club, userId: ids.suspended, role: "MODERATOR" },
+        { id: ids.anonymizedMembership, clubId: ids.club, userId: ids.anonymized, role: "MEMBER" },
       ],
       skipDuplicates: true,
     });
@@ -81,16 +92,20 @@ try {
     throw new Error("The Club did not retain exactly one active Admin.");
   }
 
-  const [adminPolicy, moderatorPolicy, memberPolicy] = await Promise.all([
+  const [adminPolicy, moderatorPolicy, memberPolicy, seededProPolicy] = await Promise.all([
     policy.project(principal(ids.admin), ids.club),
     policy.project(principal(ids.moderator), ids.club),
     policy.project(principal(ids.member), ids.club),
+    policy.project(principal(SYNTHETIC_FIXTURES.users[0].id), SYNTHETIC_FIXTURES.club.id),
   ]);
   if (!adminPolicy.permissions.manageRoles || !moderatorPolicy.permissions.manageSessions) {
     throw new Error("Admin or Moderator policy projection is missing an allowed action.");
   }
   if (memberPolicy.permissions.manageSessions || memberPolicy.entitlements.tier !== "FREE") {
-    throw new Error("Member policy or fixture entitlements exceed the approved Free boundary.");
+    throw new Error("Member policy or static tier limits exceed the approved Free boundary.");
+  }
+  if (seededProPolicy.entitlements.tier !== "PRO" || seededProPolicy.entitlements.memberLimit !== 16) {
+    throw new Error("The seeded Pro Club did not receive its approved tier limits.");
   }
   await policy.project(principal(ids.outsider), ids.club).then(
     () => { throw new Error("A non-member received a Club policy projection."); },
@@ -132,6 +147,37 @@ try {
       }
     },
   );
+
+  await database.club.update({ where: { id: ids.club }, data: { lifecycle: "ARCHIVED" } });
+  await transitions.changeMembershipRole({ ...roleInput, nextRole: "MEMBER", operationId: randomUUID() }).then(
+    () => { throw new Error("An archived Club allowed an ordinary Membership role change."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubConflictError)) {
+        throw error;
+      }
+    },
+  );
+  await database.club.update({ where: { id: ids.club }, data: { lifecycle: "ACTIVE" } });
+
+  for (const [status, targetMembershipId] of [
+    ["suspended", ids.suspendedMembership],
+    ["anonymized", ids.anonymizedMembership],
+  ] as const) {
+    await transitions.transferAdministration({
+      actorUserId: ids.admin,
+      clubId: ids.club,
+      operationId: randomUUID(),
+      previousAdminNextRole: "MEMBER",
+      targetMembershipId,
+    }).then(
+      () => { throw new Error(`A ${status} User became the Club Admin.`); },
+      (error: unknown) => {
+        if (!(error instanceof ClubConflictError)) {
+          throw error;
+        }
+      },
+    );
+  }
 
   const transferOperationId = randomUUID();
   const transferInput = {
@@ -177,15 +223,14 @@ try {
   }
 
   console.log(
-    "Club checks passed: private policy projections, fixture entitlements, serialized role changes, idempotent transfer, and audit-safe records.",
+    "Club checks passed: private policy projections, static Free/Pro tiers, archived-Club denial, active-User administration transfer, serialized role changes, idempotent transfer, and audit-safe records.",
   );
 } finally {
   await database.clubAuditEvent.deleteMany({ where: { clubId: ids.club } });
   await database.membership.deleteMany({ where: { clubId: ids.club } });
   await database.club.deleteMany({ where: { id: ids.club } });
   await database.user.deleteMany({
-    where: { id: { in: [ids.admin, ids.moderator, ids.member, ids.outsider, ids.suspended] } },
+    where: { id: { in: [ids.admin, ids.moderator, ids.member, ids.outsider, ids.suspended, ids.anonymized] } },
   });
-  await repository.onModuleDestroy();
-  await database.$disconnect();
+  await databaseService.onModuleDestroy();
 }

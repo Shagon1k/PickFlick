@@ -1,8 +1,6 @@
-import { Inject, OnModuleDestroy } from "@nestjs/common";
-import type { RuntimeEnvironment } from "@pickflick/config/environment";
-import { createDatabaseClient } from "@pickflick/database";
+import { Injectable } from "@nestjs/common";
 
-import { RUNTIME_ENVIRONMENT } from "../runtime.tokens.js";
+import { DatabaseService } from "../database/database.service.js";
 import { ClubAuthorizationError, ClubConflictError } from "./club.errors.js";
 import type { ClubPolicySubject } from "./club-policy.js";
 
@@ -32,16 +30,14 @@ export abstract class ClubRepository {
   abstract transferAdministration(input: TransferAdministrationInput): Promise<ClubTransitionResult>;
 }
 
-export class PrismaClubRepository extends ClubRepository implements OnModuleDestroy {
-  private readonly database;
-
-  constructor(@Inject(RUNTIME_ENVIRONMENT) environment: Pick<RuntimeEnvironment, "databaseUrl">) {
+@Injectable()
+export class PrismaClubRepository extends ClubRepository {
+  constructor(private readonly database: DatabaseService) {
     super();
-    this.database = createDatabaseClient(environment.databaseUrl);
   }
 
   async readPolicySubject(userId: string, clubId: string): Promise<ClubPolicySubject> {
-    const user = await this.database.user.findUnique({
+    const user = await this.database.client.user.findUnique({
       where: { id: userId },
       select: {
         appRole: true,
@@ -63,7 +59,7 @@ export class PrismaClubRepository extends ClubRepository implements OnModuleDest
   }
 
   async changeMembershipRole(input: ChangeMembershipRoleInput): Promise<ClubTransitionResult> {
-    return this.database.$transaction(async (transaction) => {
+    return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${input.operationId}`}, 0))`;
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${input.clubId}`}, 0))`;
 
@@ -101,12 +97,15 @@ export class PrismaClubRepository extends ClubRepository implements OnModuleDest
           memberships: {
             where: { clubId: input.clubId, status: "ACTIVE" },
             take: 1,
-            select: { role: true },
+            select: { role: true, club: { select: { lifecycle: true } } },
           },
         },
       });
       if (actor?.status !== "ACTIVE" || actor.memberships[0]?.role !== "ADMIN") {
         throw new ClubAuthorizationError("The current User cannot manage Club roles.");
+      }
+      if (actor.memberships[0].club.lifecycle !== "ACTIVE") {
+        throw new ClubConflictError("Archived Clubs do not allow Membership role changes.");
       }
       if (!target || target.clubId !== input.clubId || target.status !== "ACTIVE" || target.role === "ADMIN") {
         throw new ClubConflictError("The target is not an eligible active non-Admin Membership.");
@@ -137,13 +136,20 @@ export class PrismaClubRepository extends ClubRepository implements OnModuleDest
   }
 
   async transferAdministration(input: TransferAdministrationInput): Promise<ClubTransitionResult> {
-    return this.database.$transaction(async (transaction) => {
+    return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${input.operationId}`}, 0))`;
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${input.clubId}`}, 0))`;
 
       const target = await transaction.membership.findUnique({
         where: { id: input.targetMembershipId },
-        select: { clubId: true, id: true, role: true, status: true, userId: true },
+        select: {
+          clubId: true,
+          id: true,
+          role: true,
+          status: true,
+          userId: true,
+          user: { select: { status: true } },
+        },
       });
       const existing = await transaction.clubAuditEvent.findUnique({
         where: { operationId: input.operationId },
@@ -187,6 +193,7 @@ export class PrismaClubRepository extends ClubRepository implements OnModuleDest
         !target ||
         target.clubId !== input.clubId ||
         target.status !== "ACTIVE" ||
+        target.user.status !== "ACTIVE" ||
         target.role === "ADMIN" ||
         target.id === actorMembership.id
       ) {
@@ -218,9 +225,5 @@ export class PrismaClubRepository extends ClubRepository implements OnModuleDest
       });
       return { changed: true, auditEventId: audit.id, replayed: false };
     });
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.database.$disconnect();
   }
 }

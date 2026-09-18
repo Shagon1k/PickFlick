@@ -30,6 +30,7 @@ separately.
 | [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags) | Promote source-built production from UAT-proven SemVer tags | Accepted | 2026-09-11 |
 | [ADR-009](#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Use one public contact and environment-specific Resend senders | Accepted | 2026-09-13 |
 | [ADR-010](#adr-010--use-better-auth-at-the-api-boundary) | Use Better Auth at the API boundary | Accepted | 2026-09-16 |
+| [ADR-011](#adr-011--organize-the-api-by-feature-module-with-one-database-client) | Organize the API by feature module with one database client | Accepted | 2026-09-18 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -877,3 +878,59 @@ Until those issues provide named code and runtime evidence, authentication remai
 - [NestJS Passport integration](https://docs.nestjs.com/recipes/passport)
 - [SuperTokens NestJS integration](https://supertokens.com/docs/quickstart/integrations/nestjs)
 - [SuperTokens account-linking availability](https://supertokens.com/docs/post-authentication/account-linking/introduction)
+
+## ADR-011 — Organize the API by feature module with one database client
+
+- **Status:** Accepted
+- **Date:** 2026-09-18
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#29](https://github.com/Shagon1k/PickFlick/issues/29)
+
+### Context
+
+The first Club implementation added a complete domain slice, but its controller, services,
+repository binding, tier resolver, Identity providers, Contact providers, and Health providers were
+all registered in `AppModule`. Repeating that pattern for Sessions, Billing, and Notifications would
+make the composition root depend on feature internals. Identity, Contact, and Clubs also created
+separate long-lived Prisma clients with separate shutdown hooks.
+
+### Decision
+
+Give each API feature a Nest module that owns its controllers, services, repository adapters, and
+other internal providers. Export only a capability with a current cross-module consumer. Keep
+`AppModule` limited to feature/infrastructure imports, the root controller, and application-wide
+guard configuration.
+
+Provide validated runtime values through one application-wide runtime module. Provide one
+application-scoped Prisma client through `DatabaseModule`; feature repositories and Identity import
+that module and share its lifecycle. `DatabaseService` alone disconnects the client during Nest
+shutdown. Do not make feature modules or the database module global.
+
+### Consequences
+
+- Feature implementation details stay out of the composition root and remain private by default.
+- Cross-feature dependencies must use an explicitly exported token or service.
+- API database consumers share one connection-pool lifecycle instead of creating a client per
+  repository.
+- Standalone integration scripts still own their process-local client lifecycle explicitly.
+
+### Alternatives considered
+
+- **Register feature providers directly in `AppModule`.** Rejected because the root would accumulate
+  feature-specific controllers, repositories, and adapters.
+- **Let each repository own a Prisma client.** Rejected because independent long-lived pools and
+  shutdown hooks obscure application resource ownership.
+- **Make every module global.** Rejected because it hides dependency direction and makes accidental
+  cross-feature coupling easier.
+
+### Verification
+
+Issue #29 must prove that the application boots through the real feature modules, Club and Contact
+repository bindings resolve inside their owning modules, Identity and both repositories share one
+database client, protected Club policy behavior remains unchanged, and Club database integration
+checks pass.
+
+### Evidence
+
+- The developer's architecture request in pull request
+  [#150](https://github.com/Shagon1k/PickFlick/pull/150) on 2026-09-18.

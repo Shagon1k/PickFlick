@@ -4,7 +4,6 @@ import type { ApplicationLogger } from "@pickflick/observability";
 
 import type { AuthenticatedPrincipal } from "../identity/authorization.types.js";
 import { APPLICATION_LOGGER } from "../runtime.tokens.js";
-import { ClubEntitlementResolver } from "./club-entitlements.js";
 import { ClubValidationError } from "./club.errors.js";
 import { projectClubPermissions } from "./club-policy.js";
 import {
@@ -13,6 +12,7 @@ import {
   type ClubTransitionResult,
   type TransferAdministrationInput,
 } from "./club.repository.js";
+import { ClubTierResolver } from "./club-tiers.js";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -26,7 +26,7 @@ function assertUuid(value: string, field: string): void {
 export class ClubPolicyService {
   constructor(
     private readonly repository: ClubRepository,
-    private readonly entitlements: ClubEntitlementResolver,
+    private readonly tiers: ClubTierResolver,
   ) {}
 
   async project(principal: AuthenticatedPrincipal, clubId: string): Promise<ClubPolicyProjection> {
@@ -40,7 +40,7 @@ export class ClubPolicyService {
       lifecycle: subject.lifecycle,
       membershipRole: subject.clubRole,
       permissions,
-      entitlements: await this.entitlements.resolve(clubId),
+      entitlements: await this.tiers.resolve(clubId),
     };
   }
 }

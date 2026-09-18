@@ -16,9 +16,9 @@ import {
   type IdentityAuthorizationBoundary,
 } from "../../identity/authorization.types.js";
 import { APPLICATION_LOGGER } from "../../runtime.tokens.js";
-import { ClubEntitlementResolver, FixtureClubEntitlementResolver } from "../club-entitlements.js";
 import type { ClubPolicySubject } from "../club-policy.js";
 import { ClubRepository } from "../club.repository.js";
+import { ClubTierResolver, StaticClubTierResolver } from "../club-tiers.js";
 import { ClubsController } from "../clubs.controller.js";
 import { ClubPolicyService } from "../clubs.service.js";
 
@@ -81,7 +81,7 @@ const logger = createLogger({ environment: "test", service: "api" });
   providers: [
     ClubPolicyService,
     { provide: ClubRepository, useClass: StubClubRepository },
-    { provide: ClubEntitlementResolver, useClass: FixtureClubEntitlementResolver },
+    { provide: ClubTierResolver, useClass: StaticClubTierResolver },
     { provide: IDENTITY_AUTHORIZATION, useClass: StubIdentityAuthorization },
     { provide: APPLICATION_LOGGER, useValue: logger },
     { provide: SSE_AUTHORIZATION_RECHECK_MILLISECONDS, useValue: 30_000 },
@@ -124,7 +124,7 @@ describe("Club policy HTTP boundary", () => {
     };
     expect(body.membershipRole).toBe(membershipRole);
     expect(body.permissions).toMatchObject(expected);
-    expect(body.entitlements).toMatchObject({ tier: "FREE", memberLimit: 8 });
+    expect(body.entitlements).toMatchObject({ tier: "PRO", memberLimit: 16 });
   });
 
   it.each([

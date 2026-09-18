@@ -7,8 +7,16 @@ import { createLogger } from "@pickflick/observability";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { AppModule } from "../app.module.js";
+import { ClubRepository, PrismaClubRepository } from "../clubs/club.repository.js";
+import { ClubTierResolver, StaticClubTierResolver } from "../clubs/club-tiers.js";
+import { ClubsModule } from "../clubs/clubs.module.js";
 import { configureApplication } from "../configure-application.js";
+import { ContactModule } from "../contact/contact.module.js";
+import { ContactMessageRepository, PrismaContactMessageRepository } from "../contact/contact.repository.js";
+import { DatabaseService } from "../database/database.service.js";
 import { isAllowedAuthRequest } from "../identity/auth-http.js";
+import { IdentityModule } from "../identity/identity.module.js";
+import { IdentityService } from "../identity/identity.service.js";
 
 const environment = {
   appEnvironment: "test",
@@ -88,6 +96,23 @@ afterAll(async () => {
 });
 
 describe("authentication HTTP boundary", () => {
+  it("composes feature-owned providers around one database client", () => {
+    const database = app.get(DatabaseService);
+    const clubs = app.select(ClubsModule);
+    const contact = app.select(ContactModule);
+    const identity = app.select(IdentityModule);
+    const clubRepository = clubs.get(ClubRepository, { strict: true });
+    const contactRepository = contact.get(ContactMessageRepository, { strict: true });
+    const identityService = identity.get(IdentityService, { strict: true });
+
+    expect(clubRepository).toBeInstanceOf(PrismaClubRepository);
+    expect(clubs.get(ClubTierResolver, { strict: true })).toBeInstanceOf(StaticClubTierResolver);
+    expect(contactRepository).toBeInstanceOf(PrismaContactMessageRepository);
+    expect((clubRepository as unknown as { database: DatabaseService }).database).toBe(database);
+    expect((contactRepository as unknown as { database: DatabaseService }).database).toBe(database);
+    expect((identityService as unknown as { database: unknown }).database).toBe(database.client);
+  });
+
   it.each(["application/json", "application/octet-stream"])(
     "rejects a chunked %s authentication body above 100 KB with 413",
     async (contentType) => {

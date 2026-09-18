@@ -151,6 +151,9 @@ jobs:
       - name: Check OAuth state and session revocation
         run: pnpm auth:check
 
+      - name: Check Club policies, role transitions, and audit records
+        run: pnpm club:check
+
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke
 

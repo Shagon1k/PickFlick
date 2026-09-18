@@ -1,8 +1,25 @@
 import { CLUB_POLICY_ACTIONS, type ClubPolicyAction } from "@pickflick/contracts";
+import { SYNTHETIC_FIXTURES } from "@pickflick/database";
 import { describe, expect, it } from "vitest";
 
-import { fixtureClubEntitlements } from "../club-entitlements.js";
 import { projectClubPermissions, type ClubPolicySubject } from "../club-policy.js";
+import { ClubRepository } from "../club.repository.js";
+import { StaticClubTierResolver } from "../club-tiers.js";
+import { ClubPolicyService } from "../clubs.service.js";
+
+class PolicyRepository extends ClubRepository {
+  async readPolicySubject(): Promise<ClubPolicySubject> {
+    return { appRole: "USER", clubRole: "ADMIN", lifecycle: "ACTIVE", userStatus: "ACTIVE" };
+  }
+
+  async changeMembershipRole(): Promise<never> {
+    throw new Error("Not used by this test.");
+  }
+
+  async transferAdministration(): Promise<never> {
+    throw new Error("Not used by this test.");
+  }
+}
 
 function allowedActions(subject: ClubPolicySubject): ClubPolicyAction[] {
   const permissions = projectClubPermissions(subject);
@@ -74,8 +91,19 @@ describe("Club policy", () => {
     ).toEqual(allowed);
   });
 
-  it("projects the approved fixture limits without Paddle state", () => {
-    expect(fixtureClubEntitlements("FREE")).toEqual({
+  it("projects both static Club tiers through the policy service", async () => {
+    const policy = new ClubPolicyService(new PolicyRepository(), new StaticClubTierResolver());
+    const principal = {
+      appRole: "USER" as const,
+      sessionId: "30000000-0000-4000-8000-000000000001",
+      userId: "00000000-0000-4000-8000-000000000001",
+    };
+    const [freePolicy, proPolicy] = await Promise.all([
+      policy.project(principal, "10000000-0000-4000-8000-000000000002"),
+      policy.project(principal, SYNTHETIC_FIXTURES.club.id),
+    ]);
+
+    expect(freePolicy.entitlements).toEqual({
       tier: "FREE",
       adminClubLimit: 1,
       memberLimit: 8,
@@ -84,7 +112,7 @@ describe("Club policy", () => {
       voteResultVisibility: "ADMIN_HIDDEN",
       analyticsTier: "BASIC",
     });
-    expect(fixtureClubEntitlements("PRO")).toEqual({
+    expect(proPolicy.entitlements).toEqual({
       tier: "PRO",
       adminClubLimit: 5,
       memberLimit: 16,
