@@ -40,6 +40,12 @@ enum MembershipStatus {
 enum ClubAuditAction {
   MEMBERSHIP_ROLE_CHANGED
   ADMIN_TRANSFERRED
+  CLUB_SETTINGS_UPDATED
+  CLUB_AVATAR_UPDATED
+  CLUB_ARCHIVED
+  CLUB_REACTIVATED
+  MEMBERSHIP_LEFT
+  CLUB_DELETED
 }
 
 enum SessionType {
@@ -138,17 +144,24 @@ model AuthRateLimit {
 }
 
 model Club {
-  id                String           @id @db.Uuid
-  name              String
-  description       String?
-  lifecycle         ClubLifecycle    @default(ACTIVE)
-  selectionScaleMin Int              @default(1)
-  selectionScaleMax Int              @default(5)
-  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
-  memberships       Membership[]
-  sessions          Session[]
-  auditEvents       ClubAuditEvent[]
+  id                           String           @id @db.Uuid
+  name                         String
+  description                  String?
+  avatarObjectKey              String?
+  lifecycle                    ClubLifecycle    @default(ACTIVE)
+  selectionScaleMin            Int              @default(1)
+  selectionScaleMax            Int              @default(5)
+  showNominationAuthors        Boolean          @default(true)
+  showNominationsBeforeSubmit  Boolean          @default(true)
+  showVoteResults              Boolean          @default(false)
+  showRatingResults            Boolean          @default(true)
+  useMonochromeMedia           Boolean          @default(true)
+  deletedAt                    DateTime?         @db.Timestamptz(3)
+  createdAt                    DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt                    DateTime          @updatedAt @db.Timestamptz(3)
+  memberships                  Membership[]
+  sessions                     Session[]
+  auditEvents                  ClubAuditEvent[]
 }
 
 model Membership {
@@ -178,8 +191,11 @@ model ClubAuditEvent {
   subjectMembershipId   String          @db.Uuid
   action                ClubAuditAction
   changed               Boolean
-  previousRole          ClubRole
-  nextRole              ClubRole
+  requestHash           String?         @db.Char(64)
+  previousRole          ClubRole?
+  nextRole              ClubRole?
+  previousLifecycle     ClubLifecycle?
+  nextLifecycle         ClubLifecycle?
   previousAdminUserId   String?         @db.Uuid
   previousAdminNextRole ClubRole?
   createdAt             DateTime        @default(now()) @db.Timestamptz(3)

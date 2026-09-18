@@ -11,6 +11,10 @@ export function configureApplication(app: NestExpressApplication, logger: Applic
   app.use(createRequestContextMiddleware(logger));
   app.useBodyParser("json", { limit: "100kb" });
   app.useBodyParser("urlencoded", { extended: true, limit: "100kb" });
+  app.useBodyParser("raw", {
+    limit: "600kb",
+    type: ["image/jpeg", "image/png", "image/webp"],
+  });
   app.useBodyParser("raw", { limit: "100kb", type: () => true });
   app.getHttpAdapter().getInstance().all("/api/auth/*splat", app.get(IdentityService).handler);
   app.useGlobalFilters(new ApiExceptionFilter(logger));

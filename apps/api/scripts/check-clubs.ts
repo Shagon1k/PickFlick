@@ -6,6 +6,9 @@ import { SYNTHETIC_FIXTURES, assertSafeSeedOrResetTarget } from "@pickflick/data
 import { createLogger } from "@pickflick/observability";
 
 import { ClubAuthorizationError, ClubConflictError } from "../src/clubs/club.errors.js";
+import { ClubAvatarStorage } from "../src/clubs/club-avatar.storage.js";
+import { PrismaClubManagementRepository } from "../src/clubs/club-management.repository.js";
+import { ClubManagementService } from "../src/clubs/club-management.service.js";
 import { PrismaClubRepository } from "../src/clubs/club.repository.js";
 import { StaticClubTierResolver } from "../src/clubs/club-tiers.js";
 import {
@@ -20,6 +23,20 @@ assertSafeSeedOrResetTarget(environment);
 const databaseService = new DatabaseService(environment);
 const database = databaseService.client;
 const repository = new PrismaClubRepository(databaseService);
+const managementRepository = new PrismaClubManagementRepository(databaseService);
+
+class CheckAvatarStorage extends ClubAvatarStorage {
+  readonly objects = new Map<string, { body: Buffer; contentType: string }>();
+  async put(objectKey: string, body: Buffer, contentType: string): Promise<void> {
+    this.objects.set(objectKey, { body, contentType });
+  }
+  async get(objectKey: string) {
+    return this.objects.get(objectKey);
+  }
+  async delete(objectKey: string): Promise<void> {
+    this.objects.delete(objectKey);
+  }
+}
 
 let logOutput = "";
 const logger = createLogger({
@@ -35,6 +52,14 @@ const logger = createLogger({
 const policy = new ClubPolicyService(repository, new StaticClubTierResolver());
 const onboarding = new ClubOnboardingService(repository, new StaticClubTierResolver(), logger);
 const transitions = new ClubRoleTransitionService(repository, logger);
+const avatarStorage = new CheckAvatarStorage();
+const management = new ClubManagementService(
+  managementRepository,
+  transitions,
+  new StaticClubTierResolver(),
+  avatarStorage,
+  logger,
+);
 
 const ids = {
   club: randomUUID(),
@@ -51,6 +76,9 @@ const ids = {
   memberMembership: randomUUID(),
   suspendedMembership: randomUUID(),
   anonymizedMembership: randomUUID(),
+  adminlessClub: randomUUID(),
+  adminlessMembership: randomUUID(),
+  historicalSession: randomUUID(),
 };
 
 let createdClubId: string | undefined;
@@ -89,6 +117,7 @@ try {
       ],
     });
     await transaction.club.create({ data: { id: ids.club, name: "Club boundary check" } });
+    await transaction.club.create({ data: { id: ids.adminlessClub, name: "Adminless boundary check" } });
     await transaction.membership.createMany({
       data: [
         { id: ids.adminMembership, clubId: ids.club, userId: ids.admin, role: "ADMIN" },
@@ -96,8 +125,12 @@ try {
         { id: ids.memberMembership, clubId: ids.club, userId: ids.member, role: "MEMBER" },
         { id: ids.suspendedMembership, clubId: ids.club, userId: ids.suspended, role: "MODERATOR" },
         { id: ids.anonymizedMembership, clubId: ids.club, userId: ids.anonymized, role: "MEMBER" },
+        { id: ids.adminlessMembership, clubId: ids.adminlessClub, userId: ids.member, role: "MEMBER" },
       ],
       skipDuplicates: true,
+    });
+    await transaction.session.create({
+      data: { id: ids.historicalSession, clubId: ids.club, type: "PAST", phase: "COMPLETED" },
     });
   });
 
@@ -157,6 +190,93 @@ try {
   if (creatorClubs.clubs.length !== 1 || creatorClubs.clubs[0]?.id !== createdClub.id) {
     throw new Error("The creator's Club collection did not include the new Club.");
   }
+
+  const adminless = await management.project(principal(ids.member), ids.adminlessClub);
+  if (adminless.club.membershipRole !== "MEMBER" || adminless.permissions.manageLifecycle) {
+    throw new Error("An adminless Club granted ownership-sensitive actions to a Member.");
+  }
+
+  const settingsOperationId = randomUUID();
+  const settingsInput = {
+    operationId: settingsOperationId,
+    name: "Club boundary updated",
+    description: "Audited settings check.",
+    selectionScaleMin: 0,
+    selectionScaleMax: 8,
+    showNominationAuthors: false,
+    showNominationsBeforeSubmit: true,
+    showVoteResults: false,
+    showRatingResults: true,
+    useMonochromeMedia: false,
+  };
+  const settings = await management.updateSettings(principal(ids.admin), ids.club, settingsInput);
+  const settingsRetry = await management.updateSettings(principal(ids.admin), ids.club, settingsInput);
+  if (!settings.changed || settings.replayed || !settingsRetry.replayed || settingsRetry.settings.club.name !== settingsInput.name) {
+    throw new Error("Club settings did not persist or replay idempotently.");
+  }
+  await management.updateSettings(principal(ids.moderator), ids.club, {
+    ...settingsInput,
+    operationId: randomUUID(),
+  }).then(
+    () => { throw new Error("A Moderator changed Admin-only Club settings."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubAuthorizationError)) {
+        throw error;
+      }
+    },
+  );
+  await management.updateSettings(principal(ids.appAdmin), ids.club, {
+    ...settingsInput,
+    operationId: randomUUID(),
+  }).then(
+    () => { throw new Error("An App Admin without Membership changed Club settings."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubAuthorizationError)) {
+        throw error;
+      }
+    },
+  );
+  await management.delete(principal(ids.admin), ids.club, {
+    operationId: randomUUID(),
+    confirmation: settingsInput.name,
+  }).then(
+    () => { throw new Error("A Club with Session history was deleted."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubConflictError)) {
+        throw error;
+      }
+    },
+  );
+
+  const avatarOperationId = randomUUID();
+  const avatar = await management.putAvatar(
+    principal(ids.admin),
+    ids.club,
+    avatarOperationId,
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]),
+    "image/png",
+  );
+  if (!avatar.changed || !avatar.hasAvatar || avatarStorage.objects.size !== 1) {
+    throw new Error("Club avatar storage/reference update did not complete atomically enough for recovery.");
+  }
+  const removedAvatar = await management.removeAvatar(principal(ids.admin), ids.club, { operationId: randomUUID() });
+  if (!removedAvatar.changed || removedAvatar.hasAvatar || avatarStorage.objects.size !== 0) {
+    throw new Error("Club avatar removal did not clear its reference and private object.");
+  }
+
+  const archiveOperationId = randomUUID();
+  const archived = await management.changeLifecycle(principal(ids.admin), ids.club, "archive", {
+    operationId: archiveOperationId,
+    confirmation: "ARCHIVE",
+  });
+  const archiveRetry = await management.changeLifecycle(principal(ids.admin), ids.club, "archive", {
+    operationId: archiveOperationId,
+    confirmation: "ARCHIVE",
+  });
+  if (!archived.changed || archived.replayed || !archiveRetry.replayed) {
+    throw new Error("Club archival did not return a stable idempotent receipt.");
+  }
+  await management.changeLifecycle(principal(ids.admin), ids.club, "reactivate", { operationId: randomUUID() });
 
   const adminCount = await database.membership.count({
     where: { clubId: ids.club, role: "ADMIN", status: "ACTIVE" },
@@ -341,6 +461,55 @@ try {
   ) {
     throw new Error("Administration transfer audit record is incomplete.");
   }
+
+  const leaveOperationId = randomUUID();
+  const leave = await management.leave(principal(ids.member), ids.club, {
+    operationId: leaveOperationId,
+    confirmation: "LEAVE",
+  });
+  const leaveRetry = await management.leave(principal(ids.member), ids.club, {
+    operationId: leaveOperationId,
+    confirmation: "LEAVE",
+  });
+  const departed = await database.membership.findUnique({
+    where: { id: ids.memberMembership },
+    select: { status: true, leftAt: true },
+  });
+  if (!leave.changed || leave.replayed || !leaveRetry.replayed || departed?.status !== "LEFT" || !departed.leftAt) {
+    throw new Error("Membership leave did not persist one retry-safe departure and audit receipt.");
+  }
+
+  const deleteOperationId = randomUUID();
+  await management.delete(principal(ids.creator), createdClub.id, {
+    operationId: randomUUID(),
+    confirmation: "wrong name",
+  }).then(
+    () => { throw new Error("Club deletion accepted an incorrect typed-name confirmation."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubConflictError)) {
+        throw error;
+      }
+    },
+  );
+  const deleted = await management.delete(principal(ids.creator), createdClub.id, {
+    operationId: deleteOperationId,
+    confirmation: createdClub.name,
+  });
+  const deleteRetry = await management.delete(principal(ids.creator), createdClub.id, {
+    operationId: deleteOperationId,
+    confirmation: createdClub.name,
+  });
+  const deletedClub = await database.club.findUnique({
+    where: { id: createdClub.id },
+    select: { deletedAt: true },
+  });
+  const visibleAfterDelete = await onboarding.list(principal(ids.creator));
+  if (
+    !deleted.changed || deleted.replayed || !deleteRetry.replayed || !deletedClub?.deletedAt ||
+    visibleAfterDelete.clubs.length !== 0
+  ) {
+    throw new Error("Empty Club deletion did not tombstone access while preserving an idempotent audit receipt.");
+  }
   if (
     logOutput.includes(ids.club) ||
     logOutput.includes(ids.admin) ||
@@ -352,14 +521,19 @@ try {
   }
 
   console.log(
-    "Club checks passed: transactional first-Club creation, serialized Free limits, private policy projections, static Free/Pro tiers, archived-Club denial, App Admin ownership transfer, UUID canonicalization, durable no-op receipts, serialized role changes, idempotent transfer, and audit-safe records.",
+    "Club checks passed: transactional creation, private role projections, adminless handling, audited settings/avatar changes, archive/reactivate, leave, empty-Club deletion tombstones, static tiers, serialized role changes, App Admin transfer, and idempotent receipts.",
   );
 } finally {
   if (createdClubId) {
+    await database.clubAuditEvent.deleteMany({ where: { clubId: createdClubId } });
     await database.membership.deleteMany({ where: { clubId: createdClubId } });
     await database.club.deleteMany({ where: { id: createdClubId } });
   }
+  await database.clubAuditEvent.deleteMany({ where: { clubId: ids.adminlessClub } });
+  await database.membership.deleteMany({ where: { clubId: ids.adminlessClub } });
+  await database.club.deleteMany({ where: { id: ids.adminlessClub } });
   await database.clubAuditEvent.deleteMany({ where: { clubId: ids.club } });
+  await database.session.deleteMany({ where: { clubId: ids.club } });
   await database.membership.deleteMany({ where: { clubId: ids.club } });
   await database.club.deleteMany({ where: { id: ids.club } });
   await database.user.deleteMany({

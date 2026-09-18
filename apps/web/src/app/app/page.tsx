@@ -56,6 +56,9 @@ function ClubReady({ club }: Readonly<{ club: ClubSummary }>) {
             <div><dt>Selection scale</dt><dd>{club.selectionScaleMin}–{club.selectionScaleMax}</dd></div>
             <div><dt>Status</dt><dd>{club.lifecycle === "ACTIVE" ? "Active" : "Archived"}</dd></div>
           </dl>
+          <div className={styles.actions}>
+            <ActionLink href={`/clubs/${club.id}/settings`} variant="primary">Manage Club</ActionLink>
+          </div>
         </section>
       </main>
     </ProductFrame>
