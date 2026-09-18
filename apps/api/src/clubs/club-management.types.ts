@@ -13,7 +13,7 @@ export interface NormalizedClubOperation {
   readonly operationId: string;
 }
 
-export interface NormalizedClubSettings extends Omit<UpdateClubSettingsRequest, "operationId" | "confirmation"> {
+export interface NormalizedClubSettings extends Omit<UpdateClubSettingsRequest, "operationId"> {
   readonly description?: string;
 }
 

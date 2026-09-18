@@ -24,7 +24,7 @@ import {
 const clubId = "10000000-0000-4000-8000-000000000031";
 const previous = { message: "", revision: 2, status: "idle" as const };
 const unavailable = {
-  message: "The Club could not be updated. Nothing unsafe was applied; try again.",
+  message: "This Club action may have been applied. Reload to check current state, or retry now; the same operation ID will be used.",
   revision: 3,
   status: "error",
 };

@@ -182,7 +182,10 @@ export interface ClubSettingsProjection {
 
 export interface ClubOperationRequest {
   readonly operationId: string;
-  readonly confirmation?: string;
+}
+
+export interface ConfirmedClubOperationRequest extends ClubOperationRequest {
+  readonly confirmation: string;
 }
 
 export interface UpdateClubSettingsRequest extends ClubOperationRequest, ClubVisibilitySettings {
@@ -195,6 +198,10 @@ export interface UpdateClubSettingsRequest extends ClubOperationRequest, ClubVis
 export interface ChangeClubMemberRoleRequest extends ClubOperationRequest {
   readonly nextRole: "MODERATOR" | "MEMBER";
 }
+
+export type ClubLifecycleRequest =
+  | ({ readonly action: "reactivate" } & ClubOperationRequest)
+  | ({ readonly action: "archive" | "delete" | "leave" } & ConfirmedClubOperationRequest);
 
 export interface ClubOperationReceipt {
   readonly changed: boolean;

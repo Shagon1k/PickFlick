@@ -39,7 +39,11 @@ function apiFailure(previous: ClubManagementActionState, status: number): ClubMa
   if (status === 409) {
     return state(previous, "error", "The Club changed or the confirmation did not match. Reload and try again.");
   }
-  return state(previous, "error", "The Club could not be updated. Nothing unsafe was applied; try again.");
+  return state(
+    previous,
+    "error",
+    "This Club action may have been applied. Reload to check current state, or retry now; the same operation ID will be used.",
+  );
 }
 
 async function submitMutation<T>(
@@ -114,10 +118,10 @@ export async function clubLifecycleAction(
   formData: FormData,
 ): Promise<ClubManagementActionState> {
   const confirmation = String(formData.get("confirmation") ?? "");
-  const result = await submitMutation(previous, async () => submitClubOperation(await headers(), clubId, action, {
-    operationId: operationId(formData),
-    ...(confirmation ? { confirmation } : {}),
-  }));
+  const request = action === "reactivate"
+    ? { action, operationId: operationId(formData) } as const
+    : { action, confirmation, operationId: operationId(formData) } as const;
+  const result = await submitMutation(previous, async () => submitClubOperation(await headers(), clubId, request));
   if ("failure" in result) {
     return result.failure;
   }

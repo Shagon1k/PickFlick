@@ -300,7 +300,7 @@ export function ClubSettings({ projection }: Readonly<{ projection: ClubSettings
             <article className={styles.member} key={member.id}>
               <div className={styles.memberIdentity}>
                 <span aria-hidden="true">{member.displayName.slice(0, 2).toUpperCase()}</span>
-                <div><strong>{member.displayName}</strong><small>Joined {new Date(member.joinedAt).toLocaleDateString("en")}</small></div>
+                <div><strong>{member.displayName}</strong><small>Joined {new Date(member.joinedAt).toLocaleDateString("en", { timeZone: "UTC" })}</small></div>
               </div>
               <MemberRoleForm clubId={projection.club.id} member={member} writable={projection.permissions.manageRoles && active} />
             </article>
@@ -316,7 +316,7 @@ export function ClubSettings({ projection }: Readonly<{ projection: ClubSettings
               {projection.auditEvents.map((event) => (
                 <li key={event.id}>
                   <span>{event.action.replaceAll("_", " ").toLowerCase()}</span>
-                  <time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString("en")}</time>
+                  <time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString("en", { timeZone: "UTC" })}</time>
                 </li>
               ))}
             </ol>

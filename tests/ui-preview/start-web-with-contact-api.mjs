@@ -5,6 +5,10 @@ const retryKeys = new Map();
 const clubsBySession = new Map();
 const avatarVersionsBySession = new Map();
 const settingsClubId = "10000000-0000-4000-8000-000000000031";
+const avatarPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
 
 function settingsProjection(token) {
   const role = token?.includes("member") ? "MEMBER" : token?.includes("moderator") ? "MODERATOR" : "ADMIN";
@@ -135,6 +139,16 @@ const api = createServer((request, response) => {
       sendJson(response, 200, settingsProjection(token));
       return;
     }
+    if (request.method === "GET" &&
+      new URL(request.url, "http://127.0.0.1").pathname === `/clubs/${settingsClubId}/avatar`) {
+      response.writeHead(200, {
+        "cache-control": "private, no-store",
+        "content-length": avatarPng.length,
+        "content-type": "image/png",
+      });
+      response.end(avatarPng);
+      return;
+    }
     if (request.method === "PATCH" && request.url.endsWith("/settings")) {
       sendJson(response, 200, { changed: true, replayed: false, settings: settingsProjection(token) });
       return;
@@ -215,7 +229,7 @@ const api = createServer((request, response) => {
 
 await new Promise((resolve, reject) => {
   api.once("error", reject);
-  api.listen(0, "127.0.0.1", resolve);
+  api.listen(42731, "127.0.0.1", resolve);
 });
 const apiAddress = api.address();
 if (!apiAddress || typeof apiAddress === "string") {

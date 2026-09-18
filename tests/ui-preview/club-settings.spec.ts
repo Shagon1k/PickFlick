@@ -93,6 +93,8 @@ test("avatar replacements refresh the image and removal keeps the latest status"
 
   const avatarInput = page.getByLabel("Club avatar");
   const upload = async () => {
+    const avatarResponse = page.waitForResponse((response) =>
+      new URL(response.url()).pathname === `/api/clubs/${clubId}/avatar`);
     await avatarInput.setInputFiles({
       name: "avatar.png",
       mimeType: "image/png",
@@ -100,14 +102,24 @@ test("avatar replacements refresh the image and removal keeps the latest status"
     });
     await page.getByRole("button", { name: "Upload" }).click();
     await expect(page.getByText("Club avatar updated.")).toBeVisible();
+    return avatarResponse;
   };
 
-  await upload();
+  const firstAvatarResponse = await upload();
+  expect(firstAvatarResponse.status()).toBe(200);
+  expect(firstAvatarResponse.headers()["content-type"]).toBe("image/png");
   const avatar = page.getByRole("img", { name: "Midnight Society avatar" });
   await expect(avatar).toHaveAttribute("src", /\?v=avatar-1$/u);
+  await expect.poll(() => avatar.evaluate((image) => ({
+    complete: (image as HTMLImageElement).complete,
+    naturalHeight: (image as HTMLImageElement).naturalHeight,
+    naturalWidth: (image as HTMLImageElement).naturalWidth,
+  }))).toEqual({ complete: true, naturalHeight: 1, naturalWidth: 1 });
 
-  await upload();
+  const secondAvatarResponse = await upload();
+  expect(secondAvatarResponse.status()).toBe(200);
   await expect(avatar).toHaveAttribute("src", /\?v=avatar-2$/u);
+  await expect.poll(() => avatar.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBe(1);
 
   await page.getByRole("button", { name: "Remove avatar" }).click();
   await expect(page.getByText("Club avatar removed.")).toBeVisible();

@@ -3,6 +3,7 @@ import type {
   ChangeClubMemberRoleRequest,
   ClubAvatarResponse,
   ClubCollectionResponse,
+  ClubLifecycleRequest,
   ClubOperationReceipt,
   ClubOperationRequest,
   ClubSettingsProjection,
@@ -209,10 +210,10 @@ export async function submitClubSettings(
 export async function submitClubOperation(
   requestHeaders: RequestHeaders,
   clubId: string,
-  action: "archive" | "delete" | "leave" | "reactivate",
-  payload: ClubOperationRequest,
+  request: ClubLifecycleRequest,
   fetcher: Fetcher = fetch,
 ): Promise<ClubApiResult<ClubOperationReceipt>> {
+  const { action, ...payload } = request;
   return submitJson(requestHeaders, `/clubs/${clubId}/${action}`, "POST", payload, isReceipt, fetcher);
 }
 
