@@ -166,6 +166,11 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
   test(`Archived Club settings match the ${viewport.name} source-comparison capture`, async ({ context, page }) => {
     await authenticate(context, `valid-settings-archived-${viewport.name}`);
     await open(page, viewport);
+    await expect(page.getByRole("button", { name: "Reactivate Club" })).toBeVisible();
+    await page.getByRole("button", { name: "Delete Club" }).click();
+    await expect(page.getByRole("dialog", { name: "Delete this Club?" })
+      .getByRole("textbox", { name: "Type Midnight Society to confirm" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
     await expect(page).toHaveScreenshot(`club-settings-archived-${viewport.name}.png`, {
       animations: "disabled",
       caret: "hide",

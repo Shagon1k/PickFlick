@@ -53,6 +53,8 @@ export interface UpdateAvatarReferenceInput extends LeaveClubInput {
   readonly objectKey: string | null;
 }
 
+export type FindAvatarReplayInput = Omit<UpdateAvatarReferenceInput, "objectKey">;
+
 export interface StoredClubManagementView {
   readonly subject: ClubPolicySubject;
   readonly club: Omit<ClubSummary, "tier">;

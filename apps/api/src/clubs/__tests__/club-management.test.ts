@@ -14,6 +14,7 @@ import { ClubManagementService } from "../club-management.service.js";
 import type {
   ClubLifecycleInput,
   DeleteClubInput,
+  FindAvatarReplayInput,
   LeaveClubInput,
   PersistClubSettingsInput,
   StoredClubManagementView,
@@ -79,6 +80,10 @@ class ManagementRepository extends ClubManagementRepository {
     void input;
     return { changed: true, replayed: false };
   });
+  readonly avatarReplayCall = vi.fn(async (input: FindAvatarReplayInput): Promise<ClubAvatarReferenceResult | null> => {
+    void input;
+    return null;
+  });
 
   async readForUser(userId: string): Promise<StoredClubManagementView | null> {
     if (userId === ids.admin) {
@@ -93,6 +98,7 @@ class ManagementRepository extends ClubManagementRepository {
   async changeLifecycle(input: ClubLifecycleInput) { return this.lifecycleCall(input); }
   async leave(input: LeaveClubInput) { return this.leaveCall(input); }
   async delete(input: DeleteClubInput) { return this.deleteCall(input); }
+  async findAvatarReplay(input: FindAvatarReplayInput) { return this.avatarReplayCall(input); }
   async updateAvatarReference(input: UpdateAvatarReferenceInput) { return this.avatarCall(input); }
 }
 
@@ -239,6 +245,32 @@ describe("Club management service", () => {
 
     expect(fixture.avatars.putCall).toHaveBeenCalledOnce();
     expect(fixture.avatars.deleteCall).toHaveBeenCalledOnce();
+  });
+
+  it("returns an avatar replay before current authorization or storage", async () => {
+    const fixture = service();
+    fixture.repository.avatarReplayCall.mockResolvedValueOnce({ changed: true, replayed: true });
+    const authorization = vi.spyOn(fixture.repository, "readForUser");
+    const operationId = randomUUID();
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+
+    await expect(fixture.service.putAvatar(
+      principal(ids.admin),
+      ids.club,
+      operationId,
+      png,
+      "image/png",
+    )).resolves.toEqual({ changed: true, hasAvatar: false, replayed: true });
+
+    expect(fixture.repository.avatarReplayCall).toHaveBeenCalledWith({
+      actorUserId: ids.admin,
+      clubId: ids.club,
+      operationId,
+      requestHash: expect.stringMatching(/^[0-9a-f]{64}$/u),
+    });
+    expect(authorization).not.toHaveBeenCalled();
+    expect(fixture.avatars.putCall).not.toHaveBeenCalled();
+    expect(fixture.repository.avatarCall).not.toHaveBeenCalled();
   });
 
   it("logs a safe reconciliation digest when failed persistence cleanup also fails", async () => {

@@ -8,6 +8,7 @@ import { ClubAuthorizationError, ClubConflictError } from "./club.errors.js";
 import type {
   ClubLifecycleInput,
   DeleteClubInput,
+  FindAvatarReplayInput,
   LeaveClubInput,
   PersistClubSettingsInput,
   StoredClubManagementView,
@@ -30,6 +31,7 @@ export abstract class ClubManagementRepository {
   abstract changeLifecycle(input: ClubLifecycleInput): Promise<ClubManagementResult>;
   abstract leave(input: LeaveClubInput): Promise<ClubManagementResult>;
   abstract delete(input: DeleteClubInput): Promise<ClubAvatarReferenceResult>;
+  abstract findAvatarReplay(input: FindAvatarReplayInput): Promise<ClubAvatarReferenceResult | null>;
   abstract updateAvatarReference(input: UpdateAvatarReferenceInput): Promise<ClubAvatarReferenceResult>;
 }
 
@@ -402,6 +404,35 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         replayed: false,
         ...(input.objectKey ? { currentObjectKey: input.objectKey } : {}),
         ...(previousObjectKey ? { previousObjectKey } : {}),
+      };
+    });
+  }
+
+  async findAvatarReplay(input: FindAvatarReplayInput): Promise<ClubAvatarReferenceResult | null> {
+    const actorUserId = canonicalUuid(input.actorUserId);
+    const clubId = canonicalUuid(input.clubId);
+    const operationId = canonicalUuid(input.operationId);
+    return this.database.client.$transaction(async (transaction) => {
+      const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
+      if (!existing) {
+        return null;
+      }
+      await this.assertReplay(
+        transaction,
+        existing,
+        actorUserId,
+        clubId,
+        "CLUB_AVATAR_UPDATED",
+        input.requestHash,
+      );
+      const current = await transaction.club.findUnique({
+        where: { id: clubId },
+        select: { avatarObjectKey: true },
+      });
+      return {
+        changed: existing.changed,
+        replayed: true,
+        ...(current?.avatarObjectKey ? { currentObjectKey: current.avatarObjectKey } : {}),
       };
     });
   }

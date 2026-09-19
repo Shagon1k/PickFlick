@@ -334,7 +334,15 @@ export function ClubSettings({ projection }: Readonly<{ projection: ClubSettings
               <div><strong>Delete empty Club</strong><p>Removes active access. Clubs with Session history cannot be deleted.</p></div>
               <ConfirmAction action="delete" clubId={projection.club.id} confirmation={projection.club.name} description="This removes every active Membership and cannot be undone from the Club UI." label="Delete Club" title="Delete this Club?" />
             </div>
-          ) : <ReactivateAction clubId={projection.club.id} />
+          ) : (
+            <div className={styles.stack}>
+              <ReactivateAction clubId={projection.club.id} />
+              <div className={styles.dangerActions}>
+                <div><strong>Delete empty Club</strong><p>Removes active access. Clubs with Session history cannot be deleted.</p></div>
+                <ConfirmAction action="delete" clubId={projection.club.id} confirmation={projection.club.name} description="This removes every active Membership and cannot be undone from the Club UI." label="Delete Club" title="Delete this Club?" />
+              </div>
+            </div>
+          )
         ) : (
           <div className={styles.dangerActions}>
             <div><strong>Leave Club</strong><p>Your Membership ends immediately. Shared Club history remains.</p></div>

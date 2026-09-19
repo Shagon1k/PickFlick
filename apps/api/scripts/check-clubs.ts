@@ -325,6 +325,30 @@ try {
   if (!archived.changed || archived.replayed || !archiveRetry.replayed) {
     throw new Error("Club archival did not return a stable idempotent receipt.");
   }
+  await management.putAvatar(
+    principal(ids.admin),
+    ids.club,
+    avatarOperationId,
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]),
+    "image/png",
+  ).then(
+    () => { throw new Error("An archived Club accepted avatar payload drift for a replayed operation."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubConflictError)) {
+        throw error;
+      }
+    },
+  );
+  const avatarRetryAfterArchive = await management.putAvatar(
+    principal(ids.admin),
+    ids.club,
+    avatarOperationId,
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]),
+    "image/png",
+  );
+  if (!avatarRetryAfterArchive.replayed || avatarRetryAfterArchive.hasAvatar || avatarStorage.objects.size !== 0) {
+    throw new Error("An archived Club avatar retry did not return its receipt without rewriting storage.");
+  }
   await management.changeLifecycle(principal(ids.admin), ids.club, "reactivate", { operationId: randomUUID() });
 
   const adminCount = await database.membership.count({

@@ -187,10 +187,24 @@ export class ClubManagementService {
     body: unknown,
     contentType: string | undefined,
   ): Promise<ClubAvatarResponse> {
-    const current = await this.authorizeAvatarManagement(principal, clubId);
     const operationId = parseOperationId(operationIdValue);
     const avatar = avatarPayload(body, contentType);
     const contentHash = createHash("sha256").update(avatar.body).digest("hex");
+    const requestHash = operationRequestHash("avatar", { contentHash, contentType: avatar.contentType });
+    const replay = await this.repository.findAvatarReplay({
+      actorUserId: principal.userId,
+      clubId,
+      operationId,
+      requestHash,
+    });
+    if (replay) {
+      return {
+        changed: replay.changed,
+        replayed: true,
+        hasAvatar: Boolean(replay.currentObjectKey),
+      };
+    }
+    const current = await this.authorizeAvatarManagement(principal, clubId);
     const objectKey = `club-avatars/${clubId.toLowerCase()}/${operationId}-${contentHash}.${avatar.extension}`;
     await this.avatars.put(objectKey, avatar.body, avatar.contentType);
     let receipt;
@@ -200,7 +214,7 @@ export class ClubManagementService {
         clubId,
         objectKey,
         operationId,
-        requestHash: operationRequestHash("avatar", { contentHash, contentType: avatar.contentType }),
+        requestHash,
       });
     } catch (error) {
       if (objectKey !== current.avatarObjectKey) {
