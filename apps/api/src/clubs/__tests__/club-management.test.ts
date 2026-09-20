@@ -11,6 +11,7 @@ import {
   type ClubManagementResult,
 } from "../club-management.repository.js";
 import { ClubManagementService } from "../club-management.service.js";
+import { ClubConflictError } from "../club.errors.js";
 import type {
   ClubLifecycleInput,
   DeleteClubInput,
@@ -20,6 +21,7 @@ import type {
   StoredClubManagementView,
   UpdateAvatarReferenceInput,
 } from "../club-management.types.js";
+import { operationRequestHash } from "../club-management.validation.js";
 import { StaticClubTierResolver } from "../club-tiers.js";
 import type { ClubRoleTransitionService } from "../clubs.service.js";
 
@@ -168,13 +170,19 @@ describe("Club management service", () => {
     await expect(fixture.service.project(principal(randomUUID()), ids.club)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it("rejects a Free-only visibility escalation before persistence", async () => {
+  it("passes the current tier rule to serialized settings persistence", async () => {
     const fixture = service();
+    fixture.repository.updateSettingsCall.mockRejectedValueOnce(
+      new ClubConflictError("Vote-result visibility is not configurable on this Club tier."),
+    );
     await expect(fixture.service.updateSettings(principal(ids.admin), ids.club, {
       ...validSettings,
       showVoteResults: true,
     })).rejects.toThrow(/not configurable/u);
-    expect(fixture.repository.updateSettingsCall).not.toHaveBeenCalled();
+    expect(fixture.repository.updateSettingsCall).toHaveBeenCalledWith(expect.objectContaining({
+      showVoteResults: true,
+      voteResultVisibility: "ADMIN_HIDDEN",
+    }));
   });
 
   it("requires exact lifecycle confirmations and passes an idempotency hash", async () => {
@@ -182,6 +190,10 @@ describe("Club management service", () => {
     await expect(fixture.service.changeLifecycle(principal(ids.admin), ids.club, "archive", {
       operationId: randomUUID(),
       confirmation: "archive",
+    })).rejects.toThrow(/confirmation/u);
+    await expect(fixture.service.changeLifecycle(principal(ids.admin), ids.club, "archive", {
+      operationId: randomUUID(),
+      confirmation: " ARCHIVE ",
     })).rejects.toThrow(/confirmation/u);
     const operationId = randomUUID();
     await expect(fixture.service.changeLifecycle(principal(ids.admin), ids.club, "archive", {
@@ -193,6 +205,22 @@ describe("Club management service", () => {
       operationId,
       requestHash: expect.stringMatching(/^[0-9a-f]{64}$/u),
     }));
+  });
+
+  it("preserves deletion confirmation text for exact comparison and hashing", async () => {
+    const fixture = service();
+    const operationId = randomUUID();
+    const confirmation = " Midnight Society ";
+
+    await fixture.service.delete(principal(ids.admin), ids.club, { operationId, confirmation });
+
+    expect(fixture.repository.deleteCall).toHaveBeenCalledWith({
+      actorUserId: ids.admin,
+      clubId: ids.club,
+      confirmation,
+      operationId,
+      requestHash: operationRequestHash("delete", { confirmation }),
+    });
   });
 
   it("passes the current tier Admin Club limit to reactivation persistence", async () => {
@@ -273,11 +301,10 @@ describe("Club management service", () => {
     expect(fixture.repository.avatarCall).not.toHaveBeenCalled();
   });
 
-  it("logs a safe reconciliation digest when failed persistence cleanup also fails", async () => {
+  it("retains a stored avatar when the persistence commit outcome is unknown", async () => {
     const fixture = service();
     const persistenceFailure = new Error("database unavailable");
     fixture.repository.avatarCall.mockRejectedValueOnce(persistenceFailure);
-    fixture.avatars.deleteCall.mockRejectedValueOnce(new Error("object storage unavailable"));
     const operationId = randomUUID();
     const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
 
@@ -289,10 +316,8 @@ describe("Club management service", () => {
       "image/png",
     )).rejects.toBe(persistenceFailure);
 
-    expect(fixture.errorLog).toHaveBeenCalledWith({
-      event: "club.avatar.cleanup_failed",
-      objectKeyDigest: expect.stringMatching(/^[0-9a-f]{64}$/u),
-    }, "Retired Club avatar cleanup failed.");
-    expect(JSON.stringify(fixture.errorLog.mock.calls)).not.toContain(operationId);
+    expect(fixture.avatars.putCall).toHaveBeenCalledOnce();
+    expect(fixture.avatars.deleteCall).not.toHaveBeenCalled();
+    expect(fixture.errorLog).not.toHaveBeenCalled();
   });
 });

@@ -89,15 +89,13 @@ export class ClubManagementService {
   ): Promise<UpdateClubSettingsResponse> {
     const parsed = parseClubSettings(value);
     const tier = await this.tiers.resolve(clubId);
-    if (tier.voteResultVisibility !== "ADMIN_CONFIGURABLE" && parsed.settings.showVoteResults) {
-      throw new ClubConflictError("Vote-result visibility is not configurable on this Club tier.");
-    }
     const receipt = await this.repository.updateSettings({
       ...parsed.settings,
       actorUserId: principal.userId,
       clubId,
       operationId: parsed.operationId,
       requestHash: operationRequestHash("settings", parsed.settings),
+      voteResultVisibility: tier.voteResultVisibility,
     });
     this.logChange(receipt, "club.settings.updated", "Club settings updated.");
     return { ...receipt, settings: await this.project(principal, clubId) };
@@ -204,24 +202,16 @@ export class ClubManagementService {
         hasAvatar: Boolean(replay.currentObjectKey),
       };
     }
-    const current = await this.authorizeAvatarManagement(principal, clubId);
+    await this.authorizeAvatarManagement(principal, clubId);
     const objectKey = `club-avatars/${clubId.toLowerCase()}/${operationId}-${contentHash}.${avatar.extension}`;
     await this.avatars.put(objectKey, avatar.body, avatar.contentType);
-    let receipt;
-    try {
-      receipt = await this.repository.updateAvatarReference({
-        actorUserId: principal.userId,
-        clubId,
-        objectKey,
-        operationId,
-        requestHash,
-      });
-    } catch (error) {
-      if (objectKey !== current.avatarObjectKey) {
-        await this.deleteRetiredAvatar(objectKey);
-      }
-      throw error;
-    }
+    const receipt = await this.repository.updateAvatarReference({
+      actorUserId: principal.userId,
+      clubId,
+      objectKey,
+      operationId,
+      requestHash,
+    });
     if (receipt.replayed && receipt.currentObjectKey !== objectKey) {
       await this.deleteRetiredAvatar(objectKey);
     }

@@ -258,6 +258,32 @@ try {
     showRatingResults: true,
     useMonochromeMedia: false,
   };
+  for (const privateClubId of [ids.club, SYNTHETIC_FIXTURES.club.id]) {
+    await management.updateSettings(principal(ids.outsider), privateClubId, {
+      ...settingsInput,
+      operationId: randomUUID(),
+      showVoteResults: true,
+    }).then(
+      () => { throw new Error("A non-member changed private Club settings."); },
+      (error: unknown) => {
+        if (!(error instanceof ClubAuthorizationError)) {
+          throw error;
+        }
+      },
+    );
+  }
+  await management.updateSettings(principal(ids.admin), ids.club, {
+    ...settingsInput,
+    operationId: randomUUID(),
+    showVoteResults: true,
+  }).then(
+    () => { throw new Error("A Free Club enabled ordinary-member vote results."); },
+    (error: unknown) => {
+      if (!(error instanceof ClubConflictError)) {
+        throw error;
+      }
+    },
+  );
   const settings = await management.updateSettings(principal(ids.admin), ids.club, settingsInput);
   const settingsRetry = await management.updateSettings(principal(ids.admin), ids.club, settingsInput);
   if (!settings.changed || settings.replayed || !settingsRetry.replayed || settingsRetry.settings.club.name !== settingsInput.name) {

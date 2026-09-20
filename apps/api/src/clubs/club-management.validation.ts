@@ -44,7 +44,7 @@ export function parseClubOperation(value: unknown, confirmationRequired = false)
   }
   return {
     operationId,
-    ...(typeof input.confirmation === "string" ? { confirmation: input.confirmation.trim() } : {}),
+    ...(typeof input.confirmation === "string" ? { confirmation: input.confirmation } : {}),
   };
 }
 

@@ -156,12 +156,15 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     return this.database.client.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
       await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      const actor = await this.activeAdmin(transaction, actorUserId, clubId, true);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
         await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_SETTINGS_UPDATED", input.requestHash);
         return { changed: existing.changed, replayed: true };
       }
-      const actor = await this.activeAdmin(transaction, actorUserId, clubId, true);
+      if (input.voteResultVisibility !== "ADMIN_CONFIGURABLE" && input.showVoteResults) {
+        throw new ClubConflictError("Vote-result visibility is not configurable on this Club tier.");
+      }
       const club = actor.club;
       const changed =
         club.name !== input.name ||

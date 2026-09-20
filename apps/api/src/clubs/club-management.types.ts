@@ -2,6 +2,7 @@ import type {
   ClubAuditProjection,
   ClubMemberProjection,
   ClubSummary,
+  ClubTierProjection,
   ClubVisibilitySettings,
   UpdateClubSettingsRequest,
 } from "@pickflick/contracts";
@@ -22,6 +23,7 @@ export interface PersistClubSettingsInput extends NormalizedClubSettings {
   readonly clubId: string;
   readonly operationId: string;
   readonly requestHash: string;
+  readonly voteResultVisibility: ClubTierProjection["voteResultVisibility"];
 }
 
 interface ClubLifecycleInputBase {
