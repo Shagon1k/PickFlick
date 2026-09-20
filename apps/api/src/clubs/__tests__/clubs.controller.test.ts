@@ -19,6 +19,7 @@ import { APPLICATION_LOGGER } from "../../runtime.tokens.js";
 import type { ClubPolicySubject } from "../club-policy.js";
 import type { PersistClubInput, StoredClubSummary } from "../club-onboarding.types.js";
 import { ClubConflictError } from "../club.errors.js";
+import { ClubManagementService } from "../club-management.service.js";
 import { ClubRepository } from "../club.repository.js";
 import { ClubTierResolver, StaticClubTierResolver } from "../club-tiers.js";
 import { ClubsController } from "../clubs.controller.js";
@@ -53,6 +54,7 @@ class StubClubRepository extends ClubRepository {
       id: input.clubId,
       name: input.name,
       ...(input.description ? { description: input.description } : {}),
+      hasAvatar: false,
       lifecycle: "ACTIVE",
       membershipRole: "ADMIN",
       selectionScaleMin: input.selectionScaleMin,
@@ -107,6 +109,7 @@ const logger = createLogger({ environment: "test", service: "api" });
   providers: [
     ClubOnboardingService,
     ClubPolicyService,
+    { provide: ClubManagementService, useValue: {} },
     { provide: ClubRepository, useClass: StubClubRepository },
     { provide: ClubTierResolver, useClass: StaticClubTierResolver },
     { provide: IDENTITY_AUTHORIZATION, useClass: StubIdentityAuthorization },

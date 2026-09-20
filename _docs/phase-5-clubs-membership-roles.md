@@ -64,17 +64,38 @@ replaces that resolver with subscription-derived state.
 - The post-create `/app` projection confirms the Club, role, tier, lifecycle, and Selection scale.
   The full Club Hub, invitations, and Session creation remain with later issues.
 
+## Issue #31 implementation contract
+
+- `/clubs/[clubId]/settings` returns only an active member's private settings projection. Admins
+  receive settings, role, lifecycle, avatar, and recent categorical audit controls; Moderators and
+  Members receive read-only settings, disabled role controls with explanations, and leave access.
+- Re-authorize current User status, active Membership, Club role, lifecycle, and plan at the API and
+  database boundary. App Admin status alone grants no Club visibility or ordinary Club mutation.
+- Let active Club Admins update bounded name, description, `0..N` or `1..N` Selection scale, and
+  visibility/presentation settings. Free Clubs cannot enable ordinary-member Selection results.
+- Store Club avatars as private PNG, JPEG, or WebP objects no larger than 512 KiB. Verify the byte
+  signature, update the database reference only after storage succeeds, authorize every read, and
+  retire superseded objects without logging their keys.
+- Serialize role, settings, avatar-reference, archive/reactivate, leave, and empty-Club deletion
+  commands per Club. Bind caller operation IDs to the actor, Club, action, and normalized request so
+  an exact retry is stable and payload drift conflicts.
+- Require exact `ARCHIVE` and `LEAVE` confirmations and the exact current Club name for deletion.
+  Admins cannot leave their own Club. Empty-Club deletion preserves an audit tombstone and removes
+  active access; Clubs with Session history cannot use this foundation.
+- Keep archived Clubs readable but otherwise locked until an Admin reactivates them. Preserve the
+  adminless state without silently granting recovery rights to an App Admin or another member.
+- Record categorical audit evidence without request bodies, object keys, credentials, email
+  addresses, display names, or raw confirmation text.
+
 ## Verification in progress
 
 | Evidence | Command or source | Status |
 | --- | --- | --- |
-| Database invariants and migration upgrade | `pnpm db:check` | Passed locally against a fresh six-migration PostgreSQL database, including upgrade compatibility, active Membership uniqueness, single/adminless Admin states, departure consistency, and audit constraints. |
-| Role/action and forged-request matrix | `pnpm test` | Passed locally: Admin, Moderator, Member, App Admin, suspended, non-member, archived, and caller-forged role cases are covered. |
-| Transactional roles, idempotency, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, archived-Club denial, App Admin-only ownership transfer, suspended/anonymized transfer-target denial, mixed-case UUID retries, Free/Pro tier projection, durable no-op results, per-Club serialization, retry deduplication, categorical logs, and audit fields are covered. |
-| Club onboarding unit and HTTP matrix | `pnpm test` | Passed locally: 360 tests cover authenticated collection/creation, invalid names and scale bounds, unsupported fields/media, forged and expired sessions, Free-limit conflict, preserved browser values, and response-shape validation. |
-| Club onboarding responsive and interaction QA | `pnpm ui:test` | Passed locally: all 158 checks, including 14 onboarding tests at S/M/L/XL and bridge widths for axe, overflow, focus/validation, touch targets, creation, and eight reviewed captures. |
-| Club creation PostgreSQL check | `pnpm club:check` | Extended with concurrent first-Club creation, sole-Admin, Free-limit, normalized values, collection, and scale assertions. Local execution is pending because this worktree has no `.env`; no secret file was created or copied. |
-| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 360 tests, workspace-boundary validation, and all production builds. |
+| Database invariants and migration upgrade | `pnpm db:check` | Passed locally against fresh isolated PostgreSQL with all eight migrations, including upgrade compatibility, Club settings defaults, Membership/Admin constraints, deletion tombstones, and audit-shape enforcement. |
+| Role/action, validation, and forged-request matrix | `pnpm test` | Passed locally: all 365 tests, including focused Club management, controller, authorization HTTP, and web API coverage for Admin, Moderator, Member, App Admin, suspended, non-member, archived, unsafe file, confirmation, entitlement, and operation-ID cases. |
+| Transactional settings, lifecycle, roles, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, Free visibility limits, role changes, archive/reactivate, leave, Session-history deletion refusal, exact-name empty-Club deletion, tombstones, private avatar references, safe logs, and idempotent receipts are covered. |
+| Club settings responsive and interaction QA | `pnpm ui:test` | Passed locally: all 171 checks, including the 13 settings checks at S/M/L/XL and bridge widths for private denial, axe, overflow, Admin mutations, role changes, archive confirmation, Member leave, archived/read-only explanations, and eight reviewed captures. |
+| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 365 tests, workspace-boundary validation, and all production builds. |
 
 At the Phase 5 boundary, move durable implementation facts into canonical guidance, record phase
 evidence in `ROADMAP.md`, and delete this file plus its docs-map link.

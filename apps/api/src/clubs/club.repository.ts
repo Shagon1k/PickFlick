@@ -21,9 +21,11 @@ export interface TransferAdministrationInput {
   readonly targetMembershipId: string;
 }
 
-export type ClubTransitionResult =
-  | { readonly changed: false }
-  | { readonly changed: true; readonly auditEventId: string; readonly replayed: boolean };
+export interface ClubTransitionResult {
+  readonly changed: boolean;
+  readonly replayed: boolean;
+  readonly auditEventId?: string;
+}
 
 function canonicalUuid(value: string): string {
   return value.toLowerCase();
@@ -88,6 +90,7 @@ export class PrismaClubRepository extends ClubRepository {
           id: true,
           name: true,
           description: true,
+          avatarObjectKey: true,
           lifecycle: true,
           selectionScaleMin: true,
           selectionScaleMax: true,
@@ -98,6 +101,7 @@ export class PrismaClubRepository extends ClubRepository {
         id: club.id,
         name: club.name,
         ...(club.description ? { description: club.description } : {}),
+        hasAvatar: Boolean(club.avatarObjectKey),
         lifecycle: club.lifecycle,
         membershipRole: "ADMIN",
         selectionScaleMin: club.selectionScaleMin as 0 | 1,
@@ -108,7 +112,7 @@ export class PrismaClubRepository extends ClubRepository {
 
   async listForUser(userId: string): Promise<readonly StoredClubSummary[]> {
     const memberships = await this.database.client.membership.findMany({
-      where: { userId: canonicalUuid(userId), status: "ACTIVE" },
+      where: { userId: canonicalUuid(userId), status: "ACTIVE", club: { deletedAt: null } },
       orderBy: [{ club: { updatedAt: "desc" } }, { joinedAt: "asc" }],
       select: {
         role: true,
@@ -117,6 +121,7 @@ export class PrismaClubRepository extends ClubRepository {
             id: true,
             name: true,
             description: true,
+            avatarObjectKey: true,
             lifecycle: true,
             selectionScaleMin: true,
             selectionScaleMax: true,
@@ -128,6 +133,7 @@ export class PrismaClubRepository extends ClubRepository {
       id: club.id,
       name: club.name,
       ...(club.description ? { description: club.description } : {}),
+      hasAvatar: Boolean(club.avatarObjectKey),
       lifecycle: club.lifecycle,
       membershipRole: role,
       selectionScaleMin: club.selectionScaleMin as 0 | 1,
@@ -144,7 +150,7 @@ export class PrismaClubRepository extends ClubRepository {
         appRole: true,
         status: true,
         memberships: {
-          where: { clubId: canonicalClubId, status: "ACTIVE" },
+          where: { clubId: canonicalClubId, status: "ACTIVE", club: { deletedAt: null } },
           take: 1,
           select: { role: true, club: { select: { lifecycle: true } } },
         },
@@ -192,7 +198,7 @@ export class PrismaClubRepository extends ClubRepository {
         ) {
           return existing.changed
             ? { changed: true, auditEventId: existing.id, replayed: true }
-            : { changed: false };
+            : { changed: false, replayed: true };
         }
         throw new ClubConflictError("The operation identifier was already used for another transition.");
       }
@@ -231,7 +237,7 @@ export class PrismaClubRepository extends ClubRepository {
             nextRole: input.nextRole,
           },
         });
-        return { changed: false };
+        return { changed: false, replayed: false };
       }
 
       await transaction.membership.update({

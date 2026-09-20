@@ -162,6 +162,8 @@
   color: var(--ivory);
 }
 
+.readyCard .actions { margin-top: var(--gap-lg); }
+
 .setupMain {
   position: relative;
   display: grid;

@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
+import type {
+  ClubLifecycleRequest,
+  ClubOperationRequest,
+  ConfirmedClubOperationRequest,
+} from "../index.js";
 import { API_ERROR_CODES, CLUB_POLICY_ACTIONS, DEPENDENCY_NAMES, SERVICE_NAMES } from "../index.js";
 
 describe("service contracts", () => {
@@ -28,5 +33,18 @@ describe("service contracts", () => {
       "manageLifecycle",
       "viewAudit",
     ]);
+  });
+
+  it("separates operation-only and confirmed Club lifecycle requests", () => {
+    expectTypeOf<ClubOperationRequest>().not.toHaveProperty("confirmation");
+    expectTypeOf<ConfirmedClubOperationRequest>().toHaveProperty("confirmation").toEqualTypeOf<string>();
+    expectTypeOf<Extract<ClubLifecycleRequest, { action: "reactivate" }>>()
+      .not.toHaveProperty("confirmation");
+    expectTypeOf<Extract<ClubLifecycleRequest, { confirmation: string }>>()
+      .toHaveProperty("confirmation")
+      .toEqualTypeOf<string>();
+    expectTypeOf<Extract<ClubLifecycleRequest, { confirmation: string }>>()
+      .toHaveProperty("action")
+      .toEqualTypeOf<"archive" | "delete" | "leave">();
   });
 });

@@ -10,6 +10,7 @@ const requestHeaders = new Headers({
 const club = {
   id: "10000000-0000-4000-8000-000000000001",
   name: "Midnight Society",
+  hasAvatar: false,
   lifecycle: "ACTIVE",
   membershipRole: "ADMIN",
   selectionScaleMin: 0,

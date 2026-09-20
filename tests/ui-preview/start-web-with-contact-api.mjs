@@ -3,6 +3,71 @@ import { createServer } from "node:http";
 
 const retryKeys = new Map();
 const clubsBySession = new Map();
+const avatarVersionsBySession = new Map();
+const settingsClubId = "10000000-0000-4000-8000-000000000031";
+const avatarPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
+
+function settingsProjection(token) {
+  const role = token?.includes("member") ? "MEMBER" : token?.includes("moderator") ? "MODERATOR" : "ADMIN";
+  const lifecycle = token?.includes("archived") ? "ARCHIVED" : "ACTIVE";
+  const admin = role === "ADMIN";
+  const active = lifecycle === "ACTIVE";
+  const avatarVersion = avatarVersionsBySession.get(token);
+  return {
+    club: {
+      id: settingsClubId,
+      name: "Midnight Society",
+      description: "Noir, classics, and arguments.",
+      hasAvatar: Boolean(avatarVersion),
+      ...(avatarVersion ? { avatarVersion } : {}),
+      lifecycle,
+      membershipRole: role,
+      selectionScaleMin: 0,
+      selectionScaleMax: 7,
+      tier: "FREE",
+    },
+    permissions: {
+      viewClub: true,
+      participate: active,
+      leaveClub: !admin,
+      manageSessions: active && role !== "MEMBER",
+      manageMembers: active && admin,
+      manageRoles: active && admin,
+      manageSettings: active && admin,
+      manageLifecycle: admin,
+      viewAudit: admin,
+    },
+    entitlements: {
+      tier: "FREE",
+      adminClubLimit: 1,
+      memberLimit: 8,
+      blockingSessionLimit: 1,
+      inactivityGraceDays: 90,
+      voteResultVisibility: "ADMIN_HIDDEN",
+      analyticsTier: "BASIC",
+    },
+    visibility: {
+      showNominationAuthors: true,
+      showNominationsBeforeSubmit: true,
+      showVoteResults: false,
+      showRatingResults: true,
+      useMonochromeMedia: true,
+    },
+    members: [
+      { id: "20000000-0000-4000-8000-000000000031", displayName: "Avery Admin", role: "ADMIN", joinedAt: "2026-01-01T00:00:00.000Z" },
+      { id: "20000000-0000-4000-8000-000000000032", displayName: "Morgan Member", role: "MEMBER", joinedAt: "2026-02-01T00:00:00.000Z" },
+    ],
+    auditEvents: admin ? [{
+      id: "50000000-0000-4000-8000-000000000031",
+      action: "CLUB_SETTINGS_UPDATED",
+      changed: true,
+      createdAt: "2026-09-18T12:00:00.000Z",
+    }] : [],
+  };
+}
 
 function sessionToken(request) {
   return request.headers.cookie?.match(/(?:^|;\s*)pickflick\.session_token=([^;]+)/)?.[1];
@@ -45,6 +110,7 @@ const api = createServer((request, response) => {
           id: "10000000-0000-4000-8000-000000000099",
           name: String(payload.name).trim(),
           ...(description ? { description } : {}),
+          hasAvatar: false,
           lifecycle: "ACTIVE",
           membershipRole: "ADMIN",
           selectionScaleMin: payload.selectionScaleMin,
@@ -57,6 +123,60 @@ const api = createServer((request, response) => {
       return;
     }
     response.writeHead(405).end();
+    return;
+  }
+  if (request.url?.startsWith(`/clubs/${settingsClubId}`)) {
+    const token = sessionToken(request);
+    if (!token?.startsWith("valid")) {
+      sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required.", requestId: "request-settings-auth" } });
+      return;
+    }
+    if (token.includes("settings-outsider")) {
+      sendJson(response, 403, { error: { code: "FORBIDDEN", message: "Forbidden.", requestId: "request-settings-private" } });
+      return;
+    }
+    if (request.method === "GET" && request.url.endsWith("/settings")) {
+      sendJson(response, 200, settingsProjection(token));
+      return;
+    }
+    if (request.method === "GET" &&
+      new URL(request.url, "http://127.0.0.1").pathname === `/clubs/${settingsClubId}/avatar`) {
+      response.writeHead(200, {
+        "cache-control": "private, no-store",
+        "content-length": avatarPng.length,
+        "content-type": "image/png",
+      });
+      response.end(avatarPng);
+      return;
+    }
+    if (request.method === "PATCH" && request.url.endsWith("/settings")) {
+      sendJson(response, 200, { changed: true, replayed: false, settings: settingsProjection(token) });
+      return;
+    }
+    if (request.method === "PATCH" && request.url.includes("/members/") && request.url.endsWith("/role")) {
+      sendJson(response, token.includes("settings-admin") ? 200 : 403, token.includes("settings-admin")
+        ? { changed: true, replayed: false }
+        : { error: { code: "FORBIDDEN", message: "Forbidden.", requestId: "request-role-private" } });
+      return;
+    }
+    if (request.method === "POST" && /\/(archive|reactivate|leave|delete)$/u.test(request.url)) {
+      sendJson(response, 200, { changed: true, replayed: false });
+      return;
+    }
+    if (request.method === "PUT" && request.url.endsWith("/avatar")) {
+      const nextVersion = `avatar-${Number(avatarVersionsBySession.get(token)?.split("-")[1] ?? 0) + 1}`;
+      avatarVersionsBySession.set(token, nextVersion);
+      request.resume();
+      sendJson(response, 200, { changed: true, hasAvatar: true, replayed: false });
+      return;
+    }
+    if (request.method === "DELETE" && request.url.endsWith("/avatar")) {
+      avatarVersionsBySession.delete(token);
+      request.resume();
+      sendJson(response, 200, { changed: true, hasAvatar: false, replayed: false });
+      return;
+    }
+    response.writeHead(404).end();
     return;
   }
   if (request.method !== "POST" || request.url !== "/contact") {
@@ -109,7 +229,7 @@ const api = createServer((request, response) => {
 
 await new Promise((resolve, reject) => {
   api.once("error", reject);
-  api.listen(0, "127.0.0.1", resolve);
+  api.listen(42731, "127.0.0.1", resolve);
 });
 const apiAddress = api.address();
 if (!apiAddress || typeof apiAddress === "string") {

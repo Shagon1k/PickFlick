@@ -214,8 +214,11 @@ create the `User`, `Club`, `Membership`, and `Session` foundation and its review
 third adds `ContactMessage` with duplicate, delivery-state, payload-lifecycle, and lookup
 constraints. The fourth adds Google identity, database-session, verification-state, and auth
 rate-limit records plus the provider-subject uniqueness constraint. The fifth adds optional Apple
-email and first-return display-name fields to the provider-owned account row. All five migrations are
-additive and backward compatible with the preceding application schema.
+email and first-return display-name fields to the provider-owned account row. The sixth adds active
+Membership, single-Admin, lifecycle, role-transition, and Club audit constraints. The seventh
+extends the audit action enum, and the eighth adds Club visibility settings, private avatar
+references, deletion tombstones, and the matching lifecycle/destructive audit shape. All eight
+migrations are additive and backward compatible with the preceding application schema.
 
 `pnpm seed` is idempotent and uses stable identifiers plus `example.invalid` email addresses. It
 refuses every environment except `local` and `test`. A local seed also requires a loopback database
@@ -317,8 +320,15 @@ the bounded upgrade and patch removal.
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as
 `STORAGE_ENDPOINT`, set `STORAGE_FORCE_PATH_STYLE=true`, and keep the console private. This matches
-the future presigned-URL shape. AWS S3 production configuration will use its regional endpoint and
-set `STORAGE_FORCE_PATH_STYLE=false`.
+the API's server-signed S3 request shape. AWS S3 production configuration will use its regional
+endpoint and set `STORAGE_FORCE_PATH_STYLE=false`.
+
+Club avatars are private objects under the `club-avatars/` prefix. The API accepts PNG, JPEG, or
+WebP files up to 512 KiB, verifies the declared type against the leading bytes, replaces the
+database reference only after a successful object write, and authorizes every read against current
+Membership state. Superseded objects are deleted best-effort without logging their keys. A future
+storage maintenance job must reconcile abandoned objects before production retention is considered
+complete.
 
 The runtime validates the declared Resend delivery mode, environment, key kind, and Contact values
 at startup but does not call Resend from readiness.

@@ -112,6 +112,8 @@ export interface ClubSummary {
   readonly id: string;
   readonly name: string;
   readonly description?: string;
+  readonly hasAvatar: boolean;
+  readonly avatarVersion?: string;
   readonly lifecycle: "ACTIVE" | "ARCHIVED";
   readonly membershipRole: "ADMIN" | "MODERATOR" | "MEMBER";
   readonly selectionScaleMin: 0 | 1;
@@ -132,6 +134,86 @@ export interface CreateClubRequest {
 
 export interface CreateClubResponse {
   readonly club: ClubSummary;
+}
+
+export interface ClubVisibilitySettings {
+  readonly showNominationAuthors: boolean;
+  readonly showNominationsBeforeSubmit: boolean;
+  readonly showVoteResults: boolean;
+  readonly showRatingResults: boolean;
+  readonly useMonochromeMedia: boolean;
+}
+
+export interface ClubMemberProjection {
+  readonly id: string;
+  readonly displayName: string;
+  readonly role: "ADMIN" | "MODERATOR" | "MEMBER";
+  readonly joinedAt: string;
+}
+
+export const CLUB_AUDIT_ACTIONS = [
+  "MEMBERSHIP_ROLE_CHANGED",
+  "ADMIN_TRANSFERRED",
+  "CLUB_SETTINGS_UPDATED",
+  "CLUB_AVATAR_UPDATED",
+  "CLUB_ARCHIVED",
+  "CLUB_REACTIVATED",
+  "MEMBERSHIP_LEFT",
+  "CLUB_DELETED",
+] as const;
+
+export type ClubAuditAction = (typeof CLUB_AUDIT_ACTIONS)[number];
+
+export interface ClubAuditProjection {
+  readonly id: string;
+  readonly action: ClubAuditAction;
+  readonly changed: boolean;
+  readonly createdAt: string;
+}
+
+export interface ClubSettingsProjection {
+  readonly club: ClubSummary;
+  readonly permissions: ClubPolicyPermissions;
+  readonly entitlements: ClubTierProjection;
+  readonly visibility: ClubVisibilitySettings;
+  readonly members: readonly ClubMemberProjection[];
+  readonly auditEvents: readonly ClubAuditProjection[];
+}
+
+export interface ClubOperationRequest {
+  readonly operationId: string;
+}
+
+export interface ConfirmedClubOperationRequest extends ClubOperationRequest {
+  readonly confirmation: string;
+}
+
+export interface UpdateClubSettingsRequest extends ClubOperationRequest, ClubVisibilitySettings {
+  readonly name: string;
+  readonly description?: string;
+  readonly selectionScaleMin: 0 | 1;
+  readonly selectionScaleMax: number;
+}
+
+export interface ChangeClubMemberRoleRequest extends ClubOperationRequest {
+  readonly nextRole: "MODERATOR" | "MEMBER";
+}
+
+export type ClubLifecycleRequest =
+  | ({ readonly action: "reactivate" } & ClubOperationRequest)
+  | ({ readonly action: "archive" | "delete" | "leave" } & ConfirmedClubOperationRequest);
+
+export interface ClubOperationReceipt {
+  readonly changed: boolean;
+  readonly replayed: boolean;
+}
+
+export interface UpdateClubSettingsResponse extends ClubOperationReceipt {
+  readonly settings: ClubSettingsProjection;
+}
+
+export interface ClubAvatarResponse extends ClubOperationReceipt {
+  readonly hasAvatar: boolean;
 }
 
 export const DEFAULT_AUTH_RETURN_TARGET = "/app";
