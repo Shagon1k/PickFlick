@@ -120,7 +120,11 @@ const smokeRun = (async () => {
   const listbox = page.getByRole("listbox");
   await expect(listbox).toBeVisible();
   await waitForAnimations(listbox);
-  await page.keyboard.press("ArrowDown");
+  // Mantine seeds its keyboard position shortly after opening; arrow until the next range is highlighted.
+  await expect(async () => {
+    await page.keyboard.press("ArrowDown");
+    await expect(listbox.locator("[data-combobox-selected]")).toHaveText("1 to 5", { timeout: 250 });
+  }).toPass({ timeout: 5_000 });
   await page.keyboard.press("Enter");
   await expect(select).toHaveValue("1 to 5");
   await expect(page.locator('input[type="hidden"][name="score-range"]')).toHaveValue("1-5");
@@ -143,9 +147,14 @@ const smokeRun = (async () => {
   await expect(requiredSelect).toHaveAttribute("aria-invalid", "true");
   assert.equal(await constraintInput.evaluate((element) => element.matches(":invalid")), true);
   await requiredSelect.click();
-  await expect(page.getByRole("listbox")).toBeVisible();
-  await waitForAnimations(page.getByRole("listbox"));
-  await page.getByRole("option", { name: "0 to 4" }).click();
+  // Scope to this select's own listbox: another Select's dropdown can still be closing on the page.
+  await expect(requiredSelect).toHaveAttribute("aria-expanded", "true");
+  const requiredListbox = page.locator(`[id="${await requiredSelect.getAttribute("aria-controls")}"]`);
+  await expect(requiredListbox).toBeVisible();
+  await waitForAnimations(requiredListbox);
+  await requiredListbox.getByRole("option", { name: "0 to 4" }).click();
+  // Submitting before the constraint input receives the value is blocked by native required validation.
+  await expect(constraintInput).toHaveValue("0-4");
   await requiredForm.getByRole("button", { name: "Submit required select" }).click();
   await expect(requiredForm.locator("[data-submitted-value]")).toHaveText("0-4");
   assert.equal(await constraintInput.evaluate((element) => element.matches(":valid")), true);
@@ -271,7 +280,8 @@ const smokeRun = (async () => {
   }
   assert.equal(
     await select.evaluate((element) => element.ownerDocument.defaultView?.getComputedStyle(element).backgroundColor),
-    "rgb(22, 22, 22)",
+    // Controls sit one step darker (--bg) than the --surface that holds them.
+    "rgb(12, 12, 12)",
   );
   assert.equal(
     await page
