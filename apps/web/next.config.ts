@@ -15,6 +15,7 @@ if (!["http:", "https:"].includes(backendInternalUrl.protocol)) {
 }
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   ...(sourceRevision
     ? { deploymentId: sourceRevision, generateBuildId: async () => sourceRevision }
     : {}),
