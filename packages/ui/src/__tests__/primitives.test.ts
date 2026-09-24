@@ -79,7 +79,7 @@ describe("Projector Noir primitives", () => {
   it("keeps field messages outside the control label", () => {
     const field = TextField({ id: "club-name", label: "Club name", error: "Use at least 3 characters." });
     const nodes = descendants(field);
-    const label = nodes.find((element) => element.type === "label");
+    const label = nodes.find((element) => element.props.htmlFor !== undefined);
     const input = nodes.find((element) => element.type === "input");
 
     expect(field.type).toBe("div");
@@ -89,6 +89,14 @@ describe("Projector Noir primitives", () => {
     expect(input?.props["aria-describedby"]).toBe("club-name-message");
     expect(descendants(label).some((element) => element.props.messageId === "club-name-message")).toBe(false);
     expect(nodes.some((element) => element.props.messageId === "club-name-message")).toBe(true);
+  });
+
+  it("renders the label qualifier inside the accessible label", () => {
+    const markup = renderToStaticMarkup(TextField({ id: "message", label: "Message", labelHint: "required" }));
+
+    expect(markup).toContain(
+      '<label class="pf-field__label" for="message">Message<span class="pf-field__label-hint"> — required</span></label>',
+    );
   });
 
   it("keeps an empty field-message region mounted", () => {
