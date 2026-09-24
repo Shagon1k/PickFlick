@@ -1,0 +1,129 @@
+.scale {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.label {
+  color: var(--fg);
+  font-size: var(--fs-body-sm);
+  font-weight: 500;
+}
+
+.description {
+  margin: 0;
+  color: var(--fg-secondary);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+}
+
+.value {
+  display: inline-flex;
+  width: var(--hit);
+  height: var(--hit);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  background: var(--bg);
+  font: 500 var(--fs-lead)/1 var(--font-mono);
+}
+
+.rangeRow {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+}
+
+.range {
+  width: 100%;
+  min-height: var(--hit);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.range::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--accent);
+  transition: box-shadow var(--motion-local) var(--ease-standard);
+  appearance: none;
+}
+
+.range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.range:hover::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.range:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--gold-soft);
+}
+
+.range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--gold-soft);
+}
+
+.range[aria-invalid="true"]::-webkit-slider-runnable-track {
+  background: var(--danger);
+}
+
+.range:disabled {
+  cursor: not-allowed;
+}
+
+.range:disabled,
+.range:disabled + .value {
+  opacity: 0.58;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  color: var(--fg-secondary);
+  font-size: var(--fs-caption);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger-text);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .range::-webkit-slider-thumb {
+    transition-duration: 0.01ms;
+  }
+}
