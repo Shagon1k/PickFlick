@@ -210,7 +210,7 @@ Otherwise, only the Club Admin or a Moderator advances a phase with explicit con
 
 ### Selection and result rules
 
-- Each Club chooses an inclusive score scale `0..N` or `1..N`; the upper bound is no greater than 10.
+- Each Club chooses the upper bound N (at most 10) of an inclusive `0..N` score scale. The data model and API still accept a stored `1` start; existing Clubs keep theirs, and the product UI no longer offers that choice (see the Decision Log).
 - Every Selection participant scores every nomination before submitting.
 - Winner computation uses total score first, then the deterministic tie-break sequence retained from the product blueprint: more maximum scores, more distinct supporting voters, earlier nomination, stable movie-provider ID, then stable nomination ID.
 - Free Clubs keep vote results hidden from ordinary members; Pro Club Admins configure post-close visibility. App Admins retain audited operational access only when required.
@@ -328,9 +328,9 @@ stateDiagram-v2
 
 | Surface | Decision |
 | --- | --- |
-| Public header | Product mark, product/how-it-works entry, Pricing, Contact, and Sign in/Get started actions. |
+| Public header | Product mark, How it works and Features landing anchors, Pricing, and a Go to App entry. Below 821px the header keeps only Pricing and Go to App; public pages have no bottom menu. Contact and legal links live in the footer. |
 | Authenticated desktop | Global film search, notifications, account menu, Club switcher, and context tabs/sidebar. |
-| Authenticated mobile | Recomposition with fixed bottom navigation for Hub, Library, Alerts, and Settings; local film-strip menus expose subviews. |
+| Authenticated mobile | Recomposition with fixed bottom navigation for Hub, My Library, Alerts, and Settings; local film-strip menus expose subviews. App Admins reach the Admin Panel from the Settings strip. |
 | App Admin | Separate protected administration shell accessible only to App Admin. |
 | Post-login routing | Return to a valid pending invite when present; otherwise open last-used Club, or the no-Clubs onboarding state. |
 
@@ -354,7 +354,7 @@ stateDiagram-v2
 | `/sessions/[sessionId]` | Phase-aware Session detail for Nomination, Selection, Watching, Rating, or Completed. |
 | `/library` | Personal ratings, Watchlist, statistics, and achievements. |
 | `/movies/[tmdbId]` | TMDB-backed Movie Details, personal rating, Watchlist priority, and related films. |
-| `/settings` | Profile, notifications, subscription, privacy, and import/export sections. |
+| `/settings` | Profile, notifications, subscription, Privacy & data, and import/export sections. Privacy & data holds the personal-data summary and rights actions (personal CSV export, GDPR archive, account deletion) and links to `/legal/privacy`; it does not duplicate policy text. |
 | `/admin` | App Admin overview, Users, Clubs, and application settings. |
 | `not-found` | Branded 404 state with safe navigation. |
 | `error` | Branded application error state with retry and Hub recovery. |
@@ -1330,6 +1330,9 @@ sender identities are fixed by
 | Decision | Owner | Resolution | Evidence |
 | --- | --- | --- | --- |
 | Canonical UAT and production domains | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases. | Developer decision, 2026-08-24. |
+| Selection scale start | Product owner | New Clubs use `0..N` with one slider for N (1–10), matching the canonical Create Club design. The `0|1` start remains accepted by the data model, API, and stored Clubs, so nothing is migrated; tightening the schema needs a separate reviewed migration. | Phase 6 human verification, 2026-09-24. |
+| Product navigation density | Product owner | The mobile Hub strip lists Club views only (My Library is its own tab). The Settings strip and account menu keep Profile, Notifications, Subscription, Privacy, and Sign out, plus Admin Panel for App Admins. Contact stays in the site footer. Pricing is reached from the public header and, later, Subscription. Manage Club stays visible to every member because it carries Leave Club and a read-only view. | Phase 6 human verification, 2026-09-24. |
+| Public marketing navigation | Product owner | Public pages use a header with How it works, Features, and Pricing plus a secondary Go to App entry, and no mobile bottom menu. Below 821px only Pricing and Go to App stay in the header. Contact, Privacy, and Terms move to a wordmark-and-tagline footer. | Phase 6 human verification, 2026-09-24. |
 | Proportional MVP deployment baseline | Developer | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07. |
 | Source-built production promotion | Developer | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement. | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11. |
 | Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13. |
