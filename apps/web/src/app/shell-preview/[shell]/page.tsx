@@ -22,9 +22,12 @@ type AdminShellName = (typeof adminShellNames)[number];
 type PreviewShellName = ShellName | AdminShellName;
 const previewRoutes: ShellRouteMap = {
   admin: "/shell-preview/admin",
-  contact: "/shell-preview/public",
+  contact: "/shell-preview/public#contact",
+  createClub: "/shell-preview/setup",
+  features: "/shell-preview/public#public-content",
   home: "/shell-preview",
   howItWorks: "/shell-preview/public#public-content",
+  joinClub: "/shell-preview/setup",
   library: "/shell-preview/library",
   legalPrivacy: "/legal/privacy",
   legalTerms: "/legal/terms",
@@ -132,7 +135,7 @@ export default async function ShellPreviewPage({
             { href: "/shell-preview/settings", label: "Profile", current: true },
             { href: "/shell-preview/settings?tab=notifications", label: "Notifications" },
             { href: "/shell-preview/settings?tab=subscription", label: "Subscription" },
-            { href: "/shell-preview/settings?tab=privacy", label: "Privacy" },
+            { href: "/shell-preview/settings?tab=privacy", label: "Privacy & data" },
             { href: "/shell-preview/settings?tab=import-export", label: "Import & Export" },
           ]}
           routes={previewRoutes}

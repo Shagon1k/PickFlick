@@ -5,10 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 import { Icon, type IconName } from "@pickflick/ui";
@@ -30,12 +32,26 @@ export interface ShellActionItem {
 
 export type ShellMenuItem = ShellActionItem | ShellNavigationItem;
 
-export interface MobileNavigationGroup extends ShellNavigationItem {
-  readonly items?: readonly ShellMenuItem[];
-  readonly overlay?: "notifications";
+export interface MobileNavigationMenu {
+  readonly icon: IconName;
+  readonly id: string;
+  readonly items: readonly ShellMenuItem[];
+  /** Visible trigger text; the Hub trigger shows the current Club view. */
+  readonly label: string;
+  /** Stable group name used for the strip's accessible name. */
+  readonly name: string;
+  readonly current?: boolean;
 }
 
-type HeaderOverlay = "account" | "notifications" | "search";
+export interface MobileNavigationAlerts {
+  readonly id: "alerts";
+  readonly label: string;
+  readonly overlay: "notifications";
+}
+
+export type MobileNavigationEntry = MobileNavigationAlerts | MobileNavigationMenu;
+
+type HeaderOverlay = "account" | "notifications" | "notifications-mobile" | "search";
 type ProductOverlay = HeaderOverlay | `mobile:${string}` | `section:${string}`;
 
 interface ProductOverlayContextValue {
@@ -45,6 +61,9 @@ interface ProductOverlayContextValue {
 }
 
 const ProductOverlayContext = createContext<ProductOverlayContextValue | null>(null);
+
+const focusableSelector =
+  "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
 export function ProductOverlayProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [activeOverlay, setActiveOverlay] = useState<ProductOverlay | null>(null);
@@ -75,24 +94,89 @@ function useProductOverlay() {
   return context;
 }
 
-function Magnifier() {
-  return <Icon className={styles.icon} name="search" />;
+/** Closes an open overlay on Escape or an outside pointer, optionally keeping Tab inside it. */
+function useOverlayDismissal(
+  open: boolean,
+  rootRef: RefObject<HTMLElement | null>,
+  closeOverlay: (returnFocus?: boolean) => void,
+  trapFocus = false,
+) {
+  useEffect(() => {
+    if (!open) {return;}
+
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeOverlay();
+        return;
+      }
+      if (!trapFocus || event.key !== "Tab") {return;}
+
+      const root = rootRef.current;
+      if (!root) {return;}
+      const focusable = [...root.querySelectorAll<HTMLElement>(focusableSelector)];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      const activeElement = document.activeElement;
+      if (!first || !last) {
+        event.preventDefault();
+        root.focus();
+      } else if (event.shiftKey && (activeElement === first || !root.contains(activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeElement === last || !root.contains(activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const closeOnPointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        !rootRef.current?.contains(target) &&
+        !target.closest("[data-product-overlay-control]")
+      ) {closeOverlay(false);}
+    };
+    document.addEventListener("keydown", handleKeyboard);
+    document.addEventListener("pointerdown", closeOnPointer);
+    return () => {
+      document.removeEventListener("keydown", handleKeyboard);
+      document.removeEventListener("pointerdown", closeOnPointer);
+    };
+  }, [closeOverlay, open, rootRef, trapFocus]);
 }
 
-function Bell() {
-  return <Icon className={styles.icon} name="bell" />;
+/** Centres a film strip on its trigger, nudging it inside the viewport when it would overflow. */
+function alignToAnchor(menu: HTMLElement, anchor: HTMLElement) {
+  const anchorBox = anchor.getBoundingClientRect();
+  const centered = anchorBox.left + (anchorBox.width - menu.offsetWidth) / 2;
+  const clamped = Math.min(Math.max(centered, 8), window.innerWidth - menu.offsetWidth - 8);
+  menu.style.setProperty("--menu-shift", `${clamped - centered}px`);
 }
 
-function MobileNavigationIcon({ label }: Readonly<{ label: string }>) {
-  const iconByLabel: Readonly<Record<string, IconName>> = {
-    Admin: "admin",
-    Alerts: "bell",
-    Hub: "hub",
-    Library: "library",
-    Settings: "settings",
-  };
+/**
+ * Keeps every `[data-anchored-menu]` inside `rootRef` aligned to its `[data-menu-anchor]` while closed,
+ * so the opening transition starts from the final position, then focuses the open menu's first item.
+ */
+function useAnchoredMenus(openMenu: string | null, rootRef: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const alignAll = () => {
+      for (const menu of rootRef.current?.querySelectorAll<HTMLElement>("[data-anchored-menu]") ?? []) {
+        const anchor = menu.closest<HTMLElement>("[data-menu-anchor]");
+        if (anchor) {alignToAnchor(menu, anchor);}
+      }
+    };
+    alignAll();
+    window.addEventListener("resize", alignAll);
+    return () => window.removeEventListener("resize", alignAll);
+  }, [rootRef]);
 
-  return <Icon className={styles.mobileNavGlyph} name={iconByLabel[label] ?? "circle"} />;
+  useEffect(() => {
+    if (!openMenu) {return;}
+    rootRef.current
+      ?.querySelector<HTMLElement>(`[data-anchored-menu="${openMenu}"]`)
+      ?.querySelector<HTMLElement>(focusableSelector)
+      ?.focus({ preventScroll: true });
+  }, [openMenu, rootRef]);
 }
 
 function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
@@ -100,23 +184,27 @@ function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
     "Admin Panel": "admin",
     "Application settings": "settings",
     "Contact Us": "contact",
+    "Create a Club": "overview",
     "Import & Export": "import-export",
+    "Join a Club": "user-plus",
+    "Manage Club": "settings",
+    "My Library": "book",
     "My Ratings": "ratings",
     Achievements: "achievements",
     Clubs: "club-building",
     Manage: "settings",
-    "Manage Club": "settings",
     Members: "members",
     Notifications: "bell",
     Overview: "overview",
     Pricing: "pricing",
     Privacy: "privacy",
+    "Privacy & data": "privacy",
     Profile: "profile",
     Ratings: "ratings",
     Sessions: "sessions",
     Settings: "settings",
     "Sign out": "sign-out",
-    Subscription: "pricing",
+    Subscription: "credit-card",
     Users: "members",
     Watchlist: "watchlist",
   };
@@ -125,12 +213,22 @@ function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
 }
 
 function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
-  const content = <><NavigationItemIcon label={item.label} />{item.label}</>;
+  const content = <><NavigationItemIcon label={item.label} /><b>{item.label}</b></>;
 
   return "href" in item ? (
-    <a aria-current={item.current ? "page" : undefined} href={item.href}>{content}</a>
+    <a aria-current={item.current ? "page" : undefined} className={styles.filmFrame} href={item.href}>{content}</a>
   ) : (
     <SignOutMenuItem content={content} />
+  );
+}
+
+function FilmStrip({ items, label }: Readonly<{ items: readonly ShellMenuItem[]; label: string }>) {
+  return (
+    <div className={styles.filmStrip}>
+      <nav aria-label={label}>
+        {items.map((item) => <FilmMenuItem item={item} key={item.label} />)}
+      </nav>
+    </div>
   );
 }
 
@@ -157,7 +255,14 @@ function SignOutMenuItem({ content }: Readonly<{ content: ReactNode }>) {
 
   return (
     <>
-      <button aria-busy={pending || undefined} data-shell-action="sign-out" disabled={pending} onClick={signOut} type="button">
+      <button
+        aria-busy={pending || undefined}
+        className={styles.filmFrame}
+        data-shell-action="sign-out"
+        disabled={pending}
+        onClick={signOut}
+        type="button"
+      >
         {content}
       </button>
       {error ? <span aria-live="assertive" className={styles.signOutError} role="alert">{error}</span> : null}
@@ -165,299 +270,240 @@ function SignOutMenuItem({ content }: Readonly<{ content: ReactNode }>) {
   );
 }
 
-export function PublicNavigation({
-  items,
-  variant,
-}: Readonly<{
-  items: readonly ShellNavigationItem[];
-  variant: "desktop" | "mobile";
-}>) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) {return;}
-
-    menuRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [open]);
-
+function NotificationsPanel({
+  id,
+  mobile = false,
+  open,
+  panelRef,
+}: Readonly<{ id: string; mobile?: boolean; open: boolean; panelRef: RefObject<HTMLDivElement | null> }>) {
   return (
-    <>
-      {variant === "desktop" ? (
-        <nav aria-label="Public navigation" className={styles.publicDesktopNav}>
-          {items.map((item) => (
-            <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      ) : (
-        <div className={styles.publicMobileNav}>
-        <button
-          aria-controls="public-mobile-navigation"
-          aria-expanded={open}
-          className={styles.headerButton}
-          onClick={() => setOpen((current) => !current)}
-          ref={triggerRef}
-          type="button"
-        >
-          <Icon className={styles.publicMenuIcon} name="menu" />
-          <span>Menu</span>
-        </button>
-        {open ? (
-          <div
-            className={styles.filmMenu}
-            id="public-mobile-navigation"
-            onBlur={(event) => {
-              if (
-                event.relatedTarget !== triggerRef.current &&
-                !event.currentTarget.contains(event.relatedTarget)
-              ) {setOpen(false);}
-            }}
-            ref={menuRef}
-          >
-            <nav aria-label="Public mobile navigation">
-              {items.map((item) => (
-                <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        ) : null}
+    <div
+      aria-label="Notifications"
+      className={mobile ? `${styles.notifPopover} ${styles.notifPopoverMobile}` : styles.notifPopover}
+      data-open={open || undefined}
+      id={id}
+      ref={panelRef}
+      role="dialog"
+      tabIndex={-1}
+    >
+      <div className={styles.notifHeader}>
+        <div>
+          <h2>Notifications</h2>
+          <span>You’re all caught up</span>
         </div>
-      )}
-    </>
+        <button disabled type="button">Mark all as read</button>
+      </div>
+      <p className={styles.overlayEmpty}>No notifications yet.</p>
+    </div>
   );
+}
+
+/** Up to two initials from the viewer's display name; empty when no usable name exists. */
+function initialsFor(name: string | null | undefined): string {
+  const words = (name ?? "").trim().split(/\s+/u).filter(Boolean);
+  const initials = words.length > 1
+    ? `${words[0]?.[0] ?? ""}${words.at(-1)?.[0] ?? ""}`
+    : (words[0] ?? "").slice(0, 2);
+  return initials.toUpperCase();
 }
 
 export function ProductHeaderActions({
   accountItems,
 }: Readonly<{ accountItems: readonly ShellMenuItem[] }>) {
   const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const accountOpen = activeOverlay === "account";
+  const notificationsOpen = activeOverlay === "notifications";
+  const { data: session } = authClient.useSession();
+  const initials = initialsFor(session?.user.name);
+
+  useOverlayDismissal(accountOpen, accountRef, closeOverlay, true);
+  useOverlayDismissal(notificationsOpen, notificationsRef, closeOverlay, true);
+
+  useAnchoredMenus(accountOpen ? "account" : null, actionsRef);
 
   useEffect(() => {
-    if (
-      activeOverlay !== "account" &&
-      activeOverlay !== "notifications" &&
-      activeOverlay !== "search"
-    ) {return;}
-
-    if (activeOverlay === "search") {searchRef.current?.focus();}
-    else {containerRef.current?.querySelector<HTMLElement>("[data-shell-overlay] a, [data-shell-overlay] button")?.focus();}
-
-    const handleKeyboard = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeOverlay();
-        return;
-      }
-      if (event.key !== "Tab") {return;}
-
-      const overlay = containerRef.current?.querySelector<HTMLElement>("[data-shell-overlay]");
-      const focusable = overlay ? [...overlay.querySelectorAll<HTMLElement>(
-        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
-      )] : [];
-      const first = focusable[0];
-      const last = focusable.at(-1);
-      if (!overlay || !first || !last) {return;}
-
-      const activeElement = document.activeElement;
-      if (event.shiftKey && (activeElement === first || !overlay.contains(activeElement))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (activeElement === last || !overlay.contains(activeElement))) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    const closeOnPointer = (event: PointerEvent) => {
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        !containerRef.current?.contains(target) &&
-        !target.closest("[data-product-overlay-control]")
-      ) {closeOverlay(false);}
-    };
-    document.addEventListener("keydown", handleKeyboard);
-    document.addEventListener("pointerdown", closeOnPointer);
-    return () => {
-      document.removeEventListener("keydown", handleKeyboard);
-      document.removeEventListener("pointerdown", closeOnPointer);
-    };
-  }, [activeOverlay, closeOverlay]);
+    if (notificationsOpen) {notificationsRef.current?.focus({ preventScroll: true });}
+  }, [notificationsOpen]);
 
   return (
-    <div className={styles.headerActions} ref={containerRef}>
+    <div className={styles.headerActions} ref={actionsRef}>
       <button
-        aria-controls="shell-search-overlay"
+        aria-controls="shell-search"
         aria-expanded={activeOverlay === "search"}
         aria-label="Search films"
-        className={styles.headerIconButton}
+        className={styles.roundButton}
         data-product-overlay-control
         onClick={(event) => toggleOverlay("search", event.currentTarget)}
         type="button"
       >
-        <Magnifier />
+        <Icon className={styles.roundIcon} name="search" />
       </button>
-      <button
-        aria-controls="shell-notifications-overlay"
-        aria-expanded={activeOverlay === "notifications"}
-        aria-label="Alerts"
-        className={`${styles.headerIconButton} ${styles.desktopHeaderAction}`}
-        data-product-overlay-control
-        onClick={(event) => toggleOverlay("notifications", event.currentTarget)}
-        type="button"
-      >
-        <Bell />
-        <span aria-hidden="true" className={styles.alertBadge} />
-      </button>
-      <button
-        aria-controls="shell-account-overlay"
-        aria-expanded={activeOverlay === "account"}
-        aria-label="Account menu"
-        className={`${styles.avatarButton} ${styles.desktopHeaderAction}`}
-        data-product-overlay-control
-        onClick={(event) => toggleOverlay("account", event.currentTarget)}
-        type="button"
-      >
-        PF
-      </button>
-
-      {activeOverlay === "search" ? (
-        <section
-          aria-label="Film search"
-          className={`${styles.headerOverlay} ${styles.searchOverlay}`}
-          data-shell-overlay
-          id="shell-search-overlay"
+      <div className={`${styles.popoverAnchor} ${styles.desktopHeaderAction}`}>
+        <button
+          aria-controls="shell-notifications"
+          aria-expanded={notificationsOpen}
+          aria-haspopup="dialog"
+          aria-label="Notifications"
+          className={styles.roundButton}
+          data-product-overlay-control
+          onClick={(event) => toggleOverlay("notifications", event.currentTarget)}
+          type="button"
         >
-          <label className={styles.overlayLabel} htmlFor="shell-search-input">Search films</label>
-          <div className={styles.searchRow}>
-            <input className="pf-control" id="shell-search-input" placeholder="Film title" ref={searchRef} type="search" />
-            <button aria-label="Close search" className={styles.headerButton} onClick={() => closeOverlay()} type="button">Close</button>
-          </div>
-          <p className={styles.overlayHint}>Search results render in this bounded region.</p>
-        </section>
-      ) : null}
-
-      {activeOverlay === "notifications" ? (
-        <section
-          aria-label="Alerts"
-          className={styles.headerOverlay}
-          data-shell-overlay
-          id="shell-notifications-overlay"
+          <Icon className={styles.roundIcon} name="bell" />
+        </button>
+        <NotificationsPanel id="shell-notifications" open={notificationsOpen} panelRef={notificationsRef} />
+      </div>
+      <div className={`${styles.popoverAnchor} ${styles.desktopHeaderAction}`} data-menu-anchor>
+        <button
+          aria-controls="shell-account-menu"
+          aria-expanded={accountOpen}
+          aria-label="Account menu"
+          className={styles.avatarButton}
+          data-product-overlay-control
+          onClick={(event) => toggleOverlay("account", event.currentTarget)}
+          type="button"
         >
-          <div className={styles.overlayHeading}>
-            <strong>Alerts</strong>
-            <button className={styles.textButton} type="button">Mark all as read</button>
-          </div>
-          <p className={styles.overlayHint}>Notification states render here without shifting the header.</p>
-        </section>
-      ) : null}
-
-      {activeOverlay === "account" ? (
+          {initials || <Icon className={styles.roundIcon} name="profile" />}
+        </button>
         <div
-          className={`${styles.headerOverlay} ${styles.accountOverlay}`}
-          data-shell-overlay
-          id="shell-account-overlay"
+          className={styles.accountPopover}
+          data-anchored-menu="account"
+          data-open={accountOpen || undefined}
+          id="shell-account-menu"
+          inert={!accountOpen}
+          ref={accountRef}
         >
           <span aria-hidden="true" className={styles.filmTail} />
-          <div className={styles.filmMenu}>
-            <nav aria-label="Account navigation">
-              {accountItems.map((item) => <FilmMenuItem item={item} key={item.label} />)}
-            </nav>
-          </div>
+          <FilmStrip items={accountItems} label="Account navigation" />
         </div>
-      ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function ProductSearch() {
+  const { activeOverlay, closeOverlay } = useProductOverlay();
+  const open = activeOverlay === "search";
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [wasOpen, setWasOpen] = useState(open);
+
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) {setQuery("");}
+  }
+
+  useOverlayDismissal(open, rootRef, closeOverlay, true);
+
+  useEffect(() => {
+    if (open) {inputRef.current?.focus({ preventScroll: true });}
+  }, [open]);
+
+  return (
+    <div
+      aria-label="Film search"
+      className={styles.globalSearch}
+      data-open={open || undefined}
+      id="shell-search"
+      inert={!open}
+      ref={rootRef}
+      role="search"
+    >
+      <div className={styles.globalSearchInner}>
+        <label className="pf-visually-hidden" htmlFor="shell-search-input">Search films</label>
+        <input
+          autoComplete="off"
+          className={`pf-control ${styles.globalSearchInput}`}
+          id="shell-search-input"
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search films…"
+          ref={inputRef}
+          type="search"
+          value={query}
+        />
+        <button aria-label="Close search" className={styles.searchClose} onClick={() => closeOverlay()} type="button">
+          <Icon className={styles.roundIcon} name="close" />
+        </button>
+        <div className={styles.searchResults} role="status">
+          {query.trim() ? <p className={styles.overlayEmpty}>Film search isn’t available yet.</p> : null}
+        </div>
+      </div>
     </div>
   );
 }
 
 export function MobileProductNavigation({
-  groups,
-}: Readonly<{ groups: readonly MobileNavigationGroup[] }>) {
+  entries,
+}: Readonly<{ entries: readonly MobileNavigationEntry[] }>) {
   const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
   const navigationRef = useRef<HTMLElement>(null);
-  const activeGroup = activeOverlay?.startsWith("mobile:") ? activeOverlay.slice("mobile:".length) : null;
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const activeMenu = activeOverlay?.startsWith("mobile:") ? activeOverlay.slice("mobile:".length) : null;
+  const notificationsOpen = activeOverlay === "notifications-mobile";
+
+  useOverlayDismissal(activeMenu !== null, navigationRef, closeOverlay);
+  useOverlayDismissal(notificationsOpen, notificationsRef, closeOverlay, true);
+
+  useAnchoredMenus(activeMenu, navigationRef);
 
   useEffect(() => {
-    if (!activeGroup) {return;}
-    navigationRef.current?.querySelector<HTMLElement>(`[data-mobile-menu="${activeGroup}"] a, [data-mobile-menu="${activeGroup}"] button`)?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeOverlay();
-      }
-    };
-    const closeOnPointer = (event: PointerEvent) => {
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        !navigationRef.current?.contains(target) &&
-        !target.closest("[data-product-overlay-control]")
-      ) {closeOverlay(false);}
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    document.addEventListener("pointerdown", closeOnPointer);
-    return () => {
-      document.removeEventListener("keydown", closeOnEscape);
-      document.removeEventListener("pointerdown", closeOnPointer);
-    };
-  }, [activeGroup, closeOverlay]);
+    if (notificationsOpen) {notificationsRef.current?.focus({ preventScroll: true });}
+  }, [notificationsOpen]);
 
   return (
-    <nav aria-label="Mobile product navigation" className={styles.mobileNavigation} ref={navigationRef}>
-      {groups.map((group) => {
-        const groupId = group.label.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-");
-        const hasMenu = Boolean(group.items?.length);
-        const controls = group.overlay === "notifications" ? "shell-notifications-overlay" : `mobile-${groupId}-menu`;
-        const overlay = group.overlay ?? `mobile:${groupId}`;
-        return (
-          <div className={styles.mobileNavigationGroup} key={group.label}>
-            {hasMenu || group.overlay ? (
-              <button
-                aria-controls={controls}
-                aria-current={group.current ? "page" : undefined}
-                aria-expanded={activeOverlay === overlay}
-                data-product-overlay-control
-                onClick={(event) => toggleOverlay(overlay, event.currentTarget)}
-                type="button"
-              >
-                <MobileNavigationIcon label={group.label} />
-                {group.overlay === "notifications" ? <span aria-hidden="true" className={styles.alertBadge} /> : null}
-                {group.label}
-              </button>
-            ) : (
-              <a aria-current={group.current ? "page" : undefined} href={group.href}>
-                <MobileNavigationIcon label={group.label} />
-                {group.label}
-              </a>
-            )}
-            {hasMenu && activeGroup === groupId ? (
-              <div className={styles.mobileMenu} data-mobile-menu={groupId} id={`mobile-${groupId}-menu`}>
-                <div className={styles.filmMenu}>
-                  <nav aria-label={`${group.label} sections`}>
-                    {group.items?.map((item) => (
-                      <FilmMenuItem item={item} key={item.label} />
-                    ))}
-                  </nav>
+    <>
+      <nav aria-label="Mobile product navigation" className={styles.mobileNavigation} ref={navigationRef}>
+        <div className={styles.mobileNavigationGrid}>
+          {entries.map((entry) => {
+            if ("overlay" in entry) {
+              return (
+                <div className={styles.navGroup} key={entry.id}>
+                  <button
+                    aria-controls="shell-notifications-mobile"
+                    aria-expanded={notificationsOpen}
+                    aria-haspopup="dialog"
+                    className={styles.navTrigger}
+                    data-product-overlay-control
+                    onClick={(event) => toggleOverlay("notifications-mobile", event.currentTarget)}
+                    type="button"
+                  >
+                    <Icon className={styles.navGlyph} name="bell" />
+                    <span>{entry.label}</span>
+                  </button>
                 </div>
-                <span aria-hidden="true" className={styles.filmTail} />
+              );
+            }
+
+            const open = activeMenu === entry.id;
+            return (
+              <div className={styles.navGroup} data-menu-anchor data-open={open || undefined} key={entry.id}>
+                <button
+                  aria-controls={`mobile-${entry.id}-menu`}
+                  aria-current={entry.current ? "page" : undefined}
+                  aria-expanded={open}
+                  className={styles.navTrigger}
+                  data-product-overlay-control
+                  onClick={(event) => toggleOverlay(`mobile:${entry.id}`, event.currentTarget)}
+                  type="button"
+                >
+                  <Icon className={styles.navGlyph} name={entry.icon} />
+                  <span>{entry.label}</span>
+                </button>
+                <div className={styles.filmMenu} data-anchored-menu={entry.id} id={`mobile-${entry.id}-menu`} inert={!open}>
+                  <FilmStrip items={entry.items} label={`${entry.name} sections`} />
+                  <span aria-hidden="true" className={styles.filmTail} />
+                </div>
               </div>
-            ) : null}
-          </div>
-        );
-      })}
-    </nav>
+            );
+          })}
+        </div>
+      </nav>
+      <NotificationsPanel id="shell-notifications-mobile" mobile open={notificationsOpen} panelRef={notificationsRef} />
+    </>
   );
 }
 
@@ -471,33 +517,12 @@ export function SectionNavigation({
   const open = activeOverlay === overlay;
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useOverlayDismissal(open, containerRef, closeOverlay);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-    menuRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeOverlay();
-      }
-    };
-    const closeOnPointer = (event: PointerEvent) => {
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        !containerRef.current?.contains(target) &&
-        !target.closest("[data-product-overlay-control]")
-      ) {closeOverlay(false);}
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    document.addEventListener("pointerdown", closeOnPointer);
-    return () => {
-      document.removeEventListener("keydown", closeOnEscape);
-      document.removeEventListener("pointerdown", closeOnPointer);
-    };
-  }, [closeOverlay, open]);
+    if (open) {menuRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();}
+  }, [open]);
 
   return (
     <>
@@ -515,23 +540,14 @@ export function SectionNavigation({
           className={styles.sectionMenuTrigger}
           data-product-overlay-control
           onClick={(event) => toggleOverlay(overlay, event.currentTarget)}
-          ref={triggerRef}
           type="button"
         >
           <span>{label}</span>
           <strong>{items.find((item) => item.current)?.label ?? items[0]?.label}</strong>
         </button>
         {open ? (
-          <div
-            className={`${styles.sectionMobileMenu} ${styles.filmMenu}`}
-            id={`section-${sectionId}-menu`}
-            ref={menuRef}
-          >
-            <nav aria-label={`${label} mobile`}>
-              {items.map((item) => (
-                <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}><NavigationItemIcon label={item.label} />{item.label}</a>
-              ))}
-            </nav>
+          <div className={styles.sectionMobileMenu} id={`section-${sectionId}-menu`} ref={menuRef}>
+            <FilmStrip items={items} label={`${label} mobile`} />
           </div>
         ) : null}
       </div>

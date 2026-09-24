@@ -1,15 +1,15 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
-import { BrandImage, Pill, StatusBanner } from "@pickflick/ui";
+import { ActionLink, BrandImage, Pill, StatusBanner } from "@pickflick/ui";
 
 import {
   BoundedScrollRegion,
   MobileProductNavigation,
   ProductHeaderActions,
   ProductOverlayProvider,
-  PublicNavigation,
+  ProductSearch,
   SectionNavigation,
-  type MobileNavigationGroup,
+  type MobileNavigationEntry,
   type ShellActionItem,
   type ShellMenuItem,
   type ShellNavigationItem,
@@ -19,8 +19,11 @@ import styles from "./shells.module.css";
 export interface ShellRouteMap {
   readonly admin: string;
   readonly contact: string;
+  readonly createClub: string;
+  readonly features: string;
   readonly home: string;
   readonly howItWorks: string;
+  readonly joinClub: string;
   readonly library: string;
   readonly legalPrivacy: string;
   readonly legalTerms: string;
@@ -35,8 +38,11 @@ export interface ShellRouteMap {
 const canonicalRoutes: ShellRouteMap = {
   admin: "/admin",
   contact: "/contact",
+  createClub: "/clubs/new",
+  features: "/#features",
   home: "/",
   howItWorks: "/#how",
+  joinClub: "/invite",
   library: "/library",
   legalPrivacy: "/legal/privacy",
   legalTerms: "/legal/terms",
@@ -48,14 +54,18 @@ const canonicalRoutes: ShellRouteMap = {
   setup: "/login",
 };
 
+interface PublicNavigationItem extends ShellNavigationItem {
+  readonly desktopOnly?: boolean;
+}
+
 function publicNavigation(
   routes: ShellRouteMap,
-  currentPage?: "home" | "pricing" | "contact",
-): readonly ShellNavigationItem[] {
+  currentPage?: "pricing",
+): readonly PublicNavigationItem[] {
   return [
-    { href: routes.howItWorks, label: "How it works" },
+    { href: routes.howItWorks, label: "How it works", desktopOnly: true },
+    { href: routes.features, label: "Features", desktopOnly: true },
     { href: routes.pricing, label: "Pricing", current: currentPage === "pricing" },
-    { href: routes.contact, label: "Contact", current: currentPage === "contact" },
   ];
 }
 
@@ -76,52 +86,89 @@ function accountNavigation(routes: ShellRouteMap, admin: boolean): readonly Shel
   return [
     ...(admin ? [{ href: routes.admin, label: "Admin Panel" }] : []),
     { href: routes.settings, label: "Settings" },
-    { href: routes.privacy, label: "Privacy" },
-    { href: routes.pricing, label: "Pricing" },
-    { href: routes.contact, label: "Contact Us" },
+    { href: routes.privacy, label: "Privacy & data" },
     signOutItem,
   ];
 }
 
-function mobileNavigation(
-  routes: ShellRouteMap,
-  clubItems: readonly ShellNavigationItem[],
-  libraryItems?: readonly ShellNavigationItem[],
-  settingsItems?: readonly ShellNavigationItem[],
-): readonly MobileNavigationGroup[] {
+/**
+ * Club Hub views; views beyond Overview and Manage Club arrive with the Club Hub phase.
+ * Every member keeps Manage Club: it is read-only for them and carries Leave Club.
+ */
+export function clubNavigation(clubId: string, current: "overview" | "manage"): readonly ShellNavigationItem[] {
+  const hub = `/clubs/${clubId}`;
+  return [
+    { href: canonicalRoutes.product, label: "Overview", current: current === "overview" },
+    { href: sectionHref(hub, "sessions"), label: "Sessions" },
+    { href: sectionHref(hub, "ratings"), label: "Ratings" },
+    { href: sectionHref(hub, "members"), label: "Members" },
+    { href: sectionHref(hub, "achievements"), label: "Achievements" },
+    { href: `${hub}/settings`, label: "Manage Club", current: current === "manage" },
+  ];
+}
+
+function mobileNavigation({
+  admin,
+  clubItems,
+  currentArea,
+  libraryItems,
+  routes,
+  settingsItems,
+}: Readonly<{
+  admin: boolean;
+  clubItems: readonly ShellNavigationItem[];
+  currentArea: ProductShellProps["currentArea"];
+  libraryItems?: readonly ShellNavigationItem[] | undefined;
+  routes: ShellRouteMap;
+  settingsItems?: readonly ShellNavigationItem[] | undefined;
+}>): readonly MobileNavigationEntry[] {
+  const hubArea = currentArea === "hub" || currentArea === "session";
+  const currentClubItem = hubArea ? clubItems.find((item) => item.current) : undefined;
+  const hubItems: readonly ShellMenuItem[] = clubItems.length > 0
+    ? clubItems.map((item) => ({ ...item, current: hubArea && item.current === true }))
+    : [
+        { href: routes.createClub, label: "Create a Club" },
+        { href: routes.joinClub, label: "Join a Club" },
+      ];
+
   return [
     {
-      href: routes.product,
-      items: clubItems,
-      label: "Hub",
+      current: hubArea,
+      icon: "hub",
+      id: "hub",
+      items: hubItems,
+      label: currentClubItem?.label ?? "Hub",
+      name: "Hub",
     },
     {
-      href: routes.library,
+      current: currentArea === "library",
+      icon: "library",
+      id: "library",
       items: libraryItems ?? [
         { href: sectionHref(routes.library, "my-ratings"), label: "My Ratings" },
         { href: sectionHref(routes.library, "watchlist"), label: "Watchlist" },
         { href: sectionHref(routes.library, "achievements"), label: "Achievements" },
       ],
-      label: "Library",
+      label: "My Library",
+      name: "My Library",
     },
+    { id: "alerts", label: "Alerts", overlay: "notifications" },
     {
-      href: routes.settings,
-      label: "Alerts",
-      overlay: "notifications",
-    },
-    {
-      href: routes.settings,
+      current: currentArea === "settings" || currentArea === "admin",
+      icon: "settings",
+      id: "settings",
       items: [
+        ...(admin ? [{ href: routes.admin, label: "Admin Panel", current: currentArea === "admin" }] : []),
         ...(settingsItems ?? [
           { href: routes.settings, label: "Profile" },
           { href: sectionHref(routes.settings, "notifications"), label: "Notifications" },
           { href: sectionHref(routes.settings, "subscription"), label: "Subscription" },
-          { href: routes.privacy, label: "Privacy" },
-          { href: sectionHref(routes.settings, "import-export"), label: "Import & Export" },
+          { href: routes.privacy, label: "Privacy & data" },
         ]),
         signOutItem,
       ],
       label: "Settings",
+      name: "Settings",
     },
   ];
 }
@@ -135,35 +182,67 @@ function Brand({ href = "/" }: Readonly<{ href?: string }>) {
   );
 }
 
+function SiteFooter({ routes }: Readonly<{ routes: ShellRouteMap }>) {
+  const footerLinks = [
+    { href: routes.howItWorks, label: "How it works" },
+    { href: routes.legalPrivacy, label: "Privacy" },
+    { href: routes.legalTerms, label: "Terms" },
+    { href: routes.contact, label: "Contact" },
+  ];
+
+  return (
+    <footer className={styles.publicFooter}>
+      <div className={styles.publicFooterInner}>
+        <div className={styles.footerBrand}>
+          <a className={styles.footerWordmark} href={routes.home}>PickFlick</a>
+          <p>Pick a film. Watch together. Remember everything.</p>
+        </div>
+        <nav aria-label="Footer navigation">
+          {footerLinks.map((link, index) => (
+            <Fragment key={link.label}>
+              {index > 0 ? <span aria-hidden="true">·</span> : null}
+              <a href={link.href}>{link.label}</a>
+            </Fragment>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
 export function PublicShell({
   children,
   currentPage,
   routes = canonicalRoutes,
 }: Readonly<{
   children: ReactNode;
-  currentPage?: "home" | "pricing" | "contact";
+  currentPage?: "pricing";
   routes?: ShellRouteMap;
 }>) {
   return (
-    <div className={`${styles.shell} ${styles.publicShell}`} data-shell="public">
+    <div className={styles.shell} data-shell="public">
       <header className={styles.publicHeader}>
         <div className={styles.headerInner}>
           <Brand href={routes.home} />
-          <PublicNavigation items={publicNavigation(routes, currentPage)} variant="desktop" />
-          <a className={styles.headerCta} href={routes.setup}>Get started</a>
+          <nav aria-label="Public navigation" className={styles.publicNav}>
+            {publicNavigation(routes, currentPage).map((item) => (
+              <a
+                aria-current={item.current ? "page" : undefined}
+                className={item.desktopOnly ? styles.desktopOnlyLink : undefined}
+                href={item.href}
+                key={item.label}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          <ActionLink className={styles.publicHeaderAction} href={routes.product} size="small">
+            Go to App
+          </ActionLink>
         </div>
       </header>
-      <PublicNavigation items={publicNavigation(routes, currentPage)} variant="mobile" />
       <main>{children}</main>
-      <footer className={styles.publicFooter}>
-        <Brand href={routes.home} />
-        <nav aria-label="Footer navigation">
-          <a href={routes.legalPrivacy}>Privacy</a>
-          <a href={routes.legalTerms}>Terms</a>
-          <a href={routes.contact}>Contact</a>
-        </nav>
-        <p>PickFlick</p>
-      </footer>
+      <SiteFooter routes={routes} />
     </div>
   );
 }
@@ -199,7 +278,8 @@ export function SetupShell({
 interface ProductShellProps {
   readonly children: ReactNode;
   readonly clubItems: readonly ShellNavigationItem[];
-  readonly currentArea: "admin" | "hub" | "library" | "session" | "settings";
+  /** `recovery` marks error states, where no product destination is current. */
+  readonly currentArea: "admin" | "hub" | "library" | "recovery" | "session" | "settings";
   readonly eyebrow: string;
   readonly title: string;
   readonly admin?: boolean;
@@ -208,7 +288,6 @@ interface ProductShellProps {
 
 function ProductChrome({
   admin = false,
-  adminItems = [],
   children,
   clubItems,
   currentArea,
@@ -218,7 +297,6 @@ function ProductChrome({
   settingsItems,
 }: Readonly<{
   admin?: boolean;
-  adminItems?: readonly ShellNavigationItem[];
   children: ReactNode;
   clubItems: readonly ShellNavigationItem[];
   currentArea: ProductShellProps["currentArea"];
@@ -233,29 +311,6 @@ function ProductChrome({
       (item.label === "Hub" && ["hub", "session"].includes(currentArea)) ||
       (item.label === "My Library" && currentArea === "library"),
   }));
-  const mobileItems: readonly MobileNavigationGroup[] = [
-    ...mobileNavigation(
-      routes,
-      clubItems.map((item) => ({ ...item, current: currentArea === "hub" && item.current === true })),
-      libraryItems,
-      settingsItems,
-    ).map((item) => ({
-      ...item,
-      current:
-        (item.label === "Hub" && ["hub", "session"].includes(currentArea)) ||
-        (item.label === "Library" && currentArea === "library") ||
-        (item.label === "Settings" && currentArea === "settings"),
-    })),
-    ...(admin
-      ? [{
-          href: routes.admin,
-          label: "Admin",
-          current: currentArea === "admin",
-          items: adminItems,
-        }]
-      : []),
-  ];
-
   return (
     <ProductOverlayProvider>
       <div className={`${styles.shell} ${styles.productShell}`} data-shell={currentArea}>
@@ -272,9 +327,13 @@ function ProductChrome({
               <ProductHeaderActions accountItems={accountNavigation(routes, admin)} />
             </div>
           </div>
+          <ProductSearch />
         </header>
         {children}
-        <MobileProductNavigation groups={mobileItems} />
+        <SiteFooter routes={routes} />
+        <MobileProductNavigation
+          entries={mobileNavigation({ admin, clubItems, currentArea, libraryItems, routes, settingsItems })}
+        />
       </div>
     </ProductOverlayProvider>
   );
@@ -284,15 +343,17 @@ export function ProductFrame({
   admin = false,
   children,
   clubItems = [],
+  currentArea = "hub",
   routes,
 }: Readonly<{
   admin?: boolean;
   children: ReactNode;
   clubItems?: readonly ShellNavigationItem[];
+  currentArea?: "hub" | "recovery";
   routes?: ShellRouteMap;
 }>) {
   return (
-    <ProductChrome admin={admin} clubItems={clubItems} currentArea="hub" routes={routes}>
+    <ProductChrome admin={admin} clubItems={clubItems} currentArea={currentArea} routes={routes}>
       {children}
     </ProductChrome>
   );
@@ -408,7 +469,7 @@ export function AdminShell({
   routes?: ShellRouteMap;
 }>) {
   return (
-    <ProductChrome admin adminItems={items} clubItems={clubItems} currentArea="admin" routes={routes}>
+    <ProductChrome admin clubItems={clubItems} currentArea="admin" routes={routes}>
       <main className={`${styles.controlMain} ${styles.adminMain}`}>
         <header className={styles.pageHeading}>
           <div>

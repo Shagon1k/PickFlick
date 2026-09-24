@@ -87,30 +87,34 @@ test("header overlays are mutually exclusive and return focus", async ({ page })
   await openShell(page, "product", canonicalViewports[2]);
 
   const searchTrigger = page.getByRole("button", { name: "Search films" });
-  const alertsTrigger = page.getByRole("button", { name: "Alerts" });
+  const notificationsTrigger = page.getByRole("button", { name: "Notifications" });
+  const searchOverlay = page.locator("#shell-search");
+  const notifications = page.locator("#shell-notifications");
   await searchTrigger.click();
-  await expect(page.locator("#shell-search-overlay")).toBeVisible();
+  await expect(searchOverlay).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search films" })).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(page.getByRole("button", { name: "Close search" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("searchbox", { name: "Search films" })).toBeFocused();
+  await page.getByRole("searchbox", { name: "Search films" }).fill("Dune");
+  await expect(searchOverlay.getByRole("status")).toHaveText("Film search isn’t available yet.");
   await page.getByRole("button", { name: "Close search" }).click();
   await expect(searchTrigger).toBeFocused();
+  await expect(page.getByRole("searchbox", { name: "Search films", includeHidden: true })).toHaveValue("");
 
-  await alertsTrigger.click();
-  await expect(page.locator("#shell-search-overlay")).toHaveCount(0);
-  await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
-  const alertAction = page.getByRole("button", { name: "Mark all as read" });
-  await expect(alertAction).toBeFocused();
+  await notificationsTrigger.click();
+  await expect(searchOverlay).toBeHidden();
+  await expect(notifications).toBeVisible();
+  await expect(notifications).toBeFocused();
+  await expect(notifications.getByRole("heading", { name: "Notifications" })).toBeVisible();
+  await expect(notifications.getByRole("button", { name: "Mark all as read" })).toBeDisabled();
   await page.keyboard.press("Tab");
-  await expect(alertAction).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
-  await expect(alertAction).toBeFocused();
+  await expect(notifications).toBeFocused();
 
   await page.keyboard.press("Escape");
-  await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
-  await expect(alertsTrigger).toBeFocused();
+  await expect(notifications).toBeHidden();
+  await expect(notificationsTrigger).toBeFocused();
 
   const accountTrigger = page.getByRole("button", { name: "Account menu" });
   await accountTrigger.click();
@@ -122,11 +126,20 @@ test("header overlays are mutually exclusive and return focus", async ({ page })
   await expect(lastAccountItem).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(firstAccountItem).toBeFocused();
+
+  const accountMenu = page.locator("#shell-account-menu");
+  await accountMenu.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+  const accountBox = await accountMenu.boundingBox();
+  const accountTriggerBox = await accountTrigger.boundingBox();
+  expect(accountBox?.y).toBeGreaterThan(accountTriggerBox?.y ?? 0);
+  expect((accountBox?.x ?? 0) + (accountBox?.width ?? 0)).toBeLessThanOrEqual(canonicalViewports[2].width);
+  const accountTail = await accountMenu.locator(":scope > [aria-hidden=true]").boundingBox();
+  const center = (box: { x: number; width: number } | null) => (box?.x ?? 0) + (box?.width ?? 0) / 2;
+  expect(Math.abs(center(accountTail) - center(accountBox))).toBeLessThanOrEqual(1);
   await page.keyboard.press("Escape");
   await expect(accountTrigger).toBeFocused();
 
   await searchTrigger.click();
-  const searchOverlay = page.locator("#shell-search-overlay");
   await searchOverlay.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
   const searchBox = await searchOverlay.boundingBox();
   expect(searchBox?.x).toBe(0);
@@ -138,45 +151,55 @@ test("mobile product menus stay in view, dismiss outside, and share the Alerts o
   await openShell(page, "product", canonicalViewports[0]);
 
   const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
-  const hubTrigger = mobileNavigation.getByRole("button", { name: "Hub" });
-  const libraryTrigger = mobileNavigation.getByRole("button", { name: "Library" });
+  const hubTrigger = mobileNavigation.getByRole("button", { name: "Overview" });
+  const libraryTrigger = mobileNavigation.getByRole("button", { name: "My Library" });
   const alertsTrigger = mobileNavigation.getByRole("button", { name: "Alerts" });
   const settingsTrigger = mobileNavigation.getByRole("button", { name: "Settings" });
+  const mobileNotifications = page.locator("#shell-notifications-mobile");
   await hubTrigger.click();
   await expect(page.getByRole("navigation", { name: "Hub sections" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Overview" })).toBeFocused();
+  await expect(page.getByRole("navigation", { name: "Hub sections" }).getByRole("link", { name: "Overview" })).toBeFocused();
 
-  const hubBox = await page.locator("[data-mobile-menu=hub]").boundingBox();
+  const hubMenu = page.locator("[data-anchored-menu=hub]");
+  await hubMenu.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+  const hubBox = await hubMenu.boundingBox();
   expect(hubBox?.x).toBeGreaterThanOrEqual(0);
   expect((hubBox?.x ?? 0) + (hubBox?.width ?? 0)).toBeLessThanOrEqual(canonicalViewports[0].width);
+  const hubTail = await hubMenu.locator(":scope > [aria-hidden=true]").boundingBox();
+  expect(Math.abs(((hubTail?.x ?? 0) + (hubTail?.width ?? 0) / 2) - ((hubBox?.x ?? 0) + (hubBox?.width ?? 0) / 2))).toBeLessThanOrEqual(1);
 
   await page.getByRole("heading", { name: "Club context" }).click();
-  await expect(page.getByRole("navigation", { name: "Hub sections" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Hub sections" })).toBeHidden();
 
   await libraryTrigger.click();
-  await expect(page.getByRole("navigation", { name: "Library sections" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "My Library sections" })).toBeVisible();
   await expect(page.getByRole("link", { name: "My Ratings" })).toBeFocused();
 
   await alertsTrigger.click();
-  await expect(page.getByRole("navigation", { name: "Library sections" })).toHaveCount(0);
-  await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Mark all as read" })).toBeFocused();
+  await expect(page.getByRole("navigation", { name: "My Library sections" })).toBeHidden();
+  await expect(mobileNotifications).toBeVisible();
+  await expect(mobileNotifications).toBeFocused();
+  expect((await mobileNotifications.boundingBox())?.y).toBeLessThan((await alertsTrigger.boundingBox())?.y ?? 0);
 
   await settingsTrigger.click();
-  await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
+  await expect(mobileNotifications).toBeHidden();
   await expect(page.getByRole("navigation", { name: "Settings sections" })).toBeVisible();
-  const settingsBox = await page.locator("[data-mobile-menu=settings]").boundingBox();
+  const settingsMenu = page.locator("[data-anchored-menu=settings]");
+  await settingsMenu.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+  const settingsBox = await settingsMenu.boundingBox();
   expect(settingsBox?.x).toBeGreaterThanOrEqual(0);
   expect((settingsBox?.x ?? 0) + (settingsBox?.width ?? 0)).toBeLessThanOrEqual(canonicalViewports[0].width);
 
   await page.keyboard.press("Escape");
   await expect(settingsTrigger).toBeFocused();
 
-  for (const control of await mobileNavigation.locator(":scope > div > button, :scope > div > a").all()) {
+  const triggers = mobileNavigation.locator("button[data-product-overlay-control]");
+  await expect(triggers).toHaveCount(4);
+  for (const control of await triggers.all()) {
     expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
 
-  const mobileIcons = await mobileNavigation.locator(":scope > div > button svg").evaluateAll((icons) =>
+  const mobileIcons = await triggers.locator("svg").evaluateAll((icons) =>
     icons.map((icon) => icon.innerHTML),
   );
   expect(new Set(mobileIcons).size).toBe(mobileIcons.length);
@@ -188,9 +211,10 @@ test("mobile product menus remain scrollable in a short landscape viewport", asy
 
   const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
   await mobileNavigation.getByRole("button", { name: "Settings" }).click();
-  const menu = page.locator("[data-mobile-menu=settings]");
+  const menu = page.locator("[data-anchored-menu=settings]");
+  await menu.evaluate(async (element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
   const menuBox = await menu.boundingBox();
-  const dimensions = await menu.evaluate((element) => ({
+  const dimensions = await page.getByRole("navigation", { name: "Settings sections" }).evaluate((element) => ({
     clientHeight: element.clientHeight,
     overflowY: globalThis.getComputedStyle(element).overflowY,
     scrollHeight: element.scrollHeight,
@@ -229,19 +253,19 @@ test("Library and Settings menus expose distinct subsection destinations", async
   await openShell(page, "product", canonicalViewports[0]);
   const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
 
-  await mobileNavigation.getByRole("button", { name: "Library" }).click();
-  const libraryLinks = page.getByRole("navigation", { name: "Library sections" }).getByRole("link");
+  await mobileNavigation.getByRole("button", { name: "My Library" }).click();
+  const libraryLinks = page.getByRole("navigation", { name: "My Library sections" }).getByRole("link");
   await expect(libraryLinks).toHaveCount(3);
   expect(new Set(await libraryLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(3);
 
   await mobileNavigation.getByRole("button", { name: "Settings" }).click();
   const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
   const settingsLinks = settingsNavigation.getByRole("link");
-  await expect(settingsLinks).toHaveCount(5);
+  await expect(settingsLinks).toHaveText(["Admin Panel", "Profile", "Notifications", "Subscription", "Privacy & data"]);
   expect(new Set(await settingsLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(5);
+  await expect(settingsNavigation.getByRole("button", { name: "Sign out" })).toBeVisible();
   await expect(settingsNavigation.getByRole("link", { name: "Subscription" })).toHaveAttribute("href", "/shell-preview/settings?tab=subscription");
-  await expect(settingsNavigation.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/shell-preview/settings?tab=privacy");
-  await expect(settingsNavigation.getByRole("link", { name: "Import & Export" })).toHaveAttribute("href", "/shell-preview/settings?tab=import-export");
+  await expect(settingsNavigation.getByRole("link", { name: "Privacy & data" })).toHaveAttribute("href", "/shell-preview/settings?tab=privacy");
 });
 
 test("Club and Admin section navigation exposes distinct destinations and current state", async ({ page }) => {
@@ -253,12 +277,11 @@ test("Club and Admin section navigation exposes distinct destinations and curren
   await expect(clubNavigation.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
 
   await openShell(page, "product", canonicalViewports[0]);
-  const hubTrigger = page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Hub" });
+  const hubTrigger = page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Overview" });
   await hubTrigger.click();
   const hubLinks = page.getByRole("navigation", { name: "Hub sections" }).getByRole("link");
-  await expect(hubLinks).toHaveCount(6);
-  await expect(page.getByRole("link", { name: "Achievements" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Manage Club" })).toBeVisible();
+  await expect(hubLinks).toHaveText(["Overview", "Sessions", "Ratings", "Members", "Achievements", "Manage Club"]);
+  await expect(hubLinks.first()).toHaveAttribute("aria-current", "page");
 
   await openShell(page, "admin", canonicalViewports[2]);
   const adminNavigation = page.getByRole("complementary", { name: "Admin sections" }).getByRole("navigation");
@@ -268,11 +291,22 @@ test("Club and Admin section navigation exposes distinct destinations and curren
   await expect(adminNavigation.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
 
   await openShell(page, "admin", canonicalViewports[0]);
-  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Admin" }).click();
-  const mobileAdminLinks = page.getByRole("navigation", { name: "Admin sections" }).getByRole("link");
+  await page.getByRole("button", { name: /Admin sections Overview/ }).click();
+  const mobileAdminLinks = page.getByRole("navigation", { name: "Admin sections mobile" }).getByRole("link");
   await expect(mobileAdminLinks).toHaveCount(4);
   expect(new Set(await mobileAdminLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href")))).size).toBe(4);
 });
+
+async function expectMobileAdminEntry(page: Page, shell: PreviewShellRoute) {
+  await openShell(page, shell, canonicalViewports[0]);
+  const mobileNavigation = page.getByRole("navigation", { name: "Mobile product navigation" });
+  await expect(mobileNavigation.getByRole("button", { name: "Admin" })).toHaveCount(0);
+  await mobileNavigation.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Admin Panel" })).toHaveAttribute(
+    "href",
+    "/shell-preview/admin",
+  );
+}
 
 test("App Admin capability is preserved on admin and non-admin shells", async ({ page }) => {
   await openShell(page, "session", canonicalViewports[2]);
@@ -283,10 +317,12 @@ test("App Admin capability is preserved on admin and non-admin shells", async ({
   await page.getByRole("button", { name: "Account menu" }).click();
   await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toBeVisible();
 
-  await openShell(page, "product", canonicalViewports[0]);
-  await expect(page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("link", { name: "Admin" })).toHaveAttribute(
-    "href",
-    "/shell-preview/admin",
+  await expectMobileAdminEntry(page, "product");
+  await openShell(page, "admin", canonicalViewports[0]);
+  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Admin Panel" })).toHaveAttribute(
+    "aria-current",
+    "page",
   );
 
   for (const shell of ["session", "settings", "library"] as const) {
@@ -294,12 +330,12 @@ test("App Admin capability is preserved on admin and non-admin shells", async ({
     await page.getByRole("button", { name: "Account menu" }).click();
     await expect(page.getByRole("navigation", { name: "Account navigation" }).getByRole("link", { name: "Admin Panel" })).toBeVisible();
 
-    await openShell(page, `${shell}-admin`, canonicalViewports[0]);
-    await expect(page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("link", { name: "Admin" })).toHaveAttribute(
-      "href",
-      "/shell-preview/admin",
-    );
+    await expectMobileAdminEntry(page, `${shell}-admin`);
   }
+
+  await openShell(page, "session", canonicalViewports[0]);
+  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Admin Panel" })).toHaveCount(0);
 });
 
 test("authenticated shells expose Sign out as an action on desktop and mobile", async ({ page }) => {
@@ -350,7 +386,7 @@ test("compact and Session headers match their canonical navigation variants", as
   await openShell(page, "product", canonicalViewports[1]);
   await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" })).toBeHidden();
   const compactHeader = page.locator("header");
-  await expect(compactHeader.getByRole("button", { name: "Alerts" })).toBeHidden();
+  await expect(compactHeader.getByRole("button", { name: "Notifications" })).toBeHidden();
   await expect(compactHeader.getByRole("button", { name: "Account menu" })).toBeHidden();
   await expect(page.getByRole("link", { name: "PickFlick home" })).toContainText("PickFlick");
 
@@ -383,18 +419,7 @@ test("visible shell controls keep 44px targets and a visible keyboard focus", as
   ).toBe(true);
 });
 
-test("public and section mobile menus focus their first item and return focus", async ({ page }) => {
-  await openShell(page, "public", canonicalViewports[0]);
-  const publicTrigger = page.getByRole("button", { name: "Menu" });
-  await publicTrigger.click();
-  await expect(page.getByRole("navigation", { name: "Public mobile navigation" }).getByRole("link").first()).toBeFocused();
-  await publicTrigger.click();
-  await expect(page.getByRole("navigation", { name: "Public mobile navigation" })).toHaveCount(0);
-  await expect(publicTrigger).toBeFocused();
-  await publicTrigger.click();
-  await page.keyboard.press("Escape");
-  await expect(publicTrigger).toBeFocused();
-
+test("section mobile menus focus their first item and return focus", async ({ page }) => {
   await openShell(page, "settings", canonicalViewports[0]);
   const sectionTrigger = page.getByRole("button", { name: /Settings sections Profile/ });
   await sectionTrigger.click();
@@ -412,14 +437,14 @@ test("section menus share the product overlay state", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toBeVisible();
   await mobileNavigation.getByRole("button", { name: "Alerts" }).click();
   await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toHaveCount(0);
-  await expect(page.locator("#shell-notifications-overlay")).toBeVisible();
+  await expect(page.locator("#shell-notifications-mobile")).toBeVisible();
 
   await sectionTrigger.click();
-  await expect(page.locator("#shell-notifications-overlay")).toHaveCount(0);
+  await expect(page.locator("#shell-notifications-mobile")).toBeHidden();
   await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toBeVisible();
-  await mobileNavigation.getByRole("button", { name: "Library" }).click();
+  await mobileNavigation.getByRole("button", { name: "My Library" }).click();
   await expect(page.getByRole("navigation", { name: "Settings sections mobile" })).toHaveCount(0);
-  await expect(page.getByRole("navigation", { name: "Library sections" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "My Library sections" })).toBeVisible();
 });
 
 test("dense regions scroll locally without widening the page", async ({ page }) => {
@@ -437,15 +462,12 @@ test("dense regions scroll locally without widening the page", async ({ page }) 
 test("shell motion collapses under reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openShell(page, "product", canonicalViewports[0]);
-  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Hub" }).click();
-  const duration = await page.getByRole("navigation", { name: "Hub sections" }).evaluate((element) =>
-    Number.parseFloat(element.parentElement ? globalThis.getComputedStyle(element.parentElement).animationDuration : "0"),
-  );
-  expect(duration).toBeLessThanOrEqual(0.001);
+  const longestTransition = (element: Element) =>
+    Math.max(...globalThis.getComputedStyle(element).transitionDuration.split(",").map((value) => Number.parseFloat(value)));
+
+  await page.getByRole("navigation", { name: "Mobile product navigation" }).getByRole("button", { name: "Overview" }).click();
+  expect(await page.locator("[data-anchored-menu=hub]").evaluate(longestTransition)).toBeLessThanOrEqual(0.001);
 
   await page.getByRole("button", { name: "Search films" }).click();
-  const searchDuration = await page.locator("#shell-search-overlay").evaluate((element) =>
-    Number.parseFloat(globalThis.getComputedStyle(element).animationDuration),
-  );
-  expect(searchDuration).toBeLessThanOrEqual(0.001);
+  expect(await page.locator("#shell-search").evaluate(longestTransition)).toBeLessThanOrEqual(0.001);
 });
