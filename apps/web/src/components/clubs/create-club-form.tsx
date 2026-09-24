@@ -7,7 +7,7 @@ import {
   CLUB_DESCRIPTION_MAX_LENGTH,
   CLUB_NAME_MAX_LENGTH,
 } from "@pickflick/contracts";
-import { Button, SelectField, TextAreaField, TextField } from "@pickflick/ui";
+import { Button, TextAreaField, TextField } from "@pickflick/ui";
 
 import { createClub } from "../../app/clubs/new/actions";
 import { initialFormActionState } from "../forms/form-action.types";
@@ -15,11 +15,12 @@ import { useFormAction } from "../forms/use-form-action";
 import type { ClubFieldErrors, ClubFieldName, ClubFormValues } from "./club-form.types";
 import { validateClubValues } from "./club-form.validation";
 import styles from "./create-club.module.css";
+import { SelectionScaleField } from "./selection-scale-field";
 
 const initialValues: ClubFormValues = {
   name: "",
   description: "",
-  selectionScaleMin: "1",
+  selectionScaleMin: "0",
   selectionScaleMax: "5",
 };
 
@@ -90,7 +91,8 @@ export function CreateClubForm() {
         autoComplete="organization"
         disabled={pending}
         id="club-name"
-        label="Club name — required"
+        label="Club name"
+        labelHint="required"
         maxLength={CLUB_NAME_MAX_LENGTH}
         name="name"
         onChange={(event) => update("name", event.currentTarget.value)}
@@ -101,9 +103,10 @@ export function CreateClubForm() {
       <TextAreaField
         {...(errors.description ? { error: errors.description } : {})}
         disabled={pending}
-        hint={`Optional · ${values.description.length}/${CLUB_DESCRIPTION_MAX_LENGTH} characters`}
+        hint={`${values.description.length}/${CLUB_DESCRIPTION_MAX_LENGTH}`}
         id="club-description"
         label="Description"
+        labelHint="optional"
         maxLength={CLUB_DESCRIPTION_MAX_LENGTH}
         name="description"
         onChange={(event) => update("description", event.currentTarget.value)}
@@ -111,42 +114,16 @@ export function CreateClubForm() {
         value={values.description}
       />
 
-      <fieldset className={styles.scaleFieldset}>
-        <legend>Selection score range</legend>
-        <p>Members score every nomination on this inclusive scale.</p>
-        <div className={styles.scaleFields}>
-          <SelectField
-            {...(errors.selectionScaleMin ? { error: errors.selectionScaleMin } : {})}
-            disabled={pending}
-            id="selection-scale-min"
-            label="Starts at"
-            name="selectionScaleMin"
-            onChange={(value) => update("selectionScaleMin", value ?? "")}
-            required
-            value={values.selectionScaleMin}
-          >
-            <option value="0">0</option>
-            <option value="1">1</option>
-          </SelectField>
-          <SelectField
-            {...(errors.selectionScaleMax ? { error: errors.selectionScaleMax } : {})}
-            disabled={pending}
-            id="selection-scale-max"
-            label="Ends at"
-            name="selectionScaleMax"
-            onChange={(value) => update("selectionScaleMax", value ?? "")}
-            required
-            value={values.selectionScaleMax}
-          >
-            {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
-              <option key={value} value={String(value)}>{value}</option>
-            ))}
-          </SelectField>
-        </div>
-        <p className={styles.rangePreview} aria-live="polite">
-          Current range: {values.selectionScaleMin || "—"}–{values.selectionScaleMax || "—"}
-        </p>
-      </fieldset>
+      <div className={styles.scaleSection}>
+        <SelectionScaleField
+          defaultMax={Number(initialValues.selectionScaleMax)}
+          disabled={pending}
+          idPrefix="selection-scale"
+          maxError={errors.selectionScaleMax ?? errors.selectionScaleMin}
+          min={Number(initialValues.selectionScaleMin)}
+          onChange={(max) => update("selectionScaleMax", String(max))}
+        />
+      </div>
 
       <div className={styles.submitZone}>
         <Button className={styles.submitButton} loading={pending} type="submit">

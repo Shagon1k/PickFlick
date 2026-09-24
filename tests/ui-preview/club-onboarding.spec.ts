@@ -99,10 +99,11 @@ test("a valid Club creation opens the new Free Club with its configured scale", 
 
   await page.getByRole("textbox", { name: "Club name — required" }).fill("Midnight Society");
   await page.getByRole("textbox", { name: "Description" }).fill("Noir and classic cinema.");
-  await page.getByLabel("Starts at").click();
-  await page.getByRole("option", { name: "0", exact: true }).click();
-  await page.getByLabel("Ends at").click();
-  await page.getByRole("option", { name: "7", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/app");
+  const scaleEnd = page.getByRole("slider", { name: "Selection score range" });
+  await expect(scaleEnd).toHaveAttribute("min", "1");
+  await scaleEnd.fill("7");
+  await expect(page.getByText("Members score nominations 0–7")).toBeVisible();
   await page.getByRole("button", { name: "Create Screening Room" }).click();
 
   await expect(page).toHaveURL(/\/app$/u);

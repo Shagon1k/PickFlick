@@ -8,7 +8,7 @@ import { ActionLink } from "@pickflick/ui";
 import { loadClubSettings } from "../../../../components/clubs/club-api";
 import { ClubSettings } from "../../../../components/clubs/club-settings";
 import styles from "../../../../components/clubs/club-settings.module.css";
-import { ProductFrame } from "../../../../components/shells/shells";
+import { clubNavigation, ProductFrame } from "../../../../components/shells/shells";
 
 export const metadata: Metadata = {
   title: "Club settings — PickFlick",
@@ -49,10 +49,7 @@ export default async function ClubSettingsPage({ params }: { params: Promise<{ c
   }
   const club = response.body.club;
   return (
-    <ProductFrame clubItems={[
-      { href: "/app", label: club.name },
-      { href: `/clubs/${club.id}/settings`, label: "Manage Club", current: true },
-    ]}>
+    <ProductFrame clubItems={clubNavigation(club.id, "manage")}>
       <ClubSettings projection={response.body} />
     </ProductFrame>
   );

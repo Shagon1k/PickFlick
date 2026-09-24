@@ -70,14 +70,24 @@ test("Admin can submit settings, change a role, and confirm archive", async ({ c
   await authenticate(context, "valid-settings-admin-actions");
   await open(page, canonicalViewports[2]);
 
-  const name = page.getByRole("textbox", { name: "Club name" });
+  await expect(page.getByRole("navigation", { name: "Club sections" }).getByRole("link", { name: "Manage Club" })).toHaveAttribute("aria-current", "page");
+  const clubInfo = page.getByRole("region", { name: "Club Info" });
+  const name = clubInfo.getByRole("textbox", { name: "Club name" });
   await name.fill("Midnight Society Updated");
-  await page.getByRole("button", { name: "Save settings" }).click();
-  await expect(page.getByText("Club settings saved.")).toBeVisible();
+  await clubInfo.getByRole("button", { name: "Save Changes" }).click();
+  await expect(clubInfo.getByText("Club settings saved.")).toBeVisible();
 
-  await page.getByLabel("Role for Morgan Member").selectOption("MODERATOR");
-  await page.getByRole("button", { name: "Save role" }).click();
-  await expect(page.getByText("Member role updated.")).toBeVisible();
+  const visibility = page.getByRole("region", { name: "Settings", exact: true });
+  await visibility.getByRole("checkbox", { name: "Show ratings after the round closes" }).uncheck();
+  await visibility.getByRole("button", { name: "Save Changes" }).click();
+  await expect(visibility.getByText("Club settings saved.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Manage Moderators" }).click();
+  const moderators = page.getByRole("dialog", { name: "Manage Moderators" });
+  await moderators.getByRole("group", { name: "Role for Morgan Member" }).getByRole("radio", { name: "Moderator" }).check();
+  await moderators.getByRole("button", { name: "Save role" }).click();
+  await expect(moderators.getByText("Member role updated.")).toBeVisible();
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Archive Club" }).click();
   const dialog = page.getByRole("dialog", { name: "Archive this Club?" });
@@ -91,7 +101,7 @@ test("avatar replacements refresh the image and removal keeps the latest status"
   await authenticate(context, "valid-settings-admin-avatar-actions");
   await open(page, canonicalViewports[2]);
 
-  const avatarInput = page.getByLabel("Club avatar");
+  const avatarInput = page.getByLabel("Club avatar", { exact: true });
   const upload = async () => {
     const avatarResponse = page.waitForResponse((response) =>
       new URL(response.url()).pathname === `/api/clubs/${clubId}/avatar`);
@@ -130,7 +140,9 @@ test("Member sees read-only controls and can confirm leaving", async ({ context,
   await authenticate(context, "valid-settings-member-actions");
   await open(page);
   await expect(page.getByRole("textbox", { name: "Club name" })).toBeDisabled();
-  await expect(page.getByLabel("Role for Morgan Member")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save Changes" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Manage Moderators" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Upload" })).toHaveCount(0);
   await page.getByRole("button", { name: "Leave Club" }).click();
   const dialog = page.getByRole("dialog", { name: "Leave this Club?" });
   await dialog.getByRole("textbox", { name: "Type LEAVE to confirm" }).fill("LEAVE");

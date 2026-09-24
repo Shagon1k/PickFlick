@@ -30,11 +30,14 @@
 }
 
 .illustration {
+  --mascot-optical-height: min(100%, 63cqw);
+
   position: relative;
   display: grid;
   width: 100%;
   height: clamp(310px, 33vw, 410px);
   place-items: end center;
+  container-type: inline-size;
 }
 
 .illustration::before,
@@ -61,14 +64,15 @@
   border-bottom: 1px solid var(--border-lit);
 }
 
+/* The panda sits inside the corner frame at the prototype's optical height, not edge to edge. */
 .illustration img {
-  width: 100%;
-  min-height: 0;
-  height: 100%;
-  filter: grayscale(1) contrast(1.04);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-  object-fit: contain;
-  object-position: center bottom;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: var(--mascot-optical-height);
+  filter: grayscale(1) contrast(1.05);
+  opacity: 0.94;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 86%, transparent 100%);
 }
 
 .body {
@@ -87,7 +91,7 @@
 .body h1 {
   max-width: 620px;
   margin: 0;
-  font: clamp(44px, 5vw, 64px)/0.98 var(--font-display);
+  font: 600 clamp(44px, 5vw, 64px)/0.98 var(--font-display);
   letter-spacing: var(--tracking-tight);
   text-wrap: balance;
 }
@@ -126,7 +130,7 @@
 
 .readyCard h1 {
   margin: var(--gap-sm) 0;
-  font: var(--fs-app-title)/var(--lh-title) var(--font-display);
+  font: 600 var(--fs-app-title)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
 }
 
@@ -168,8 +172,8 @@
   position: relative;
   display: grid;
   min-height: 100svh;
-  padding: 72px var(--gutter) 48px;
-  place-items: center;
+  padding: 96px var(--gutter) 48px;
+  place-items: start center;
   overflow: hidden;
 }
 
@@ -177,14 +181,27 @@
   position: absolute;
   z-index: 3;
   top: 20px;
-  left: max(20px, var(--gutter));
+  left: 20px;
   display: inline-flex;
   min-height: var(--hit);
   align-items: center;
-  padding: 0 10px;
+  gap: 6px;
+  padding: 0 10px 0 8px;
   border-radius: var(--radius);
   color: var(--fg-secondary);
+  font-size: var(--fs-body-sm);
+  font-weight: 500;
   text-decoration: none;
+  transition:
+    color var(--motion-local) var(--ease-standard),
+    background-color var(--motion-local) var(--ease-standard);
+}
+
+.backLink svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentcolor;
+  stroke-width: 1.8;
 }
 
 .backLink:hover { color: var(--fg); background: var(--accent-soft); }
@@ -193,49 +210,53 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(100%, 560px);
+  width: min(100%, 432px);
   justify-items: center;
 }
 
 .createScene::before {
   position: absolute;
-  top: -80px;
-  width: min(720px, 110vw);
-  aspect-ratio: 1.5;
+  z-index: -1;
+  top: -20%;
+  left: 50%;
+  width: min(500px, 100vw);
+  height: 500px;
   content: "";
   pointer-events: none;
-  background: radial-gradient(ellipse, var(--projector-wash), transparent 70%);
+  background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
+  translate: -50% 0;
 }
 
 .mascot {
   position: relative;
   z-index: 2;
-  width: 190px;
-  height: 145px;
-  margin-bottom: -34px;
-  object-fit: contain;
+  display: block;
+  width: 200px;
+  height: auto;
+  margin: 25px 0 -40px;
+  transform: translateY(-21px);
 }
 
 .createCard {
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: clamp(var(--gap-lg), 6vw, 42px);
-  border: 1px solid var(--border-lit);
+  padding: 40px 36px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(22, 22, 22, 0.92);
+  background: var(--surface);
   box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
 }
 
 .createCard h1 {
-  margin: 0;
-  font: var(--fs-app-title)/var(--lh-title) var(--font-display);
+  margin: 0 0 var(--gap-xs);
+  font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
   text-align: center;
 }
 
 .lead {
-  margin: var(--gap-xs) 0 var(--gap-lg);
+  margin: 0 0 var(--gap-lg);
   color: var(--fg-secondary);
   line-height: var(--lh-body);
   text-align: center;
@@ -243,8 +264,8 @@
 
 .sceneOrnament {
   position: relative;
-  margin: var(--gap-md) 0 0;
-  color: var(--muted);
+  margin: var(--gap-lg) 0 0;
+  color: var(--accent-dim);
   font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
@@ -278,8 +299,8 @@
   .facts { grid-template-columns: 1fr; }
   .setupMain { padding: 72px 16px 40px; }
   .backLink { top: 12px; left: 8px; }
-  .mascot { width: 140px; height: 110px; margin-bottom: -24px; }
-  .createCard { padding: var(--gap-lg) var(--gap-md); }
+  .mascot { width: 140px; }
+  .createCard { padding: 32px 24px; }
 }
 
 @media (min-width: 1024px) {

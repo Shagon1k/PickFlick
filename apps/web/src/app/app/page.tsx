@@ -8,7 +8,7 @@ import { ActionLink, BrandImage, Pill } from "@pickflick/ui";
 
 import { loadClubCollection } from "../../components/clubs/club-api";
 import styles from "../../components/clubs/club-onboarding.module.css";
-import { ProductFrame } from "../../components/shells/shells";
+import { clubNavigation, ProductFrame } from "../../components/shells/shells";
 
 export const metadata: Metadata = {
   title: "Your Clubs — PickFlick",
@@ -42,7 +42,7 @@ function NoClubs() {
 
 function ClubReady({ club }: Readonly<{ club: ClubSummary }>) {
   return (
-    <ProductFrame clubItems={[{ href: "/app", label: club.name, current: true }]}>
+    <ProductFrame clubItems={clubNavigation(club.id, "overview")}>
       <main className={styles.readyMain}>
         <section aria-labelledby="club-ready-title" className={styles.readyCard}>
           <p className={styles.kicker}>Opening night</p>

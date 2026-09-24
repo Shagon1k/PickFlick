@@ -1,40 +1,20 @@
 .form {
   display: grid;
-  gap: var(--gap-md);
+  gap: 4px;
 }
 
-.scaleFieldset {
-  min-width: 0;
-  margin: var(--gap-xs) 0 0;
-  padding: var(--gap-md) 0 0;
-  border: 0;
+.scaleSection {
+  margin: var(--gap-xs) 0 var(--gap-md);
+  padding-top: var(--gap-md);
   border-top: 1px solid var(--border);
 }
 
-.scaleFieldset legend {
-  padding: var(--gap-md) 0 0;
-  color: var(--fg);
-  font-size: var(--fs-body-sm);
-  font-weight: 650;
+.form :global(.pf-field__message) {
+  text-align: right;
 }
 
-.scaleFieldset > p {
-  margin: var(--gap-xs) 0 var(--gap-sm);
-  color: var(--fg-secondary);
-  font-size: var(--fs-caption);
-  line-height: var(--lh-body);
-}
-
-.scaleFields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gap-sm);
-}
-
-.scaleFieldset .rangePreview {
-  margin-bottom: 0;
-  color: var(--ivory-muted);
-  font-family: var(--font-mono);
+.form :global(.pf-control--textarea) {
+  min-height: 80px;
 }
 
 .submitZone {
@@ -57,12 +37,7 @@
   text-align: center;
 }
 
+.feedback:empty { min-height: 0; }
 .feedback[data-tone="danger"] { color: var(--danger-text); }
 .feedback[data-tone="warning"] { color: var(--gold-light); }
 .feedback[data-tone="success"] { color: var(--success); }
-
-@media (max-width: 575px) {
-  .scaleFields {
-    grid-template-columns: 1fr;
-  }
-}
