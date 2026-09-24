@@ -112,7 +112,8 @@ These rules are high-risk and require database/server enforcement plus focused t
 - One Club may have at most one Session in Nomination, Selection, or Watching; Rating Sessions are non-blocking and unlimited.
 - Automatic phase transitions are idempotent and serialized. Watching moves to Rating manually.
 - Session invitations disclose nothing to non-members and never create Club membership.
-- Selection score range is Club-configured as `0..N` or `1..N`, with upper bound no greater than 10.
+- Selection score range is inclusive with a Club-configured upper bound no greater than 10. New Clubs
+  start at `0`; the data model still accepts a stored `1` start, which existing Clubs keep.
 - Historical Session Ratings are separate from editable Personal Ratings.
 - Account deletion anonymizes shared history; it does not erase other members’ Club/Session records.
 - Billing webhooks, background jobs, exports, ownership changes, suspension, and destructive actions are idempotent/audited where applicable.
