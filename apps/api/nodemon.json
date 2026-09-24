@@ -1,0 +1,18 @@
+{
+  "watch": [
+    "src",
+    "tsconfig.json",
+    "tsconfig.build.json",
+    "../../.env",
+    "../../packages/config/tsconfig",
+    "../../packages/config/dist",
+    "../../packages/contracts/dist",
+    "../../packages/database/dist",
+    "../../packages/observability/dist"
+  ],
+  "ignore": ["src/**/__tests__/**"],
+  "ext": "ts,js,json,env",
+  "delay": "500ms",
+  "signal": "SIGTERM",
+  "exec": "tsc -p tsconfig.build.json --noEmitOnError && node --enable-source-maps dist/main.js"
+}

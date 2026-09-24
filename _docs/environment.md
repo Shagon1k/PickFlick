@@ -194,6 +194,9 @@ pnpm dev
 MinIO bucket if it does not exist. `pnpm services:check` checks each service from the host and uses
 the runtime storage credentials to verify access to the configured bucket. Local configuration uses
 the non-secret `RESEND_API_KEY=local-disabled` placeholder and does not call Resend.
+The checked-in local host ports deliberately avoid the services' conventional defaults:
+PostgreSQL uses `15432`, Redis uses `16379`, and MinIO uses `19000`/`19001`. The containers keep
+their conventional internal ports, and the matching host URLs in `.env.example` are authoritative.
 `pnpm db:check` verifies the migration history, migration upgrade compatibility, deterministic
 fixtures, and PostgreSQL constraints. `pnpm auth:check` internally enables synthetic Apple settings
 for its local provider doubles, so the checked-in default-off product gate remains unchanged. It
@@ -206,6 +209,20 @@ provider or validate a real provider credential.
 
 Stop the containers with `pnpm services:down`. That command retains the named volumes. Delete the
 volumes only when you intentionally want to discard all local service data.
+
+The API development command uses `nodemon` to run `tsc -p tsconfig.build.json --noEmitOnError`
+followed by `node --enable-source-maps dist/main.js`. It rebuilds and restarts on API source,
+TypeScript configuration, root `.env`, and consumed internal-package build changes. A compilation
+error prevents startup until a subsequent change compiles successfully. Restarts use `SIGTERM`
+for the existing graceful shutdown handler. API output and test files do not trigger rebuild loops.
+Use `pnpm dev` from the repository root, or `pnpm --filter @pickflick/api dev` after building the
+internal packages. `tsx` remains available for standalone checks but cannot run the Nest application:
+it does not emit the decorator metadata needed for constructor dependency injection.
+
+Open the local web app at `http://127.0.0.1:3000`, matching `AUTH_BASE_URL` and the registered
+Google callback origin. Next.js explicitly allows `127.0.0.1` in `allowedDevOrigins` so its
+development resources and HMR connection work on that host. This dev-only setting does not
+change the API's trusted OAuth origins or disable CSRF validation.
 
 ## Run migrations and seeds
 

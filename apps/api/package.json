@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "club:check": "tsx scripts/check-clubs.ts",
     "contact:check": "tsx scripts/check-contact.ts",
-    "dev": "tsx watch src/main.ts",
+    "dev": "nodemon",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@pickflick/config": "workspace:*",
     "@types/node": "catalog:",
+    "nodemon": "3.1.14",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }
