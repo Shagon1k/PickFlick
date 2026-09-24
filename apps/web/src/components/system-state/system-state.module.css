@@ -1,40 +1,8 @@
 .stage {
-  min-height: 100svh;
   overflow: hidden;
   color: var(--fg);
-  background:
-    radial-gradient(circle at 18% 54%, var(--projector-wash), transparent 30rem),
-    linear-gradient(var(--bg), var(--bg-deep));
 }
 
-.header {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  width: min(var(--container), calc(100% - (2 * var(--gutter))));
-  min-height: 69px;
-  align-items: center;
-  justify-content: space-between;
-  margin-inline: auto;
-  border-bottom: 1px solid var(--border);
-}
-
-.brand {
-  display: inline-flex;
-  min-height: var(--hit);
-  align-items: center;
-  color: inherit;
-  font: 600 19px/1 var(--font-display);
-  letter-spacing: var(--tracking-tight);
-  text-decoration: none;
-}
-
-.brand img {
-  width: 48px;
-  height: 48px;
-}
-
-.format,
 .eyebrow {
   color: var(--ivory-muted);
   font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
@@ -147,7 +115,7 @@
   max-width: 620px;
   margin: 0;
   color: var(--fg);
-  font: clamp(44px, 5vw, 64px)/0.98 var(--font-display);
+  font: 600 clamp(44px, 5vw, 64px)/0.98 var(--font-display);
   letter-spacing: var(--tracking-tight);
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -256,10 +224,6 @@
 }
 
 @media (width <= 575px) {
-  .format {
-    display: none;
-  }
-
   .stage[data-system-state="application-error"] .body {
     margin-top: 28px;
   }

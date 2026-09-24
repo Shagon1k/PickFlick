@@ -12,27 +12,27 @@
 .scene::before {
   position: absolute;
   z-index: -1;
-  top: -160px;
+  top: -20px;
   left: 50%;
-  width: min(720px, 125vw);
-  height: 660px;
-  background: radial-gradient(ellipse at center, var(--gold-soft), transparent 68%);
+  width: min(500px, 100vw);
+  height: 500px;
+  background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
   content: "";
   transform: translateX(-50%);
 }
 
 .sceneInner {
-  width: min(100%, 480px);
+  width: min(100%, 432px);
 }
 
 .mascot {
   position: relative;
   z-index: 0;
+  display: block;
   width: 180px;
-  height: 221px;
-  margin: 0 auto -32px;
-  object-fit: contain;
-  opacity: 0.86;
+  height: auto;
+  margin: 0 auto -30px;
+  opacity: 0.85;
   pointer-events: none;
 }
 
@@ -50,7 +50,7 @@
 
 .card h1 {
   margin: 0 0 var(--gap-xs);
-  font: var(--fs-app-section)/var(--lh-title) var(--font-display);
+  font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
   text-align: center;
 }
@@ -64,11 +64,7 @@
 
 .form {
   display: grid;
-  gap: var(--gap-sm);
-}
-
-.form :global(.pf-control) {
-  background: var(--bg);
+  gap: 4px;
 }
 
 .form :global(.pf-control--textarea) {
@@ -81,7 +77,6 @@
 
 .submitZone {
   display: grid;
-  min-height: 78px;
   margin-top: var(--gap-xs);
   align-items: center;
   gap: var(--gap-xs);
@@ -107,6 +102,11 @@
 .feedback:not(:empty) {
   opacity: 1;
   transform: none;
+}
+
+/* The live region stays mounted for announcements but takes no room until it speaks. */
+.feedback:empty {
+  min-height: 0;
 }
 
 .feedback[data-tone="danger"] {
@@ -138,29 +138,6 @@
 
 .emailAlternative a:hover {
   color: var(--fg);
-}
-
-.divider {
-  display: flex;
-  max-width: 240px;
-  align-items: center;
-  gap: var(--gap-sm);
-  margin: var(--gap-xl) auto 0;
-}
-
-.divider::before,
-.divider::after {
-  width: 64px;
-  height: 1px;
-  background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
-  content: "";
-}
-
-.divider i {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--border);
 }
 
 .ornament {

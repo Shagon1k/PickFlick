@@ -4,6 +4,7 @@ import {
   comparisonRows,
   freePlanFeatures,
   proPlanFeatures,
+  type PlanFeature,
 } from "../../components/marketing/marketing-content";
 import styles from "../../components/marketing/marketing.module.css";
 import { PricingFaq } from "../../components/marketing/pricing-faq";
@@ -20,11 +21,14 @@ function SprocketDivider() {
   return <div aria-hidden="true" className={styles.divider}><i /><i /><i /></div>;
 }
 
-function PlanFeatures({ features }: Readonly<{ features: readonly string[] }>) {
+function PlanFeatures({ features }: Readonly<{ features: readonly PlanFeature[] }>) {
   return (
     <ul className={styles.featureList}>
-      {features.map((feature) => (
-        <li key={feature}><span aria-hidden="true" className={styles.check}>✓</span><span>{feature}</span></li>
+      {features.map(({ label, tone }) => (
+        <li data-tone={tone} key={label}>
+          <span aria-hidden="true" className={styles.check}>{tone === "limited" ? "—" : "✓"}</span>
+          {tone === "upgrade" ? <strong>{label}</strong> : <span>{label}</span>}
+        </li>
       ))}
     </ul>
   );

@@ -1,8 +1,5 @@
 .page {
   overflow: clip;
-  background:
-    radial-gradient(circle at 50% 5%, rgba(200, 155, 85, 0.07), transparent 34rem),
-    linear-gradient(180deg, rgba(12, 12, 12, 0.12), rgba(8, 8, 8, 0.52));
 }
 
 .container {
@@ -221,10 +218,14 @@
 }
 
 .step h3,
-.feature h3,
 .planCard h3 {
   margin: 0;
   font: 600 var(--fs-card-title)/var(--lh-ui) var(--font-display);
+}
+
+.feature h3 {
+  margin: 0 0 6px;
+  font: 600 var(--fs-lead)/var(--lh-title) var(--font-body);
 }
 
 .step p,
@@ -310,7 +311,7 @@
 .statement {
   max-width: 760px;
   margin: 0 auto;
-  font: 600 var(--fs-section)/var(--lh-title) var(--font-display);
+  font: 400 var(--fs-section)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
   text-align: center;
   text-wrap: balance;
@@ -509,8 +510,21 @@
 
 .check {
   flex: 0 0 auto;
-  color: var(--ivory-muted);
+  color: var(--accent);
   font-weight: 700;
+}
+
+.featureList li[data-tone="limited"] {
+  color: var(--fg-secondary);
+}
+
+.featureList li[data-tone="limited"] .check {
+  color: var(--fg-secondary);
+  font-weight: 400;
+}
+
+.featureList strong {
+  font-weight: 600;
 }
 
 .comparisonSection {

@@ -10,10 +10,19 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--fg);
-  background:
-    radial-gradient(circle at 82% 8%, var(--projector-wash), transparent 28rem),
-    linear-gradient(var(--bg), var(--bg-deep));
+  background: var(--bg);
   font-family: var(--font-body);
+}
+
+/* Projector Noir film grain: a fixed 2.5% texture over every screen that never takes input. */
+body::after {
+  position: fixed;
+  z-index: 2147483000;
+  inset: 0;
+  content: "";
+  background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
+  opacity: 0.025;
+  pointer-events: none;
 }
 
 :focus-visible {

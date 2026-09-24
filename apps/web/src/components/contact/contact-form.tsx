@@ -100,9 +100,10 @@ export function ContactForm() {
       <input name="submissionKey" ref={submissionKeyInputRef} type="hidden" />
       <TextAreaField
         {...(errors.message ? { error: errors.message } : {})}
-        hint={`${values.message.length}/${CONTACT_MESSAGE_MAX_LENGTH} characters`}
+        hint={`${values.message.length}/${CONTACT_MESSAGE_MAX_LENGTH}`}
         id="contact-message"
-        label="Message — required"
+        label="Message"
+        labelHint="required"
         maxLength={CONTACT_MESSAGE_MAX_LENGTH}
         name="message"
         disabled={pending}
@@ -114,9 +115,9 @@ export function ContactForm() {
       <TextField
         autoComplete="name"
         {...(errors.name ? { error: errors.name } : {})}
-        hint="Optional"
         id="contact-name"
         label="Your name"
+        labelHint="optional"
         maxLength={CONTACT_NAME_MAX_LENGTH}
         name="name"
         disabled={pending}
@@ -127,9 +128,9 @@ export function ContactForm() {
       <TextField
         autoComplete="email"
         {...(errors.email ? { error: errors.email } : {})}
-        hint="Optional"
         id="contact-email"
         label="Your email"
+        labelHint="optional"
         maxLength={CONTACT_EMAIL_MAX_LENGTH}
         name="email"
         disabled={pending}

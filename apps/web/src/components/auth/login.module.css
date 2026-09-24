@@ -88,7 +88,7 @@
 
 .card h1 {
   margin: 0 0 var(--gap-xs);
-  font: var(--fs-app-section)/var(--lh-title) var(--font-display);
+  font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
   letter-spacing: var(--tracking-tight);
 }
 
@@ -169,29 +169,6 @@
 
 .legal a:hover {
   color: var(--fg);
-}
-
-.divider {
-  display: flex;
-  max-width: 240px;
-  align-items: center;
-  gap: var(--gap-sm);
-  margin: var(--gap-xl) auto 0;
-}
-
-.divider::before,
-.divider::after {
-  height: 1px;
-  flex: 1;
-  background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
-  content: "";
-}
-
-.divider i {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--border);
 }
 
 .ornament {

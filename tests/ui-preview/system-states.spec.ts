@@ -69,7 +69,9 @@ test("unmatched routes return a private, branded 404 with safe recovery", async 
   const recovery = page.getByRole("region", { name: "Reel Not Found" });
   await expect(recovery.getByRole("heading", { level: 1, name: "Reel Not Found" })).toBeVisible();
   await expect(page.getByText(NOT_FOUND_ROUTE)).toHaveCount(0);
-  await expect(recovery.getByRole("link", { name: "PickFlick home" })).toHaveAttribute("href", "/");
+  await expect(recovery.getByRole("link", { name: "Back to main" })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Footer navigation" })).toBeVisible();
 });
 
 test("application failures hide diagnostics and recover through retry", async ({ page }) => {
@@ -79,14 +81,35 @@ test("application failures hide diagnostics and recover through retry", async ({
   await expect(page.getByRole("heading", { level: 1, name: "Projector Malfunction" })).toBeFocused();
   expect(await page.evaluate(() => globalThis.scrollY)).toBe(0);
   const recovery = page.getByRole("region", { name: "Projector Malfunction" });
-  await expect(recovery.getByRole("link", { name: "Back to Hub" })).toHaveAttribute("href", "/app");
-  await expect(recovery.getByRole("link", { name: "PickFlick home" })).toHaveAttribute("href", "/");
+  await expect(recovery.getByRole("link", { name: "Back to main" })).toHaveAttribute("href", "/");
+  await expect(recovery.getByRole("link", { name: "Back to Hub" })).toHaveCount(0);
 
   await page.keyboard.press("Tab");
   const retry = page.getByRole("button", { name: "Try again" });
   await expect(retry).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1, name: "Error recovery preview" })).toBeVisible();
+});
+
+test("signed-in application failures recover inside the product shell", async ({ page }) => {
+  await page.route("**/api/auth/get-session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        session: { expiresAt: new Date(Date.now() + 3_600_000).toISOString(), id: "preview-session", userId: "preview-user" },
+        user: { email: "preview@example.com", id: "preview-user", name: "Preview User" },
+      },
+      status: 200,
+    });
+  });
+  await openApplicationError(page, canonicalViewports[3]);
+
+  const recovery = page.getByRole("region", { name: "Projector Malfunction" });
+  await expect(page.getByRole("navigation", { exact: true, name: "Product navigation" })).toBeVisible();
+  await expect(recovery.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(recovery.getByRole("link", { name: "Back to Hub" })).toHaveAttribute("href", "/app");
+  await expect(recovery.getByRole("link", { name: "Back to main" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Footer navigation" })).toBeVisible();
 });
 
 test("recovery actions support touch and meet the target-size contract", async ({ browser }) => {
@@ -99,7 +122,7 @@ test("recovery actions support touch and meet the target-size contract", async (
 
   try {
     await openNotFound(page, canonicalViewports[0]);
-    const home = page.getByRole("region", { name: "Reel Not Found" }).getByRole("link", { name: "PickFlick home" });
+    const home = page.getByRole("region", { name: "Reel Not Found" }).getByRole("link", { name: "Back to main" });
     const box = await home.boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(44);
     await home.tap();
@@ -137,7 +160,7 @@ test("system-state reveals are removed when reduced motion is requested", async 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openApplicationError(page, canonicalViewports[0]);
 
-  const motion = await page.locator('[data-system-state="application-error"] main > div:nth-child(2)').evaluate((element) => {
+  const motion = await page.locator('[data-system-state="application-error"] > div > div:nth-child(2)').evaluate((element) => {
     const style = globalThis.getComputedStyle(element);
     return { animationDuration: Number.parseFloat(style.animationDuration), animationName: style.animationName };
   });
