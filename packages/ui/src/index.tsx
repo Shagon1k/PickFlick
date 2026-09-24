@@ -164,9 +164,20 @@ function FieldMessage({ error, hint, messageId, success }: FieldMessageProps) {
   );
 }
 
+function FieldLabel({ hint, htmlFor, label }: Readonly<{ hint?: string | undefined; htmlFor: string; label: string }>) {
+  return (
+    <label className="pf-field__label" htmlFor={htmlFor}>
+      {label}
+      {hint ? <span className="pf-field__label-hint"> — {hint}</span> : null}
+    </label>
+  );
+}
+
 interface SharedFieldProps {
   readonly id: string;
   readonly label: string;
+  /** Quiet qualifier rendered inside the label, such as "required" or "optional". */
+  readonly labelHint?: string;
   readonly error?: string;
   readonly hint?: string;
   readonly success?: string;
@@ -185,6 +196,7 @@ export function TextField({
   hint,
   id,
   label,
+  labelHint,
   success,
   ...props
 }: TextFieldProps) {
@@ -193,7 +205,7 @@ export function TextField({
 
   return (
     <div className={classes("pf-field", className)}>
-      <label className="pf-field__label" htmlFor={id}>{label}</label>
+      <FieldLabel hint={labelHint} htmlFor={id} label={label} />
       <input
         {...props}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
@@ -219,6 +231,7 @@ export function TextAreaField({
   hint,
   id,
   label,
+  labelHint,
   success,
   ...props
 }: TextAreaFieldProps) {
@@ -227,7 +240,7 @@ export function TextAreaField({
 
   return (
     <div className={classes("pf-field", className)}>
-      <label className="pf-field__label" htmlFor={id}>{label}</label>
+      <FieldLabel hint={labelHint} htmlFor={id} label={label} />
       <textarea
         {...props}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
@@ -289,6 +302,7 @@ export function SelectField({
   hint,
   id,
   label,
+  labelHint,
   name,
   onChange,
   placeholder,
@@ -303,7 +317,7 @@ export function SelectField({
 
   return (
     <div className={classes("pf-field", className)}>
-      <label className="pf-field__label" htmlFor={id}>{label}</label>
+      <FieldLabel hint={labelHint} htmlFor={id} label={label} />
       <ConstraintSelect
         allowDeselect={false}
         aria-describedby={descriptionIds(ariaDescribedBy, hasMessage ? messageId : undefined)}
@@ -410,6 +424,11 @@ export interface StatusBannerProps {
   readonly children: ReactNode;
   readonly label?: string;
   readonly tone?: FeedbackTone;
+}
+
+/** Decorative film-sprocket rule that closes a cinematic scene. */
+export function SprocketDivider({ className }: Readonly<{ className?: string | undefined }>) {
+  return <div aria-hidden="true" className={classes("pf-sprocket-divider", className)}><i /><i /><i /></div>;
 }
 
 export function StatusBanner({ children, label = "Session status", tone = "neutral" }: StatusBannerProps) {
