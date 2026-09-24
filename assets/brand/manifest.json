@@ -1,9 +1,14 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-22",
+  "updatedAt": "2026-09-24",
   "formatPolicy": "Preserve transparent WebP originals; generate platform icon derivatives during implementation.",
   "assets": [
-    { "file": "favicon.png", "width": 300, "height": 300, "role": "favicon-pwa-source", "containsEmbeddedText": false },
+    { "file": "favicon.png", "width": 300, "height": 300, "role": "app-icon-illustrated", "containsEmbeddedText": false },
+    { "file": "panda-mark.png", "width": 512, "height": 512, "role": "favicon-pwa-source", "containsEmbeddedText": false },
+    { "file": "icons/icon-192.png", "width": 192, "height": 192, "role": "pwa-icon", "containsEmbeddedText": false },
+    { "file": "icons/icon-512.png", "width": 512, "height": 512, "role": "pwa-icon", "containsEmbeddedText": false },
+    { "file": "icons/icon-maskable-512.png", "width": 512, "height": 512, "role": "pwa-maskable-icon", "containsEmbeddedText": false },
+    { "file": "icons/apple-touch-icon-180.png", "width": 180, "height": 180, "role": "apple-touch-icon", "containsEmbeddedText": false },
     { "file": "panda-logo.webp", "width": 350, "height": 350, "role": "brand-mark", "containsEmbeddedText": false },
     { "file": "panda-hero.webp", "width": 750, "height": 400, "role": "landing-hero", "containsEmbeddedText": false },
     { "file": "panda-404.webp", "width": 604, "height": 381, "role": "error-recovery", "containsEmbeddedText": false },
