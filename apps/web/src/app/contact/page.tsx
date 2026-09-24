@@ -1,4 +1,4 @@
-import { BrandImage } from "@pickflick/ui";
+import { BrandImage, SprocketDivider } from "@pickflick/ui";
 
 import { ContactForm } from "../../components/contact/contact-form";
 import styles from "../../components/contact/contact.module.css";
@@ -13,7 +13,7 @@ export const metadata = createPublicMetadata({
 
 export default function ContactPage() {
   return (
-    <PublicShell currentPage="contact">
+    <PublicShell>
       <section aria-labelledby="contact-title" className={styles.scene}>
         <div className={styles.sceneInner}>
           <BrandImage alt="" asset="reviewsCritique" className={styles.mascot} loading="eager" />
@@ -26,7 +26,7 @@ export default function ContactPage() {
               <a href="mailto:hello@pick-flick.app">hello@pick-flick.app</a>
             </p>
           </div>
-          <div aria-hidden="true" className={styles.divider}><i /><i /><i /></div>
+          <SprocketDivider />
           <p className={styles.ornament}>Scene 05 · Share post-watch review</p>
         </div>
       </section>

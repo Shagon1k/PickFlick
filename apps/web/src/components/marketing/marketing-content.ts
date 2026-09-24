@@ -60,29 +60,35 @@ export const landingFeatures = [
   },
 ] as const;
 
-export const freePlanFeatures = [
-  "1 administered Club",
-  "Up to 8 members per Club",
-  "1 blocking Session per Club",
-  "Unlimited open Rating Sessions",
-  "Unlimited Session history",
-  "Club customization",
-  "Basic counters",
-  "Vote results hidden from ordinary members",
-  "90-day inactivity grace",
-] as const;
+/** `limited` marks a Free-plan restriction; `upgrade` marks what Pro adds over Free. */
+export interface PlanFeature {
+  readonly label: string;
+  readonly tone?: "limited" | "upgrade";
+}
 
-export const proPlanFeatures = [
-  "5 administered Clubs",
-  "Up to 16 members per Club",
-  "1 blocking Session per Club",
-  "Unlimited open Rating Sessions",
-  "Unlimited Session history",
-  "Club customization",
-  "Admin-configurable vote results",
-  "180-day inactivity grace",
-  "Extended deterministic analytics",
-] as const;
+export const freePlanFeatures: readonly PlanFeature[] = [
+  { label: "1 administered Club" },
+  { label: "Up to 8 members per Club" },
+  { label: "1 blocking Session per Club" },
+  { label: "Unlimited open Rating Sessions" },
+  { label: "Unlimited Session history" },
+  { label: "Club customization" },
+  { label: "Basic counters" },
+  { label: "Vote results hidden from ordinary members", tone: "limited" },
+  { label: "90-day inactivity grace", tone: "limited" },
+];
+
+export const proPlanFeatures: readonly PlanFeature[] = [
+  { label: "5 administered Clubs", tone: "upgrade" },
+  { label: "Up to 16 members per Club", tone: "upgrade" },
+  { label: "1 blocking Session per Club" },
+  { label: "Unlimited open Rating Sessions" },
+  { label: "Unlimited Session history" },
+  { label: "Club customization" },
+  { label: "Admin-configurable vote results", tone: "upgrade" },
+  { label: "180-day inactivity grace", tone: "upgrade" },
+  { label: "Extended deterministic analytics" },
+];
 
 export const comparisonRows = [
   { feature: "Administered Clubs", free: "1", pro: "5" },

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { resolveAuthReturnTarget } from "@pickflick/contracts";
-import { BrandImage } from "@pickflick/ui";
+import { BrandImage, SprocketDivider } from "@pickflick/ui";
 
 import { hasAuthenticatedSession, isAppleSignInEnabled } from "../../auth-server";
 import { LoginActions } from "../../components/auth/login-actions";
@@ -47,10 +47,10 @@ export default async function LoginPage({
           <LoginActions appleSignInEnabled={appleSignInEnabled} returnTo={returnTo} />
           <p className={styles.legal}>
             By continuing, you agree to PickFlick&apos;s <a href="/legal/terms">Terms of Service</a> and {" "}
-            <a href="/legal/privacy">Privacy Policy</a>.
+            <a href="/legal/privacy">Privacy Notice</a>.
           </p>
         </div>
-        <div aria-hidden="true" className={styles.divider}><i /><i /><i /></div>
+        <SprocketDivider />
         <p className={styles.ornament}>Scene 01 · The Arrival</p>
       </section>
     </main>

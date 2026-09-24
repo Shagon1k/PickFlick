@@ -108,28 +108,33 @@ test("landing calls to action and public navigation use canonical destinations",
 
   await expect(page.getByRole("link", { name: "Start your first Club" })).toHaveAttribute("href", "/login");
   await expect(page.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#how");
-  await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" }).getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing");
+  const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
+  await expect(publicNavigation.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "/#how");
+  await expect(publicNavigation.getByRole("link", { name: "Features" })).toHaveAttribute("href", "/#features");
+  await expect(publicNavigation.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing");
+  await expect(publicNavigation.getByRole("link", { name: "Contact" })).toHaveCount(0);
+  await expect(page.getByRole("banner").getByRole("link", { name: "Go to App" })).toHaveAttribute("href", "/app");
 });
 
-test("public navigation stays fixed at the viewport bottom through tablet", async ({ page }) => {
+test("public header keeps Pricing and the app entry through tablet without a bottom menu", async ({ page }) => {
   for (const viewport of [canonicalViewports[0], canonicalViewports[1]]) {
     await openPage(page, "/", viewport);
-    const menuButton = page.getByRole("button", { name: "Menu" });
-    const menuBar = menuButton.locator("..");
-    const menuBox = await menuButton.boundingBox();
+    const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
 
-    expect(await menuBar.evaluate((element) => globalThis.getComputedStyle(element).position)).toBe("fixed");
-    expect(menuBox?.y).toBeGreaterThanOrEqual(viewport.height - 64);
+    await expect(page.getByRole("button", { name: "Menu" })).toHaveCount(0);
+    await expect(publicNavigation.getByRole("link", { name: "Pricing" })).toBeVisible();
+    await expect(publicNavigation.getByRole("link", { name: "How it works" })).toBeHidden();
+    await expect(publicNavigation.getByRole("link", { name: "Features" })).toBeHidden();
 
-    await menuButton.click();
-    const mobileNavigation = page.getByRole("navigation", { name: "Public mobile navigation" });
-    await expect(mobileNavigation).toBeVisible();
-    expect((await mobileNavigation.boundingBox())?.y).toBeLessThan(menuBox?.y ?? 0);
+    const appEntry = await page.getByRole("banner").getByRole("link", { name: "Go to App" }).boundingBox();
+    expect(appEntry?.height).toBeGreaterThanOrEqual(44);
+    expect(appEntry?.width).toBeLessThan(viewport.width / 2);
   }
 
   await openPage(page, "/", { height: 900, width: 821 });
-  await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
-  await expect(page.getByRole("navigation", { exact: true, name: "Public navigation" })).toBeVisible();
+  const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
+  await expect(publicNavigation.getByRole("link", { name: "How it works" })).toBeVisible();
+  await expect(publicNavigation.getByRole("link", { name: "Features" })).toBeVisible();
 });
 
 test("legal entries expose distinct provisional documents and public contact", async ({ page }) => {
@@ -274,14 +279,13 @@ test("contact validates fields, focuses the first error, and reports its message
   await expect(message).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#contact-message-message")).toHaveText("Enter a message.");
   await message.fill("A concise note");
-  await expect(page.getByText("14/500 characters")).toBeVisible();
+  await expect(page.getByText("14/500", { exact: true })).toBeVisible();
 });
 
 test("contact accepts both new and duplicate submissions through one stable feedback region", async ({ page }) => {
   await openPage(page, "/contact", canonicalViewports[3]);
 
-  const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
-  await expect(publicNavigation.getByRole("link", { name: "Contact" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "Footer navigation" }).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
   await page.getByRole("textbox", { name: "Message — required" }).fill("A concise note");
   await page.getByRole("textbox", { name: "Your email" }).fill("jane@example.com");
   await page.getByRole("button", { name: "Send message" }).click();
