@@ -68,11 +68,11 @@ test("Create Club and Login surface an unavailable session API instead of signin
   }]);
   await page.goto("/clubs/new");
   await expect(page).toHaveURL(/\/clubs\/new$/u);
-  await expect(page.getByRole("alert")).toContainText("could not confirm your session");
+  await expect(page.getByRole("alert").filter({ hasText: "could not confirm your session" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/clubs/new");
 
   await page.goto("/login");
-  await expect(page.getByRole("alert")).toContainText("could not check your session");
+  await expect(page.getByRole("alert").filter({ hasText: "could not check your session" })).toBeVisible();
 });
 
 test("signed-in Login returns to the requested allowed target", async ({ context, page }) => {
