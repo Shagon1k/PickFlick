@@ -294,6 +294,8 @@ interface SelectOptionProps {
 function selectData(
     children: ReactNode,
 ): Array<{ value: string; label: string; disabled?: boolean }> {
+    // SelectField mirrors the native <select> API, so its <option> children become Mantine data.
+    // eslint-disable-next-line @eslint-react/no-children-to-array
     return Children.toArray(children).flatMap((child) => {
         if (!isValidElement<SelectOptionProps>(child) || child.type !== 'option') {
             return [];

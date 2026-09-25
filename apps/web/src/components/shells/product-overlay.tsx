@@ -2,8 +2,8 @@
 
 import {
     createContext,
+    use,
     useCallback,
-    useContext,
     useEffect,
     useLayoutEffect,
     useMemo,
@@ -53,13 +53,11 @@ export function ProductOverlayProvider({ children }: Readonly<{ children: ReactN
         [activeOverlay, closeOverlay, toggleOverlay],
     );
 
-    return (
-        <ProductOverlayContext.Provider value={value}>{children}</ProductOverlayContext.Provider>
-    );
+    return <ProductOverlayContext value={value}>{children}</ProductOverlayContext>;
 }
 
 export function useProductOverlay() {
-    const context = useContext(ProductOverlayContext);
+    const context = use(ProductOverlayContext);
     if (!context) {
         throw new Error('Product shell interactions require ProductOverlayProvider.');
     }

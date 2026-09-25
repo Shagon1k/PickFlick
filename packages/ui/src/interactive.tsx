@@ -52,11 +52,10 @@ export function ConstraintSelect({
         (ariaInvalid !== undefined && ariaInvalid !== false && ariaInvalid !== 'false');
     const renderedAriaInvalid = constraintError || Boolean(error) ? true : ariaInvalid;
 
-    useEffect(() => {
-        if (!effectiveRequired || disabled || value) {
-            setConstraintInvalid(false);
-        }
-    }, [disabled, effectiveRequired, value]);
+    // A satisfied or lifted constraint clears the flag during render rather than in an effect.
+    if (constraintInvalid && (!effectiveRequired || disabled || value)) {
+        setConstraintInvalid(false);
+    }
 
     return (
         <MantineSelect
@@ -127,11 +126,9 @@ export function Tabs({ initialId, items, label }: TabsProps) {
     const resolvedValue =
         selectedValue && enabledIds.includes(selectedValue) ? selectedValue : firstEnabledId;
 
-    useEffect(() => {
-        if (selectedValue !== resolvedValue) {
-            setSelectedValue(resolvedValue);
-        }
-    }, [resolvedValue, selectedValue]);
+    if (selectedValue !== resolvedValue) {
+        setSelectedValue(resolvedValue);
+    }
 
     return (
         <MantineTabs
@@ -185,13 +182,13 @@ export interface FilmStripMenuProps {
 export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuProps) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const itemRefs = useRef<Array<HTMLElement | null>>([]);
+    const itemsRef = useRef<Array<HTMLElement | null>>([]);
 
     useEffect(() => {
         if (!open) {
             return;
         }
-        requestAnimationFrame(() => itemRefs.current[0]?.focus());
+        requestAnimationFrame(() => itemsRef.current[0]?.focus());
     }, [open]);
 
     function closeWhenFocusLeaves(event: FocusEvent<HTMLDivElement>): void {
@@ -228,7 +225,7 @@ export function FilmStripMenu({ items, menuLabel, triggerLabel }: FilmStripMenuP
                 <MantineMenu.Dropdown aria-label={menuLabel} className="pf-film-strip">
                     {items.map((item, index) => {
                         const ref = (node: HTMLElement | null) => {
-                            itemRefs.current[index] = node;
+                            itemsRef.current[index] = node;
                         };
 
                         return item.href !== undefined ? (
@@ -375,23 +372,19 @@ export function ScaleControl({
     const locked = disabled || readOnly || submitted;
     const constraintRequired = required && !locked;
     const [constraintInvalid, setConstraintInvalid] = useState(false);
-    const controlRefs = useRef(new Map<number, HTMLButtonElement>());
+    const controlsRef = useRef(new Map<number, HTMLButtonElement>());
     const feedbackId = useId();
 
-    useEffect(() => {
-        setInternalValue((current) =>
-            current !== undefined && values.includes(current) ? current : undefined,
-        );
-        setPreviewValue((current) =>
-            current !== undefined && values.includes(current) ? current : undefined,
-        );
-    }, [values]);
-
-    useEffect(() => {
-        if (!constraintRequired || selectedValue !== undefined) {
-            setConstraintInvalid(false);
-        }
-    }, [constraintRequired, selectedValue]);
+    // Values that fall outside a changed scale, and a satisfied constraint, reset during render.
+    if (internalValue !== undefined && !values.includes(internalValue)) {
+        setInternalValue(undefined);
+    }
+    if (previewValue !== undefined && !values.includes(previewValue)) {
+        setPreviewValue(undefined);
+    }
+    if (constraintInvalid && (!constraintRequired || selectedValue !== undefined)) {
+        setConstraintInvalid(false);
+    }
 
     if (submitted) {
         return (
@@ -434,7 +427,7 @@ export function ScaleControl({
         if (nextValue !== undefined) {
             event.preventDefault();
             select(nextValue);
-            controlRefs.current.get(nextValue)?.focus();
+            controlsRef.current.get(nextValue)?.focus();
         }
     }
 
@@ -483,9 +476,9 @@ export function ScaleControl({
                             }}
                             ref={(node) => {
                                 if (node) {
-                                    controlRefs.current.set(scaleValue, node);
+                                    controlsRef.current.set(scaleValue, node);
                                 } else {
-                                    controlRefs.current.delete(scaleValue);
+                                    controlsRef.current.delete(scaleValue);
                                 }
                             }}
                             role="radio"
@@ -516,7 +509,7 @@ export function ScaleControl({
                     onInvalid={(event) => {
                         event.preventDefault();
                         setConstraintInvalid(true);
-                        controlRefs.current.get(firstValue)?.focus();
+                        controlsRef.current.get(firstValue)?.focus();
                     }}
                     required
                     tabIndex={-1}

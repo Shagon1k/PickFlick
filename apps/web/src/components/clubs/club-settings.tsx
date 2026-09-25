@@ -26,13 +26,13 @@ import { SelectionScaleField } from './selection-scale-field';
 
 function useOperationId(state: ClubManagementActionState): string {
     const [operationId, setOperationId] = useState('');
-    const refreshedRevision = useRef(-1);
+    const refreshedRevisionRef = useRef(-1);
     useEffect(() => {
         if (
             !operationId ||
-            (state.status === 'success' && refreshedRevision.current !== state.revision)
+            (state.status === 'success' && refreshedRevisionRef.current !== state.revision)
         ) {
-            refreshedRevision.current = state.revision;
+            refreshedRevisionRef.current = state.revision;
             setOperationId(globalThis.crypto.randomUUID());
         }
     }, [operationId, state.revision, state.status]);

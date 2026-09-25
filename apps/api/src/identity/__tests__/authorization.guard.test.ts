@@ -4,8 +4,7 @@ import { Writable } from 'node:stream';
 
 import { Controller, Get, Header, Module, Sse } from '@nestjs/common';
 import { APP_GUARD, NestFactory } from '@nestjs/core';
-import type { ApplicationLogger } from '@pickflick/observability';
-import { createLogger } from '@pickflick/observability';
+import { createLogger, type ApplicationLogger } from '@pickflick/observability';
 import { BehaviorSubject } from 'rxjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 

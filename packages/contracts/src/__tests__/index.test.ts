@@ -1,11 +1,14 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type {
-    ClubLifecycleRequest,
-    ClubOperationRequest,
-    ConfirmedClubOperationRequest,
+import {
+    API_ERROR_CODES,
+    CLUB_POLICY_ACTIONS,
+    DEPENDENCY_NAMES,
+    SERVICE_NAMES,
+    type ClubLifecycleRequest,
+    type ClubOperationRequest,
+    type ConfirmedClubOperationRequest,
 } from '../index.js';
-import { API_ERROR_CODES, CLUB_POLICY_ACTIONS, DEPENDENCY_NAMES, SERVICE_NAMES } from '../index.js';
 
 describe('service contracts', () => {
     it('names each independent runtime', () => {
