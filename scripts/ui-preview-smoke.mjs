@@ -208,6 +208,8 @@ const smokeRun = (async () => {
   await page.keyboard.press("Enter");
   await expect(page.getByRole("menu", { name: "Account menu" })).toBeVisible();
   await expect(page.getByRole("menu", { name: "Club menu" })).toBeHidden();
+  // Escape belongs to the open menu; pressing it before focus lands on an item races the opening.
+  await expect(page.getByRole("menuitem", { name: "Profile" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(accountTrigger).toBeFocused();
 
