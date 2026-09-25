@@ -1,17 +1,19 @@
-import type {
-  ApiErrorEnvelope,
-  ChangeClubMemberRoleRequest,
-  ClubAvatarResponse,
-  ClubCollectionResponse,
-  ClubLifecycleRequest,
-  ClubOperationReceipt,
-  ClubOperationRequest,
-  ClubSettingsProjection,
-  ClubSummary,
-  CreateClubRequest,
-  CreateClubResponse,
-  UpdateClubSettingsRequest,
-  UpdateClubSettingsResponse,
+import {
+  CLUB_AUDIT_ACTIONS,
+  type ApiErrorEnvelope,
+  type ChangeClubMemberRoleRequest,
+  type ClubAuditAction,
+  type ClubAvatarResponse,
+  type ClubCollectionResponse,
+  type ClubLifecycleRequest,
+  type ClubOperationReceipt,
+  type ClubOperationRequest,
+  type ClubSettingsProjection,
+  type ClubSummary,
+  type CreateClubRequest,
+  type CreateClubResponse,
+  type UpdateClubSettingsRequest,
+  type UpdateClubSettingsResponse,
 } from "@pickflick/contracts";
 
 type Fetcher = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -100,7 +102,7 @@ function isClubSettings(value: unknown): value is ClubSettingsProjection {
         return false;
       }
       const item = event as Record<string, unknown>;
-      return typeof item.id === "string" && typeof item.action === "string" &&
+      return typeof item.id === "string" && CLUB_AUDIT_ACTIONS.includes(item.action as ClubAuditAction) &&
         typeof item.changed === "boolean" && typeof item.createdAt === "string";
     })
   );

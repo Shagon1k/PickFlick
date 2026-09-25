@@ -184,7 +184,6 @@
 
 .headerCta,
 .secondaryAction,
-.headerButton,
 .sectionMenuTrigger {
   display: inline-flex;
   align-items: center;
@@ -213,8 +212,7 @@
   padding: 10px 16px;
 }
 
-.compactLink,
-.backLink {
+.compactLink {
   display: inline-flex;
   align-items: center;
   min-height: var(--hit);
