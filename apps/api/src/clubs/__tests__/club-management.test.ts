@@ -301,6 +301,25 @@ describe("Club management service", () => {
     expect(fixture.repository.avatarCall).not.toHaveBeenCalled();
   });
 
+  it("deletes the uploaded object when the reference update is rejected", async () => {
+    const fixture = service();
+    const rejection = new ClubConflictError("Archived Clubs are read-only until reactivated.");
+    fixture.repository.avatarCall.mockRejectedValueOnce(rejection);
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+
+    await expect(fixture.service.putAvatar(
+      principal(ids.admin),
+      ids.club,
+      randomUUID(),
+      png,
+      "image/png",
+    )).rejects.toBe(rejection);
+
+    const uploadedKey = fixture.avatars.putCall.mock.calls[0]?.[0];
+    expect(uploadedKey).toMatch(/^club-avatars\//u);
+    expect(fixture.avatars.deleteCall).toHaveBeenCalledExactlyOnceWith(uploadedKey);
+  });
+
   it("retains a stored avatar when the persistence commit outcome is unknown", async () => {
     const fixture = service();
     const persistenceFailure = new Error("database unavailable");

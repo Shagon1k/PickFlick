@@ -12,9 +12,10 @@ import type { ApplicationLogger } from "@pickflick/observability";
 import type { AuthenticatedPrincipal } from "../identity/authorization.types.js";
 import { APPLICATION_LOGGER } from "../runtime.tokens.js";
 import { ClubAvatarStorage } from "./club-avatar.storage.js";
-import { ClubConflictError, ClubValidationError } from "./club.errors.js";
+import { ClubAuthorizationError, ClubConflictError, ClubValidationError } from "./club.errors.js";
 import {
   ClubManagementRepository,
+  type ClubAvatarReferenceResult,
   type ClubManagementResult,
 } from "./club-management.repository.js";
 import {
@@ -54,6 +55,14 @@ function avatarPayload(body: unknown, suppliedContentType: string | undefined): 
     return { body, contentType, extension: "webp" };
   }
   throw new ClubValidationError("Club avatar content must match a PNG, JPEG, or WebP media type.");
+}
+
+function isClubDomainRejection(error: unknown): boolean {
+  return (
+    error instanceof ClubAuthorizationError ||
+    error instanceof ClubConflictError ||
+    error instanceof ClubValidationError
+  );
 }
 
 @Injectable()
@@ -205,13 +214,23 @@ export class ClubManagementService {
     await this.authorizeAvatarManagement(principal, clubId);
     const objectKey = `club-avatars/${clubId.toLowerCase()}/${operationId}-${contentHash}.${avatar.extension}`;
     await this.avatars.put(objectKey, avatar.body, avatar.contentType);
-    const receipt = await this.repository.updateAvatarReference({
-      actorUserId: principal.userId,
-      clubId,
-      objectKey,
-      operationId,
-      requestHash,
-    });
+    let receipt: ClubAvatarReferenceResult;
+    try {
+      receipt = await this.repository.updateAvatarReference({
+        actorUserId: principal.userId,
+        clubId,
+        objectKey,
+        operationId,
+        requestHash,
+      });
+    } catch (error) {
+      // A domain rejection rolled the reference back, so the new object is unreferenced. Any other
+      // failure leaves the commit outcome unknown, and the object must stay in case it committed.
+      if (isClubDomainRejection(error)) {
+        await this.deleteRetiredAvatar(objectKey);
+      }
+      throw error;
+    }
     if (receipt.replayed && receipt.currentObjectKey !== objectKey) {
       await this.deleteRetiredAvatar(objectKey);
     }
