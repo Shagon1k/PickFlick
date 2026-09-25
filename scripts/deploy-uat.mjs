@@ -1,30 +1,23 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import {
+    canonicalComposePath,
+    dokployAuthentication,
+    dokployUrl,
+    requestHeaders,
+    requestJson,
+    required,
+    validateRevision,
+} from './lib/dokploy.mjs';
+
 export const UAT_BASE_URL = 'https://uat.pick-flick.app';
 export const UAT_DEFAULT_REF = 'main';
 export const DOKPLOY_COMPOSE_PATH = 'compose.deploy.yaml';
 
 const githubRepository = 'Shagon1k/PickFlick';
 const composeIdPattern = /^[A-Za-z0-9_-]+$/;
-const revisionPattern = /^[0-9a-f]{40}$/;
 const expectedReadinessDependencies = ['database', 'redis', 'objectStorage'];
-
-function required(source, name) {
-    const value = source[name]?.trim();
-    if (!value) {
-        throw new Error(`${name} is required.`);
-    }
-    return value;
-}
-
-function validateRevision(value) {
-    const revision = value?.trim().toLowerCase();
-    if (!revisionPattern.test(revision ?? '')) {
-        throw new Error('SOURCE_REVISION must be a full 40-character hexadecimal Git SHA.');
-    }
-    return revision;
-}
 
 export function validateDokployUrl(value) {
     let url;
@@ -46,54 +39,6 @@ export function validateDokployUrl(value) {
         );
     }
     return url.origin;
-}
-
-function requestHeaders(authentication) {
-    return {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...authentication,
-    };
-}
-
-function dokployAuthentication(configuration) {
-    return {
-        'CF-Access-Client-Id': configuration.cloudflareAccessClientId,
-        'CF-Access-Client-Secret': configuration.cloudflareAccessClientSecret,
-        'x-api-key': configuration.dokployApiToken,
-    };
-}
-
-async function requestJson(fetchImplementation, url, options, acceptedStatuses = [200]) {
-    let response;
-    try {
-        response = await fetchImplementation(url, {
-            ...options,
-            signal: AbortSignal.timeout(15_000),
-        });
-    } catch (error) {
-        throw new Error(`Request to ${new URL(url).pathname} failed.`, { cause: error });
-    }
-
-    if (!acceptedStatuses.includes(response.status)) {
-        throw new Error(`Request to ${new URL(url).pathname} returned HTTP ${response.status}.`);
-    }
-    if (response.status === 204) {
-        return undefined;
-    }
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.includes('application/json')) {
-        throw new Error(`Request to ${new URL(url).pathname} did not return JSON.`);
-    }
-    return response.json();
-}
-
-function dokployUrl(origin, path) {
-    return new URL(path, `${origin}/`).href;
-}
-
-export function canonicalComposePath(path) {
-    return typeof path === 'string' ? path.trim().replace(/^\.\/+/, '') : path;
 }
 
 async function verifyDokployCompose(fetchImplementation, configuration) {
@@ -351,3 +296,5 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
     await deployUat();
     console.log(`UAT is ready at ${UAT_BASE_URL}.`);
 }
+
+export { canonicalComposePath } from './lib/dokploy.mjs';

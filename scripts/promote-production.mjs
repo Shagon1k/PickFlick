@@ -3,6 +3,22 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import {
+    canonicalComposePath,
+    dokployAuthentication,
+    dokployUrl,
+    requestHeaders,
+    requestJson,
+    required,
+    validateRevision,
+} from './lib/dokploy.mjs';
+import {
+    highestStableVersion,
+    nextStableVersion,
+    releaseTypes,
+    stableVersionPattern,
+} from './lib/release-version.mjs';
+
 export const PRODUCTION_COMPOSE_PATH = 'compose.deploy.yaml';
 export const PRODUCTION_DEFAULT_REF = 'main';
 export const UAT_JOB_NAME = 'UAT E2E';
@@ -11,17 +27,6 @@ export const UAT_WORKFLOW_PATH = '.github/workflows/deploy-uat.yml';
 const githubRepository = 'Shagon1k/PickFlick';
 const uatWorkflowFile = 'deploy-uat.yml';
 const composeIdPattern = /^[A-Za-z0-9_-]+$/;
-const revisionPattern = /^[0-9a-f]{40}$/;
-const stableVersionPattern = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const releaseTypes = new Set(['major', 'minor', 'patch']);
-
-function required(source, name) {
-    const value = source[name]?.trim();
-    if (!value) {
-        throw new Error(`${name} is required.`);
-    }
-    return value;
-}
 
 function validateHttpsOrigin(value, name) {
     let url;
@@ -53,14 +58,6 @@ function validateRepository(source) {
     return repository;
 }
 
-function validateRevision(value, name = 'RELEASE_SHA') {
-    const revision = value?.trim().toLowerCase();
-    if (!revisionPattern.test(revision ?? '')) {
-        throw new Error(`${name} must be a full 40-character hexadecimal Git SHA.`);
-    }
-    return revision;
-}
-
 function validateStableVersion(value) {
     const version = value?.trim();
     if (!stableVersionPattern.test(version ?? '')) {
@@ -78,91 +75,6 @@ function defaultGit(arguments_) {
         throw new Error(`git ${arguments_[0]} failed with exit code ${result.status ?? 1}.`);
     }
     return result.stdout.trim();
-}
-
-function requestHeaders(authentication = {}) {
-    return {
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-        ...authentication,
-    };
-}
-
-async function requestJson(fetchImplementation, url, options, acceptedStatuses = [200]) {
-    let response;
-    try {
-        response = await fetchImplementation(url, {
-            ...options,
-            signal: AbortSignal.timeout(15_000),
-        });
-    } catch (error) {
-        throw new Error(`Request to ${new URL(url).pathname} failed.`, { cause: error });
-    }
-
-    if (!acceptedStatuses.includes(response.status)) {
-        throw new Error(`Request to ${new URL(url).pathname} returned HTTP ${response.status}.`);
-    }
-    if (response.status === 204) {
-        return undefined;
-    }
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.includes('application/json')) {
-        throw new Error(`Request to ${new URL(url).pathname} did not return JSON.`);
-    }
-    return response.json();
-}
-
-function parseVersion(version) {
-    const match = stableVersionPattern.exec(version);
-    return match ? match.slice(1).map((part) => BigInt(part)) : undefined;
-}
-
-function compareVersions(left, right) {
-    for (let index = 0; index < left.length; index += 1) {
-        if (left[index] > right[index]) {
-            return 1;
-        }
-        if (left[index] < right[index]) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-function highestStableVersion(tags) {
-    return tags
-        .map((tag) => ({ parsed: parseVersion(tag), tag }))
-        .filter(({ parsed }) => parsed !== undefined)
-        .reduce(
-            (current, candidate) =>
-                current === undefined || compareVersions(candidate.parsed, current.parsed) > 0
-                    ? candidate
-                    : current,
-            undefined,
-        );
-}
-
-export function nextStableVersion(tags, releaseType) {
-    if (!releaseTypes.has(releaseType)) {
-        throw new Error('RELEASE_TYPE must be patch, minor, or major.');
-    }
-    const versions = tags.map(parseVersion).filter(Boolean);
-    const latest = versions.reduce(
-        (current, candidate) => (compareVersions(candidate, current) > 0 ? candidate : current),
-        [0n, 0n, 0n],
-    );
-    let [major, minor, patch] = latest;
-    if (releaseType === 'major') {
-        major += 1n;
-        minor = 0n;
-        patch = 0n;
-    } else if (releaseType === 'minor') {
-        minor += 1n;
-        patch = 0n;
-    } else {
-        patch += 1n;
-    }
-    return `v${major}.${minor}.${patch}`;
 }
 
 export function resolveRelease(source = process.env, runGit = defaultGit) {
@@ -293,22 +205,6 @@ export function productionConfiguration(source = process.env) {
         releaseSha: validateRevision(required(source, 'RELEASE_SHA')),
         releaseVersion: validateStableVersion(required(source, 'RELEASE_VERSION')),
     };
-}
-
-function dokployAuthentication(configuration) {
-    return {
-        'CF-Access-Client-Id': configuration.cloudflareAccessClientId,
-        'CF-Access-Client-Secret': configuration.cloudflareAccessClientSecret,
-        'x-api-key': configuration.dokployApiToken,
-    };
-}
-
-function dokployUrl(origin, path) {
-    return new URL(path, `${origin}/`).href;
-}
-
-function canonicalComposePath(path) {
-    return typeof path === 'string' ? path.trim().replace(/^\.\/+/, '') : path;
 }
 
 function deploymentRecords(compose) {
@@ -601,3 +497,5 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
         throw new Error('Usage: node scripts/promote-production.mjs <prepare|deploy>');
     }
 }
+
+export { nextStableVersion } from './lib/release-version.mjs';
