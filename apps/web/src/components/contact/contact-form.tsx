@@ -1,7 +1,6 @@
 'use client';
 
-import type { FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import {
     CONTACT_EMAIL_MAX_LENGTH,
@@ -12,6 +11,7 @@ import { Button, TextAreaField, TextField } from '@pickflick/ui';
 
 import { submitContact } from '../../app/contact/actions';
 import { initialFormActionState } from '../forms/form-action.types';
+import { useActionResult } from '../forms/use-action-result';
 import { useFormAction } from '../forms/use-form-action';
 import type { ContactFieldErrors, ContactFieldName, ContactFormValues } from './contact-form.types';
 import { validateContactValues } from './contact-form.validation';
@@ -38,14 +38,19 @@ export function ContactForm() {
         "We couldn't reach PickFlick. Your text is still here — try again.",
     );
 
+    useActionResult(actionState, (result) => {
+        setErrors(result.fieldErrors ?? {});
+        setFeedback({ message: result.message, tone: result.tone });
+        if (result.status === 'success') {
+            setValues(emptyValues);
+        }
+    });
+
     useEffect(() => {
         if (actionState.revision === 0) {
             return;
         }
-        setErrors(actionState.fieldErrors ?? {});
-        setFeedback({ message: actionState.message, tone: actionState.tone });
         if (actionState.status === 'success') {
-            setValues(emptyValues);
             attemptRef.current = undefined;
         } else if (actionState.fieldErrors) {
             focusFirstError();

@@ -1,13 +1,13 @@
 'use client';
 
-import type { FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { CLUB_DESCRIPTION_MAX_LENGTH, CLUB_NAME_MAX_LENGTH } from '@pickflick/contracts';
 import { Button, TextAreaField, TextField } from '@pickflick/ui';
 
 import { createClub } from '../../app/clubs/new/actions';
 import { initialFormActionState } from '../forms/form-action.types';
+import { useActionResult } from '../forms/use-action-result';
 import { useFormAction } from '../forms/use-form-action';
 import type { ClubFieldErrors, ClubFieldName, ClubFormValues } from './club-form.types';
 import { validateClubValues } from './club-form.validation';
@@ -32,12 +32,15 @@ export function CreateClubForm() {
         "We couldn't reach PickFlick. Your entries are still here — try again.",
     );
 
+    useActionResult(actionState, (result) => {
+        setErrors(result.fieldErrors ?? {});
+        setFeedback({ message: result.message, tone: result.tone });
+    });
+
     useEffect(() => {
         if (actionState.revision === 0) {
             return;
         }
-        setErrors(actionState.fieldErrors ?? {});
-        setFeedback({ message: actionState.message, tone: actionState.tone });
         if (actionState.status === 'success') {
             window.location.assign('/app');
         } else if (actionState.fieldErrors) {

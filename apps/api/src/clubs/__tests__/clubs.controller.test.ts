@@ -2,8 +2,7 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 
 import { Module, type INestApplication } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { NestFactory } from '@nestjs/core';
+import { APP_GUARD, NestFactory } from '@nestjs/core';
 import type { ClubPolicyPermissions } from '@pickflick/contracts';
 import { createLogger } from '@pickflick/observability';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

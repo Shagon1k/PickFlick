@@ -376,16 +376,16 @@ describe('production contracts', () => {
         }
         expect(primitives).toContain('@media (prefers-reduced-motion: reduce)');
         expect(primitives).toContain('.pf-button:focus-visible');
-        expect(primitives).toContain('.pf-control[data-state="error"]');
-        expect(primitives).toContain('.pf-button[data-state="success"]');
+        expect(primitives).toContain(".pf-control[data-state='error']");
+        expect(primitives).toContain(".pf-button[data-state='success']");
         expect(primitives).toContain(
-            '.pf-button[data-state="loading"] .pf-spinner {\n  position: absolute;',
+            ".pf-button[data-state='loading'] .pf-spinner {\n    position: absolute;",
         );
         expect(primitives).toContain(
-            '.pf-scale__rail[data-presentation="rating"] .pf-scale__option {\n  min-width: var(--hit);\n  min-height: var(--hit);\n  flex-basis: var(--hit);',
+            ".pf-scale__rail[data-presentation='rating'] .pf-scale__option {\n    min-width: var(--hit);\n    min-height: var(--hit);\n    flex-basis: var(--hit);",
         );
         expect(primitives).toContain(
-            '@media (max-width: 575px) {\n  .pf-button--small {\n    min-height: var(--hit);',
+            '@media (max-width: 575px) {\n    .pf-button--small {\n        min-height: var(--hit);',
         );
         expect(primitives).toContain('.pf-select__option[data-combobox-selected]');
         expect(primitives).toContain('.pf-dialog__overlay');

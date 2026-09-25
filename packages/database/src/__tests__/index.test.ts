@@ -1,5 +1,4 @@
-import { createServer } from 'node:net';
-import type { AddressInfo, Socket } from 'node:net';
+import { createServer, type AddressInfo, type Socket } from 'node:net';
 
 import { describe, expect, it } from 'vitest';
 
