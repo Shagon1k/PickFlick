@@ -1,24 +1,24 @@
+import '@mantine/core/styles.layer.css';
+import '@/styles/globals.scss';
+
 import type { ReactNode } from 'react';
 
-import {
-    ProjectorNoirColorSchemeScript,
-    ProjectorNoirProvider,
-    projectorNoirHtmlProps,
-} from '@pickflick/ui';
-import '@pickflick/ui/styles.css';
+import ThemeProvider, {
+    ThemeScript,
+    themeHtmlProps,
+} from '@/components/ui/ThemeProvider/ThemeProvider';
 import { rootMetadata } from '@/lib/public-metadata';
-import '@/styles/globals.scss';
 
 export const metadata = rootMetadata;
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
     return (
-        <html lang="en" {...projectorNoirHtmlProps}>
+        <html lang="en" {...themeHtmlProps}>
             <head>
-                <ProjectorNoirColorSchemeScript />
+                <ThemeScript />
             </head>
             <body>
-                <ProjectorNoirProvider>{children}</ProjectorNoirProvider>
+                <ThemeProvider>{children}</ThemeProvider>
             </body>
         </html>
     );

@@ -1,0 +1,106 @@
+.modal__close:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    box-shadow: none;
+}
+
+.modal__root {
+    position: relative;
+    z-index: 200;
+}
+
+.modal__overlay {
+    position: fixed;
+    z-index: 200;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(3px);
+}
+
+.modal__inner {
+    position: fixed;
+    z-index: 200;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    pointer-events: none;
+}
+
+.modal {
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-lg);
+    color: var(--fg);
+    background: var(--surface);
+    box-shadow: var(--shadow-overlay);
+    pointer-events: all;
+}
+
+.modal.m-danger {
+    border-color: var(--danger-border);
+}
+
+.modal__body {
+    padding: clamp(20px, 5vw, 32px);
+}
+
+.modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    min-height: var(--hit);
+    padding: clamp(20px, 5vw, 32px) clamp(20px, 5vw, 32px) 0;
+    background: var(--surface);
+}
+
+.modal__title {
+    margin: 0;
+    color: var(--fg);
+    font: var(--fs-section)/var(--lh-title) var(--font-display);
+    letter-spacing: var(--tracking-tight);
+}
+
+.modal__close {
+    display: grid;
+    width: var(--hit);
+    height: var(--hit);
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--fg-secondary);
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal__close svg {
+    width: 18px;
+    height: 18px;
+}
+
+.modal__content {
+    color: var(--fg-secondary);
+    line-height: var(--lh-body);
+}
+
+.modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--gap-sm);
+    margin-top: var(--gap-lg);
+    padding-top: var(--gap-md);
+    border-top: 1px solid var(--border);
+}
+
+@media (max-width: 575px) {
+    .modal__actions > * {
+        width: 100%;
+    }
+}

@@ -1,146 +1,122 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-
+import { useForm } from '@mantine/form';
 import { CLUB_DESCRIPTION_MAX_LENGTH, CLUB_NAME_MAX_LENGTH } from '@pickflick/contracts';
-import { Button, TextAreaField, TextField } from '@pickflick/ui';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+
+import type { IClubFormValues } from '@/components/clubs/club-form.types';
+import { validateClubValues } from '@/components/clubs/club-form.validation';
+import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
+import Button from '@/components/ui/Button/Button';
+import Textarea from '@/components/ui/Textarea/Textarea';
+import TextInput from '@/components/ui/TextInput/TextInput';
+import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
 
 import { createClubAction } from '../../actions';
-import { initialFormActionState } from '@/components/forms/form-action.types';
-import { useActionResult } from '@/components/forms/use-action-result';
-import { useFormAction } from '@/components/forms/use-form-action';
-import type {
-    TClubFieldErrors,
-    TClubFieldName,
-    IClubFormValues,
-} from '@/components/clubs/club-form.types';
-import { validateClubValues } from '@/components/clubs/club-form.validation';
 import styles from './CreateClubForm.module.scss';
-import { SelectionScaleField } from '@/components/clubs/SelectionScaleField/SelectionScaleField';
 
-const initialValues: IClubFormValues = {
+const IDLE = { message: '', tone: 'neutral' as TFeedbackTone };
+const INITIAL_VALUES: IClubFormValues = {
     name: '',
     description: '',
     selectionScaleMin: '0',
     selectionScaleMax: '5',
 };
 
-export function CreateClubForm() {
-    const [values, setValues] = useState<IClubFormValues>(initialValues);
-    const [errors, setErrors] = useState<TClubFieldErrors>({});
-    const [feedback, setFeedback] = useState({ message: '', tone: 'neutral' });
-    const formRef = useRef<HTMLFormElement>(null);
-    const [actionState, formAction, pending] = useFormAction(
-        createClubAction,
-        initialFormActionState<TClubFieldName>(),
-        "We couldn't reach PickFlick. Your entries are still here — try again.",
-    );
-
-    useActionResult(actionState, (result) => {
-        setErrors(result.fieldErrors ?? {});
-        setFeedback({ message: result.message, tone: result.tone });
+export default function CreateClubForm() {
+    const router = useRouter();
+    const [pending, startTransition] = useTransition();
+    const [feedback, setFeedback] = useState(IDLE);
+    const form = useForm<IClubFormValues>({
+        initialValues: INITIAL_VALUES,
+        validate: validateClubValues,
+        onValuesChange: () => setFeedback(IDLE),
     });
 
-    useEffect(() => {
-        if (actionState.revision === 0) {
-            return;
-        }
-        if (actionState.status === 'success') {
-            window.location.assign('/app');
-        } else if (actionState.fieldErrors) {
-            focusFirstError();
-        }
-    }, [actionState]);
-
-    function update(field: TClubFieldName, value: string): void {
-        setValues((current) => ({ ...current, [field]: value }));
-        setErrors((current) => {
-            const next = { ...current };
-            delete next[field];
-            return next;
-        });
-        setFeedback({ message: '', tone: 'neutral' });
-    }
-
-    function focusFirstError(): void {
-        requestAnimationFrame(() => {
-            formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
-        });
-    }
-
-    function submit(event: FormEvent<HTMLFormElement>): void {
-        const nextErrors = validateClubValues(values);
-        setErrors(nextErrors);
-        if (Object.keys(nextErrors).length > 0) {
-            event.preventDefault();
+    const submit = form.onSubmit(
+        (values, event) => {
+            const formElement = event?.currentTarget as HTMLFormElement | undefined;
+            if (!navigator.onLine) {
+                setFeedback({
+                    message:
+                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
+                    tone: 'warning',
+                });
+                return;
+            }
+            setFeedback({ message: 'Creating your Club…', tone: 'neutral' });
+            startTransition(async () => {
+                const result: TFormResult<keyof IClubFormValues> = await createClubAction(
+                    values,
+                ).catch(() => ({
+                    ok: false as const,
+                    message:
+                        "We couldn't reach PickFlick. Your entries are still here — try again.",
+                    tone: 'danger' as const,
+                }));
+                if (result.ok) {
+                    setFeedback({
+                        message: 'Club created. Opening your screening room…',
+                        tone: 'success',
+                    });
+                    router.push('/app');
+                    return;
+                }
+                setFeedback({ message: result.message, tone: result.tone });
+                if (result.fieldErrors) {
+                    form.setErrors(result.fieldErrors);
+                    focusFirstInvalid(formElement);
+                }
+            });
+        },
+        () => {
             setFeedback({
                 message: 'Review the highlighted fields and try again.',
                 tone: 'danger',
             });
-            focusFirstError();
-            return;
-        }
-        if (!navigator.onLine) {
-            event.preventDefault();
-            setFeedback({
-                message:
-                    'You appear to be offline. Reconnect, then try again; your entries are still here.',
-                tone: 'warning',
-            });
-            return;
-        }
-        setFeedback({ message: 'Creating your Club…', tone: 'neutral' });
-    }
+            focusFirstInvalid(event?.currentTarget as HTMLFormElement | undefined);
+        },
+    );
 
     return (
-        <form
-            action={formAction}
-            className={styles.form}
-            noValidate
-            onSubmit={submit}
-            ref={formRef}
-        >
-            <TextField
-                {...(errors.name ? { error: errors.name } : {})}
+        <form className={styles.form} noValidate onSubmit={submit}>
+            <TextInput
+                {...form.getInputProps('name')}
                 autoComplete="organization"
                 disabled={pending}
                 id="club-name"
                 label="Club name"
                 labelHint="required"
                 maxLength={CLUB_NAME_MAX_LENGTH}
-                name="name"
-                onChange={(event) => update('name', event.currentTarget.value)}
                 placeholder="e.g. Friday Night Film Club"
                 required
-                value={values.name}
             />
-            <TextAreaField
-                {...(errors.description ? { error: errors.description } : {})}
+            <Textarea
+                {...form.getInputProps('description')}
                 disabled={pending}
-                hint={`${values.description.length}/${CLUB_DESCRIPTION_MAX_LENGTH}`}
                 id="club-description"
                 label="Description"
                 labelHint="optional"
                 maxLength={CLUB_DESCRIPTION_MAX_LENGTH}
-                name="description"
-                onChange={(event) => update('description', event.currentTarget.value)}
                 placeholder="What kind of films does your Club watch?"
-                value={values.description}
+                showCount
+                size="compact"
             />
 
             <div className={styles.scaleSection}>
                 <SelectionScaleField
-                    defaultMax={Number(initialValues.selectionScaleMax)}
+                    defaultMax={Number(INITIAL_VALUES.selectionScaleMax)}
                     disabled={pending}
                     idPrefix="selection-scale"
-                    maxError={errors.selectionScaleMax ?? errors.selectionScaleMin}
-                    min={Number(initialValues.selectionScaleMin)}
-                    onChange={(max) => update('selectionScaleMax', String(max))}
+                    maxError={form.errors.selectionScaleMax ?? form.errors.selectionScaleMin}
+                    min={Number(INITIAL_VALUES.selectionScaleMin)}
+                    onChange={(max) => form.setFieldValue('selectionScaleMax', String(max))}
                 />
             </div>
 
             <div className={styles.submitZone}>
-                <Button className={styles.submitButton} loading={pending} type="submit">
+                <Button fullWidth loading={pending} type="submit">
                     Create Screening Room
                 </Button>
                 <p

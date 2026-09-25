@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import { Icon } from '@pickflick/ui';
+import Icon from '@/components/ui/Icon/Icon';
 
 import { FilmStrip } from '@/components/shells/film-strip';
 import { NotificationsPanel } from '@/components/shells/notifications-panel';

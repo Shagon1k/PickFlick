@@ -1,157 +1,115 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-
+import { useForm } from '@mantine/form';
 import {
     CONTACT_EMAIL_MAX_LENGTH,
     CONTACT_MESSAGE_MAX_LENGTH,
     CONTACT_NAME_MAX_LENGTH,
 } from '@pickflick/contracts';
-import { Button, TextAreaField, TextField } from '@pickflick/ui';
+import { useState, useTransition } from 'react';
 
-import { submitContact } from '@/app/(marketing)/contact/actions';
-import { initialFormActionState } from '@/components/forms/form-action.types';
-import { useActionResult } from '@/components/forms/use-action-result';
-import { useFormAction } from '@/components/forms/use-form-action';
-import type {
-    ContactFieldErrors,
-    ContactFieldName,
-    ContactFormValues,
-} from '@/app/(marketing)/contact/_components/ContactForm/contact-form.types';
-import { validateContactValues } from '@/app/(marketing)/contact/_components/ContactForm/contact-form.validation';
-import styles from '@/app/(marketing)/contact/contact.module.scss';
+import Button from '@/components/ui/Button/Button';
+import Textarea from '@/components/ui/Textarea/Textarea';
+import TextInput from '@/components/ui/TextInput/TextInput';
+import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
 
-type FeedbackTone = 'neutral' | 'success' | 'danger' | 'warning';
+import { sendContact } from '../../actions';
+import styles from '../../contact.module.scss';
+import type { IContactFormValues } from './contact-form.types';
+import { validateContactValues } from './contact-form.validation';
 
-const emptyValues: ContactFormValues = { message: '', name: '', email: '' };
-const initialActionState = initialFormActionState<ContactFieldName>();
+const IDLE = { message: '', tone: 'neutral' as TFeedbackTone };
 
-export function ContactForm() {
-    const [values, setValues] = useState<ContactFormValues>(emptyValues);
-    const [errors, setErrors] = useState<ContactFieldErrors>({});
-    const [feedback, setFeedback] = useState<{ message: string; tone: FeedbackTone }>({
-        message: '',
-        tone: 'neutral',
+export default function ContactForm() {
+    const [pending, startTransition] = useTransition();
+    const [feedback, setFeedback] = useState(IDLE);
+    const form = useForm<IContactFormValues>({
+        initialValues: { message: '', name: '', email: '' },
+        validate: validateContactValues,
+        onValuesChange: () => setFeedback(IDLE),
     });
-    const formRef = useRef<HTMLFormElement>(null);
-    const [actionState, formAction, pending] = useFormAction(
-        submitContact,
-        initialActionState,
-        "We couldn't reach PickFlick. Your text is still here — try again.",
+
+    const submit = form.onSubmit(
+        (values, event) => {
+            const formElement = event?.currentTarget as HTMLFormElement | undefined;
+            if (!navigator.onLine) {
+                setFeedback({
+                    message:
+                        'You appear to be offline. Reconnect, then send again; your message is still here.',
+                    tone: 'warning',
+                });
+                return;
+            }
+            setFeedback({ message: 'Sending your message…', tone: 'neutral' });
+            startTransition(async () => {
+                const result: TFormResult<keyof IContactFormValues> = await sendContact(
+                    values,
+                ).catch(() => ({
+                    ok: false as const,
+                    message: "We couldn't reach PickFlick. Your text is still here — try again.",
+                    tone: 'danger' as const,
+                }));
+                if (result.ok) {
+                    form.reset();
+                    setFeedback({
+                        message: "Message received — we'll get back to you soon.",
+                        tone: 'success',
+                    });
+                    return;
+                }
+                setFeedback({ message: result.message, tone: result.tone });
+                if (result.fieldErrors) {
+                    form.setErrors(result.fieldErrors);
+                    focusFirstInvalid(formElement);
+                }
+            });
+        },
+        (_errors, _values, event) => {
+            setFeedback({ message: 'Review the highlighted field and try again.', tone: 'danger' });
+            focusFirstInvalid(event?.currentTarget as HTMLFormElement | undefined);
+        },
     );
 
-    useActionResult(actionState, (result) => {
-        setErrors(result.fieldErrors ?? {});
-        setFeedback({ message: result.message, tone: result.tone });
-        if (result.status === 'success') {
-            setValues(emptyValues);
-        }
-    });
-
-    useEffect(() => {
-        if (actionState.revision === 0) {
-            return;
-        }
-        if (actionState.status === 'error' && actionState.fieldErrors) {
-            focusFirstError();
-        }
-    }, [actionState]);
-
-    function update(field: ContactFieldName, value: string): void {
-        setValues((current) => ({ ...current, [field]: value }));
-        setErrors((current) => {
-            const next = { ...current };
-            delete next[field];
-            return next;
-        });
-        setFeedback({ message: '', tone: 'neutral' });
-    }
-
-    function focusFirstError(): void {
-        requestAnimationFrame(() => {
-            formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
-        });
-    }
-
-    function submit(event: FormEvent<HTMLFormElement>): void {
-        const nextErrors = validateContactValues(values);
-        setErrors(nextErrors);
-        if (Object.keys(nextErrors).length > 0) {
-            event.preventDefault();
-            setFeedback({ message: 'Review the highlighted field and try again.', tone: 'danger' });
-            focusFirstError();
-            return;
-        }
-        if (!navigator.onLine) {
-            event.preventDefault();
-            setFeedback({
-                message:
-                    'You appear to be offline. Reconnect, then send again; your message is still here.',
-                tone: 'warning',
-            });
-            return;
-        }
-        setFeedback({ message: 'Sending your message…', tone: 'neutral' });
-    }
-
+    const sent = feedback.tone === 'success';
     return (
-        <form
-            action={formAction}
-            className={styles.form}
-            noValidate
-            onSubmit={submit}
-            ref={formRef}
-        >
-            <TextAreaField
-                {...(errors.message ? { error: errors.message } : {})}
-                hint={`${values.message.length}/${CONTACT_MESSAGE_MAX_LENGTH}`}
+        <form className={styles.form} noValidate onSubmit={submit}>
+            <Textarea
+                {...form.getInputProps('message')}
+                disabled={pending}
                 id="contact-message"
                 label="Message"
                 labelHint="required"
                 maxLength={CONTACT_MESSAGE_MAX_LENGTH}
-                name="message"
-                disabled={pending}
-                onChange={(event) => update('message', event.currentTarget.value)}
                 placeholder="Tell us what's on your mind…"
                 required
-                value={values.message}
+                showCount
+                size="large"
             />
-            <TextField
+            <TextInput
+                {...form.getInputProps('name')}
                 autoComplete="name"
-                {...(errors.name ? { error: errors.name } : {})}
+                disabled={pending}
                 id="contact-name"
                 label="Your name"
                 labelHint="optional"
                 maxLength={CONTACT_NAME_MAX_LENGTH}
-                name="name"
-                disabled={pending}
-                onChange={(event) => update('name', event.currentTarget.value)}
                 placeholder="e.g. Jane Doe"
-                value={values.name}
             />
-            <TextField
+            <TextInput
+                {...form.getInputProps('email')}
                 autoComplete="email"
-                {...(errors.email ? { error: errors.email } : {})}
+                disabled={pending}
                 id="contact-email"
                 label="Your email"
                 labelHint="optional"
                 maxLength={CONTACT_EMAIL_MAX_LENGTH}
-                name="email"
-                disabled={pending}
-                onChange={(event) => update('email', event.currentTarget.value)}
                 placeholder="e.g. jane@example.com"
                 type="email"
-                value={values.email}
             />
 
             <div className={styles.submitZone}>
-                <Button
-                    className={styles.submitButton}
-                    disabled={feedback.tone === 'success'}
-                    loading={pending}
-                    type="submit"
-                >
-                    {feedback.tone === 'success' ? 'Message sent' : 'Send message'}
+                <Button disabled={sent} fullWidth loading={pending} type="submit">
+                    {sent ? 'Message sent' : 'Send message'}
                 </Button>
                 <p
                     aria-atomic="true"

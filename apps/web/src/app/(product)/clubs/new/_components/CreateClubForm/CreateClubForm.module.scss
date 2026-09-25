@@ -9,23 +9,11 @@
     border-top: 1px solid var(--border);
 }
 
-.form :global(.pf-field__message) {
-    text-align: right;
-}
-
-.form :global(.pf-control--textarea) {
-    min-height: 80px;
-}
-
 .submitZone {
     display: grid;
     gap: var(--gap-sm);
     padding-top: var(--gap-sm);
     border-top: 1px solid var(--border);
-}
-
-.submitButton {
-    width: 100%;
 }
 
 .feedback {

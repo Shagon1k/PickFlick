@@ -8,7 +8,6 @@ const expectedPackages = new Map([
     ['packages/config', '@pickflick/config'],
     ['packages/contracts', '@pickflick/contracts'],
     ['packages/database', '@pickflick/database'],
-    ['packages/ui', '@pickflick/ui'],
 ]);
 
 const dependencyFields = [

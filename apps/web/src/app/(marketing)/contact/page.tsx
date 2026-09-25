@@ -1,7 +1,8 @@
-import { BrandImage, SprocketDivider } from '@pickflick/ui';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
-import { ContactForm } from '@/app/(marketing)/contact/_components/ContactForm/ContactForm';
-import styles from '@/app/(marketing)/contact/contact.module.scss';
+import ContactForm from './_components/ContactForm/ContactForm';
+import styles from './contact.module.scss';
 import { PublicShell } from '@/components/shells/shells';
 import { createPublicMetadata } from '@/lib/public-metadata';
 

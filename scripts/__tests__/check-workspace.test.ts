@@ -19,7 +19,6 @@ async function createWorkspace() {
         ['packages/config', '@pickflick/config'],
         ['packages/contracts', '@pickflick/contracts'],
         ['packages/database', '@pickflick/database'],
-        ['packages/ui', '@pickflick/ui'],
     ] as const;
 
     await Promise.all(

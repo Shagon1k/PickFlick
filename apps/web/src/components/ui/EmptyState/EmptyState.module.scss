@@ -1,0 +1,38 @@
+.empty-state {
+    display: grid;
+    justify-items: center;
+    padding: clamp(32px, 8vw, 72px) var(--gap-md);
+    color: var(--fg-secondary);
+    text-align: center;
+}
+
+.empty-state h3 {
+    margin: var(--gap-md) 0 var(--gap-xs);
+    color: var(--fg);
+    font: var(--fs-section)/var(--lh-title) var(--font-display);
+}
+
+.empty-state__action {
+    margin-top: var(--gap-md);
+}
+
+.empty-state__sprocket {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent-dim);
+}
+
+.empty-state__sprocket::before,
+.empty-state__sprocket::after {
+    width: 44px;
+    border-top: 1px dashed currentColor;
+    content: '';
+}
+
+.empty-state__sprocket i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}

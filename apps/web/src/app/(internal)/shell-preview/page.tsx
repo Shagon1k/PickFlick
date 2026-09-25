@@ -1,6 +1,8 @@
-import { ActionLink, BrandImage, Pill } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Pill from '@/components/ui/Pill/Pill';
 
-import styles from '@/app/(internal)/shell-preview/shell-preview.module.scss';
+import styles from './shell-preview.module.scss';
 
 const shells = [
     ['Public', 'Brand header, responsive navigation, editorial canvas, and public footer.'],
@@ -40,9 +42,9 @@ export default function ShellPreviewIndexPage() {
                             <p className={styles.cardLabel}>Shared shell</p>
                             <h3>{name}</h3>
                             <p>{description}</p>
-                            <ActionLink href={`/shell-preview/${name.toLowerCase()}`}>
+                            <ButtonLink href={`/shell-preview/${name.toLowerCase()}`}>
                                 Open {name} shell
-                            </ActionLink>
+                            </ButtonLink>
                         </article>
                     ))}
                 </div>

@@ -3,13 +3,13 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import type { IClubSettings } from '@pickflick/contracts';
-import { ActionLink } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 
 import { getClubSettings } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
 import { ApiError } from '@/lib/api.server';
-import { ClubSettings } from '@/app/(product)/clubs/[clubId]/settings/_components/ClubSettings/ClubSettings';
-import styles from '@/app/(product)/clubs/[clubId]/settings/settings.module.scss';
+import { ClubSettings } from './_components/ClubSettings/ClubSettings';
+import styles from './settings.module.scss';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import { ProductFrame } from '@/components/shells/shells';
 
@@ -37,9 +37,9 @@ function SafeFailure({ forbidden = false }: Readonly<{ forbidden?: boolean }>) {
                             : 'Nothing was changed. Return to your Clubs or retry this page.'}
                     </p>
                     <div className={styles.formFooter}>
-                        <ActionLink href="/app" variant="primary">
+                        <ButtonLink href="/app" variant="primary">
                             Back to your Clubs
-                        </ActionLink>
+                        </ButtonLink>
                     </div>
                 </section>
             </main>

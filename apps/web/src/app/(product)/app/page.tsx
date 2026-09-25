@@ -3,12 +3,14 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import type { IClubSummary } from '@pickflick/contracts';
-import { ActionLink, BrandImage, Pill } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Pill from '@/components/ui/Pill/Pill';
 
 import { listClubs } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
 import { ApiError } from '@/lib/api.server';
-import styles from '@/app/(product)/onboarding.module.scss';
+import styles from '../onboarding.module.scss';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import { ProductFrame } from '@/components/shells/shells';
 
@@ -33,9 +35,9 @@ function NoClubs() {
                             nights, and ratings in one place.
                         </p>
                         <div className={styles.actions}>
-                            <ActionLink href="/clubs/new" variant="primary">
+                            <ButtonLink href="/clubs/new" variant="primary">
                                 Create a Club
-                            </ActionLink>
+                            </ButtonLink>
                         </div>
                         <p className={styles.note}>
                             Have an invitation? Open its private link to join that Club.
@@ -78,9 +80,9 @@ function ClubReady({ club }: Readonly<{ club: IClubSummary }>) {
                         </div>
                     </dl>
                     <div className={styles.actions}>
-                        <ActionLink href={`/clubs/${club.id}/settings`} variant="primary">
+                        <ButtonLink href={`/clubs/${club.id}/settings`} variant="primary">
                             Manage Club
-                        </ActionLink>
+                        </ButtonLink>
                     </div>
                 </section>
             </main>
@@ -97,9 +99,9 @@ function ClubsUnavailable() {
                     <h1 id="clubs-unavailable-title">Your Clubs are temporarily unavailable</h1>
                     <p>Nothing was changed. Try loading the screening room again.</p>
                     <div className={styles.actions}>
-                        <ActionLink href="/app" variant="primary">
+                        <ButtonLink href="/app" variant="primary">
                             Try again
-                        </ActionLink>
+                        </ButtonLink>
                     </div>
                 </section>
             </main>

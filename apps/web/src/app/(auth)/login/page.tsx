@@ -3,16 +3,15 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { resolveAuthReturnTarget } from '@pickflick/contracts';
-import { BrandImage, Icon, SprocketDivider } from '@pickflick/ui';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Icon from '@/components/ui/Icon/Icon';
+import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
 import { getSessionState, isAppleSignInEnabled } from '@/api/session.server';
-import { LoginActions } from '@/app/(auth)/login/_components/LoginActions/LoginActions';
-import {
-    resolveLoginErrorMessage,
-    sessionUnavailableMessage,
-} from '@/app/(auth)/login/login-errors';
-import { firstSearchValue } from '@/app/(auth)/login/login.utils';
-import styles from '@/app/(auth)/login/login.module.scss';
+import { LoginActions } from './_components/LoginActions/LoginActions';
+import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
+import { firstSearchValue } from './login.utils';
+import styles from './login.module.scss';
 
 export const metadata: Metadata = {
     title: 'Sign in — PickFlick',

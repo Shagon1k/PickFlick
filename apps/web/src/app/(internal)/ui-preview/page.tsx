@@ -1,37 +1,35 @@
-import {
-    Alert,
-    BrandImage,
-    Button,
-    DataTable,
-    EmptyState,
-    LoadingState,
-    Pill,
-    ProgressFilmStrip,
-    SelectField,
-    StatusBanner,
-    Tabs,
-    TextAreaField,
-    TextField,
-    Toggle,
-} from '@pickflick/ui';
+import Alert from '@/components/ui/Alert/Alert';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Button from '@/components/ui/Button/Button';
+import Table, { type ITableColumn, type ITableRow } from '@/components/ui/Table/Table';
+import EmptyState from '@/components/ui/EmptyState/EmptyState';
+import LoadingState from '@/components/ui/LoadingState/LoadingState';
+import Pill from '@/components/ui/Pill/Pill';
+import Progress from '@/components/ui/Progress/Progress';
+import Select from '@/components/ui/Select/Select';
+import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
+import Tabs from '@/components/ui/Tabs/Tabs';
+import Textarea from '@/components/ui/Textarea/Textarea';
+import TextInput from '@/components/ui/TextInput/TextInput';
+import Switch from '@/components/ui/Switch/Switch';
 
 import {
     PreviewInteractions,
     PreviewMenus,
     ReviewFixInteractions,
-} from '@/app/(internal)/ui-preview/_components/PreviewInteractions/PreviewInteractions';
-import styles from '@/app/(internal)/ui-preview/preview.module.scss';
+} from './_components/PreviewInteractions/PreviewInteractions';
+import styles from './preview.module.scss';
 
-const tableColumns = [
+const tableColumns: ITableColumn[] = [
     { key: 'member', header: 'Member' },
     { key: 'state', header: 'State' },
     { key: 'score', header: 'Score', numeric: true },
-] as const;
+];
 
-const tableRows = [
+const tableRows: ITableRow[] = [
     { id: 'alex', cells: { member: 'Alex', state: 'Submitted', score: '4' } },
     { id: 'maya', cells: { member: 'Maya', state: 'Waiting', score: '—' } },
-] as const;
+];
 
 export default function UiPreviewPage() {
     return (
@@ -125,25 +123,25 @@ export default function UiPreviewPage() {
             >
                 <div className={styles.grid}>
                     <div className={`${styles.panel} ${styles.formStack}`}>
-                        <TextField
+                        <TextInput
                             id="club-name"
                             hint="Shown to every Club member."
                             label="Club name"
                             defaultValue="Friday Night Film Club"
                         />
-                        <TextField
+                        <TextInput
                             error="Use at least 3 characters."
                             id="short-name"
                             label="Club name with error"
                             defaultValue="F"
                         />
-                        <TextField
+                        <TextInput
                             id="saved-name"
                             label="Saved Club name"
                             success="Club name saved."
                             defaultValue="Friday Night"
                         />
-                        <TextField
+                        <TextInput
                             disabled
                             id="provider-email"
                             label="Email"
@@ -151,28 +149,29 @@ export default function UiPreviewPage() {
                         />
                     </div>
                     <div className={`${styles.panel} ${styles.formStack}`}>
-                        <SelectField
+                        <Select
                             id="score-range"
                             label="Selection range"
                             name="score-range"
                             defaultValue="0-4"
                             hint="Choose the Club scoring range."
-                        >
-                            <option value="0-4">0 to 4</option>
-                            <option value="1-5">1 to 5</option>
-                        </SelectField>
-                        <TextAreaField
+                            data={[
+                                { value: '0-4', label: '0 to 4' },
+                                { value: '1-5', label: '1 to 5' },
+                            ]}
+                        />
+                        <Textarea
                             id="session-note"
                             label="Session note"
                             placeholder="Add context for the Club"
                         />
-                        <Toggle
+                        <Switch
                             defaultChecked
                             id="rating-reminders"
                             label="Rating reminders"
                             description="Receive a reminder while Rating remains open."
                         />
-                        <Toggle disabled id="provider-setting" label="Provider-managed setting" />
+                        <Switch disabled id="provider-setting" label="Provider-managed setting" />
                     </div>
                 </div>
             </PreviewSection>
@@ -252,7 +251,7 @@ export default function UiPreviewPage() {
                         </Alert>
                     </div>
                     <div className={`${styles.panel} ${styles.feedbackStack}`}>
-                        <ProgressFilmStrip label="Selection participation" max={5} value={4} />
+                        <Progress label="Selection participation" max={5} value={4} />
                         <LoadingState label="Loading Session details" lines={3} />
                     </div>
                 </div>
@@ -264,11 +263,7 @@ export default function UiPreviewPage() {
                 description="Dense data scrolls inside a named region; empty states preserve an authorized next step."
             >
                 <div className={styles.grid}>
-                    <DataTable
-                        caption="Selection progress"
-                        columns={tableColumns}
-                        rows={tableRows}
-                    />
+                    <Table caption="Selection progress" columns={tableColumns} rows={tableRows} />
                     <EmptyState
                         title="No completed Sessions yet"
                         action={<Button variant="secondary">Log a past Session</Button>}

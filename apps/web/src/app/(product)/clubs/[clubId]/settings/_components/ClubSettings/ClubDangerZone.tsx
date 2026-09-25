@@ -3,7 +3,10 @@
 import { useActionState, useState } from 'react';
 
 import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
-import { Button, Dialog, InfoTip, TextField } from '@pickflick/ui';
+import Button from '@/components/ui/Button/Button';
+import Modal from '@/components/ui/Modal/Modal';
+import InfoTip from '@/components/ui/InfoTip/InfoTip';
+import TextInput from '@/components/ui/TextInput/TextInput';
 
 import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
 import { initialClubActionState } from '../../action-state';
@@ -28,7 +31,7 @@ function MemberRoleForm({
     return (
         <form action={formAction} className={styles.roleForm}>
             <fieldset className={styles.roleChoice} disabled={!writable}>
-                <legend className="pf-visually-hidden">Role for {member.displayName}</legend>
+                <legend className="visually-hidden">Role for {member.displayName}</legend>
                 {(['MEMBER', 'MODERATOR'] as const).map((role) => (
                     <label key={role}>
                         <input
@@ -63,7 +66,7 @@ function ManageModerators({ projection }: Readonly<{ projection: IClubSettings }
             <Button onClick={() => setOpen(true)} size="small" variant="secondary">
                 Manage Moderators
             </Button>
-            <Dialog onClose={() => setOpen(false)} open={open} title="Manage Moderators">
+            <Modal onClose={() => setOpen(false)} open={open} title="Manage Moderators">
                 <p className={styles.explanation}>
                     Moderators run Sessions with you. {projection.members.length} of{' '}
                     {projection.entitlements.memberLimit} member places are in use.
@@ -93,7 +96,7 @@ function ManageModerators({ projection }: Readonly<{ projection: IClubSettings }
                         </li>
                     ))}
                 </ul>
-            </Dialog>
+            </Modal>
         </>
     );
 }
@@ -123,10 +126,10 @@ function ConfirmAction({
             <Button onClick={() => setOpen(true)} size="small" variant={variant}>
                 {label}
             </Button>
-            <Dialog onClose={() => setOpen(false)} open={open} title={title} tone="danger">
+            <Modal onClose={() => setOpen(false)} open={open} title={title} tone="danger">
                 <form action={formAction} className={styles.dialogForm}>
                     <p>{description}</p>
-                    <TextField
+                    <TextInput
                         autoComplete="off"
                         id={`${action}-confirmation`}
                         label={`Type ${confirmation} to confirm`}
@@ -143,7 +146,7 @@ function ConfirmAction({
                         </Button>
                     </div>
                 </form>
-            </Dialog>
+            </Modal>
         </>
     );
 }

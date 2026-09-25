@@ -3,7 +3,7 @@ import {
     freePlanFeatures,
     pricingFaqs,
     proPlanFeatures,
-} from '@/app/(marketing)/marketing-content';
+} from '../marketing-content';
 
 describe('public plan contract', () => {
     it('should keep canonical Free and Pro limits aligned', () => {

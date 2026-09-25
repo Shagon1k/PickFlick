@@ -1,12 +1,9 @@
 import { notFound } from 'next/navigation';
 
-import { BrandImage } from '@pickflick/ui';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
 
-import {
-    isLegalDocumentName,
-    legalDocuments,
-} from '@/app/(marketing)/legal/[document]/legal-content';
-import styles from '@/app/(marketing)/legal/[document]/page.module.scss';
+import { isLegalDocumentName, legalDocuments } from './legal-content';
+import styles from './page.module.scss';
 import { PublicShell } from '@/components/shells/shells';
 import { createPublicMetadata } from '@/lib/public-metadata';
 

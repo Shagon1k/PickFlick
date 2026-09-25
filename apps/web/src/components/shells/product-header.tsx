@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { Icon } from '@pickflick/ui';
+import Icon from '@/components/ui/Icon/Icon';
 
 import { authClient } from '@/lib/auth-client';
 import { FilmStrip } from '@/components/shells/film-strip';
@@ -145,12 +145,12 @@ export function ProductSearch() {
             role="search"
         >
             <div className={styles.globalSearchInner}>
-                <label className="pf-visually-hidden" htmlFor="shell-search-input">
+                <label className="visually-hidden" htmlFor="shell-search-input">
                     Search films
                 </label>
                 <input
                     autoComplete="off"
-                    className={`pf-control ${styles.globalSearchInput}`}
+                    className={styles.globalSearchInput}
                     id="shell-search-input"
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search films…"

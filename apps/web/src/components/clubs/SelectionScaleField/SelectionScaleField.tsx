@@ -1,35 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
-import { InfoTip } from '@pickflick/ui';
+import InfoTip from '@/components/ui/InfoTip/InfoTip';
 
-import styles from '@/components/clubs/SelectionScaleField/SelectionScaleField.module.scss';
+import styles from './SelectionScaleField.module.scss';
 
 const SELECTION_SCALE_CEILING = 10;
 
-export interface SelectionScaleFieldProps {
-    readonly defaultMax: number;
-    readonly disabled?: boolean;
-    readonly idPrefix: string;
-    readonly maxError?: string | undefined;
+export interface ISelectionScaleFieldProps {
+    defaultMax: number;
+    disabled?: boolean;
+    idPrefix: string;
+    maxError?: ReactNode;
     /** The scale's first score. New Clubs start at 0; existing Clubs keep their stored start. */
-    readonly min: number;
-    readonly onChange?: (max: number) => void;
+    min: number;
+    onChange?: (max: number) => void;
 }
 
 /**
  * Club Selection scale: one slider for the inclusive upper bound, never above 10.
  * Submits `selectionScaleMin` and `selectionScaleMax` with the surrounding form.
  */
-export function SelectionScaleField({
+export default function SelectionScaleField({
     defaultMax,
     disabled = false,
     idPrefix,
     maxError,
     min,
     onChange,
-}: SelectionScaleFieldProps) {
+}: ISelectionScaleFieldProps) {
     const [max, setMax] = useState(defaultMax);
     const maxId = `${idPrefix}-max`;
     const summaryId = `${idPrefix}-summary`;
