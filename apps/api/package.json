@@ -4,29 +4,34 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "auth:check": "tsx scripts/check-auth.ts",
         "build": "tsc -p tsconfig.build.json",
-        "club:check": "tsx scripts/check-clubs.ts",
-        "contact:check": "tsx scripts/check-contact.ts",
         "dev": "nodemon",
         "start": "node dist/main.js",
-        "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.scripts.json"
+        "typecheck": "tsc -p tsconfig.json"
     },
     "dependencies": {
+        "@aws-sdk/client-s3": "3.1140.0",
         "@better-auth/prisma-adapter": "1.7.5",
-        "@nestjs/common": "12.0.1",
-        "@nestjs/core": "12.0.1",
-        "@nestjs/platform-express": "12.0.1",
+        "@nestjs/common": "12.1.0",
+        "@nestjs/core": "12.1.0",
+        "@nestjs/platform-express": "12.1.0",
+        "@nestjs/throttler": "6.7.1",
         "@pickflick/config": "workspace:*",
         "@pickflick/contracts": "workspace:*",
         "@pickflick/database": "workspace:*",
-        "@pickflick/observability": "workspace:*",
         "better-auth": "1.7.5",
+        "nestjs-pino": "5.2.1",
+        "pino": "10.3.1",
+        "pino-http": "11.0.0",
         "reflect-metadata": "0.2.2",
-        "rxjs": "7.8.2"
+        "resend": "6.29.0",
+        "rxjs": "7.8.2",
+        "zod": "4.6.5"
     },
     "devDependencies": {
+        "@nestjs/testing": "12.1.0",
         "@pickflick/config": "workspace:*",
+        "@types/express": "^5.0.6",
         "@types/node": "catalog:",
         "nodemon": "3.1.14",
         "tsx": "catalog:",

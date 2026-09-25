@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
-import { DatabaseService } from './database.service.js';
+import { PrismaService } from './prisma.service.js';
 
+/** One Prisma client and connection pool for the whole API. */
+@Global()
 @Module({
-    providers: [DatabaseService],
-    exports: [DatabaseService],
+    providers: [PrismaService],
+    exports: [PrismaService],
 })
 export class DatabaseModule {}
