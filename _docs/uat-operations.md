@@ -22,18 +22,18 @@ See the official [Dokploy releases](https://github.com/Dokploy/dokploy/releases)
 3. Add repository secret `DOKPLOY_API_TOKEN` with least-privilege read/deploy access.
 4. Protect Dokploy with Cloudflare Access and add the UAT deployment service-token credentials as
    `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
-5. Add repository variable `PLAYWRIGHT_BASE_URL=https://uat.pick-flick.app`.
 
-Dokploy Auto Deploy remains off. After CI succeeds for a push to `main`, the workflow checks out the
-exact triggering SHA, confirms that `main` has not advanced, and triggers the configured UAT Compose
-resource. It accepts the deployment only when Dokploy records that exact cloned commit and the live
-API reports the same revision. It then verifies readiness and runs desktop/mobile browser smoke. The
-workflow never creates tags, changes the Compose branch, or saves its environment text.
+Dokploy Auto Deploy remains off. After CI succeeds for a push to `main`, `deploy-uat.yml` checks out
+the exact triggering SHA, confirms that `main` has not advanced, checks the Compose resource settings
+below, and triggers one deployment. It accepts the result only when `/api/health/live` reports that
+SHA and `/api/health/ready` reports every dependency up, then runs the desktop and mobile Playwright
+smoke (`pnpm uat:smoke`). The workflow never creates tags, changes the Compose branch, or reads its
+environment.
 
 ## Provision Dokploy UAT
 
-1. Create a dedicated PickFlick UAT project plus UAT-only managed PostgreSQL and Redis resources.
-   Disable their external ports.
+1. Create a dedicated PickFlick UAT project plus a UAT-only managed PostgreSQL resource. Disable
+   its external port.
 2. Ensure the Compose resource and managed data resources attach to Dokploy's shared
    `dokploy-network`. The repository fixes this name in `compose.deploy.yaml`; do not add a
    `DOKPLOY_NETWORK` environment variable.
@@ -54,8 +54,8 @@ workflow never creates tags, changes the Compose branch, or saves its environmen
 | Isolated deployment | Off                       |
 | Custom Command      | Empty                     |
 
-`compose.deploy.yaml` owns release ordering: `release` completes successfully before `api` and
-`worker`; `web` waits for API health. Dokploy's standard Compose deployment is the sole runtime
+`compose.deploy.yaml` owns release ordering: `release` completes successfully before `api`; `web`
+waits for API health. Dokploy's standard Compose deployment is the sole runtime
 lifecycle.
 
 Enter runtime values directly in the Compose resource's **Environment** editor. This resource-owned
@@ -67,11 +67,9 @@ AUTH_BASE_URL=https://uat.pick-flick.app
 AUTH_SECRET
 APPLE_SIGN_IN_ENABLED=false
 CONTACT_DELIVERY_TO
-CONTACT_HASH_SECRET
 DATABASE_URL
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
-REDIS_URL
 RESEND_API_KEY
 RESEND_FROM="PickFlick UAT <notifications@uat.pick-flick.app>"
 STORAGE_ENDPOINT=https://storage-uat.pick-flick.app
@@ -88,8 +86,7 @@ private. `RESEND_API_KEY` is server-only and must have sending-only access restr
 `uat.pick-flick.app`. Do not reuse the production key or sender, send to product users, or fall back
 to production or personal SMTP. UAT does not need a Google Workspace mailbox for the sender address.
 Set `CONTACT_DELIVERY_TO` to one explicitly approved test recipient and use synthetic Contact
-content only. Keep `CONTACT_HASH_SECRET` in the Dokploy secret environment; it must differ from the
-production value and contain at least 32 characters.
+content only.
 
 Use a UAT-only Google OAuth web client. Set its only redirect URI for this application to
 `https://uat.pick-flick.app/api/auth/callback/google`, and leave Authorized JavaScript origins
@@ -108,35 +105,34 @@ Keep `AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` only in Dokploy's secret environme
 enabled later, apply the same rule to `APPLE_PRIVATE_KEY`. Do not save a rendered Compose
 configuration as deployment evidence.
 
-Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`,
-`worker`, and `web` exist and none has a host-published port.
+Before the first deployment, use Dokploy's Compose preview. Confirm that only `release`, `api`, and
+`web` exist and none has a host-published port.
 
 ## Configure ingress
 
 Create one Dokploy domain route for `uat.pick-flick.app` to `web:3000`. Next.js rewrites `/api/*`
 to the private API alias, so API needs no public Dokploy domain. Add
 `storage-uat.pick-flick.app` to MinIO API port `9000`; do not expose the console, PostgreSQL,
-Redis, or raw application ports.
+or raw application ports.
 
 Traefik appends the Cloudflare hop to `X-Forwarded-For`, and the Next.js rewrite preserves that
 header. The API trusts the two represented proxy hops (its Next.js peer and the Cloudflare entry)
-so Contact rate limiting resolves the visitor address rather than a shared proxy address. Keep the
+so rate limiting resolves the visitor address rather than a shared proxy address. Keep the
 API private; this trust boundary depends on the documented ingress path being the only public path.
 
 ## Verify the first deployment
 
 After the workflow is explicitly re-enabled and CI succeeds for a push to `main`:
 
-1. Record the triggering main SHA and the new Dokploy deployment record. Confirm that the record's
-   cloned commit equals the triggering SHA.
+1. Record the triggering main SHA and the new Dokploy deployment record.
 2. Confirm `https://uat.pick-flick.app/api/health/live` is alive and reports the triggering SHA.
    Confirm that `https://uat.pick-flick.app/api/health/ready` reports every dependency as up.
 3. Confirm valid HTTPS and HTTP-to-HTTPS redirect.
 4. Confirm desktop and mobile Playwright smoke pass; compare the uploaded screenshots with live UAT.
-5. From outside the Dokploy host, confirm managed PostgreSQL and Redis ports are unreachable.
+5. From outside the Dokploy host, confirm the managed PostgreSQL port is unreachable.
 
 Standard Dokploy Compose may replace existing containers during convergence. A failed release blocks
-new `api`, `worker`, and `web` services through native dependencies; it does not promise that the
+new `api` and `web` services through native dependencies; it does not promise that the
 old runtime remains untouched. Recover failed releases by restoring the corrected environment and
 running an explicitly approved deployment. Do not paste environment values, connection URLs, tokens,
 or raw provider responses into evidence.

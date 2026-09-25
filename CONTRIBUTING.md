@@ -40,7 +40,8 @@ docs(project): align GitHub delivery workflow
 
 ## Current enforcement
 
-The pinned pnpm workspace enforces install-time engine and peer-dependency checks. Run `pnpm verify`
-before requesting review; it covers lint, type-checks, unit tests, workspace-boundary checks, and
-production builds. Commit-message and pull-request conventions remain review-enforced because the
-repository does not install commit hooks yet.
+- Husky's pre-commit hook scans staged changes with gitleaks, formats them with Prettier, and runs
+  ESLint with autofix; commitlint checks the message (header up to 72 characters, body lines up to
+  100).
+- `pnpm lint` enforces the house style described in `.agent-docs/rules/`.
+- Run `pnpm verify` before requesting review; CI repeats it with integration, UI, and image checks.

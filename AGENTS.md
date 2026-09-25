@@ -1,7 +1,7 @@
 # PickFlick
 
-> Agent operating instructions for this repository. The project is greenfield with executable
-> web/API/worker runtime foundations; product behavior is not implemented yet.
+> Agent operating instructions for this repository. Phases 1–5 (foundations, design system, public
+> site, authentication, Clubs) are built; Phase 6 human verification is in progress.
 
 ## Core Contract
 
@@ -18,67 +18,60 @@
 - For GitHub task routing, Project 3 workflow, and run authorization, read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - Inspect `git status --short` before editing and preserve unrelated user changes.
 - Before frontend work, inspect the canonical screen, [\_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
-- Before domain/API/worker work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
+- Before domain or API work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
 - For changes touching more than 5 files or roughly 100 lines, present a short impact/verification plan and obtain approval unless an already-approved phase/task clearly covers that breadth.
 - Group genuine requirement questions. If a safe, reversible assumption does not change product scope, state it and proceed.
 
 ## Current Repository State
 
-- The typed pnpm workspace, web/API/worker entrypoints, focused internal packages, local
-  PostgreSQL/Redis/MinIO stack, typed storage/Resend configuration, and baseline quality commands
-  are executable. Production-oriented web/API/worker/release images and the proportional,
-  source-built UAT/production application Compose topology are also executable locally. The
-  exact-revision UAT workflow and operator guide are implemented; live Dokploy/Cloudflare
-  provisioning and UAT evidence remain owner-run Phase 1 work. The guarded manual production
-  promotion workflow and runbook are also implemented; the production guard remains false, and no
-  production provisioning, deployment, or traffic cutover is authorized.
-- `packages/database` owns the initial `User`, `Club`, `Membership`, and `Session` Prisma schema,
-  the Contact delivery intent, five reviewed migrations, deterministic synthetic fixtures, and
-  guarded local/test seed and reset commands. Remaining product entities arrive with their owning
-  phases.
-- Proposed architecture is not Active implementation. Approve significant choices through the ADR registry before scaffolding makes them expensive to change.
-- The HTML prototypes are inspectable design specifications and disposable implementation examples; do not copy their inline JavaScript, fixture data, or page-local CSS into production uncritically.
+- A pnpm workspace with two runtime entrypoints — `apps/web` (Next.js) and `apps/api` (NestJS) —
+  plus `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
+  (environment schema, TypeScript and ESLint presets). No worker or Redis until the first background
+  job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
+- The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club audit
+  events, and the Session skeleton across nine reviewed migrations.
+- UAT deploys automatically after CI on `main`; production promotion is implemented but guarded off
+  (`PRODUCTION_DEPLOY_ENABLED` is false). Live production provisioning, deployment, and traffic are
+  not authorized.
+- Proposed architecture is not Active implementation. Approve significant choices through the ADR
+  registry before scaffolding makes them expensive to change.
+- The HTML prototypes are design specifications; do not copy their inline JavaScript, fixture data,
+  or page-local CSS into production.
 
 ## Command Map
 
 Use the Node and pnpm versions pinned by `.node-version` and `package.json` from the repository root.
 
-| Task                                                                    | Command                                        |
-| ----------------------------------------------------------------------- | ---------------------------------------------- |
-| Install dependencies                                                    | `pnpm install --frozen-lockfile`               |
-| Start local data services and create the object-storage bucket          | `pnpm services:up`                             |
-| Check local PostgreSQL, Redis, and object storage                       | `pnpm services:check`                          |
-| Stop local data services and retain their volumes                       | `pnpm services:down`                           |
-| Start web, API, and worker in development                               | `pnpm dev`                                     |
-| Start previously built production entrypoints                           | `pnpm start`                                   |
-| Validate workspace topology and dependency boundaries                   | `pnpm check:workspace`                         |
-| Lint                                                                    | `pnpm lint`                                    |
-| Apply ESLint autofixes                                                  | `pnpm lint:fix`                                |
-| Format with Prettier (4-space, single-quote, 100 columns)               | `pnpm format`                                  |
-| Check formatting                                                        | `pnpm format:check`                            |
-| Type-check                                                              | `pnpm typecheck`                               |
-| Run unit tests                                                          | `pnpm test`                                    |
-| Build every package and app                                             | `pnpm build`                                   |
-| Run component accessibility, interaction, viewport, and visual checks   | `pnpm ui:test`                                 |
-| Update reviewed component screenshot baselines                          | `pnpm ui:test:update`                          |
-| Smoke built web, API, and worker entrypoints                            | `pnpm e2e:smoke`                               |
-| Build the four production image targets                                 | `pnpm images:build`                            |
-| Validate isolated UAT/production Compose renders                        | `pnpm compose:check`                           |
-| Run the release gate, then converge the deployment                      | `pnpm deploy:compose`                          |
-| Deploy and wait for the configured exact UAT revision                   | `pnpm uat:deploy`                              |
-| Run desktop/mobile UAT browser smoke and screenshots                    | `pnpm uat:smoke`                               |
-| Prepare or execute the guarded production promotion controller          | `pnpm production:promote -- <prepare\|deploy>` |
-| Run all scaffold quality gates                                          | `pnpm verify`                                  |
-| Apply database migrations                                               | `pnpm migrate`                                 |
-| Run the database seed                                                   | `pnpm seed`                                    |
-| Verify migrations, fixtures, and database constraints                   | `pnpm db:check`                                |
-| Verify Contact persistence, duplicate handling, and rate limits         | `pnpm contact:check`                           |
-| Verify Club policies, role transitions, entitlements, and audit records | `pnpm club:check`                              |
-| Reset a positively identified local/test database                       | `pnpm db:reset`                                |
+| Task                                                               | Command                             |
+| ------------------------------------------------------------------ | ----------------------------------- |
+| Install dependencies                                               | `pnpm install --frozen-lockfile`    |
+| Start local PostgreSQL and MinIO and create the bucket             | `pnpm services:up`                  |
+| Check local PostgreSQL and MinIO                                   | `pnpm services:check`               |
+| Stop local services and keep their volumes                         | `pnpm services:down`                |
+| Start web and API in development                                   | `pnpm dev`                          |
+| Start previously built web and API                                 | `pnpm start`                        |
+| Lint (house style is enforced here)                                | `pnpm lint`                         |
+| Apply ESLint autofixes                                             | `pnpm lint:fix`                     |
+| Format / check formatting                                          | `pnpm format` / `pnpm format:check` |
+| Type-check                                                         | `pnpm typecheck`                    |
+| Run unit tests                                                     | `pnpm test`                         |
+| Run database integration tests against local services              | `pnpm test:integration`             |
+| Build every package and app                                        | `pnpm build`                        |
+| Run UI accessibility, interaction, viewport, and screenshot checks | `pnpm ui:test`                      |
+| Update reviewed screenshot baselines                               | `pnpm ui:test:update`               |
+| Smoke the built web and API                                        | `pnpm e2e:smoke`                    |
+| Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`)               | `pnpm uat:smoke`                    |
+| Build the production images                                        | `pnpm images:build`                 |
+| Render the local, deploy, and preview Compose files                | `pnpm compose:check`                |
+| Converge UAT Compose from a clean checkout                         | `pnpm deploy:compose`               |
+| Run the quality gates                                              | `pnpm verify`                       |
+| Apply database migrations                                          | `pnpm migrate`                      |
+| Seed local or test data                                            | `pnpm seed`                         |
+| Reset a positively identified local/test database                  | `pnpm db:reset`                     |
 
-Copy `.env.example` to `.env` before running services or runtime commands. See
-[\_docs/environment.md](_docs/environment.md) for the variable inventory and destructive-reset
-safeguards.
+UAT deployment and production promotion run only in GitHub Actions (`deploy-uat.yml`,
+`promote-production.yml`). Copy `.env.example` to `.env` before running services or runtime
+commands. See [\_docs/environment.md](_docs/environment.md) for variables and reset safeguards.
 
 ## Phase Workflow
 

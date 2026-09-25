@@ -27,12 +27,10 @@ Use these controls together:
 - Do not attach `pick-flick.app` or another public domain to the production web service.
 - Protect the GitHub `production` environment with a required owner reviewer.
 
-The `Promote to Production` workflow always resolves the candidate and verifies its exact UAT run.
-When `PRODUCTION_DEPLOY_ENABLED` is not exactly `true`, the workflow stops after that read-only
-validation. It cannot create a tag, change the Dokploy resource, or start a deployment. If the guard
-was true during validation, the deploy job reads it again after protected-environment approval. The
-controller stops before reading Git or Dokploy state unless that current value is still exact
-lowercase `true`.
+The `Promote to Production` workflow always resolves the candidate and verifies its `UAT E2E`
+check. When `PRODUCTION_DEPLOY_ENABLED` is not exactly `true`, the deploy job is skipped: nothing can
+create a tag, change the Dokploy resource, or start a deployment. After protected-environment
+approval the deploy job reads the guard again and stops unless it is still exactly `true`.
 
 ## Provision the dormant Dokploy contract
 
@@ -40,7 +38,7 @@ Follow this procedure under issue #94, only after the owner approves production 
 work. It is not a completion step for issue #16. Do not copy values from UAT.
 
 1. Create a separate production Dokploy project.
-2. Create production PostgreSQL and Redis resources with external ports disabled.
+2. Create a production PostgreSQL resource with its external port disabled.
 3. Create a separate production object-storage bucket and credentials. Production is expected to
    use AWS S3 with `STORAGE_FORCE_PATH_STYLE=false`; do not reuse the UAT MinIO bucket.
 4. Connect the managed resources and application Compose resource to the production application
@@ -51,7 +49,7 @@ work. It is not a completion step for issue #16. Do not copy values from UAT.
 7. Leave the production web service without a public domain.
 
 Use Dokploy's Compose preview to render the complete operator-supplied configuration. Confirm that
-only `release`, `api`, `worker`, and `web` exist, no service publishes a host port, and every alias
+only `release`, `api`, and `web` exist, no service publishes a host port, and every alias
 uses the `pickflick-production-` prefix. Do not save or paste the rendered output because it contains
 resolved secret values.
 
@@ -90,7 +88,7 @@ environment. The workflow receives its short-lived `GITHUB_TOKEN` from GitHub Ac
 ## Configure the production application
 
 Supply a production-specific value for every input required by `compose.deploy.yaml`. Set
-`APP_ENV=production`. Use distinct database, Redis, storage, and Resend identities; do not reuse UAT
+`APP_ENV=production`. Use distinct database, storage, and Resend identities; do not reuse UAT
 credentials or scopes. The [environment reference](environment.md#runtime-variables) defines the
 full runtime inventory and marks sensitive values.
 
@@ -99,21 +97,17 @@ restricted to `pick-flick.app`. Application email sets `Reply-To` to the public
 `hello@pick-flick.app` address. Google Workspace receives public mail, Cloudflare owns authoritative
 DNS, Resend sends application mail, and Alex retains administrative ownership and recovery control
 for all three providers. Do not configure a personal, UAT, or cross-environment fallback.
-Set `CONTACT_DELIVERY_TO=hello@pick-flick.app` and supply a production-only
-`CONTACT_HASH_SECRET` of at least 32 characters through Dokploy. Never copy the UAT hash secret or
-record either value in deployment evidence.
+Set `CONTACT_DELIVERY_TO=hello@pick-flick.app`.
 
 Before activation, check these boundaries:
 
-- PostgreSQL, Redis, and object-storage credentials select only production resources.
-- Managed PostgreSQL and Redis have no externally published port.
+- PostgreSQL and object-storage credentials select only production resources.
+- Managed PostgreSQL has no externally published port.
 - The storage bucket contains no UAT or local data.
 - `RESEND_FROM` exactly matches `PickFlick <notifications@pick-flick.app>`.
-- `CONTACT_DELIVERY_TO` exactly matches `hello@pick-flick.app`, and `CONTACT_HASH_SECRET` is present
-  only in the runtime secret environment.
+- `CONTACT_DELIVERY_TO` exactly matches `hello@pick-flick.app`.
 - Google Workspace receives `hello@pick-flick.app` and direct mail to the production sender before
   public release.
-- The notification adapter directs replies to `hello@pick-flick.app`.
 - The Resend key has sending-only access restricted to `pick-flick.app`; no UAT key or sender is
   present.
 - SPF and DKIM pass for both Google Workspace and Resend. Stage DMARC in monitoring mode before
@@ -133,9 +127,8 @@ Run **Promote to Production** manually and choose `patch`, `minor`, or `major`. 
    baseline.
 3. Reuses the latest tag when it already points to current `main`; otherwise it increments the
    selected component.
-4. Requires the `UAT E2E` job to have completed successfully in a
-   `.github/workflows/deploy-uat.yml` run for the exact `main` revision.
-5. Records the candidate revision, version, and UAT run.
+4. Requires the latest `UAT E2E` check run for that exact revision to have succeeded.
+5. Records the candidate revision and version in the run summary.
 6. Skips the deploy job while `PRODUCTION_DEPLOY_ENABLED` is not exactly `true`.
 
 The disabled run is the expected issue #16 rehearsal. Confirm that no release tag was created and
@@ -154,8 +147,8 @@ release:
 4. Set `PRODUCTION_DEPLOY_ENABLED=true` only for the approved release window.
 5. Run **Promote to Production** and approve its protected `production` environment job.
 6. Confirm that the workflow creates or reuses the expected annotated SemVer tag, pins Dokploy to
-   that tag with automatic deployment disabled, and waits for the correlated deployment record to
-   finish at the release SHA.
+   that tag with automatic deployment disabled, waits for the deployment, and sees
+   `https://pick-flick.app/api/health/live` report the release SHA with every dependency ready.
 7. Return `PRODUCTION_DEPLOY_ENABLED` to `false` after the workflow finishes.
 8. Verify production readiness before attaching or restoring public traffic.
 
@@ -167,7 +160,7 @@ either check or create a tag from a developer machine.
 ## Review migration compatibility
 
 The `release` service runs committed Prisma migrations before its production-safe required-seed
-step. API and worker wait for `release` to succeed, and web waits for API health.
+step. The API waits for `release` to succeed, and web waits for API health.
 
 Before every production release:
 
@@ -177,7 +170,7 @@ Before every production release:
 4. Use a later release for destructive contract cleanup after the old runtime can no longer run.
 5. Prefer a forward fix when the applied schema cannot support the previous application tag.
 
-A failed release prevents the candidate API, worker, and web services from passing their dependency
+A failed release prevents the candidate API and web services from passing their dependency
 gates. Standard Dokploy Compose may already have replaced containers during convergence, so this
 topology does not promise zero downtime or preservation of the previous runtime.
 
@@ -193,7 +186,7 @@ seed state remain compatible with the selected older tag.
 4. Pin the Dokploy production resource to the approved tag while keeping automatic deployment
    disabled.
 5. Start one manual deployment and wait for the correlated deployment record.
-6. Verify release completion, API readiness, worker readiness, web health, and critical smoke paths.
+6. Verify release completion, API readiness, web health, and critical smoke paths.
 7. Restore public traffic only after those checks pass.
 8. Record the failed tag, restored tag, applied migration boundary, deployment record, and follow-up.
 
@@ -202,7 +195,7 @@ restore a database merely to make an old application image start.
 
 ## Recover partial promotion failures
 
-The controller permits an automatic retry only before Dokploy is pinned to the candidate release:
+The workflow permits an automatic retry only before Dokploy is pinned to the candidate release:
 
 - Before tag creation, every failure leaves repository and Dokploy state unchanged.
 - If tag creation succeeds but the Dokploy ref update does not, the next run reuses that tag when it
