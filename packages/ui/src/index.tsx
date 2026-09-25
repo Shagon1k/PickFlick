@@ -554,19 +554,3 @@ export interface PillProps {
 export function Pill({ children, tone = "neutral" }: PillProps) {
   return <span className="pf-pill" data-tone={tone}>{children}</span>;
 }
-
-export interface ScaffoldPanelProps {
-  readonly eyebrow: string;
-  readonly title: string;
-  readonly children: ReactNode;
-}
-
-export function ScaffoldPanel({ children, eyebrow, title }: ScaffoldPanelProps) {
-  return (
-    <main className="scaffold-panel">
-      <p className="scaffold-panel__eyebrow">{eyebrow}</p>
-      <h1>{title}</h1>
-      <div className="scaffold-panel__body">{children}</div>
-    </main>
-  );
-}
