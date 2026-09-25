@@ -6,7 +6,7 @@ const appleAudience = 'https://appleid.apple.com';
 // Apple accepts client secrets for up to six months; every API start signs a fresh one.
 const clientSecretLifetimeSeconds = 150 * 24 * 60 * 60;
 
-function encodeJson(value: Readonly<Record<string, string | number>>): string {
+function encodeJson(value: Record<string, string | number>): string {
     return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 

@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation';
 
+import { PublicShell } from '@/components/shells/shells';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import { createPublicMetadata } from '@/lib/public-metadata';
 
 import { isLegalDocumentName, legalDocuments } from './legal-content';
 import styles from './page.module.scss';
-import { PublicShell } from '@/components/shells/shells';
-import { createPublicMetadata } from '@/lib/public-metadata';
 
-interface LegalPageProps {
+interface ILegalPageProps {
     readonly params: Promise<{ document: string }>;
 }
 
@@ -15,7 +15,7 @@ export function generateStaticParams() {
     return Object.keys(legalDocuments).map((document) => ({ document }));
 }
 
-export async function generateMetadata({ params }: LegalPageProps) {
+export async function generateMetadata({ params }: ILegalPageProps) {
     const { document } = await params;
     if (!isLegalDocumentName(document)) {
         notFound();
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: LegalPageProps) {
     });
 }
 
-export default async function LegalPage({ params }: LegalPageProps) {
+export default async function LegalPage({ params }: ILegalPageProps) {
     const { document } = await params;
     if (!isLegalDocumentName(document)) {
         notFound();

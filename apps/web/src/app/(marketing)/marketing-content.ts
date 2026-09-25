@@ -61,12 +61,12 @@ export const landingFeatures = [
 ] as const;
 
 /** `limited` marks a Free-plan restriction; `upgrade` marks what Pro adds over Free. */
-export interface PlanFeature {
+export interface IPlanFeature {
     readonly label: string;
     readonly tone?: 'limited' | 'upgrade';
 }
 
-export const freePlanFeatures: readonly PlanFeature[] = [
+export const freePlanFeatures: readonly IPlanFeature[] = [
     { label: '1 administered Club' },
     { label: 'Up to 8 members per Club' },
     { label: '1 blocking Session per Club' },
@@ -78,7 +78,7 @@ export const freePlanFeatures: readonly PlanFeature[] = [
     { label: '90-day inactivity grace', tone: 'limited' },
 ];
 
-export const proPlanFeatures: readonly PlanFeature[] = [
+export const proPlanFeatures: readonly IPlanFeature[] = [
     { label: '5 administered Clubs', tone: 'upgrade' },
     { label: 'Up to 16 members per Club', tone: 'upgrade' },
     { label: '1 blocking Session per Club' },

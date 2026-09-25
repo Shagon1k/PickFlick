@@ -1,17 +1,17 @@
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { PublicShell } from '@/components/shells/shells';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Button from '@/components/ui/Button/Button';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { createPublicMetadata } from '@/lib/public-metadata';
 
+import styles from '../marketing.module.scss';
 import {
     comparisonRows,
     freePlanFeatures,
+    type IPlanFeature,
     proPlanFeatures,
-    type PlanFeature,
 } from '../marketing-content';
-import styles from '../marketing.module.scss';
 import { PricingFaq } from './_components/PricingFaq/PricingFaq';
-import { PublicShell } from '@/components/shells/shells';
-import { createPublicMetadata } from '@/lib/public-metadata';
 
 export const metadata = createPublicMetadata({
     title: 'Pricing — PickFlick',
@@ -29,7 +29,7 @@ function SprocketDivider() {
     );
 }
 
-function PlanFeatures({ features }: Readonly<{ features: readonly PlanFeature[] }>) {
+function PlanFeatures({ features }: { features: readonly IPlanFeature[] }) {
     return (
         <ul className={styles.featureList}>
             {features.map(({ label, tone }) => (

@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * Component and shell previews ship in every image because one image is promoted from UAT to

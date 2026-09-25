@@ -1,12 +1,13 @@
 'use client';
 
 import { type IClubSettings } from '@pickflick/contracts';
+
 import Button from '@/components/ui/Button/Button';
 
 import { type IClubActionState } from '../../action-state';
-import styles from '../../settings.module.scss';
+import styles from '../../page.module.scss';
 
-export function ActionStatus({ state }: Readonly<{ state: IClubActionState }>) {
+export function ActionStatus({ state }: { state: IClubActionState }) {
     return (
         <p
             aria-atomic="true"
@@ -20,7 +21,7 @@ export function ActionStatus({ state }: Readonly<{ state: IClubActionState }>) {
     );
 }
 
-export type VisibilityName =
+export type TVisibilityName =
     | 'showNominationAuthors'
     | 'showNominationsBeforeSubmit'
     | 'showVoteResults'
@@ -28,7 +29,7 @@ export type VisibilityName =
     | 'useMonochromeMedia';
 
 export const visibilityOptions: ReadonlyArray<{
-    readonly name: VisibilityName;
+    readonly name: TVisibilityName;
     readonly label: string;
 }> = [
     { name: 'showNominationAuthors', label: 'Show who nominated each film' },
@@ -46,7 +47,7 @@ export function isWritable(projection: IClubSettings): boolean {
  * Club Info and Settings save through one settings action; each card submits its own fields and
  * carries the other card's stored values so a save never resets what the other card shows.
  */
-export function StoredClubInfo({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function StoredClubInfo({ projection }: { projection: IClubSettings }) {
     return (
         <>
             <input name="name" type="hidden" value={projection.club.name} />
@@ -65,7 +66,7 @@ export function StoredClubInfo({ projection }: Readonly<{ projection: IClubSetti
     );
 }
 
-export function StoredVisibility({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function StoredVisibility({ projection }: { projection: IClubSettings }) {
     return (
         <>
             {visibilityOptions
@@ -81,11 +82,11 @@ export function SaveRow({
     disabled,
     pending,
     state,
-}: Readonly<{
+}: {
     disabled: boolean;
     pending: boolean;
     state: IClubActionState;
-}>) {
+}) {
     return (
         <div className={styles.saveRow}>
             <div className={styles.saveButton}>

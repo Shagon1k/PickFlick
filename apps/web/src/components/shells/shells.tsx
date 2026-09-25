@@ -1,10 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
 
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Pill from '@/components/ui/Pill/Pill';
-import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
-
 import { MobileProductNavigation } from '@/components/shells/mobile-navigation';
 import { ProductHeaderActions, ProductSearch } from '@/components/shells/product-header';
 import { ProductOverlayProvider } from '@/components/shells/product-overlay';
@@ -12,16 +7,20 @@ import { BoundedScrollRegion, SectionNavigation } from '@/components/shells/sect
 import {
     accountNavigation,
     canonicalRoutes,
+    type IShellNavigationItem,
+    type IShellRouteMap,
     mobileNavigation,
     productNavigation,
     publicNavigation,
-    type ShellArea,
-    type ShellNavigationItem,
-    type ShellRouteMap,
+    type TShellArea,
 } from '@/components/shells/shell-navigation';
 import styles from '@/components/shells/shells.module.scss';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import Pill from '@/components/ui/Pill/Pill';
+import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
 
-function Brand({ href = '/' }: Readonly<{ href?: string }>) {
+function Brand({ href = '/' }: { href?: string }) {
     return (
         <a aria-label="PickFlick home" className={styles.brand} href={href}>
             <BrandImage alt="" asset="logo" loading="eager" />
@@ -30,7 +29,7 @@ function Brand({ href = '/' }: Readonly<{ href?: string }>) {
     );
 }
 
-function SiteFooter({ routes }: Readonly<{ routes: ShellRouteMap }>) {
+function SiteFooter({ routes }: { routes: IShellRouteMap }) {
     const footerLinks = [
         { href: routes.howItWorks, label: 'How it works' },
         { href: routes.legalPrivacy, label: 'Privacy' },
@@ -64,11 +63,11 @@ export function PublicShell({
     children,
     currentPage,
     routes = canonicalRoutes,
-}: Readonly<{
+}: {
     children: ReactNode;
     currentPage?: 'pricing';
-    routes?: ShellRouteMap;
-}>) {
+    routes?: IShellRouteMap;
+}) {
     return (
         <div className={styles.shell} data-shell="public">
             <header className={styles.publicHeader}>
@@ -103,7 +102,12 @@ export function SetupShell({
     description,
     routes = canonicalRoutes,
     title,
-}: Readonly<{ children: ReactNode; description: string; routes?: ShellRouteMap; title: string }>) {
+}: {
+    children: ReactNode;
+    description: string;
+    routes?: IShellRouteMap;
+    title: string;
+}) {
     return (
         <div className={`${styles.shell} ${styles.setupShell}`} data-shell="setup">
             <header className={styles.compactHeader}>
@@ -128,15 +132,15 @@ export function SetupShell({
     );
 }
 
-interface ProductShellProps {
+interface IProductShellProps {
     readonly children: ReactNode;
-    readonly clubItems: readonly ShellNavigationItem[];
+    readonly clubItems: readonly IShellNavigationItem[];
     /** `recovery` marks error states, where no product destination is current. */
-    readonly currentArea: ShellArea;
+    readonly currentArea: TShellArea;
     readonly eyebrow: string;
     readonly title: string;
     readonly admin?: boolean;
-    readonly routes?: ShellRouteMap | undefined;
+    readonly routes?: IShellRouteMap | undefined;
 }
 
 function ProductChrome({
@@ -148,16 +152,16 @@ function ProductChrome({
     routes = canonicalRoutes,
     sessionBackHref,
     settingsItems,
-}: Readonly<{
+}: {
     admin?: boolean;
     children: ReactNode;
-    clubItems: readonly ShellNavigationItem[];
-    currentArea: ProductShellProps['currentArea'];
-    libraryItems?: readonly ShellNavigationItem[] | undefined;
-    routes?: ShellRouteMap | undefined;
+    clubItems: readonly IShellNavigationItem[];
+    currentArea: IProductShellProps['currentArea'];
+    libraryItems?: readonly IShellNavigationItem[] | undefined;
+    routes?: IShellRouteMap | undefined;
     sessionBackHref?: string;
-    settingsItems?: readonly ShellNavigationItem[] | undefined;
-}>) {
+    settingsItems?: readonly IShellNavigationItem[] | undefined;
+}) {
     const desktopItems = (currentArea === 'session' ? [] : productNavigation(routes)).map(
         (item) => ({
             ...item,
@@ -220,13 +224,13 @@ export function ProductFrame({
     clubItems = [],
     currentArea = 'hub',
     routes,
-}: Readonly<{
+}: {
     admin?: boolean;
     children: ReactNode;
-    clubItems?: readonly ShellNavigationItem[];
+    clubItems?: readonly IShellNavigationItem[];
     currentArea?: 'hub' | 'recovery';
-    routes?: ShellRouteMap;
-}>) {
+    routes?: IShellRouteMap;
+}) {
     return (
         <ProductChrome
             admin={admin}
@@ -247,7 +251,7 @@ export function ProductShell({
     eyebrow,
     routes,
     title,
-}: ProductShellProps) {
+}: IProductShellProps) {
     return (
         <ProductChrome
             admin={admin}
@@ -290,12 +294,12 @@ export function SessionShell({
     children,
     clubItems,
     routes,
-}: Readonly<{
+}: {
     admin?: boolean;
     children: ReactNode;
-    clubItems: readonly ShellNavigationItem[];
-    routes?: ShellRouteMap;
-}>) {
+    clubItems: readonly IShellNavigationItem[];
+    routes?: IShellRouteMap;
+}) {
     return (
         <ProductChrome
             admin={admin}
@@ -339,14 +343,14 @@ export function SessionShell({
     );
 }
 
-interface ControlShellProps {
+interface IControlShellProps {
     readonly admin?: boolean;
     readonly children: ReactNode;
-    readonly clubItems: readonly ShellNavigationItem[];
+    readonly clubItems: readonly IShellNavigationItem[];
     readonly currentArea: 'library' | 'settings';
     readonly description: string;
-    readonly items: readonly ShellNavigationItem[];
-    readonly routes?: ShellRouteMap;
+    readonly items: readonly IShellNavigationItem[];
+    readonly routes?: IShellRouteMap;
     readonly title: string;
 }
 
@@ -359,7 +363,7 @@ export function ControlShell({
     items,
     routes,
     title,
-}: ControlShellProps) {
+}: IControlShellProps) {
     return (
         <ProductChrome
             admin={admin}
@@ -389,12 +393,12 @@ export function AdminShell({
     clubItems,
     items,
     routes = canonicalRoutes,
-}: Readonly<{
+}: {
     children: ReactNode;
-    clubItems: readonly ShellNavigationItem[];
-    items: readonly ShellNavigationItem[];
-    routes?: ShellRouteMap;
-}>) {
+    clubItems: readonly IShellNavigationItem[];
+    items: readonly IShellNavigationItem[];
+    routes?: IShellRouteMap;
+}) {
     return (
         <ProductChrome admin clubItems={clubItems} currentArea="admin" routes={routes}>
             <main className={`${styles.controlMain} ${styles.adminMain}`}>
@@ -416,10 +420,7 @@ export function AdminShell({
     );
 }
 
-export function ShellPlaceholder({
-    children,
-    title,
-}: Readonly<{ children: ReactNode; title: string }>) {
+export function ShellPlaceholder({ children, title }: { children: ReactNode; title: string }) {
     return (
         <section
             aria-labelledby={`${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-title`}
@@ -431,7 +432,7 @@ export function ShellPlaceholder({
     );
 }
 
-export function DenseRegion({ label }: Readonly<{ label: string }>) {
+export function DenseRegion({ label }: { label: string }) {
     return (
         <BoundedScrollRegion label={label}>
             <div className={styles.denseGrid}>

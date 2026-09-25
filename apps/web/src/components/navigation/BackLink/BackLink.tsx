@@ -11,7 +11,10 @@ import Icon from '@/components/ui/Icon/Icon';
 export function BackLink({
     className,
     fallbackHref,
-}: Readonly<{ className?: string | undefined; fallbackHref: string }>) {
+}: {
+    className?: string | undefined;
+    fallbackHref: string;
+}) {
     function goBack(event: MouseEvent<HTMLAnchorElement>): void {
         if (
             event.button !== 0 ||

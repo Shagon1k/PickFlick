@@ -1,7 +1,8 @@
 'use client';
 
-import Button from '@/components/ui/Button/Button';
 import { useTransition } from 'react';
+
+import Button from '@/components/ui/Button/Button';
 
 export default function ErrorRecoveryPreviewPage() {
     const [isPending, startTransition] = useTransition();

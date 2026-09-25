@@ -2,6 +2,8 @@
 
 import {
     createContext,
+    type ReactNode,
+    type RefObject,
     use,
     useCallback,
     useEffect,
@@ -9,30 +11,28 @@ import {
     useMemo,
     useRef,
     useState,
-    type ReactNode,
-    type RefObject,
 } from 'react';
 
 /**
  * One product overlay (search, notifications, account, or a navigation strip) is open at a time.
  * Opening another closes the first, and closing returns focus to the trigger that opened it.
  */
-type HeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search';
-type ProductOverlay = HeaderOverlay | `mobile:${string}` | `section:${string}`;
+type THeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search';
+type TProductOverlay = THeaderOverlay | `mobile:${string}` | `section:${string}`;
 
-interface ProductOverlayContextValue {
-    readonly activeOverlay: ProductOverlay | null;
+interface IProductOverlayContextValue {
+    readonly activeOverlay: TProductOverlay | null;
     readonly closeOverlay: (returnFocus?: boolean) => void;
-    readonly toggleOverlay: (overlay: ProductOverlay, trigger: HTMLElement) => void;
+    readonly toggleOverlay: (overlay: TProductOverlay, trigger: HTMLElement) => void;
 }
 
-const ProductOverlayContext = createContext<ProductOverlayContextValue | null>(null);
+const ProductOverlayContext = createContext<IProductOverlayContextValue | null>(null);
 
 const focusableSelector =
     "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-export function ProductOverlayProvider({ children }: Readonly<{ children: ReactNode }>) {
-    const [activeOverlay, setActiveOverlay] = useState<ProductOverlay | null>(null);
+export function ProductOverlayProvider({ children }: { children: ReactNode }) {
+    const [activeOverlay, setActiveOverlay] = useState<TProductOverlay | null>(null);
     const returnFocusRef = useRef<HTMLElement | null>(null);
 
     const closeOverlay = useCallback((returnFocus = true) => {
@@ -43,7 +43,7 @@ export function ProductOverlayProvider({ children }: Readonly<{ children: ReactN
         }
     }, []);
 
-    const toggleOverlay = useCallback((overlay: ProductOverlay, trigger: HTMLElement) => {
+    const toggleOverlay = useCallback((overlay: TProductOverlay, trigger: HTMLElement) => {
         returnFocusRef.current = trigger;
         setActiveOverlay((current) => (current === overlay ? null : overlay));
     }, []);

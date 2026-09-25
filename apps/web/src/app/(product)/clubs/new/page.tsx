@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { getSessionState, loginPath } from '@/api/session.server';
+import { BackLink } from '@/components/navigation/BackLink/BackLink';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
-import { getSessionState, loginPath } from '@/api/session.server';
 import styles from '../../onboarding.module.scss';
 import CreateClubForm from './_components/CreateClubForm/CreateClubForm';
-import { BackLink } from '@/components/navigation/BackLink/BackLink';
 
 export const metadata: Metadata = {
     title: 'Create a Club — PickFlick',

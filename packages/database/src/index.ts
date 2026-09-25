@@ -1,7 +1,6 @@
 export { checkDatabaseReadiness, createDatabaseAdapter, createDatabaseClient } from './client.js';
-export { Prisma, PrismaClient } from './generated/prisma/client.js';
 export { SYNTHETIC_FIXTURES } from './fixtures.js';
-export { assertSafeSeedOrResetTarget } from './safety.js';
+export { Prisma, PrismaClient } from './generated/prisma/client.js';
 export type {
     AppRole,
     ClubAuditAction,
@@ -10,3 +9,4 @@ export type {
     MembershipStatus,
     UserStatus,
 } from './generated/prisma/enums.js';
+export { assertSafeSeedOrResetTarget } from './safety.js';

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { shellRoutes, openShell, formatViolations } from './shell-fixtures';
+
+import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 for (const shell of shellRoutes) {

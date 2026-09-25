@@ -1,8 +1,8 @@
-import ButtonLink from '@/components/ui/Button/ButtonLink';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 import Pill from '@/components/ui/Pill/Pill';
 
-import styles from './shell-preview.module.scss';
+import styles from './page.module.scss';
 
 const shells = [
     ['Public', 'Brand header, responsive navigation, editorial canvas, and public footer.'],

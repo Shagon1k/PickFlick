@@ -9,13 +9,13 @@ const SOCIAL_IMAGE = {
     width: 1200,
 } as const;
 
-interface PublicMetadataInput {
+interface IPublicMetadataInput {
     readonly description: string;
     readonly path: `/${string}`;
     readonly title: string;
 }
 
-export function createPublicMetadata({ description, path, title }: PublicMetadataInput): Metadata {
+export function createPublicMetadata({ description, path, title }: IPublicMetadataInput): Metadata {
     return {
         alternates: { canonical: path },
         description,

@@ -4,20 +4,20 @@ import { useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import Icon from '@/components/ui/Icon/Icon';
+import { startSocialSignIn, type TIdentityProvider } from '@/lib/auth.service';
 
-import { startSocialSignIn, type IdentityProvider } from '@/lib/auth.service';
-import styles from '../../login.module.scss';
+import styles from '../../page.module.scss';
 
-interface LoginActionsProps {
+interface ILoginActionsProps {
     readonly appleSignInEnabled: boolean;
     readonly returnTo: string;
 }
 
-export function LoginActions({ appleSignInEnabled, returnTo }: LoginActionsProps) {
-    const [pendingProvider, setPendingProvider] = useState<IdentityProvider>();
+export function LoginActions({ appleSignInEnabled, returnTo }: ILoginActionsProps) {
+    const [pendingProvider, setPendingProvider] = useState<TIdentityProvider>();
     const [error, setError] = useState('');
 
-    async function signIn(provider: IdentityProvider) {
+    async function signIn(provider: TIdentityProvider) {
         const providerName = provider === 'apple' ? 'Apple' : 'Google';
         setPendingProvider(provider);
         setError('');

@@ -1,11 +1,10 @@
-import '@mantine/core/styles.layer.css';
 import '@/styles/globals.scss';
 
 import type { ReactNode } from 'react';
 
 import ThemeProvider, {
-    ThemeScript,
     themeHtmlProps,
+    ThemeScript,
 } from '@/components/ui/ThemeProvider/ThemeProvider';
 import { rootMetadata } from '@/lib/public-metadata';
 

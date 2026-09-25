@@ -7,12 +7,12 @@ export function NotificationsPanel({
     mobile = false,
     open,
     panelRef,
-}: Readonly<{
+}: {
     id: string;
     mobile?: boolean;
     open: boolean;
     panelRef: RefObject<HTMLDivElement | null>;
-}>) {
+}) {
     return (
         <div
             aria-label="Notifications"

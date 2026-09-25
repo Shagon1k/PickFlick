@@ -1,17 +1,17 @@
+import { resolveAuthReturnTarget } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { resolveAuthReturnTarget } from '@pickflick/contracts';
+import { getSessionState, isAppleSignInEnabled } from '@/api/session.server';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Icon from '@/components/ui/Icon/Icon';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
-import { getSessionState, isAppleSignInEnabled } from '@/api/session.server';
 import { LoginActions } from './_components/LoginActions/LoginActions';
-import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
 import { firstSearchValue } from './login.utils';
-import styles from './login.module.scss';
+import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
+import styles from './page.module.scss';
 
 export const metadata: Metadata = {
     title: 'Sign in — PickFlick',
@@ -20,7 +20,9 @@ export const metadata: Metadata = {
 
 export default async function LoginPage({
     searchParams,
-}: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
     await connection();
     const parameters = await searchParams;
     const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));

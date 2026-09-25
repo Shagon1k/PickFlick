@@ -1,28 +1,27 @@
 'use client';
 
+import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
 import { useActionState, useState } from 'react';
 
-import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
 import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
 import InfoTip from '@/components/ui/InfoTip/InfoTip';
+import Modal from '@/components/ui/Modal/Modal';
 import TextInput from '@/components/ui/TextInput/TextInput';
 
-import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
 import { initialClubActionState } from '../../action-state';
-import styles from '../../settings.module.scss';
-
+import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
+import styles from '../../page.module.scss';
 import { ActionStatus } from './club-settings-shared';
 
 function MemberRoleForm({
     clubId,
     member,
     writable,
-}: Readonly<{
+}: {
     clubId: string;
     member: IClubMember;
     writable: boolean;
-}>) {
+}) {
     const action = changeClubMemberRoleAction.bind(null, clubId, member.id);
     const [state, formAction, pending] = useActionState(action, initialClubActionState);
     if (member.role === 'ADMIN') {
@@ -58,7 +57,7 @@ function MemberRoleForm({
     );
 }
 
-function ManageModerators({ projection }: Readonly<{ projection: IClubSettings }>) {
+function ManageModerators({ projection }: { projection: IClubSettings }) {
     const [open, setOpen] = useState(false);
     const writable = projection.permissions.manageRoles && projection.club.lifecycle === 'ACTIVE';
     return (
@@ -109,7 +108,7 @@ function ConfirmAction({
     label,
     title,
     variant = 'secondary-danger',
-}: Readonly<{
+}: {
     action: 'archive' | 'delete' | 'leave';
     clubId: string;
     confirmation: string;
@@ -117,7 +116,7 @@ function ConfirmAction({
     label: string;
     title: string;
     variant?: 'secondary-danger' | 'danger';
-}>) {
+}) {
     const serverAction = clubLifecycleAction.bind(null, clubId, action);
     const [state, formAction, pending] = useActionState(serverAction, initialClubActionState);
     const [open, setOpen] = useState(false);
@@ -151,7 +150,7 @@ function ConfirmAction({
     );
 }
 
-function ReactivateAction({ clubId }: Readonly<{ clubId: string }>) {
+function ReactivateAction({ clubId }: { clubId: string }) {
     const action = clubLifecycleAction.bind(null, clubId, 'reactivate');
     const [state, formAction, pending] = useActionState(action, initialClubActionState);
     return (
@@ -164,7 +163,7 @@ function ReactivateAction({ clubId }: Readonly<{ clubId: string }>) {
     );
 }
 
-export function DangerZone({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function DangerZone({ projection }: { projection: IClubSettings }) {
     const active = projection.club.lifecycle === 'ACTIVE';
     const isAdmin = projection.club.membershipRole === 'ADMIN';
     const clubId = projection.club.id;

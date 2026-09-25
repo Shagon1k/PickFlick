@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function authenticate(context: BrowserContext, token: string) {

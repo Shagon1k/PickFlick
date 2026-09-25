@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 import styles from '../../marketing.module.scss';
 
-export function LandingRevealRoot({ children }: Readonly<{ children: ReactNode }>) {
+export function LandingRevealRoot({ children }: { children: ReactNode }) {
     const rootRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

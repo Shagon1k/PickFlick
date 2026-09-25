@@ -1,26 +1,26 @@
 import type { TIconName } from '@/components/ui/Icon/Icon';
 
 /** Product areas that mark the matching mobile tab and navigation group as current. */
-export type ShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';
+export type TShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';
 
-export interface ShellNavigationItem {
+export interface IShellNavigationItem {
     readonly href: string;
     readonly label: string;
     readonly current?: boolean;
 }
 
-export interface ShellActionItem {
+export interface IShellActionItem {
     readonly action: 'sign-out';
     readonly label: string;
     readonly current?: never;
 }
 
-export type ShellMenuItem = ShellActionItem | ShellNavigationItem;
+export type TShellMenuItem = IShellActionItem | IShellNavigationItem;
 
-export interface MobileNavigationMenu {
+export interface IMobileNavigationMenu {
     readonly icon: TIconName;
     readonly id: string;
-    readonly items: readonly ShellMenuItem[];
+    readonly items: readonly TShellMenuItem[];
     /** Visible trigger text; the Hub trigger shows the current Club view. */
     readonly label: string;
     /** Stable group name used for the strip's accessible name. */
@@ -28,15 +28,15 @@ export interface MobileNavigationMenu {
     readonly current?: boolean;
 }
 
-export interface MobileNavigationAlerts {
+export interface IMobileNavigationAlerts {
     readonly id: 'alerts';
     readonly label: string;
     readonly overlay: 'notifications';
 }
 
-export type MobileNavigationEntry = MobileNavigationAlerts | MobileNavigationMenu;
+export type TMobileNavigationEntry = IMobileNavigationAlerts | IMobileNavigationMenu;
 
-export interface ShellRouteMap {
+export interface IShellRouteMap {
     readonly admin: string;
     readonly contact: string;
     readonly createClub: string;
@@ -55,7 +55,7 @@ export interface ShellRouteMap {
     readonly setup: string;
 }
 
-export const canonicalRoutes: ShellRouteMap = {
+export const canonicalRoutes: IShellRouteMap = {
     admin: '/admin',
     contact: '/contact',
     createClub: '/clubs/new',
@@ -75,9 +75,9 @@ export const canonicalRoutes: ShellRouteMap = {
 };
 
 export function publicNavigation(
-    routes: ShellRouteMap,
+    routes: IShellRouteMap,
     currentPage?: 'pricing',
-): readonly ShellNavigationItem[] {
+): readonly IShellNavigationItem[] {
     return [
         { href: routes.howItWorks, label: 'How it works' },
         { href: routes.features, label: 'Features' },
@@ -85,20 +85,23 @@ export function publicNavigation(
     ];
 }
 
-export function productNavigation(routes: ShellRouteMap): readonly ShellNavigationItem[] {
+export function productNavigation(routes: IShellRouteMap): readonly IShellNavigationItem[] {
     return [
         { href: routes.product, label: 'Hub' },
         { href: routes.library, label: 'My Library' },
     ];
 }
 
-const signOutItem: ShellActionItem = { action: 'sign-out', label: 'Sign out' };
+const signOutItem: IShellActionItem = { action: 'sign-out', label: 'Sign out' };
 
 function sectionHref(route: string, tab: string): string {
     return `${route}${route.includes('?') ? '&' : '?'}tab=${tab}`;
 }
 
-export function accountNavigation(routes: ShellRouteMap, admin: boolean): readonly ShellMenuItem[] {
+export function accountNavigation(
+    routes: IShellRouteMap,
+    admin: boolean,
+): readonly TShellMenuItem[] {
     return [
         ...(admin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
         { href: routes.settings, label: 'Settings' },
@@ -114,7 +117,7 @@ export function accountNavigation(routes: ShellRouteMap, admin: boolean): readon
 export function clubNavigation(
     clubId: string,
     current: 'overview' | 'manage',
-): readonly ShellNavigationItem[] {
+): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [
         { href: canonicalRoutes.product, label: 'Overview', current: current === 'overview' },
@@ -133,17 +136,17 @@ export function mobileNavigation({
     libraryItems,
     routes,
     settingsItems,
-}: Readonly<{
+}: {
     admin: boolean;
-    clubItems: readonly ShellNavigationItem[];
-    currentArea: ShellArea;
-    libraryItems?: readonly ShellNavigationItem[] | undefined;
-    routes: ShellRouteMap;
-    settingsItems?: readonly ShellNavigationItem[] | undefined;
-}>): readonly MobileNavigationEntry[] {
+    clubItems: readonly IShellNavigationItem[];
+    currentArea: TShellArea;
+    libraryItems?: readonly IShellNavigationItem[] | undefined;
+    routes: IShellRouteMap;
+    settingsItems?: readonly IShellNavigationItem[] | undefined;
+}): readonly TMobileNavigationEntry[] {
     const hubArea = currentArea === 'hub' || currentArea === 'session';
     const currentClubItem = hubArea ? clubItems.find((item) => item.current) : undefined;
-    const hubItems: readonly ShellMenuItem[] =
+    const hubItems: readonly TShellMenuItem[] =
         clubItems.length > 0
             ? clubItems.map((item) => ({ ...item, current: hubArea && item.current === true }))
             : [

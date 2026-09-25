@@ -4,7 +4,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { CLUB_AVATAR_MAX_BYTES, type TClubAvatarMediaType } from '@pickflick/contracts';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { StorageService, type IStoredObject } from '../storage/storage.service.js';
+import { type IStoredObject, StorageService } from '../storage/storage.service.js';
 import { assertActive, assertAdmin, findMembership, recordAudit } from './club-access.js';
 
 const signatures: Record<

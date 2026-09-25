@@ -14,7 +14,7 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
 
 import { sendContact } from '../../actions';
-import styles from '../../contact.module.scss';
+import styles from '../../page.module.scss';
 import type { IContactFormValues } from './contact-form.types';
 import { validateContactValues } from './contact-form.validation';
 

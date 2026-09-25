@@ -1,16 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+
 import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
 import FilmStripMenu from '@/components/ui/FilmStripMenu/FilmStripMenu';
+import Modal from '@/components/ui/Modal/Modal';
 import RatingControl from '@/components/ui/ScaleControl/RatingControl';
 import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
 import Select from '@/components/ui/Select/Select';
 import Tabs from '@/components/ui/Tabs/Tabs';
 import TextInput from '@/components/ui/TextInput/TextInput';
-import { useState } from 'react';
 
-import styles from '../../preview.module.scss';
+import styles from '../../page.module.scss';
 
 export function PreviewInteractions() {
     const [dialogOpen, setDialogOpen] = useState(false);
