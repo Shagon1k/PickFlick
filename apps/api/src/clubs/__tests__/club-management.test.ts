@@ -173,7 +173,7 @@ describe("Club management service", () => {
   it("passes the current tier rule to serialized settings persistence", async () => {
     const fixture = service();
     fixture.repository.updateSettingsCall.mockRejectedValueOnce(
-      new ClubConflictError("Vote-result visibility is not configurable on this Club tier."),
+      new ClubConflictError("TIER_SETTING_UNAVAILABLE", "Vote-result visibility is not configurable on this Club tier."),
     );
     await expect(fixture.service.updateSettings(principal(ids.admin), ids.club, {
       ...validSettings,
@@ -303,7 +303,7 @@ describe("Club management service", () => {
 
   it("deletes the uploaded object when the reference update is rejected", async () => {
     const fixture = service();
-    const rejection = new ClubConflictError("Archived Clubs are read-only until reactivated.");
+    const rejection = new ClubConflictError("CLUB_ARCHIVED", "Archived Clubs are read-only until reactivated.");
     fixture.repository.avatarCall.mockRejectedValueOnce(rejection);
     const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
 

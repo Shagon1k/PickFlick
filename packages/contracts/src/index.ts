@@ -52,6 +52,8 @@ export interface ApiErrorEnvelope {
     readonly code: ApiErrorCode;
     readonly message: string;
     readonly requestId: string;
+    /** Stable module-specific cause, such as a `ClubConflictReason`, when the code alone is ambiguous. */
+    readonly reason?: string;
   };
 }
 
@@ -103,6 +105,19 @@ export interface ClubPolicyProjection {
   readonly permissions: ClubPolicyPermissions;
   readonly entitlements: ClubTierProjection;
 }
+
+/** Why a Club request conflicted with current state; the web maps each to recovery copy. */
+export const CLUB_CONFLICT_REASONS = [
+  "CONFIRMATION_MISMATCH",
+  "ADMIN_CLUB_LIMIT_REACHED",
+  "ADMIN_MUST_TRANSFER",
+  "SESSION_HISTORY",
+  "CLUB_ARCHIVED",
+  "TIER_SETTING_UNAVAILABLE",
+  "OPERATION_REUSED",
+  "MEMBERSHIP_INELIGIBLE",
+] as const;
+export type ClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
 
 export const CLUB_NAME_MIN_LENGTH = 3;
 export const CLUB_NAME_MAX_LENGTH = 100;

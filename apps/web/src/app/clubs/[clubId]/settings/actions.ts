@@ -14,6 +14,7 @@ import {
   uploadClubAvatar,
   type ClubApiResult,
 } from "../../../../components/clubs/club-api";
+import { clubFailureMessage } from "../../../../components/clubs/club-errors";
 import { clubValues, validateClubValues } from "../../../../components/clubs/club-form.validation";
 import type { ClubManagementActionState } from "../../../../components/clubs/club-management.types";
 
@@ -29,21 +30,12 @@ function operationId(formData: FormData): string {
   return String(formData.get("operationId") ?? "");
 }
 
-function apiFailure(previous: ClubManagementActionState, status: number): ClubManagementActionState {
-  if (status === 401) {
-    return state(previous, "error", "Your session expired. Sign in again, then retry.");
-  }
-  if (status === 403) {
-    return state(previous, "error", "Your current Club role does not allow that action.");
-  }
-  if (status === 409) {
-    return state(previous, "error", "The Club changed or the confirmation did not match. Reload and try again.");
-  }
-  return state(
-    previous,
-    "error",
-    "This Club action may have been applied. Reload to check current state, or retry now; the same operation ID will be used.",
-  );
+function apiFailure(
+  previous: ClubManagementActionState,
+  status: number,
+  reason?: string,
+): ClubManagementActionState {
+  return state(previous, "error", clubFailureMessage(status, reason));
 }
 
 async function submitMutation<T>(
@@ -52,7 +44,7 @@ async function submitMutation<T>(
 ): Promise<{ readonly failure: ClubManagementActionState } | { readonly response: ClubApiResult<T> }> {
   try {
     const response = await request();
-    return response.ok ? { response } : { failure: apiFailure(previous, response.status) };
+    return response.ok ? { response } : { failure: apiFailure(previous, response.status, response.reason) };
   } catch {
     return { failure: apiFailure(previous, 503) };
   }

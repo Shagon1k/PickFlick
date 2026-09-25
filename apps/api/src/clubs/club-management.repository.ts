@@ -163,7 +163,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         return { changed: existing.changed, replayed: true };
       }
       if (input.voteResultVisibility !== "ADMIN_CONFIGURABLE" && input.showVoteResults) {
-        throw new ClubConflictError("Vote-result visibility is not configurable on this Club tier.");
+        throw new ClubConflictError("TIER_SETTING_UNAVAILABLE", "Vote-result visibility is not configurable on this Club tier.");
       }
       const club = actor.club;
       const changed =
@@ -238,7 +238,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
           },
         });
         if (activeAdminClubCount >= input.adminClubLimit) {
-          throw new ClubConflictError("The current User has reached the administered Club limit.");
+          throw new ClubConflictError("ADMIN_CLUB_LIMIT_REACHED", "The current User has reached the administered Club limit.");
         }
       }
       if (changed) {
@@ -290,7 +290,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         throw new ClubAuthorizationError("The current User cannot leave this Club.");
       }
       if (membership.role === "ADMIN") {
-        throw new ClubConflictError("A Club Admin must transfer administration or delete the Club before leaving.");
+        throw new ClubConflictError("ADMIN_MUST_TRANSFER", "A Club Admin must transfer administration or delete the Club before leaving.");
       }
       await transaction.membership.update({
         where: { id: membership.id },
@@ -327,10 +327,10 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       }
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, false);
       if (input.confirmation !== actor.club.name) {
-        throw new ClubConflictError("The Club name confirmation does not match.");
+        throw new ClubConflictError("CONFIRMATION_MISMATCH", "The Club name confirmation does not match.");
       }
       if (await transaction.session.count({ where: { clubId } })) {
-        throw new ClubConflictError("A Club with Session history cannot be deleted.");
+        throw new ClubConflictError("SESSION_HISTORY", "A Club with Session history cannot be deleted.");
       }
       const deletedAt = new Date();
       await transaction.club.update({
@@ -458,7 +458,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       existing.clubId !== clubId ||
       existing.requestHash !== requestHash
     ) {
-      throw new ClubConflictError("The operation identifier was already used for another Club operation.");
+      throw new ClubConflictError("OPERATION_REUSED", "The operation identifier was already used for another Club operation.");
     }
   }
 
@@ -503,7 +503,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       throw new ClubAuthorizationError("The current User cannot manage this Club.");
     }
     if (requireActiveClub && membership.club.lifecycle !== "ACTIVE") {
-      throw new ClubConflictError("Archived Clubs are read-only until reactivated.");
+      throw new ClubConflictError("CLUB_ARCHIVED", "Archived Clubs are read-only until reactivated.");
     }
     return { membershipId: membership.id, club: membership.club };
   }

@@ -48,7 +48,7 @@ class StubClubRepository extends ClubRepository {
   async create(input: PersistClubInput, adminClubLimit: number): Promise<StoredClubSummary> {
     const current = this.created.get(input.creatorUserId) ?? [];
     if (current.length >= adminClubLimit) {
-      throw new ClubConflictError("Admin Club limit reached.");
+      throw new ClubConflictError("ADMIN_CLUB_LIMIT_REACHED", "Admin Club limit reached.");
     }
     const club: StoredClubSummary = {
       id: input.clubId,
@@ -183,7 +183,9 @@ describe("Club policy HTTP boundary", () => {
       body: JSON.stringify({ name: "Second Club", selectionScaleMin: 1, selectionScaleMax: 5 }),
     });
     expect(limitedResponse.status).toBe(409);
-    await expect(limitedResponse.json()).resolves.toMatchObject({ error: { code: "CONFLICT" } });
+    await expect(limitedResponse.json()).resolves.toMatchObject({
+      error: { code: "CONFLICT", reason: "ADMIN_CLUB_LIMIT_REACHED" },
+    });
   });
 
   it.each([

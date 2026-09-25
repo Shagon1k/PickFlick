@@ -22,6 +22,7 @@ export interface ClubApiResult<T> {
   readonly status: number;
   readonly body?: T;
   readonly code?: string;
+  readonly reason?: string;
 }
 
 function backendEndpoint(path: string): URL {
@@ -112,12 +113,16 @@ async function parseResponse<T>(response: Response, validate: (value: unknown) =
   } catch {
     value = undefined;
   }
-  const error = value as ApiErrorEnvelope | undefined;
+  const body = response.ok && validate(value) ? value : undefined;
+  const error = value && typeof value === "object" && "error" in value
+    ? (value as ApiErrorEnvelope).error
+    : undefined;
   return {
-    ok: response.ok && validate(value),
+    ok: body !== undefined,
     status: response.status,
-    ...(response.ok && validate(value) ? { body: value } : {}),
-    ...(error && typeof error === "object" && "error" in error ? { code: error.error.code } : {}),
+    ...(body !== undefined ? { body } : {}),
+    ...(error ? { code: error.code } : {}),
+    ...(typeof error?.reason === "string" ? { reason: error.reason } : {}),
   };
 }
 

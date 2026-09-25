@@ -61,6 +61,16 @@ function frameworkStatusCode(exception: unknown): number | undefined {
   );
 }
 
+/** Passes through only a stable upper-case reason code, never free-form exception text. */
+function exceptionReason(exception: unknown): string | undefined {
+  if (!(exception instanceof HttpException)) {
+    return undefined;
+  }
+  const body = exception.getResponse();
+  const reason = typeof body === "object" && body !== null && "reason" in body ? body.reason : undefined;
+  return typeof reason === "string" && /^[A-Z][A-Z_]{0,63}$/u.test(reason) ? reason : undefined;
+}
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: ApplicationLogger) {}
@@ -74,7 +84,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const definition = errorDefinition(statusCode);
     const requestId =
       currentCorrelationContext()?.requestId ?? resolveCorrelationId(responseRequestId(response));
-    const fields = { event: "http.request.failed", requestId, statusCode, errorCode: definition.code };
+    const reason = exceptionReason(exception);
+    const fields = {
+      event: "http.request.failed",
+      requestId,
+      statusCode,
+      errorCode: definition.code,
+      ...(reason ? { reason } : {}),
+    };
 
     if (statusCode >= 500) {
       this.logger.error(fields, "HTTP request failed.");
@@ -86,6 +103,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
       error: {
         ...definition,
         requestId,
+        ...(reason ? { reason } : {}),
       },
     });
   }
