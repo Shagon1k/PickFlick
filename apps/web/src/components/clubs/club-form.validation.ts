@@ -2,18 +2,25 @@ import {
     CLUB_DESCRIPTION_MAX_LENGTH,
     CLUB_NAME_MAX_LENGTH,
     CLUB_NAME_MIN_LENGTH,
+    CLUB_SELECTION_SCALE_CEILING,
+    createClubSchema,
 } from '@pickflick/contracts';
 
-import type { ClubFieldErrors, ClubFormValues } from './club-form.types';
+import type {
+    IClubFormValues,
+    TClubFieldErrors,
+    TClubFieldName,
+} from '@/components/clubs/club-form.types';
+import { fieldErrors } from '@/lib/form-errors';
 
-function containsUnsafeControlCharacter(value: string): boolean {
-    return [...value].some((character) => {
-        const codePoint = character.codePointAt(0) ?? 0;
-        return (codePoint < 32 && codePoint !== 9 && codePoint !== 10) || codePoint === 127;
-    });
-}
+const FIELD_MESSAGES: Record<TClubFieldName, string> = {
+    name: `Use ${CLUB_NAME_MIN_LENGTH}–${CLUB_NAME_MAX_LENGTH} characters on a single line.`,
+    description: `Keep the description to ${CLUB_DESCRIPTION_MAX_LENGTH} characters.`,
+    selectionScaleMin: 'Choose 0 or 1 as the first score.',
+    selectionScaleMax: `Choose a final score above the first score, up to ${CLUB_SELECTION_SCALE_CEILING}.`,
+};
 
-export function clubValues(formData: FormData): ClubFormValues {
+export function clubValues(formData: FormData): IClubFormValues {
     return {
         name: String(formData.get('name') ?? ''),
         description: String(formData.get('description') ?? ''),
@@ -22,39 +29,16 @@ export function clubValues(formData: FormData): ClubFormValues {
     };
 }
 
-export function validateClubValues(values: ClubFormValues): ClubFieldErrors {
-    const errors: ClubFieldErrors = {};
-    const name = values.name.trim();
-    if (name.length < CLUB_NAME_MIN_LENGTH) {
-        errors.name = `Use at least ${CLUB_NAME_MIN_LENGTH} characters.`;
-    } else if (
-        name.length > CLUB_NAME_MAX_LENGTH ||
-        /[\r\n]/u.test(name) ||
-        containsUnsafeControlCharacter(name)
-    ) {
-        errors.name = `Keep the Club name to ${CLUB_NAME_MAX_LENGTH} safe, single-line characters.`;
-    }
+/** Parses the form's string values into the create/update Club request fields. */
+export function parseClubValues(values: IClubFormValues) {
+    return createClubSchema.safeParse({
+        ...values,
+        selectionScaleMin: Number(values.selectionScaleMin),
+        selectionScaleMax: Number(values.selectionScaleMax),
+    });
+}
 
-    const description = values.description.trim();
-    if (
-        description.length > CLUB_DESCRIPTION_MAX_LENGTH ||
-        containsUnsafeControlCharacter(description)
-    ) {
-        errors.description = `Keep the description to ${CLUB_DESCRIPTION_MAX_LENGTH} characters.`;
-    }
-
-    const selectionScaleMin = Number(values.selectionScaleMin);
-    const selectionScaleMax = Number(values.selectionScaleMax);
-    if (selectionScaleMin !== 0 && selectionScaleMin !== 1) {
-        errors.selectionScaleMin = 'Choose 0 or 1 as the first score.';
-    }
-    if (!Number.isInteger(selectionScaleMax) || selectionScaleMax < 1 || selectionScaleMax > 10) {
-        errors.selectionScaleMax = 'Choose a final score from 1 through 10.';
-    } else if (
-        (selectionScaleMin === 0 || selectionScaleMin === 1) &&
-        selectionScaleMax <= selectionScaleMin
-    ) {
-        errors.selectionScaleMax = 'The final score must be greater than the first score.';
-    }
-    return errors;
+export function validateClubValues(values: IClubFormValues): TClubFieldErrors {
+    const parsed = parseClubValues(values);
+    return parsed.success ? {} : fieldErrors(parsed.error, FIELD_MESSAGES);
 }

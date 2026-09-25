@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { CANONICAL_ORIGIN, INDEXABLE_PUBLIC_ROUTES } from '../indexing';
+import { CANONICAL_ORIGIN, INDEXABLE_PUBLIC_ROUTES } from '@/lib/indexing';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     return INDEXABLE_PUBLIC_ROUTES.map((path) => ({

@@ -1,10 +1,10 @@
-export type ClubFieldName = 'name' | 'description' | 'selectionScaleMin' | 'selectionScaleMax';
+export type TClubFieldName = 'name' | 'description' | 'selectionScaleMin' | 'selectionScaleMax';
 
-export interface ClubFormValues {
-    readonly name: string;
-    readonly description: string;
-    readonly selectionScaleMin: string;
-    readonly selectionScaleMax: string;
+export interface IClubFormValues {
+    name: string;
+    description: string;
+    selectionScaleMin: string;
+    selectionScaleMax: string;
 }
 
-export type ClubFieldErrors = Partial<Record<ClubFieldName, string>>;
+export type TClubFieldErrors = Partial<Record<TClubFieldName, string>>;
