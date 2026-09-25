@@ -1,9 +1,0 @@
-{
-    "extends": "@pickflick/config/tsconfig/library.json",
-    "compilerOptions": {
-        "noEmit": true,
-        "rootDir": "src",
-        "types": ["node"]
-    },
-    "include": ["src/**/*.ts", "src/**/*.tsx"]
-}

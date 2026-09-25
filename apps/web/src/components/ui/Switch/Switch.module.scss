@@ -1,0 +1,89 @@
+.switch {
+    display: flex;
+    /* Mantine renders the track first; the label reads first. */
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    min-height: var(--hit);
+    color: var(--fg);
+    cursor: pointer;
+}
+
+.switch__copy {
+    display: grid;
+    gap: 3px;
+}
+
+.switch__label {
+    font-size: var(--fs-body-sm);
+    font-weight: 600;
+    line-height: var(--lh-ui);
+}
+
+.switch__description {
+    color: var(--fg-secondary);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-body);
+}
+
+.switch__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+}
+
+.switch__track {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    flex: 0 0 auto;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
+}
+
+.switch__thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--fg-secondary);
+    transition:
+        transform var(--motion-emphasis) var(--ease-standard),
+        background-color var(--motion-local) var(--ease-standard);
+}
+
+.switch__input:checked + .switch__track {
+    border-color: var(--gold-border);
+    background: var(--gold-soft);
+}
+
+.switch__input:checked + .switch__track .switch__thumb {
+    transform: translateX(20px);
+    background: var(--ivory);
+}
+
+.switch__input:focus-visible + .switch__track {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.switch:has(.switch__input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .switch__track,
+    .switch__thumb {
+        transition-duration: 0.01ms;
+    }
+}

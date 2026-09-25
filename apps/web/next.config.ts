@@ -37,7 +37,6 @@ const nextConfig: NextConfig = {
             destination: `${backendInternalUrl.origin}/:path*`,
         },
     ],
-    transpilePackages: ['@pickflick/ui'],
 };
 
 export default nextConfig;

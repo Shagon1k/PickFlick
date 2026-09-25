@@ -1,6 +1,9 @@
 import { Fragment, type ReactNode } from 'react';
 
-import { ActionLink, BrandImage, Pill, StatusBanner } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Pill from '@/components/ui/Pill/Pill';
+import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
 
 import { MobileProductNavigation } from '@/components/shells/mobile-navigation';
 import { ProductHeaderActions, ProductSearch } from '@/components/shells/product-header';
@@ -82,13 +85,11 @@ export function PublicShell({
                             </a>
                         ))}
                     </nav>
-                    <ActionLink
-                        className={styles.publicHeaderAction}
-                        href={routes.product}
-                        size="small"
-                    >
-                        Go to App
-                    </ActionLink>
+                    <div className={styles.publicHeaderAction}>
+                        <ButtonLink href={routes.product} size="small">
+                            Go to App
+                        </ButtonLink>
+                    </div>
                 </div>
             </header>
             <main>{children}</main>

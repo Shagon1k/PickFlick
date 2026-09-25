@@ -2,14 +2,13 @@
 
 import { useState, type ReactNode } from 'react';
 
-import { Icon, type IconName } from '@pickflick/ui';
-
+import Icon, { type TIconName } from '@/components/ui/Icon/Icon';
 import { authClient } from '@/lib/auth-client';
 import type { ShellMenuItem } from '@/components/shells/shell-navigation';
 import styles from '@/components/shells/product-navigation.module.scss';
 
 export function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
-    const iconByLabel: Readonly<Record<string, IconName>> = {
+    const iconByLabel: Readonly<Record<string, TIconName>> = {
         'Admin Panel': 'admin',
         'Application settings': 'settings',
         'Contact Us': 'contact',

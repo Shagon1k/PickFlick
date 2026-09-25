@@ -135,15 +135,24 @@ importers:
 
   apps/web:
     dependencies:
+      '@mantine/core':
+        specifier: 9.6.1
+        version: 9.6.1(@mantine/hooks@9.6.1(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@mantine/form':
+        specifier: 9.6.1
+        version: 9.6.1(react@19.2.8)
+      '@mantine/hooks':
+        specifier: 9.6.1
+        version: 9.6.1(react@19.2.8)
       '@pickflick/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@pickflick/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       better-auth:
         specifier: 1.7.5
         version: 1.7.5(@prisma/client@7.10.0(prisma@7.10.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(typescript@6.0.3))(mysql2@3.15.3)(next@16.3.4(@babel/core@7.29.7(supports-color@5.5.0))(@playwright/test@1.63.0)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.105.0))(pg@8.23.0)(prisma@7.10.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.0(@types/node@22.20.1)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.0)(tsx@4.23.13)(yaml@2.9.1)))
+      clsx:
+        specifier: 2.1.1
+        version: 2.1.1
       next:
         specifier: 16.3.4
         version: 16.3.4(@babel/core@7.29.7(supports-color@5.5.0))(@playwright/test@1.63.0)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.105.0)
@@ -250,37 +259,6 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.23.13
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  packages/ui:
-    dependencies:
-      '@mantine/core':
-        specifier: 9.6.1
-        version: 9.6.1(@mantine/hooks@9.6.1(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@mantine/hooks':
-        specifier: 9.6.1
-        version: 9.6.1(react@19.2.8)
-    devDependencies:
-      '@pickflick/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.20.1
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.2.7(@types/react@19.2.18)
-      react:
-        specifier: 19.2.8
-        version: 19.2.8
-      react-dom:
-        specifier: 19.2.8
-        version: 19.2.8(react@19.2.8)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1103,6 +1081,11 @@ packages:
       '@mantine/hooks': 9.6.1
       react: ^19.2.0
       react-dom: ^19.2.0
+
+  '@mantine/form@9.6.1':
+    resolution: {integrity: sha512-l9vs/TJ/ScVwbuQNIgc03yR+QewM7oUmkNfhB0/Wx6iuHP57sP6u1yTlCaXvrq6UBHc7PAk6DPoQKyAGcAWWpg==}
+    peerDependencies:
+      react: ^19.2.0
 
   '@mantine/hooks@9.6.1':
     resolution: {integrity: sha512-pfxM95WozngB0ZALw6h99QV1TQ0qniOkFhzi0+dmSnKpxkVSR0xeNsvPpGDj9Teu+M69fRoE4IkzyMnu5Xld3w==}
@@ -2730,6 +2713,10 @@ packages:
 
   keyv@5.6.0:
     resolution: {integrity: sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==}
+
+  klona@2.0.6:
+    resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
+    engines: {node: '>= 8'}
 
   kysely@0.29.5:
     resolution: {integrity: sha512-ooa+eSbBNPTo3MycPEuW5jdrxQdQwdtB3LC3h43FiXQbIry5tR0C5lDG7eealK0E4D7XjrnOP5DIUg/LyjRMYQ==}
@@ -4639,6 +4626,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
+  '@mantine/form@9.6.1(react@19.2.8)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      fast-deep-equal: 3.1.3
+      klona: 2.0.6
+      react: 19.2.8
+
   '@mantine/hooks@9.6.1(react@19.2.8)':
     dependencies:
       react: 19.2.8
@@ -6265,6 +6259,8 @@ snapshots:
   keyv@5.6.0:
     dependencies:
       '@keyv/serialize': 1.1.1
+
+  klona@2.0.6: {}
 
   kysely@0.29.5: {}
 

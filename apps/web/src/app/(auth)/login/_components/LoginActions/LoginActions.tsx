@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 
-import { Button, Icon } from '@pickflick/ui';
+import Button from '@/components/ui/Button/Button';
+import Icon from '@/components/ui/Icon/Icon';
 
 import { startSocialSignIn, type IdentityProvider } from '@/lib/auth.service';
-import styles from '@/app/(auth)/login/login.module.scss';
+import styles from '../../login.module.scss';
 
 interface LoginActionsProps {
     readonly appleSignInEnabled: boolean;
@@ -35,7 +36,8 @@ export function LoginActions({ appleSignInEnabled, returnTo }: LoginActionsProps
         <div className={styles.actionArea}>
             <div className={styles.oauthStack}>
                 <Button
-                    className={styles.oauthButton}
+                    fullWidth
+                    size="large"
                     disabled={pendingProvider === 'apple'}
                     loading={pendingProvider === 'google'}
                     onClick={() => signIn('google')}
@@ -48,7 +50,8 @@ export function LoginActions({ appleSignInEnabled, returnTo }: LoginActionsProps
                 </Button>
                 {appleSignInEnabled ? (
                     <Button
-                        className={styles.oauthButton}
+                        fullWidth
+                        size="large"
                         disabled={pendingProvider === 'google'}
                         loading={pendingProvider === 'apple'}
                         onClick={() => signIn('apple')}

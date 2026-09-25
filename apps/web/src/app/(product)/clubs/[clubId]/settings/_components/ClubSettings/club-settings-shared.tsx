@@ -1,7 +1,7 @@
 'use client';
 
 import { type IClubSettings } from '@pickflick/contracts';
-import { Button } from '@pickflick/ui';
+import Button from '@/components/ui/Button/Button';
 
 import { type IClubActionState } from '../../action-state';
 import styles from '../../settings.module.scss';
@@ -88,15 +88,11 @@ export function SaveRow({
 }>) {
     return (
         <div className={styles.saveRow}>
-            <Button
-                className={styles.saveButton}
-                disabled={disabled}
-                loading={pending}
-                size="small"
-                type="submit"
-            >
-                Save Changes
-            </Button>
+            <div className={styles.saveButton}>
+                <Button disabled={disabled} fullWidth loading={pending} size="small" type="submit">
+                    Save Changes
+                </Button>
+            </div>
             <ActionStatus state={state} />
         </div>
     );

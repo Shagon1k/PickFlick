@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { ActionLink, BrandImage, SprocketDivider } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
 import { getSessionState, loginPath } from '@/api/session.server';
-import styles from '@/app/(product)/onboarding.module.scss';
-import { CreateClubForm } from '@/app/(product)/clubs/new/_components/CreateClubForm/CreateClubForm';
+import styles from '../../onboarding.module.scss';
+import CreateClubForm from './_components/CreateClubForm/CreateClubForm';
 import { BackLink } from '@/components/navigation/BackLink/BackLink';
 
 export const metadata: Metadata = {
@@ -40,9 +42,9 @@ export default async function CreateClubPage() {
                                 try again in a moment.
                             </p>
                             <div className={styles.actions}>
-                                <ActionLink href="/clubs/new" variant="primary">
+                                <ButtonLink href="/clubs/new" variant="primary">
                                     Try again
-                                </ActionLink>
+                                </ButtonLink>
                             </div>
                         </>
                     ) : (

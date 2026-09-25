@@ -1,4 +1,6 @@
-import { ActionLink, BrandImage, Button } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Button from '@/components/ui/Button/Button';
 
 import { ProductFrame, PublicShell } from '@/components/shells/shells';
 import styles from '@/components/SystemState/SystemState.module.scss';
@@ -61,12 +63,12 @@ export function SystemState({
                     <p className={styles.description}>{description}</p>
                     <div className={styles.actions}>
                         {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
-                        <ActionLink
+                        <ButtonLink
                             href={destination.href}
                             variant={onRetry ? 'secondary' : 'primary'}
                         >
                             {destination.label}
-                        </ActionLink>
+                        </ButtonLink>
                     </div>
                 </section>
             </div>

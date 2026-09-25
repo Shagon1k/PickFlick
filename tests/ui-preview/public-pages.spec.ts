@@ -375,7 +375,7 @@ test('contact validates fields, focuses the first error, and reports its message
     const message = page.getByRole('textbox', { name: 'Message — required' });
     await expect(message).toBeFocused();
     await expect(message).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.locator('#contact-message-message')).toHaveText(
+    await expect(page.locator('#contact-message-description')).toHaveText(
         'Enter a message of up to 500 characters.',
     );
     await message.fill('A concise note');

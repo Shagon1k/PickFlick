@@ -67,23 +67,11 @@
     gap: 4px;
 }
 
-.form :global(.pf-control--textarea) {
-    min-height: 120px;
-}
-
-.form :global(.pf-field__message) {
-    text-align: right;
-}
-
 .submitZone {
     display: grid;
     margin-top: var(--gap-xs);
     align-items: center;
     gap: var(--gap-xs);
-}
-
-.submitButton {
-    width: 100%;
 }
 
 .feedback {

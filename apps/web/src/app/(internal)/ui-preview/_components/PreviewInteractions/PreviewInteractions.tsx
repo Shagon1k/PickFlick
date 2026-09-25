@@ -1,18 +1,16 @@
 'use client';
 
-import {
-    Button,
-    Dialog,
-    FilmStripMenu,
-    RatingControl,
-    ScoreControl,
-    SelectField,
-    Tabs,
-    TextField,
-} from '@pickflick/ui';
+import Button from '@/components/ui/Button/Button';
+import Modal from '@/components/ui/Modal/Modal';
+import FilmStripMenu from '@/components/ui/FilmStripMenu/FilmStripMenu';
+import RatingControl from '@/components/ui/ScaleControl/RatingControl';
+import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
+import Select from '@/components/ui/Select/Select';
+import Tabs from '@/components/ui/Tabs/Tabs';
+import TextInput from '@/components/ui/TextInput/TextInput';
 import { useState } from 'react';
 
-import styles from '@/app/(internal)/ui-preview/preview.module.scss';
+import styles from '../../preview.module.scss';
 
 export function PreviewInteractions() {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,15 +54,15 @@ export function PreviewInteractions() {
                     Delete Club
                 </Button>
             </div>
-            <Dialog
+            <Modal
                 actions={<Button onClick={() => setDialogOpen(false)}>Continue</Button>}
                 onClose={() => setDialogOpen(false)}
                 open={dialogOpen}
                 title="Move to Selection?"
             >
                 Members who have not nominated will lose their remaining nomination opportunity.
-            </Dialog>
-            <Dialog
+            </Modal>
+            <Modal
                 actions={
                     <>
                         <Button onClick={() => setDangerDialogOpen(false)} variant="secondary">
@@ -81,7 +79,7 @@ export function PreviewInteractions() {
                 tone="danger"
             >
                 This irreversible action belongs in a separate confirmation context.
-            </Dialog>
+            </Modal>
         </div>
     );
 }
@@ -119,16 +117,17 @@ export function ReviewFixInteractions() {
                     );
                 }}
             >
-                <SelectField
+                <Select
                     id="required-range"
                     label="Required selection range"
                     name="required-range"
                     placeholder="Choose a range"
+                    data={[
+                        { value: '0-4', label: '0 to 4' },
+                        { value: '1-5', label: '1 to 5' },
+                    ]}
                     required
-                >
-                    <option value="0-4">0 to 4</option>
-                    <option value="1-5">1 to 5</option>
-                </SelectField>
+                />
                 <Button type="submit" variant="secondary">
                     Submit required select
                 </Button>
@@ -142,7 +141,7 @@ export function ReviewFixInteractions() {
                     setReadOnlySubmitted(true);
                 }}
             >
-                <SelectField
+                <Select
                     id="read-only-range"
                     label="Read-only selection range"
                     name="read-only-range"
@@ -197,7 +196,7 @@ export function ReviewFixInteractions() {
                 </div>
             </div>
             <div className={`${styles.panel} ${styles.formStack}`}>
-                <TextField
+                <TextInput
                     id="async-club-name"
                     label="Async Club name"
                     {...(feedback === 'error' ? { error: 'Club name could not be saved.' } : {})}

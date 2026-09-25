@@ -233,12 +233,27 @@
 }
 
 .globalSearchInner .globalSearchInput {
+    width: 100%;
     min-width: 0;
+    min-height: var(--hit);
     flex: 0 1 480px;
     padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--fg);
     background: var(--surface);
-    font-family: var(--font-display);
-    font-size: var(--fs-body);
+    font: var(--fs-body) / var(--lh-ui) var(--font-display);
+    transition: border-color var(--motion-local) var(--ease-standard);
+
+    &::placeholder {
+        color: var(--muted);
+    }
+
+    &:focus {
+        border-color: var(--gold-border);
+        outline: none;
+        box-shadow: 0 0 0 3px var(--gold-soft);
+    }
 }
 
 .globalSearchInput::-webkit-search-cancel-button {

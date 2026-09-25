@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import { ActionLink, Button, TextField } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import Button from '@/components/ui/Button/Button';
+import TextInput from '@/components/ui/TextInput/TextInput';
 
 import {
     AdminShell,
@@ -13,7 +15,7 @@ import {
     ShellPlaceholder,
 } from '@/components/shells/shells';
 import type { ShellRouteMap } from '@/components/shells/shell-navigation';
-import styles from '@/app/(internal)/shell-preview/[shell]/page.module.scss';
+import styles from './page.module.scss';
 
 const shellNames = [
     'public',
@@ -107,10 +109,10 @@ export default async function ShellPreviewPage({
                             responsive header, reading measure, action hierarchy, and footer.
                         </p>
                         <div className={styles.actions}>
-                            <ActionLink href="/shell-preview/setup" variant="primary">
+                            <ButtonLink href="/shell-preview/setup" variant="primary">
                                 Get started
-                            </ActionLink>
-                            <ActionLink href="#public-content">See the structure</ActionLink>
+                            </ButtonLink>
+                            <ButtonLink href="#public-content">See the structure</ButtonLink>
                         </div>
                     </section>
                     <div className={styles.publicSections} id="public-content">
@@ -136,15 +138,15 @@ export default async function ShellPreviewPage({
                     routes={previewRoutes}
                     title="Begin with one clear task."
                 >
-                    <TextField
+                    <TextInput
                         id="setup-placeholder"
                         label="Named setup field"
                         placeholder="Feature-owned value"
                     />
                     <Button>Continue</Button>
-                    <ActionLink href="/shell-preview/public" variant="ghost">
+                    <ButtonLink href="/shell-preview/public" variant="ghost">
                         Return to public shell
-                    </ActionLink>
+                    </ButtonLink>
                 </SetupShell>
             );
         case 'product':

@@ -1,8 +1,8 @@
-export interface ContactFormValues {
-    readonly message: string;
-    readonly name: string;
-    readonly email: string;
+export interface IContactFormValues {
+    message: string;
+    name: string;
+    email: string;
 }
 
-export type ContactFieldName = keyof ContactFormValues;
-export type ContactFieldErrors = Partial<Record<ContactFieldName, string>>;
+export type TContactFieldName = keyof IContactFormValues;
+export type TContactFieldErrors = Partial<Record<TContactFieldName, string>>;

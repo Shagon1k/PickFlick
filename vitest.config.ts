@@ -8,6 +8,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@/': source('./apps/web/src/'),
+            '@brand/': source('./assets/brand/'),
             '@pickflick/contracts': source('./packages/contracts/src/index.ts'),
             '@pickflick/database': source('./packages/database/src/index.ts'),
             // Next swaps `server-only` for an empty module on the server; tests run on the server too.

@@ -1,4 +1,4 @@
-import type { IconName } from '@pickflick/ui';
+import type { TIconName } from '@/components/ui/Icon/Icon';
 
 /** Product areas that mark the matching mobile tab and navigation group as current. */
 export type ShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';
@@ -18,7 +18,7 @@ export interface ShellActionItem {
 export type ShellMenuItem = ShellActionItem | ShellNavigationItem;
 
 export interface MobileNavigationMenu {
-    readonly icon: IconName;
+    readonly icon: TIconName;
     readonly id: string;
     readonly items: readonly ShellMenuItem[];
     /** Visible trigger text; the Hub trigger shows the current Club view. */

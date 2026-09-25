@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@pickflick/ui';
+import Button from '@/components/ui/Button/Button';
 import { useTransition } from 'react';
 
 export default function ErrorRecoveryPreviewPage() {

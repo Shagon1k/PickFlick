@@ -9,16 +9,13 @@
         "pnpm": "11.25.0"
     },
     "scripts": {
-        "auth:check": "pnpm --filter @pickflick/api auth:check",
         "build": "pnpm check:workspace && pnpm -r --if-present build",
         "check:workspace": "node scripts/check-workspace.mjs",
-        "club:check": "pnpm build:packages && pnpm --filter @pickflick/api club:check",
         "db:reset": "pnpm --filter @pickflick/database reset",
         "deploy:compose": "node scripts/deploy-compose.mjs",
-        "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/ui --filter @pickflick/web --filter @pickflick/api dev",
+        "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/web --filter @pickflick/api dev",
         "e2e:smoke": "node scripts/e2e-smoke.mjs",
         "compose:check": "sh scripts/check-compose.sh",
-        "contact:check": "pnpm --filter @pickflick/api contact:check",
         "images:build": "node scripts/build-images.mjs",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "format": "prettier --write .",

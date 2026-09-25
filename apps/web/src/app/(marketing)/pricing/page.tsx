@@ -1,13 +1,15 @@
-import { ActionLink, BrandImage, Button } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Button from '@/components/ui/Button/Button';
 
 import {
     comparisonRows,
     freePlanFeatures,
     proPlanFeatures,
     type PlanFeature,
-} from '@/app/(marketing)/marketing-content';
-import styles from '@/app/(marketing)/marketing.module.scss';
-import { PricingFaq } from '@/app/(marketing)/pricing/_components/PricingFaq/PricingFaq';
+} from '../marketing-content';
+import styles from '../marketing.module.scss';
+import { PricingFaq } from './_components/PricingFaq/PricingFaq';
 import { PublicShell } from '@/components/shells/shells';
 import { createPublicMetadata } from '@/lib/public-metadata';
 
@@ -86,7 +88,7 @@ export default function PricingPage() {
                                     <strong>€0</strong>
                                     <span>/ forever</span>
                                 </div>
-                                <ActionLink href="/login">Get started</ActionLink>
+                                <ButtonLink href="/login">Get started</ButtonLink>
                                 <hr className={styles.planRule} />
                                 <PlanFeatures features={freePlanFeatures} />
                             </article>
@@ -192,9 +194,9 @@ export default function PricingPage() {
                                 <span>to start</span>
                             </div>
                             <p className={styles.handoffNote}>No credit card required.</p>
-                            <ActionLink href="/login" variant="primary">
+                            <ButtonLink href="/login" variant="primary">
                                 Create your first Club
-                            </ActionLink>
+                            </ButtonLink>
                         </div>
                     </div>
                 </section>

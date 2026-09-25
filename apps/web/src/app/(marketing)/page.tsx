@@ -1,8 +1,10 @@
-import { ActionLink, BrandImage, Icon } from '@pickflick/ui';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Icon from '@/components/ui/Icon/Icon';
 
-import { LandingRevealRoot } from '@/app/(marketing)/_components/LandingReveal/LandingReveal';
-import { landingFeatures, landingSteps } from '@/app/(marketing)/marketing-content';
-import styles from '@/app/(marketing)/marketing.module.scss';
+import { LandingRevealRoot } from './_components/LandingReveal/LandingReveal';
+import { landingFeatures, landingSteps } from './marketing-content';
+import styles from './marketing.module.scss';
 import { PublicShell } from '@/components/shells/shells';
 import { createPublicMetadata } from '@/lib/public-metadata';
 
@@ -37,10 +39,10 @@ export default function HomePage() {
                             <BrandImage alt="" asset="hero" loading="eager" />
                         </div>
                         <div className={styles.heroActions}>
-                            <ActionLink href="/login" variant="primary">
+                            <ButtonLink href="/login" variant="primary">
                                 Start your first Club
-                            </ActionLink>
-                            <ActionLink href="#how">See how it works</ActionLink>
+                            </ButtonLink>
+                            <ButtonLink href="#how">See how it works</ButtonLink>
                         </div>
                     </div>
                 </section>
@@ -53,7 +55,7 @@ export default function HomePage() {
                     id="how"
                 >
                     <div className={`${styles.container} ${styles.steps}`}>
-                        <h2 className="pf-visually-hidden" id="journey-title">
+                        <h2 className="visually-hidden" id="journey-title">
                             How PickFlick works
                         </h2>
                         <p className={styles.eyebrow}>The four-act structure</p>
@@ -143,9 +145,9 @@ export default function HomePage() {
                                 <span>to start</span>
                             </div>
                             <p className={styles.handoffNote}>No credit card required.</p>
-                            <ActionLink href="/login" variant="primary">
+                            <ButtonLink href="/login" variant="primary">
                                 Create your first Club
-                            </ActionLink>
+                            </ButtonLink>
                             <a className={styles.handoffLink} href="/pricing">
                                 Compare plans
                             </a>

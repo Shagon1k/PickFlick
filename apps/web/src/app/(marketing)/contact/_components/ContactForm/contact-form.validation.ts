@@ -2,7 +2,7 @@ import { contactSubmissionSchema } from '@pickflick/contracts';
 
 import { fieldErrors } from '@/lib/form-errors';
 
-import type { ContactFieldErrors, ContactFormValues } from './contact-form.types';
+import type { IContactFormValues, TContactFieldErrors } from './contact-form.types';
 
 const FIELD_MESSAGES = {
     message: 'Enter a message of up to 500 characters.',
@@ -10,15 +10,7 @@ const FIELD_MESSAGES = {
     email: 'Enter a valid email address or leave this blank.',
 };
 
-export function contactValues(formData: FormData): ContactFormValues {
-    return {
-        message: String(formData.get('message') ?? ''),
-        name: String(formData.get('name') ?? ''),
-        email: String(formData.get('email') ?? ''),
-    };
-}
-
-export function validateContactValues(values: ContactFormValues): ContactFieldErrors {
+export function validateContactValues(values: IContactFormValues): TContactFieldErrors {
     const result = contactSubmissionSchema.safeParse(values);
     return result.success ? {} : fieldErrors(result.error, FIELD_MESSAGES);
 }

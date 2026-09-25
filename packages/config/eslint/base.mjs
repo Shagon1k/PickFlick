@@ -38,7 +38,7 @@ export default [
         },
     },
     {
-        files: ['apps/web/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
+        files: ['apps/web/**/*.{ts,tsx}'],
         ...reactConfig,
         languageOptions: {
             ...reactConfig.languageOptions,

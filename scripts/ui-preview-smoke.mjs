@@ -91,15 +91,14 @@ const smokeRun = (async () => {
     );
 
     const namedField = page.getByRole('textbox', { name: 'Club name', exact: true });
-    await expect(namedField).toHaveAttribute('aria-describedby', 'club-name-message');
-    await expect(page.locator('#club-name-message')).toHaveText('Shown to every Club member.');
-    const reminderToggle = page.getByRole('checkbox', { name: 'Rating reminders', exact: true });
-    await expect(reminderToggle).toHaveAttribute('aria-labelledby', 'rating-reminders-label');
+    await expect(namedField).toHaveAttribute('aria-describedby', 'club-name-description');
+    await expect(page.locator('#club-name-description')).toHaveText('Shown to every Club member.');
+    const reminderToggle = page.getByRole('switch', { name: 'Rating reminders', exact: true });
     await expect(reminderToggle).toHaveAttribute(
         'aria-describedby',
         'rating-reminders-description',
     );
-    const emptyMessage = page.locator('#session-note-message');
+    const emptyMessage = page.locator('#session-note-description');
     await expect(emptyMessage).toBeAttached();
     assert.ok(
         (await emptyMessage.evaluate((element) => element.getBoundingClientRect().height)) > 0,
@@ -108,7 +107,7 @@ const smokeRun = (async () => {
 
     const asyncField = page
         .locator('#async-club-name')
-        .locator("xpath=ancestor::*[contains(@class, 'pf-field')]");
+        .locator("xpath=ancestor::*[contains(@class, '__field')][1]");
     const errorAnnouncement = asyncField.locator('[data-field-live="error"]');
     const successAnnouncement = asyncField.locator('[data-field-live="success"]');
     await expect(errorAnnouncement).toBeAttached();
@@ -116,19 +115,21 @@ const smokeRun = (async () => {
     await expect(errorAnnouncement).toBeEmpty();
     await expect(successAnnouncement).toBeEmpty();
     await page.getByRole('button', { name: 'Show async error' }).click();
-    await expect(page.locator('#async-club-name-message')).toHaveText(
+    await expect(page.locator('#async-club-name-description')).toHaveText(
         'Club name could not be saved.',
     );
     await expect(errorAnnouncement).toHaveText('Club name could not be saved.');
     await expect(successAnnouncement).toBeEmpty();
     await page.getByRole('button', { name: 'Show async success' }).click();
-    await expect(page.locator('#async-club-name-message')).toHaveText('Club name saved.');
+    await expect(page.locator('#async-club-name-description')).toHaveText('Club name saved.');
     await expect(errorAnnouncement).toBeEmpty();
     await expect(successAnnouncement).toHaveText('Club name saved.');
 
     const select = page.getByRole('combobox', { name: 'Selection range', exact: true });
-    await expect(select).toHaveAttribute('aria-describedby', 'score-range-message');
-    await expect(page.locator('#score-range-message')).toHaveText('Choose the Club scoring range.');
+    await expect(select).toHaveAttribute('aria-describedby', 'score-range-description');
+    await expect(page.locator('#score-range-description')).toHaveText(
+        'Choose the Club scoring range.',
+    );
     await select.focus();
     await page.keyboard.press('Enter');
     await assertVisibleFocus(select, 'select');
@@ -146,7 +147,7 @@ const smokeRun = (async () => {
     await expect(select).toHaveValue('1 to 5');
     await expect(page.locator('input[type="hidden"][name="score-range"]')).toHaveValue('1-5');
 
-    await expect(page.locator('.pf-button[data-state="success"] + [role="status"]')).toHaveText(
+    await expect(page.locator('button[data-state="success"] + [role="status"]')).toHaveText(
         'Changes saved.',
     );
 
@@ -265,7 +266,7 @@ const smokeRun = (async () => {
     await expect(requiredScoreForm.locator('[data-submitted-score]')).toHaveText('Not submitted');
     await expect(requiredScore).toHaveAttribute('aria-invalid', 'true');
     await expect(requiredScore.getByRole('radio', { name: '0 of 4' })).toBeFocused();
-    await expect(requiredScoreForm.locator('.pf-scale__value')).toHaveText('Select a score.');
+    await expect(requiredScoreForm.locator('fieldset output')).toHaveText('Select a score.');
     assert.equal(await scoreConstraint.evaluate((element) => element.matches(':invalid')), true);
     await requiredScore.getByRole('radio', { name: '0 of 4' }).click();
     await requiredScoreForm.getByRole('button', { name: 'Submit required score' }).click();

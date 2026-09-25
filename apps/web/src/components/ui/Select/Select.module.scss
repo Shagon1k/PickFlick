@@ -1,0 +1,51 @@
+.select__dropdown {
+    position: absolute;
+    z-index: 200;
+    padding: 6px;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    color: var(--fg-secondary);
+    background: var(--surface);
+    box-shadow: var(--shadow-popover);
+}
+
+.select__wrapper {
+    position: relative;
+}
+
+.select__option {
+    min-height: var(--hit);
+    padding: 10px 12px;
+    border-radius: calc(var(--radius) - 4px);
+    color: var(--fg-secondary);
+    font: var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+}
+
+.select__option:hover,
+.select__option[data-combobox-active] {
+    color: var(--fg);
+    background: var(--accent-soft);
+}
+
+.select__option[data-combobox-selected] {
+    color: var(--ivory);
+    background: var(--gold-soft);
+    box-shadow: inset 2px 0 var(--gold);
+}
+
+.select__section {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    color: var(--ivory-muted);
+    pointer-events: none;
+}
+
+.select__section svg {
+    width: 16px;
+    height: 16px;
+}
