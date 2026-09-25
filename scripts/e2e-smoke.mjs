@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { generateKeyPairSync } from 'node:crypto';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,11 +37,20 @@ async function availablePort(configuredPort, excludedPorts = []) {
 const webPort = await availablePort(process.env.E2E_WEB_PORT);
 const apiPort = await availablePort(process.env.E2E_API_PORT, [webPort]);
 const apiOrigin = `http://127.0.0.1:${apiPort}`;
+// A throwaway key lets the smoke prove the dormant Apple flow without real credentials.
+const syntheticAppleKey = generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
+    .privateKey.export({ format: 'pem', type: 'pkcs8' })
+    .toString();
 const runtimeEnvironment = {
     ...process.env,
     API_HOST: '127.0.0.1',
     API_PORT: String(apiPort),
     AUTH_BASE_URL: apiOrigin,
+    APPLE_SIGN_IN_ENABLED: 'true',
+    APPLE_CLIENT_ID: 'synthetic-smoke-apple-client',
+    APPLE_KEY_ID: 'SYNTHKEY1',
+    APPLE_PRIVATE_KEY: syntheticAppleKey,
+    APPLE_TEAM_ID: 'SYNTHTEAM1',
 };
 
 function startRuntime(name, arguments_, onOutput = () => undefined) {
@@ -192,9 +202,10 @@ try {
         signal: AbortSignal.timeout(2_000),
     });
     const unsupportedAuthFailure = await unsupportedAuthResponse.json();
+    // Better Auth can only name the provider if it parsed the raw JSON body itself.
     if (
-        unsupportedAuthResponse.status !== 400 ||
-        unsupportedAuthFailure.code !== 'UNSUPPORTED_IDENTITY_PROVIDER'
+        unsupportedAuthResponse.status !== 404 ||
+        unsupportedAuthFailure.code !== 'PROVIDER_NOT_FOUND'
     ) {
         throw new Error(
             'The built API authentication handler is not mounted at the reviewed raw-request boundary.',

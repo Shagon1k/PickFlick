@@ -53,11 +53,12 @@ observability package, Contact storage, and operation IDs removed, and lint-enfo
 
 Findings made while restructuring:
 
-| #   | Finding                                                                                   | Severity | Outcome                                                               |
-| --- | ----------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------- |
-| R1  | The web API client failed on bodiless `202` answers, so Contact reported a false failure. | Major    | Fixed                                                                 |
-| R2  | Field live regions sat inside the described element, so screen readers read errors twice. | Minor    | Fixed                                                                 |
-| R3  | The UAT readiness check expected a health field the rewritten API no longer returns.      | Major    | Fixed; readiness now checks the deployed revision in `deploy-uat.yml` |
+| #   | Finding                                                                                           | Severity | Outcome                                                                            |
+| --- | ------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| R1  | The web API client failed on bodiless `202` answers, so Contact reported a false failure.         | Major    | Fixed                                                                              |
+| R2  | Field live regions sat inside the described element, so screen readers read errors twice.         | Minor    | Fixed                                                                              |
+| R3  | The UAT readiness check expected a health field the rewritten API no longer returns.              | Major    | Fixed; readiness now checks the deployed revision in `deploy-uat.yml`              |
+| R4  | CI's placeholder Apple key would crash the API, which now signs Apple's client secret at startup. | Major    | Fixed; any enabled Apple key is validated, and the smoke generates a throwaway key |
 
 ## Deferrals
 
