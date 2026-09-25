@@ -1,250 +1,45 @@
-import { createPrivateKey } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const DEPLOYMENT_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
-export type DeploymentEnvironment = (typeof DEPLOYMENT_ENVIRONMENTS)[number];
-export const RESEND_DELIVERY_MODES = ['disabled', 'preview', 'live'] as const;
-export type ResendDeliveryMode = (typeof RESEND_DELIVERY_MODES)[number];
+import {
+    boolean,
+    durationMilliseconds,
+    integer,
+    oneOf,
+    optionalBoolean,
+    originUrl,
+    required,
+    url,
+} from './environment.fields.js';
+import {
+    DEPLOYMENT_ENVIRONMENTS,
+    EnvironmentValidationError,
+    RESEND_DELIVERY_MODES,
+    type DatabaseEnvironment,
+    type DeploymentEnvironment,
+    type EnvironmentSource,
+    type RuntimeEnvironment,
+    type ValidationFailure,
+    type WorkerEnvironment,
+} from './environment.types.js';
+import {
+    validateApplePrivateKey,
+    validateContactMailboxes,
+    validateResendDelivery,
+    validateStorageBucket,
+} from './environment.validation.js';
 
-export interface RuntimeEnvironment {
-    readonly appEnvironment: DeploymentEnvironment;
-    readonly sourceRevision?: string;
-    readonly apiHost: string;
-    readonly apiPort: number;
-    readonly shutdownTimeoutMilliseconds: number;
-    readonly databaseUrl: string;
-    readonly redisUrl: string;
-    readonly storage: {
-        readonly endpoint: string;
-        readonly region: string;
-        readonly bucket: string;
-        readonly accessKey: string;
-        readonly secretKey: string;
-        readonly forcePathStyle: boolean;
-    };
-    readonly resend: {
-        readonly apiKey: string;
-        readonly from: string;
-        readonly deliveryMode: ResendDeliveryMode;
-        readonly deliveryEnabled: boolean;
-    };
-    readonly contact: {
-        readonly deliveryTo: string;
-        readonly hashSecret: string;
-    };
-    readonly auth: {
-        readonly baseUrl: string;
-        readonly secret: string;
-        readonly googleClientId: string;
-        readonly googleClientSecret: string;
-        readonly secureCookies: boolean;
-    } & (
-        | {
-              readonly appleSignInEnabled: true;
-              readonly appleClientId: string;
-              readonly appleKeyId: string;
-              readonly applePrivateKey: string;
-              readonly appleTeamId: string;
-          }
-        | {
-              readonly appleSignInEnabled: false;
-              readonly appleClientId?: string;
-              readonly appleKeyId?: string;
-              readonly applePrivateKey?: string;
-              readonly appleTeamId?: string;
-          }
-    );
-}
-
-export type WorkerEnvironment = Omit<RuntimeEnvironment, 'apiHost' | 'apiPort' | 'auth'>;
-
-export interface DatabaseEnvironment {
-    readonly appEnvironment: DeploymentEnvironment;
-    readonly databaseUrl: string;
-}
-
-type EnvironmentSource = Readonly<Record<string, string | undefined>>;
-
-interface ValidationFailure {
-    readonly name: string;
-    readonly reason: string;
-}
-
-export class EnvironmentValidationError extends Error {
-    readonly failures: readonly ValidationFailure[];
-
-    constructor(failures: readonly ValidationFailure[]) {
-        super(
-            `Invalid environment configuration: ${failures.map(({ name, reason }) => name + ' ' + reason).join('; ')}`,
-        );
-        this.name = 'EnvironmentValidationError';
-        this.failures = failures;
-    }
-}
-
-/**
- * Produces diagnostic-safe validation details: names and fixed validation rules only.
- * Environment values, URLs, tokens, and other supplied data are never included.
- */
-export function safeEnvironmentValidationFailures(error: unknown): readonly string[] | undefined {
-    if (!(error instanceof EnvironmentValidationError)) {
-        return undefined;
-    }
-    return error.failures.map(({ name, reason }) => `${name} ${reason}`);
-}
-
-// Domain labels exclude dots, so matching stays linear instead of backtracking over the domain.
-const emailAddressPattern = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/u;
-
-function isEmailAddress(value: string): boolean {
-    return emailAddressPattern.test(value);
-}
-
-/** `local@domain.tld` or `Display Name <local@domain.tld>`. */
-function isMailbox(value: string): boolean {
-    if (isEmailAddress(value)) {
-        return true;
-    }
-    const open = value.lastIndexOf(' <');
-    return (
-        open > 0 &&
-        value.endsWith('>') &&
-        !/[@<>\r\n]/u.test(value.slice(0, open)) &&
-        isEmailAddress(value.slice(open + 2, -1))
-    );
-}
-
-function required(source: EnvironmentSource, name: string, failures: ValidationFailure[]): string {
-    const value = source[name]?.trim();
-    if (!value) {
-        failures.push({ name, reason: 'is required' });
-        return '';
-    }
-    return value;
-}
-
-function oneOf<T extends readonly string[]>(
-    source: EnvironmentSource,
-    name: string,
-    values: T,
-    failures: ValidationFailure[],
-): T[number] {
-    const value = required(source, name, failures);
-    if (value && !values.includes(value)) {
-        failures.push({ name, reason: `must be one of ${values.join(', ')}` });
-    }
-    return value as T[number];
-}
-
-function integer(source: EnvironmentSource, name: string, failures: ValidationFailure[]): number {
-    const value = required(source, name, failures);
-    const parsed = Number(value);
-    if (value && (!Number.isInteger(parsed) || parsed < 1 || parsed > 65_535)) {
-        failures.push({ name, reason: 'must be an integer from 1 through 65535' });
-    }
-    return parsed;
-}
-
-function durationMilliseconds(
-    source: EnvironmentSource,
-    name: string,
-    failures: ValidationFailure[],
-): number {
-    const value = required(source, name, failures);
-    const parsed = Number(value);
-    if (value && (!Number.isInteger(parsed) || parsed < 1 || parsed > 86_400_000)) {
-        failures.push({ name, reason: 'must be an integer from 1 through 86400000' });
-    }
-    return parsed;
-}
-
-function boolean(source: EnvironmentSource, name: string, failures: ValidationFailure[]): boolean {
-    const value = required(source, name, failures);
-    if (value && value !== 'true' && value !== 'false') {
-        failures.push({ name, reason: 'must be true or false' });
-    }
-    return value === 'true';
-}
-
-function optionalBoolean(
-    source: EnvironmentSource,
-    name: string,
-    failures: ValidationFailure[],
-): boolean {
-    const value = source[name]?.trim();
-    if (!value) {
-        return false;
-    }
-    if (value !== 'true' && value !== 'false') {
-        failures.push({ name, reason: 'must be true or false' });
-    }
-    return value === 'true';
-}
-
-function url(
-    source: EnvironmentSource,
-    name: string,
-    protocols: readonly string[],
-    failures: ValidationFailure[],
-    structure?: 'host' | 'host-and-path',
-): string {
-    const value = required(source, name, failures);
-    if (!value) {
-        return value;
-    }
-    try {
-        const parsed = new URL(value);
-        if (!protocols.includes(parsed.protocol)) {
-            failures.push({ name, reason: `must use ${protocols.join(' or ')}` });
-        }
-        if (structure && !parsed.hostname) {
-            failures.push({ name, reason: 'must include a host' });
-        }
-        if (structure === 'host-and-path' && (!parsed.pathname || parsed.pathname === '/')) {
-            failures.push({ name, reason: 'must include a database name' });
-        }
-    } catch {
-        failures.push({ name, reason: 'must be a valid URL' });
-    }
-    return value;
-}
-
-function originUrl(
-    source: EnvironmentSource,
-    name: string,
-    appEnvironment: DeploymentEnvironment,
-    failures: ValidationFailure[],
-): string {
-    const value = url(source, name, ['http:', 'https:'], failures, 'host');
-    if (!value) {
-        return value;
-    }
-    try {
-        const parsed = new URL(value);
-        if (
-            parsed.pathname !== '/' ||
-            parsed.search ||
-            parsed.hash ||
-            parsed.username ||
-            parsed.password
-        ) {
-            failures.push({
-                name,
-                reason: 'must be an origin without credentials, path, query, or fragment',
-            });
-        }
-        if (
-            (appEnvironment === 'uat' || appEnvironment === 'production') &&
-            parsed.protocol !== 'https:'
-        ) {
-            failures.push({ name, reason: 'must use https in uat or production' });
-        }
-        return parsed.origin;
-    } catch {
-        return value;
-    }
-}
+export {
+    DEPLOYMENT_ENVIRONMENTS,
+    EnvironmentValidationError,
+    RESEND_DELIVERY_MODES,
+    safeEnvironmentValidationFailures,
+    type DatabaseEnvironment,
+    type DeploymentEnvironment,
+    type ResendDeliveryMode,
+    type RuntimeEnvironment,
+    type WorkerEnvironment,
+} from './environment.types.js';
 
 export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnvironment {
     const failures: ValidationFailure[] = [];
@@ -262,125 +57,6 @@ export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnv
         throw new EnvironmentValidationError(failures);
     }
     return result;
-}
-
-function validateStorageBucket(bucket: string, failures: ValidationFailure[]): void {
-    if (
-        bucket &&
-        (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket) ||
-            bucket.includes('..') ||
-            /^(?:\d{1,3}\.){3}\d{1,3}$/.test(bucket))
-    ) {
-        failures.push({
-            name: 'STORAGE_BUCKET',
-            reason: 'must be a valid lowercase S3 bucket name',
-        });
-    }
-}
-
-function validateContactMailboxes(
-    appEnvironment: DeploymentEnvironment,
-    from: string,
-    contactDeliveryTo: string,
-    failures: ValidationFailure[],
-): void {
-    if (from && !isMailbox(from)) {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be an email address or a name plus email address',
-        });
-    }
-    if (appEnvironment === 'uat' && from !== 'PickFlick UAT <notifications@uat.pick-flick.app>') {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be PickFlick UAT <notifications@uat.pick-flick.app> in uat',
-        });
-    }
-    if (appEnvironment === 'production' && from !== 'PickFlick <notifications@pick-flick.app>') {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be PickFlick <notifications@pick-flick.app> in production',
-        });
-    }
-    if (contactDeliveryTo && !isEmailAddress(contactDeliveryTo)) {
-        failures.push({ name: 'CONTACT_DELIVERY_TO', reason: 'must be an email address' });
-    }
-    if (appEnvironment === 'production' && contactDeliveryTo !== 'hello@pick-flick.app') {
-        failures.push({
-            name: 'CONTACT_DELIVERY_TO',
-            reason: 'must be hello@pick-flick.app in production',
-        });
-    }
-}
-
-/** Local and test never send, UAT may preview, and production always delivers live. */
-function validateResendDelivery(
-    appEnvironment: DeploymentEnvironment,
-    resendDeliveryMode: ResendDeliveryMode,
-    resendApiKey: string,
-    failures: ValidationFailure[],
-): void {
-    const localOrTest = appEnvironment === 'local' || appEnvironment === 'test';
-    if (localOrTest && resendDeliveryMode !== 'disabled') {
-        failures.push({
-            name: 'RESEND_DELIVERY_MODE',
-            reason: 'must be disabled in local or test',
-        });
-    }
-    if (localOrTest && resendApiKey !== 'local-disabled') {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be local-disabled in local or test',
-        });
-    }
-    if (resendDeliveryMode === 'disabled' && !localOrTest) {
-        failures.push({
-            name: 'RESEND_DELIVERY_MODE',
-            reason: 'may be disabled only in local or test',
-        });
-    }
-    if (resendDeliveryMode === 'preview' && appEnvironment !== 'uat') {
-        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'may be preview only in uat' });
-    }
-    if (resendDeliveryMode === 'preview' && resendApiKey !== 'preview-disabled') {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be preview-disabled in preview mode',
-        });
-    }
-    if (
-        resendDeliveryMode === 'live' &&
-        (resendApiKey === 'local-disabled' || resendApiKey === 'preview-disabled')
-    ) {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be a live environment key in live mode',
-        });
-    }
-    if (appEnvironment === 'production' && resendDeliveryMode !== 'live') {
-        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'must be live in production' });
-    }
-}
-
-function validateApplePrivateKey(applePrivateKey: string, failures: ValidationFailure[]): void {
-    try {
-        const normalizedPrivateKey = applePrivateKey.replaceAll('\\n', '\n');
-        if (!normalizedPrivateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
-            throw new Error('Not PKCS#8 PEM.');
-        }
-        const privateKey = createPrivateKey(normalizedPrivateKey);
-        if (
-            privateKey.asymmetricKeyType !== 'ec' ||
-            privateKey.asymmetricKeyDetails?.namedCurve !== 'prime256v1'
-        ) {
-            throw new Error('Not an EC P-256 key.');
-        }
-    } catch {
-        failures.push({
-            name: 'APPLE_PRIVATE_KEY',
-            reason: 'must be a valid EC P-256 PKCS#8 PEM private key in uat or production',
-        });
-    }
 }
 
 function parseWorkerValues(
