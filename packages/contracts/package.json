@@ -17,5 +17,8 @@
     "devDependencies": {
         "@pickflick/config": "workspace:*",
         "typescript": "catalog:"
+    },
+    "dependencies": {
+        "zod": "4.6.5"
     }
 }
