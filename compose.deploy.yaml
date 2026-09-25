@@ -109,6 +109,7 @@ services:
         BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
         SOURCE_REVISION: ${SOURCE_REVISION:-}
     environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
       APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
       BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
       NODE_ENV: production

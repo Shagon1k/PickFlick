@@ -290,7 +290,7 @@ the API-only bind settings. Validation errors name invalid variables but never e
 
 | Variable | Type and allowed values | Consumer | Sensitive |
 | --- | --- | --- | --- |
-| `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, database commands | No |
+| `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, web (production hides `/ui-preview` and `/shell-preview`), database commands | No |
 | `API_HOST` | Non-empty host without whitespace | API | No |
 | `API_PORT` | Integer from 1 through 65535 | API | No |
 | `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
