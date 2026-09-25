@@ -114,17 +114,17 @@ test("landing calls to action and public navigation use canonical destinations",
   await expect(publicNavigation.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "/pricing");
   await expect(publicNavigation.getByRole("link", { name: "Contact" })).toHaveCount(0);
   await expect(page.getByRole("banner").getByRole("link", { name: "Go to App" })).toHaveAttribute("href", "/app");
+  await expect(page.getByRole("link", { name: "Compare plans" })).toHaveAttribute("href", "/pricing");
 });
 
-test("public header keeps Pricing and the app entry through tablet without a bottom menu", async ({ page }) => {
+test("public header keeps only the app entry through tablet without a bottom menu", async ({ page }) => {
   for (const viewport of [canonicalViewports[0], canonicalViewports[1]]) {
     await openPage(page, "/", viewport);
-    const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
+    const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation", includeHidden: true });
 
     await expect(page.getByRole("button", { name: "Menu" })).toHaveCount(0);
-    await expect(publicNavigation.getByRole("link", { name: "Pricing" })).toBeVisible();
-    await expect(publicNavigation.getByRole("link", { name: "How it works" })).toBeHidden();
-    await expect(publicNavigation.getByRole("link", { name: "Features" })).toBeHidden();
+    await expect(publicNavigation).toBeHidden();
+    await expect(page.getByRole("link", { name: "Compare plans" })).toHaveAttribute("href", "/pricing");
 
     const appEntry = await page.getByRole("banner").getByRole("link", { name: "Go to App" }).boundingBox();
     expect(appEntry?.height).toBeGreaterThanOrEqual(44);
@@ -135,6 +135,7 @@ test("public header keeps Pricing and the app entry through tablet without a bot
   const publicNavigation = page.getByRole("navigation", { exact: true, name: "Public navigation" });
   await expect(publicNavigation.getByRole("link", { name: "How it works" })).toBeVisible();
   await expect(publicNavigation.getByRole("link", { name: "Features" })).toBeVisible();
+  await expect(publicNavigation.getByRole("link", { name: "Pricing" })).toBeVisible();
 });
 
 test("legal entries expose distinct provisional documents and public contact", async ({ page }) => {

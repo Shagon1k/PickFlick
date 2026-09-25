@@ -54,17 +54,13 @@ const canonicalRoutes: ShellRouteMap = {
   setup: "/login",
 };
 
-interface PublicNavigationItem extends ShellNavigationItem {
-  readonly desktopOnly?: boolean;
-}
-
 function publicNavigation(
   routes: ShellRouteMap,
   currentPage?: "pricing",
-): readonly PublicNavigationItem[] {
+): readonly ShellNavigationItem[] {
   return [
-    { href: routes.howItWorks, label: "How it works", desktopOnly: true },
-    { href: routes.features, label: "Features", desktopOnly: true },
+    { href: routes.howItWorks, label: "How it works" },
+    { href: routes.features, label: "Features" },
     { href: routes.pricing, label: "Pricing", current: currentPage === "pricing" },
   ];
 }
@@ -226,12 +222,7 @@ export function PublicShell({
           <Brand href={routes.home} />
           <nav aria-label="Public navigation" className={styles.publicNav}>
             {publicNavigation(routes, currentPage).map((item) => (
-              <a
-                aria-current={item.current ? "page" : undefined}
-                className={item.desktopOnly ? styles.desktopOnlyLink : undefined}
-                href={item.href}
-                key={item.label}
-              >
+              <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>
                 {item.label}
               </a>
             ))}
@@ -316,7 +307,7 @@ function ProductChrome({
       <div className={`${styles.shell} ${styles.productShell}`} data-shell={currentArea}>
         <header className={styles.productHeader}>
           <div className={styles.headerInner}>
-            <Brand href={routes.product} />
+            <Brand href={routes.home} />
             <nav aria-label="Product navigation" className={styles.productDesktopNav}>
               {desktopItems.map((item) => (
                 <a aria-current={item.current ? "page" : undefined} href={item.href} key={item.label}>{item.label}</a>

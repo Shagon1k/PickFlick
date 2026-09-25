@@ -395,6 +395,24 @@
   font-size: var(--fs-body-sm);
 }
 
+.handoffAction .handoffLink {
+  display: inline-flex;
+  min-height: var(--hit);
+  align-items: center;
+  color: var(--fg-secondary);
+  font-size: var(--fs-body-sm);
+  text-decoration: underline;
+  text-decoration-color: var(--border-lit);
+  text-underline-offset: 4px;
+  transition: color var(--motion-local) var(--ease-standard), text-decoration-color var(--motion-local) var(--ease-standard);
+}
+
+.handoffAction .handoffLink:hover,
+.handoffAction .handoffLink:focus-visible {
+  color: var(--fg);
+  text-decoration-color: currentcolor;
+}
+
 .plansSection {
   padding-top: 0;
 }
@@ -732,7 +750,7 @@
     justify-items: center;
   }
 
-  .handoffAction > a {
+  .handoffAction > a:not(.handoffLink) {
     width: min(360px, 100%);
   }
 
