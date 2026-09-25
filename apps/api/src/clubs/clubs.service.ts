@@ -8,6 +8,7 @@ import type {
 } from "@pickflick/contracts";
 import type { ApplicationLogger } from "@pickflick/observability";
 
+import { isUuid } from "../common/validation/uuid.js";
 import type { AuthenticatedPrincipal } from "../identity/authorization.types.js";
 import { APPLICATION_LOGGER } from "../runtime.tokens.js";
 import { ClubValidationError } from "./club.errors.js";
@@ -21,10 +22,8 @@ import {
 } from "./club.repository.js";
 import { clubTierLimits, ClubTierResolver } from "./club-tiers.js";
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
-
 function assertUuid(value: string, field: string): void {
-  if (!uuidPattern.test(value)) {
+  if (!isUuid(value)) {
     throw new ClubValidationError(`${field} must be a UUID.`);
   }
 }

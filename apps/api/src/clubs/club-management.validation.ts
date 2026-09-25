@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { ClubVisibilitySettings } from "@pickflick/contracts";
 
+import { canonicalUuid, isUuid } from "../common/validation/uuid.js";
 import { ClubValidationError } from "./club.errors.js";
 import type {
   NormalizedClubOperation,
@@ -9,7 +10,6 @@ import type {
 } from "./club-management.types.js";
 import { parseCreateClubInput } from "./club-onboarding.validation.js";
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const visibilityFields = [
   "showNominationAuthors",
   "showNominationsBeforeSubmit",
@@ -26,10 +26,10 @@ function objectInput(value: unknown, message: string): Record<string, unknown> {
 }
 
 export function parseOperationId(value: unknown): string {
-  if (typeof value !== "string" || !uuidPattern.test(value)) {
+  if (!isUuid(value)) {
     throw new ClubValidationError("operationId must be a UUID.");
   }
-  return value.toLowerCase();
+  return canonicalUuid(value);
 }
 
 export function parseClubOperation(value: unknown, confirmationRequired = false): NormalizedClubOperation {

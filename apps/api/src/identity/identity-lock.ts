@@ -1,5 +1,7 @@
 import type { createDatabaseClient } from "@pickflick/database";
 
+import { lockKeys } from "../database/advisory-lock.js";
+
 type IdentityLockTransaction = Pick<ReturnType<typeof createDatabaseClient>, "$executeRaw">;
 
 export function identityUserLockKey(userId: string): string {
@@ -10,6 +12,5 @@ export async function lockIdentityUser(
   transaction: IdentityLockTransaction,
   userId: string,
 ): Promise<void> {
-  const key = identityUserLockKey(userId);
-  await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
+  await lockKeys(transaction, identityUserLockKey(userId));
 }

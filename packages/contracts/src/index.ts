@@ -119,6 +119,10 @@ export const CLUB_CONFLICT_REASONS = [
 ] as const;
 export type ClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
 
+export const CLUB_AVATAR_MAX_BYTES = 512 * 1024;
+export const CLUB_AVATAR_MEDIA_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+export type ClubAvatarMediaType = (typeof CLUB_AVATAR_MEDIA_TYPES)[number];
+
 export const CLUB_NAME_MIN_LENGTH = 3;
 export const CLUB_NAME_MAX_LENGTH = 100;
 export const CLUB_DESCRIPTION_MAX_LENGTH = 500;

@@ -9,10 +9,10 @@ import {
   Post,
   Req,
   Res,
-  UnsupportedMediaTypeException,
 } from "@nestjs/common";
 import type { ContactSubmissionResponse } from "@pickflick/contracts";
 
+import { assertJsonBody } from "../common/http/json-body.js";
 import { Public } from "../identity/authorization.decorators.js";
 import {
   ContactConflictError,
@@ -31,11 +31,6 @@ interface ContactHttpResponse {
   setHeader(name: string, value: string): void;
 }
 
-function acceptsJsonBody(request: ContactHttpRequest): boolean {
-  const contentType = request.headers?.["content-type"];
-  return typeof contentType === "string" && contentType.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
-}
-
 @Controller("contact")
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
@@ -48,9 +43,7 @@ export class ContactController {
     @Req() request: ContactHttpRequest,
     @Res({ passthrough: true }) response: ContactHttpResponse,
   ): Promise<ContactSubmissionResponse> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
 
     try {
       return await this.contactService.submit(body, request.ip ?? request.socket?.remoteAddress ?? "unknown");

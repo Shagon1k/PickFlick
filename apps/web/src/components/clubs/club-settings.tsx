@@ -2,7 +2,11 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import type { ClubMemberProjection, ClubSettingsProjection } from "@pickflick/contracts";
+import {
+  CLUB_AVATAR_MEDIA_TYPES,
+  type ClubMemberProjection,
+  type ClubSettingsProjection,
+} from "@pickflick/contracts";
 import { Button, Dialog, InfoTip, TextAreaField, TextField } from "@pickflick/ui";
 
 import {
@@ -201,7 +205,7 @@ function AvatarCard({ projection }: Readonly<{ projection: ClubSettingsProjectio
             <input name="operationId" type="hidden" value={uploadOperationId} />
             <label className={styles.fileLabel}>
               <span className="pf-visually-hidden">Club avatar</span>
-              <input accept="image/png,image/jpeg,image/webp" disabled={!writable} name="avatar" required type="file" />
+              <input accept={CLUB_AVATAR_MEDIA_TYPES.join(",")} disabled={!writable} name="avatar" required type="file" />
             </label>
             <Button disabled={!writable || !uploadOperationId} loading={uploadPending} size="small" type="submit">Upload</Button>
           </form>

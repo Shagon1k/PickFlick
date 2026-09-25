@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { createDatabaseClient } from "@pickflick/database";
 
+import { lockKeys } from "../database/advisory-lock.js";
 import { storeAppleCallbackProfile } from "./apple-callback-handoff.js";
 import { sanitizeAppleCallbackProfile } from "./apple-profile.js";
 import type { IdentitySessionResolution } from "./authorization.types.js";
@@ -130,7 +131,7 @@ async function consumeRateLimit(
   rule: RateLimitRule,
 ): Promise<number | undefined> {
   return database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`auth-rate-limit:${key}`}, 0))`;
+    await lockKeys(transaction, `auth-rate-limit:${key}`);
     const now = Date.now();
     const existing = await transaction.authRateLimit.findUnique({ where: { key } });
     if (!existing) {
@@ -211,7 +212,7 @@ async function handleSerializedUnlink(
 
   const lockKey = `identity-unlink:${userId}`;
   await options.database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+    await lockKeys(transaction, lockKey);
     await handler(request, response);
   });
 }

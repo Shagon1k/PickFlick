@@ -4,6 +4,8 @@ import type { createDatabaseClient } from "@pickflick/database";
 import type { BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 
+import { lockKeys } from "../database/advisory-lock.js";
+
 const handoffLifetimeMilliseconds = 10 * 60 * 1_000;
 const handoffPrefix = "apple-callback:";
 
@@ -34,7 +36,7 @@ export async function storeAppleCallbackProfile(
 ): Promise<void> {
   const identifier = handoffIdentifier(state);
   await database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${identifier}))`;
+    await lockKeys(transaction, identifier);
     const now = new Date();
     await transaction.authVerification.deleteMany({
       where: { expiresAt: { lte: now }, identifier: { startsWith: handoffPrefix } },
