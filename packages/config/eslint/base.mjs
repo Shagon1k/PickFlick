@@ -78,11 +78,7 @@ export default [
     },
     {
         // Developer and CI tooling deliberately resolves pnpm, docker, and git from PATH.
-        files: [
-            'scripts/**',
-            'packages/database/src/reset.ts',
-            'packages/database/src/run-prisma.ts',
-        ],
+        files: ['scripts/**', 'packages/database/src/cli/**'],
         rules: {
             'sonarjs/no-os-command-from-path': 'off',
         },

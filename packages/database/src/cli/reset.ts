@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 
 import { loadDatabaseEnvironment } from '@pickflick/config/environment';
 
-import { assertSafeSeedOrResetTarget } from './safety.js';
+import { assertSafeSeedOrResetTarget } from '../safety.js';
 
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);
