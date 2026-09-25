@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 
+import type { BetterAuthPlugin } from 'better-auth';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import { testUtils } from 'better-auth/plugins';
 
@@ -9,10 +10,13 @@ import { createIdentityAuth } from '../../src/identity/identity.service.js';
 import { database, environment, logger, nextSyntheticClientAddress } from './context.js';
 import { deterministicProviders } from './providers.js';
 
-export const auth = createIdentityAuth(environment, database, logger, [testUtils()]);
+// Better Auth types its test plugin more loosely than BetterAuthPlugin under exactOptionalPropertyTypes.
+const testHelpersPlugin = (): BetterAuthPlugin => testUtils() as BetterAuthPlugin;
+
+export const auth = createIdentityAuth(environment, database, logger, [testHelpersPlugin()]);
 export const deterministicAuth = createIdentityAuth(environment, database, logger, [
     deterministicProviders(),
-    testUtils(),
+    testHelpersPlugin(),
 ]);
 export const deterministicAuthorization = new IdentityAuthorizationService(
     database,
@@ -152,7 +156,7 @@ export async function submitGoogleCallback(
 export async function startAppleSignIn(
     identityAuth = auth,
     options: {
-        headers?: HeadersInit;
+        headers?: ConstructorParameters<typeof Headers>[0];
         link?: boolean;
         returnTo?: string;
     } = {},

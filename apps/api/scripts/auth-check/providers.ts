@@ -1,4 +1,4 @@
-import type { BetterAuthPlugin } from 'better-auth';
+import type { AuthContext, BetterAuthPlugin } from 'better-auth';
 
 import { normalizeAppleDisplayName } from '../../src/identity/apple-profile.js';
 import {
@@ -207,7 +207,11 @@ export function deterministicProviders(): BetterAuthPlugin {
         id: 'pickflick-deterministic-providers',
         init: () => ({
             context: {
-                socialProviders: [deterministicGoogleProvider(), deterministicAppleProvider()],
+                // Synthetic providers implement only the OAuth calls the check exercises.
+                socialProviders: [
+                    deterministicGoogleProvider(),
+                    deterministicAppleProvider(),
+                ] as unknown as AuthContext['socialProviders'],
             },
         }),
     };

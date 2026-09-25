@@ -88,7 +88,12 @@ export async function checkGoogleIdentity(userId: string) {
     const googleLinkBody = (await googleLink.json()) as { url?: string };
     const googleLinkUrl = googleLinkBody.url ? new URL(googleLinkBody.url) : undefined;
     const googleLinkState = googleLinkUrl?.searchParams.get('state');
-    if (!googleLink.ok || !googleLinkState || googleLinkUrl.searchParams.has('login_hint')) {
+    if (
+        !googleLink.ok ||
+        !googleLinkUrl ||
+        !googleLinkState ||
+        googleLinkUrl.searchParams.has('login_hint')
+    ) {
         throw new Error('An explicit Google link retained a caller-controlled login hint.');
     }
     oauthStateIdentifiers.add(googleLinkState);
