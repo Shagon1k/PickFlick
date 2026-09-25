@@ -126,19 +126,26 @@ describe("identity configuration", () => {
     expect(auth.options.rateLimit?.customRules?.["/unlink-account"]).toBeTypeOf("function");
   });
 
-  it("rejects session creation for a suspended User", async () => {
+  it("rejects session creation for a suspended User under the identity lock", async () => {
     const findUnique = vi.fn(async () => ({ status: "SUSPENDED" as const }));
-    const suspendedAuth = createIdentityAuth(
-      environment,
-      { user: { findUnique } } as never,
-      logger,
-    );
-    const beforeSessionCreate = suspendedAuth.options.databaseHooks?.session?.create?.before;
+    const transaction = { $executeRaw: vi.fn(async () => 1), user: { findUnique } };
+    const database = {
+      $transaction: vi.fn(async (operation: (client: typeof transaction) => Promise<unknown>) => operation(transaction)),
+      user: { findUnique },
+    };
+    const suspendedAuth = createIdentityAuth(environment, database as never, logger);
+    const adapterFactory = suspendedAuth.options.database as unknown as (
+      options: typeof suspendedAuth.options,
+    ) => { create(input: { model: string; data: Record<string, unknown> }): Promise<unknown> };
 
-    await expect(beforeSessionCreate?.({ userId: "suspended-user" } as never)).rejects.toMatchObject({
+    await expect(adapterFactory(suspendedAuth.options).create({
+      model: "session",
+      data: { userId: "suspended-user" },
+    })).rejects.toMatchObject({
       body: { code: "ACCOUNT_INACTIVE" },
       status: "FORBIDDEN",
     });
+    expect(transaction.$executeRaw).toHaveBeenCalledOnce();
     expect(findUnique).toHaveBeenCalledWith({
       select: { status: true },
       where: { id: "suspended-user" },
