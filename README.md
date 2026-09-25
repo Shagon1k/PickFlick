@@ -3,9 +3,9 @@
 PickFlick helps private film clubs nominate, select, watch, rate, and remember films together,
 while giving each registered user a personal film library.
 
-The repository is greenfield. Its typed pnpm monorepo, web/API/worker entrypoints, local data
-foundation, and runtime observability baseline run, while product features, provider integrations,
-and provisioned deployment environments remain future work.
+The web app (Next.js) and API (NestJS) run with authentication, Clubs, the public site, and
+Contact. Sessions, the film library, billing, and the rest of the product are future phases; see
+the [Roadmap](ROADMAP.md).
 
 ## Start here
 
@@ -34,36 +34,24 @@ pnpm services:check
 pnpm dev
 ```
 
-The development command builds the internal packages, then starts the Next.js web app, NestJS API,
-and worker together. Run the complete workspace gate with `pnpm verify`. See the
-[environment and local data services reference](_docs/environment.md) for configuration, database
-safety, health endpoints, runtime logs, and service commands.
+The development command builds the internal packages, then starts the web app and API. Run the
+quality gates with `pnpm verify`, database integration tests with `pnpm test:integration`, and the
+Playwright UI suite with `pnpm ui:test`. The [environment reference](_docs/environment.md) covers
+configuration, database safety, health endpoints, and logs; the [UI quality guide](_docs/ui-quality.md)
+covers browser setup and baselines.
 
-Run `pnpm ui:test` for the component accessibility, interaction, viewport, reduced-motion, and
-visual-regression gate. See the [UI quality guide](_docs/ui-quality.md) for browser setup, focused
-commands, failure artifacts, and the controlled baseline-update workflow.
-
-## Build deployment artifacts
-
-Build the immutable web, API, worker, and release image targets from the current revision:
+## Build and deploy
 
 ```bash
 pnpm images:build
 pnpm compose:check
 ```
 
-`pnpm images:build` tags local images with the first 12 characters of the full source revision.
-`pnpm compose:check` renders the shared `compose.deploy.yaml` topology for synthetic UAT and
-production inputs. It checks the four source-built application services, environment-specific
-networks and aliases, private ports, native release ordering, health gates, revision
-traceability, and container hardening. With the environment-specific Dokploy values configured,
-run `pnpm deploy:compose`. Docker Compose starts the one-shot release service before API and worker,
-and web waits for API health; a failed release blocks the new runtime services. Standard Compose
-may replace running containers during convergence. See the
-[environment and runtime operations reference](_docs/environment.md#deployment-images-and-compose)
-before supplying real environment values. The automatic exact-revision path and the owner-run
-Dokploy, Cloudflare, failure-injection, rollback, and preview steps are in the
-[UAT operations guide](_docs/uat-operations.md).
+`pnpm images:build` builds the web, API, and release images tagged with the short revision.
+`pnpm compose:check` renders the local, deploy, and preview Compose files. After CI passes on
+`main`, GitHub Actions deploys that revision to UAT; production promotion is a guarded manual
+workflow. See the [UAT](_docs/uat-operations.md) and [production](_docs/production-operations.md)
+guides.
 
 ## Delivery workflow
 

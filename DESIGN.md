@@ -1,7 +1,7 @@
 # PickFlick — Design Reference
 
 > Current UI/UX direction, source authority, screen behavior, and design QA contract.
-> Exact approved visual values are implemented in `packages/ui/styles/tokens.css`; the self-contained
+> Exact approved visual values are implemented in `apps/web/src/styles/tokens.scss`; the self-contained
 > canonical design package remains their visual and interaction source.
 
 | Document owner | Last reviewed |
@@ -46,9 +46,9 @@ When sources conflict:
 | Build     | `Not started` / `Partial` / `Done`  | `Done` means the documented contract is implemented.                       |
 | QA        | `Not checked` / `Passed` / `Issues` | `Passed` requires recorded comparison and applicable baseline evidence.    |
 
-The design package is **detailed and approved as direction**. Phase 2 tokens, semantic brand assets,
-primitives, and shared responsive shells are built. Feature-owned product screens remain **not
-started**. Prototype quality is not production QA.
+The design package is **detailed and approved as direction**. Tokens, brand assets, the UI kit,
+shared shells, the public pages, Login, Club onboarding, and Club settings are built; other product
+screens are **not started**. Prototype quality is not production QA.
 
 ## 2. Experience Direction
 
@@ -72,7 +72,8 @@ started**. Prototype quality is not production QA.
 
 ## 3. Foundations
 
-Production values live in [`packages/ui/styles/tokens.css`](packages/ui/styles/tokens.css) and remain
+Production values live in [`apps/web/src/styles/tokens.scss`](apps/web/src/styles/tokens.scss) and
+the UI kit in [`apps/web/src/components/ui`](apps/web/src/components/ui); both remain
 traceable to the [canonical design contract](_docs/design/prototypes/DESIGN.md). Do not copy partial
 token sets into feature files.
 

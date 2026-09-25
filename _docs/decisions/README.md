@@ -18,26 +18,29 @@ separately.
 
 ## Registry
 
-| ID                                                                                  | Decision                                                       | Status                                                                            | Date       |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- |
-| [ADR-001](#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints)     | Use a pnpm modular monorepo with three runtime entrypoints     | Accepted                                                                          | 2026-09-05 |
-| [ADR-002](#adr-002--keep-authentication-and-sessions-at-the-api-boundary)           | Keep authentication and sessions at the API boundary           | Accepted                                                                          | 2026-09-05 |
-| [ADR-003](#adr-003--use-postgresql-and-reviewed-prisma-migrations)                  | Use PostgreSQL and reviewed Prisma migrations                  | Accepted                                                                          | 2026-09-05 |
-| [ADR-004](#adr-004--use-bullmq-with-a-transactional-outbox)                         | Use BullMQ with a transactional outbox                         | Accepted                                                                          | 2026-09-05 |
-| [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments)  | Deploy immutable images through isolated Dokploy environments  | Superseded by [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline) | 2026-09-05 |
-| [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively)                 | Own Projector Noir and use Mantine selectively                 | Accepted                                                                          | 2026-09-05 |
-| [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline)                 | Use a proportional Dokploy deployment baseline                 | Accepted                                                                          | 2026-09-07 |
-| [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags)    | Promote source-built production from UAT-proven SemVer tags    | Accepted                                                                          | 2026-09-11 |
-| [ADR-009](#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Use one public contact and environment-specific Resend senders | Accepted                                                                          | 2026-09-13 |
-| [ADR-010](#adr-010--use-better-auth-at-the-api-boundary)                            | Use Better Auth at the API boundary                            | Accepted                                                                          | 2026-09-16 |
-| [ADR-011](#adr-011--organize-the-api-by-feature-module-with-one-database-client)    | Organize the API by feature module with one database client    | Accepted                                                                          | 2026-09-18 |
+| ID                                                                                  | Decision                                                       | Status                                                                                | Date       |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------- |
+| [ADR-001](#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints)     | Use a pnpm modular monorepo with three runtime entrypoints     | Superseded by [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job) | 2026-09-05 |
+| [ADR-002](#adr-002--keep-authentication-and-sessions-at-the-api-boundary)           | Keep authentication and sessions at the API boundary           | Accepted                                                                              | 2026-09-05 |
+| [ADR-003](#adr-003--use-postgresql-and-reviewed-prisma-migrations)                  | Use PostgreSQL and reviewed Prisma migrations                  | Accepted                                                                              | 2026-09-05 |
+| [ADR-004](#adr-004--use-bullmq-with-a-transactional-outbox)                         | Use BullMQ with a transactional outbox                         | Superseded by [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job) | 2026-09-05 |
+| [ADR-005](#adr-005--deploy-immutable-images-through-isolated-dokploy-environments)  | Deploy immutable images through isolated Dokploy environments  | Superseded by [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline)     | 2026-09-05 |
+| [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively)                 | Own Projector Noir and use Mantine selectively                 | Superseded by [ADR-013](#adr-013--keep-the-ui-kit-in-the-web-app-on-unstyled-mantine) | 2026-09-05 |
+| [ADR-007](#adr-007--use-a-proportional-dokploy-deployment-baseline)                 | Use a proportional Dokploy deployment baseline                 | Accepted                                                                              | 2026-09-07 |
+| [ADR-008](#adr-008--promote-source-built-production-from-uat-proven-semver-tags)    | Promote source-built production from UAT-proven SemVer tags    | Accepted                                                                              | 2026-09-11 |
+| [ADR-009](#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Use one public contact and environment-specific Resend senders | Accepted                                                                              | 2026-09-13 |
+| [ADR-010](#adr-010--use-better-auth-at-the-api-boundary)                            | Use Better Auth at the API boundary                            | Accepted                                                                              | 2026-09-16 |
+| [ADR-011](#adr-011--organize-the-api-by-feature-module-with-one-database-client)    | Organize the API by feature module with one database client    | Accepted                                                                              | 2026-09-18 |
+| [ADR-012](#adr-012--validate-boundaries-with-shared-zod-schemas)                    | Validate boundaries with shared zod schemas                    | Accepted                                                                              | 2026-09-26 |
+| [ADR-013](#adr-013--keep-the-ui-kit-in-the-web-app-on-unstyled-mantine)             | Keep the UI kit in the web app on unstyled Mantine             | Accepted                                                                              | 2026-09-26 |
+| [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)             | Run two entrypoints until the first background job             | Accepted                                                                              | 2026-09-26 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
 ## ADR-001 — Use a pnpm modular monorepo with three runtime entrypoints
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)
 - **Date:** 2026-09-05
 - **Decider:** Developer
 - **Owning issue:** [#9](https://github.com/Shagon1k/PickFlick/issues/9)
@@ -217,7 +220,7 @@ the implementation remains `Proposed`.
 
 ## ADR-004 — Use BullMQ with a transactional outbox
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)
 - **Date:** 2026-09-05
 - **Decider:** Developer
 - **Owning issue:** [#9](https://github.com/Shagon1k/PickFlick/issues/9)
@@ -345,7 +348,7 @@ disabled production guard. Until then, the implementation and environments remai
 
 ## ADR-006 — Own Projector Noir and use Mantine selectively
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-013](#adr-013--keep-the-ui-kit-in-the-web-app-on-unstyled-mantine)
 - **Date:** 2026-09-05
 - **Decider:** Developer
 - **Owning issue:** [#9](https://github.com/Shagon1k/PickFlick/issues/9)
@@ -547,6 +550,13 @@ pass before the first production deployment.
 - [TailorTales UAT workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-uat.yml)
 - [TailorTales production workflow at reviewed revision](https://github.com/Shagon1k/TailorTales/blob/69577359bfedffe7492b4a013e6c39456a18a237/.github/workflows/deploy-prod.yml)
 
+### Amendment — 2026-09-26
+
+The worker and Redis are removed until the first background job ([ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)).
+Application Compose now runs `release`, `api`, and `web`; environments provision PostgreSQL and
+object storage only. The deployment-configuration checker script is removed; `pnpm compose:check`
+renders the local, deploy, and preview Compose files.
+
 ## ADR-008 — Promote source-built production from UAT-proven SemVer tags
 
 - **Status:** Accepted
@@ -643,6 +653,14 @@ complete.
   human-control approval of the TailorTales-aligned production approach.
 - ADR-007's evidence list above, including the reviewed TailorTales Compose, deployment guide, UAT
   workflow, and production workflow revision.
+
+### Amendment — 2026-09-26
+
+The promotion decision is unchanged. Its implementation moved from Node scripts into the
+`deploy-uat.yml` and `promote-production.yml` workflow steps: Dokploy contract and status checks,
+readiness of the exact deployed revision, the successful `UAT E2E` check-run requirement, and
+annotated-tag creation. Production deployment still requires `PRODUCTION_DEPLOY_ENABLED=true` and
+the `production` environment approval.
 
 ## ADR-009 — Use one public contact and environment-specific Resend senders
 
@@ -749,6 +767,13 @@ SPF/DKIM, replies reach the public contact queue, and staged DMARC does not reje
 - [Resend DMARC rollout guidance](https://resend.com/docs/dashboard/domains/dmarc)
 - [Google Workspace MX setup](https://knowledge.workspace.google.com/admin/domains/set-up-mx-records-for-google-workspace)
 
+### Amendment — 2026-09-26
+
+Contact messages are no longer stored or delivered by a worker. The API sends each valid message
+through Resend with `Reply-To` set to the visitor's address when given, and answers `503` when
+delivery fails; the form keeps the visitor's text so they can retry. Rate limiting uses
+`@nestjs/throttler`. Sender identities and environment rules above are unchanged.
+
 ## ADR-010 — Use Better Auth at the API boundary
 
 - **Status:** Accepted
@@ -817,8 +842,8 @@ stable line and prioritize security updates. Provider issues add exact environme
 typed startup validation, migration changes, and tests when those values and schemas become active.
 
 The implementation-ready provider, conflict, callback, return-to-intent, cookie, and verification
-contract lives in the active
-[Phase 4 plan](../phase-4-authentication-account-onboarding.md#accepted-implementation-contract).
+contract lived in the Phase 4 plan; after Phase 6 consolidation it is summarized in
+[ARCHITECTURE.md](../../ARCHITECTURE.md#5-cross-cutting-contracts) and retained in Git history.
 
 ### Consequences
 
@@ -879,6 +904,16 @@ Until those issues provide named code and runtime evidence, authentication remai
 - [SuperTokens NestJS integration](https://supertokens.com/docs/quickstart/integrations/nestjs)
 - [SuperTokens account-linking availability](https://supertokens.com/docs/post-authentication/account-linking/introduction)
 
+### Amendment — 2026-09-26
+
+- Explicit provider linking is deferred until a product need appears. Implicit linking stays
+  disabled: a signed-out sign-in whose email matches another User fails safely, and one User keeps
+  one provider identity.
+- Google and Apple use Better Auth's built-in `socialProviders`. Apple returns a name only on first
+  consent, so a missing name falls back to the email address.
+- The local patch to Better Auth's OAuth state consumption is removed; the supported release is used
+  unmodified.
+
 ## ADR-011 — Organize the API by feature module with one database client
 
 - **Status:** Accepted
@@ -934,3 +969,115 @@ checks pass.
 
 - The developer's architecture request in pull request
   [#150](https://github.com/Shagon1k/PickFlick/pull/150) on 2026-09-18.
+
+### Amendment — 2026-09-26
+
+Infrastructure that every feature uses — the runtime environment, `PrismaService`, and object
+storage — is provided by `@Global()` modules, following NestJS convention. Feature modules stay
+non-global and export only what another module consumes.
+
+## ADR-012 — Validate boundaries with shared zod schemas
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#32](https://github.com/Shagon1k/PickFlick/issues/32)
+
+### Context
+
+Request bodies, form values, and environment variables were validated by hand-written parsers in
+the API, the web app, and the config package, each with its own error shapes. The same Club and
+Contact rules were written twice.
+
+### Decision
+
+Describe every untrusted input as a zod schema. Request schemas live in `@pickflick/contracts` and
+are shared by the API (`ZodValidationPipe`) and web forms; response shapes stay plain TypeScript
+interfaces. `@pickflick/config` validates the environment with one zod schema plus a small table of
+cross-variable rules. Forms map schema failures to friendly per-field copy; zod's own messages are
+for developers.
+
+### Consequences
+
+- One definition per rule; API and forms cannot drift.
+- zod is a runtime dependency of contracts, config, API, and web.
+- Friendly form copy still lives next to each form.
+
+### Alternatives considered
+
+- **Keep hand-written validators.** Rejected: duplicated rules and bespoke error plumbing.
+- **class-validator DTOs in the API.** Rejected: the web could not reuse them.
+
+### Evidence
+
+- [zod](https://zod.dev)
+
+## ADR-013 — Keep the UI kit in the web app on unstyled Mantine
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#32](https://github.com/Shagon1k/PickFlick/issues/32)
+- **Supersedes:** [ADR-006](#adr-006--own-projector-noir-and-use-mantine-selectively)
+
+### Context
+
+`packages/ui` held one global stylesheet and a mix of hand-rolled and Mantine-backed primitives.
+Only the web app consumed it, so the package boundary added build steps without isolation, and
+hand-rolled buttons, fields, and switches re-implemented behavior Mantine already provides.
+
+### Decision
+
+Move the UI kit to `apps/web/src/components/ui/<Name>/`: one folder per component with its own SCSS
+module and a default export. Buttons, text fields, select, switch, tabs, modal, and menu wrap
+Mantine components rendered `unstyled`, so Projector Noir owns every slot's styling. Tokens live in
+`styles/tokens.scss`; the Mantine theme lives in `theme/mantine.ts`. Only the kit and theme import
+`@mantine/*` (lint-enforced), except `@mantine/form`, which forms use directly.
+
+### Consequences
+
+- Projector Noir stays the only visual authority; Mantine supplies focus, keyboard, and overlay
+  behavior.
+- No separate UI build; changes land with the screens that use them.
+- Visual regressions are caught by the Playwright baselines at 390 and 1440 pixels.
+
+### Alternatives considered
+
+- **Keep `packages/ui`.** Rejected: a package with one consumer.
+- **Use Mantine's default styles.** Rejected for the reasons in ADR-006.
+
+### Evidence
+
+- [Mantine unstyled components](https://mantine.dev/styles/unstyled/)
+- [Mantine form](https://mantine.dev/form/use-form/)
+
+## ADR-014 — Run two entrypoints until the first background job
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#32](https://github.com/Shagon1k/PickFlick/issues/32)
+- **Supersedes:** [ADR-001](#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints)
+  (third entrypoint) and [ADR-004](#adr-004--use-bullmq-with-a-transactional-outbox)
+
+### Context
+
+The worker, Redis, and outbox existed only to deliver Contact email. Sending that email directly
+from the API removes their one caller, leaving a process, a data service, and retry machinery with
+nothing to do.
+
+### Decision
+
+Keep the pnpm monorepo with two runtime entrypoints, `apps/web` and `apps/api`, plus the one-shot
+release job. Remove the worker, Redis, the observability package, and the Contact outbox. The phase
+that introduces the first background job (Session deadlines or notifications) records a new ADR for
+its queue; a transactional outbox with BullMQ remains the default candidate.
+
+### Consequences
+
+- Fewer processes and services to run, deploy, and monitor.
+- Session deadline work must bring its queue design with it.
+
+### Alternatives considered
+
+- **Keep an idle worker and Redis.** Rejected: operating cost without a caller.
