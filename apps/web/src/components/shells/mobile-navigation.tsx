@@ -8,7 +8,7 @@ import { FilmStrip } from "./film-strip";
 import { NotificationsPanel } from "./notifications-panel";
 import { useAnchoredMenus, useOverlayDismissal, useProductOverlay } from "./product-overlay";
 import type { MobileNavigationEntry } from "./shell-navigation";
-import styles from "./shells.module.css";
+import styles from "./product-navigation.module.css";
 
 export function MobileProductNavigation({
   entries,

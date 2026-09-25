@@ -9,7 +9,7 @@ import { FilmStrip } from "./film-strip";
 import { NotificationsPanel } from "./notifications-panel";
 import { useAnchoredMenus, useOverlayDismissal, useProductOverlay } from "./product-overlay";
 import type { ShellMenuItem } from "./shell-navigation";
-import styles from "./shells.module.css";
+import styles from "./product-navigation.module.css";
 
 /** Up to two initials from the viewer's display name; empty when no usable name exists. */
 function initialsFor(name: string | null | undefined): string {
