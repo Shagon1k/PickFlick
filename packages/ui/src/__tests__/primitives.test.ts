@@ -395,7 +395,7 @@ describe('production contracts', () => {
     it('maps Projector Noir into Mantine without application imports', async () => {
         const [layout, interactive, provider] = await Promise.all([
             readFile(new URL('../../../../apps/web/src/app/layout.tsx', import.meta.url), 'utf8'),
-            readFile(new URL('../interactive.tsx', import.meta.url), 'utf8'),
+            readFile(new URL('../tabs.tsx', import.meta.url), 'utf8'),
             readFile(new URL('../provider.tsx', import.meta.url), 'utf8'),
         ]);
 
