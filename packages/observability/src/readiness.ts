@@ -45,8 +45,17 @@ export async function checkReadiness(
     };
 }
 
+function withoutTrailingSlashes(path: string): string {
+    let end = path.length;
+    while (end > 0 && path[end - 1] === '/') {
+        end -= 1;
+    }
+    return path.slice(0, end);
+}
+
 function redisCommand(parts: readonly string[]): string {
-    return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join('')}`;
+    const bulkStrings = parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`);
+    return `*${parts.length}\r\n${bulkStrings.join('')}`;
 }
 
 export async function checkRedis(
@@ -111,7 +120,7 @@ function hmac(key: string | Buffer, value: string): Buffer {
 function bucketUrl(configuration: WorkerEnvironment['storage']): URL {
     const target = new URL(configuration.endpoint);
     if (configuration.forcePathStyle) {
-        target.pathname = `${target.pathname.replace(/\/+$/, '')}/${configuration.bucket}`;
+        target.pathname = `${withoutTrailingSlashes(target.pathname)}/${configuration.bucket}`;
     } else {
         target.hostname = `${configuration.bucket}.${target.hostname}`;
     }

@@ -28,6 +28,21 @@ export interface ConstraintSelectProps extends Omit<
     readonly onChange?: (value: string | null) => void;
 }
 
+type AriaInvalid = ConstraintSelectProps['aria-invalid'];
+
+function isAriaInvalid(value: AriaInvalid): boolean {
+    return value !== undefined && value !== false && value !== 'false';
+}
+
+/** Drops undefined entries, which exactOptionalPropertyTypes forbids passing explicitly. */
+function definedProps<Props extends Record<string, unknown>>(
+    props: Props,
+): { [Key in keyof Props]?: Exclude<Props[Key], undefined> } {
+    return Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined)) as {
+        [Key in keyof Props]?: Exclude<Props[Key], undefined>;
+    };
+}
+
 export function ConstraintSelect({
     'aria-describedby': ariaDescribedBy,
     'aria-invalid': ariaInvalid,
@@ -46,11 +61,21 @@ export function ConstraintSelect({
     const constraintError = constraintInvalid && !readOnly;
     const effectiveRequired = required && !readOnly;
     const dataState = props['data-state'] ?? (constraintError ? 'error' : undefined);
-    const invalid =
-        constraintError ||
-        Boolean(error) ||
-        (ariaInvalid !== undefined && ariaInvalid !== false && ariaInvalid !== 'false');
-    const renderedAriaInvalid = constraintError || Boolean(error) ? true : ariaInvalid;
+    const flaggedInvalid = constraintError || Boolean(error);
+    const invalid = flaggedInvalid || isAriaInvalid(ariaInvalid);
+    const renderedAriaInvalid = flaggedInvalid ? true : ariaInvalid;
+    const constraintInputProps: MantineSelectProps<string>['hiddenInputProps'] = {
+        'aria-hidden': true,
+        className: 'pf-visually-hidden',
+        onInvalid: (event) => {
+            event.preventDefault();
+            setConstraintInvalid(true);
+            inputRef.current?.focus();
+        },
+        required: true,
+        tabIndex: -1,
+        type: 'text',
+    };
 
     // A satisfied or lifted constraint clears the flag during render rather than in an effect.
     if (constraintInvalid && (!effectiveRequired || disabled || value)) {
@@ -64,33 +89,17 @@ export function ConstraintSelect({
                 ...attributes,
                 input: {
                     ...attributes?.input,
-                    ...(ariaDescribedBy !== undefined
-                        ? { 'aria-describedby': ariaDescribedBy }
-                        : {}),
-                    ...(renderedAriaInvalid !== undefined
-                        ? { 'aria-invalid': renderedAriaInvalid }
-                        : {}),
-                    ...(id !== undefined ? { id } : {}),
+                    ...definedProps({
+                        'aria-describedby': ariaDescribedBy,
+                        'aria-invalid': renderedAriaInvalid,
+                        id,
+                    }),
                 },
             }}
-            {...(dataState !== undefined ? { 'data-state': dataState } : {})}
-            {...(disabled !== undefined ? { disabled } : {})}
+            {...definedProps({ 'data-state': dataState, disabled, readOnly, value })}
             {...(invalid ? { error: true } : {})}
             {...(effectiveRequired
-                ? {
-                      hiddenInputProps: {
-                          'aria-hidden': true,
-                          className: 'pf-visually-hidden',
-                          onInvalid: (event) => {
-                              event.preventDefault();
-                              setConstraintInvalid(true);
-                              inputRef.current?.focus();
-                          },
-                          required: true,
-                          tabIndex: -1,
-                          type: 'text',
-                      },
-                  }
+                ? { hiddenInputProps: constraintInputProps, required: true }
                 : {})}
             onChange={(nextValue) => {
                 setConstraintInvalid(false);
@@ -98,9 +107,6 @@ export function ConstraintSelect({
             }}
             id={id}
             ref={inputRef}
-            {...(readOnly !== undefined ? { readOnly } : {})}
-            {...(effectiveRequired ? { required: true } : {})}
-            {...(value !== undefined ? { value } : {})}
         />
     );
 }
@@ -342,6 +348,29 @@ export interface ScaleControlProps {
     readonly presentation?: 'score' | 'rating';
 }
 
+/** The candidate when it belongs to the scale; anything outside it counts as no selection. */
+function inScale(values: readonly number[], candidate: number | undefined): number | undefined {
+    return candidate !== undefined && values.includes(candidate) ? candidate : undefined;
+}
+
+/** Radio-group keys: arrows step within the scale, Home and End jump to its ends. */
+function keyboardScaleValue(
+    key: string,
+    current: number,
+    min: number,
+    max: number,
+): number | undefined {
+    const moves: Readonly<Record<string, number>> = {
+        ArrowDown: Math.max(min, current - 1),
+        ArrowLeft: Math.max(min, current - 1),
+        ArrowRight: Math.min(max, current + 1),
+        ArrowUp: Math.min(max, current + 1),
+        End: max,
+        Home: min,
+    };
+    return moves[key];
+}
+
 export function ScaleControl({
     defaultValue,
     disabled = false,
@@ -358,17 +387,11 @@ export function ScaleControl({
 }: ScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
     const firstValue = values[0] ?? min;
-    const initialValue =
-        defaultValue !== undefined && values.includes(defaultValue) ? defaultValue : undefined;
+    const initialValue = inScale(values, defaultValue);
     const [internalValue, setInternalValue] = useState<number | undefined>(initialValue);
     const [previewValue, setPreviewValue] = useState<number | undefined>();
-    const candidateValue = value ?? internalValue;
-    const selectedValue =
-        candidateValue !== undefined && values.includes(candidateValue)
-            ? candidateValue
-            : undefined;
-    const activeValue =
-        previewValue !== undefined && values.includes(previewValue) ? previewValue : selectedValue;
+    const selectedValue = inScale(values, value ?? internalValue);
+    const activeValue = inScale(values, previewValue) ?? selectedValue;
     const locked = disabled || readOnly || submitted;
     const constraintRequired = required && !locked;
     const [constraintInvalid, setConstraintInvalid] = useState(false);
@@ -386,17 +409,17 @@ export function ScaleControl({
         setConstraintInvalid(false);
     }
 
+    const selectionLabel =
+        selectedValue === undefined ? 'Not selected' : `${selectedValue} of ${max}`;
+    const scaleStatus = constraintInvalid ? `Select a ${presentation}.` : selectionLabel;
+
     if (submitted) {
         return (
             <fieldset className="pf-scale" data-submitted="true">
                 <legend>{label}</legend>
                 <div className="pf-scale__submitted">
                     <span>Submitted</span>
-                    <strong>
-                        {selectedValue === undefined
-                            ? 'Not selected'
-                            : `${selectedValue} of ${max}`}
-                    </strong>
+                    <strong>{selectionLabel}</strong>
                 </div>
             </fieldset>
         );
@@ -414,16 +437,7 @@ export function ScaleControl({
     }
 
     function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentValue: number): void {
-        let nextValue: number | undefined;
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-            nextValue = Math.max(min, currentValue - 1);
-        } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-            nextValue = Math.min(max, currentValue + 1);
-        } else if (event.key === 'Home') {
-            nextValue = min;
-        } else if (event.key === 'End') {
-            nextValue = max;
-        }
+        const nextValue = keyboardScaleValue(event.key, currentValue, min, max);
         if (nextValue !== undefined) {
             event.preventDefault();
             select(nextValue);
@@ -518,11 +532,7 @@ export function ScaleControl({
                 />
             ) : null}
             <output aria-live="polite" className="pf-scale__value" id={feedbackId}>
-                {constraintInvalid
-                    ? `Select a ${presentation}.`
-                    : selectedValue === undefined
-                      ? 'Not selected'
-                      : `${selectedValue} of ${max}`}
+                {scaleStatus}
             </output>
         </fieldset>
     );

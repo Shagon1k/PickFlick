@@ -1,3 +1,5 @@
+// This local verification harness runs reviewed migration files and code-owned schema names.
+/* eslint-disable sonarjs/sql-queries */
 import { readFile } from 'node:fs/promises';
 
 import { loadDatabaseEnvironment } from '@pickflick/config/environment';

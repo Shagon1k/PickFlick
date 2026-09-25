@@ -21,6 +21,7 @@ import {
     type AppRole,
     type IdentityAuthorizationBoundary,
     type IdentitySessionResolution,
+    type SessionDenialReason,
 } from '../authorization.types.js';
 
 const principals: Readonly<Record<string, AppRole>> = {
@@ -42,6 +43,10 @@ const logger = createLogger({ environment: 'test', service: 'api', destination: 
 const identity: IdentityAuthorizationBoundary = {
     async resolveSession(headers): Promise<IdentitySessionResolution> {
         const credential = headers.authorization?.replace('Bearer ', '') ?? '';
+        const denialReasons: Readonly<Record<string, SessionDenialReason>> = {
+            suspended: 'inactive_user',
+            unavailable: 'service_unavailable',
+        };
         if (suspendedCredentials.has(credential)) {
             return { authorized: false, reason: 'inactive_user' };
         }
@@ -58,12 +63,7 @@ const identity: IdentityAuthorizationBoundary = {
         }
         return {
             authorized: false,
-            reason:
-                credential === 'unavailable'
-                    ? 'service_unavailable'
-                    : credential === 'suspended'
-                      ? 'inactive_user'
-                      : 'invalid_session',
+            reason: denialReasons[credential] ?? 'invalid_session',
         };
     },
 };

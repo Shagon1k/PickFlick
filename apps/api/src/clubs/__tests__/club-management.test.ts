@@ -70,40 +70,24 @@ function stored(role: 'ADMIN' | 'MODERATOR' | 'MEMBER'): StoredClubManagementVie
 }
 
 class ManagementRepository extends ClubManagementRepository {
-    readonly updateSettingsCall = vi.fn(
-        async (input: PersistClubSettingsInput): Promise<ClubManagementResult> => {
-            void input;
-            return { changed: true, replayed: false };
-        },
+    readonly updateSettingsCall = vi.fn<
+        (input: PersistClubSettingsInput) => Promise<ClubManagementResult>
+    >(async () => ({ changed: true, replayed: false }));
+    readonly lifecycleCall = vi.fn<(input: ClubLifecycleInput) => Promise<ClubManagementResult>>(
+        async () => ({ changed: true, replayed: false }),
     );
-    readonly lifecycleCall = vi.fn(
-        async (input: ClubLifecycleInput): Promise<ClubManagementResult> => {
-            void input;
-            return { changed: true, replayed: false };
-        },
+    readonly leaveCall = vi.fn<(input: LeaveClubInput) => Promise<ClubManagementResult>>(
+        async () => ({ changed: true, replayed: false }),
     );
-    readonly leaveCall = vi.fn(async (input: LeaveClubInput): Promise<ClubManagementResult> => {
-        void input;
-        return { changed: true, replayed: false };
-    });
-    readonly deleteCall = vi.fn(
-        async (input: DeleteClubInput): Promise<ClubAvatarReferenceResult> => {
-            void input;
-            return { changed: true, replayed: false };
-        },
+    readonly deleteCall = vi.fn<(input: DeleteClubInput) => Promise<ClubAvatarReferenceResult>>(
+        async () => ({ changed: true, replayed: false }),
     );
-    readonly avatarCall = vi.fn(
-        async (input: UpdateAvatarReferenceInput): Promise<ClubAvatarReferenceResult> => {
-            void input;
-            return { changed: true, replayed: false };
-        },
-    );
-    readonly avatarReplayCall = vi.fn(
-        async (input: FindAvatarReplayInput): Promise<ClubAvatarReferenceResult | null> => {
-            void input;
-            return null;
-        },
-    );
+    readonly avatarCall = vi.fn<
+        (input: UpdateAvatarReferenceInput) => Promise<ClubAvatarReferenceResult>
+    >(async () => ({ changed: true, replayed: false }));
+    readonly avatarReplayCall = vi.fn<
+        (input: FindAvatarReplayInput) => Promise<ClubAvatarReferenceResult | null>
+    >(async () => null);
 
     async readForUser(userId: string): Promise<StoredClubManagementView | null> {
         if (userId === ids.admin) {
@@ -139,14 +123,10 @@ class ManagementRepository extends ClubManagementRepository {
 }
 
 class AvatarStorage extends ClubAvatarStorage {
-    readonly putCall = vi.fn(async (objectKey: string, body: Buffer, contentType: string) => {
-        void objectKey;
-        void body;
-        void contentType;
-    });
-    readonly deleteCall = vi.fn(async (objectKey: string) => {
-        void objectKey;
-    });
+    readonly putCall = vi.fn<
+        (objectKey: string, body: Buffer, contentType: string) => Promise<void>
+    >(async () => undefined);
+    readonly deleteCall = vi.fn<(objectKey: string) => Promise<void>>(async () => undefined);
     async put(objectKey: string, body: Buffer, contentType: string) {
         return this.putCall(objectKey, body, contentType);
     }

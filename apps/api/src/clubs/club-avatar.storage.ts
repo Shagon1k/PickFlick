@@ -16,6 +16,14 @@ export abstract class ClubAvatarStorage {
     abstract delete(objectKey: string): Promise<void>;
 }
 
+function withoutTrailingSlashes(path: string): string {
+    let end = path.length;
+    while (end > 0 && path[end - 1] === '/') {
+        end -= 1;
+    }
+    return path.slice(0, end);
+}
+
 function sha256(value: string | Buffer): string {
     return createHash('sha256').update(value).digest('hex');
 }
@@ -65,7 +73,7 @@ export class S3ClubAvatarStorage extends ClubAvatarStorage {
 
     private target(objectKey: string): URL {
         const target = new URL(this.configuration.endpoint);
-        const basePath = target.pathname.replace(/\/+$/u, '');
+        const basePath = withoutTrailingSlashes(target.pathname);
         target.pathname = this.configuration.forcePathStyle
             ? `${basePath}/${this.configuration.bucket}/${objectKey}`
             : `${basePath}/${objectKey}`;

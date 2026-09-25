@@ -11,11 +11,8 @@ const avatarPng = Buffer.from(
 );
 
 function settingsProjection(token) {
-    const role = token?.includes('member')
-        ? 'MEMBER'
-        : token?.includes('moderator')
-          ? 'MODERATOR'
-          : 'ADMIN';
+    const role =
+        ['member', 'moderator'].find((name) => token?.includes(name))?.toUpperCase() ?? 'ADMIN';
     const lifecycle = token?.includes('archived') ? 'ARCHIVED' : 'ACTIVE';
     const admin = role === 'ADMIN';
     const active = lifecycle === 'ACTIVE';
@@ -96,226 +93,197 @@ function sendJson(response, status, body) {
     response.end(JSON.stringify(body));
 }
 
-const api = createServer((request, response) => {
-    if (request.method === 'GET' && request.url === '/api/auth/get-session') {
-        const token = sessionToken(request);
-        if (token === 'session-api-unavailable') {
-            sendJson(response, 503, null);
-            return;
-        }
-        const authenticated = token?.startsWith('valid') ?? false;
-        sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
+function sendError(response, status, code, requestId, reason) {
+    sendJson(response, status, {
+        error: { code, message: code, requestId, ...(reason ? { reason } : {}) },
+    });
+}
+
+function readJson(request, onBody) {
+    let body = '';
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => (body += chunk));
+    request.on('end', () => onBody(JSON.parse(body)));
+}
+
+function handleSession(request, response) {
+    const token = sessionToken(request);
+    if (token === 'session-api-unavailable') {
+        sendJson(response, 503, null);
         return;
     }
-    if (request.url === '/clubs') {
-        const token = sessionToken(request);
-        if (!token?.startsWith('valid')) {
-            sendJson(response, 401, {
-                error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required.',
-                    requestId: 'request-club-auth',
-                },
-            });
+    const authenticated = token?.startsWith('valid') ?? false;
+    sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
+}
+
+function createClub(request, response, token) {
+    readJson(request, (payload) => {
+        if ((clubsBySession.get(token) ?? []).length > 0) {
+            sendError(response, 409, 'CONFLICT', 'request-club-limit', 'ADMIN_CLUB_LIMIT_REACHED');
             return;
         }
-        if (request.method === 'GET') {
-            sendJson(response, 200, { clubs: clubsBySession.get(token) ?? [] });
-            return;
-        }
-        if (request.method === 'POST') {
-            let body = '';
-            request.setEncoding('utf8');
-            request.on('data', (chunk) => (body += chunk));
-            request.on('end', () => {
-                if ((clubsBySession.get(token) ?? []).length > 0) {
-                    sendJson(response, 409, {
-                        error: {
-                            code: 'CONFLICT',
-                            message: 'Conflict.',
-                            requestId: 'request-club-limit',
-                            reason: 'ADMIN_CLUB_LIMIT_REACHED',
-                        },
-                    });
-                    return;
-                }
-                const payload = JSON.parse(body);
-                const description = String(payload.description ?? '').trim();
-                const club = {
-                    id: '10000000-0000-4000-8000-000000000099',
-                    name: String(payload.name).trim(),
-                    ...(description ? { description } : {}),
-                    hasAvatar: false,
-                    lifecycle: 'ACTIVE',
-                    membershipRole: 'ADMIN',
-                    selectionScaleMin: payload.selectionScaleMin,
-                    selectionScaleMax: payload.selectionScaleMax,
-                    tier: 'FREE',
-                };
-                clubsBySession.set(token, [club]);
-                sendJson(response, 201, { club });
-            });
-            return;
-        }
+        const description = String(payload.description ?? '').trim();
+        const club = {
+            id: '10000000-0000-4000-8000-000000000099',
+            name: String(payload.name).trim(),
+            ...(description ? { description } : {}),
+            hasAvatar: false,
+            lifecycle: 'ACTIVE',
+            membershipRole: 'ADMIN',
+            selectionScaleMin: payload.selectionScaleMin,
+            selectionScaleMax: payload.selectionScaleMax,
+            tier: 'FREE',
+        };
+        clubsBySession.set(token, [club]);
+        sendJson(response, 201, { club });
+    });
+}
+
+function handleClubs(request, response) {
+    const token = sessionToken(request);
+    if (!token?.startsWith('valid')) {
+        sendError(response, 401, 'UNAUTHORIZED', 'request-club-auth');
+        return;
+    }
+    if (request.method === 'GET') {
+        sendJson(response, 200, { clubs: clubsBySession.get(token) ?? [] });
+    } else if (request.method === 'POST') {
+        createClub(request, response, token);
+    } else {
         response.writeHead(405).end();
-        return;
     }
-    if (request.url?.startsWith(`/clubs/${settingsClubId}`)) {
-        const token = sessionToken(request);
-        if (!token?.startsWith('valid')) {
-            sendJson(response, 401, {
-                error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required.',
-                    requestId: 'request-settings-auth',
-                },
-            });
-            return;
-        }
-        if (token.includes('settings-outsider')) {
-            sendJson(response, 403, {
-                error: {
-                    code: 'FORBIDDEN',
-                    message: 'Forbidden.',
-                    requestId: 'request-settings-private',
-                },
-            });
-            return;
-        }
-        if (request.method === 'GET' && request.url.endsWith('/settings')) {
-            sendJson(response, 200, settingsProjection(token));
-            return;
-        }
-        if (
-            request.method === 'GET' &&
-            new URL(request.url, 'http://127.0.0.1').pathname === `/clubs/${settingsClubId}/avatar`
-        ) {
-            response.writeHead(200, {
-                'cache-control': 'private, no-store',
-                'content-length': avatarPng.length,
-                'content-type': 'image/png',
-            });
-            response.end(avatarPng);
-            return;
-        }
-        if (request.method === 'PATCH' && request.url.endsWith('/settings')) {
+}
+
+function sendAvatar(response) {
+    response.writeHead(200, {
+        'cache-control': 'private, no-store',
+        'content-length': avatarPng.length,
+        'content-type': 'image/png',
+    });
+    response.end(avatarPng);
+}
+
+function changeRole(response, token) {
+    if (token.includes('settings-admin')) {
+        sendJson(response, 200, { changed: true, replayed: false });
+    } else {
+        sendError(response, 403, 'FORBIDDEN', 'request-role-private');
+    }
+}
+
+function uploadAvatar(request, response, token) {
+    const previous = Number(avatarVersionsBySession.get(token)?.split('-')[1] ?? 0);
+    avatarVersionsBySession.set(token, `avatar-${previous + 1}`);
+    request.resume();
+    sendJson(response, 200, { changed: true, hasAvatar: true, replayed: false });
+}
+
+function removeAvatar(request, response, token) {
+    avatarVersionsBySession.delete(token);
+    request.resume();
+    sendJson(response, 200, { changed: true, hasAvatar: false, replayed: false });
+}
+
+/** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
+const clubRoutes = [
+    [
+        'GET',
+        /^\/settings$/u,
+        (_request, response, token) => sendJson(response, 200, settingsProjection(token)),
+    ],
+    ['GET', /^\/avatar$/u, (_request, response) => sendAvatar(response)],
+    [
+        'PATCH',
+        /^\/settings$/u,
+        (_request, response, token) =>
             sendJson(response, 200, {
                 changed: true,
                 replayed: false,
                 settings: settingsProjection(token),
-            });
-            return;
-        }
-        if (
-            request.method === 'PATCH' &&
-            request.url.includes('/members/') &&
-            request.url.endsWith('/role')
-        ) {
-            sendJson(
-                response,
-                token.includes('settings-admin') ? 200 : 403,
-                token.includes('settings-admin')
-                    ? { changed: true, replayed: false }
-                    : {
-                          error: {
-                              code: 'FORBIDDEN',
-                              message: 'Forbidden.',
-                              requestId: 'request-role-private',
-                          },
-                      },
-            );
-            return;
-        }
-        if (
-            request.method === 'POST' &&
-            /\/(archive|reactivate|leave|delete)$/u.test(request.url)
-        ) {
-            sendJson(response, 200, { changed: true, replayed: false });
-            return;
-        }
-        if (request.method === 'PUT' && request.url.endsWith('/avatar')) {
-            const nextVersion = `avatar-${Number(avatarVersionsBySession.get(token)?.split('-')[1] ?? 0) + 1}`;
-            avatarVersionsBySession.set(token, nextVersion);
-            request.resume();
-            sendJson(response, 200, { changed: true, hasAvatar: true, replayed: false });
-            return;
-        }
-        if (request.method === 'DELETE' && request.url.endsWith('/avatar')) {
-            avatarVersionsBySession.delete(token);
-            request.resume();
-            sendJson(response, 200, { changed: true, hasAvatar: false, replayed: false });
-            return;
-        }
-        response.writeHead(404).end();
+            }),
+    ],
+    [
+        'PATCH',
+        /^\/members\/[^/]+\/role$/u,
+        (_request, response, token) => changeRole(response, token),
+    ],
+    [
+        'POST',
+        /^\/(?:archive|reactivate|leave|delete)$/u,
+        (_request, response) => sendJson(response, 200, { changed: true, replayed: false }),
+    ],
+    ['PUT', /^\/avatar$/u, uploadAvatar],
+    ['DELETE', /^\/avatar$/u, removeAvatar],
+];
+
+function handleClub(request, response, subpath) {
+    const token = sessionToken(request);
+    if (!token?.startsWith('valid')) {
+        sendError(response, 401, 'UNAUTHORIZED', 'request-settings-auth');
         return;
     }
-    if (request.method !== 'POST' || request.url !== '/contact') {
-        response.writeHead(404).end();
+    if (token.includes('settings-outsider')) {
+        sendError(response, 403, 'FORBIDDEN', 'request-settings-private');
         return;
     }
+    const route = clubRoutes.find(
+        ([method, path]) => method === request.method && path.test(subpath),
+    );
+    if (route) {
+        route[2](request, response, token);
+    } else {
+        response.writeHead(404).end();
+    }
+}
 
-    let body = '';
-    request.setEncoding('utf8');
-    request.on('data', (chunk) => (body += chunk));
-    request.on('end', () => {
-        const payload = JSON.parse(body);
-        const send = (status, result) => {
-            response.writeHead(status, { 'content-type': 'application/json' });
-            response.end(JSON.stringify(result));
-        };
+const contactFailures = {
+    'Rate limited message': [429, 'RATE_LIMITED', 'request-1'],
+    'Service unavailable message': [503, 'SERVICE_UNAVAILABLE', 'request-2'],
+};
 
-        if (payload.message === 'Rate limited message') {
-            send(429, {
-                error: {
-                    code: 'RATE_LIMITED',
-                    message: 'Too many requests.',
-                    requestId: 'request-1',
-                },
-            });
+/** The first attempt fails; a retry must reuse its submission key or it conflicts. */
+function retryFailure(payload) {
+    if (payload.message !== 'Retry this exact message') {
+        return undefined;
+    }
+    const previousKey = retryKeys.get(payload.message);
+    if (!previousKey) {
+        retryKeys.set(payload.message, payload.submissionKey);
+        return [503, 'SERVICE_UNAVAILABLE', 'request-3'];
+    }
+    return previousKey === payload.submissionKey ? undefined : [409, 'CONFLICT', 'request-4'];
+}
+
+function handleContact(request, response) {
+    readJson(request, (payload) => {
+        const failure = contactFailures[payload.message] ?? retryFailure(payload);
+        if (failure) {
+            sendError(response, ...failure);
             return;
         }
-        if (payload.message === 'Service unavailable message') {
-            send(503, {
-                error: {
-                    code: 'SERVICE_UNAVAILABLE',
-                    message: 'Unavailable.',
-                    requestId: 'request-2',
-                },
-            });
-            return;
-        }
-        if (payload.message === 'Retry this exact message') {
-            const previousKey = retryKeys.get(payload.message);
-            if (!previousKey) {
-                retryKeys.set(payload.message, payload.submissionKey);
-                send(503, {
-                    error: {
-                        code: 'SERVICE_UNAVAILABLE',
-                        message: 'Unavailable.',
-                        requestId: 'request-3',
-                    },
-                });
-                return;
-            }
-            if (previousKey !== payload.submissionKey) {
-                send(409, {
-                    error: { code: 'CONFLICT', message: 'Conflict.', requestId: 'request-4' },
-                });
-                return;
-            }
-        }
-
         const complete = () =>
-            send(202, {
+            sendJson(response, 202, {
                 id: 'contact-1',
                 status: payload.message === 'Duplicate message' ? 'duplicate' : 'accepted',
             });
-        if (payload.message === 'Slow Contact response') {
-            setTimeout(complete, 300);
-        } else {
-            complete();
-        }
+        setTimeout(complete, payload.message === 'Slow Contact response' ? 300 : 0);
     });
+}
+
+const api = createServer((request, response) => {
+    const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
+    const clubPrefix = `/clubs/${settingsClubId}`;
+    if (request.method === 'GET' && pathname === '/api/auth/get-session') {
+        handleSession(request, response);
+    } else if (pathname === '/clubs') {
+        handleClubs(request, response);
+    } else if (pathname.startsWith(clubPrefix)) {
+        handleClub(request, response, pathname.slice(clubPrefix.length));
+    } else if (request.method === 'POST' && pathname === '/contact') {
+        handleContact(request, response);
+    } else {
+        response.writeHead(404).end();
+    }
 });
 
 await new Promise((resolve, reject) => {

@@ -2,6 +2,7 @@ import {
     CONTACT_EMAIL_MAX_LENGTH,
     CONTACT_MESSAGE_MAX_LENGTH,
     CONTACT_NAME_MAX_LENGTH,
+    isEmailAddress,
 } from '@pickflick/contracts';
 
 import { ContactValidationError } from './contact.errors.js';
@@ -68,7 +69,7 @@ export function parseContactSubmission(value: unknown): NormalizedContactSubmiss
     }
     const name = optionalString(input.name, CONTACT_NAME_MAX_LENGTH, true);
     const email = optionalString(input.email, CONTACT_EMAIL_MAX_LENGTH, true)?.toLowerCase();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email && !isEmailAddress(email)) {
         throw new ContactValidationError();
     }
     return {

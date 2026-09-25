@@ -2,6 +2,7 @@ import {
     CONTACT_EMAIL_MAX_LENGTH,
     CONTACT_MESSAGE_MAX_LENGTH,
     CONTACT_NAME_MAX_LENGTH,
+    isEmailAddress,
 } from '@pickflick/contracts';
 
 import type { ContactFieldErrors, ContactFormValues } from './contact-form.types';
@@ -26,10 +27,7 @@ export function validateContactValues(values: ContactFormValues): ContactFieldEr
         errors.name = `Keep your name to ${CONTACT_NAME_MAX_LENGTH} characters.`;
     }
     const email = values.email.trim();
-    if (
-        email.length > CONTACT_EMAIL_MAX_LENGTH ||
-        (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    ) {
+    if (email.length > CONTACT_EMAIL_MAX_LENGTH || (email && !isEmailAddress(email))) {
         errors.email = 'Enter a valid email address or leave this blank.';
     }
     return errors;

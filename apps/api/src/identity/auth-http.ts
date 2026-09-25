@@ -65,7 +65,7 @@ export function isAllowedAuthRequest(
         return false;
     }
 
-    const pathname = new URL(requestUrl, 'http://pickflick.invalid').pathname;
+    const pathname = new URL(requestUrl, 'https://pickflick.invalid').pathname;
     const requestKey = `${method.toUpperCase()} ${pathname}`;
     return (
         allowedAuthRequests.has(requestKey) ||
@@ -74,7 +74,7 @@ export function isAllowedAuthRequest(
 }
 
 function requestPath(requestUrl: string | undefined): string | undefined {
-    return requestUrl ? new URL(requestUrl, 'http://pickflick.invalid').pathname : undefined;
+    return requestUrl ? new URL(requestUrl, 'https://pickflick.invalid').pathname : undefined;
 }
 
 async function readFormBody(request: IncomingMessage): Promise<URLSearchParams | undefined> {
@@ -246,7 +246,7 @@ async function handleAppleCallbackPost(
         return;
     }
 
-    const callback = new URL('/api/auth/callback/apple', 'http://pickflick.invalid');
+    const callback = new URL('/api/auth/callback/apple', 'https://pickflick.invalid');
     if (code) {
         callback.searchParams.set('code', code);
         const profile = sanitizeAppleCallbackProfile(body?.get('user'));
@@ -287,73 +287,111 @@ async function writeFilteredAccounts(response: ServerResponse, upstream: Respons
     writeJson(response, upstream.status, accounts);
 }
 
+/** Writes 429 and returns true when the key has used its window. */
+async function rejectRateLimited(
+    response: ServerResponse,
+    database: AuthHandlerOptions['database'],
+    key: string,
+    rule: RateLimitRule,
+): Promise<boolean> {
+    const retryAfter = await consumeRateLimit(database, key, rule);
+    if (!retryAfter) {
+        return false;
+    }
+    response.setHeader('retry-after', String(retryAfter));
+    writeJson(response, 429, { statusCode: 429, message: 'Too many requests.' });
+    return true;
+}
+
+/**
+ * Resolves the session before Better Auth sees the request. get-session only surfaces an outage;
+ * protected account routes also reject a missing or invalid session.
+ */
+async function rejectUnresolvedSession(
+    request: IncomingMessage,
+    response: ServerResponse,
+    requestKey: string,
+    options: AuthHandlerOptions,
+): Promise<boolean> {
+    const sessionProbe = requestKey === 'GET /api/auth/get-session';
+    if (!sessionProbe && !protectedAuthRequests.has(requestKey)) {
+        return false;
+    }
+    const resolution = await options.resolveSession(request);
+    if (resolution.authorized) {
+        return false;
+    }
+    if (resolution.reason === 'service_unavailable') {
+        writeJson(
+            response,
+            503,
+            sessionProbe ? null : { statusCode: 503, message: 'Unauthorized' },
+        );
+        return true;
+    }
+    if (sessionProbe) {
+        return false;
+    }
+    writeJson(response, 401, { statusCode: 401, message: 'Unauthorized' });
+    return true;
+}
+
 export function restrictAuthHandler(
     handler: NodeAuthHandler,
     options: AuthHandlerOptions,
 ): NodeAuthHandler {
+    const routes: ReadonlyMap<string, NodeAuthHandler> = new Map([
+        [
+            'POST /api/auth/callback/apple',
+            async (request, response) => {
+                const key = appleCallbackRateLimitKey(request, options);
+                if (
+                    !(await rejectRateLimited(
+                        response,
+                        options.database,
+                        key,
+                        appleCallbackRateLimit,
+                    ))
+                ) {
+                    await handleAppleCallbackPost(request, response, options.database);
+                }
+            },
+        ],
+        [
+            'GET /api/auth/list-accounts',
+            async (request, response) =>
+                writeFilteredAccounts(response, await options.listAccounts(request)),
+        ],
+        [
+            'POST /api/auth/unlink-account',
+            async (request, response) =>
+                handleSerializedUnlink(request, response, handler, options),
+        ],
+    ]);
+
     return async (request, response) => {
         if (!isAllowedAuthRequest(request.method, request.url, options.appleSignInEnabled)) {
             writeJson(response, 404, { statusCode: 404, message: 'Not Found' });
             return;
         }
 
-        const path = requestPath(request.url);
-        const requestKey = `${request.method?.toUpperCase()} ${path}`;
+        const requestKey = `${request.method?.toUpperCase()} ${requestPath(request.url)}`;
         const protectedRule = protectedAuthRateLimits.get(requestKey);
-        if (protectedRule) {
-            const retryAfter = await consumeRateLimit(
+        if (
+            protectedRule &&
+            (await rejectRateLimited(
+                response,
                 options.database,
                 protectedAuthRateLimitKey(request, requestKey, options),
                 protectedRule,
-            );
-            if (retryAfter) {
-                response.setHeader('retry-after', String(retryAfter));
-                writeJson(response, 429, { statusCode: 429, message: 'Too many requests.' });
-                return;
-            }
+            ))
+        ) {
+            return;
         }
-        if (request.method === 'GET' && path === '/api/auth/get-session') {
-            const resolution = await options.resolveSession(request);
-            if (!resolution.authorized && resolution.reason === 'service_unavailable') {
-                writeJson(response, 503, null);
-                return;
-            }
-        } else if (protectedAuthRequests.has(requestKey)) {
-            const resolution = await options.resolveSession(request);
-            if (!resolution.authorized) {
-                writeJson(response, resolution.reason === 'service_unavailable' ? 503 : 401, {
-                    statusCode: resolution.reason === 'service_unavailable' ? 503 : 401,
-                    message: 'Unauthorized',
-                });
-                return;
-            }
-        }
-
-        if (request.method === 'POST' && path === '/api/auth/callback/apple') {
-            const retryAfter = await consumeRateLimit(
-                options.database,
-                appleCallbackRateLimitKey(request, options),
-                appleCallbackRateLimit,
-            );
-            if (retryAfter) {
-                response.setHeader('retry-after', String(retryAfter));
-                writeJson(response, 429, { statusCode: 429, message: 'Too many requests.' });
-                return;
-            }
-            await handleAppleCallbackPost(request, response, options.database);
+        if (await rejectUnresolvedSession(request, response, requestKey, options)) {
             return;
         }
 
-        if (request.method === 'GET' && path === '/api/auth/list-accounts') {
-            await writeFilteredAccounts(response, await options.listAccounts(request));
-            return;
-        }
-
-        if (request.method === 'POST' && path === '/api/auth/unlink-account') {
-            await handleSerializedUnlink(request, response, handler, options);
-            return;
-        }
-
-        await handler(request, response);
+        await (routes.get(requestKey) ?? handler)(request, response);
     };
 }

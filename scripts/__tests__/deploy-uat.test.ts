@@ -13,6 +13,8 @@ import {
     waitForUatReadiness,
 } from '../deploy-uat.mjs';
 
+type FetchInput = Parameters<typeof fetch>[0];
+
 const source = {
     CF_ACCESS_CLIENT_ID: 'cloudflare-client',
     CF_ACCESS_CLIENT_SECRET: 'cloudflare-secret',
@@ -67,42 +69,40 @@ describe('UAT deployment', () => {
     it('triggers the configured main Compose resource without rewriting it', async () => {
         let composeReads = 0;
         const requests: Array<{ body?: unknown; method: string; pathname: string }> = [];
-        const fetchImplementation = vi.fn(
-            async (input: string | URL | Request, init?: RequestInit) => {
-                const url = new URL(String(input));
-                const method = init?.method ?? 'GET';
-                requests.push({
-                    ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}),
-                    method,
-                    pathname: url.pathname,
+        const fetchImplementation = vi.fn(async (input: FetchInput, init?: RequestInit) => {
+            const url = new URL(String(input));
+            const method = init?.method ?? 'GET';
+            requests.push({
+                ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}),
+                method,
+                pathname: url.pathname,
+            });
+            if (url.pathname === '/api/compose.one') {
+                composeReads += 1;
+                const compose = composeContract();
+                return jsonResponse({
+                    ...compose,
+                    deployments:
+                        composeReads === 2
+                            ? [
+                                  ...compose.deployments,
+                                  {
+                                      description: `Commit: ${source.SOURCE_REVISION}`,
+                                      deploymentId: 'deployment-new',
+                                      status: 'done',
+                                  },
+                              ]
+                            : compose.deployments,
                 });
-                if (url.pathname === '/api/compose.one') {
-                    composeReads += 1;
-                    const compose = composeContract();
-                    return jsonResponse({
-                        ...compose,
-                        deployments:
-                            composeReads === 2
-                                ? [
-                                      ...compose.deployments,
-                                      {
-                                          description: `Commit: ${source.SOURCE_REVISION}`,
-                                          deploymentId: 'deployment-new',
-                                          status: 'done',
-                                      },
-                                  ]
-                                : compose.deployments,
-                    });
-                }
-                if (url.pathname === '/api/compose.deploy') {
-                    return jsonResponse({ composeId: 'compose_123', success: true });
-                }
-                if (url.pathname.startsWith('/api/health/')) {
-                    return jsonResponse(readyHealth(url.pathname));
-                }
-                throw new Error(`Unexpected request: ${method} ${url.href}`);
-            },
-        );
+            }
+            if (url.pathname === '/api/compose.deploy') {
+                return jsonResponse({ composeId: 'compose_123', success: true });
+            }
+            if (url.pathname.startsWith('/api/health/')) {
+                return jsonResponse(readyHealth(url.pathname));
+            }
+            throw new Error(`Unexpected request: ${method} ${url.href}`);
+        });
 
         await expect(
             deployUat(source, fetchImplementation, { sleep: vi.fn() }),
@@ -276,7 +276,7 @@ describe('UAT workflow', () => {
 describe('UAT readiness', () => {
     it('waits until both health endpoints report ready dependencies', async () => {
         let attempts = 0;
-        const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
+        const fetchImplementation = vi.fn(async (input: FetchInput) => {
             const pathname = new URL(String(input)).pathname;
             attempts += 1;
             if (attempts <= 2) {
@@ -298,7 +298,7 @@ describe('UAT readiness', () => {
 
     it('rejects a ready response that omits a required dependency', async () => {
         let readinessReads = 0;
-        const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
+        const fetchImplementation = vi.fn(async (input: FetchInput) => {
             const pathname = new URL(String(input)).pathname;
             if (pathname.endsWith('/live')) {
                 return jsonResponse(readyHealth(pathname));
@@ -326,7 +326,7 @@ describe('UAT readiness', () => {
 
     it('waits for the live API to report the exact deployed revision', async () => {
         let livenessReads = 0;
-        const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
+        const fetchImplementation = vi.fn(async (input: FetchInput) => {
             const pathname = new URL(String(input)).pathname;
             if (pathname.endsWith('/live')) {
                 livenessReads += 1;

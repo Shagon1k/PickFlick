@@ -404,8 +404,8 @@ export function validateDeployments({ production, uat }) {
 export function checkDeployment() {
     validatePreviewAuthContract();
     const deployments = {
-        production: renderDeployment('production', {}),
-        uat: renderDeployment('uat', {}),
+        production: renderDeployment('production'),
+        uat: renderDeployment('uat'),
     };
 
     return validateDeployments(deployments);

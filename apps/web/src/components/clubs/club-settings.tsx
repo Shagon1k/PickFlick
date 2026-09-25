@@ -534,10 +534,16 @@ function DangerZone({ projection }: Readonly<{ projection: ClubSettingsProjectio
     );
 }
 
+const roleLabels: Readonly<Record<ClubSettingsProjection['club']['membershipRole'], string>> = {
+    ADMIN: 'Admin',
+    MODERATOR: 'Moderator',
+    MEMBER: 'Member',
+};
+
 export function ClubSettings({ projection }: Readonly<{ projection: ClubSettingsProjection }>) {
     const active = projection.club.lifecycle === 'ACTIVE';
     const role = projection.club.membershipRole;
-    const roleLabel = role === 'ADMIN' ? 'Admin' : role === 'MODERATOR' ? 'Moderator' : 'Member';
+    const roleLabel = roleLabels[role];
     return (
         <main className={styles.layout}>
             <header className={styles.hero}>

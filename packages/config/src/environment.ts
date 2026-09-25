@@ -1,5 +1,5 @@
 import { createPrivateKey } from 'node:crypto';
-import { isAbsolute, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const DEPLOYMENT_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
@@ -76,7 +76,7 @@ export class EnvironmentValidationError extends Error {
 
     constructor(failures: readonly ValidationFailure[]) {
         super(
-            `Invalid environment configuration: ${failures.map(({ name, reason }) => `${name} ${reason}`).join('; ')}`,
+            `Invalid environment configuration: ${failures.map(({ name, reason }) => name + ' ' + reason).join('; ')}`,
         );
         this.name = 'EnvironmentValidationError';
         this.failures = failures;
@@ -92,6 +92,27 @@ export function safeEnvironmentValidationFailures(error: unknown): readonly stri
         return undefined;
     }
     return error.failures.map(({ name, reason }) => `${name} ${reason}`);
+}
+
+// Domain labels exclude dots, so matching stays linear instead of backtracking over the domain.
+const emailAddressPattern = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/u;
+
+function isEmailAddress(value: string): boolean {
+    return emailAddressPattern.test(value);
+}
+
+/** `local@domain.tld` or `Display Name <local@domain.tld>`. */
+function isMailbox(value: string): boolean {
+    if (isEmailAddress(value)) {
+        return true;
+    }
+    const open = value.lastIndexOf(' <');
+    return (
+        open > 0 &&
+        value.endsWith('>') &&
+        !/[@<>\r\n]/u.test(value.slice(0, open)) &&
+        isEmailAddress(value.slice(open + 2, -1))
+    );
 }
 
 function required(source: EnvironmentSource, name: string, failures: ValidationFailure[]): string {
@@ -243,6 +264,125 @@ export function parseDatabaseEnvironment(source: EnvironmentSource): DatabaseEnv
     return result;
 }
 
+function validateStorageBucket(bucket: string, failures: ValidationFailure[]): void {
+    if (
+        bucket &&
+        (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket) ||
+            bucket.includes('..') ||
+            /^(?:\d{1,3}\.){3}\d{1,3}$/.test(bucket))
+    ) {
+        failures.push({
+            name: 'STORAGE_BUCKET',
+            reason: 'must be a valid lowercase S3 bucket name',
+        });
+    }
+}
+
+function validateContactMailboxes(
+    appEnvironment: DeploymentEnvironment,
+    from: string,
+    contactDeliveryTo: string,
+    failures: ValidationFailure[],
+): void {
+    if (from && !isMailbox(from)) {
+        failures.push({
+            name: 'RESEND_FROM',
+            reason: 'must be an email address or a name plus email address',
+        });
+    }
+    if (appEnvironment === 'uat' && from !== 'PickFlick UAT <notifications@uat.pick-flick.app>') {
+        failures.push({
+            name: 'RESEND_FROM',
+            reason: 'must be PickFlick UAT <notifications@uat.pick-flick.app> in uat',
+        });
+    }
+    if (appEnvironment === 'production' && from !== 'PickFlick <notifications@pick-flick.app>') {
+        failures.push({
+            name: 'RESEND_FROM',
+            reason: 'must be PickFlick <notifications@pick-flick.app> in production',
+        });
+    }
+    if (contactDeliveryTo && !isEmailAddress(contactDeliveryTo)) {
+        failures.push({ name: 'CONTACT_DELIVERY_TO', reason: 'must be an email address' });
+    }
+    if (appEnvironment === 'production' && contactDeliveryTo !== 'hello@pick-flick.app') {
+        failures.push({
+            name: 'CONTACT_DELIVERY_TO',
+            reason: 'must be hello@pick-flick.app in production',
+        });
+    }
+}
+
+/** Local and test never send, UAT may preview, and production always delivers live. */
+function validateResendDelivery(
+    appEnvironment: DeploymentEnvironment,
+    resendDeliveryMode: ResendDeliveryMode,
+    resendApiKey: string,
+    failures: ValidationFailure[],
+): void {
+    const localOrTest = appEnvironment === 'local' || appEnvironment === 'test';
+    if (localOrTest && resendDeliveryMode !== 'disabled') {
+        failures.push({
+            name: 'RESEND_DELIVERY_MODE',
+            reason: 'must be disabled in local or test',
+        });
+    }
+    if (localOrTest && resendApiKey !== 'local-disabled') {
+        failures.push({
+            name: 'RESEND_API_KEY',
+            reason: 'must be local-disabled in local or test',
+        });
+    }
+    if (resendDeliveryMode === 'disabled' && !localOrTest) {
+        failures.push({
+            name: 'RESEND_DELIVERY_MODE',
+            reason: 'may be disabled only in local or test',
+        });
+    }
+    if (resendDeliveryMode === 'preview' && appEnvironment !== 'uat') {
+        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'may be preview only in uat' });
+    }
+    if (resendDeliveryMode === 'preview' && resendApiKey !== 'preview-disabled') {
+        failures.push({
+            name: 'RESEND_API_KEY',
+            reason: 'must be preview-disabled in preview mode',
+        });
+    }
+    if (
+        resendDeliveryMode === 'live' &&
+        (resendApiKey === 'local-disabled' || resendApiKey === 'preview-disabled')
+    ) {
+        failures.push({
+            name: 'RESEND_API_KEY',
+            reason: 'must be a live environment key in live mode',
+        });
+    }
+    if (appEnvironment === 'production' && resendDeliveryMode !== 'live') {
+        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'must be live in production' });
+    }
+}
+
+function validateApplePrivateKey(applePrivateKey: string, failures: ValidationFailure[]): void {
+    try {
+        const normalizedPrivateKey = applePrivateKey.replaceAll('\\n', '\n');
+        if (!normalizedPrivateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
+            throw new Error('Not PKCS#8 PEM.');
+        }
+        const privateKey = createPrivateKey(normalizedPrivateKey);
+        if (
+            privateKey.asymmetricKeyType !== 'ec' ||
+            privateKey.asymmetricKeyDetails?.namedCurve !== 'prime256v1'
+        ) {
+            throw new Error('Not an EC P-256 key.');
+        }
+    } catch {
+        failures.push({
+            name: 'APPLE_PRIVATE_KEY',
+            reason: 'must be a valid EC P-256 PKCS#8 PEM private key in uat or production',
+        });
+    }
+}
+
 function parseWorkerValues(
     source: EnvironmentSource,
     appEnvironment: DeploymentEnvironment,
@@ -286,87 +426,9 @@ function parseWorkerValues(
     const contactDeliveryTo = required(source, 'CONTACT_DELIVERY_TO', failures);
     const contactHashSecret = required(source, 'CONTACT_HASH_SECRET', failures);
 
-    if (
-        bucket &&
-        (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket) ||
-            bucket.includes('..') ||
-            /^(?:\d{1,3}\.){3}\d{1,3}$/.test(bucket))
-    ) {
-        failures.push({
-            name: 'STORAGE_BUCKET',
-            reason: 'must be a valid lowercase S3 bucket name',
-        });
-    }
-    if (
-        from &&
-        !/^(?:[^@\s]+@[^@\s]+\.[^@\s]+|[^@<>\r\n]+ <[^@\s]+@[^@\s]+\.[^@\s]+>)$/.test(from)
-    ) {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be an email address or a name plus email address',
-        });
-    }
-    if (appEnvironment === 'uat' && from !== 'PickFlick UAT <notifications@uat.pick-flick.app>') {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be PickFlick UAT <notifications@uat.pick-flick.app> in uat',
-        });
-    }
-    if (appEnvironment === 'production' && from !== 'PickFlick <notifications@pick-flick.app>') {
-        failures.push({
-            name: 'RESEND_FROM',
-            reason: 'must be PickFlick <notifications@pick-flick.app> in production',
-        });
-    }
-    if (contactDeliveryTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactDeliveryTo)) {
-        failures.push({ name: 'CONTACT_DELIVERY_TO', reason: 'must be an email address' });
-    }
-    if (appEnvironment === 'production' && contactDeliveryTo !== 'hello@pick-flick.app') {
-        failures.push({
-            name: 'CONTACT_DELIVERY_TO',
-            reason: 'must be hello@pick-flick.app in production',
-        });
-    }
-    const localOrTest = appEnvironment === 'local' || appEnvironment === 'test';
-    if (localOrTest && resendDeliveryMode !== 'disabled') {
-        failures.push({
-            name: 'RESEND_DELIVERY_MODE',
-            reason: 'must be disabled in local or test',
-        });
-    }
-    if (localOrTest && resendApiKey !== 'local-disabled') {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be local-disabled in local or test',
-        });
-    }
-    if (resendDeliveryMode === 'disabled' && !localOrTest) {
-        failures.push({
-            name: 'RESEND_DELIVERY_MODE',
-            reason: 'may be disabled only in local or test',
-        });
-    }
-    if (resendDeliveryMode === 'preview' && appEnvironment !== 'uat') {
-        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'may be preview only in uat' });
-    }
-    if (resendDeliveryMode === 'preview' && resendApiKey !== 'preview-disabled') {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be preview-disabled in preview mode',
-        });
-    }
-    if (
-        resendDeliveryMode === 'live' &&
-        (resendApiKey === 'local-disabled' || resendApiKey === 'preview-disabled')
-    ) {
-        failures.push({
-            name: 'RESEND_API_KEY',
-            reason: 'must be a live environment key in live mode',
-        });
-    }
-    if (appEnvironment === 'production' && resendDeliveryMode !== 'live') {
-        failures.push({ name: 'RESEND_DELIVERY_MODE', reason: 'must be live in production' });
-    }
+    validateStorageBucket(bucket, failures);
+    validateContactMailboxes(appEnvironment, from, contactDeliveryTo, failures);
+    validateResendDelivery(appEnvironment, resendDeliveryMode, resendApiKey, failures);
     if (contactHashSecret && contactHashSecret.length < 32) {
         failures.push({
             name: 'CONTACT_HASH_SECRET',
@@ -433,24 +495,7 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
         (appEnvironment === 'uat' || appEnvironment === 'production') &&
         applePrivateKey
     ) {
-        try {
-            const normalizedPrivateKey = applePrivateKey.replaceAll('\\n', '\n');
-            if (!normalizedPrivateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
-                throw new Error('Not PKCS#8 PEM.');
-            }
-            const privateKey = createPrivateKey(normalizedPrivateKey);
-            if (
-                privateKey.asymmetricKeyType !== 'ec' ||
-                privateKey.asymmetricKeyDetails?.namedCurve !== 'prime256v1'
-            ) {
-                throw new Error('Not an EC P-256 key.');
-            }
-        } catch {
-            failures.push({
-                name: 'APPLE_PRIVATE_KEY',
-                reason: 'must be a valid EC P-256 PKCS#8 PEM private key in uat or production',
-            });
-        }
+        validateApplePrivateKey(applePrivateKey, failures);
     }
     if (failures.length > 0) {
         throw new EnvironmentValidationError(failures);
@@ -482,11 +527,8 @@ export function parseRuntimeEnvironment(source: EnvironmentSource): RuntimeEnvir
 export function loadRepositoryEnvironmentFile(source: EnvironmentSource = process.env): void {
     const configuredPath = source.PICKFLICK_ENV_FILE?.trim();
     const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url));
-    const environmentPath = configuredPath
-        ? isAbsolute(configuredPath)
-            ? configuredPath
-            : resolve(repositoryRoot, configuredPath)
-        : resolve(repositoryRoot, '.env');
+    // resolve() keeps an absolute path as given and anchors a relative one at the repository.
+    const environmentPath = resolve(repositoryRoot, configuredPath || '.env');
 
     try {
         process.loadEnvFile(environmentPath);

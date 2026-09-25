@@ -53,6 +53,28 @@ function descriptionIds(...values: Array<string | undefined>): string | undefine
     return values.filter(Boolean).join(' ') || undefined;
 }
 
+/** Feedback state shared by fields: an error outranks success, and neither leaves it unset. */
+function controlState(error: unknown, success: unknown): 'error' | 'success' | undefined {
+    if (error) {
+        return 'error';
+    }
+    return success ? 'success' : undefined;
+}
+
+function messageTone(error: unknown, success: unknown): 'danger' | 'success' | 'neutral' {
+    if (error) {
+        return 'danger';
+    }
+    return success ? 'success' : 'neutral';
+}
+
+function buttonState(success: unknown, loading: unknown): 'success' | 'loading' | undefined {
+    if (success) {
+        return 'success';
+    }
+    return loading ? 'loading' : undefined;
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     readonly variant?: ButtonVariant;
     readonly size?: ButtonSize;
@@ -82,7 +104,7 @@ export function Button({
                     size === 'small' && 'pf-button--small',
                     className,
                 )}
-                data-state={success ? 'success' : loading ? 'loading' : undefined}
+                data-state={buttonState(success, loading)}
                 disabled={disabled || loading}
                 type={type}
             >
@@ -160,7 +182,7 @@ function FieldMessage({ error, hint, messageId, success }: FieldMessageProps) {
             <span
                 aria-hidden={message ? undefined : true}
                 className="pf-field__message"
-                data-tone={error ? 'danger' : success ? 'success' : 'neutral'}
+                data-tone={messageTone(error, success)}
                 id={messageId}
             >
                 {message}
@@ -238,7 +260,7 @@ export function TextField({
                 )}
                 aria-invalid={ariaInvalid ?? (error ? true : undefined)}
                 className="pf-control"
-                data-state={error ? 'error' : success ? 'success' : undefined}
+                data-state={controlState(error, success)}
                 id={id}
             />
             <FieldMessage error={error} hint={hint} messageId={messageId} success={success} />
@@ -277,7 +299,7 @@ export function TextAreaField({
                 )}
                 aria-invalid={ariaInvalid ?? (error ? true : undefined)}
                 className="pf-control pf-control--textarea"
-                data-state={error ? 'error' : success ? 'success' : undefined}
+                data-state={controlState(error, success)}
                 id={id}
             />
             <FieldMessage error={error} hint={hint} messageId={messageId} success={success} />
@@ -370,7 +392,7 @@ export function SelectField({
                 }}
                 comboboxProps={{ transitionProps: { duration: 150 } }}
                 data={selectData(children)}
-                data-state={error ? 'error' : success ? 'success' : undefined}
+                data-state={controlState(error, success)}
                 id={id}
                 unstyled
                 withCheckIcon={false}

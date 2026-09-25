@@ -7,6 +7,8 @@ const executeFile = promisify(execFile);
 
 test.setTimeout(75_000);
 
+// The smoke script asserts internally and fails this test through its exit code.
+// eslint-disable-next-line sonarjs/assertions-in-tests
 test('passes the component accessibility and interaction smoke', async ({ baseURL }, testInfo) => {
     let smokeOutput = '';
 
