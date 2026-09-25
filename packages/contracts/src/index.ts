@@ -219,6 +219,7 @@ export interface ClubAvatarResponse extends ClubOperationReceipt {
 export const DEFAULT_AUTH_RETURN_TARGET = "/app";
 
 const invitationAuthReturnTarget = /^\/invite\/(?:club|session)\/[A-Za-z0-9_-]{1,512}$/;
+const clubAuthReturnTarget = /^\/clubs\/(?:new|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/settings)$/;
 
 export function isAllowedAuthReturnTarget(value: unknown): value is string {
   if (typeof value !== "string" || value.length > 600 || !value.startsWith("/") || value.startsWith("//")) {
@@ -230,7 +231,11 @@ export function isAllowedAuthReturnTarget(value: unknown): value is string {
       return false;
     }
   }
-  return value === DEFAULT_AUTH_RETURN_TARGET || invitationAuthReturnTarget.test(value);
+  return (
+    value === DEFAULT_AUTH_RETURN_TARGET ||
+    invitationAuthReturnTarget.test(value) ||
+    clubAuthReturnTarget.test(value)
+  );
 }
 
 export function resolveAuthReturnTarget(value: unknown): string {

@@ -5,6 +5,7 @@ import { connection } from "next/server";
 
 import { ActionLink } from "@pickflick/ui";
 
+import { loginPath } from "../../../../auth-server";
 import { loadClubSettings } from "../../../../components/clubs/club-api";
 import { ClubSettings } from "../../../../components/clubs/club-settings";
 import styles from "../../../../components/clubs/club-settings.module.css";
@@ -39,7 +40,7 @@ export default async function ClubSettingsPage({ params }: { params: Promise<{ c
   const { clubId } = await params;
   const response = await loadClubSettings(await headers(), clubId).catch(() => ({ ok: false, status: 503 } as const));
   if (response.status === 401) {
-    redirect("/login?returnTo=/app");
+    redirect(loginPath(`/clubs/${clubId}/settings`));
   }
   if (response.status === 403) {
     return <SafeFailure forbidden />;

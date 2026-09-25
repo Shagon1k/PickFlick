@@ -81,6 +81,10 @@ function sendJson(response, status, body) {
 const api = createServer((request, response) => {
   if (request.method === "GET" && request.url === "/api/auth/get-session") {
     const token = sessionToken(request);
+    if (token === "session-api-unavailable") {
+      sendJson(response, 503, null);
+      return;
+    }
     const authenticated = token?.startsWith("valid") ?? false;
     sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
     return;
