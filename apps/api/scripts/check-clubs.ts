@@ -9,13 +9,12 @@ import { ClubAuthorizationError, ClubConflictError } from "../src/clubs/club.err
 import { ClubAvatarStorage } from "../src/clubs/club-avatar.storage.js";
 import { PrismaClubManagementRepository } from "../src/clubs/club-management.repository.js";
 import { ClubManagementService } from "../src/clubs/club-management.service.js";
+import { ClubOnboardingService } from "../src/clubs/club-onboarding.service.js";
+import { ClubPolicyService } from "../src/clubs/club-policy.service.js";
 import { PrismaClubRepository } from "../src/clubs/club.repository.js";
+import { PrismaClubRoleRepository } from "../src/clubs/club-role.repository.js";
+import { ClubRoleTransitionService } from "../src/clubs/club-role-transition.service.js";
 import { StaticClubTierResolver } from "../src/clubs/club-tiers.js";
-import {
-  ClubOnboardingService,
-  ClubPolicyService,
-  ClubRoleTransitionService,
-} from "../src/clubs/clubs.service.js";
 import { DatabaseService } from "../src/database/database.service.js";
 
 const environment = loadDatabaseEnvironment();
@@ -51,7 +50,7 @@ const logger = createLogger({
 });
 const policy = new ClubPolicyService(repository, new StaticClubTierResolver());
 const onboarding = new ClubOnboardingService(repository, new StaticClubTierResolver(), logger);
-const transitions = new ClubRoleTransitionService(repository, logger);
+const transitions = new ClubRoleTransitionService(new PrismaClubRoleRepository(databaseService), logger);
 const avatarStorage = new CheckAvatarStorage();
 const management = new ClubManagementService(
   managementRepository,

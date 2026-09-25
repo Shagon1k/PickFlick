@@ -7,6 +7,7 @@ import { canonicalUuid } from "../common/validation/uuid.js";
 import { lockKeys } from "../database/advisory-lock.js";
 import { DatabaseService } from "../database/database.service.js";
 import { ClubAuthorizationError, ClubConflictError } from "./club.errors.js";
+import { assertClubOperationReplay } from "./club-operation-replay.js";
 import type {
   ClubLifecycleInput,
   DeleteClubInput,
@@ -185,7 +186,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, true);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
-        await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_SETTINGS_UPDATED", input.requestHash);
+        await assertClubOperationReplay(transaction, existing, {
+          action: "CLUB_SETTINGS_UPDATED",
+          actorUserId,
+          clubId,
+          requestHash: input.requestHash,
+        });
         return { changed: existing.changed, replayed: true };
       }
       if (input.voteResultVisibility !== "ADMIN_CONFIGURABLE" && input.showVoteResults) {
@@ -249,7 +255,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       );
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
-        await this.assertReplay(transaction, existing, actorUserId, clubId, auditAction, input.requestHash);
+        await assertClubOperationReplay(transaction, existing, {
+          action: auditAction,
+          actorUserId,
+          clubId,
+          requestHash: input.requestHash,
+        });
         return { changed: existing.changed, replayed: true };
       }
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, false);
@@ -297,7 +308,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
-        await this.assertReplay(transaction, existing, actorUserId, clubId, "MEMBERSHIP_LEFT", input.requestHash);
+        await assertClubOperationReplay(transaction, existing, {
+          action: "MEMBERSHIP_LEFT",
+          actorUserId,
+          clubId,
+          requestHash: input.requestHash,
+        });
         return { changed: existing.changed, replayed: true };
       }
       const actor = await transaction.user.findUnique({
@@ -347,7 +363,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
-        await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_DELETED", input.requestHash);
+        await assertClubOperationReplay(transaction, existing, {
+          action: "CLUB_DELETED",
+          actorUserId,
+          clubId,
+          requestHash: input.requestHash,
+        });
         return { changed: existing.changed, replayed: true };
       }
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, false);
@@ -394,7 +415,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
-        await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_AVATAR_UPDATED", input.requestHash);
+        await assertClubOperationReplay(transaction, existing, {
+          action: "CLUB_AVATAR_UPDATED",
+          actorUserId,
+          clubId,
+          requestHash: input.requestHash,
+        });
         const current = await transaction.club.findUnique({
           where: { id: clubId },
           select: { avatarObjectKey: true },
@@ -444,14 +470,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
       if (!existing) {
         return null;
       }
-      await this.assertReplay(
-        transaction,
-        existing,
+      await assertClubOperationReplay(transaction, existing, {
+        action: "CLUB_AVATAR_UPDATED",
         actorUserId,
         clubId,
-        "CLUB_AVATAR_UPDATED",
-        input.requestHash,
-      );
+        requestHash: input.requestHash,
+      });
       const current = await transaction.club.findUnique({
         where: { id: clubId },
         select: { avatarObjectKey: true },
@@ -462,28 +486,6 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         ...(current?.avatarObjectKey ? { currentObjectKey: current.avatarObjectKey } : {}),
       };
     });
-  }
-
-  private async assertReplay(
-    transaction: Prisma.TransactionClient,
-    existing: { action: string; actorUserId: string; clubId: string; requestHash: string | null },
-    actorUserId: string,
-    clubId: string,
-    action: string,
-    requestHash: string,
-  ): Promise<void> {
-    const actor = await transaction.user.findUnique({ where: { id: actorUserId }, select: { status: true } });
-    if (actor?.status !== "ACTIVE") {
-      throw new ClubAuthorizationError("The current User cannot replay this Club operation.");
-    }
-    if (
-      existing.action !== action ||
-      existing.actorUserId !== actorUserId ||
-      existing.clubId !== clubId ||
-      existing.requestHash !== requestHash
-    ) {
-      throw new ClubConflictError("OPERATION_REUSED", "The operation identifier was already used for another Club operation.");
-    }
   }
 
   private async activeAdmin(

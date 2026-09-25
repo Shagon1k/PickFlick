@@ -21,15 +21,15 @@ import {
   type ClubManagementResult,
 } from "./club-management.repository.js";
 import {
-  operationRequestHash,
   parseClubOperation,
   parseClubSettings,
   parseMemberRoleChange,
   parseOperationId,
 } from "./club-management.validation.js";
+import { operationRequestHash } from "./club-operation-replay.js";
 import { projectClubPermissions } from "./club-policy.js";
 import { ClubTierResolver } from "./club-tiers.js";
-import { ClubRoleTransitionService } from "./clubs.service.js";
+import { ClubRoleTransitionService } from "./club-role-transition.service.js";
 
 interface ClubAvatarPayload {
   readonly body: Buffer;

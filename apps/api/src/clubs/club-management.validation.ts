@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import type { ClubVisibilitySettings } from "@pickflick/contracts";
 
 import { canonicalUuid, isUuid } from "../common/validation/uuid.js";
@@ -78,10 +76,6 @@ export function parseClubSettings(value: unknown): { operationId: string; settin
     operationId: parseOperationId(input.operationId),
     settings: { ...club, ...visibility },
   };
-}
-
-export function operationRequestHash(action: string, value: unknown): string {
-  return createHash("sha256").update(JSON.stringify({ action, value })).digest("hex");
 }
 
 export function parseMemberRoleChange(value: unknown): {

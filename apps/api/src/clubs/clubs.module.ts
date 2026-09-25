@@ -7,10 +7,13 @@ import {
   PrismaClubManagementRepository,
 } from "./club-management.repository.js";
 import { ClubManagementService } from "./club-management.service.js";
+import { ClubOnboardingService } from "./club-onboarding.service.js";
+import { ClubPolicyService } from "./club-policy.service.js";
 import { ClubRepository, PrismaClubRepository } from "./club.repository.js";
+import { ClubRoleRepository, PrismaClubRoleRepository } from "./club-role.repository.js";
+import { ClubRoleTransitionService } from "./club-role-transition.service.js";
 import { ClubTierResolver, StaticClubTierResolver } from "./club-tiers.js";
 import { ClubsController } from "./clubs.controller.js";
-import { ClubOnboardingService, ClubPolicyService, ClubRoleTransitionService } from "./clubs.service.js";
 
 @Module({
   imports: [DatabaseModule],
@@ -21,6 +24,7 @@ import { ClubOnboardingService, ClubPolicyService, ClubRoleTransitionService } f
     ClubRoleTransitionService,
     ClubManagementService,
     { provide: ClubRepository, useClass: PrismaClubRepository },
+    { provide: ClubRoleRepository, useClass: PrismaClubRoleRepository },
     { provide: ClubManagementRepository, useClass: PrismaClubManagementRepository },
     { provide: ClubTierResolver, useClass: StaticClubTierResolver },
     { provide: ClubAvatarStorage, useClass: S3ClubAvatarStorage },

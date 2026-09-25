@@ -22,9 +22,9 @@ import type {
   StoredClubManagementView,
   UpdateAvatarReferenceInput,
 } from "../club-management.types.js";
-import { operationRequestHash } from "../club-management.validation.js";
+import { operationRequestHash } from "../club-operation-replay.js";
 import { StaticClubTierResolver } from "../club-tiers.js";
-import type { ClubRoleTransitionService } from "../clubs.service.js";
+import type { ClubRoleTransitionService } from "../club-role-transition.service.js";
 
 const ids = {
   club: "10000000-0000-4000-8000-000000000002",
