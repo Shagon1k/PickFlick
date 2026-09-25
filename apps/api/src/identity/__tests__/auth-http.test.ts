@@ -117,6 +117,41 @@ describe("authentication HTTP rate limits", () => {
     expect(upstream).toHaveBeenCalledTimes(60);
   });
 
+  it("resets get-session on a fixed window even while requests keep arriving", async () => {
+    vi.useFakeTimers();
+    try {
+      const startedAt = new Date("2026-09-25T12:00:00.000Z");
+      vi.setSystemTime(startedAt);
+      const { database } = databaseDouble();
+      const handler = restrictAuthHandler(
+        async (_request, response) => {
+          response.end("ok");
+        },
+        authorizedOptions(database),
+      );
+      const request = async () => {
+        const { response } = responseDouble();
+        await handler(requestDouble(), response);
+        return response.statusCode;
+      };
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        expect(await request()).toBe(200);
+      }
+      vi.setSystemTime(startedAt.getTime() + 50_000);
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        expect(await request()).toBe(200);
+      }
+      expect(await request()).toBe(429);
+
+      // A sliding "last request" timestamp would still block here, 11 seconds after the last hit.
+      vi.setSystemTime(startedAt.getTime() + 61_000);
+      expect(await request()).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("prunes rows older than the longest configured window when creating a bucket", async () => {
     const now = Date.now();
     const oldRow = { count: 1, id: "old", key: "old-client|/list-accounts", lastRequest: BigInt(now - 120_000) };

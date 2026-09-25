@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { createDatabaseClient } from "@pickflick/database";
 
@@ -17,11 +16,13 @@ interface AuthHandlerOptions {
   readonly resolveSession: (request: IncomingMessage) => Promise<IdentitySessionResolution>;
 }
 
-const appleCallbackRateLimit = { maximum: 10, windowMilliseconds: 60_000 } as const;
-const protectedAuthRateLimits: ReadonlyMap<string, {
+interface RateLimitRule {
   readonly maximum: number;
   readonly windowMilliseconds: number;
-}> = new Map([
+}
+
+const appleCallbackRateLimit: RateLimitRule = { maximum: 10, windowMilliseconds: 60_000 };
+const protectedAuthRateLimits: ReadonlyMap<string, RateLimitRule> = new Map([
   ["GET /api/auth/get-session", { maximum: 60, windowMilliseconds: 60_000 }],
   ["GET /api/auth/list-accounts", { maximum: 60, windowMilliseconds: 60_000 }],
   ["POST /api/auth/link-social", { maximum: 10, windowMilliseconds: 60_000 }],
@@ -119,17 +120,17 @@ async function pruneExpiredRateLimits(
   });
 }
 
-async function consumeAppleCallbackRateLimit(
-  request: IncomingMessage,
-  options: AuthHandlerOptions,
+/**
+ * Fixed-window counter in the Better Auth rate-limit table. `lastRequest` stores the window start,
+ * so steady traffic below the limit never extends a window the way a sliding timestamp would.
+ */
+async function consumeRateLimit(
+  database: AuthHandlerOptions["database"],
+  key: string,
+  rule: RateLimitRule,
 ): Promise<number | undefined> {
-  const addressHash = createHash("sha256")
-    .update(clientAddress(request, options.clientAddressHeader))
-    .digest("hex");
-  const key = `apple-callback-post:${addressHash}`;
-
-  return options.database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+  return database.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`auth-rate-limit:${key}`}, 0))`;
     const now = Date.now();
     const existing = await transaction.authRateLimit.findUnique({ where: { key } });
     if (!existing) {
@@ -139,7 +140,7 @@ async function consumeAppleCallbackRateLimit(
     }
 
     const windowStartedAt = Number(existing.lastRequest);
-    if (now - windowStartedAt >= appleCallbackRateLimit.windowMilliseconds) {
+    if (now - windowStartedAt >= rule.windowMilliseconds) {
       await transaction.authRateLimit.update({
         data: { count: 1, lastRequest: now },
         where: { key },
@@ -147,10 +148,8 @@ async function consumeAppleCallbackRateLimit(
       await pruneExpiredRateLimits(transaction, now);
       return undefined;
     }
-    if (existing.count >= appleCallbackRateLimit.maximum) {
-      return Math.max(1, Math.ceil(
-        (windowStartedAt + appleCallbackRateLimit.windowMilliseconds - now) / 1_000,
-      ));
+    if (existing.count >= rule.maximum) {
+      return Math.max(1, Math.ceil((windowStartedAt + rule.windowMilliseconds - now) / 1_000));
     }
 
     await transaction.authRateLimit.update({
@@ -161,49 +160,13 @@ async function consumeAppleCallbackRateLimit(
   });
 }
 
-async function consumeProtectedAuthRateLimit(
-  request: IncomingMessage,
-  requestKey: string,
-  options: AuthHandlerOptions,
-): Promise<number | undefined> {
-  const rule = protectedAuthRateLimits.get(requestKey);
-  if (!rule) {
-    return undefined;
-  }
+function appleCallbackRateLimitKey(request: IncomingMessage, options: AuthHandlerOptions): string {
+  return `${clientAddress(request, options.clientAddressHeader)}|POST /callback/apple`;
+}
 
+function protectedAuthRateLimitKey(request: IncomingMessage, requestKey: string, options: AuthHandlerOptions): string {
   const path = requestKey.slice(requestKey.indexOf("/api/auth") + "/api/auth".length);
-  const key = `${clientAddress(request, options.clientAddressHeader)}|${path}`;
-  const lockKey = `auth-rate-limit:${key}`;
-
-  return options.database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
-    const now = Date.now();
-    const existing = await transaction.authRateLimit.findUnique({ where: { key } });
-    if (!existing) {
-      await pruneExpiredRateLimits(transaction, now);
-      await transaction.authRateLimit.create({ data: { count: 1, key, lastRequest: now } });
-      return undefined;
-    }
-
-    const lastRequest = Number(existing.lastRequest);
-    if (now - lastRequest >= rule.windowMilliseconds) {
-      await transaction.authRateLimit.update({
-        data: { count: 1, lastRequest: now },
-        where: { key },
-      });
-      await pruneExpiredRateLimits(transaction, now);
-      return undefined;
-    }
-    if (existing.count >= rule.maximum) {
-      return Math.max(1, Math.ceil((lastRequest + rule.windowMilliseconds - now) / 1_000));
-    }
-
-    await transaction.authRateLimit.update({
-      data: { count: { increment: 1 }, lastRequest: now },
-      where: { key },
-    });
-    return undefined;
-  });
+  return `${clientAddress(request, options.clientAddressHeader)}|${path}`;
 }
 
 async function authenticatedUserId(
@@ -248,7 +211,7 @@ async function handleSerializedUnlink(
 
   const lockKey = `identity-unlink:${userId}`;
   await options.database.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
     await handler(request, response);
   });
 }
@@ -317,8 +280,13 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
 
     const path = requestPath(request.url);
     const requestKey = `${request.method?.toUpperCase()} ${path}`;
-    if (protectedAuthRateLimits.has(requestKey)) {
-      const retryAfter = await consumeProtectedAuthRateLimit(request, requestKey, options);
+    const protectedRule = protectedAuthRateLimits.get(requestKey);
+    if (protectedRule) {
+      const retryAfter = await consumeRateLimit(
+        options.database,
+        protectedAuthRateLimitKey(request, requestKey, options),
+        protectedRule,
+      );
       if (retryAfter) {
         response.setHeader("retry-after", String(retryAfter));
         writeJson(response, 429, { statusCode: 429, message: "Too many requests." });
@@ -344,7 +312,11 @@ export function restrictAuthHandler(handler: NodeAuthHandler, options: AuthHandl
     }
 
     if (request.method === "POST" && path === "/api/auth/callback/apple") {
-      const retryAfter = await consumeAppleCallbackRateLimit(request, options);
+      const retryAfter = await consumeRateLimit(
+        options.database,
+        appleCallbackRateLimitKey(request, options),
+        appleCallbackRateLimit,
+      );
       if (retryAfter) {
         response.setHeader("retry-after", String(retryAfter));
         writeJson(response, 429, { statusCode: 429, message: "Too many requests." });
