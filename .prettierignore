@@ -1,0 +1,24 @@
+node_modules
+dist
+build
+.next
+out
+coverage
+test-results
+playwright-report
+pnpm-lock.yaml
+.claude
+.github
+**/next-env.d.ts
+**/generated/**
+
+# Canonical design package and brand inventory: reviewed as authored, never reformatted.
+_docs/design/prototypes
+assets
+
+# Screenshot baselines and the dependency patch are exact artifacts.
+**/__screenshots__/**
+patches
+
+# `next dev` rewrites its block in this file; formatting it would only create churn.
+apps/web/AGENTS.md
