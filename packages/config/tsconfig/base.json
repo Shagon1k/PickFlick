@@ -3,7 +3,6 @@
     "compilerOptions": {
         "allowJs": false,
         "esModuleInterop": true,
-        "exactOptionalPropertyTypes": true,
         "forceConsistentCasingInFileNames": true,
         "isolatedModules": true,
         "noFallthroughCasesInSwitch": true,
