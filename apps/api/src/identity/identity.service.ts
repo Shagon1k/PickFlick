@@ -324,22 +324,7 @@ export function createIdentityAuth(
       },
       session: {
         create: {
-          before: async (session) => {
-            const user = await database.user.findUnique({
-              select: { status: true },
-              where: { id: session.userId },
-            });
-            if (user?.status !== "ACTIVE") {
-              logger.warn(
-                { event: "auth.session.denied", reason: "inactive_user" },
-                "Authentication session creation denied.",
-              );
-              throw APIError.from("FORBIDDEN", {
-                code: "ACCOUNT_INACTIVE",
-                message: "Unable to sign in.",
-              });
-            }
-          },
+          // The serialized adapter denies inactive Users under the identity lock before insertion.
           after: async () => {
             logger.info({ event: "auth.session.issued" }, "Authentication session issued.");
           },
