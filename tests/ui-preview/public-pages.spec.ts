@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const pages = [
     { name: 'landing', route: '/' },
@@ -8,18 +9,6 @@ const pages = [
     { name: 'privacy', route: '/legal/privacy' },
     { name: 'terms', route: '/legal/terms' },
 ] as const;
-const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-const gapViewports = [
-    { height: 900, name: 's-to-m-640', width: 640 },
-    { height: 900, name: 'm-to-l-900', width: 900 },
-    { height: 900, name: 'l-to-xl-1200', width: 1200 },
-] as const;
-
 async function openPage(page: Page, route: string, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
     await page.goto(route, { waitUntil: 'networkidle' });
@@ -97,7 +86,7 @@ for (const publicPage of pages) {
         }
     });
 
-    for (const viewport of canonicalViewports) {
+    for (const viewport of screenshotViewports) {
         test(`${publicPage.name} matches the ${viewport.name} source-comparison capture`, async ({
             page,
         }) => {

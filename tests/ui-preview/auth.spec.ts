@@ -1,14 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
-const viewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-
-async function openLogin(page: Page, viewport = viewports[0], route = '/login') {
+async function openLogin(page: Page, viewport = canonicalViewports[0], route = '/login') {
     await page.setViewportSize(viewport);
     await page.goto(route, { waitUntil: 'networkidle' });
     await page.evaluate(async () => {
@@ -29,7 +23,7 @@ async function openLogin(page: Page, viewport = viewports[0], route = '/login') 
 test('Login is accessible with Google while dormant Apple Sign In stays hidden', async ({
     page,
 }) => {
-    for (const viewport of [viewports[0], viewports[3]]) {
+    for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         await openLogin(page, viewport);
         await expect(
             page.getByRole('heading', { level: 1, name: 'Welcome to PickFlick' }),
@@ -69,7 +63,10 @@ test('Login remains available for a forged session cookie', async ({ context, pa
 });
 
 test('Login has no horizontal overflow at canonical and bridge widths', async ({ page }) => {
-    for (const viewport of [...viewports, { height: 900, name: 'bridge-640', width: 640 }]) {
+    for (const viewport of [
+        ...canonicalViewports,
+        { height: 900, name: 'bridge-640', width: 640 },
+    ]) {
         await openLogin(page, viewport);
         const dimensions = await page.evaluate(() => ({
             body: globalThis.document.body.scrollWidth,
@@ -81,7 +78,7 @@ test('Login has no horizontal overflow at canonical and bridge widths', async ({
     }
 });
 
-for (const viewport of viewports) {
+for (const viewport of screenshotViewports) {
     test(`Login matches the ${viewport.name} source-comparison capture`, async ({ page }) => {
         await openLogin(page, viewport);
         await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
@@ -106,7 +103,11 @@ test('Google sign-in sends only an allowlisted return target and stores no token
         });
     });
 
-    await openLogin(page, viewports[0], '/login?returnTo=https%3A%2F%2Fevil.example%2Fsteal');
+    await openLogin(
+        page,
+        canonicalViewports[0],
+        '/login?returnTo=https%3A%2F%2Fevil.example%2Fsteal',
+    );
     await page.getByRole('button', { name: 'Continue with Google' }).click();
     await expect(page).toHaveURL(/oauth_started=1/);
     expect(requestBody).toMatchObject({ callbackURL: '/app', provider: 'google' });
@@ -134,7 +135,7 @@ test('Login preserves a supported invitation and never reflects raw provider err
 
     await openLogin(
         page,
-        viewports[3],
+        canonicalViewports[3],
         '/login?returnTo=%2Finvite%2Fclub%2Finvite_token-123&error=provider-secret-detail',
     );
     await expect(page.locator('main').getByRole('alert')).toHaveText(

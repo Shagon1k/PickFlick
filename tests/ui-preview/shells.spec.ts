@@ -1,12 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import {
-    shellRoutes,
-    canonicalViewports,
-    gapViewports,
-    openShell,
-    formatViolations,
-} from './shell-fixtures';
+import { shellRoutes, openShell, formatViolations } from './shell-fixtures';
+import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 for (const shell of shellRoutes) {
     test(`${shell} shell has no automated accessibility violations`, async ({ page }) => {
@@ -40,7 +35,7 @@ for (const shell of shellRoutes) {
         }
     });
 
-    for (const viewport of canonicalViewports) {
+    for (const viewport of screenshotViewports) {
         test(`${shell} shell matches the ${viewport.name} source-comparison capture`, async ({
             page,
         }) => {

@@ -1,17 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-
-const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-
-const fluidGapViewports = [
-    { height: 900, name: 's-to-m-640', width: 640 },
-    { height: 900, name: 'm-to-l-900', width: 900 },
-    { height: 900, name: 'l-to-xl-1200', width: 1200 },
-] as const;
+import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function openStablePreview(page: Page, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
@@ -31,7 +19,7 @@ async function openStablePreview(page: Page, viewport: { height: number; width: 
     });
 }
 
-for (const profile of [...canonicalViewports, ...fluidGapViewports]) {
+for (const profile of [...canonicalViewports, ...gapViewports]) {
     test(`has no horizontal page overflow at ${profile.name}`, async ({ page }) => {
         await openStablePreview(page, profile);
 
@@ -51,7 +39,7 @@ for (const profile of [...canonicalViewports, ...fluidGapViewports]) {
     });
 }
 
-for (const profile of canonicalViewports) {
+for (const profile of screenshotViewports) {
     test(`matches the ${profile.name} visual baseline`, async ({ page }) => {
         await openStablePreview(page, profile);
 

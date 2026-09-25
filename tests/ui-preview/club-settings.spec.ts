@@ -1,15 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
 const clubId = '10000000-0000-4000-8000-000000000031';
 const route = `/clubs/${clubId}/settings`;
-const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
         {
@@ -180,7 +174,7 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
     await expect(page).toHaveURL(/\/app$/u);
 });
 
-for (const viewport of canonicalViewports) {
+for (const viewport of screenshotViewports) {
     test(`Club Admin settings match the ${viewport.name} source-comparison capture`, async ({
         context,
         page,

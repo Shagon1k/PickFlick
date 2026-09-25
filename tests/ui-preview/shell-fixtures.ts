@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
+import { canonicalViewports } from './viewports';
 
 export const shellRoutes = [
     'public',
@@ -15,18 +16,6 @@ export type PreviewShellRoute =
     | 'session-admin'
     | 'settings-admin'
     | 'library-admin';
-export const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-export const gapViewports = [
-    { height: 900, name: 's-to-m-640', width: 640 },
-    { height: 900, name: 'm-to-l-900', width: 900 },
-    { height: 900, name: 'l-to-xl-1200', width: 1200 },
-] as const;
-
 export async function openShell(
     page: Page,
     shell: PreviewShellRoute,
