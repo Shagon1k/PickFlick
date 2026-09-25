@@ -63,7 +63,9 @@ export interface StoredClubManagementView {
   readonly visibility: ClubVisibilitySettings;
   readonly members: readonly ClubMemberProjection[];
   readonly auditEvents: readonly ClubAuditProjection[];
-  readonly avatarObjectKey?: string;
 }
 
-export type StoredVisibilitySettings = ClubVisibilitySettings;
+export interface StoredClubAvatarAccess {
+  readonly subject: ClubPolicySubject;
+  readonly avatarObjectKey?: string;
+}
