@@ -53,6 +53,9 @@ Use the Node and pnpm versions pinned by `.node-version` and `package.json` from
 | Start previously built production entrypoints | `pnpm start` |
 | Validate workspace topology and dependency boundaries | `pnpm check:workspace` |
 | Lint | `pnpm lint` |
+| Apply ESLint autofixes | `pnpm lint:fix` |
+| Format with Prettier (4-space, single-quote, 100 columns) | `pnpm format` |
+| Check formatting | `pnpm format:check` |
 | Type-check | `pnpm typecheck` |
 | Run unit tests | `pnpm test` |
 | Build every package and app | `pnpm build` |

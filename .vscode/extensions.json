@@ -1,0 +1,19 @@
+{
+    "recommendations": [
+        // ── Critical ─────────────────────────────────────────────────────────
+        // Format on save
+        "esbenp.prettier-vscode",
+        // Linting
+        "dbaeumer.vscode-eslint",
+        // Prisma schema syntax, formatting, autocomplete
+        "prisma.prisma",
+        // Readable TypeScript errors (essential for strict: true)
+        "yoavbls.pretty-ts-errors",
+        // Run / debug Vitest tests directly from the editor gutter
+        "vitest.explorer",
+
+        // ── Recommended ──────────────────────────────────────────────────────
+        // Autocomplete for CSS Module class names in TSX imports
+        "clinyong.vscode-css-modules"
+    ]
+}

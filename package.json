@@ -22,7 +22,10 @@
         "contact:check": "pnpm --filter @pickflick/api contact:check",
         "images:build": "node scripts/build-images.mjs",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "migrate": "pnpm --filter @pickflick/database migrate",
         "production:promote": "node scripts/promote-production.mjs",
         "release": "node scripts/run-release.mjs",
@@ -40,7 +43,7 @@
         "ui:visual": "playwright test --config playwright.ui.config.ts tests/ui-preview/viewport-visual.spec.ts",
         "uat:deploy": "node scripts/deploy-uat.mjs",
         "uat:smoke": "node scripts/uat-browser-smoke.mjs",
-        "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+        "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",
@@ -48,6 +51,7 @@
         "@playwright/test": "1.63.0",
         "@types/node": "catalog:",
         "eslint": "10.10.0",
+        "prettier": "3.8.3",
         "vite": "8.2.2",
         "vitest": "5.0.0"
     }
