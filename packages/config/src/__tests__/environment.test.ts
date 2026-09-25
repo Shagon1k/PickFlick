@@ -1,393 +1,464 @@
-import { generateKeyPairSync } from "node:crypto";
+import { generateKeyPairSync } from 'node:crypto';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
-  EnvironmentValidationError,
-  parseDatabaseEnvironment,
-  parseRuntimeEnvironment,
-  parseWorkerEnvironment,
-  safeEnvironmentValidationFailures,
-} from "../environment.js";
+    EnvironmentValidationError,
+    parseDatabaseEnvironment,
+    parseRuntimeEnvironment,
+    parseWorkerEnvironment,
+    safeEnvironmentValidationFailures,
+} from '../environment.js';
 
-const validApplePrivateKey = generateKeyPairSync("ec", { namedCurve: "P-256" })
-  .privateKey.export({ format: "pem", type: "pkcs8" })
-  .toString()
-  .replaceAll("\n", "\\n");
-const invalidAppleRsaPrivateKey = generateKeyPairSync("rsa", { modulusLength: 2048 })
-  .privateKey.export({ format: "pem", type: "pkcs8" })
-  .toString()
-  .replaceAll("\n", "\\n");
+const validApplePrivateKey = generateKeyPairSync('ec', { namedCurve: 'P-256' })
+    .privateKey.export({ format: 'pem', type: 'pkcs8' })
+    .toString()
+    .replaceAll('\n', '\\n');
+const invalidAppleRsaPrivateKey = generateKeyPairSync('rsa', { modulusLength: 2048 })
+    .privateKey.export({ format: 'pem', type: 'pkcs8' })
+    .toString()
+    .replaceAll('\n', '\\n');
 
 const validEnvironment = {
-  APP_ENV: "local",
-  API_HOST: "127.0.0.1",
-  API_PORT: "3001",
-  SHUTDOWN_TIMEOUT_MS: "10000",
-  DATABASE_URL: "postgresql://pickflick:local-password@127.0.0.1:5432/pickflick_local",
-  REDIS_URL: "redis://127.0.0.1:6379/0",
-  STORAGE_ENDPOINT: "http://127.0.0.1:9000",
-  STORAGE_REGION: "us-east-1",
-  STORAGE_BUCKET: "pickflick-local",
-  STORAGE_ACCESS_KEY: "local-access-key",
-  STORAGE_SECRET_KEY: "local-secret-key",
-  STORAGE_FORCE_PATH_STYLE: "true",
-  RESEND_DELIVERY_MODE: "disabled",
-  RESEND_API_KEY: "local-disabled",
-  RESEND_FROM: "PickFlick <pickflick@example.invalid>",
-  CONTACT_DELIVERY_TO: "contact@example.invalid",
-  CONTACT_HASH_SECRET: "local-contact-hash-secret-for-tests",
-  AUTH_BASE_URL: "http://127.0.0.1:3000",
-  AUTH_SECRET: "local-auth-secret-for-tests-change-me",
-  APPLE_SIGN_IN_ENABLED: "false",
-  APPLE_CLIENT_ID: "synthetic-apple-client-id",
-  APPLE_KEY_ID: "SYNTHKEY1",
-  APPLE_PRIVATE_KEY: validApplePrivateKey,
-  APPLE_TEAM_ID: "SYNTHTEAM1",
-  GOOGLE_CLIENT_ID: "synthetic-google-client-id",
-  GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
+    APP_ENV: 'local',
+    API_HOST: '127.0.0.1',
+    API_PORT: '3001',
+    SHUTDOWN_TIMEOUT_MS: '10000',
+    DATABASE_URL: 'postgresql://pickflick:local-password@127.0.0.1:5432/pickflick_local',
+    REDIS_URL: 'redis://127.0.0.1:6379/0',
+    STORAGE_ENDPOINT: 'http://127.0.0.1:9000',
+    STORAGE_REGION: 'us-east-1',
+    STORAGE_BUCKET: 'pickflick-local',
+    STORAGE_ACCESS_KEY: 'local-access-key',
+    STORAGE_SECRET_KEY: 'local-secret-key',
+    STORAGE_FORCE_PATH_STYLE: 'true',
+    RESEND_DELIVERY_MODE: 'disabled',
+    RESEND_API_KEY: 'local-disabled',
+    RESEND_FROM: 'PickFlick <pickflick@example.invalid>',
+    CONTACT_DELIVERY_TO: 'contact@example.invalid',
+    CONTACT_HASH_SECRET: 'local-contact-hash-secret-for-tests',
+    AUTH_BASE_URL: 'http://127.0.0.1:3000',
+    AUTH_SECRET: 'local-auth-secret-for-tests-change-me',
+    APPLE_SIGN_IN_ENABLED: 'false',
+    APPLE_CLIENT_ID: 'synthetic-apple-client-id',
+    APPLE_KEY_ID: 'SYNTHKEY1',
+    APPLE_PRIVATE_KEY: validApplePrivateKey,
+    APPLE_TEAM_ID: 'SYNTHTEAM1',
+    GOOGLE_CLIENT_ID: 'synthetic-google-client-id',
+    GOOGLE_CLIENT_SECRET: 'synthetic-google-client-secret',
 } as const;
 
-describe("environment validation", () => {
-  it("reports validation field names and fixed rules without supplied values", () => {
-    let error: unknown;
-    try {
-      parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: "Invalid Bucket" });
-    } catch (caught) {
-      error = caught;
-    }
+describe('environment validation', () => {
+    it('reports validation field names and fixed rules without supplied values', () => {
+        let error: unknown;
+        try {
+            parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: 'Invalid Bucket' });
+        } catch (caught) {
+            error = caught;
+        }
 
-    expect(safeEnvironmentValidationFailures(error)).toEqual([
-      "STORAGE_BUCKET must be a valid lowercase S3 bucket name",
-    ]);
-    expect(JSON.stringify(safeEnvironmentValidationFailures(error))).not.toContain("Invalid Bucket");
-    expect(safeEnvironmentValidationFailures(new Error("other"))).toBeUndefined();
-  });
-
-  it("parses the typed runtime inventory", () => {
-    expect(parseRuntimeEnvironment(validEnvironment)).toMatchObject({
-      appEnvironment: "local",
-      apiPort: 3001,
-      shutdownTimeoutMilliseconds: 10_000,
-      storage: { forcePathStyle: true },
-      resend: {
-        deliveryMode: "disabled",
-        deliveryEnabled: false,
-        from: "PickFlick <pickflick@example.invalid>",
-      },
-      contact: { deliveryTo: "contact@example.invalid" },
-      auth: { appleSignInEnabled: false, baseUrl: "http://127.0.0.1:3000", secureCookies: false },
+        expect(safeEnvironmentValidationFailures(error)).toEqual([
+            'STORAGE_BUCKET must be a valid lowercase S3 bucket name',
+        ]);
+        expect(JSON.stringify(safeEnvironmentValidationFailures(error))).not.toContain(
+            'Invalid Bucket',
+        );
+        expect(safeEnvironmentValidationFailures(new Error('other'))).toBeUndefined();
     });
-  });
 
-  it("accepts a standard display name with spaces for the Resend sender", () => {
-    expect(
-      parseRuntimeEnvironment({ ...validEnvironment, RESEND_FROM: "PickFlick UAT <uat@pick-flick.app>" }),
-    ).toMatchObject({ resend: { from: "PickFlick UAT <uat@pick-flick.app>" } });
-  });
-
-  it.each([
-    '"PickFlick UAT <uat@pick-flick.app>"',
-    "PickFlick UAT <uat@pick-flick.app> extra",
-    "PickFlick UAT <uat@pick-flick.app>\nother@example.com",
-  ])("rejects an unsafe or malformed Resend sender: %s", (from) => {
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, RESEND_FROM: from })).toThrow(
-      /RESEND_FROM must be an email address or a name plus email address/,
-    );
-  });
-
-  it("accepts the focused database inventory", () => {
-    expect(parseDatabaseEnvironment(validEnvironment)).toEqual({
-      appEnvironment: "local",
-      databaseUrl: validEnvironment.DATABASE_URL,
+    it('parses the typed runtime inventory', () => {
+        expect(parseRuntimeEnvironment(validEnvironment)).toMatchObject({
+            appEnvironment: 'local',
+            apiPort: 3001,
+            shutdownTimeoutMilliseconds: 10_000,
+            storage: { forcePathStyle: true },
+            resend: {
+                deliveryMode: 'disabled',
+                deliveryEnabled: false,
+                from: 'PickFlick <pickflick@example.invalid>',
+            },
+            contact: { deliveryTo: 'contact@example.invalid' },
+            auth: {
+                appleSignInEnabled: false,
+                baseUrl: 'http://127.0.0.1:3000',
+                secureCookies: false,
+            },
+        });
     });
-  });
 
-  it("requires the storage and Resend provider contract", () => {
-    expect(() =>
-      parseWorkerEnvironment({
-        ...validEnvironment,
-        RESEND_API_KEY: undefined,
-        STORAGE_ACCESS_KEY: undefined,
-        CONTACT_HASH_SECRET: undefined,
-      }),
-    ).toThrow(/STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required; CONTACT_HASH_SECRET is required/);
-  });
-
-  it("rejects unsafe Contact delivery configuration without echoing the secret", () => {
-    expect(() =>
-      parseWorkerEnvironment({
-        ...validEnvironment,
-        CONTACT_DELIVERY_TO: "not-an-email",
-        CONTACT_HASH_SECRET: "too-short",
-      }),
-    ).toThrow(/CONTACT_DELIVERY_TO must be an email address; CONTACT_HASH_SECRET must contain at least 32 characters/);
-  });
-
-  it("requires the approved Contact destination in production", () => {
-    expect(() =>
-      parseWorkerEnvironment({
-        ...validEnvironment,
-        APP_ENV: "production",
-        RESEND_API_KEY: "production-key",
-        CONTACT_DELIVERY_TO: "other@example.com",
-      }),
-    ).toThrow(/CONTACT_DELIVERY_TO must be hello@pick-flick.app in production/);
-  });
-
-  it.each(["uat", "production"])("rejects disabled Resend delivery in %s", (appEnvironment) => {
-    expect(() =>
-      parseWorkerEnvironment({
-        ...validEnvironment,
-        APP_ENV: appEnvironment,
-        CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
-      }),
-    ).toThrow(/RESEND_DELIVERY_MODE may be disabled only in local or test/);
-  });
-
-  it.each(["local", "test"])("allows disabled Resend delivery in %s", (appEnvironment) => {
-    expect(parseWorkerEnvironment({ ...validEnvironment, APP_ENV: appEnvironment })).toMatchObject({
-      appEnvironment,
-      resend: { apiKey: "local-disabled", deliveryEnabled: false },
+    it('accepts a standard display name with spaces for the Resend sender', () => {
+        expect(
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                RESEND_FROM: 'PickFlick UAT <uat@pick-flick.app>',
+            }),
+        ).toMatchObject({ resend: { from: 'PickFlick UAT <uat@pick-flick.app>' } });
     });
-  });
 
-  it("keeps the synthetic UAT-shaped preview delivery disabled", () => {
-    expect(parseWorkerEnvironment({
-      ...validEnvironment,
-      APP_ENV: "uat",
-      RESEND_DELIVERY_MODE: "preview",
-      RESEND_API_KEY: "preview-disabled",
-      RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
-    })).toMatchObject({
-      appEnvironment: "uat",
-      resend: { apiKey: "preview-disabled", deliveryMode: "preview", deliveryEnabled: false },
+    it.each([
+        '"PickFlick UAT <uat@pick-flick.app>"',
+        'PickFlick UAT <uat@pick-flick.app> extra',
+        'PickFlick UAT <uat@pick-flick.app>\nother@example.com',
+    ])('rejects an unsafe or malformed Resend sender: %s', (from) => {
+        expect(() => parseRuntimeEnvironment({ ...validEnvironment, RESEND_FROM: from })).toThrow(
+            /RESEND_FROM must be an email address or a name plus email address/,
+        );
     });
-  });
 
-  it("rejects the preview-disabled mode outside uat", () => {
-    expect(() => parseWorkerEnvironment({
-      ...validEnvironment,
-      APP_ENV: "production",
-      CONTACT_DELIVERY_TO: "hello@pick-flick.app",
-      RESEND_DELIVERY_MODE: "preview",
-      RESEND_API_KEY: "preview-disabled",
-      RESEND_FROM: "PickFlick <notifications@pick-flick.app>",
-    })).toThrow(/RESEND_DELIVERY_MODE may be preview only in uat/);
-  });
-
-  it.each([
-    ["uat", "PickFlick <notifications@pick-flick.app>", "PickFlick UAT <notifications@uat.pick-flick.app> in uat"],
-    ["production", "PickFlick UAT <notifications@uat.pick-flick.app>", "PickFlick <notifications@pick-flick.app> in production"],
-  ] as const)("rejects the wrong sender identity in %s", (appEnvironment, from, reason) => {
-    expect(() => parseWorkerEnvironment({
-      ...validEnvironment,
-      APP_ENV: appEnvironment,
-      CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
-      RESEND_DELIVERY_MODE: "live",
-      RESEND_API_KEY: `${appEnvironment}-key`,
-      RESEND_FROM: from,
-    })).toThrow(`RESEND_FROM must be ${reason}`);
-  });
-
-  it.each([
-    ["uat", "contact@example.invalid", "PickFlick UAT <notifications@uat.pick-flick.app>"],
-    ["production", "hello@pick-flick.app", "PickFlick <notifications@pick-flick.app>"],
-  ] as const)("accepts the exact sender identity in %s", (appEnvironment, deliveryTo, from) => {
-    expect(parseWorkerEnvironment({
-      ...validEnvironment,
-      APP_ENV: appEnvironment,
-      CONTACT_DELIVERY_TO: deliveryTo,
-      RESEND_DELIVERY_MODE: "live",
-      RESEND_API_KEY: `${appEnvironment}-key`,
-      RESEND_FROM: from,
-    })).toMatchObject({ appEnvironment, resend: { deliveryEnabled: true, from } });
-  });
-
-  it("accepts the worker inventory without API bind settings", () => {
-    expect(parseWorkerEnvironment({ ...validEnvironment, API_HOST: undefined, API_PORT: undefined })).toMatchObject({
-      appEnvironment: "local",
-      databaseUrl: validEnvironment.DATABASE_URL,
-      redisUrl: validEnvironment.REDIS_URL,
+    it('accepts the focused database inventory', () => {
+        expect(parseDatabaseEnvironment(validEnvironment)).toEqual({
+            appEnvironment: 'local',
+            databaseUrl: validEnvironment.DATABASE_URL,
+        });
     });
-  });
 
-  it("does not require API-owned authentication settings for workers", () => {
-    expect(
-      parseWorkerEnvironment({
-        ...validEnvironment,
-        AUTH_BASE_URL: undefined,
-        AUTH_SECRET: undefined,
-        APPLE_CLIENT_ID: undefined,
-        APPLE_KEY_ID: undefined,
-        APPLE_PRIVATE_KEY: undefined,
-        APPLE_TEAM_ID: undefined,
-        GOOGLE_CLIENT_ID: undefined,
-        GOOGLE_CLIENT_SECRET: undefined,
-      }),
-    ).not.toHaveProperty("auth");
-  });
-
-  it("requires and validates the enabled authentication inventory without exposing secret values", () => {
-    const unsafeSecret = "short";
-    expect(() =>
-      parseRuntimeEnvironment({
-        ...validEnvironment,
-        AUTH_BASE_URL: "https://pick-flick.app/login?next=unsafe",
-        AUTH_SECRET: unsafeSecret,
-        APPLE_SIGN_IN_ENABLED: "true",
-        APPLE_CLIENT_ID: undefined,
-        GOOGLE_CLIENT_ID: undefined,
-      }),
-    ).toThrow(
-      /AUTH_BASE_URL must be an origin without credentials, path, query, or fragment; APPLE_CLIENT_ID is required; GOOGLE_CLIENT_ID is required; AUTH_SECRET must contain at least 32 characters/,
-    );
-
-    try {
-      parseRuntimeEnvironment({ ...validEnvironment, AUTH_SECRET: unsafeSecret });
-    } catch (error) {
-      expect(String(error)).not.toContain(unsafeSecret);
-    }
-  });
-
-  it("does not require Apple credentials while Apple Sign In is disabled", () => {
-    expect(parseRuntimeEnvironment({
-      ...validEnvironment,
-      APPLE_CLIENT_ID: undefined,
-      APPLE_KEY_ID: undefined,
-      APPLE_PRIVATE_KEY: undefined,
-      APPLE_TEAM_ID: undefined,
-    })).toMatchObject({ auth: { appleSignInEnabled: false } });
-  });
-
-  it("fails closed when Apple Sign In is enabled without its provider configuration", () => {
-    expect(() => parseRuntimeEnvironment({
-      ...validEnvironment,
-      APPLE_SIGN_IN_ENABLED: "true",
-      APPLE_CLIENT_ID: undefined,
-      APPLE_KEY_ID: undefined,
-      APPLE_PRIVATE_KEY: undefined,
-      APPLE_TEAM_ID: undefined,
-    })).toThrow(
-      /APPLE_CLIENT_ID is required; APPLE_KEY_ID is required; APPLE_PRIVATE_KEY is required; APPLE_TEAM_ID is required/,
-    );
-  });
-
-  it.each(["uat", "production"])("requires an Apple EC P-256 PKCS#8 private key in %s", (appEnvironment) => {
-    for (const applePrivateKey of ["local-synthetic-apple-private-key", invalidAppleRsaPrivateKey]) {
-      expect(() =>
-        parseRuntimeEnvironment({
-          ...validEnvironment,
-          APP_ENV: appEnvironment,
-          APPLE_SIGN_IN_ENABLED: "true",
-          APPLE_PRIVATE_KEY: applePrivateKey,
-          AUTH_BASE_URL: `https://${appEnvironment}.pick-flick.app`,
-          CONTACT_DELIVERY_TO: appEnvironment === "production" ? "hello@pick-flick.app" : "contact@example.invalid",
-          RESEND_DELIVERY_MODE: "live",
-          RESEND_API_KEY: `${appEnvironment}-key`,
-          RESEND_FROM: appEnvironment === "production"
-            ? "PickFlick <notifications@pick-flick.app>"
-            : "PickFlick UAT <notifications@uat.pick-flick.app>",
-        }),
-      ).toThrow(/APPLE_PRIVATE_KEY must be a valid EC P-256 PKCS#8 PEM private key in uat or production/);
-    }
-  });
-
-  it.each([
-    ["uat", "PickFlick UAT <notifications@uat.pick-flick.app>", "contact@example.invalid"],
-    ["production", "PickFlick <notifications@pick-flick.app>", "hello@pick-flick.app"],
-  ] as const)("requires an https authentication origin in %s", (appEnvironment, from, deliveryTo) => {
-    expect(() =>
-      parseRuntimeEnvironment({
-        ...validEnvironment,
-        APP_ENV: appEnvironment,
-        AUTH_BASE_URL: "http://pick-flick.app",
-        RESEND_DELIVERY_MODE: "live",
-        RESEND_API_KEY: `${appEnvironment}-key`,
-        RESEND_FROM: from,
-        CONTACT_DELIVERY_TO: deliveryTo,
-      }),
-    ).toThrow(/AUTH_BASE_URL must use https in uat or production/);
-  });
-
-  it("accepts a shutdown drain longer than the port-number range", () => {
-    expect(parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "120000" })).toMatchObject({
-      shutdownTimeoutMilliseconds: 120_000,
+    it('requires the storage and Resend provider contract', () => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                RESEND_API_KEY: undefined,
+                STORAGE_ACCESS_KEY: undefined,
+                CONTACT_HASH_SECRET: undefined,
+            }),
+        ).toThrow(
+            /STORAGE_ACCESS_KEY is required; RESEND_API_KEY is required; CONTACT_HASH_SECRET is required/,
+        );
     });
-  });
 
-  it("allows deployed environments without a source revision", () => {
-    expect(parseRuntimeEnvironment({
-      ...validEnvironment,
-      APP_ENV: "uat",
-      AUTH_BASE_URL: "https://uat.pick-flick.app",
-      RESEND_DELIVERY_MODE: "live",
-      RESEND_API_KEY: "uat-key",
-      RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
-    })).toMatchObject({ appEnvironment: "uat", resend: { deliveryEnabled: true } });
-    expect(
-      parseRuntimeEnvironment({
-        ...validEnvironment,
-        APP_ENV: "uat",
-        AUTH_BASE_URL: "https://uat.pick-flick.app",
-        RESEND_DELIVERY_MODE: "live",
-        RESEND_API_KEY: "uat-key",
-        RESEND_FROM: "PickFlick UAT <notifications@uat.pick-flick.app>",
-        SOURCE_REVISION: "a".repeat(40),
-      }),
-    ).toMatchObject({ sourceRevision: "a".repeat(40) });
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, SOURCE_REVISION: "main" })).toThrow(
-      /SOURCE_REVISION must be a full hexadecimal source revision/,
+    it('rejects unsafe Contact delivery configuration without echoing the secret', () => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                CONTACT_DELIVERY_TO: 'not-an-email',
+                CONTACT_HASH_SECRET: 'too-short',
+            }),
+        ).toThrow(
+            /CONTACT_DELIVERY_TO must be an email address; CONTACT_HASH_SECRET must contain at least 32 characters/,
+        );
+    });
+
+    it('requires the approved Contact destination in production', () => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: 'production',
+                RESEND_API_KEY: 'production-key',
+                CONTACT_DELIVERY_TO: 'other@example.com',
+            }),
+        ).toThrow(/CONTACT_DELIVERY_TO must be hello@pick-flick.app in production/);
+    });
+
+    it.each(['uat', 'production'])('rejects disabled Resend delivery in %s', (appEnvironment) => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: appEnvironment,
+                CONTACT_DELIVERY_TO:
+                    appEnvironment === 'production'
+                        ? 'hello@pick-flick.app'
+                        : 'contact@example.invalid',
+            }),
+        ).toThrow(/RESEND_DELIVERY_MODE may be disabled only in local or test/);
+    });
+
+    it.each(['local', 'test'])('allows disabled Resend delivery in %s', (appEnvironment) => {
+        expect(
+            parseWorkerEnvironment({ ...validEnvironment, APP_ENV: appEnvironment }),
+        ).toMatchObject({
+            appEnvironment,
+            resend: { apiKey: 'local-disabled', deliveryEnabled: false },
+        });
+    });
+
+    it('keeps the synthetic UAT-shaped preview delivery disabled', () => {
+        expect(
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: 'uat',
+                RESEND_DELIVERY_MODE: 'preview',
+                RESEND_API_KEY: 'preview-disabled',
+                RESEND_FROM: 'PickFlick UAT <notifications@uat.pick-flick.app>',
+            }),
+        ).toMatchObject({
+            appEnvironment: 'uat',
+            resend: { apiKey: 'preview-disabled', deliveryMode: 'preview', deliveryEnabled: false },
+        });
+    });
+
+    it('rejects the preview-disabled mode outside uat', () => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: 'production',
+                CONTACT_DELIVERY_TO: 'hello@pick-flick.app',
+                RESEND_DELIVERY_MODE: 'preview',
+                RESEND_API_KEY: 'preview-disabled',
+                RESEND_FROM: 'PickFlick <notifications@pick-flick.app>',
+            }),
+        ).toThrow(/RESEND_DELIVERY_MODE may be preview only in uat/);
+    });
+
+    it.each([
+        [
+            'uat',
+            'PickFlick <notifications@pick-flick.app>',
+            'PickFlick UAT <notifications@uat.pick-flick.app> in uat',
+        ],
+        [
+            'production',
+            'PickFlick UAT <notifications@uat.pick-flick.app>',
+            'PickFlick <notifications@pick-flick.app> in production',
+        ],
+    ] as const)('rejects the wrong sender identity in %s', (appEnvironment, from, reason) => {
+        expect(() =>
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: appEnvironment,
+                CONTACT_DELIVERY_TO:
+                    appEnvironment === 'production'
+                        ? 'hello@pick-flick.app'
+                        : 'contact@example.invalid',
+                RESEND_DELIVERY_MODE: 'live',
+                RESEND_API_KEY: `${appEnvironment}-key`,
+                RESEND_FROM: from,
+            }),
+        ).toThrow(`RESEND_FROM must be ${reason}`);
+    });
+
+    it.each([
+        ['uat', 'contact@example.invalid', 'PickFlick UAT <notifications@uat.pick-flick.app>'],
+        ['production', 'hello@pick-flick.app', 'PickFlick <notifications@pick-flick.app>'],
+    ] as const)('accepts the exact sender identity in %s', (appEnvironment, deliveryTo, from) => {
+        expect(
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                APP_ENV: appEnvironment,
+                CONTACT_DELIVERY_TO: deliveryTo,
+                RESEND_DELIVERY_MODE: 'live',
+                RESEND_API_KEY: `${appEnvironment}-key`,
+                RESEND_FROM: from,
+            }),
+        ).toMatchObject({ appEnvironment, resend: { deliveryEnabled: true, from } });
+    });
+
+    it('accepts the worker inventory without API bind settings', () => {
+        expect(
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                API_HOST: undefined,
+                API_PORT: undefined,
+            }),
+        ).toMatchObject({
+            appEnvironment: 'local',
+            databaseUrl: validEnvironment.DATABASE_URL,
+            redisUrl: validEnvironment.REDIS_URL,
+        });
+    });
+
+    it('does not require API-owned authentication settings for workers', () => {
+        expect(
+            parseWorkerEnvironment({
+                ...validEnvironment,
+                AUTH_BASE_URL: undefined,
+                AUTH_SECRET: undefined,
+                APPLE_CLIENT_ID: undefined,
+                APPLE_KEY_ID: undefined,
+                APPLE_PRIVATE_KEY: undefined,
+                APPLE_TEAM_ID: undefined,
+                GOOGLE_CLIENT_ID: undefined,
+                GOOGLE_CLIENT_SECRET: undefined,
+            }),
+        ).not.toHaveProperty('auth');
+    });
+
+    it('requires and validates the enabled authentication inventory without exposing secret values', () => {
+        const unsafeSecret = 'short';
+        expect(() =>
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                AUTH_BASE_URL: 'https://pick-flick.app/login?next=unsafe',
+                AUTH_SECRET: unsafeSecret,
+                APPLE_SIGN_IN_ENABLED: 'true',
+                APPLE_CLIENT_ID: undefined,
+                GOOGLE_CLIENT_ID: undefined,
+            }),
+        ).toThrow(
+            /AUTH_BASE_URL must be an origin without credentials, path, query, or fragment; APPLE_CLIENT_ID is required; GOOGLE_CLIENT_ID is required; AUTH_SECRET must contain at least 32 characters/,
+        );
+
+        try {
+            parseRuntimeEnvironment({ ...validEnvironment, AUTH_SECRET: unsafeSecret });
+        } catch (error) {
+            expect(String(error)).not.toContain(unsafeSecret);
+        }
+    });
+
+    it('does not require Apple credentials while Apple Sign In is disabled', () => {
+        expect(
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                APPLE_CLIENT_ID: undefined,
+                APPLE_KEY_ID: undefined,
+                APPLE_PRIVATE_KEY: undefined,
+                APPLE_TEAM_ID: undefined,
+            }),
+        ).toMatchObject({ auth: { appleSignInEnabled: false } });
+    });
+
+    it('fails closed when Apple Sign In is enabled without its provider configuration', () => {
+        expect(() =>
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                APPLE_SIGN_IN_ENABLED: 'true',
+                APPLE_CLIENT_ID: undefined,
+                APPLE_KEY_ID: undefined,
+                APPLE_PRIVATE_KEY: undefined,
+                APPLE_TEAM_ID: undefined,
+            }),
+        ).toThrow(
+            /APPLE_CLIENT_ID is required; APPLE_KEY_ID is required; APPLE_PRIVATE_KEY is required; APPLE_TEAM_ID is required/,
+        );
+    });
+
+    it.each(['uat', 'production'])(
+        'requires an Apple EC P-256 PKCS#8 private key in %s',
+        (appEnvironment) => {
+            for (const applePrivateKey of [
+                'local-synthetic-apple-private-key',
+                invalidAppleRsaPrivateKey,
+            ]) {
+                expect(() =>
+                    parseRuntimeEnvironment({
+                        ...validEnvironment,
+                        APP_ENV: appEnvironment,
+                        APPLE_SIGN_IN_ENABLED: 'true',
+                        APPLE_PRIVATE_KEY: applePrivateKey,
+                        AUTH_BASE_URL: `https://${appEnvironment}.pick-flick.app`,
+                        CONTACT_DELIVERY_TO:
+                            appEnvironment === 'production'
+                                ? 'hello@pick-flick.app'
+                                : 'contact@example.invalid',
+                        RESEND_DELIVERY_MODE: 'live',
+                        RESEND_API_KEY: `${appEnvironment}-key`,
+                        RESEND_FROM:
+                            appEnvironment === 'production'
+                                ? 'PickFlick <notifications@pick-flick.app>'
+                                : 'PickFlick UAT <notifications@uat.pick-flick.app>',
+                    }),
+                ).toThrow(
+                    /APPLE_PRIVATE_KEY must be a valid EC P-256 PKCS#8 PEM private key in uat or production/,
+                );
+            }
+        },
     );
-  });
 
-  it("rejects a shutdown drain longer than 24 hours", () => {
-    expect(() => parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: "86400001" })).toThrow(
-      /SHUTDOWN_TIMEOUT_MS must be an integer from 1 through 86400000/,
+    it.each([
+        ['uat', 'PickFlick UAT <notifications@uat.pick-flick.app>', 'contact@example.invalid'],
+        ['production', 'PickFlick <notifications@pick-flick.app>', 'hello@pick-flick.app'],
+    ] as const)(
+        'requires an https authentication origin in %s',
+        (appEnvironment, from, deliveryTo) => {
+            expect(() =>
+                parseRuntimeEnvironment({
+                    ...validEnvironment,
+                    APP_ENV: appEnvironment,
+                    AUTH_BASE_URL: 'http://pick-flick.app',
+                    RESEND_DELIVERY_MODE: 'live',
+                    RESEND_API_KEY: `${appEnvironment}-key`,
+                    RESEND_FROM: from,
+                    CONTACT_DELIVERY_TO: deliveryTo,
+                }),
+            ).toThrow(/AUTH_BASE_URL must use https in uat or production/);
+        },
     );
-  });
 
-  it.each(["foo..bar", "192.168.5.4"])("rejects an invalid storage bucket name: %s", (bucket) => {
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: bucket })).toThrow(
-      /STORAGE_BUCKET must be a valid lowercase S3 bucket name/,
+    it('accepts a shutdown drain longer than the port-number range', () => {
+        expect(
+            parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: '120000' }),
+        ).toMatchObject({
+            shutdownTimeoutMilliseconds: 120_000,
+        });
+    });
+
+    it('allows deployed environments without a source revision', () => {
+        expect(
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                APP_ENV: 'uat',
+                AUTH_BASE_URL: 'https://uat.pick-flick.app',
+                RESEND_DELIVERY_MODE: 'live',
+                RESEND_API_KEY: 'uat-key',
+                RESEND_FROM: 'PickFlick UAT <notifications@uat.pick-flick.app>',
+            }),
+        ).toMatchObject({ appEnvironment: 'uat', resend: { deliveryEnabled: true } });
+        expect(
+            parseRuntimeEnvironment({
+                ...validEnvironment,
+                APP_ENV: 'uat',
+                AUTH_BASE_URL: 'https://uat.pick-flick.app',
+                RESEND_DELIVERY_MODE: 'live',
+                RESEND_API_KEY: 'uat-key',
+                RESEND_FROM: 'PickFlick UAT <notifications@uat.pick-flick.app>',
+                SOURCE_REVISION: 'a'.repeat(40),
+            }),
+        ).toMatchObject({ sourceRevision: 'a'.repeat(40) });
+        expect(() =>
+            parseRuntimeEnvironment({ ...validEnvironment, SOURCE_REVISION: 'main' }),
+        ).toThrow(/SOURCE_REVISION must be a full hexadecimal source revision/);
+    });
+
+    it('rejects a shutdown drain longer than 24 hours', () => {
+        expect(() =>
+            parseWorkerEnvironment({ ...validEnvironment, SHUTDOWN_TIMEOUT_MS: '86400001' }),
+        ).toThrow(/SHUTDOWN_TIMEOUT_MS must be an integer from 1 through 86400000/);
+    });
+
+    it.each(['foo..bar', '192.168.5.4'])('rejects an invalid storage bucket name: %s', (bucket) => {
+        expect(() =>
+            parseRuntimeEnvironment({ ...validEnvironment, STORAGE_BUCKET: bucket }),
+        ).toThrow(/STORAGE_BUCKET must be a valid lowercase S3 bucket name/);
+    });
+
+    it('names invalid variables without echoing their values', () => {
+        const secretValue = 'do-not-echo-this-value';
+        expect(() =>
+            parseRuntimeEnvironment({ ...validEnvironment, DATABASE_URL: secretValue }),
+        ).toThrow(EnvironmentValidationError);
+        try {
+            parseRuntimeEnvironment({ ...validEnvironment, DATABASE_URL: secretValue });
+        } catch (error) {
+            expect(String(error)).toContain('DATABASE_URL');
+            expect(String(error)).not.toContain(secretValue);
+        }
+    });
+
+    it.each(['postgresql:pickflick_local', 'postgresql:///pickflick_local'])(
+        'rejects a database URL without a host: %s',
+        (databaseUrl) => {
+            expect(() =>
+                parseDatabaseEnvironment({ ...validEnvironment, DATABASE_URL: databaseUrl }),
+            ).toThrow(/DATABASE_URL must include a host/);
+        },
     );
-  });
 
-  it("names invalid variables without echoing their values", () => {
-    const secretValue = "do-not-echo-this-value";
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, DATABASE_URL: secretValue })).toThrow(
-      EnvironmentValidationError,
-    );
-    try {
-      parseRuntimeEnvironment({ ...validEnvironment, DATABASE_URL: secretValue });
-    } catch (error) {
-      expect(String(error)).toContain("DATABASE_URL");
-      expect(String(error)).not.toContain(secretValue);
-    }
-  });
+    it('rejects a database URL without a database name', () => {
+        expect(() =>
+            parseDatabaseEnvironment({
+                ...validEnvironment,
+                DATABASE_URL: 'postgresql://127.0.0.1',
+            }),
+        ).toThrow(/DATABASE_URL must include a database name/);
+    });
 
-  it.each(["postgresql:pickflick_local", "postgresql:///pickflick_local"])(
-    "rejects a database URL without a host: %s",
-    (databaseUrl) => {
-      expect(() => parseDatabaseEnvironment({ ...validEnvironment, DATABASE_URL: databaseUrl })).toThrow(
-        /DATABASE_URL must include a host/,
-      );
-    },
-  );
+    it.each(['redis:0', 'redis:///0'])('rejects a Redis URL without a host: %s', (redisUrl) => {
+        expect(() => parseRuntimeEnvironment({ ...validEnvironment, REDIS_URL: redisUrl })).toThrow(
+            /REDIS_URL must include a host/,
+        );
+    });
 
-  it("rejects a database URL without a database name", () => {
-    expect(() =>
-      parseDatabaseEnvironment({ ...validEnvironment, DATABASE_URL: "postgresql://127.0.0.1" }),
-    ).toThrow(/DATABASE_URL must include a database name/);
-  });
-
-  it.each(["redis:0", "redis:///0"])("rejects a Redis URL without a host: %s", (redisUrl) => {
-    expect(() => parseRuntimeEnvironment({ ...validEnvironment, REDIS_URL: redisUrl })).toThrow(
-      /REDIS_URL must include a host/,
-    );
-  });
-
-  it("reports every missing required variable in one safe failure", () => {
-    expect(() => parseRuntimeEnvironment({})).toThrow(/APP_ENV is required; API_HOST is required/);
-  });
+    it('reports every missing required variable in one safe failure', () => {
+        expect(() => parseRuntimeEnvironment({})).toThrow(
+            /APP_ENV is required; API_HOST is required/,
+        );
+    });
 });

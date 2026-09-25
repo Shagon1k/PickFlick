@@ -4,13 +4,13 @@
 > Product behavior follows the approved design package when it conflicts with the retired blueprint,
 > except where later developer decisions are recorded here.
 
-| Related artifact | Project path |
-| --- | --- |
-| Design reference | [DESIGN.md](DESIGN.md) |
-| Architecture reference | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| ADR registry | [_docs/decisions/README.md](_docs/decisions/README.md) |
-| Canonical prototypes | [_docs/design/prototypes/index.html](_docs/design/prototypes/index.html) |
-| Actionable delivery tracker | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) |
+| Related artifact            | Project path                                                              |
+| --------------------------- | ------------------------------------------------------------------------- |
+| Design reference            | [DESIGN.md](DESIGN.md)                                                    |
+| Architecture reference      | [ARCHITECTURE.md](ARCHITECTURE.md)                                        |
+| ADR registry                | [\_docs/decisions/README.md](_docs/decisions/README.md)                   |
+| Canonical prototypes        | [\_docs/design/prototypes/index.html](_docs/design/prototypes/index.html) |
+| Actionable delivery tracker | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3)          |
 
 GitHub Issues in Project 3 are the canonical source for actionable active and deferred delivery
 work. This Roadmap remains the product/MVP/phase contract and phase-level acceptance record; it is
@@ -18,13 +18,13 @@ not a duplicate task inbox.
 
 ## 1. Project Contract
 
-| Field | Value |
-| --- | --- |
-| Product | A private, registered-user web app that helps film clubs nominate, select, watch, rate, and remember films together. |
-| Primary users | Friends and small film clubs; Club Admins and Moderators coordinating sessions; App Admins operating PickFlick. |
-| Core outcome | A club can move from “what should we watch?” to a shared, durable film-night memory without chat-thread chaos or spreadsheet bookkeeping. |
-| MVP proof | Real clubs repeatedly complete the session lifecycle, return to their shared and personal histories, and understand the Free/Pro value boundary. |
-| Non-goals | Anonymous participation, session-only guests, native mobile apps, offline writes, public social profiles, AI analysis, and enterprise organization management. |
+| Field         | Value                                                                                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product       | A private, registered-user web app that helps film clubs nominate, select, watch, rate, and remember films together.                                           |
+| Primary users | Friends and small film clubs; Club Admins and Moderators coordinating sessions; App Admins operating PickFlick.                                                |
+| Core outcome  | A club can move from “what should we watch?” to a shared, durable film-night memory without chat-thread chaos or spreadsheet bookkeeping.                      |
+| MVP proof     | Real clubs repeatedly complete the session lifecycle, return to their shared and personal histories, and understand the Free/Pro value boundary.               |
+| Non-goals     | Anonymous participation, session-only guests, native mobile apps, offline writes, public social profiles, AI analysis, and enterprise organization management. |
 
 ## 2. Product Shape
 
@@ -52,11 +52,11 @@ Discover a film -> Rate or add to Watchlist -> My Library
 
 ### Brand & UX Direction
 
-| Area | Decision |
-| --- | --- |
+| Area            | Decision                                                                                                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Visual identity | “Projector Noir”: deep monochrome surfaces, restrained ivory and connected gold, editorial serif display type, utilitarian sans body type, mono metadata, and cinematic panda illustrations. |
-| Voice & tone | Warm, concise, film-literate, and lightly theatrical. Forms, errors, privacy, billing, and destructive actions stay plain and unambiguous. |
-| UX principle | Preserve context through the whole movie-night journey; make the current Club, Session, phase, progress, next action, and recovery path obvious. |
+| Voice & tone    | Warm, concise, film-literate, and lightly theatrical. Forms, errors, privacy, billing, and destructive actions stay plain and unambiguous.                                                   |
+| UX principle    | Preserve context through the whole movie-night journey; make the current Club, Session, phase, progress, next action, and recovery path obvious.                                             |
 
 ## 3. MVP Scope
 
@@ -114,97 +114,97 @@ Every canonical product surface in the design package is part of MVP. “Coming 
 
 ### OUT
 
-| Item | Why out | Target |
-| --- | --- | --- |
-| AI analysis of watch history | Requires a stable history corpus, privacy design, evaluation, and cost controls. | Post-MVP |
-| Personalized AI film recommendations | TMDB/provider-related titles cover the MVP surface without an inference pipeline. | Post-MVP |
-| AI-enhanced Club analytics | Extended deterministic analytics ship first. | Post-MVP |
-| Club ratings CSV export | Marked “Coming soon” in pricing; personal rating CSV remains MVP. | Post-MVP |
-| Offline nominations, votes, ratings, or queued mutations | Conflict resolution and stale phase handling would add disproportionate risk. | Post-MVP |
-| Web push notifications | In-app and email channels cover MVP. | Post-MVP |
-| Annual billing | Initial commercial offer is €5 monthly Pro only. | Post-MVP |
-| Russian or other UI locales | Build localization-ready now; ship English first. | Post-MVP |
-| Session-only guests | Session access requires both registration and Club membership. | Not planned |
-| App-wide Support role | App authorization has only User and App Admin. | Not planned |
+| Item                                                     | Why out                                                                           | Target      |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- |
+| AI analysis of watch history                             | Requires a stable history corpus, privacy design, evaluation, and cost controls.  | Post-MVP    |
+| Personalized AI film recommendations                     | TMDB/provider-related titles cover the MVP surface without an inference pipeline. | Post-MVP    |
+| AI-enhanced Club analytics                               | Extended deterministic analytics ship first.                                      | Post-MVP    |
+| Club ratings CSV export                                  | Marked “Coming soon” in pricing; personal rating CSV remains MVP.                 | Post-MVP    |
+| Offline nominations, votes, ratings, or queued mutations | Conflict resolution and stale phase handling would add disproportionate risk.     | Post-MVP    |
+| Web push notifications                                   | In-app and email channels cover MVP.                                              | Post-MVP    |
+| Annual billing                                           | Initial commercial offer is €5 monthly Pro only.                                  | Post-MVP    |
+| Russian or other UI locales                              | Build localization-ready now; ship English first.                                 | Post-MVP    |
+| Session-only guests                                      | Session access requires both registration and Club membership.                    | Not planned |
+| App-wide Support role                                    | App authorization has only User and App Admin.                                    | Not planned |
 
 ## 4. Baseline Web App Considerations
 
-| Status | Meaning |
-| --- | --- |
+| Status           | Meaning                                                              |
+| ---------------- | -------------------------------------------------------------------- |
 | `Needs decision` | A safe answer is still required; the Decision Log names its trigger. |
-| `Planned` | Direction is chosen but not implemented. |
-| `Covered` | Implemented and verified with linked evidence. |
-| `Deferred` | Intentionally postponed with a revisit trigger. |
-| `Not applicable` | Retained to show why the concern does not apply. |
+| `Planned`        | Direction is chosen but not implemented.                             |
+| `Covered`        | Implemented and verified with linked evidence.                       |
+| `Deferred`       | Intentionally postponed with a revisit trigger.                      |
+| `Not applicable` | Retained to show why the concern does not apply.                     |
 
-| Area | Default question | Status | Decision / note |
-| --- | --- | --- | --- |
-| Infrastructure & Foundation | How are repo layout, local dev, scripts, CI, containers, and base architecture handled? | Planned | pnpm TypeScript monorepo with web, API, worker, shared contracts, PostgreSQL, Redis, and containerized delivery; final choices are approved in Phase 1. |
-| Users & Authentication | Does the app need users, roles, sessions, OAuth, permissions, or anonymous mode? | Planned | Registered OAuth users only; Google is active and Apple is retained behind a default-off owner-controlled provisioning gate. App Admin/User globally; Admin/Moderator/Member per Club; server-side authorization is mandatory. |
-| Design System | How do UI primitives, layout, styling, tokens, and component rules stay consistent? | Planned | Canonical Projector Noir rules and prototypes live under `_docs/design/prototypes`; production tokens/components are established in Phase 2. |
-| Localization | Is the product single-language, multilingual now, or multilingual-ready later? | Deferred | English MVP with externalized copy, locale-safe date/number formatting, and layout tolerance; add Russian when localization becomes scheduled. |
-| Analytics & Monitoring | How will we know usage, errors, latency, job health, and outages? | Planned | Structured logs, error/performance monitoring, health checks, job metrics, and first-party aggregate product metrics; no undisclosed behavioral tracker. |
-| SEO | Does the app have public/indexable pages, metadata, sitemap, robots, and share previews? | Planned | Public marketing/pricing/contact/legal pages are indexable with metadata and social previews; authenticated and invite-token routes are noindex. |
-| Security | What are the auth, validation, secrets, rate limits, headers, abuse, and data-protection rules? | Planned | Deny-by-default authorization, boundary validation, output encoding, secure cookies/tokens, CSRF strategy, rate limits, verified webhooks, encrypted transport, and secret isolation. |
-| Testing & Quality Gates | How will behavior be verified? | Planned | Unit/domain, API integration, database, worker/job, E2E critical-flow, accessibility, responsive visual, and provider-contract checks run through CI gates. |
-| Data & Privacy | What personal data is stored, exported, deleted, retained, and shared? | Planned | Data inventory, personal CSV and GDPR archive, account deletion/anonymization, shared-history preservation, audit retention, and provider disclosures are launch requirements. |
-| Mobile Support | Is mobile first-class? | Planned | Mobile is first-class, recomposed rather than merely shrunk, with fixed bottom navigation and 44px minimum touch targets. |
-| PWA / installability | Does the app need offline support, installability, push, or an app shell? | Planned | Installable online-first PWA; cached shell/read-only fallback may be used, but mutations require a live connection; push deferred. |
-| Environments & Production Deploy | How are environments, migrations, deploys, rollback, and smoke checks handled? | Planned | Local and CI/test profiles plus `https://uat.pick-flick.app` and `https://pick-flick.app`; Phase 1 establishes the shared Dokploy/Cloudflare deployment baseline, automatic UAT delivery, and a disabled manual production-promotion path. Forward migrations, backups, rollback, and smoke checks remain required. |
+| Area                             | Default question                                                                                | Status   | Decision / note                                                                                                                                                                                                                                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Infrastructure & Foundation      | How are repo layout, local dev, scripts, CI, containers, and base architecture handled?         | Planned  | pnpm TypeScript monorepo with web, API, worker, shared contracts, PostgreSQL, Redis, and containerized delivery; final choices are approved in Phase 1.                                                                                                                                                             |
+| Users & Authentication           | Does the app need users, roles, sessions, OAuth, permissions, or anonymous mode?                | Planned  | Registered OAuth users only; Google is active and Apple is retained behind a default-off owner-controlled provisioning gate. App Admin/User globally; Admin/Moderator/Member per Club; server-side authorization is mandatory.                                                                                      |
+| Design System                    | How do UI primitives, layout, styling, tokens, and component rules stay consistent?             | Planned  | Canonical Projector Noir rules and prototypes live under `_docs/design/prototypes`; production tokens/components are established in Phase 2.                                                                                                                                                                        |
+| Localization                     | Is the product single-language, multilingual now, or multilingual-ready later?                  | Deferred | English MVP with externalized copy, locale-safe date/number formatting, and layout tolerance; add Russian when localization becomes scheduled.                                                                                                                                                                      |
+| Analytics & Monitoring           | How will we know usage, errors, latency, job health, and outages?                               | Planned  | Structured logs, error/performance monitoring, health checks, job metrics, and first-party aggregate product metrics; no undisclosed behavioral tracker.                                                                                                                                                            |
+| SEO                              | Does the app have public/indexable pages, metadata, sitemap, robots, and share previews?        | Planned  | Public marketing/pricing/contact/legal pages are indexable with metadata and social previews; authenticated and invite-token routes are noindex.                                                                                                                                                                    |
+| Security                         | What are the auth, validation, secrets, rate limits, headers, abuse, and data-protection rules? | Planned  | Deny-by-default authorization, boundary validation, output encoding, secure cookies/tokens, CSRF strategy, rate limits, verified webhooks, encrypted transport, and secret isolation.                                                                                                                               |
+| Testing & Quality Gates          | How will behavior be verified?                                                                  | Planned  | Unit/domain, API integration, database, worker/job, E2E critical-flow, accessibility, responsive visual, and provider-contract checks run through CI gates.                                                                                                                                                         |
+| Data & Privacy                   | What personal data is stored, exported, deleted, retained, and shared?                          | Planned  | Data inventory, personal CSV and GDPR archive, account deletion/anonymization, shared-history preservation, audit retention, and provider disclosures are launch requirements.                                                                                                                                      |
+| Mobile Support                   | Is mobile first-class?                                                                          | Planned  | Mobile is first-class, recomposed rather than merely shrunk, with fixed bottom navigation and 44px minimum touch targets.                                                                                                                                                                                           |
+| PWA / installability             | Does the app need offline support, installability, push, or an app shell?                       | Planned  | Installable online-first PWA; cached shell/read-only fallback may be used, but mutations require a live connection; push deferred.                                                                                                                                                                                  |
+| Environments & Production Deploy | How are environments, migrations, deploys, rollback, and smoke checks handled?                  | Planned  | Local and CI/test profiles plus `https://uat.pick-flick.app` and `https://pick-flick.app`; Phase 1 establishes the shared Dokploy/Cloudflare deployment baseline, automatic UAT delivery, and a disabled manual production-promotion path. Forward migrations, backups, rollback, and smoke checks remain required. |
 
 ### Pre-MVP Production Readiness
 
 These decisions must be resolved before the first production MVP launch. A `Deferred` item needs
 an owner and revisit trigger; it cannot bypass a launch-critical risk.
 
-| Topic | Required decision and evidence | Status | Owner | Current planning direction / revisit trigger |
-| --- | --- | --- | --- | --- |
-| Deploy ownership | Name one release owner and rollback authority; record the exact approved revision, readiness and smoke evidence, and tested rollback path. | Needs decision | Release owner — to be assigned | Phase 23 prepares the release candidate and runbooks; Phase 25 records the deployed revision and production evidence. Assign before Phase 23 release rehearsal. |
-| Data durability | Decide backup destination and retention; demonstrate restore; separately decide the response to regional or hosting-account loss. | Needs decision | Infrastructure owner — to be assigned | PostgreSQL and durable avatars require backups; Redis is not a domain source of truth. Align retention with the Phase 19 legal/privacy decision and complete the restore/disaster-recovery drill in Phase 23. |
-| Edge reliability | Verify client identity behind the chosen proxy, abuse limits, graceful connection/workload drain, and a real UAT drill. | Needs decision | Infrastructure owner — to be assigned | Reverse proxy and Dokploy are Proposed. Decide their concrete behavior before Phase 23; verify it again with production-like UAT before the Go decision. |
-| Public surface | Validate the confirmed canonical host, SEO, PWA, and social/OG assets in production; account for external crawler cache refresh. | Planned | Product owner + developer | Production is `https://pick-flick.app`; UAT is `https://uat.pick-flick.app`. Public metadata is implemented in Phase 3 and completed in Phase 23; validate deployed canonical/robots/sitemap/preview behavior and document cache-refresh evidence before launch. |
-| Compliance boundary | Separate technically shipped behavior from required external legal action, then explicitly decide `Launch gate` or `Post-launch follow-up` for each unresolved item. | Needs decision | Product owner + legal/privacy reviewer | Privacy, retention, billing, provider disclosure, and public legal copy require review. Resolve the disposition before Phase 23 exits; no safety, privacy, or billing risk may be deferred through Phase 24. |
+| Topic               | Required decision and evidence                                                                                                                                       | Status         | Owner                                  | Current planning direction / revisit trigger                                                                                                                                                                                                                     |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy ownership    | Name one release owner and rollback authority; record the exact approved revision, readiness and smoke evidence, and tested rollback path.                           | Needs decision | Release owner — to be assigned         | Phase 23 prepares the release candidate and runbooks; Phase 25 records the deployed revision and production evidence. Assign before Phase 23 release rehearsal.                                                                                                  |
+| Data durability     | Decide backup destination and retention; demonstrate restore; separately decide the response to regional or hosting-account loss.                                    | Needs decision | Infrastructure owner — to be assigned  | PostgreSQL and durable avatars require backups; Redis is not a domain source of truth. Align retention with the Phase 19 legal/privacy decision and complete the restore/disaster-recovery drill in Phase 23.                                                    |
+| Edge reliability    | Verify client identity behind the chosen proxy, abuse limits, graceful connection/workload drain, and a real UAT drill.                                              | Needs decision | Infrastructure owner — to be assigned  | Reverse proxy and Dokploy are Proposed. Decide their concrete behavior before Phase 23; verify it again with production-like UAT before the Go decision.                                                                                                         |
+| Public surface      | Validate the confirmed canonical host, SEO, PWA, and social/OG assets in production; account for external crawler cache refresh.                                     | Planned        | Product owner + developer              | Production is `https://pick-flick.app`; UAT is `https://uat.pick-flick.app`. Public metadata is implemented in Phase 3 and completed in Phase 23; validate deployed canonical/robots/sitemap/preview behavior and document cache-refresh evidence before launch. |
+| Compliance boundary | Separate technically shipped behavior from required external legal action, then explicitly decide `Launch gate` or `Post-launch follow-up` for each unresolved item. | Needs decision | Product owner + legal/privacy reviewer | Privacy, retention, billing, provider disclosure, and public legal copy require review. Resolve the disposition before Phase 23 exits; no safety, privacy, or billing risk may be deferred through Phase 24.                                                     |
 
 ## 5. Business, Product & Monetization Rules
 
 ### Identity and access
 
-| Rule | Rationale | Enforcement |
-| --- | --- | --- |
-| Every participant has a registered PickFlick account. | Personal history, privacy rights, invitations, and phase denominators require a durable identity. | OAuth gate plus API authorization. |
-| App roles are only User and App Admin. | Avoid an unsupported global Support permission model. | Database constraint and server policy. |
-| Each Club has at most one Admin, may have multiple Moderators, and may temporarily have no Admin. | Separates ownership/billing from operational help and supports rare account-deletion cases. | Membership-role constraints and audited transitions. |
-| Admin owns billing, ownership, Club deletion, role management, and all Moderator capabilities. | High-impact actions remain with the owner. | Server authorization; never UI-only. |
-| Moderator may create/edit/cancel/advance Sessions, invite or remove Session participants, and log past Sessions. | Lets trusted members run movie nights without financial or ownership authority. | Server authorization. |
-| Member may accept eligible invitations, participate, view allowed results/history, manage personal data, and leave a Session or Club. | Covers the normal participant journey. | Server authorization and visibility policy. |
-| A Session invite reveals no Session details to a non-member. | Prevents accidental disclosure and enforces the Club boundary. | Generic forbidden state with a hint to join the Club first. |
-| Accepting a Session invite never creates membership. | Membership requires the separate Club invitation flow. | Invite-type validation and transaction boundary. |
+| Rule                                                                                                                                  | Rationale                                                                                         | Enforcement                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Every participant has a registered PickFlick account.                                                                                 | Personal history, privacy rights, invitations, and phase denominators require a durable identity. | OAuth gate plus API authorization.                          |
+| App roles are only User and App Admin.                                                                                                | Avoid an unsupported global Support permission model.                                             | Database constraint and server policy.                      |
+| Each Club has at most one Admin, may have multiple Moderators, and may temporarily have no Admin.                                     | Separates ownership/billing from operational help and supports rare account-deletion cases.       | Membership-role constraints and audited transitions.        |
+| Admin owns billing, ownership, Club deletion, role management, and all Moderator capabilities.                                        | High-impact actions remain with the owner.                                                        | Server authorization; never UI-only.                        |
+| Moderator may create/edit/cancel/advance Sessions, invite or remove Session participants, and log past Sessions.                      | Lets trusted members run movie nights without financial or ownership authority.                   | Server authorization.                                       |
+| Member may accept eligible invitations, participate, view allowed results/history, manage personal data, and leave a Session or Club. | Covers the normal participant journey.                                                            | Server authorization and visibility policy.                 |
+| A Session invite reveals no Session details to a non-member.                                                                          | Prevents accidental disclosure and enforces the Club boundary.                                    | Generic forbidden state with a hint to join the Club first. |
+| Accepting a Session invite never creates membership.                                                                                  | Membership requires the separate Club invitation flow.                                            | Invite-type validation and transaction boundary.            |
 
 ### Club and Session invariants
 
-| Rule | Rationale | Enforcement |
-| --- | --- | --- |
-| A Club may have at most one blocking Session in Nomination, Selection, or Watching. | Members should focus on one active movie-night decision. | Database-level invariant plus transactional state change. |
-| Any number of Sessions may remain in Rating while a new blocking Session runs. | Slow or unwilling raters must not block the next movie night. | Rating is explicitly non-blocking. |
-| Admin or Moderator may close Rating before all responses arrive. | Participation is voluntary and waiting indefinitely is not useful. | Confirmed phase action; received ratings remain immutable history. |
-| One participant may submit one nomination in a full-cycle Session. | Keeps influence balanced. | Unique Session/participant nomination constraint. |
-| A submitted Selection ballot is immutable in MVP. | Preserves trust and makes automatic completion deterministic. | Unique ballot plus closed submission state. |
-| Session ratings are historical records; personal movie ratings are editable summaries. | Club history must not rewrite when a person changes their mind later. | Separate entities and aggregates. |
-| Past Sessions may record partial historical evidence. | Old movie nights rarely have complete data. | Optional nominations, ballots, and attendee ratings with provenance. |
+| Rule                                                                                   | Rationale                                                             | Enforcement                                                          |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| A Club may have at most one blocking Session in Nomination, Selection, or Watching.    | Members should focus on one active movie-night decision.              | Database-level invariant plus transactional state change.            |
+| Any number of Sessions may remain in Rating while a new blocking Session runs.         | Slow or unwilling raters must not block the next movie night.         | Rating is explicitly non-blocking.                                   |
+| Admin or Moderator may close Rating before all responses arrive.                       | Participation is voluntary and waiting indefinitely is not useful.    | Confirmed phase action; received ratings remain immutable history.   |
+| One participant may submit one nomination in a full-cycle Session.                     | Keeps influence balanced.                                             | Unique Session/participant nomination constraint.                    |
+| A submitted Selection ballot is immutable in MVP.                                      | Preserves trust and makes automatic completion deterministic.         | Unique ballot plus closed submission state.                          |
+| Session ratings are historical records; personal movie ratings are editable summaries. | Club history must not rewrite when a person changes their mind later. | Separate entities and aggregates.                                    |
+| Past Sessions may record partial historical evidence.                                  | Old movie nights rarely have complete data.                           | Optional nominations, ballots, and attendee ratings with provenance. |
 
 ### Automatic phase transitions
 
 The eligible denominator `N` is the current Session participant roster for that phase. Removing or leaving a Session updates the roster before completion is evaluated. Every transition is idempotent and serialized to prevent two clients or a deadline job from advancing twice.
 
-| Current phase | Automatic trigger | Result |
-| --- | --- | --- |
-| Nomination | All `N` participants have nominated and at least two nominations exist. | Open Selection and notify participants. |
-| Nomination | All `N` participants have nominated and exactly one nomination exists. | Select the sole film and advance to Watching. |
-| Nomination | Optional deadline expires with at least two nominations. | Close nominations, open Selection, and notify participants. |
-| Nomination | Optional deadline expires with exactly one nomination. | Select the sole film and advance to Watching. |
-| Nomination | Optional deadline expires with zero nominations. | Stay in Nomination and notify the Admin/Moderators; submissions remain open until manual action or a new deadline. |
-| Selection | All `N` participants have submitted ballots. | Compute the winner, advance to Watching, and notify participants. |
-| Rating | All `N` participants have rated. | Complete the Session and publish allowed results. |
+| Current phase | Automatic trigger                                                       | Result                                                                                                             |
+| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Nomination    | All `N` participants have nominated and at least two nominations exist. | Open Selection and notify participants.                                                                            |
+| Nomination    | All `N` participants have nominated and exactly one nomination exists.  | Select the sole film and advance to Watching.                                                                      |
+| Nomination    | Optional deadline expires with at least two nominations.                | Close nominations, open Selection, and notify participants.                                                        |
+| Nomination    | Optional deadline expires with exactly one nomination.                  | Select the sole film and advance to Watching.                                                                      |
+| Nomination    | Optional deadline expires with zero nominations.                        | Stay in Nomination and notify the Admin/Moderators; submissions remain open until manual action or a new deadline. |
+| Selection     | All `N` participants have submitted ballots.                            | Compute the winner, advance to Watching, and notify participants.                                                  |
+| Rating        | All `N` participants have rated.                                        | Complete the Session and publish allowed results.                                                                  |
 
 Otherwise, only the Club Admin or a Moderator advances a phase with explicit controls. Watching always moves to Rating manually because attendance, the real screening, and timing cannot be inferred from page activity. Manual early closure must use the same deterministic result rules and may not advance Nomination with zero films.
 
@@ -219,19 +219,19 @@ Otherwise, only the Club Admin or a Moderator advances a phase with explicit con
 
 ### Pricing / Limits
 
-| Feature / limit | Free — Screening Room | Pro — Director’s Cut |
-| --- | --- | --- |
-| Price | €0 | €5 per recurring monthly billing period |
-| Admin Clubs per subscriber | 1 | 5 |
-| Clubs joined as Member/Moderator | Unlimited | Unlimited |
-| Members per Club | 8 | 16 |
-| Blocking Sessions per Club | 1 | 1 |
-| Open Rating Sessions per Club | Unlimited | Unlimited |
-| Session history | Unlimited | Unlimited |
-| Club customization | Included | Included |
-| Vote-result visibility | Always hidden from ordinary members | Admin-configurable |
-| Inactivity grace | 90 days | 180 days |
-| Analytics | Basic counters | Extended deterministic analytics |
+| Feature / limit                  | Free — Screening Room               | Pro — Director’s Cut                    |
+| -------------------------------- | ----------------------------------- | --------------------------------------- |
+| Price                            | €0                                  | €5 per recurring monthly billing period |
+| Admin Clubs per subscriber       | 1                                   | 5                                       |
+| Clubs joined as Member/Moderator | Unlimited                           | Unlimited                               |
+| Members per Club                 | 8                                   | 16                                      |
+| Blocking Sessions per Club       | 1                                   | 1                                       |
+| Open Rating Sessions per Club    | Unlimited                           | Unlimited                               |
+| Session history                  | Unlimited                           | Unlimited                               |
+| Club customization               | Included                            | Included                                |
+| Vote-result visibility           | Always hidden from ordinary members | Admin-configurable                      |
+| Inactivity grace                 | 90 days                             | 180 days                                |
+| Analytics                        | Basic counters                      | Extended deterministic analytics        |
 
 - The monthly billing anchor is the first successful payment date and is managed by Paddle; it is not a calendar-month subscription.
 - Pro cancellation or downgrade takes effect at the end of the paid billing period.
@@ -249,58 +249,58 @@ Otherwise, only the Club Admin or a Moderator advances a phase with explicit con
 
 ## 6. Glossary
 
-| Term | Meaning | Canonical usage |
-| --- | --- | --- |
-| PickFlick | The product and application. | `PickFlick` |
-| User | Any registered account; may also have app-level or Club-level roles. | `User` |
-| App Admin | A User authorized to operate the PickFlick service globally. | `APP_ADMIN` |
-| Club | A private group that organizes and remembers screenings. “Group” is retired product terminology. | `Club` |
-| Club Admin | The Club owner and subscription/role authority. | `ADMIN` membership role |
-| Moderator | A Club member allowed to operate Sessions but not ownership or billing. | `MODERATOR` membership role |
-| Member | A normal Club participant. | `MEMBER` membership role |
-| Session | One planned or historical screening and its lifecycle data. | `Session` |
-| Blocking Session | A Session in Nomination, Selection, or Watching; only one per Club. | Derived lifecycle classification |
-| Nomination | One participant’s proposed film for a full-cycle Session. | `Nomination` |
-| Selection | The scored voting phase used to choose among nominations. “Voting” may appear as explanatory copy but is not the canonical phase name. | `SELECTION` |
-| Ballot | One participant’s immutable set of scores for every nomination. | `SelectionBallot` |
-| Session Rating | A participant’s historical 1–10 response for one screening. | `SessionRating` |
-| Personal Rating | A user’s current editable rating for a Movie, independent from historical Session records. | `PersonalMovieRating` |
-| Bench | Club-specific films saved for quick future nomination. | `ClubBenchItem` |
-| Watchlist | A user’s personal saved films with viewing priority. | `WatchlistItem` |
-| Rating phase | Non-blocking period after watching while attendees submit ratings. | `RATING` |
-| Completed | Closed Session whose visible results and history are stable. | `COMPLETED` |
+| Term             | Meaning                                                                                                                                | Canonical usage                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| PickFlick        | The product and application.                                                                                                           | `PickFlick`                      |
+| User             | Any registered account; may also have app-level or Club-level roles.                                                                   | `User`                           |
+| App Admin        | A User authorized to operate the PickFlick service globally.                                                                           | `APP_ADMIN`                      |
+| Club             | A private group that organizes and remembers screenings. “Group” is retired product terminology.                                       | `Club`                           |
+| Club Admin       | The Club owner and subscription/role authority.                                                                                        | `ADMIN` membership role          |
+| Moderator        | A Club member allowed to operate Sessions but not ownership or billing.                                                                | `MODERATOR` membership role      |
+| Member           | A normal Club participant.                                                                                                             | `MEMBER` membership role         |
+| Session          | One planned or historical screening and its lifecycle data.                                                                            | `Session`                        |
+| Blocking Session | A Session in Nomination, Selection, or Watching; only one per Club.                                                                    | Derived lifecycle classification |
+| Nomination       | One participant’s proposed film for a full-cycle Session.                                                                              | `Nomination`                     |
+| Selection        | The scored voting phase used to choose among nominations. “Voting” may appear as explanatory copy but is not the canonical phase name. | `SELECTION`                      |
+| Ballot           | One participant’s immutable set of scores for every nomination.                                                                        | `SelectionBallot`                |
+| Session Rating   | A participant’s historical 1–10 response for one screening.                                                                            | `SessionRating`                  |
+| Personal Rating  | A user’s current editable rating for a Movie, independent from historical Session records.                                             | `PersonalMovieRating`            |
+| Bench            | Club-specific films saved for quick future nomination.                                                                                 | `ClubBenchItem`                  |
+| Watchlist        | A user’s personal saved films with viewing priority.                                                                                   | `WatchlistItem`                  |
+| Rating phase     | Non-blocking period after watching while attendees submit ratings.                                                                     | `RATING`                         |
+| Completed        | Closed Session whose visible results and history are stable.                                                                           | `COMPLETED`                      |
 
 ## 7. Domain Model & State
 
 ### Domain Model
 
-| Entity | Key fields | Notes |
-| --- | --- | --- |
-| User | profile, email, app role, status, locale | Registered identity; suspended users are signed out and denied access. |
-| OAuthAccount | provider, provider subject, User | Google and Apple identities; provider subject is unique. |
-| Club | Admin, name, description, avatar, plan-derived limits, visibility settings, lifecycle | May temporarily be adminless; shared history survives personal account deletion. |
-| Membership | Club, User, role, status, joined/left timestamps | Unique active membership per User/Club; roles Admin, Moderator, Member. |
-| ClubInvite | token digest, Club, inviter, expiry, state | May be inspected only within the privacy-safe invitation contract. |
-| Session | Club, type, phase, date, location, topic, notes, selected Movie, deadline, closure metadata | Type is Full Cycle, Pre-selected, or Past; phase controls blocking status. |
-| SessionParticipant | Session, Membership, invitation/attendance state | Owns phase denominator and historical attendance snapshot. |
-| SessionInvite | token digest, Session, invited Membership, expiry, state | Valid only for an existing Club member; non-members receive no details. |
-| Movie | TMDB ID, title, release data, credits, media metadata, refresh state | Cached provider record; TMDB ID is canonical external identity. |
-| ClubBenchItem | Club, Movie, creator, created time | Reusable future nomination shortcut. |
-| Nomination | Session, participant, Movie, submitted time, provenance | One per participant; imported past data is marked as such. |
-| SelectionBallot | Session, participant, submitted time | Immutable after submission. |
-| SelectionScore | Ballot, Nomination, score | Score validated against the Club’s snapshot scale. |
-| SessionRating | Session, participant, score, comment, submitted time | Historical value; immutable after Session completion. |
-| PersonalMovieRating | User, Movie, score, updated time, source | Editable current rating; Session submission may update it without rewriting history. |
-| WatchlistItem | User, Movie, priority, timestamps | Priority is Low, Medium, or High. |
-| AchievementDefinition | scope, key, rule/version, presentation | Personal or Club achievement; version rules rather than mutating earned history silently. |
-| AchievementAward | definition, User or Club, progress, awarded time | Supports unlocked, in-progress, and not-started views. |
-| Notification | recipient, type, payload reference, read/delivery state | In-app source of truth; payload uses safe entity references. |
-| NotificationPreference | User, event type, in-app/email flags | Billing/service announcements may have mandatory policy exceptions. |
-| Subscription | User, Paddle IDs, plan, status, billing period | Club entitlements derive from the Admin’s active plan. |
-| BillingEvent | provider event ID, type, processing state | Idempotent webhook record and audit trail. |
-| AdminAuditEvent | actor, action, target, safe metadata, timestamp | Append-oriented sensitive operations log with configurable retention. |
-| ContactMessage | optional identity fields, message, handling state | Message is required and limited to 500 characters. |
-| DataExportJob | User, export type, status, expiry | Produces personal CSV or GDPR archive without blocking requests. |
+| Entity                 | Key fields                                                                                  | Notes                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| User                   | profile, email, app role, status, locale                                                    | Registered identity; suspended users are signed out and denied access.                    |
+| OAuthAccount           | provider, provider subject, User                                                            | Google and Apple identities; provider subject is unique.                                  |
+| Club                   | Admin, name, description, avatar, plan-derived limits, visibility settings, lifecycle       | May temporarily be adminless; shared history survives personal account deletion.          |
+| Membership             | Club, User, role, status, joined/left timestamps                                            | Unique active membership per User/Club; roles Admin, Moderator, Member.                   |
+| ClubInvite             | token digest, Club, inviter, expiry, state                                                  | May be inspected only within the privacy-safe invitation contract.                        |
+| Session                | Club, type, phase, date, location, topic, notes, selected Movie, deadline, closure metadata | Type is Full Cycle, Pre-selected, or Past; phase controls blocking status.                |
+| SessionParticipant     | Session, Membership, invitation/attendance state                                            | Owns phase denominator and historical attendance snapshot.                                |
+| SessionInvite          | token digest, Session, invited Membership, expiry, state                                    | Valid only for an existing Club member; non-members receive no details.                   |
+| Movie                  | TMDB ID, title, release data, credits, media metadata, refresh state                        | Cached provider record; TMDB ID is canonical external identity.                           |
+| ClubBenchItem          | Club, Movie, creator, created time                                                          | Reusable future nomination shortcut.                                                      |
+| Nomination             | Session, participant, Movie, submitted time, provenance                                     | One per participant; imported past data is marked as such.                                |
+| SelectionBallot        | Session, participant, submitted time                                                        | Immutable after submission.                                                               |
+| SelectionScore         | Ballot, Nomination, score                                                                   | Score validated against the Club’s snapshot scale.                                        |
+| SessionRating          | Session, participant, score, comment, submitted time                                        | Historical value; immutable after Session completion.                                     |
+| PersonalMovieRating    | User, Movie, score, updated time, source                                                    | Editable current rating; Session submission may update it without rewriting history.      |
+| WatchlistItem          | User, Movie, priority, timestamps                                                           | Priority is Low, Medium, or High.                                                         |
+| AchievementDefinition  | scope, key, rule/version, presentation                                                      | Personal or Club achievement; version rules rather than mutating earned history silently. |
+| AchievementAward       | definition, User or Club, progress, awarded time                                            | Supports unlocked, in-progress, and not-started views.                                    |
+| Notification           | recipient, type, payload reference, read/delivery state                                     | In-app source of truth; payload uses safe entity references.                              |
+| NotificationPreference | User, event type, in-app/email flags                                                        | Billing/service announcements may have mandatory policy exceptions.                       |
+| Subscription           | User, Paddle IDs, plan, status, billing period                                              | Club entitlements derive from the Admin’s active plan.                                    |
+| BillingEvent           | provider event ID, type, processing state                                                   | Idempotent webhook record and audit trail.                                                |
+| AdminAuditEvent        | actor, action, target, safe metadata, timestamp                                             | Append-oriented sensitive operations log with configurable retention.                     |
+| ContactMessage         | optional identity fields, message, handling state                                           | Message is required and limited to 500 characters.                                        |
+| DataExportJob          | User, export type, status, expiry                                                           | Produces personal CSV or GDPR archive without blocking requests.                          |
 
 ### Session State Machine
 
@@ -326,38 +326,38 @@ stateDiagram-v2
 
 ### Navigation Decisions
 
-| Surface | Decision |
-| --- | --- |
-| Public header | Product mark, How it works and Features landing anchors, Pricing, and a Go to App entry. Below 821px the header keeps only Go to App, and the landing price block links to Pricing ("Compare plans"). Public pages have no bottom menu. Contact and legal links live in the footer. |
-| Authenticated desktop | Global film search, notifications, account menu, Club switcher, and context tabs/sidebar. |
-| Authenticated mobile | Recomposition with fixed bottom navigation for Hub, My Library, Alerts, and Settings; local film-strip menus expose subviews. App Admins reach the Admin Panel from the Settings strip. |
-| App Admin | Separate protected administration shell accessible only to App Admin. |
-| Post-login routing | Return to a valid pending invite when present; otherwise open last-used Club, or the no-Clubs onboarding state. |
+| Surface               | Decision                                                                                                                                                                                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public header         | Product mark, How it works and Features landing anchors, Pricing, and a Go to App entry. Below 821px the header keeps only Go to App, and the landing price block links to Pricing ("Compare plans"). Public pages have no bottom menu. Contact and legal links live in the footer. |
+| Authenticated desktop | Global film search, notifications, account menu, Club switcher, and context tabs/sidebar.                                                                                                                                                                                           |
+| Authenticated mobile  | Recomposition with fixed bottom navigation for Hub, My Library, Alerts, and Settings; local film-strip menus expose subviews. App Admins reach the Admin Panel from the Settings strip.                                                                                             |
+| App Admin             | Separate protected administration shell accessible only to App Admin.                                                                                                                                                                                                               |
+| Post-login routing    | Return to a valid pending invite when present; otherwise open last-used Club, or the no-Clubs onboarding state.                                                                                                                                                                     |
 
 ### Route Map
 
-| Route | Description |
-| --- | --- |
-| `/` | Public landing page. |
-| `/pricing` | Free/Pro comparison and billing entry. |
-| `/contact` | Public contact form. |
-| `/login` | Available provider sign-in and legal links; authenticated Users continue to `/app`, while Google is visible and dormant Apple is omitted. |
-| `/legal/privacy` | Launch-required privacy notice; final copy requires review. |
-| `/legal/terms` | Launch-required terms; final copy requires review. |
-| `/invite/club/[token]` | Club invitation preview, auth continuation, accept/decline, expired state. |
-| `/invite/session/[token]` | Member-only Session invitation; generic error for non-members or invalid access. |
-| `/app` | Authenticated landing; last Club Hub or no-Clubs state. |
-| `/clubs/new` | Create Club and configure selection scale. |
-| `/clubs/[clubId]` | Club Hub with Overview, Sessions, Ratings, Members, Achievements, and Manage Club views. |
-| `/clubs/[clubId]/sessions/new` | Create full-cycle or pre-selected Session. |
-| `/clubs/[clubId]/sessions/past/new` | Log a past screening. |
-| `/sessions/[sessionId]` | Phase-aware Session detail for Nomination, Selection, Watching, Rating, or Completed. |
-| `/library` | Personal ratings, Watchlist, statistics, and achievements. |
-| `/movies/[tmdbId]` | TMDB-backed Movie Details, personal rating, Watchlist priority, and related films. |
-| `/settings` | Profile, notifications, subscription, Privacy & data, and import/export sections. Privacy & data holds the personal-data summary and rights actions (personal CSV export, GDPR archive, account deletion) and links to `/legal/privacy`; it does not duplicate policy text. |
-| `/admin` | App Admin overview, Users, Clubs, and application settings. |
-| `not-found` | Branded 404 state with safe navigation. |
-| `error` | Branded application error state with retry and Hub recovery. |
+| Route                               | Description                                                                                                                                                                                                                                                                 |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                 | Public landing page.                                                                                                                                                                                                                                                        |
+| `/pricing`                          | Free/Pro comparison and billing entry.                                                                                                                                                                                                                                      |
+| `/contact`                          | Public contact form.                                                                                                                                                                                                                                                        |
+| `/login`                            | Available provider sign-in and legal links; authenticated Users continue to `/app`, while Google is visible and dormant Apple is omitted.                                                                                                                                   |
+| `/legal/privacy`                    | Launch-required privacy notice; final copy requires review.                                                                                                                                                                                                                 |
+| `/legal/terms`                      | Launch-required terms; final copy requires review.                                                                                                                                                                                                                          |
+| `/invite/club/[token]`              | Club invitation preview, auth continuation, accept/decline, expired state.                                                                                                                                                                                                  |
+| `/invite/session/[token]`           | Member-only Session invitation; generic error for non-members or invalid access.                                                                                                                                                                                            |
+| `/app`                              | Authenticated landing; last Club Hub or no-Clubs state.                                                                                                                                                                                                                     |
+| `/clubs/new`                        | Create Club and configure selection scale.                                                                                                                                                                                                                                  |
+| `/clubs/[clubId]`                   | Club Hub with Overview, Sessions, Ratings, Members, Achievements, and Manage Club views.                                                                                                                                                                                    |
+| `/clubs/[clubId]/sessions/new`      | Create full-cycle or pre-selected Session.                                                                                                                                                                                                                                  |
+| `/clubs/[clubId]/sessions/past/new` | Log a past screening.                                                                                                                                                                                                                                                       |
+| `/sessions/[sessionId]`             | Phase-aware Session detail for Nomination, Selection, Watching, Rating, or Completed.                                                                                                                                                                                       |
+| `/library`                          | Personal ratings, Watchlist, statistics, and achievements.                                                                                                                                                                                                                  |
+| `/movies/[tmdbId]`                  | TMDB-backed Movie Details, personal rating, Watchlist priority, and related films.                                                                                                                                                                                          |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, and import/export sections. Privacy & data holds the personal-data summary and rights actions (personal CSV export, GDPR archive, account deletion) and links to `/legal/privacy`; it does not duplicate policy text. |
+| `/admin`                            | App Admin overview, Users, Clubs, and application settings.                                                                                                                                                                                                                 |
+| `not-found`                         | Branded 404 state with safe navigation.                                                                                                                                                                                                                                     |
+| `error`                             | Branded application error state with retry and Hub recovery.                                                                                                                                                                                                                |
 
 ## 9. Architecture Decisions
 
@@ -369,28 +369,28 @@ Accepted direction is not implemented state: each runtime row remains Proposed u
 phase provides verification. Exact dependency versions are selected and pinned during scaffolding,
 not frozen in planning prose.
 
-| Area | Planning decision | State | Architecture / ADR reference |
-| --- | --- | --- | --- |
-| Repository | pnpm modular monorepo with separate web, API, and worker entrypoints. | Accepted direction; Proposed implementation | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints) |
-| Frontend | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state. | Accepted direction; Proposed implementation | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively) |
-| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority. | Accepted direction; Partial implementation — Google sign-in and deny-by-default protected-boundary authorization are active locally; the reviewed Apple implementation and linking safeguards are retained behind a default-off server gate; owner provider runs remain pending | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) |
-| Database | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants. | Accepted direction; Proposed implementation | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations) |
-| Jobs / async | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation. | Accepted direction; Proposed implementation | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox) |
-| Storage | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static. | Accepted direction; Proposed implementation | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline) |
-| Deployment | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis, one source-built application Compose resource, ordered release/health gates, revision traceability, and no host-published ports. UAT builds current `main`; manual production promotion pins its exact UAT-proven revision to an immutable SemVer tag and stays disabled by default. | Accepted direction; Partial implementation | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags) |
+| Area                    | Planning decision                                                                                                                                                                                                                                                                                                                                            | State                                                                                                                                                                                                                                                                           | Architecture / ADR reference                                                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository              | pnpm modular monorepo with separate web, API, and worker entrypoints.                                                                                                                                                                                                                                                                                        | Accepted direction; Proposed implementation                                                                                                                                                                                                                                     | [ADR-001](_docs/decisions/README.md#adr-001--use-a-pnpm-modular-monorepo-with-three-runtime-entrypoints)                                                                                                |
+| Frontend                | Next.js App Router, project-owned CSS tokens/modules, wrapped selective Mantine primitives, and TanStack Query; add Zustand only for demonstrated cross-route state.                                                                                                                                                                                         | Accepted direction; Proposed implementation                                                                                                                                                                                                                                     | [ADR-006](_docs/decisions/README.md#adr-006--own-projector-noir-and-use-mantine-selectively)                                                                                                            |
+| Backend / auth boundary | NestJS modular REST/SSE API owns same-origin Better Auth OAuth, explicit provider linking, and PostgreSQL-backed opaque sessions; Next.js remains presentation, not auth authority.                                                                                                                                                                          | Accepted direction; Partial implementation — Google sign-in and deny-by-default protected-boundary authorization are active locally; the reviewed Apple implementation and linking safeguards are retained behind a default-off server gate; owner provider runs remain pending | [ADR-002](_docs/decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary), [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary)                   |
+| Database                | PostgreSQL with committed, reviewed Prisma/manual SQL migrations and database-enforced invariants.                                                                                                                                                                                                                                                           | Accepted direction; Proposed implementation                                                                                                                                                                                                                                     | [ADR-003](_docs/decisions/README.md#adr-003--use-postgresql-and-reviewed-prisma-migrations)                                                                                                             |
+| Jobs / async            | Redis + BullMQ execution with a PostgreSQL transactional outbox, idempotent consumers, and reconciliation.                                                                                                                                                                                                                                                   | Accepted direction; Proposed implementation                                                                                                                                                                                                                                     | [ADR-004](_docs/decisions/README.md#adr-004--use-bullmq-with-a-transactional-outbox)                                                                                                                    |
+| Storage                 | S3-compatible private object storage for user/Club avatars and generated exports; bundled brand assets remain static.                                                                                                                                                                                                                                        | Accepted direction; Proposed implementation                                                                                                                                                                                                                                     | [ADR-007 storage scope](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline)                                                                                              |
+| Deployment              | Separate Dokploy UAT/production projects with managed PostgreSQL/Redis, one source-built application Compose resource, ordered release/health gates, revision traceability, and no host-published ports. UAT builds current `main`; manual production promotion pins its exact UAT-proven revision to an immutable SemVer tag and stays disabled by default. | Accepted direction; Partial implementation                                                                                                                                                                                                                                      | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags) |
 
 ## 10. External Integrations
 
-| Provider / capability | Purpose | MVP status | Architecture reference |
-| --- | --- | --- | --- |
-| Google OAuth | Registered identity. | Implemented locally; owner sandbox/UAT evidence pending | [External integrations](ARCHITECTURE.md#external-integrations) |
-| Apple Sign in | Registered identity after approved activation. | Implementation retained but dormant by default; owner Apple Developer Program approval and sandbox/UAT evidence required before enablement | [External integrations](ARCHITECTURE.md#external-integrations) |
-| TMDB | Film search, metadata, credits, images, and related titles. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
-| Paddle | Merchant of record, checkout, recurring subscription state, invoices, portal, tax handling. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
-| Resend | Transactional and opted-in email notifications. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
-| S3-compatible storage | Avatar uploads and time-limited export artifacts. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
-| Sentry | Error and performance visibility with privacy-safe context. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
-| IMDb/Wikipedia links | Optional outbound Movie Details links built from trusted identifiers. | Planned | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Provider / capability | Purpose                                                                                     | MVP status                                                                                                                                 | Architecture reference                                         |
+| --------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| Google OAuth          | Registered identity.                                                                        | Implemented locally; owner sandbox/UAT evidence pending                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Apple Sign in         | Registered identity after approved activation.                                              | Implementation retained but dormant by default; owner Apple Developer Program approval and sandbox/UAT evidence required before enablement | [External integrations](ARCHITECTURE.md#external-integrations) |
+| TMDB                  | Film search, metadata, credits, images, and related titles.                                 | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Paddle                | Merchant of record, checkout, recurring subscription state, invoices, portal, tax handling. | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Resend                | Transactional and opted-in email notifications.                                             | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| S3-compatible storage | Avatar uploads and time-limited export artifacts.                                           | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| Sentry                | Error and performance visibility with privacy-safe context.                                 | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
+| IMDb/Wikipedia links  | Optional outbound Movie Details links built from trusted identifiers.                       | Planned                                                                                                                                    | [External integrations](ARCHITECTURE.md#external-integrations) |
 
 ## 11. Phase Plan
 
@@ -1327,58 +1327,58 @@ sender identities are fixed by
 
 ### Resolved Decisions
 
-| Decision | Owner | Resolution | Evidence |
-| --- | --- | --- | --- |
-| Canonical UAT and production domains | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases. | Developer decision, 2026-08-24. |
-| Selection scale start | Product owner | New Clubs use `0..N` with one slider for N (1–10), matching the canonical Create Club design. The `0|1` start remains accepted by the data model, API, and stored Clubs, so nothing is migrated; tightening the schema needs a separate reviewed migration. | Phase 6 human verification, 2026-09-24. |
-| Product navigation density | Product owner | The mobile Hub strip lists Club views only (My Library is its own tab). The Settings strip and account menu keep Profile, Notifications, Subscription, Privacy, and Sign out, plus Admin Panel for App Admins. Contact stays in the site footer. Pricing is reached from the public header and, later, Subscription. Manage Club stays visible to every member because it carries Leave Club and a read-only view. | Phase 6 human verification, 2026-09-24. |
-| Public marketing navigation | Product owner | Public pages use a header with How it works, Features, and Pricing plus a secondary Go to App entry, and no mobile bottom menu. Below 821px only Go to App stays in the header, and "Compare plans" in the landing price block reaches Pricing. Contact, Privacy, and Terms move to a wordmark-and-tagline footer. | Phase 6 human verification, 2026-09-24. |
-| Proportional MVP deployment baseline | Developer | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production. | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07. |
-| Source-built production promotion | Developer | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement. | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11. |
-| Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers. | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13. |
-| Authentication and account linking | Developer | Run Better Auth inside the NestJS API with database-backed opaque sessions. Identify external accounts by provider subject, disable implicit email linking, and require an explicit fresh-session flow to link Google or Apple identities. Next.js remains presentation rather than session authority. | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16. |
-| Apple Sign In activation | Product owner | Retain the reviewed Apple implementation but keep it disabled in every deployed environment. Activation requires separate owner approval for Apple Developer Program membership, real provider configuration, and sandbox/UAT verification. | Issue #27 review decision, 2026-09-17. |
+| Decision                                     | Owner         | Resolution                                                                                                                                                                                                                                                                                                                                                                                                         | Evidence                                                                                                                                               |
+| -------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Canonical UAT and production domains         | Product owner | Use `https://uat.pick-flick.app` for UAT and `https://pick-flick.app` for production. Do not introduce alternative application-environment aliases.                                                                                                                                                                                                                                                                | Developer decision, 2026-08-24.                                                                                                                        |
+| Selection scale start                        | Product owner | New Clubs use `0..N` with one slider for N (1–10), matching the canonical Create Club design. The `0                                                                                                                                                                                                                                                                                                               | 1` start remains accepted by the data model, API, and stored Clubs, so nothing is migrated; tightening the schema needs a separate reviewed migration. | Phase 6 human verification, 2026-09-24. |
+| Product navigation density                   | Product owner | The mobile Hub strip lists Club views only (My Library is its own tab). The Settings strip and account menu keep Profile, Notifications, Subscription, Privacy, and Sign out, plus Admin Panel for App Admins. Contact stays in the site footer. Pricing is reached from the public header and, later, Subscription. Manage Club stays visible to every member because it carries Leave Club and a read-only view. | Phase 6 human verification, 2026-09-24.                                                                                                                |
+| Public marketing navigation                  | Product owner | Public pages use a header with How it works, Features, and Pricing plus a secondary Go to App entry, and no mobile bottom menu. Below 821px only Go to App stays in the header, and "Compare plans" in the landing price block reaches Pricing. Contact, Privacy, and Terms move to a wordmark-and-tagline footer.                                                                                                 | Phase 6 human verification, 2026-09-24.                                                                                                                |
+| Proportional MVP deployment baseline         | Developer     | Use Dokploy-managed PostgreSQL/Redis and one application Compose resource per environment; trace source-built UAT by full revision, then require UAT-proven digest promotion before production.                                                                                                                                                                                                                    | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07.                                              |
+| Source-built production promotion            | Developer     | For the current single-host MVP, promote only current `main` with exact successful UAT evidence by pinning production to an immutable SemVer tag. Keep production disabled by default and defer digest publication until separate build/deployment hosts or another artifact-identity requirement.                                                                                                                 | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11.                                 |
+| Production contact and email sender identity | Product owner | Publish `hello@pick-flick.app`; send production email as `PickFlick <notifications@pick-flick.app>` and UAT email as `PickFlick UAT <notifications@uat.pick-flick.app>`. Google Workspace receives public mail, Resend sends application mail, Cloudflare owns DNS, and Alex controls all three providers.                                                                                                         | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-09-13.                              |
+| Authentication and account linking           | Developer     | Run Better Auth inside the NestJS API with database-backed opaque sessions. Identify external accounts by provider subject, disable implicit email linking, and require an explicit fresh-session flow to link Google or Apple identities. Next.js remains presentation rather than session authority.                                                                                                             | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16.                                                         |
+| Apple Sign In activation                     | Product owner | Retain the reviewed Apple implementation but keep it disabled in every deployed environment. Activation requires separate owner approval for Apple Developer Program membership, real provider configuration, and sandbox/UAT verification.                                                                                                                                                                        | Issue #27 review decision, 2026-09-17.                                                                                                                 |
 
 ### Open Questions
 
 These do not block guidance creation; each has an explicit decision point.
 
-| Question | Owner | Needed by | Next check |
-| --- | --- | --- | --- |
-| Which administered Club remains writable when a Pro user with several Clubs downgrades to Free? | Product owner | Phase 20 | Design the downgrade choice/default before Paddle entitlement implementation. |
-| How will external crawler caches be refreshed after production cutover? | Product owner | Phase 23 | Define and rehearse the cache-refresh procedure before final production metadata validation. |
+| Question                                                                                                                                                                                              | Owner                                  | Needed by     | Next check                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Which administered Club remains writable when a Pro user with several Clubs downgrades to Free?                                                                                                       | Product owner                          | Phase 20      | Design the downgrade choice/default before Paddle entitlement implementation.                                                  |
+| How will external crawler caches be refreshed after production cutover?                                                                                                                               | Product owner                          | Phase 23      | Define and rehearse the cache-refresh procedure before final production metadata validation.                                   |
 | What exact deletion, export-artifact, audit, inactive-data, and backup retention periods are legally approved, and which external legal actions are launch gates versus owned post-launch follow-ups? | Product owner + legal/privacy reviewer | Phase 19 / 23 | Reconcile technically shipped behavior, backup policy, published privacy copy, and legal disposition before release readiness. |
-| Which PWA service-worker approach and supported browser/device matrix will be maintained? | Developer + implementation agent | Phase 1 / 22 | Verify current framework compatibility during foundation work and finalize before PWA implementation. |
-| Who is the release owner and rollback authority, and what exact revision/readiness/smoke evidence is required before and after production cutover? | Product owner + release owner | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal. |
-| What are the production backup destination, restore target, and regional or hosting-account-loss strategy? | Product owner + infrastructure owner | Phase 23 | Approve the deployment/operations ADR, then complete the restore and disaster-recovery drill. |
-| Which proxy configuration establishes trustworthy client identity, abuse limits, and graceful drain behavior? | Infrastructure owner + developer | Phase 23 | Decide with the final deployment topology and verify in the production-like UAT drill. |
+| Which PWA service-worker approach and supported browser/device matrix will be maintained?                                                                                                             | Developer + implementation agent       | Phase 1 / 22  | Verify current framework compatibility during foundation work and finalize before PWA implementation.                          |
+| Who is the release owner and rollback authority, and what exact revision/readiness/smoke evidence is required before and after production cutover?                                                    | Product owner + release owner          | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal.                                                 |
+| What are the production backup destination, restore target, and regional or hosting-account-loss strategy?                                                                                            | Product owner + infrastructure owner   | Phase 23      | Approve the deployment/operations ADR, then complete the restore and disaster-recovery drill.                                  |
+| Which proxy configuration establishes trustworthy client identity, abuse limits, and graceful drain behavior?                                                                                         | Infrastructure owner + developer       | Phase 23      | Decide with the final deployment topology and verify in the production-like UAT drill.                                         |
 
 ### Deferred Decisions & Tech Debt
 
-| # | Item | Context | Current stance | Revisit trigger |
-| --- | --- | --- | --- | --- |
-| 1 | Recalculate personal movie ratings from history across all Clubs | MVP keeps historical Session Ratings separate from one editable Personal Rating. | A new Session Rating updates the current Personal Rating; later edits do not rewrite history. | Users need computed averages, per-viewing trends, or a “rebuild from history” action. |
-| 2 | Adminless Club recovery | Account deletion can leave a Club with no Admin and members are notified. | Preserve history and disable owner-only operations. | First real occurrence, support burden, or ownership-recovery feature planning. |
-| 3 | Recommendation algorithm | Movie Details requires “You may also like.” | Use TMDB/provider-related titles with deterministic fallback. | AI recommendation phase begins or provider quality is insufficient. |
-| 4 | Annual billing | Admin prototype includes annual fixture data but initial offer is monthly. | Do not implement annual plans. | Commercial validation supports an annual offer. |
-| 5 | Offline mutation model | Online-first PWA is sufficient for MVP. | Reject/disable network-required actions with clear recovery; never silently queue them. | Field usage demonstrates meaningful offline demand. |
-| 6 | Localization | Settings prototype mentions Russian later. | Externalize copy and formats but ship English only. | Russian implementation is scheduled. |
-| 7 | Legal/privacy prototype copy | Prototype includes unapproved numeric and “no cookie banner” claims. | Treat as design copy, not policy truth. | Pre-launch privacy/legal review. |
+| #   | Item                                                             | Context                                                                          | Current stance                                                                                | Revisit trigger                                                                       |
+| --- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1   | Recalculate personal movie ratings from history across all Clubs | MVP keeps historical Session Ratings separate from one editable Personal Rating. | A new Session Rating updates the current Personal Rating; later edits do not rewrite history. | Users need computed averages, per-viewing trends, or a “rebuild from history” action. |
+| 2   | Adminless Club recovery                                          | Account deletion can leave a Club with no Admin and members are notified.        | Preserve history and disable owner-only operations.                                           | First real occurrence, support burden, or ownership-recovery feature planning.        |
+| 3   | Recommendation algorithm                                         | Movie Details requires “You may also like.”                                      | Use TMDB/provider-related titles with deterministic fallback.                                 | AI recommendation phase begins or provider quality is insufficient.                   |
+| 4   | Annual billing                                                   | Admin prototype includes annual fixture data but initial offer is monthly.       | Do not implement annual plans.                                                                | Commercial validation supports an annual offer.                                       |
+| 5   | Offline mutation model                                           | Online-first PWA is sufficient for MVP.                                          | Reject/disable network-required actions with clear recovery; never silently queue them.       | Field usage demonstrates meaningful offline demand.                                   |
+| 6   | Localization                                                     | Settings prototype mentions Russian later.                                       | Externalize copy and formats but ship English only.                                           | Russian implementation is scheduled.                                                  |
+| 7   | Legal/privacy prototype copy                                     | Prototype includes unapproved numeric and “no cookie banner” claims.             | Treat as design copy, not policy truth.                                                       | Pre-launch privacy/legal review.                                                      |
 
 ## 13. Post-MVP Backlog
 
-| Item | Value | Dependencies | Priority |
-| --- | --- | --- | --- |
-| AI watch-history analysis | Personal trends and deeper retention insight. | Sufficient history, consent/privacy design, evaluation, inference cost controls. | High |
-| Personal rating recomputation/history views | Lets users understand changing opinions across repeated screenings. | Stable Session/Personal Rating model. | High |
-| Personalized AI recommendations | More relevant discovery than provider-related titles. | History quality, AI evaluation, privacy and cost controls. | Medium |
-| AI-enhanced Club analytics | Adds optional assisted insight after deterministic Club analytics prove useful. | Stable deterministic analytics, privacy design, evaluation, and cost controls. | Medium |
-| Club rating CSV export | Portable Club analysis. | Export authorization and privacy policy. | Medium |
-| Russian localization | Expands accessibility for intended users. | Externalized strings and locale QA. | Medium |
-| Web push | Timelier phase participation. | PWA permission strategy and notification reliability. | Medium |
-| Offline writes | Use during poor-connectivity movie nights. | Conflict-resolution and stale-phase protocol. | Low |
-| Annual Pro plan | Lower churn and commercial flexibility. | Monthly plan validation and Paddle pricing design. | Low |
-| Adminless Club ownership recovery | Restores owner-only operations without corrupting shared history. | Real support evidence and an approved identity/ownership recovery policy. | Low |
+| Item                                        | Value                                                                           | Dependencies                                                                     | Priority |
+| ------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------- |
+| AI watch-history analysis                   | Personal trends and deeper retention insight.                                   | Sufficient history, consent/privacy design, evaluation, inference cost controls. | High     |
+| Personal rating recomputation/history views | Lets users understand changing opinions across repeated screenings.             | Stable Session/Personal Rating model.                                            | High     |
+| Personalized AI recommendations             | More relevant discovery than provider-related titles.                           | History quality, AI evaluation, privacy and cost controls.                       | Medium   |
+| AI-enhanced Club analytics                  | Adds optional assisted insight after deterministic Club analytics prove useful. | Stable deterministic analytics, privacy design, evaluation, and cost controls.   | Medium   |
+| Club rating CSV export                      | Portable Club analysis.                                                         | Export authorization and privacy policy.                                         | Medium   |
+| Russian localization                        | Expands accessibility for intended users.                                       | Externalized strings and locale QA.                                              | Medium   |
+| Web push                                    | Timelier phase participation.                                                   | PWA permission strategy and notification reliability.                            | Medium   |
+| Offline writes                              | Use during poor-connectivity movie nights.                                      | Conflict-resolution and stale-phase protocol.                                    | Low      |
+| Annual Pro plan                             | Lower churn and commercial flexibility.                                         | Monthly plan validation and Paddle pricing design.                               | Low      |
+| Adminless Club ownership recovery           | Restores owner-only operations without corrupting shared history.               | Real support evidence and an approved identity/ownership recovery policy.        | Low      |
 
 ### Owning tickets
 
@@ -1395,33 +1395,33 @@ These do not block guidance creation; each has an explicit decision point.
 
 ## 14. Progress Tracking
 
-| Phase | Status | Evidence | Notes |
-| --- | --- | --- | --- |
-| 0 — Guidance Baseline | Done | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22. | No application code was created. |
-| 1 — Infrastructure, Repository & Deployment Foundation | Not started |  | First implementation phase; create the active phase document before coding. |
-| 2 — Production Design System & App Shells | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md) | Issue #17 implements the production foundations; preview review remains required. |
-| 3 — Public Site & System States | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing, Pricing, Contact, provisional legal entry, indexing boundaries, and recovery surfaces are implemented and locally verified. Required exact-SHA visual acknowledgements remain. |
-| 4 — Authentication & Account Onboarding | In progress | [Active Phase 4 plan](_docs/phase-4-authentication-account-onboarding.md) and [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary) | The auth/session implementation and account-linking contract are approved. Google and protected-boundary authorization are active locally; Apple is implemented but dormant behind the owner-controlled provisioning gate. Owner provider runs remain. |
-| 5 — Clubs, Membership & Roles | Not started |  |  |
-| 6 — Human Verification & Bug Fixing I | Not started |  | Stabilization gate for Phases 1–5. |
-| 7 — Club Hub & Club Invitations | Not started |  |  |
-| 8 — Movie Catalog, TMDB & Global Search | Not started |  |  |
-| 9 — Session Creation & Participant Roster | Not started |  |  |
-| 10 — Nomination & Deadline Automation | Not started |  |  |
-| 11 — Selection & Winner Resolution | Not started |  |  |
-| 12 — Human Verification & Bug Fixing II | Not started |  | Stabilization gate for Phases 7–11. |
-| 13 — Watching, Rating & Completion | Not started |  | Completes the live core loop. |
-| 14 — Past Sessions & Shared History | Not started |  |  |
-| 15 — Personal Library, Ratings & Watchlist | Not started |  |  |
-| 16 — Club/Personal Statistics & Achievements | Not started |  |  |
-| 17 — Notifications & Preferences | Not started |  |  |
-| 18 — Human Verification & Bug Fixing III | Not started |  | Stabilization gate for Phases 13–17. |
-| 19 — Profile, Privacy, Import/Export & Account Deletion | Not started |  |  |
-| 20 — Subscription & Entitlements | Not started |  |  |
-| 21 — App Admin & Operational Controls | Not started |  |  |
-| 22 — PWA & Mobile Installability | Not started |  |  |
-| 23 — Security, SEO, Observability & Release Readiness | Not started |  | Produces the release candidate. |
-| 24 — Human Verification & Bug Fixing IV | Not started |  | Final UAT and explicit go/no-go gate. |
-| 25 — Production Deploy | Not started |  | Requires Phase 24 Go decision. |
+| Phase                                                   | Status      | Evidence                                                                                                                                                                           | Notes                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0 — Guidance Baseline                                   | Done        | Guidance validator, prototype-link scan, JSON checks, 24-asset manifest/dimension check, and cleanup checks passed on 2026-07-22.                                                  | No application code was created.                                                                                                                                                                                                                       |
+| 1 — Infrastructure, Repository & Deployment Foundation  | Not started |                                                                                                                                                                                    | First implementation phase; create the active phase document before coding.                                                                                                                                                                            |
+| 2 — Production Design System & App Shells               | In progress | [Active Phase 2 plan](_docs/phase-2-production-design-system.md)                                                                                                                   | Issue #17 implements the production foundations; preview review remains required.                                                                                                                                                                      |
+| 3 — Public Site & System States                         | In progress | [Active Phase 3 plan](_docs/phase-3-public-site-system-states.md) and [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) | Contact/email identity is approved; Landing, Pricing, Contact, provisional legal entry, indexing boundaries, and recovery surfaces are implemented and locally verified. Required exact-SHA visual acknowledgements remain.                            |
+| 4 — Authentication & Account Onboarding                 | In progress | [Active Phase 4 plan](_docs/phase-4-authentication-account-onboarding.md) and [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary)                    | The auth/session implementation and account-linking contract are approved. Google and protected-boundary authorization are active locally; Apple is implemented but dormant behind the owner-controlled provisioning gate. Owner provider runs remain. |
+| 5 — Clubs, Membership & Roles                           | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 6 — Human Verification & Bug Fixing I                   | Not started |                                                                                                                                                                                    | Stabilization gate for Phases 1–5.                                                                                                                                                                                                                     |
+| 7 — Club Hub & Club Invitations                         | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 8 — Movie Catalog, TMDB & Global Search                 | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 9 — Session Creation & Participant Roster               | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 10 — Nomination & Deadline Automation                   | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 11 — Selection & Winner Resolution                      | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 12 — Human Verification & Bug Fixing II                 | Not started |                                                                                                                                                                                    | Stabilization gate for Phases 7–11.                                                                                                                                                                                                                    |
+| 13 — Watching, Rating & Completion                      | Not started |                                                                                                                                                                                    | Completes the live core loop.                                                                                                                                                                                                                          |
+| 14 — Past Sessions & Shared History                     | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 15 — Personal Library, Ratings & Watchlist              | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 16 — Club/Personal Statistics & Achievements            | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 17 — Notifications & Preferences                        | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 18 — Human Verification & Bug Fixing III                | Not started |                                                                                                                                                                                    | Stabilization gate for Phases 13–17.                                                                                                                                                                                                                   |
+| 19 — Profile, Privacy, Import/Export & Account Deletion | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 20 — Subscription & Entitlements                        | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 21 — App Admin & Operational Controls                   | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 22 — PWA & Mobile Installability                        | Not started |                                                                                                                                                                                    |                                                                                                                                                                                                                                                        |
+| 23 — Security, SEO, Observability & Release Readiness   | Not started |                                                                                                                                                                                    | Produces the release candidate.                                                                                                                                                                                                                        |
+| 24 — Human Verification & Bug Fixing IV                 | Not started |                                                                                                                                                                                    | Final UAT and explicit go/no-go gate.                                                                                                                                                                                                                  |
+| 25 — Production Deploy                                  | Not started |                                                                                                                                                                                    | Requires Phase 24 Go decision.                                                                                                                                                                                                                         |
 
 Status: `Not started` · `In progress` · `Done` · `Blocked` · `Needs approval`

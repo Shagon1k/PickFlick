@@ -1,37 +1,39 @@
-import type { ServerResponse } from "node:http";
+import type { ServerResponse } from 'node:http';
 
-import { Controller, Get, Inject, Res } from "@nestjs/common";
-import type { LivenessReport, ReadinessReport } from "@pickflick/contracts";
-import type { ApplicationLogger } from "@pickflick/observability";
+import { Controller, Get, Inject, Res } from '@nestjs/common';
+import type { LivenessReport, ReadinessReport } from '@pickflick/contracts';
+import type { ApplicationLogger } from '@pickflick/observability';
 
-import { Public } from "./identity/authorization.decorators.js";
-import { HealthService } from "./health.service.js";
-import { APPLICATION_LOGGER } from "./runtime.tokens.js";
+import { Public } from './identity/authorization.decorators.js';
+import { HealthService } from './health.service.js';
+import { APPLICATION_LOGGER } from './runtime.tokens.js';
 
-@Controller("health")
+@Controller('health')
 export class HealthController {
-  constructor(
-    private readonly health: HealthService,
-    @Inject(APPLICATION_LOGGER) private readonly logger: ApplicationLogger,
-  ) {}
+    constructor(
+        private readonly health: HealthService,
+        @Inject(APPLICATION_LOGGER) private readonly logger: ApplicationLogger,
+    ) {}
 
-  @Get("live")
-  @Public()
-  liveness(): LivenessReport {
-    return this.health.liveness();
-  }
-
-  @Get("ready")
-  @Public()
-  async readiness(@Res({ passthrough: true }) response: ServerResponse): Promise<ReadinessReport> {
-    const report = await this.health.readiness();
-    if (report.status === "not_ready") {
-      response.statusCode = 503;
-      this.logger.warn(
-        { event: "readiness.not_ready", checks: report.checks },
-        "API readiness has unavailable dependencies.",
-      );
+    @Get('live')
+    @Public()
+    liveness(): LivenessReport {
+        return this.health.liveness();
     }
-    return report;
-  }
+
+    @Get('ready')
+    @Public()
+    async readiness(
+        @Res({ passthrough: true }) response: ServerResponse,
+    ): Promise<ReadinessReport> {
+        const report = await this.health.readiness();
+        if (report.status === 'not_ready') {
+            response.statusCode = 503;
+            this.logger.warn(
+                { event: 'readiness.not_ready', checks: report.checks },
+                'API readiness has unavailable dependencies.',
+            );
+        }
+        return report;
+    }
 }

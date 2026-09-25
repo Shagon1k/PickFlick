@@ -43,16 +43,16 @@ workflow never creates tags, changes the Compose branch, or saves its environmen
    test recipients.
 4. Create a Docker Compose resource with this immutable configuration:
 
-| Setting | Value |
-| --- | --- |
-| Source | GitHub |
-| Owner/repository | `Shagon1k/PickFlick` |
-| Branch | `main` |
-| Auto deploy | Off |
-| Compose type | Docker Compose, not Stack |
-| Compose path | `compose.deploy.yaml` |
-| Isolated deployment | Off |
-| Custom Command | Empty |
+| Setting             | Value                     |
+| ------------------- | ------------------------- |
+| Source              | GitHub                    |
+| Owner/repository    | `Shagon1k/PickFlick`      |
+| Branch              | `main`                    |
+| Auto deploy         | Off                       |
+| Compose type        | Docker Compose, not Stack |
+| Compose path        | `compose.deploy.yaml`     |
+| Isolated deployment | Off                       |
+| Custom Command      | Empty                     |
 
 `compose.deploy.yaml` owns release ordering: `release` completes successfully before `api` and
 `worker`; `web` waits for API health. Dokploy's standard Compose deployment is the sole runtime

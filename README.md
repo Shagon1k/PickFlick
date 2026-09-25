@@ -9,14 +9,14 @@ and provisioned deployment environments remain future work.
 
 ## Start here
 
-| Need | Source |
-| --- | --- |
-| Select or track actionable work | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) |
-| Understand MVP scope, business rules, and phase sequencing | [ROADMAP.md](ROADMAP.md) |
-| Implement or review the experience | [DESIGN.md](DESIGN.md) and the [prototype package](_docs/design/prototypes/index.html) |
-| Understand proposed technical boundaries | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| Navigate repository guidance | [_docs/README.md](_docs/README.md) |
-| Contribute a change | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Need                                                       | Source                                                                                 |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Select or track actionable work                            | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3)                       |
+| Understand MVP scope, business rules, and phase sequencing | [ROADMAP.md](ROADMAP.md)                                                               |
+| Implement or review the experience                         | [DESIGN.md](DESIGN.md) and the [prototype package](_docs/design/prototypes/index.html) |
+| Understand proposed technical boundaries                   | [ARCHITECTURE.md](ARCHITECTURE.md)                                                     |
+| Navigate repository guidance                               | [\_docs/README.md](_docs/README.md)                                                    |
+| Contribute a change                                        | [CONTRIBUTING.md](CONTRIBUTING.md)                                                     |
 
 ## Run locally
 

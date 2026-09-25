@@ -1,106 +1,106 @@
 .page {
-  width: min(var(--container), calc(100% - (2 * var(--gutter))));
-  margin-inline: auto;
-  padding-block: clamp(var(--gap-xl), 8vw, var(--gap-2xl));
+    width: min(var(--container), calc(100% - (2 * var(--gutter))));
+    margin-inline: auto;
+    padding-block: clamp(var(--gap-xl), 8vw, var(--gap-2xl));
 }
 
 .hero {
-  display: grid;
-  gap: var(--gap-xl);
-  align-items: center;
-  padding-bottom: var(--gap-xl);
-  border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: var(--gap-xl);
+    align-items: center;
+    padding-bottom: var(--gap-xl);
+    border-bottom: 1px solid var(--border);
 }
 
 .hero h1 {
-  max-width: 860px;
-  margin: var(--gap-sm) 0 var(--gap-md);
-  font: var(--fs-hero)/var(--lh-tight) var(--font-display);
-  letter-spacing: var(--tracking-tight);
+    max-width: 860px;
+    margin: var(--gap-sm) 0 var(--gap-md);
+    font: var(--fs-hero)/var(--lh-tight) var(--font-display);
+    letter-spacing: var(--tracking-tight);
 }
 
 .hero p:not(.eyebrow) {
-  max-width: 62ch;
-  color: var(--fg-secondary);
-  line-height: var(--lh-body);
+    max-width: 62ch;
+    color: var(--fg-secondary);
+    line-height: var(--lh-body);
 }
 
 .heroImage {
-  width: min(100%, 420px);
-  height: auto;
-  margin-inline: auto;
+    width: min(100%, 420px);
+    height: auto;
+    margin-inline: auto;
 }
 
 .eyebrow,
 .cardLabel {
-  margin: 0;
-  color: var(--ivory-muted);
-  font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
+    margin: 0;
+    color: var(--ivory-muted);
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
 }
 
 .section {
-  padding-top: var(--gap-xl);
+    padding-top: var(--gap-xl);
 }
 
 .section h2 {
-  margin: 0 0 var(--gap-lg);
-  font: var(--fs-section)/var(--lh-title) var(--font-display);
+    margin: 0 0 var(--gap-lg);
+    font: var(--fs-section)/var(--lh-title) var(--font-display);
 }
 
 .grid {
-  display: grid;
-  gap: var(--gap-sm);
+    display: grid;
+    gap: var(--gap-sm);
 }
 
 .card {
-  display: grid;
-  gap: var(--gap-sm);
-  min-width: 0;
-  padding: var(--gap-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: rgba(22, 22, 22, 0.44);
+    display: grid;
+    gap: var(--gap-sm);
+    min-width: 0;
+    padding: var(--gap-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: rgba(22, 22, 22, 0.44);
 }
 
 .card h3,
 .card p {
-  margin: 0;
+    margin: 0;
 }
 
 .card h3 {
-  font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
 }
 
 .card p:not(.cardLabel) {
-  color: var(--fg-secondary);
-  line-height: var(--lh-body);
+    color: var(--fg-secondary);
+    line-height: var(--lh-body);
 }
 
 .card a {
-  width: fit-content;
-  margin-top: auto;
+    width: fit-content;
+    margin-top: auto;
 }
 
 @media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (min-width: 1024px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-  }
+    .hero {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+    }
 
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 575px) {
-  .page {
-    width: calc(100% - 32px);
-  }
+    .page {
+        width: calc(100% - 32px);
+    }
 }

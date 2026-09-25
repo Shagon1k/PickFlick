@@ -1,80 +1,80 @@
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html {
-  background: var(--bg);
+    background: var(--bg);
 }
 
 body {
-  min-height: 100vh;
-  margin: 0;
-  color: var(--fg);
-  background: var(--bg);
-  font-family: var(--font-body);
+    min-height: 100vh;
+    margin: 0;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: var(--font-body);
 }
 
 /* Projector Noir film grain: a fixed 2.5% texture over every screen that never takes input. */
 body::after {
-  position: fixed;
-  z-index: 2147483000;
-  inset: 0;
-  content: "";
-  background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
-  opacity: 0.025;
-  pointer-events: none;
+    position: fixed;
+    z-index: 2147483000;
+    inset: 0;
+    content: '';
+    background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
+    opacity: 0.025;
+    pointer-events: none;
 }
 
 :focus-visible {
-  outline: 1px solid var(--focus);
-  box-shadow: var(--focus-ring);
+    outline: 1px solid var(--focus);
+    box-shadow: var(--focus-ring);
 }
 
 .scaffold-panel {
-  width: min(100% - 2rem, 72rem);
-  min-height: 100vh;
-  margin: 0 auto;
-  display: grid;
-  align-content: center;
-  padding-block: 4rem;
+    width: min(100% - 2rem, 72rem);
+    min-height: 100vh;
+    margin: 0 auto;
+    display: grid;
+    align-content: center;
+    padding-block: 4rem;
 }
 
 .scaffold-panel__eyebrow {
-  margin: 0 0 1rem;
-  color: var(--ivory-muted);
-  font: 0.75rem/1.2 var(--font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+    margin: 0 0 1rem;
+    color: var(--ivory-muted);
+    font: 0.75rem/1.2 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .scaffold-panel h1 {
-  margin: 0;
-  font: clamp(3rem, 12vw, 6.5rem) / 0.95 var(--font-display);
-  letter-spacing: -0.025em;
+    margin: 0;
+    font: clamp(3rem, 12vw, 6.5rem) / 0.95 var(--font-display);
+    letter-spacing: -0.025em;
 }
 
 .scaffold-panel__body {
-  max-width: 36rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--gold-border);
-  color: var(--fg-secondary);
-  line-height: 1.55;
+    max-width: 36rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gold-border);
+    color: var(--fg-secondary);
+    line-height: 1.55;
 }
 
 @media (min-width: 48rem) {
-  .scaffold-panel {
-    width: min(100% - 3rem, 72rem);
-  }
+    .scaffold-panel {
+        width: min(100% - 3rem, 72rem);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-  }
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
 }

@@ -6,11 +6,11 @@ own visible behavior, and GitHub Project 3 owns live issue status.
 
 ## Owning issues
 
-| Slice | Issue | Outcome |
-| --- | --- | --- |
-| 5.1 | [#29 — Implement Club membership, roles, constraints, and policy projections](https://github.com/Shagon1k/PickFlick/issues/29) | Establish the private Club boundary, role invariants, temporary Free/Pro tier limits, transactional role changes, and audit records. |
-| 5.2 | [#30 — Deliver no-Clubs and Create Club onboarding with Selection-scale setup](https://github.com/Shagon1k/PickFlick/issues/30) | Add transactional Club creation and the responsive first-Club experience. |
-| 5.3 | [#31 — Add Club settings, lifecycle, role management, and destructive safeguards](https://github.com/Shagon1k/PickFlick/issues/31) | Expose settings, membership administration, lifecycle actions, and confirmed destructive flows. |
+| Slice | Issue                                                                                                                              | Outcome                                                                                                                              |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 5.1   | [#29 — Implement Club membership, roles, constraints, and policy projections](https://github.com/Shagon1k/PickFlick/issues/29)     | Establish the private Club boundary, role invariants, temporary Free/Pro tier limits, transactional role changes, and audit records. |
+| 5.2   | [#30 — Deliver no-Clubs and Create Club onboarding with Selection-scale setup](https://github.com/Shagon1k/PickFlick/issues/30)    | Add transactional Club creation and the responsive first-Club experience.                                                            |
+| 5.3   | [#31 — Add Club settings, lifecycle, role management, and destructive safeguards](https://github.com/Shagon1k/PickFlick/issues/31) | Expose settings, membership administration, lifecycle actions, and confirmed destructive flows.                                      |
 
 ## Sequence and boundaries
 
@@ -89,13 +89,13 @@ replaces that resolver with subscription-derived state.
 
 ## Verification in progress
 
-| Evidence | Command or source | Status |
-| --- | --- | --- |
-| Database invariants and migration upgrade | `pnpm db:check` | Passed locally against fresh isolated PostgreSQL with all eight migrations, including upgrade compatibility, Club settings defaults, Membership/Admin constraints, deletion tombstones, and audit-shape enforcement. |
-| Role/action, validation, and forged-request matrix | `pnpm test` | Passed locally: all 365 tests, including focused Club management, controller, authorization HTTP, and web API coverage for Admin, Moderator, Member, App Admin, suspended, non-member, archived, unsafe file, confirmation, entitlement, and operation-ID cases. |
+| Evidence                                                    | Command or source | Status                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database invariants and migration upgrade                   | `pnpm db:check`   | Passed locally against fresh isolated PostgreSQL with all eight migrations, including upgrade compatibility, Club settings defaults, Membership/Admin constraints, deletion tombstones, and audit-shape enforcement.                                                                                     |
+| Role/action, validation, and forged-request matrix          | `pnpm test`       | Passed locally: all 365 tests, including focused Club management, controller, authorization HTTP, and web API coverage for Admin, Moderator, Member, App Admin, suspended, non-member, archived, unsafe file, confirmation, entitlement, and operation-ID cases.                                         |
 | Transactional settings, lifecycle, roles, and audit records | `pnpm club:check` | Passed locally against fresh isolated PostgreSQL: current-state authorization, Free visibility limits, role changes, archive/reactivate, leave, Session-history deletion refusal, exact-name empty-Club deletion, tombstones, private avatar references, safe logs, and idempotent receipts are covered. |
-| Club settings responsive and interaction QA | `pnpm ui:test` | Passed locally: all 171 checks, including the 13 settings checks at S/M/L/XL and bridge widths for private denial, axe, overflow, Admin mutations, role changes, archive confirmation, Member leave, archived/read-only explanations, and eight reviewed captures. |
-| Workspace quality gates | `pnpm verify` | Passed locally: lint, type-check, 365 tests, workspace-boundary validation, and all production builds. |
+| Club settings responsive and interaction QA                 | `pnpm ui:test`    | Passed locally: all 171 checks, including the 13 settings checks at S/M/L/XL and bridge widths for private denial, axe, overflow, Admin mutations, role changes, archive confirmation, Member leave, archived/read-only explanations, and eight reviewed captures.                                       |
+| Workspace quality gates                                     | `pnpm verify`     | Passed locally: lint, type-check, 365 tests, workspace-boundary validation, and all production builds.                                                                                                                                                                                                   |
 
 At the Phase 5 boundary, move durable implementation facts into canonical guidance, record phase
 evidence in `ROADMAP.md`, and delete this file plus its docs-map link.

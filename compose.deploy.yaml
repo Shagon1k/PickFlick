@@ -1,137 +1,149 @@
 name: pickflick-${APP_ENV:?APP_ENV must be uat or production}
 
 x-build: &build
-  context: .
-  dockerfile: Dockerfile
-  args:
-    SOURCE_REVISION: ${SOURCE_REVISION:-}
+    context: .
+    dockerfile: Dockerfile
+    args:
+        SOURCE_REVISION: ${SOURCE_REVISION:-}
 
 x-runtime-environment: &runtime-environment
-  APP_ENV: ${APP_ENV:?APP_ENV is required}
-  SHUTDOWN_TIMEOUT_MS: "10000"
-  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-  REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
-  STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
-  STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
-  STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
-  STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
-  STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
-  STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE:?STORAGE_FORCE_PATH_STYLE is required}
-  RESEND_DELIVERY_MODE: live
-  RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
-  RESEND_FROM: ${RESEND_FROM:?RESEND_FROM is required}
-  CONTACT_DELIVERY_TO: ${CONTACT_DELIVERY_TO:?CONTACT_DELIVERY_TO is required}
-  CONTACT_HASH_SECRET: ${CONTACT_HASH_SECRET:?CONTACT_HASH_SECRET is required}
+    APP_ENV: ${APP_ENV:?APP_ENV is required}
+    SHUTDOWN_TIMEOUT_MS: '10000'
+    DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
+    STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
+    STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
+    STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
+    STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
+    STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
+    STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE:?STORAGE_FORCE_PATH_STYLE is required}
+    RESEND_DELIVERY_MODE: live
+    RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+    RESEND_FROM: ${RESEND_FROM:?RESEND_FROM is required}
+    CONTACT_DELIVERY_TO: ${CONTACT_DELIVERY_TO:?CONTACT_DELIVERY_TO is required}
+    CONTACT_HASH_SECRET: ${CONTACT_HASH_SECRET:?CONTACT_HASH_SECRET is required}
 
 x-application-service: &application-service
-  cap_drop:
-    - ALL
-  init: true
-  read_only: true
-  restart: unless-stopped
-  security_opt:
-    - no-new-privileges:true
-  stop_grace_period: 15s
-  stop_signal: SIGTERM
-  tmpfs:
-    - /tmp
+    cap_drop:
+        - ALL
+    init: true
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+        - no-new-privileges:true
+    stop_grace_period: 15s
+    stop_signal: SIGTERM
+    tmpfs:
+        - /tmp
 
 services:
-  release:
-    <<: *application-service
-    build:
-      <<: *build
-      target: release
-    environment:
-      APP_ENV: ${APP_ENV:?APP_ENV is required}
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-    networks:
-      application:
-        aliases:
-          - pickflick-${APP_ENV:?APP_ENV is required}-release
-    restart: "no"
+    release:
+        <<: *application-service
+        build:
+            <<: *build
+            target: release
+        environment:
+            APP_ENV: ${APP_ENV:?APP_ENV is required}
+            DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+        networks:
+            application:
+                aliases:
+                    - pickflick-${APP_ENV:?APP_ENV is required}-release
+        restart: 'no'
 
-  api:
-    <<: *application-service
-    build:
-      <<: *build
-      target: api
-    environment:
-      <<: *runtime-environment
-      API_HOST: 0.0.0.0
-      API_PORT: 3001
-      AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
-      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
-      APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
-      APPLE_CLIENT_ID: "${APPLE_CLIENT_ID:-}"
-      APPLE_KEY_ID: "${APPLE_KEY_ID:-}"
-      APPLE_PRIVATE_KEY: "${APPLE_PRIVATE_KEY:-}"
-      APPLE_TEAM_ID: "${APPLE_TEAM_ID:-}"
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
-    depends_on:
-      release:
-        condition: service_completed_successfully
-        required: true
-    expose:
-      - "3001"
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    networks:
-      application:
-        aliases:
-          - pickflick-${APP_ENV:?APP_ENV is required}-api
+    api:
+        <<: *application-service
+        build:
+            <<: *build
+            target: api
+        environment:
+            <<: *runtime-environment
+            API_HOST: 0.0.0.0
+            API_PORT: 3001
+            AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
+            AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+            APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
+            APPLE_CLIENT_ID: '${APPLE_CLIENT_ID:-}'
+            APPLE_KEY_ID: '${APPLE_KEY_ID:-}'
+            APPLE_PRIVATE_KEY: '${APPLE_PRIVATE_KEY:-}'
+            APPLE_TEAM_ID: '${APPLE_TEAM_ID:-}'
+            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
+        depends_on:
+            release:
+                condition: service_completed_successfully
+                required: true
+        expose:
+            - '3001'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+        networks:
+            application:
+                aliases:
+                    - pickflick-${APP_ENV:?APP_ENV is required}-api
 
-  worker:
-    <<: *application-service
-    build:
-      <<: *build
-      target: worker
-    environment: *runtime-environment
-    depends_on:
-      release:
-        condition: service_completed_successfully
-        required: true
-    networks:
-      application:
-        aliases:
-          - pickflick-${APP_ENV:?APP_ENV is required}-worker
+    worker:
+        <<: *application-service
+        build:
+            <<: *build
+            target: worker
+        environment: *runtime-environment
+        depends_on:
+            release:
+                condition: service_completed_successfully
+                required: true
+        networks:
+            application:
+                aliases:
+                    - pickflick-${APP_ENV:?APP_ENV is required}-worker
 
-  web:
-    <<: *application-service
-    build:
-      <<: *build
-      target: web
-      args:
-        BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
-        SOURCE_REVISION: ${SOURCE_REVISION:-}
-    environment:
-      APP_ENV: ${APP_ENV:?APP_ENV is required}
-      APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
-      BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
-      NODE_ENV: production
-    depends_on:
-      api:
-        condition: service_healthy
-    expose:
-      - "3000"
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    networks:
-      application:
-        aliases:
-          - pickflick-${APP_ENV:?APP_ENV is required}-web
-    tmpfs:
-      - /tmp
-      - /app/apps/web/.next/cache
+    web:
+        <<: *application-service
+        build:
+            <<: *build
+            target: web
+            args:
+                BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
+                SOURCE_REVISION: ${SOURCE_REVISION:-}
+        environment:
+            APP_ENV: ${APP_ENV:?APP_ENV is required}
+            APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
+            BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
+            NODE_ENV: production
+        depends_on:
+            api:
+                condition: service_healthy
+        expose:
+            - '3000'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+        networks:
+            application:
+                aliases:
+                    - pickflick-${APP_ENV:?APP_ENV is required}-web
+        tmpfs:
+            - /tmp
+            - /app/apps/web/.next/cache
 
 networks:
-  application:
-    external: true
-    name: dokploy-network
+    application:
+        external: true
+        name: dokploy-network

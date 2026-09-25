@@ -17,7 +17,7 @@
 - For actionable delivery work, inspect [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) and read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - For GitHub task routing, Project 3 workflow, and run authorization, read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
 - Inspect `git status --short` before editing and preserve unrelated user changes.
-- Before frontend work, inspect the canonical screen, [_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
+- Before frontend work, inspect the canonical screen, [\_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
 - Before domain/API/worker work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
 - For changes touching more than 5 files or roughly 100 lines, present a short impact/verification plan and obtain approval unless an already-approved phase/task clearly covers that breadth.
 - Group genuine requirement questions. If a safe, reversible assumption does not change product scope, state it and proceed.
@@ -43,41 +43,41 @@
 
 Use the Node and pnpm versions pinned by `.node-version` and `package.json` from the repository root.
 
-| Task | Command |
-| --- | --- |
-| Install dependencies | `pnpm install --frozen-lockfile` |
-| Start local data services and create the object-storage bucket | `pnpm services:up` |
-| Check local PostgreSQL, Redis, and object storage | `pnpm services:check` |
-| Stop local data services and retain their volumes | `pnpm services:down` |
-| Start web, API, and worker in development | `pnpm dev` |
-| Start previously built production entrypoints | `pnpm start` |
-| Validate workspace topology and dependency boundaries | `pnpm check:workspace` |
-| Lint | `pnpm lint` |
-| Apply ESLint autofixes | `pnpm lint:fix` |
-| Format with Prettier (4-space, single-quote, 100 columns) | `pnpm format` |
-| Check formatting | `pnpm format:check` |
-| Type-check | `pnpm typecheck` |
-| Run unit tests | `pnpm test` |
-| Build every package and app | `pnpm build` |
-| Run component accessibility, interaction, viewport, and visual checks | `pnpm ui:test` |
-| Update reviewed component screenshot baselines | `pnpm ui:test:update` |
-| Smoke built web, API, and worker entrypoints | `pnpm e2e:smoke` |
-| Build the four production image targets | `pnpm images:build` |
-| Validate isolated UAT/production Compose renders | `pnpm compose:check` |
-| Run the release gate, then converge the deployment | `pnpm deploy:compose` |
-| Deploy and wait for the configured exact UAT revision | `pnpm uat:deploy` |
-| Run desktop/mobile UAT browser smoke and screenshots | `pnpm uat:smoke` |
-| Prepare or execute the guarded production promotion controller | `pnpm production:promote -- <prepare\|deploy>` |
-| Run all scaffold quality gates | `pnpm verify` |
-| Apply database migrations | `pnpm migrate` |
-| Run the database seed | `pnpm seed` |
-| Verify migrations, fixtures, and database constraints | `pnpm db:check` |
-| Verify Contact persistence, duplicate handling, and rate limits | `pnpm contact:check` |
-| Verify Club policies, role transitions, entitlements, and audit records | `pnpm club:check` |
-| Reset a positively identified local/test database | `pnpm db:reset` |
+| Task                                                                    | Command                                        |
+| ----------------------------------------------------------------------- | ---------------------------------------------- |
+| Install dependencies                                                    | `pnpm install --frozen-lockfile`               |
+| Start local data services and create the object-storage bucket          | `pnpm services:up`                             |
+| Check local PostgreSQL, Redis, and object storage                       | `pnpm services:check`                          |
+| Stop local data services and retain their volumes                       | `pnpm services:down`                           |
+| Start web, API, and worker in development                               | `pnpm dev`                                     |
+| Start previously built production entrypoints                           | `pnpm start`                                   |
+| Validate workspace topology and dependency boundaries                   | `pnpm check:workspace`                         |
+| Lint                                                                    | `pnpm lint`                                    |
+| Apply ESLint autofixes                                                  | `pnpm lint:fix`                                |
+| Format with Prettier (4-space, single-quote, 100 columns)               | `pnpm format`                                  |
+| Check formatting                                                        | `pnpm format:check`                            |
+| Type-check                                                              | `pnpm typecheck`                               |
+| Run unit tests                                                          | `pnpm test`                                    |
+| Build every package and app                                             | `pnpm build`                                   |
+| Run component accessibility, interaction, viewport, and visual checks   | `pnpm ui:test`                                 |
+| Update reviewed component screenshot baselines                          | `pnpm ui:test:update`                          |
+| Smoke built web, API, and worker entrypoints                            | `pnpm e2e:smoke`                               |
+| Build the four production image targets                                 | `pnpm images:build`                            |
+| Validate isolated UAT/production Compose renders                        | `pnpm compose:check`                           |
+| Run the release gate, then converge the deployment                      | `pnpm deploy:compose`                          |
+| Deploy and wait for the configured exact UAT revision                   | `pnpm uat:deploy`                              |
+| Run desktop/mobile UAT browser smoke and screenshots                    | `pnpm uat:smoke`                               |
+| Prepare or execute the guarded production promotion controller          | `pnpm production:promote -- <prepare\|deploy>` |
+| Run all scaffold quality gates                                          | `pnpm verify`                                  |
+| Apply database migrations                                               | `pnpm migrate`                                 |
+| Run the database seed                                                   | `pnpm seed`                                    |
+| Verify migrations, fixtures, and database constraints                   | `pnpm db:check`                                |
+| Verify Contact persistence, duplicate handling, and rate limits         | `pnpm contact:check`                           |
+| Verify Club policies, role transitions, entitlements, and audit records | `pnpm club:check`                              |
+| Reset a positively identified local/test database                       | `pnpm db:reset`                                |
 
 Copy `.env.example` to `.env` before running services or runtime commands. See
-[_docs/environment.md](_docs/environment.md) for the variable inventory and destructive-reset
+[\_docs/environment.md](_docs/environment.md) for the variable inventory and destructive-reset
 safeguards.
 
 ## Phase Workflow
@@ -160,13 +160,13 @@ These rules are high-risk and require database/server enforcement plus focused t
 
 Guidance is part of implementation. Update every affected artifact in the same task.
 
-| Artifact | Owns | Update when the task changes |
-| --- | --- | --- |
-| [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable active/deferred delivery issues and live task status. | Work is created, selected, started, deferred, sent to review, completed, or reprioritized. |
-| [ROADMAP.md](ROADMAP.md) | Product scope, business rules, routes, phase sequence/status/evidence, and product Decision Log. | Scope, behavior, limits, phase acceptance/status, or a durable product decision changes. |
-| [DESIGN.md](DESIGN.md) | Experience direction, sources, screens/states, components, responsive/accessibility contract, design QA. | Visible behavior/content, design foundations, component/state coverage, or QA status. |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Deployables/modules, data/interface ownership, integrations, runtime, security/reliability/operations. | A boundary, dependency, schema/interface workflow, integration, environment, deployment, or guarantee. |
-| [_docs/decisions/README.md](_docs/decisions/README.md) | Durable rationale and supersession for significant technical choices. | A meaningful alternative is accepted, rejected, superseded, or materially revisited. |
+| Artifact                                                         | Owns                                                                                                     | Update when the task changes                                                                           |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable active/deferred delivery issues and live task status.                                         | Work is created, selected, started, deferred, sent to review, completed, or reprioritized.             |
+| [ROADMAP.md](ROADMAP.md)                                         | Product scope, business rules, routes, phase sequence/status/evidence, and product Decision Log.         | Scope, behavior, limits, phase acceptance/status, or a durable product decision changes.               |
+| [DESIGN.md](DESIGN.md)                                           | Experience direction, sources, screens/states, components, responsive/accessibility contract, design QA. | Visible behavior/content, design foundations, component/state coverage, or QA status.                  |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                               | Deployables/modules, data/interface ownership, integrations, runtime, security/reliability/operations.   | A boundary, dependency, schema/interface workflow, integration, environment, deployment, or guarantee. |
+| [\_docs/decisions/README.md](_docs/decisions/README.md)          | Durable rationale and supersession for significant technical choices.                                    | A meaningful alternative is accepted, rejected, superseded, or materially revisited.                   |
 
 Documentation impact check after implementation:
 

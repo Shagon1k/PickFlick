@@ -7,11 +7,11 @@ traffic. Production activation and every production deployment require an explic
 
 Keep preparation separate from production activation:
 
-| Work | Owning issue |
-| --- | --- |
-| Add the checked-in promotion controls and runbooks, keep `PRODUCTION_DEPLOY_ENABLED=false`, and rehearse validation without a tag or deployment. | [#16](https://github.com/Shagon1k/PickFlick/issues/16) |
-| Provision the live production project, data services, storage, environment values, secrets, backups, providers, and domains after owner approval. | [#94](https://github.com/Shagon1k/PickFlick/issues/94) |
-| Enable one approved release window, deploy the accepted revision, verify production, and decide whether to serve traffic. | [#95](https://github.com/Shagon1k/PickFlick/issues/95) |
+| Work                                                                                                                                                             | Owning issue                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Add the checked-in promotion controls and runbooks, keep `PRODUCTION_DEPLOY_ENABLED=false`, and rehearse validation without a tag or deployment.                 | [#16](https://github.com/Shagon1k/PickFlick/issues/16)   |
+| Provision the live production project, data services, storage, environment values, secrets, backups, providers, and domains after owner approval.                | [#94](https://github.com/Shagon1k/PickFlick/issues/94)   |
+| Enable one approved release window, deploy the accepted revision, verify production, and decide whether to serve traffic.                                        | [#95](https://github.com/Shagon1k/PickFlick/issues/95)   |
 | Add registry-published digest promotion if separate build/deployment hosts or another concrete artifact-identity requirement makes source identity insufficient. | [#115](https://github.com/Shagon1k/PickFlick/issues/115) |
 
 Issue #16 does not require a live production resource, production credentials, provider activation,
@@ -75,14 +75,14 @@ provisioning is approved.
 
 The workflow uses these settings:
 
-| Setting | GitHub storage | Required while inactive | Purpose |
-| --- | --- | --- | --- |
-| `PRODUCTION_DEPLOY_ENABLED` | Repository variable | Yes; set to `false` | Fail-closed deployment guard. Only exact lowercase `true` enables the deploy job. |
-| `DOKPLOY_URL` | `production` environment variable | No | HTTPS origin for the Cloudflare-protected Dokploy API. |
-| `DOKPLOY_PRODUCTION_COMPOSE_ID` | `production` environment variable | No | Exact production Compose resource identifier. |
-| `DOKPLOY_API_TOKEN` | `production` environment secret | No | Least-privilege production Compose read/update/deploy access. |
-| `CF_ACCESS_CLIENT_ID` | `production` environment secret | No | Cloudflare Access service-token identifier for the Dokploy API. |
-| `CF_ACCESS_CLIENT_SECRET` | `production` environment secret | No | Cloudflare Access service-token secret for the Dokploy API. |
+| Setting                         | GitHub storage                    | Required while inactive | Purpose                                                                           |
+| ------------------------------- | --------------------------------- | ----------------------- | --------------------------------------------------------------------------------- |
+| `PRODUCTION_DEPLOY_ENABLED`     | Repository variable               | Yes; set to `false`     | Fail-closed deployment guard. Only exact lowercase `true` enables the deploy job. |
+| `DOKPLOY_URL`                   | `production` environment variable | No                      | HTTPS origin for the Cloudflare-protected Dokploy API.                            |
+| `DOKPLOY_PRODUCTION_COMPOSE_ID` | `production` environment variable | No                      | Exact production Compose resource identifier.                                     |
+| `DOKPLOY_API_TOKEN`             | `production` environment secret   | No                      | Least-privilege production Compose read/update/deploy access.                     |
+| `CF_ACCESS_CLIENT_ID`           | `production` environment secret   | No                      | Cloudflare Access service-token identifier for the Dokploy API.                   |
+| `CF_ACCESS_CLIENT_SECRET`       | `production` environment secret   | No                      | Cloudflare Access service-token secret for the Dokploy API.                       |
 
 Do not put these deployment-control values in `.env`, `.env.example`, or the Dokploy application
 environment. The workflow receives its short-lived `GITHUB_TOKEN` from GitHub Actions.

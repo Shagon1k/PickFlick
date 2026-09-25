@@ -1,41 +1,44 @@
-import { connect } from "node:net";
+import { connect } from 'node:net';
 
-import { loadRuntimeEnvironment } from "@pickflick/config/environment";
-import { checkStorage } from "@pickflick/observability";
+import { loadRuntimeEnvironment } from '@pickflick/config/environment';
+import { checkStorage } from '@pickflick/observability';
 
-import { createDatabaseClient } from "./client.js";
+import { createDatabaseClient } from './client.js';
 
 const environment = loadRuntimeEnvironment();
 
 async function checkRedis(redisUrl: string): Promise<void> {
-  const target = new URL(redisUrl);
-  if (target.protocol !== "redis:") {
-    throw new Error("The local service check requires a redis:// URL.");
-  }
-  await new Promise<void>((resolve, reject) => {
-    const socket = connect({ host: target.hostname, port: Number(target.port || 6379) });
-    const timeout = setTimeout(() => socket.destroy(new Error("Redis check timed out.")), 5_000);
-    socket.once("connect", () => socket.write("*1\r\n$4\r\nPING\r\n"));
-    socket.once("data", (data) => {
-      clearTimeout(timeout);
-      socket.end();
-      if (data.toString() === "+PONG\r\n") {
-        resolve();
-      } else {
-        reject(new Error("Redis did not return PONG."));
-      }
+    const target = new URL(redisUrl);
+    if (target.protocol !== 'redis:') {
+        throw new Error('The local service check requires a redis:// URL.');
+    }
+    await new Promise<void>((resolve, reject) => {
+        const socket = connect({ host: target.hostname, port: Number(target.port || 6379) });
+        const timeout = setTimeout(
+            () => socket.destroy(new Error('Redis check timed out.')),
+            5_000,
+        );
+        socket.once('connect', () => socket.write('*1\r\n$4\r\nPING\r\n'));
+        socket.once('data', (data) => {
+            clearTimeout(timeout);
+            socket.end();
+            if (data.toString() === '+PONG\r\n') {
+                resolve();
+            } else {
+                reject(new Error('Redis did not return PONG.'));
+            }
+        });
+        socket.once('error', reject);
     });
-    socket.once("error", reject);
-  });
 }
 
 const database = createDatabaseClient(environment.databaseUrl);
 try {
-  await database.$queryRaw`SELECT 1`;
+    await database.$queryRaw`SELECT 1`;
 } finally {
-  await database.$disconnect();
+    await database.$disconnect();
 }
 await checkRedis(environment.redisUrl);
 await checkStorage(environment.storage);
 
-console.log("Local services reachable: PostgreSQL, Redis, and S3-compatible storage.");
+console.log('Local services reachable: PostgreSQL, Redis, and S3-compatible storage.');

@@ -1,42 +1,42 @@
 {
-  "name": "@pickflick/config",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./environment": {
-      "types": "./src/environment.ts",
-      "default": "./dist/environment.js"
+    "name": "@pickflick/config",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./environment": {
+            "types": "./src/environment.ts",
+            "default": "./dist/environment.js"
+        },
+        "./eslint/base": "./eslint/base.mjs",
+        "./tsconfig/base.json": "./tsconfig/base.json",
+        "./tsconfig/library.json": "./tsconfig/library.json",
+        "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+        "./tsconfig/node.json": "./tsconfig/node.json"
     },
-    "./eslint/base": "./eslint/base.mjs",
-    "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/library.json": "./tsconfig/library.json",
-    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
-    "./tsconfig/node.json": "./tsconfig/node.json"
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/validate.mjs",
-    "typecheck": "tsc -p tsconfig.json && node scripts/validate.mjs"
-  },
-  "devDependencies": {
-    "@eslint-react/eslint-plugin": "5.8.3",
-    "@eslint/js": "10.0.1",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-react-hooks": "7.1.1",
-    "globals": "17.12.0",
-    "typescript": "catalog:",
-    "typescript-eslint": "8.69.0"
-  },
-  "peerDependencies": {
-    "eslint": "10.10.0",
-    "typescript": "6.0.3"
-  },
-  "peerDependenciesMeta": {
-    "eslint": {
-      "optional": true
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json && node scripts/validate.mjs",
+        "typecheck": "tsc -p tsconfig.json && node scripts/validate.mjs"
     },
-    "typescript": {
-      "optional": true
+    "devDependencies": {
+        "@eslint-react/eslint-plugin": "5.8.3",
+        "@eslint/js": "10.0.1",
+        "eslint-config-prettier": "10.1.8",
+        "eslint-plugin-react-hooks": "7.1.1",
+        "globals": "17.12.0",
+        "typescript": "catalog:",
+        "typescript-eslint": "8.69.0"
+    },
+    "peerDependencies": {
+        "eslint": "10.10.0",
+        "typescript": "6.0.3"
+    },
+    "peerDependenciesMeta": {
+        "eslint": {
+            "optional": true
+        },
+        "typescript": {
+            "optional": true
+        }
     }
-  }
 }

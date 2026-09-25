@@ -8,12 +8,12 @@ provider and provisioning issues extend this inventory when their consumers exis
 
 `Dockerfile` builds four targets from the same locked workspace and full source revision:
 
-| Target | Runtime | Default command |
-| --- | --- | --- |
-| `web` | Next.js standalone server on port 3000 | `node apps/web/server.js` |
-| `api` | Compiled NestJS API on port 3001 | Load the embedded source revision, then run `node dist/main.js` |
-| `worker` | Compiled worker process | Load the embedded source revision, then run `node dist/main.js` |
-| `release` | One-shot database release gate | `node scripts/run-release.mjs` |
+| Target    | Runtime                                | Default command                                                 |
+| --------- | -------------------------------------- | --------------------------------------------------------------- |
+| `web`     | Next.js standalone server on port 3000 | `node apps/web/server.js`                                       |
+| `api`     | Compiled NestJS API on port 3001       | Load the embedded source revision, then run `node dist/main.js` |
+| `worker`  | Compiled worker process                | Load the embedded source revision, then run `node dist/main.js` |
+| `release` | One-shot database release gate         | `node scripts/run-release.mjs`                                  |
 
 Run `pnpm images:build` from a clean Git checkout. The command passes the full Git revision into
 each build, embeds it in the build output, and tags each local image with the first 12 revision
@@ -70,10 +70,10 @@ save rendered output because it contains resolved secrets.
 
 Dokploy supplies these Compose-only values. They do not belong in the local `.env` file:
 
-| Variable | Contract |
-| --- | --- |
-| `DATABASE_URL` | Internal connection URL for that environment's Dokploy-managed PostgreSQL resource |
-| `REDIS_URL` | Internal connection URL for that environment's Dokploy-managed Redis resource |
+| Variable          | Contract                                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`    | Internal connection URL for that environment's Dokploy-managed PostgreSQL resource                              |
+| `REDIS_URL`       | Internal connection URL for that environment's Dokploy-managed Redis resource                                   |
 | `DOKPLOY_NETWORK` | Pre-created environment-specific application network shared with the managed data resources and Dokploy routing |
 
 The remote Compose file owns only `release`, `api`, `worker`, and `web`; it defines no data service
@@ -120,16 +120,16 @@ another concrete artifact-identity requirement justifies registry publication.
 The UAT workflow consumes these GitHub settings. They are deployment-control inputs, not
 application runtime variables, and do not belong in `.env` or `.env.example`:
 
-| Setting | GitHub storage | Sensitive | Purpose |
-| --- | --- | --- | --- |
-| `DOKPLOY_URL` | Actions variable | No | HTTPS origin for the Cloudflare-protected Dokploy API. |
-| `DOKPLOY_UAT_COMPOSE_ID` | Actions variable | No | Exact UAT Compose resource identifier. |
-| `DOKPLOY_API_TOKEN` | Actions secret | Yes | Least-privilege UAT Compose read/deploy access. |
-| `CF_ACCESS_CLIENT_ID` | Actions secret | Yes | Cloudflare Access service-token identifier for the Dokploy API. |
-| `CF_ACCESS_CLIENT_SECRET` | Actions secret | Yes | Cloudflare Access service-token secret for the Dokploy API. |
-| `PLAYWRIGHT_BASE_URL` | Actions variable | No | Canonical UAT browser-smoke origin; must be `https://uat.pick-flick.app`. |
-| `PRODUCTION_DEPLOY_ENABLED` | Repository variable | No | Fail-closed production guard; absent or any value except exact `true` disables deployment. |
-| `DOKPLOY_PRODUCTION_COMPOSE_ID` | `production` environment variable | No | Exact dormant production Compose resource identifier. |
+| Setting                         | GitHub storage                    | Sensitive | Purpose                                                                                    |
+| ------------------------------- | --------------------------------- | --------- | ------------------------------------------------------------------------------------------ |
+| `DOKPLOY_URL`                   | Actions variable                  | No        | HTTPS origin for the Cloudflare-protected Dokploy API.                                     |
+| `DOKPLOY_UAT_COMPOSE_ID`        | Actions variable                  | No        | Exact UAT Compose resource identifier.                                                     |
+| `DOKPLOY_API_TOKEN`             | Actions secret                    | Yes       | Least-privilege UAT Compose read/deploy access.                                            |
+| `CF_ACCESS_CLIENT_ID`           | Actions secret                    | Yes       | Cloudflare Access service-token identifier for the Dokploy API.                            |
+| `CF_ACCESS_CLIENT_SECRET`       | Actions secret                    | Yes       | Cloudflare Access service-token secret for the Dokploy API.                                |
+| `PLAYWRIGHT_BASE_URL`           | Actions variable                  | No        | Canonical UAT browser-smoke origin; must be `https://uat.pick-flick.app`.                  |
+| `PRODUCTION_DEPLOY_ENABLED`     | Repository variable               | No        | Fail-closed production guard; absent or any value except exact `true` disables deployment. |
+| `DOKPLOY_PRODUCTION_COMPOSE_ID` | `production` environment variable | No        | Exact dormant production Compose resource identifier.                                      |
 
 Production reuses `DOKPLOY_URL` and the three Dokploy/Cloudflare credentials, but scopes their
 production values through the protected GitHub `production` environment. Those settings are not
@@ -142,11 +142,11 @@ promotion controller read UAT workflow evidence; they are never saved to Dokploy
 [ADR-009](decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders)
 fixes the non-secret email identity contract:
 
-| Environment | Public contact | `RESEND_FROM` | Boundary |
-| --- | --- | --- | --- |
-| Local and test | None | `PickFlick <pickflick@example.invalid>` | `RESEND_DELIVERY_MODE=disabled` with `RESEND_API_KEY=local-disabled`; never call Resend. |
-| UAT | None | `PickFlick UAT <notifications@uat.pick-flick.app>` | Deployed UAT fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
-| Production | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>` | Production fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue. |
+| Environment    | Public contact         | `RESEND_FROM`                                      | Boundary                                                                                                                                                                     |
+| -------------- | ---------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local and test | None                   | `PickFlick <pickflick@example.invalid>`            | `RESEND_DELIVERY_MODE=disabled` with `RESEND_API_KEY=local-disabled`; never call Resend.                                                                                     |
+| UAT            | None                   | `PickFlick UAT <notifications@uat.pick-flick.app>` | Deployed UAT fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `uat.pick-flick.app`; synthetic content and approved test recipients only. |
+| Production     | `hello@pick-flick.app` | `PickFlick <notifications@pick-flick.app>`         | Production fixes `RESEND_DELIVERY_MODE=live` and uses a separate sending-only key restricted to `pick-flick.app`; application replies go to the public contact queue.        |
 
 Startup validation requires the exact UAT and production sender values. The checked-in
 `compose.preview.yaml` fixes `RESEND_DELIVERY_MODE=preview`, keeps its UAT-shaped sender, and uses
@@ -288,34 +288,34 @@ later, each environment must also use a separate Apple OAuth client and key.
 The API and worker validate their runtime variables before starting. The worker does not require
 the API-only bind settings. Validation errors name invalid variables but never echo their values.
 
-| Variable | Type and allowed values | Consumer | Sensitive |
-| --- | --- | --- | --- |
-| `APP_ENV` | `local`, `test`, `uat`, or `production` | API, worker, web (production hides `/ui-preview` and `/shell-preview`), database commands | No |
-| `API_HOST` | Non-empty host without whitespace | API | No |
-| `API_PORT` | Integer from 1 through 65535 | API | No |
-| `AUTH_BASE_URL` | Canonical origin only; deployed UAT/production require HTTPS | API | No |
-| `AUTH_SECRET` | At least 32 characters used to protect authentication state and encrypted provider-token fields | API | Yes |
-| `APPLE_SIGN_IN_ENABLED` | Optional boolean; defaults to `false`. The API registers Apple and the web renders Apple actions only when `true`; local `pnpm dev`/`pnpm start` load it from the repository-root `.env` | API, web server | No |
-| `APPLE_CLIENT_ID` | Apple Services ID; required only when `APPLE_SIGN_IN_ENABLED=true` | API | Yes |
-| `APPLE_KEY_ID` | Apple Sign In private-key identifier; required only when enabled | API | Yes |
-| `APPLE_PRIVATE_KEY` | Apple EC P-256 `.p8` key as PKCS#8 PEM; required only when enabled; `\n`-encoded line breaks are accepted | API | Yes |
-| `APPLE_TEAM_ID` | Apple Developer team identifier; required only when enabled | API | Yes |
-| `GOOGLE_CLIENT_ID` | Google OAuth web-client identifier for the current environment | API | Yes |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth web-client secret for the current environment | API | Yes |
-| `SHUTDOWN_TIMEOUT_MS` | Integer milliseconds from 1 through 86400000 (24 hours) | API, worker | No |
-| `DATABASE_URL` | `postgresql:` or `postgres:` URL with a host and database name | API, worker, database | Yes |
-| `REDIS_URL` | `redis:` or `rediss:` URL with a host | API, worker | Yes when authenticated |
-| `STORAGE_ENDPOINT` | HTTP or HTTPS S3-compatible API URL | API, worker | No |
-| `STORAGE_REGION` | Non-empty signing region; use `us-east-1` for MinIO | API, worker | No |
-| `STORAGE_BUCKET` | Valid lowercase S3 bucket name | API, worker | No |
-| `STORAGE_ACCESS_KEY` | Non-empty application access-key identifier | API, worker | Yes |
-| `STORAGE_SECRET_KEY` | Non-empty application secret access key | API, worker | Yes |
-| `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3 | API, worker | No |
-| `RESEND_DELIVERY_MODE` | `disabled` for local/test, `preview` for the synthetic preview, or `live` for deployed UAT/production | API, worker | No |
-| `RESEND_API_KEY` | Non-empty server-side Resend API key, `local-disabled` for local/test, or `preview-disabled` for the synthetic UAT-shaped preview | API, worker | Yes, except documented disabled placeholders |
-| `RESEND_FROM` | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership) | API, worker | No |
-| `CONTACT_DELIVERY_TO` | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient | API, worker | Yes outside the production public address |
-| `CONTACT_HASH_SECRET` | At least 32 characters used only for keyed source/content hashes | API, worker | Yes |
+| Variable                   | Type and allowed values                                                                                                                                                                  | Consumer                                                                                  | Sensitive                                    |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `APP_ENV`                  | `local`, `test`, `uat`, or `production`                                                                                                                                                  | API, worker, web (production hides `/ui-preview` and `/shell-preview`), database commands | No                                           |
+| `API_HOST`                 | Non-empty host without whitespace                                                                                                                                                        | API                                                                                       | No                                           |
+| `API_PORT`                 | Integer from 1 through 65535                                                                                                                                                             | API                                                                                       | No                                           |
+| `AUTH_BASE_URL`            | Canonical origin only; deployed UAT/production require HTTPS                                                                                                                             | API                                                                                       | No                                           |
+| `AUTH_SECRET`              | At least 32 characters used to protect authentication state and encrypted provider-token fields                                                                                          | API                                                                                       | Yes                                          |
+| `APPLE_SIGN_IN_ENABLED`    | Optional boolean; defaults to `false`. The API registers Apple and the web renders Apple actions only when `true`; local `pnpm dev`/`pnpm start` load it from the repository-root `.env` | API, web server                                                                           | No                                           |
+| `APPLE_CLIENT_ID`          | Apple Services ID; required only when `APPLE_SIGN_IN_ENABLED=true`                                                                                                                       | API                                                                                       | Yes                                          |
+| `APPLE_KEY_ID`             | Apple Sign In private-key identifier; required only when enabled                                                                                                                         | API                                                                                       | Yes                                          |
+| `APPLE_PRIVATE_KEY`        | Apple EC P-256 `.p8` key as PKCS#8 PEM; required only when enabled; `\n`-encoded line breaks are accepted                                                                                | API                                                                                       | Yes                                          |
+| `APPLE_TEAM_ID`            | Apple Developer team identifier; required only when enabled                                                                                                                              | API                                                                                       | Yes                                          |
+| `GOOGLE_CLIENT_ID`         | Google OAuth web-client identifier for the current environment                                                                                                                           | API                                                                                       | Yes                                          |
+| `GOOGLE_CLIENT_SECRET`     | Google OAuth web-client secret for the current environment                                                                                                                               | API                                                                                       | Yes                                          |
+| `SHUTDOWN_TIMEOUT_MS`      | Integer milliseconds from 1 through 86400000 (24 hours)                                                                                                                                  | API, worker                                                                               | No                                           |
+| `DATABASE_URL`             | `postgresql:` or `postgres:` URL with a host and database name                                                                                                                           | API, worker, database                                                                     | Yes                                          |
+| `REDIS_URL`                | `redis:` or `rediss:` URL with a host                                                                                                                                                    | API, worker                                                                               | Yes when authenticated                       |
+| `STORAGE_ENDPOINT`         | HTTP or HTTPS S3-compatible API URL                                                                                                                                                      | API, worker                                                                               | No                                           |
+| `STORAGE_REGION`           | Non-empty signing region; use `us-east-1` for MinIO                                                                                                                                      | API, worker                                                                               | No                                           |
+| `STORAGE_BUCKET`           | Valid lowercase S3 bucket name                                                                                                                                                           | API, worker                                                                               | No                                           |
+| `STORAGE_ACCESS_KEY`       | Non-empty application access-key identifier                                                                                                                                              | API, worker                                                                               | Yes                                          |
+| `STORAGE_SECRET_KEY`       | Non-empty application secret access key                                                                                                                                                  | API, worker                                                                               | Yes                                          |
+| `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO; `false` for AWS S3                                                                                                                                                     | API, worker                                                                               | No                                           |
+| `RESEND_DELIVERY_MODE`     | `disabled` for local/test, `preview` for the synthetic preview, or `live` for deployed UAT/production                                                                                    | API, worker                                                                               | No                                           |
+| `RESEND_API_KEY`           | Non-empty server-side Resend API key, `local-disabled` for local/test, or `preview-disabled` for the synthetic UAT-shaped preview                                                        | API, worker                                                                               | Yes, except documented disabled placeholders |
+| `RESEND_FROM`              | Email address, optionally with a display name; exact environment values are fixed by the [email identity contract](#email-identities-and-ownership)                                      | API, worker                                                                               | No                                           |
+| `CONTACT_DELIVERY_TO`      | One environment-approved Contact inbox; production uses `hello@pick-flick.app` and UAT uses an approved synthetic-test recipient                                                         | API, worker                                                                               | Yes outside the production public address    |
+| `CONTACT_HASH_SECRET`      | At least 32 characters used only for keyed source/content hashes                                                                                                                         | API, worker                                                                               | Yes                                          |
 
 Authentication credentials are API-only: do not expose them to the worker, web client, browser
 environment, logs, screenshots, or rendered Compose evidence. The non-secret Apple gate also
@@ -390,10 +390,10 @@ four quality jobs pass. Any future delivery workflow must require that terminal 
 
 The API exposes two unauthenticated probe endpoints:
 
-| Endpoint | Success | Failure behavior |
-| --- | --- | --- |
-| `GET /health/live` | HTTP 200 with `{"service":"api","status":"alive"}` while the process can serve HTTP. | Process or HTTP-server failure prevents a response. The endpoint does not query dependencies. |
-| `GET /health/ready` | HTTP 200 with each required dependency marked `up`. | HTTP 503 with each required dependency marked `up` or `down`; probe errors and configuration values are omitted. |
+| Endpoint            | Success                                                                              | Failure behavior                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `GET /health/live`  | HTTP 200 with `{"service":"api","status":"alive"}` while the process can serve HTTP. | Process or HTTP-server failure prevents a response. The endpoint does not query dependencies.                    |
+| `GET /health/ready` | HTTP 200 with each required dependency marked `up`.                                  | HTTP 503 with each required dependency marked `up` or `down`; probe errors and configuration values are omitted. |
 
 Readiness runs `SELECT 1` against PostgreSQL, sends `PING` to Redis, and authenticates an S3
 `HeadBucket` request. Each probe enforces its two-second deadline through its database driver,
@@ -408,11 +408,11 @@ generates a new UUIDv4 for missing or invalid input. Boundary failures use this 
 
 ```json
 {
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Resource not found.",
-    "requestId": "123e4567-e89b-42d3-a456-426614174000"
-  }
+    "error": {
+        "code": "NOT_FOUND",
+        "message": "Resource not found.",
+        "requestId": "123e4567-e89b-42d3-a456-426614174000"
+    }
 }
 ```
 
@@ -438,12 +438,12 @@ PostgreSQL; retryable and exhausted failures retain content so the owner can rec
 These variables configure `compose.local.yaml`. They are not application runtime variables unless
 the runtime table also lists them.
 
-| Variable | Purpose |
-| --- | --- |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Local PostgreSQL database, account, and loopback port |
-| `REDIS_PORT` | Local Redis loopback port |
-| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Local MinIO administrator used by the bucket initializer |
-| `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Local MinIO loopback ports |
+| Variable                                                             | Purpose                                                  |
+| -------------------------------------------------------------------- | -------------------------------------------------------- |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Local PostgreSQL database, account, and loopback port    |
+| `REDIS_PORT`                                                         | Local Redis loopback port                                |
+| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`                             | Local MinIO administrator used by the bucket initializer |
+| `MINIO_API_PORT`, `MINIO_CONSOLE_PORT`                               | Local MinIO loopback ports                               |
 
 Every published port binds to `127.0.0.1`. UAT and production must supply separate values through
 their secret/configuration systems; they must not reuse this local file or its synthetic values.
