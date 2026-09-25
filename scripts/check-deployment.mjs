@@ -274,6 +274,10 @@ export function validateDeployments({ production, uat }) {
     assert(deployment.services.api.environment.APP_ENV === appEnvironment, "API must use the selected environment.");
     assert(deployment.services.worker.environment.APP_ENV === appEnvironment, "Worker must use the selected environment.");
     assert(
+      deployment.services.web.environment.APP_ENV === appEnvironment,
+      "Web must use the selected environment so production hides internal previews.",
+    );
+    assert(
       deployment.services.api.environment.AUTH_BASE_URL ===
         (appEnvironment === "uat" ? "https://uat.pick-flick.app" : "https://pick-flick.app"),
       "API must use the canonical authentication origin for its environment.",
