@@ -23,7 +23,6 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "migrate": "pnpm --filter @pickflick/database migrate",
-        "production:promote": "node scripts/promote-production.mjs",
         "release": "node scripts/run-release.mjs",
         "prepare": "husky",
         "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
@@ -38,8 +37,7 @@
         "ui:test": "playwright test --config playwright.ui.config.ts",
         "ui:test:update": "playwright test --config playwright.ui.config.ts --update-snapshots",
         "ui:visual": "playwright test --config playwright.ui.config.ts tests/ui-preview/viewport-visual.spec.ts",
-        "uat:deploy": "node scripts/deploy-uat.mjs",
-        "uat:smoke": "node scripts/uat-browser-smoke.mjs",
+        "uat:smoke": "playwright test --config playwright.uat.config.ts",
         "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
     },
     "devDependencies": {

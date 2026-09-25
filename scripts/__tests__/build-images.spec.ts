@@ -1,5 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import { sourceRevision } from '../build-images.mjs';
 import { resolveImageRevision } from '../write-image-revision.mjs';
 
@@ -21,17 +19,17 @@ function gitWith({ head = headRevision, inside = true, status = '' } = {}) {
 }
 
 describe('production image source revision', () => {
-    it('accepts a configured revision that matches a clean checkout', () => {
+    it('should accept a configured revision that matches a clean checkout', () => {
         expect(sourceRevision({ SOURCE_REVISION: headRevision }, gitWith())).toBe(headRevision);
     });
 
-    it('rejects a configured revision that differs from Git HEAD', () => {
+    it('should reject a configured revision that differs from Git HEAD', () => {
         expect(() => sourceRevision({ SOURCE_REVISION: 'b'.repeat(40) }, gitWith())).toThrow(
             /SOURCE_REVISION must match the checked-out Git HEAD/,
         );
     });
 
-    it('rejects a dirty checkout even when a revision is configured', () => {
+    it('should reject a dirty checkout even when a revision is configured', () => {
         expect(() =>
             sourceRevision(
                 { SOURCE_REVISION: headRevision },
@@ -40,13 +38,13 @@ describe('production image source revision', () => {
         ).toThrow(/dirty worktree/);
     });
 
-    it('uses the configured revision when Git metadata is unavailable', () => {
+    it('should use the configured revision when Git metadata is unavailable', () => {
         expect(sourceRevision({ SOURCE_REVISION: headRevision }, gitWith({ inside: false }))).toBe(
             headRevision,
         );
     });
 
-    it('accepts a 64-character Git revision when Git metadata is unavailable', () => {
+    it('should accept a 64-character Git revision when Git metadata is unavailable', () => {
         const sha256Revision = 'b'.repeat(64);
 
         expect(
@@ -62,14 +60,14 @@ describe('production image source revision', () => {
 });
 
 describe('image-embedded source revision', () => {
-    it('uses the explicit build revision without reading Git metadata', () => {
+    it('should use the explicit build revision without reading Git metadata', () => {
         const readFile = vi.fn();
 
         expect(resolveImageRevision(headRevision.toUpperCase(), readFile)).toBe(headRevision);
         expect(readFile).not.toHaveBeenCalled();
     });
 
-    it('resolves a branch checkout from the minimal safe Git metadata', () => {
+    it('should resolve a branch checkout from the minimal safe Git metadata', () => {
         const readFile = vi.fn((path: string) =>
             path === '.git/HEAD' ? 'ref: refs/heads/main\n' : `${headRevision}\n`,
         );
@@ -78,7 +76,7 @@ describe('image-embedded source revision', () => {
         expect(readFile).toHaveBeenCalledTimes(2);
     });
 
-    it('resolves a detached tag checkout directly from HEAD', () => {
+    it('should resolve a detached tag checkout directly from HEAD', () => {
         expect(resolveImageRevision(undefined, () => `${headRevision}\n`)).toBe(headRevision);
     });
 });
