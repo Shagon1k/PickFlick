@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import type { ClubSummary } from "@pickflick/contracts";
 import { ActionLink, BrandImage, Pill } from "@pickflick/ui";
 
+import { loginPath } from "../../auth-server";
 import { loadClubCollection } from "../../components/clubs/club-api";
 import styles from "../../components/clubs/club-onboarding.module.css";
 import { clubNavigation, ProductFrame } from "../../components/shells/shells";
@@ -74,7 +75,7 @@ export default async function AppPage() {
     response = { ok: false, status: 503 } as const;
   }
   if (response.status === 401) {
-    redirect("/login?returnTo=/app");
+    redirect(loginPath("/app"));
   }
   if (!response.ok || !response.body) {
     return (

@@ -3,9 +3,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
-import { BrandImage, SprocketDivider } from "@pickflick/ui";
+import { ActionLink, BrandImage, SprocketDivider } from "@pickflick/ui";
 
-import { hasAuthenticatedSession } from "../../../auth-server";
+import { loginPath, probeSession } from "../../../auth-server";
 import styles from "../../../components/clubs/club-onboarding.module.css";
 import { CreateClubForm } from "../../../components/clubs/create-club-form";
 import { BackLink } from "../../../components/navigation/back-link";
@@ -17,8 +17,9 @@ export const metadata: Metadata = {
 
 export default async function CreateClubPage() {
   await connection();
-  if (!(await hasAuthenticatedSession(await headers()))) {
-    redirect("/login?returnTo=/app");
+  const session = await probeSession(await headers());
+  if (session === "anonymous") {
+    redirect(loginPath("/clubs/new"));
   }
 
   return (
@@ -28,8 +29,19 @@ export default async function CreateClubPage() {
         <BrandImage alt="" asset="settingsSubscription" className={styles.mascot} loading="eager" />
         <div className={styles.createCard}>
           <h1 id="create-club-title">Open a Screening Room</h1>
-          <p className={styles.lead}>Every great film Club starts with a name.</p>
-          <CreateClubForm />
+          {session === "unavailable" ? (
+            <>
+              <p className={styles.lead} role="alert">
+                We could not confirm your session right now. Nothing was created; try again in a moment.
+              </p>
+              <div className={styles.actions}><ActionLink href="/clubs/new" variant="primary">Try again</ActionLink></div>
+            </>
+          ) : (
+            <>
+              <p className={styles.lead}>Every great film Club starts with a name.</p>
+              <CreateClubForm />
+            </>
+          )}
         </div>
         <SprocketDivider />
         <p aria-hidden="true" className={styles.sceneOrnament}>Scene 02 · Opening Night</p>

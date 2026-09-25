@@ -1,3 +1,5 @@
+import { resolveAuthReturnTarget } from "@pickflick/contracts";
+
 interface AuthenticationEnvironment {
   readonly [name: string]: string | undefined;
   readonly APPLE_SIGN_IN_ENABLED?: string;
@@ -13,16 +15,24 @@ export function isAppleSignInEnabled(environment: AuthenticationEnvironment = pr
   return environment.APPLE_SIGN_IN_ENABLED === "true";
 }
 
-export async function hasAuthenticatedSession(
+/**
+ * `unavailable` means the API could not answer (timeout, rate limit, or outage). Callers decide how
+ * to present it; it never silently means signed out.
+ */
+export type SessionProbe = "anonymous" | "authenticated" | "unavailable";
+
+export async function probeSession(
   requestHeaders: RequestHeaders,
   environment: AuthenticationEnvironment = process.env,
   fetcher: Fetcher = fetch,
-): Promise<boolean> {
+): Promise<SessionProbe> {
   const cookieHeader = requestHeaders.get("cookie");
   if (!cookieHeader) {
-    return false;
+    return "anonymous";
   }
 
+  let response: Response;
+  let session: unknown;
   try {
     const backendUrl = new URL(environment.BACKEND_INTERNAL_URL ?? "http://127.0.0.1:3001");
     const sessionHeaders = new Headers({ cookie: cookieHeader });
@@ -30,21 +40,28 @@ export async function hasAuthenticatedSession(
     if (clientAddress) {
       sessionHeaders.set("cf-connecting-ip", clientAddress);
     }
-    const response = await fetcher(new URL("/api/auth/get-session", backendUrl), {
+    response = await fetcher(new URL("/api/auth/get-session", backendUrl), {
       cache: "no-store",
       headers: sessionHeaders,
       signal: AbortSignal.timeout(sessionProbeTimeoutMilliseconds),
     });
     if (!response.ok) {
-      return false;
+      return "unavailable";
     }
-    const session = await response.json() as unknown;
-    if (!session || typeof session !== "object") {
-      return false;
-    }
-    const user = (session as { user?: unknown }).user;
-    return Boolean(user && typeof user === "object" && typeof (user as { id?: unknown }).id === "string");
+    session = await response.json() as unknown;
   } catch {
-    return false;
+    return "unavailable";
   }
+  if (!session || typeof session !== "object") {
+    return "anonymous";
+  }
+  const user = (session as { user?: unknown }).user;
+  return user && typeof user === "object" && typeof (user as { id?: unknown }).id === "string"
+    ? "authenticated"
+    : "anonymous";
+}
+
+/** Login URL that returns to `path` when it is an allowed return target, otherwise to `/app`. */
+export function loginPath(path: string): string {
+  return `/login?returnTo=${resolveAuthReturnTarget(path)}`;
 }

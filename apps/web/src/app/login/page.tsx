@@ -6,9 +6,9 @@ import { connection } from "next/server";
 import { resolveAuthReturnTarget } from "@pickflick/contracts";
 import { BrandImage, SprocketDivider } from "@pickflick/ui";
 
-import { hasAuthenticatedSession, isAppleSignInEnabled } from "../../auth-server";
+import { isAppleSignInEnabled, probeSession } from "../../auth-server";
 import { LoginActions } from "../../components/auth/login-actions";
-import { resolveLoginErrorMessage } from "../../components/auth/login-errors";
+import { resolveLoginErrorMessage, sessionUnavailableMessage } from "../../components/auth/login-errors";
 import { firstSearchValue } from "../../components/auth/login.utils";
 import styles from "../../components/auth/login.module.css";
 
@@ -21,13 +21,16 @@ export default async function LoginPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
   await connection();
-  if (await hasAuthenticatedSession(await headers())) {
-    redirect("/app");
-  }
   const parameters = await searchParams;
-  const appleSignInEnabled = isAppleSignInEnabled();
   const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
-  const errorMessage = resolveLoginErrorMessage(firstSearchValue(parameters.error));
+  const session = await probeSession(await headers());
+  if (session === "authenticated") {
+    redirect(returnTo);
+  }
+  const appleSignInEnabled = isAppleSignInEnabled();
+  // Sign-in stays available during a session-API outage; the notice explains a stale signed-in state.
+  const errorMessage = resolveLoginErrorMessage(firstSearchValue(parameters.error)) ??
+    (session === "unavailable" ? sessionUnavailableMessage : undefined);
 
   return (
     <main className={styles.page}>

@@ -29,7 +29,7 @@ async function open(page: Page, viewport = canonicalViewports[0]) {
 
 test("Club settings redirects an unauthenticated visitor and withholds outsider data", async ({ context, page }) => {
   await page.goto(route);
-  await expect(page).toHaveURL(/\/login\?returnTo=\/app$/u);
+  await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/clubs/${clubId}/settings$`, "u"));
 
   await authenticate(context, "valid-settings-outsider");
   await page.goto(route);

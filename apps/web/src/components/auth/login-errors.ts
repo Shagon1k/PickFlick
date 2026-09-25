@@ -9,6 +9,9 @@ const safeErrorMessages: Readonly<Record<string, string>> = {
   state_not_found: "That sign-in request expired or was already used. Please start again.",
 };
 
+export const sessionUnavailableMessage =
+  "We could not check your session right now. If you are already signed in, try again in a moment.";
+
 const defaultErrorMessage = "Sign-in could not be completed safely. Please try again.";
 
 export function resolveLoginErrorMessage(errorCode: string | undefined): string | undefined {

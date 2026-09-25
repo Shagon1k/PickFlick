@@ -54,7 +54,38 @@ test("protected Club onboarding redirects an unauthenticated visitor", async ({ 
   await page.goto("/app");
   await expect(page).toHaveURL(/\/login\?returnTo=\/app$/u);
   await page.goto("/clubs/new");
-  await expect(page).toHaveURL(/\/login\?returnTo=\/app$/u);
+  await expect(page).toHaveURL(/\/login\?returnTo=\/clubs\/new$/u);
+});
+
+test("Create Club and Login surface an unavailable session API instead of signing out", async ({ context, page }) => {
+  await context.addCookies([{
+    name: "pickflick.session_token",
+    value: "session-api-unavailable",
+    domain: "127.0.0.1",
+    path: "/",
+    httpOnly: true,
+    sameSite: "Lax",
+  }]);
+  await page.goto("/clubs/new");
+  await expect(page).toHaveURL(/\/clubs\/new$/u);
+  await expect(page.getByRole("alert")).toContainText("could not confirm your session");
+  await expect(page.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/clubs/new");
+
+  await page.goto("/login");
+  await expect(page.getByRole("alert")).toContainText("could not check your session");
+});
+
+test("signed-in Login returns to the requested allowed target", async ({ context, page }) => {
+  await context.addCookies([{
+    name: "pickflick.session_token",
+    value: "valid-login-return",
+    domain: "127.0.0.1",
+    path: "/",
+    httpOnly: true,
+    sameSite: "Lax",
+  }]);
+  await page.goto("/login?returnTo=/clubs/new");
+  await expect(page).toHaveURL(/\/clubs\/new$/u);
 });
 
 test("no-Clubs and Create Club have no automated accessibility violations", async ({ context, page }) => {

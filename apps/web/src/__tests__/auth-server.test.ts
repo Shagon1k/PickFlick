@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { hasAuthenticatedSession, isAppleSignInEnabled } from "../auth-server";
+import { isAppleSignInEnabled, loginPath, probeSession } from "../auth-server";
 
 describe("authentication server state", () => {
   it("enables Apple actions only for the exact enabled value", () => {
@@ -17,7 +17,7 @@ describe("authentication server state", () => {
       (input: string | URL, init?: RequestInit) => Promise<Response>
     >(async () => Response.json(null));
 
-    await expect(hasAuthenticatedSession(
+    await expect(probeSession(
       new Headers({
         "cf-connecting-ip": "203.0.113.42",
         cookie: "pickflick.session_token=valid",
@@ -25,13 +25,13 @@ describe("authentication server state", () => {
       }),
       { BACKEND_INTERNAL_URL: "http://api:3001" },
       authenticatedFetch,
-    )).resolves.toBe(true);
-    await expect(hasAuthenticatedSession(
+    )).resolves.toBe("authenticated");
+    await expect(probeSession(
       new Headers({ cookie: "pickflick.session_token=forged" }),
       { BACKEND_INTERNAL_URL: "http://api:3001" },
       anonymousFetch,
-    )).resolves.toBe(false);
-    await expect(hasAuthenticatedSession(new Headers(), {}, authenticatedFetch)).resolves.toBe(false);
+    )).resolves.toBe("anonymous");
+    await expect(probeSession(new Headers(), {}, authenticatedFetch)).resolves.toBe("anonymous");
     expect(authenticatedFetch).toHaveBeenCalledOnce();
 
     const request = authenticatedFetch.mock.calls[0]?.[1];
@@ -42,11 +42,22 @@ describe("authentication server state", () => {
     expect(request?.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("keeps Login available when the session API is unavailable", async () => {
-    await expect(hasAuthenticatedSession(
+  it.each([
+    ["a network failure", async () => { throw new Error("unavailable"); }],
+    ["a rate limit", async () => new Response(null, { status: 429 })],
+    ["an outage", async () => new Response(null, { status: 503 })],
+  ])("reports %s as unavailable instead of signed out", async (_label, fetcher) => {
+    await expect(probeSession(
       new Headers({ cookie: "pickflick.session_token=unknown" }),
       {},
-      async () => { throw new Error("unavailable"); },
-    )).resolves.toBe(false);
+      fetcher,
+    )).resolves.toBe("unavailable");
+  });
+
+  it("builds Login URLs only for allowed return targets", () => {
+    expect(loginPath("/clubs/new")).toBe("/login?returnTo=/clubs/new");
+    expect(loginPath("/clubs/10000000-0000-4000-8000-000000000031/settings"))
+      .toBe("/login?returnTo=/clubs/10000000-0000-4000-8000-000000000031/settings");
+    expect(loginPath("/clubs/NOT-A-UUID/settings")).toBe("/login?returnTo=/app");
   });
 });
