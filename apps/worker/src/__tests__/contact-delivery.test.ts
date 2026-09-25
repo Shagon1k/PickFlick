@@ -279,4 +279,32 @@ describe("Contact delivery", () => {
       vi.useRealTimers();
     }
   });
+
+  it("keeps polling after a transient store failure without logging its details", async () => {
+    vi.useFakeTimers();
+    try {
+      const controller = new AbortController();
+      const logs = captureLogger();
+      const store = new FakeStore();
+      let claimCount = 0;
+      store.claim = async () => {
+        claimCount += 1;
+        if (claimCount === 1) {
+          throw new Error("connection refused for private-contact-message-marker");
+        }
+        controller.abort();
+        return undefined;
+      };
+
+      const running = runContactDeliveryLoop(controller.signal, store, new FakeSender(), logs.logger, new DrainController());
+      await vi.advanceTimersByTimeAsync(5_000);
+      await running;
+
+      expect(claimCount).toBe(2);
+      expect(logs.output()).toContain("contact.delivery.iteration_failed");
+      expect(logs.output()).not.toContain(privateMessage);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
