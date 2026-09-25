@@ -39,12 +39,17 @@
   --danger-border: rgba(169, 78, 74, 0.38);
   --danger-soft: rgba(169, 78, 74, 0.12);
   --danger-text: #d9a09b;
+  --danger-hover-soft: rgba(169, 78, 74, 0.18);
+  --danger-on: #fff4f2;
   --success: #6f8a63;
   --success-soft: rgba(111, 138, 99, 0.13);
   --success-border: rgba(111, 138, 99, 0.34);
+  --success-text: #a9c39d;
+  --success-text-strong: #dcebd6;
   --warn: #b9823a;
   --warn-soft: rgba(185, 130, 58, 0.14);
   --warn-border: rgba(185, 130, 58, 0.34);
+  --warn-text: #d6aa68;
 
   /* Focus */
   --focus: rgba(232, 216, 184, 0.72);
@@ -95,9 +100,27 @@
   /* Border, elevation, imagery, and motion */
   --shadow-overlay: 0 18px 48px rgba(0, 0, 0, 0.42);
   --shadow-popover: 0 10px 24px rgba(0, 0, 0, 0.28);
+  --shadow-popover-above: 0 -8px 20px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 20px 52px rgba(0, 0, 0, 0.28);
+  --shadow-mascot: 0 22px 46px rgba(0, 0, 0, 0.34);
+  --scrim: rgba(0, 0, 0, 0.76);
+  --header-glass: rgba(12, 12, 12, 0.9);
+  --bar-glass: rgba(8, 8, 8, 0.96);
+  --bar-border: rgba(255, 255, 255, 0.14);
+  --surface-glass-soft: rgba(22, 22, 22, 0.58);
+  --surface-glass: rgba(22, 22, 22, 0.72);
+  --surface-glass-lit: rgba(30, 30, 30, 0.72);
+  --surface-glass-strong: rgba(22, 22, 22, 0.9);
   --image-noir-rest: grayscale(0.72) brightness(0.84);
   --image-noir-active: grayscale(0) brightness(1);
   --projector-wash: rgba(200, 155, 85, 0.1);
+  --projector-wash-faint: rgba(200, 155, 85, 0.028);
+  --spotlight-gold: radial-gradient(
+    ellipse at 50% 48%,
+    rgba(224, 184, 122, 0.14) 0%,
+    rgba(200, 155, 85, 0.07) 34%,
+    transparent 72%
+  );
   --motion-press: 50ms;
   --motion-local: 150ms;
   --motion-panel: 250ms;

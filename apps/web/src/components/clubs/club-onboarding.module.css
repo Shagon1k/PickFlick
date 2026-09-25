@@ -245,7 +245,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow-card);
 }
 
 .createCard h1 {

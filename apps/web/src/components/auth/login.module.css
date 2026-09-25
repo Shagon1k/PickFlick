@@ -6,7 +6,7 @@
   place-items: center;
   overflow: hidden;
   padding: 88px 24px 48px;
-  background: #090909;
+  background: var(--bg-deep);
 }
 
 .page::before {
@@ -85,7 +85,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: 0 20px 52px rgb(0 0 0 / 28%);
+  box-shadow: var(--shadow-card);
 }
 
 .card h1 {
