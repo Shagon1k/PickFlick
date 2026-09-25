@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import type { ClubMemberProjection, ClubSettingsProjection } from "@pickflick/contracts";
-import { Button, Dialog, TextAreaField, TextField } from "@pickflick/ui";
+import { Button, Dialog, InfoTip, TextAreaField, TextField } from "@pickflick/ui";
 
 import {
   changeClubMemberRoleAction,
@@ -102,7 +102,7 @@ function ClubInfoCard({ projection }: Readonly<{ projection: ClubSettingsProject
   return (
     <section aria-labelledby="club-info-title" className={styles.card}>
       <h2 id="club-info-title">Club Info</h2>
-      <form action={formAction} className={styles.stack}>
+      <form action={formAction} className={styles.cardForm}>
         <input name="operationId" type="hidden" value={operationId} />
         <StoredVisibility projection={projection} />
         <TextField
@@ -147,7 +147,7 @@ function VisibilityCard({ projection }: Readonly<{ projection: ClubSettingsProje
   return (
     <section aria-labelledby="club-visibility-title" className={styles.card}>
       <h2 id="club-visibility-title">Settings</h2>
-      <form action={formAction} className={styles.stack}>
+      <form action={formAction} className={styles.cardForm}>
         <input name="operationId" type="hidden" value={operationId} />
         <StoredClubInfo projection={projection} />
         <fieldset className={styles.checks} disabled={!writable}>
@@ -342,7 +342,14 @@ function DangerZone({ projection }: Readonly<{ projection: ClubSettingsProjectio
   );
   return (
     <section aria-labelledby="club-danger-title" className={`${styles.card} ${styles.dangerZone}`}>
-      <h2 id="club-danger-title">Danger Zone</h2>
+      <div className={styles.cardTitle}>
+        <h2 id="club-danger-title">Danger Zone</h2>
+        <InfoTip label="About these actions">
+          {isAdmin
+            ? "Admins cannot leave their own Club. Delete it while it is empty, or ask the App Admin to transfer it."
+            : "Leaving ends your Membership immediately. Shared Club history remains for its members."}
+        </InfoTip>
+      </div>
       {isAdmin ? (
         <>
           <div className={styles.dangerActions}>
@@ -352,15 +359,11 @@ function DangerZone({ projection }: Readonly<{ projection: ClubSettingsProjectio
             ) : <ReactivateAction clubId={clubId} />}
             {deleteAction}
           </div>
-          <p className={styles.explanation}>Admins cannot leave their own Club. Delete it while it is empty, or ask the App Admin to transfer it.</p>
         </>
       ) : (
-        <>
-          <div className={styles.dangerActions}>
-            <ConfirmAction action="leave" clubId={clubId} confirmation="LEAVE" description="You will lose access to this private Club. Shared history remains for its members." label="Leave Club" title="Leave this Club?" />
-          </div>
-          <p className={styles.explanation}>Your Membership ends immediately. Shared Club history remains.</p>
-        </>
+        <div className={styles.dangerActions}>
+          <ConfirmAction action="leave" clubId={clubId} confirmation="LEAVE" description="You will lose access to this private Club. Shared history remains for its members." label="Leave Club" title="Leave this Club?" />
+        </div>
       )}
     </section>
   );

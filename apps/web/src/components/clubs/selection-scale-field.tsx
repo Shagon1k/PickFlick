@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { InfoTip } from "@pickflick/ui";
+
 import styles from "./selection-scale-field.module.css";
 
 const SELECTION_SCALE_CEILING = 10;
@@ -35,7 +37,12 @@ export function SelectionScaleField({
 
   return (
     <div className={styles.scale}>
-      <label className={styles.label} htmlFor={maxId}>Selection score range</label>
+      <div className={styles.labelRow}>
+        <label className={styles.label} htmlFor={maxId}>Selection score range</label>
+        <InfoTip label="About the Selection score range">
+          The highest score members can give a nomination during Selection. Scores start at {min}.
+        </InfoTip>
+      </div>
       <input name="selectionScaleMin" type="hidden" value={min} />
       <div className={styles.rangeRow}>
         <input
@@ -59,11 +66,7 @@ export function SelectionScaleField({
         />
         <span aria-hidden="true" className={styles.value}>{max}</span>
       </div>
-      <div className={styles.summary} id={summaryId}>
-        <span aria-hidden="true">{min}</span>
-        <span>Members score nominations {min}–{max}</span>
-      </div>
-      <p className={styles.description}>How many points members can give a nomination during Selection.</p>
+      <p className={styles.summary} id={summaryId}>Members score nominations {min}–{max}</p>
       {maxError ? <p className={styles.error} id={maxErrorId}>{maxError}</p> : null}
     </div>
   );
