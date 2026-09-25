@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { Module, type DynamicModule } from '@nestjs/common';
+import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';

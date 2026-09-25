@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 
+import styles from '@/components/shells/product-navigation.module.scss';
+import type { TShellMenuItem } from '@/components/shells/shell-navigation';
 import Icon, { type TIconName } from '@/components/ui/Icon/Icon';
 import { authClient } from '@/lib/auth-client';
-import type { ShellMenuItem } from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/product-navigation.module.scss';
 
-export function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
-    const iconByLabel: Readonly<Record<string, TIconName>> = {
+export function NavigationItemIcon({ label }: { label: string }) {
+    const iconByLabel: Record<string, TIconName> = {
         'Admin Panel': 'admin',
         'Application settings': 'settings',
         'Contact Us': 'contact',
@@ -40,7 +40,7 @@ export function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
     return <Icon className={styles.menuIcon} name={iconByLabel[label] ?? 'circle'} />;
 }
 
-function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
+function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     const content = (
         <>
             <NavigationItemIcon label={item.label} />
@@ -61,10 +61,7 @@ function FilmMenuItem({ item }: Readonly<{ item: ShellMenuItem }>) {
     );
 }
 
-export function FilmStrip({
-    items,
-    label,
-}: Readonly<{ items: readonly ShellMenuItem[]; label: string }>) {
+export function FilmStrip({ items, label }: { items: readonly TShellMenuItem[]; label: string }) {
     return (
         <div className={styles.filmStrip}>
             <nav aria-label={label}>
@@ -76,7 +73,7 @@ export function FilmStrip({
     );
 }
 
-function SignOutMenuItem({ content }: Readonly<{ content: ReactNode }>) {
+function SignOutMenuItem({ content }: { content: ReactNode }) {
     const [pending, setPending] = useState(false);
     const [error, setError] = useState('');
 

@@ -1,4 +1,6 @@
-import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import '@mantine/core/styles.layer.css';
+
+import { ColorSchemeScript, mantineHtmlProps, MantineProvider } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import { theme } from '@/theme/mantine';

@@ -5,9 +5,9 @@ import clsx from 'clsx';
 import { useRef, useState } from 'react';
 
 import fieldStyles from '@/components/ui/Field/Field.module.scss';
+import { fieldState, type IFieldProps } from '@/components/ui/Field/field.types';
 import FieldLabel from '@/components/ui/Field/FieldLabel';
 import FieldMessage, { FieldAnnouncements } from '@/components/ui/Field/FieldMessage';
-import { fieldState, type IFieldProps } from '@/components/ui/Field/field.types';
 import type { TOmitStyling } from '@/components/ui/types';
 
 import styles from './Select.module.scss';

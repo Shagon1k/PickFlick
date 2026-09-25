@@ -1,9 +1,9 @@
 import { authClient } from '@/lib/auth-client';
 
-export type IdentityProvider = 'apple' | 'google';
+export type TIdentityProvider = 'apple' | 'google';
 
 export async function startSocialSignIn(
-    provider: IdentityProvider,
+    provider: TIdentityProvider,
     returnTo: string,
 ): Promise<boolean> {
     const result = await authClient.signIn.social({

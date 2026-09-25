@@ -1,9 +1,9 @@
-import { createServer, type AddressInfo, type Socket } from 'node:net';
+import { type AddressInfo, createServer, type Socket } from 'node:net';
 
 import {
-    SYNTHETIC_FIXTURES,
     assertSafeSeedOrResetTarget,
     checkDatabaseReadiness,
+    SYNTHETIC_FIXTURES,
 } from '../index.js';
 
 describe('database safety', () => {

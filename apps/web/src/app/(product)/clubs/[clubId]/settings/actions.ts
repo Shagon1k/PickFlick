@@ -1,14 +1,13 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-
 import {
+    changeMemberRoleSchema,
     CLUB_AVATAR_MAX_BYTES,
     CLUB_AVATAR_MEDIA_TYPES,
-    changeMemberRoleSchema,
     updateClubSettingsSchema,
 } from '@pickflick/contracts';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 import {
     changeClubLifecycle,

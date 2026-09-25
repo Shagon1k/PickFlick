@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Button from '@/components/ui/Button/Button';
-import TextInput from '@/components/ui/TextInput/TextInput';
-
+import type { IShellRouteMap } from '@/components/shells/shell-navigation';
 import {
     AdminShell,
     ControlShell,
@@ -14,7 +11,10 @@ import {
     SetupShell,
     ShellPlaceholder,
 } from '@/components/shells/shells';
-import type { ShellRouteMap } from '@/components/shells/shell-navigation';
+import Button from '@/components/ui/Button/Button';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import TextInput from '@/components/ui/TextInput/TextInput';
+
 import styles from './page.module.scss';
 
 const shellNames = [
@@ -26,11 +26,11 @@ const shellNames = [
     'library',
     'admin',
 ] as const;
-type ShellName = (typeof shellNames)[number];
+type TShellName = (typeof shellNames)[number];
 const adminShellNames = ['session-admin', 'settings-admin', 'library-admin'] as const;
-type AdminShellName = (typeof adminShellNames)[number];
-type PreviewShellName = ShellName | AdminShellName;
-const previewRoutes: ShellRouteMap = {
+type TAdminShellName = (typeof adminShellNames)[number];
+type TPreviewShellName = TShellName | TAdminShellName;
+const previewRoutes: IShellRouteMap = {
     admin: '/shell-preview/admin',
     contact: '/shell-preview/public#contact',
     createClub: '/shell-preview/setup',
@@ -65,11 +65,11 @@ const previewAdminItems = [
     { href: '/shell-preview/admin#application', label: 'Application settings' },
 ] as const;
 
-function isPreviewShellName(value: string): value is PreviewShellName {
+function isPreviewShellName(value: string): value is TPreviewShellName {
     return [...shellNames, ...adminShellNames].some((name) => name === value);
 }
 
-function shellVariant(shell: PreviewShellName): Readonly<{ admin: boolean; shell: ShellName }> {
+function shellVariant(shell: TPreviewShellName): { admin: boolean; shell: TShellName } {
     switch (shell) {
         case 'session-admin':
             return { admin: true, shell: 'session' };
@@ -86,9 +86,7 @@ export function generateStaticParams() {
     return [...shellNames, ...adminShellNames].map((shell) => ({ shell }));
 }
 
-export default async function ShellPreviewPage({
-    params,
-}: Readonly<{ params: Promise<{ shell: string }> }>) {
+export default async function ShellPreviewPage({ params }: { params: Promise<{ shell: string }> }) {
     const { shell: previewShell } = await params;
     if (!isPreviewShellName(previewShell)) {
         notFound();

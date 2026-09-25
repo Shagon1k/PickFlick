@@ -1,10 +1,10 @@
+import { PublicShell } from '@/components/shells/shells';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
+import { createPublicMetadata } from '@/lib/public-metadata';
 
 import ContactForm from './_components/ContactForm/ContactForm';
-import styles from './contact.module.scss';
-import { PublicShell } from '@/components/shells/shells';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import styles from './page.module.scss';
 
 export const metadata = createPublicMetadata({
     title: 'Contact Us — PickFlick',

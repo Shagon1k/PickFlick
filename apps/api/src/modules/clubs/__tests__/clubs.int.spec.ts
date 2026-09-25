@@ -4,9 +4,9 @@ import type { IApiErrorEnvelope, IClubSettings, IClubSummary } from '@pickflick/
 
 import {
     createUser,
+    type ITestApi,
     removeUsers,
     startTestApi,
-    type ITestApi,
 } from '../../../testing/integration.js';
 
 const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1]);

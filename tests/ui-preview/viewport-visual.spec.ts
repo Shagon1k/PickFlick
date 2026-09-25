@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function openStablePreview(page: Page, viewport: { height: number; width: number }) {

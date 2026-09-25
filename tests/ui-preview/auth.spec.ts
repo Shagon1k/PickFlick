@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 async function openLogin(page: Page, viewport = canonicalViewports[0], route = '/login') {

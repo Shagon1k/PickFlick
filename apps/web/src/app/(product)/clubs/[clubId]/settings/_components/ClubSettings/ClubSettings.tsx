@@ -3,18 +3,18 @@
 import { type IClubSettings } from '@pickflick/contracts';
 
 import { clubNavigation } from '@/components/shells/shell-navigation';
-import styles from '../../settings.module.scss';
 
-import { AvatarCard, ClubInfoCard, VisibilityCard } from './ClubSettingsCards';
+import styles from '../../page.module.scss';
 import { DangerZone } from './ClubDangerZone';
+import { AvatarCard, ClubInfoCard, VisibilityCard } from './ClubSettingsCards';
 
-const roleLabels: Readonly<Record<IClubSettings['club']['membershipRole'], string>> = {
+const roleLabels: Record<IClubSettings['club']['membershipRole'], string> = {
     ADMIN: 'Admin',
     MODERATOR: 'Moderator',
     MEMBER: 'Member',
 };
 
-export function ClubSettings({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function ClubSettings({ projection }: { projection: IClubSettings }) {
     const active = projection.club.lifecycle === 'ACTIVE';
     const role = projection.club.membershipRole;
     const roleLabel = roleLabels[role];

@@ -1,7 +1,9 @@
 import eslint from '@eslint/js';
 import reactPlugin from '@eslint-react/eslint-plugin';
 import prettier from 'eslint-config-prettier';
+import checkFile from 'eslint-plugin-check-file';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import sonarjs from 'eslint-plugin-sonarjs';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -36,6 +38,65 @@ export default [
             // Soft guard against god-files: a signal to decompose, not a hard block.
             'max-lines': ['warn', { max: 500, skipBlankLines: true, skipComments: true }],
         },
+    },
+    {
+        // House style from .agent-docs/rules/typescript.md, enforced so every agent writes alike.
+        files: ['**/*.{ts,tsx}'],
+        plugins: { 'check-file': checkFile, 'simple-import-sort': simpleImportSort },
+        rules: {
+            'simple-import-sort/imports': 'error',
+            'simple-import-sort/exports': 'error',
+            '@typescript-eslint/naming-convention': [
+                'error',
+                { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
+                { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
+            ],
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: "TSTypeReference[typeName.name='Readonly']",
+                    message: 'Write plain types; props and data are not wrapped in Readonly<>.',
+                },
+            ],
+            'check-file/filename-naming-convention': [
+                'error',
+                { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
+                { ignoreMiddleExtensions: false },
+            ],
+        },
+    },
+    {
+        files: ['apps/web/**/*.{ts,tsx}'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['@mantine/*', '!@mantine/form'],
+                            message: 'Use the UI kit in @/components/ui; only it imports Mantine.',
+                        },
+                        {
+                            group: ['../../../*'],
+                            message: 'Import through the @/ alias instead of a deep relative path.',
+                        },
+                    ],
+                },
+            ],
+            'check-file/folder-naming-convention': [
+                'error',
+                { 'apps/web/src/components/ui/*/': 'PASCAL_CASE' },
+            ],
+        },
+    },
+    {
+        // The UI kit and theme own Mantine; tests may reach files outside src such as next.config.
+        files: [
+            'apps/web/src/components/ui/**',
+            'apps/web/src/theme/**',
+            'apps/web/**/__tests__/**',
+        ],
+        rules: { 'no-restricted-imports': 'off' },
     },
     {
         files: ['apps/web/**/*.{ts,tsx}'],

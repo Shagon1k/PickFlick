@@ -2,21 +2,22 @@
 
 import { useEffect, useRef } from 'react';
 
-import Icon from '@/components/ui/Icon/Icon';
-
 import { FilmStrip } from '@/components/shells/film-strip';
 import { NotificationsPanel } from '@/components/shells/notifications-panel';
+import styles from '@/components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
     useOverlayDismissal,
     useProductOverlay,
 } from '@/components/shells/product-overlay';
-import type { MobileNavigationEntry } from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/product-navigation.module.scss';
+import type { TMobileNavigationEntry } from '@/components/shells/shell-navigation';
+import Icon from '@/components/ui/Icon/Icon';
 
 export function MobileProductNavigation({
     entries,
-}: Readonly<{ entries: readonly MobileNavigationEntry[] }>) {
+}: {
+    entries: readonly TMobileNavigationEntry[];
+}) {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const navigationRef = useRef<HTMLElement>(null);
     const notificationsRef = useRef<HTMLDivElement>(null);

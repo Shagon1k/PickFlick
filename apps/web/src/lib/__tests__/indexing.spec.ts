@@ -1,7 +1,6 @@
-import nextConfig from '../../../next.config';
+import { legalDocuments } from '@/app/(marketing)/legal/[document]/legal-content';
 import robots from '@/app/robots';
 import sitemap from '@/app/sitemap';
-import { legalDocuments } from '@/app/(marketing)/legal/[document]/legal-content';
 import {
     CANONICAL_ORIGIN,
     INDEXABLE_PUBLIC_ROUTES,
@@ -9,6 +8,8 @@ import {
     NON_PUBLIC_INDEXING_BOUNDARIES,
 } from '@/lib/indexing';
 import { createPublicMetadata, rootMetadata } from '@/lib/public-metadata';
+
+import nextConfig from '../../../next.config';
 
 describe('public indexing boundaries', () => {
     it('should require routes to opt into indexing', () => {

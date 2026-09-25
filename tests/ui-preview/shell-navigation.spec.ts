@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+
 import { expectMobileAdminEntry, openShell } from './shell-fixtures';
 import { canonicalViewports } from './viewports';
 

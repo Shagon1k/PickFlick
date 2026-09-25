@@ -4,6 +4,7 @@ import {
     unstable_doesMiddlewareMatch,
 } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
+
 import { config, proxy } from '@/proxy';
 
 describe('preview route proxy', () => {

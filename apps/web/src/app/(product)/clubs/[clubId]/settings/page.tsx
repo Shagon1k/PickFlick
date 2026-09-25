@@ -1,24 +1,24 @@
+import type { IClubSettings } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import type { IClubSettings } from '@pickflick/contracts';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-
 import { getClubSettings } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
-import { ApiError } from '@/lib/api.server';
-import { ClubSettings } from './_components/ClubSettings/ClubSettings';
-import styles from './settings.module.scss';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import { ProductFrame } from '@/components/shells/shells';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { ApiError } from '@/lib/api.server';
+
+import { ClubSettings } from './_components/ClubSettings/ClubSettings';
+import styles from './page.module.scss';
 
 export const metadata: Metadata = {
     title: 'Club settings — PickFlick',
     description: 'Manage one private PickFlick Club.',
 };
 
-function SafeFailure({ forbidden = false }: Readonly<{ forbidden?: boolean }>) {
+function SafeFailure({ forbidden = false }: { forbidden?: boolean }) {
     return (
         <ProductFrame>
             <main className={styles.layout}>

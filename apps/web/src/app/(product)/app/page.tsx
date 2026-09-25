@@ -1,18 +1,18 @@
+import type { IClubSummary } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import type { IClubSummary } from '@pickflick/contracts';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Pill from '@/components/ui/Pill/Pill';
-
 import { listClubs } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
-import { ApiError } from '@/lib/api.server';
-import styles from '../onboarding.module.scss';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import { ProductFrame } from '@/components/shells/shells';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
+import Pill from '@/components/ui/Pill/Pill';
+import { ApiError } from '@/lib/api.server';
+
+import styles from '../onboarding.module.scss';
 
 export const metadata: Metadata = {
     title: 'Your Clubs — PickFlick',
@@ -49,7 +49,7 @@ function NoClubs() {
     );
 }
 
-function ClubReady({ club }: Readonly<{ club: IClubSummary }>) {
+function ClubReady({ club }: { club: IClubSummary }) {
     return (
         <ProductFrame clubItems={clubNavigation(club.id, 'overview')}>
             <main className={styles.readyMain}>

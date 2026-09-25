@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
+
 import { canonicalViewports } from './viewports';
 
 export const shellRoutes = [
@@ -11,14 +12,14 @@ export const shellRoutes = [
     'library',
     'admin',
 ] as const;
-export type PreviewShellRoute =
+export type TPreviewShellRoute =
     | (typeof shellRoutes)[number]
     | 'session-admin'
     | 'settings-admin'
     | 'library-admin';
 export async function openShell(
     page: Page,
-    shell: PreviewShellRoute,
+    shell: TPreviewShellRoute,
     viewport: { height: number; width: number },
 ) {
     await page.setViewportSize(viewport);
@@ -53,7 +54,7 @@ export function formatViolations(
         .join('\n');
 }
 
-export async function expectMobileAdminEntry(page: Page, shell: PreviewShellRoute) {
+export async function expectMobileAdminEntry(page: Page, shell: TPreviewShellRoute) {
     await openShell(page, shell, canonicalViewports[0]);
     const mobileNavigation = page.getByRole('navigation', { name: 'Mobile product navigation' });
     await expect(mobileNavigation.getByRole('button', { name: 'Admin' })).toHaveCount(0);

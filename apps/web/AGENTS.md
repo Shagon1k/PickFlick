@@ -29,4 +29,5 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Import with the `@/` alias; images from `assets/brand` with `@brand/`.
-- Copy `src/app/(auth)/login` as the template for a new route.
+- Copy `src/app/(auth)/login` as the template for a new route and
+  `src/app/(marketing)/contact/_components/ContactForm` for a form.

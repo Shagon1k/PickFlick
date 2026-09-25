@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 import { FilmStrip, NavigationItemIcon } from '@/components/shells/film-strip';
-import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
-import type { ShellNavigationItem } from '@/components/shells/shell-navigation';
 import styles from '@/components/shells/product-navigation.module.scss';
+import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
+import type { IShellNavigationItem } from '@/components/shells/shell-navigation';
 
 export function SectionNavigation({
     items,
     label,
-}: Readonly<{ items: readonly ShellNavigationItem[]; label: string }>) {
+}: {
+    items: readonly IShellNavigationItem[];
+    label: string;
+}) {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const sectionId = label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-');
     const overlay = `section:${sectionId}` as const;
@@ -68,10 +71,7 @@ export function SectionNavigation({
     );
 }
 
-export function BoundedScrollRegion({
-    children,
-    label,
-}: Readonly<{ children: ReactNode; label: string }>) {
+export function BoundedScrollRegion({ children, label }: { children: ReactNode; label: string }) {
     return (
         <div
             aria-label={label}

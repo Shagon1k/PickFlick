@@ -19,13 +19,13 @@ import {
     changeMemberRoleSchema,
     confirmClubActionSchema,
     createClubSchema,
-    updateClubSettingsSchema,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
     type TConfirmClubActionRequest,
     type TCreateClubRequest,
     type TUpdateClubSettingsRequest,
+    updateClubSettingsSchema,
 } from '@pickflick/contracts';
 import type { Response } from 'express';
 

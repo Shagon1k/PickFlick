@@ -43,8 +43,8 @@ export const legalDocuments = {
     },
 } as const;
 
-export type LegalDocumentName = keyof typeof legalDocuments;
+export type TLegalDocumentName = keyof typeof legalDocuments;
 
-export function isLegalDocumentName(value: string): value is LegalDocumentName {
+export function isLegalDocumentName(value: string): value is TLegalDocumentName {
     return value in legalDocuments;
 }

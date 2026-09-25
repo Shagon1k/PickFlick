@@ -1,5 +1,3 @@
-import type { StaticImageData } from 'next/image';
-
 import favicon from '@brand/favicon.png';
 import panda404 from '@brand/panda-404.webp';
 import pandaAnalytic from '@brand/panda-analytic.webp';
@@ -10,20 +8,21 @@ import pandaCoffeeCollection from '@brand/panda-coffee-collection.webp';
 import pandaCollection from '@brand/panda-collection.webp';
 import pandaCritic from '@brand/panda-critic.webp';
 import pandaHero from '@brand/panda-hero.webp';
-import pandaInvitedCampaign from '@brand/panda-invited-2.webp';
 import pandaInvited from '@brand/panda-invited.webp';
+import pandaInvitedCampaign from '@brand/panda-invited-2.webp';
 import pandaLogo from '@brand/panda-logo.webp';
 import pandaPollMaster from '@brand/panda-poll-master.webp';
 import pandaPrivacy from '@brand/panda-privacy.webp';
 import pandaProjectionist from '@brand/panda-projectionist.webp';
-import pandaRatingResults from '@brand/panda-rating-2.webp';
 import pandaRating from '@brand/panda-rating.webp';
+import pandaRatingResults from '@brand/panda-rating-2.webp';
 import pandaScales from '@brand/panda-scales.webp';
 import pandaSession from '@brand/panda-session.webp';
 import pandaSettingsProfile from '@brand/panda-settings-1.webp';
 import pandaSettingsSubscription from '@brand/panda-settings-2.webp';
 import pandaWatching from '@brand/panda-watching.webp';
 import pandaZoom from '@brand/panda-zoom.webp';
+import type { StaticImageData } from 'next/image';
 
 interface IBrandAsset {
     source: StaticImageData;

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const clubId = '10000000-0000-4000-8000-000000000031';

@@ -1,21 +1,20 @@
 'use client';
 
+import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
 import { useActionState, useState } from 'react';
 
-import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
+import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
 import Button from '@/components/ui/Button/Button';
 import Textarea from '@/components/ui/Textarea/Textarea';
 import TextInput from '@/components/ui/TextInput/TextInput';
 
+import { initialClubActionState } from '../../action-state';
 import {
     removeClubAvatarAction,
     updateClubSettingsAction,
     uploadClubAvatarAction,
 } from '../../actions';
-import { initialClubActionState } from '../../action-state';
-import styles from '../../settings.module.scss';
-import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
-
+import styles from '../../page.module.scss';
 import {
     ActionStatus,
     isWritable,
@@ -25,7 +24,7 @@ import {
     visibilityOptions,
 } from './club-settings-shared';
 
-export function ClubInfoCard({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function ClubInfoCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
     const [state, formAction, pending] = useActionState(action, initialClubActionState);
     const writable = isWritable(projection);
@@ -67,7 +66,7 @@ export function ClubInfoCard({ projection }: Readonly<{ projection: IClubSetting
     );
 }
 
-export function VisibilityCard({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function VisibilityCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
     const [state, formAction, pending] = useActionState(action, initialClubActionState);
     const writable = isWritable(projection);
@@ -109,7 +108,7 @@ export function VisibilityCard({ projection }: Readonly<{ projection: IClubSetti
     );
 }
 
-export function AvatarCard({ projection }: Readonly<{ projection: IClubSettings }>) {
+export function AvatarCard({ projection }: { projection: IClubSettings }) {
     const upload = uploadClubAvatarAction.bind(null, projection.club.id);
     const remove = removeClubAvatarAction.bind(null, projection.club.id);
     const [uploadState, uploadAction, uploadPending] = useActionState(

@@ -1,4 +1,4 @@
-import { Global, Module, type DynamicModule } from '@nestjs/common';
+import { type DynamicModule, Global, Module } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 
 export const RUNTIME_ENVIRONMENT = Symbol('RUNTIME_ENVIRONMENT');

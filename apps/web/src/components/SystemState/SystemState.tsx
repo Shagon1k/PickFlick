@@ -1,11 +1,10 @@
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Button from '@/components/ui/Button/Button';
-
 import { ProductFrame, PublicShell } from '@/components/shells/shells';
 import styles from '@/components/SystemState/SystemState.module.scss';
+import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import Button from '@/components/ui/Button/Button';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 
-type SystemStateVariant = 'application-error' | 'not-found';
+type TSystemStateVariant = 'application-error' | 'not-found';
 
 const systemStateContent = {
     'application-error': {
@@ -26,11 +25,11 @@ export function SystemState({
     onRetry,
     signedIn,
     variant,
-}: Readonly<{
+}: {
     onRetry?: () => void;
     signedIn: boolean;
-    variant: SystemStateVariant;
-}>) {
+    variant: TSystemStateVariant;
+}) {
     const content = systemStateContent[variant];
     const destination = signedIn
         ? { href: '/app', label: 'Back to Hub' }

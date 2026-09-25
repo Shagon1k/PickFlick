@@ -8,15 +8,14 @@ import type {
     TCreateClubRequest,
     TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
-
 import type { Prisma } from '@pickflick/database';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { toClubSummary } from './club.mapper.js';
 import { assertActive, assertAdmin, findMembership, recordAudit } from './club-access.js';
 import { clubPermissions } from './club-permissions.js';
 import { clubEntitlements, tierEntitlements } from './club-tiers.js';
-import { toClubSummary } from './club.mapper.js';
 
 @Injectable()
 export class ClubsService {

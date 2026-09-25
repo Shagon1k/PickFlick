@@ -2,8 +2,8 @@
 
 import { useId, useState } from 'react';
 
-import { pricingFaqs } from '@/app/(marketing)/marketing-content';
 import styles from '@/app/(marketing)/marketing.module.scss';
+import { pricingFaqs } from '@/app/(marketing)/marketing-content';
 
 export function PricingFaq() {
     const instanceId = useId();

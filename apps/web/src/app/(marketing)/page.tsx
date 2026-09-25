@@ -1,12 +1,12 @@
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { PublicShell } from '@/components/shells/shells';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 import Icon from '@/components/ui/Icon/Icon';
+import { createPublicMetadata } from '@/lib/public-metadata';
 
 import { LandingRevealRoot } from './_components/LandingReveal/LandingReveal';
-import { landingFeatures, landingSteps } from './marketing-content';
 import styles from './marketing.module.scss';
-import { PublicShell } from '@/components/shells/shells';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import { landingFeatures, landingSteps } from './marketing-content';
 
 export const metadata = createPublicMetadata({
     title: 'PickFlick — Pick a film. Watch together. Remember everything.',

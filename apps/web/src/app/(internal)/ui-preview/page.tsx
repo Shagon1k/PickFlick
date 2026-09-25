@@ -1,24 +1,24 @@
 import Alert from '@/components/ui/Alert/Alert';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Button from '@/components/ui/Button/Button';
-import Table, { type ITableColumn, type ITableRow } from '@/components/ui/Table/Table';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import LoadingState from '@/components/ui/LoadingState/LoadingState';
 import Pill from '@/components/ui/Pill/Pill';
 import Progress from '@/components/ui/Progress/Progress';
 import Select from '@/components/ui/Select/Select';
 import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
+import Switch from '@/components/ui/Switch/Switch';
+import Table, { type ITableColumn, type ITableRow } from '@/components/ui/Table/Table';
 import Tabs from '@/components/ui/Tabs/Tabs';
 import Textarea from '@/components/ui/Textarea/Textarea';
 import TextInput from '@/components/ui/TextInput/TextInput';
-import Switch from '@/components/ui/Switch/Switch';
 
 import {
     PreviewInteractions,
     PreviewMenus,
     ReviewFixInteractions,
 } from './_components/PreviewInteractions/PreviewInteractions';
-import styles from './preview.module.scss';
+import styles from './page.module.scss';
 
 const tableColumns: ITableColumn[] = [
     { key: 'member', header: 'Member' },
@@ -299,7 +299,12 @@ function PreviewSection({
     description,
     kicker,
     title,
-}: Readonly<{ children: React.ReactNode; description: string; kicker: string; title: string }>) {
+}: {
+    children: React.ReactNode;
+    description: string;
+    kicker: string;
+    title: string;
+}) {
     const id = kicker.replaceAll(/[^a-z0-9]+/gi, '-').toLowerCase();
     return (
         <section
@@ -319,7 +324,7 @@ function PreviewSection({
     );
 }
 
-function StateCell({ children, label }: Readonly<{ children: React.ReactNode; label: string }>) {
+function StateCell({ children, label }: { children: React.ReactNode; label: string }) {
     return (
         <div className={styles.stateCell}>
             <span className={styles.stateLabel}>{label}</span>

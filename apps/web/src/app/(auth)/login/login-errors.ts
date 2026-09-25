@@ -1,4 +1,4 @@
-const safeErrorMessages: Readonly<Record<string, string>> = {
+const safeErrorMessages: Record<string, string> = {
     access_denied: 'Sign-in was cancelled. You can try again when you are ready.',
     account_not_linked: 'This email is already connected to another sign-in method.',
     apple_email_not_verified:
