@@ -91,7 +91,7 @@ jobs:
       GOOGLE_CLIENT_SECRET: synthetic-ci-google-client-secret
       RESEND_DELIVERY_MODE: disabled
       CI_COMPOSE_PROJECT_NAME: pickflick-ci-${{ github.run_id }}-${{ github.run_attempt }}
-      DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:5432/pickflick_test
+      DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:15432/pickflick_test
       MINIO_ROOT_PASSWORD: synthetic-ci-password
       MINIO_ROOT_USER: pickflick-ci
       PICKFLICK_ENV_FILE: .env.example
@@ -142,9 +142,6 @@ jobs:
 
       - name: Run database integration tests
         run: pnpm test:integration
-
-
-
 
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke
