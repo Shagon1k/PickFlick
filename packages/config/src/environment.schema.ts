@@ -201,10 +201,10 @@ const RUNTIME_ENVIRONMENT_RULES: {
     })),
     {
         variable: 'APPLE_PRIVATE_KEY',
-        message: 'must be a valid EC P-256 PKCS#8 PEM private key in uat or production',
+        // The API signs Apple's client secret at startup, so a bad key must fail validation first.
+        message: 'must be a valid EC P-256 PKCS#8 PEM private key',
         broken: (env) =>
             Boolean(env.APPLE_SIGN_IN_ENABLED) &&
-            isDeployed(env) &&
             Boolean(env.APPLE_PRIVATE_KEY) &&
             !isEcP256PrivateKey(env.APPLE_PRIVATE_KEY ?? ''),
     },

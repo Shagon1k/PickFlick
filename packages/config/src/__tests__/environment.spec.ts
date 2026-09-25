@@ -129,13 +129,13 @@ describe('parseRuntimeEnvironment', () => {
             );
         });
 
-        it('should require a real EC P-256 key in production', () => {
+        it('should require a real EC P-256 key', () => {
             const key = generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
                 .privateKey.export({ format: 'pem', type: 'pkcs8' })
                 .toString();
 
             expect(
-                failuresOf({ ...production, ...apple, APPLE_PRIVATE_KEY: 'not-a-key' }).join(' '),
+                failuresOf({ ...local, ...apple, APPLE_PRIVATE_KEY: 'not-a-key' }).join(' '),
             ).toContain('APPLE_PRIVATE_KEY must be a valid EC P-256');
             expect(
                 parseRuntimeEnvironment({ ...production, ...apple, APPLE_PRIVATE_KEY: key }).auth,
