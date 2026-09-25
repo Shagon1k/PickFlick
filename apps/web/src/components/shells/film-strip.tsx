@@ -6,7 +6,7 @@ import { Icon, type IconName } from "@pickflick/ui";
 
 import { authClient } from "../auth/auth-client";
 import type { ShellMenuItem } from "./shell-navigation";
-import styles from "./shells.module.css";
+import styles from "./product-navigation.module.css";
 
 export function NavigationItemIcon({ label }: Readonly<{ label: string }>) {
   const iconByLabel: Readonly<Record<string, IconName>> = {

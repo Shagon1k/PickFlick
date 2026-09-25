@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { FilmStrip, NavigationItemIcon } from "./film-strip";
 import { useOverlayDismissal, useProductOverlay } from "./product-overlay";
 import type { ShellNavigationItem } from "./shell-navigation";
-import styles from "./shells.module.css";
+import styles from "./product-navigation.module.css";
 
 export function SectionNavigation({
   items,

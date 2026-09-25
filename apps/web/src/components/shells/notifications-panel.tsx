@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 
-import styles from "./shells.module.css";
+import styles from "./product-navigation.module.css";
 
 export function NotificationsPanel({
   id,
