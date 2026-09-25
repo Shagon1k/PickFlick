@@ -34,6 +34,8 @@
 }
 
 .visual {
+  --mascot-optical-height: min(100%, 63cqw);
+
   position: relative;
   display: grid;
   width: 100%;
@@ -83,16 +85,16 @@
   white-space: nowrap;
 }
 
+/* The mascot keeps the prototype's optical height so the status code stays visible above it. */
 .mascot {
   position: relative;
   z-index: 1;
-  width: 100%;
-  min-height: 0;
-  height: 100%;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: var(--mascot-optical-height);
   filter: grayscale(1) contrast(1.04);
   mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
-  object-fit: contain;
-  object-position: center bottom;
 }
 
 .body {
@@ -198,9 +200,10 @@
     width: min(520px, 108vw);
   }
 
+  /* A taller stage keeps the status code above the mascot, which fills the narrow width. */
   .visual {
     width: min(390px, 88vw);
-    height: 240px;
+    height: 300px;
   }
 
   .visual::before,
@@ -210,6 +213,7 @@
   }
 
   .code {
+    top: 0;
     font-size: clamp(110px, 34vw, 156px);
   }
 
