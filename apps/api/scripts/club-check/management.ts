@@ -5,6 +5,9 @@ import { SYNTHETIC_FIXTURES } from '@pickflick/database';
 import { ClubAuthorizationError, ClubConflictError } from '../../src/clubs/club.errors.js';
 import { avatarStorage, database, ids, management, principal } from './harness.js';
 
+// A call, not a property read, so each check sees the live count instead of a narrowed literal.
+const storedAvatarCount = (): number => avatarStorage.objects.size;
+
 export async function checkClubManagement() {
     const adminless = await management.project(principal(ids.member), ids.adminlessClub);
     if (adminless.club.membershipRole !== 'MEMBER' || adminless.permissions.manageLifecycle) {
@@ -126,7 +129,7 @@ export async function checkClubManagement() {
         Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]),
         'image/png',
     );
-    if (!avatar.changed || !avatar.hasAvatar || avatarStorage.objects.size !== 1) {
+    if (!avatar.changed || !avatar.hasAvatar || storedAvatarCount() !== 1) {
         throw new Error(
             'Club avatar storage/reference update did not complete atomically enough for recovery.',
         );
@@ -134,7 +137,7 @@ export async function checkClubManagement() {
     const removedAvatar = await management.removeAvatar(principal(ids.admin), ids.club, {
         operationId: randomUUID(),
     });
-    if (!removedAvatar.changed || removedAvatar.hasAvatar || avatarStorage.objects.size !== 0) {
+    if (!removedAvatar.changed || removedAvatar.hasAvatar || storedAvatarCount() !== 0) {
         throw new Error('Club avatar removal did not clear its reference and private object.');
     }
 
@@ -185,7 +188,7 @@ export async function checkClubManagement() {
     if (
         !avatarRetryAfterArchive.replayed ||
         avatarRetryAfterArchive.hasAvatar ||
-        avatarStorage.objects.size !== 0
+        storedAvatarCount() !== 0
     ) {
         throw new Error(
             'An archived Club avatar retry did not return its receipt without rewriting storage.',

@@ -10,7 +10,7 @@
         "contact:check": "tsx scripts/check-contact.ts",
         "dev": "nodemon",
         "start": "node dist/main.js",
-        "typecheck": "tsc -p tsconfig.json"
+        "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.scripts.json"
     },
     "dependencies": {
         "@better-auth/prisma-adapter": "1.7.5",
