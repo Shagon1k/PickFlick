@@ -7,8 +7,7 @@
         "../../packages/config/tsconfig",
         "../../packages/config/dist",
         "../../packages/contracts/dist",
-        "../../packages/database/dist",
-        "../../packages/observability/dist"
+        "../../packages/database/dist"
     ],
     "ignore": ["src/**/__tests__/**"],
     "ext": "ts,js,json,env",

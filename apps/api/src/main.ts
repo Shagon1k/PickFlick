@@ -6,74 +6,32 @@ import {
     loadRuntimeEnvironment,
     safeEnvironmentValidationFailures,
 } from '@pickflick/config/environment';
-import { completeWithin, createLogger } from '@pickflick/observability';
+import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
-import { configureApplication } from './configure-application.js';
+import { configureApplication } from './config/configure-application.js';
 
 async function bootstrap(): Promise<void> {
     const environment = loadRuntimeEnvironment();
-    const logger = createLogger({ service: 'api', environment: environment.appEnvironment });
-
-    try {
-        const app = await NestFactory.create<NestExpressApplication>(
-            AppModule.register(environment, logger),
-            {
-                bodyParser: false,
-                logger: false,
-            },
-        );
-        configureApplication(app, logger);
-        await app.listen(environment.apiPort, environment.apiHost);
-        logger.info(
-            { event: 'service.started', host: environment.apiHost, port: environment.apiPort },
-            'API listening.',
-        );
-
-        let shutdown: Promise<void> | undefined;
-        const stop = (signal: NodeJS.Signals) => {
-            shutdown ??= (async () => {
-                try {
-                    logger.info({ event: 'service.stopping', signal }, 'API stopping.');
-                    const closed = await completeWithin(
-                        app.close(),
-                        environment.shutdownTimeoutMilliseconds,
-                    );
-                    if (!closed) {
-                        logger.fatal(
-                            { event: 'service.shutdown.timeout', signal },
-                            'API shutdown timed out.',
-                        );
-                        process.exit(1);
-                    }
-                    logger.info({ event: 'service.stopped', signal }, 'API stopped.');
-                } catch {
-                    logger.fatal(
-                        { event: 'service.shutdown.failed', signal },
-                        'API shutdown failed.',
-                    );
-                    process.exit(1);
-                }
-            })();
-        };
-        process.once('SIGINT', stop);
-        process.once('SIGTERM', stop);
-    } catch {
-        logger.fatal({ event: 'service.start.failed' }, 'API failed to start.');
-        process.exitCode = 1;
-    }
+    const app = await NestFactory.create<NestExpressApplication>(AppModule.register(environment), {
+        bodyParser: false,
+        bufferLogs: true,
+    });
+    app.useLogger(app.get(Logger));
+    configureApplication(app);
+    await app.listen(environment.apiPort, environment.apiHost);
 }
 
 try {
     await bootstrap();
 } catch (error) {
+    // Environment failures name only the variable and rule, never its value.
     const failures = safeEnvironmentValidationFailures(error);
     process.stderr.write(
         `${JSON.stringify({
             level: 'fatal',
             service: 'api',
-            event: 'configuration.invalid',
-            message: 'API configuration is invalid.',
+            event: failures ? 'configuration.invalid' : 'service.start.failed',
             ...(failures ? { failures } : {}),
             time: new Date().toISOString(),
         })}\n`,

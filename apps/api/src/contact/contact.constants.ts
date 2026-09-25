@@ -1,2 +1,0 @@
-export const CONTACT_RATE_LIMIT_MAX = 5;
-export const CONTACT_RATE_LIMIT_WINDOW_SECONDS = 10 * 60;
