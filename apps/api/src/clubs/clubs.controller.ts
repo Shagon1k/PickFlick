@@ -30,6 +30,7 @@ import type {
   UpdateClubSettingsResponse,
 } from "@pickflick/contracts";
 
+import { assertJsonBody } from "../common/http/json-body.js";
 import {
   AUTHENTICATED_PRINCIPAL,
   type AuthenticatedRequest,
@@ -44,11 +45,6 @@ function principal(request: AuthenticatedRequest) {
     throw new Error("Authentication guard did not attach a principal.");
   }
   return authenticatedPrincipal;
-}
-
-function acceptsJsonBody(request: AuthenticatedRequest): boolean {
-  const contentType = request.headers["content-type"];
-  return typeof contentType === "string" && contentType.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
 async function command<T>(callback: () => Promise<T>): Promise<T> {
@@ -89,9 +85,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<CreateClubResponse> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.onboarding.create(principal(request), body));
   }
 
@@ -120,9 +114,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<UpdateClubSettingsResponse> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.updateSettings(principal(request), clubId, body));
   }
 
@@ -134,9 +126,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubOperationReceipt> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.changeMemberRole(principal(request), clubId, membershipId, body));
   }
 
@@ -147,9 +137,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubOperationReceipt> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.changeLifecycle(principal(request), clubId, "archive", body));
   }
 
@@ -160,9 +148,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubOperationReceipt> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.changeLifecycle(principal(request), clubId, "reactivate", body));
   }
 
@@ -173,9 +159,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubOperationReceipt> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.leave(principal(request), clubId, body));
   }
 
@@ -186,9 +170,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubOperationReceipt> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.delete(principal(request), clubId, body));
   }
 
@@ -216,9 +198,7 @@ export class ClubsController {
     @Body() body: unknown,
     @Req() request: AuthenticatedRequest,
   ): Promise<ClubAvatarResponse> {
-    if (!acceptsJsonBody(request)) {
-      throw new UnsupportedMediaTypeException();
-    }
+    assertJsonBody(request);
     return command(() => this.management.removeAvatar(principal(request), clubId, body));
   }
 

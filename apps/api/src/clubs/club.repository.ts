@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
+import { canonicalUuid } from "../common/validation/uuid.js";
+import { lockKeys } from "../database/advisory-lock.js";
 import { DatabaseService } from "../database/database.service.js";
 import { ClubAuthorizationError, ClubConflictError } from "./club.errors.js";
 import type { PersistClubInput, StoredClubSummary } from "./club-onboarding.types.js";
@@ -27,10 +29,6 @@ export interface ClubTransitionResult {
   readonly auditEventId?: string;
 }
 
-function canonicalUuid(value: string): string {
-  return value.toLowerCase();
-}
-
 export abstract class ClubRepository {
   abstract create(input: PersistClubInput, adminClubLimit: number): Promise<StoredClubSummary>;
   abstract listForUser(userId: string): Promise<readonly StoredClubSummary[]>;
@@ -48,7 +46,7 @@ export class PrismaClubRepository extends ClubRepository {
   async create(input: PersistClubInput, adminClubLimit: number): Promise<StoredClubSummary> {
     const creatorUserId = canonicalUuid(input.creatorUserId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-creation:${creatorUserId}`}, 0))`;
+      await lockKeys(transaction, `club-creation:${creatorUserId}`);
 
       const creator = await transaction.user.findUnique({
         where: { id: creatorUserId },
@@ -171,8 +169,7 @@ export class PrismaClubRepository extends ClubRepository {
     const operationId = canonicalUuid(input.operationId);
     const targetMembershipId = canonicalUuid(input.targetMembershipId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
 
       const target = await transaction.membership.findUnique({
         where: { id: targetMembershipId },
@@ -268,8 +265,7 @@ export class PrismaClubRepository extends ClubRepository {
     const operationId = canonicalUuid(input.operationId);
     const targetMembershipId = canonicalUuid(input.targetMembershipId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
 
       const target = await transaction.membership.findUnique({
         where: { id: targetMembershipId },

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import type { UpdateClubSettingsRequest } from "@pickflick/contracts";
+import {
+  CLUB_AVATAR_MAX_BYTES,
+  CLUB_AVATAR_MEDIA_TYPES,
+  type UpdateClubSettingsRequest,
+} from "@pickflick/contracts";
 
 import {
   removeClubAvatar,
@@ -131,8 +135,8 @@ export async function uploadClubAvatarAction(
   formData: FormData,
 ): Promise<ClubManagementActionState> {
   const file = formData.get("avatar");
-  if (!(file instanceof File) || file.size === 0 || file.size > 512 * 1024 ||
-    !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+  if (!(file instanceof File) || file.size === 0 || file.size > CLUB_AVATAR_MAX_BYTES ||
+    !(CLUB_AVATAR_MEDIA_TYPES as readonly string[]).includes(file.type)) {
     return state(previous, "error", "Choose a PNG, JPEG, or WebP image no larger than 512 KiB.");
   }
   const result = await submitMutation(previous, async () =>

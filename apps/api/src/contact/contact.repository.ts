@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
+import { lockKeys } from "../database/advisory-lock.js";
 import { DatabaseService } from "../database/database.service.js";
 import type { AcceptContactMessageInput, ContactAcceptance } from "./contact.types.js";
 
@@ -23,7 +24,7 @@ export class PrismaContactMessageRepository extends ContactMessageRepository {
     limit: number,
   ): Promise<ContactAcceptance> {
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`contact-key:${input.submissionKey}`}, 0))`;
+      await lockKeys(transaction, `contact-key:${input.submissionKey}`);
       const existing = await transaction.contactMessage.findUnique({
         where: { submissionKey: input.submissionKey },
         select: { id: true, contentHash: true },
@@ -34,7 +35,7 @@ export class PrismaContactMessageRepository extends ContactMessageRepository {
           : { kind: "conflict" as const };
       }
 
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`contact-source:${input.sourceHash}`}, 0))`;
+      await lockKeys(transaction, `contact-source:${input.sourceHash}`);
       const recentCount = await transaction.contactMessage.count({
         where: { sourceHash: input.sourceHash, createdAt: { gte: recentSince } },
       });
