@@ -157,7 +157,9 @@
   line-height: var(--lh-ui);
 }
 
+/* Labels sit a step below the value they describe. */
 .pf-field__label {
+  color: var(--fg-secondary);
   font-weight: 500;
 }
 
@@ -1073,4 +1075,93 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--border);
+}
+
+/* InfoTip: a 21px "?" mark with a 44px target and a small bubble above it. */
+.pf-infotip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.pf-infotip__trigger {
+  position: relative;
+  display: inline-grid;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid var(--border-lit);
+  border-radius: 50%;
+  color: var(--fg-secondary);
+  background: transparent;
+  cursor: help;
+  place-items: center;
+  transition:
+    color var(--motion-local) var(--ease-standard),
+    border-color var(--motion-local) var(--ease-standard);
+}
+
+.pf-infotip__trigger::before {
+  position: absolute;
+  inset: -12px;
+  content: "";
+}
+
+.pf-infotip__icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.pf-infotip__trigger:hover,
+.pf-infotip__trigger:focus-visible,
+.pf-infotip__trigger[aria-expanded="true"] {
+  border-color: var(--gold-border);
+  color: var(--ivory);
+}
+
+.pf-infotip__bubble {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  width: max-content;
+  max-width: min(240px, 70vw);
+  padding: 8px 10px;
+  border: 1px solid var(--border-lit);
+  border-radius: 8px;
+  color: var(--fg-secondary);
+  background: var(--surface-lit);
+  box-shadow: var(--shadow-popover);
+  font: 400 var(--fs-caption)/var(--lh-body) var(--font-body);
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity var(--motion-local) var(--ease-standard),
+    transform var(--motion-local) var(--ease-standard),
+    visibility 0s linear var(--motion-local);
+}
+
+.pf-infotip__bubble[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition:
+    opacity var(--motion-local) var(--ease-standard),
+    transform var(--motion-local) var(--ease-standard),
+    visibility 0s linear 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-infotip__trigger,
+  .pf-infotip__bubble {
+    transition-duration: 0.01ms;
+  }
 }
