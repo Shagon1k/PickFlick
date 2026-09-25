@@ -47,15 +47,21 @@ jobs:
           latest_tag="$(git tag --list 'v[0-9]*' --sort=-v:refname \
               | grep -Ex 'v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
               | head -n 1 || true)"
-          IFS=. read -r major minor patch <<<"${latest_tag:-v0.0.0}"
-          major="${major#v}"
-          case "${RELEASE_TYPE}" in
-              patch) version="v${major}.${minor}.$((patch + 1))" ;;
-              minor) version="v${major}.$((minor + 1)).0" ;;
-              major) version="v$((major + 1)).0.0" ;;
-          esac
+          release_sha="$(git rev-parse origin/main)"
+          if [ -n "${latest_tag}" ] && [ "$(git rev-parse "${latest_tag}^{commit}")" = "${release_sha}" ]; then
+              # Retrying a promotion reuses the tag that already names this revision.
+              version="${latest_tag}"
+          else
+              IFS=. read -r major minor patch <<<"${latest_tag:-v0.0.0}"
+              major="${major#v}"
+              case "${RELEASE_TYPE}" in
+                  patch) version="v${major}.${minor}.$((patch + 1))" ;;
+                  minor) version="v${major}.$((minor + 1)).0" ;;
+                  major) version="v$((major + 1)).0.0" ;;
+              esac
+          fi
 
-          echo "release_sha=$(git rev-parse origin/main)" >>"${GITHUB_OUTPUT}"
+          echo "release_sha=${release_sha}" >>"${GITHUB_OUTPUT}"
           echo "release_version=${version}" >>"${GITHUB_OUTPUT}"
 
       # Production only receives a revision whose own UAT deployment and smoke passed.
@@ -118,8 +124,13 @@ jobs:
           ref: ${{ env.RELEASE_SHA }}
           fetch-depth: 0
 
-      - name: Confirm main has not advanced
+      # Both checks run after the environment approval, so a guard turned off or a newer main
+      # while the job waited still stops the deployment.
+      - name: Re-check the production guard and main
+        env:
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
         run: |
+          test "${PRODUCTION_DEPLOY_ENABLED}" = true
           git fetch --no-tags origin main
           test "$(git rev-parse origin/main)" = "${RELEASE_SHA}"
 
@@ -156,13 +167,20 @@ jobs:
                   --data-urlencode "composeId=${DOKPLOY_PRODUCTION_COMPOSE_ID}"
           }
 
+          before="$(compose)"
           jq -e '
               .sourceType == "github" and .owner == "Shagon1k" and .repository == "PickFlick"
               and .autoDeploy == false and .composeType == "docker-compose"
               and (.composePath | ltrimstr("./")) == "compose.deploy.yaml"
               and (.composeStatus == "idle" or .composeStatus == "done")
-          ' <<<"$(compose)" >/dev/null || {
+          ' <<<"${before}" >/dev/null || {
               echo 'The Dokploy production resource does not match the contract or is busy.' >&2
+              exit 1
+          }
+          # An earlier run may have pinned and deployed this release already; deploying again from
+          # an ambiguous state could release it twice, so an operator reconciles it by hand.
+          test "$(jq -r '.branch' <<<"${before}")" != "${RELEASE_VERSION}" || {
+              echo "Dokploy is already pinned to ${RELEASE_VERSION}; reconcile manually." >&2
               exit 1
           }
 
