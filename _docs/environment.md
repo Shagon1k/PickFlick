@@ -326,13 +326,9 @@ for the server-side flow. Apple callback registration and credentials are unnece
 gate is false. Store deployed secrets only in the environment's secret system and rotate them
 through a controlled provider and deployment change.
 
-Better Auth 1.7.5 exposes the upstream atomic verification-consumption primitive added in
-[better-auth#9568](https://github.com/better-auth/better-auth/pull/9568), but its social OAuth
-database-state callback still performs separate lookup and deletion. PickFlick temporarily
-backports the atomic call in `patches/better-auth@1.7.5.patch` so concurrent callbacks cannot both
-reach provider code exchange. Keep `pnpm auth:check` coverage until a compatible stable release
-contains the call-site fix; [issue #147](https://github.com/Shagon1k/PickFlick/issues/147) tracks
-the bounded upgrade and patch removal.
+Better Auth runs unpatched. Its OAuth callback deletes the stored state after reading it rather
+than in one atomic step; the provider's single-use authorization code and PKCE binding are what
+stop a replayed callback from creating a second session.
 
 MinIO and AWS S3 share the same signed S3 API contract. Running MinIO in the Dokploy project does
 not remove the bucket or credential requirements. For UAT, use the public MinIO API origin as

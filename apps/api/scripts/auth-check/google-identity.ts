@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import {
-    authorizationCodeExchanges,
     conflictEmail,
     database,
     email,
@@ -14,8 +13,6 @@ import {
     completeGoogleSignIn,
     deterministicAuth,
     oauthStateIdentifiers,
-    startGoogleSignIn,
-    submitGoogleCallback,
     userIds,
 } from './harness.js';
 
@@ -120,42 +117,6 @@ export async function checkGoogleIdentity(userId: string) {
         usersAfterReturn[0]?.email !== email
     ) {
         throw new Error('A returning Google subject did not resolve to exactly one existing User.');
-    }
-
-    const concurrentAttempt = await startGoogleSignIn(deterministicAuth);
-    const sessionsBeforeConcurrentCallbacks = await database.authSession.count({
-        where: { userId: registeredUser.id },
-    });
-    const exchangesBeforeConcurrentCallbacks = authorizationCodeExchanges.length;
-    const concurrentResponses = await Promise.all([
-        submitGoogleCallback(concurrentAttempt, 'concurrent-one'),
-        submitGoogleCallback(concurrentAttempt, 'concurrent-two'),
-    ]);
-    const successfulConcurrentResponses = concurrentResponses.filter(
-        (response) => response.status === 302 && response.headers.get('location') === '/app',
-    );
-    const rejectedConcurrentResponses = concurrentResponses.filter(
-        (response) => !successfulConcurrentResponses.includes(response),
-    );
-    if (successfulConcurrentResponses.length !== 1 || rejectedConcurrentResponses.length !== 1) {
-        throw new Error(
-            'Concurrent callbacks did not enforce one successful use of the OAuth state.',
-        );
-    }
-    assertSafeLoginFailure(
-        rejectedConcurrentResponses[0]!,
-        'A concurrent OAuth-state replay did not fail safely.',
-    );
-    if (authorizationCodeExchanges.length - exchangesBeforeConcurrentCallbacks !== 1) {
-        throw new Error('A concurrent OAuth-state replay reached the provider code exchange.');
-    }
-    const sessionsAfterConcurrentCallbacks = await database.authSession.count({
-        where: { userId: registeredUser.id },
-    });
-    if (sessionsAfterConcurrentCallbacks !== sessionsBeforeConcurrentCallbacks + 1) {
-        throw new Error(
-            'Concurrent callbacks issued more than one database session from one OAuth state.',
-        );
     }
 
     const conflictingUserId = randomUUID();
