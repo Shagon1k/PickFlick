@@ -1,6 +1,6 @@
-import type { DatabaseEnvironment } from '@pickflick/config/environment';
+import type { TDatabaseEnvironment } from '@pickflick/config/environment';
 
-export function assertSafeSeedOrResetTarget(environment: DatabaseEnvironment): void {
+export function assertSafeSeedOrResetTarget(environment: TDatabaseEnvironment): void {
     if (environment.appEnvironment !== 'local' && environment.appEnvironment !== 'test') {
         throw new Error(
             `Database seed/reset is disabled for APP_ENV=${environment.appEnvironment}.`,

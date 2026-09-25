@@ -3,9 +3,12 @@ import { Client } from 'pg';
 
 import { PrismaClient } from './generated/prisma/client.js';
 
+export function createDatabaseAdapter(databaseUrl: string): PrismaPg {
+    return new PrismaPg({ connectionString: databaseUrl });
+}
+
 export function createDatabaseClient(databaseUrl: string): PrismaClient {
-    const adapter = new PrismaPg({ connectionString: databaseUrl });
-    return new PrismaClient({ adapter });
+    return new PrismaClient({ adapter: createDatabaseAdapter(databaseUrl) });
 }
 
 export async function checkDatabaseReadiness(
