@@ -26,6 +26,7 @@ export type IconName =
   | "pricing"
   | "privacy"
   | "profile"
+  | "question"
   | "pulse"
   | "ratings"
   | "search"
@@ -106,6 +107,8 @@ export function Icon({ name, ...props }: IconProps) {
       return <svg {...common}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
     case "pulse":
       return <svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>;
+    case "question":
+      return <svg {...common}><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01" /></svg>;
     case "ratings":
       return <svg {...common}><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" /></svg>;
     case "sessions":

@@ -22,6 +22,7 @@ export {
 export {
   Dialog,
   FilmStripMenu,
+  InfoTip,
   RatingControl,
   ScaleControl,
   ScoreControl,
