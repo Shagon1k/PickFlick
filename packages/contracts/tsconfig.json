@@ -2,7 +2,8 @@
     "extends": "@pickflick/config/tsconfig/library.json",
     "compilerOptions": {
         "noEmit": true,
-        "rootDir": "src"
+        "rootDir": "src",
+        "types": ["node", "vitest/globals"]
     },
     "include": ["src/**/*.ts"]
 }

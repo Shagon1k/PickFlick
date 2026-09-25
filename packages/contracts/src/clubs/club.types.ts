@@ -1,0 +1,95 @@
+export type TClubRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
+export type TClubLifecycle = 'ACTIVE' | 'ARCHIVED';
+export type TClubTier = 'FREE' | 'PRO';
+
+export const CLUB_PERMISSIONS = [
+    'viewClub',
+    'participate',
+    'leaveClub',
+    'manageSessions',
+    'manageMembers',
+    'manageRoles',
+    'manageSettings',
+    'manageLifecycle',
+    'viewAudit',
+] as const;
+
+export type TClubPermission = (typeof CLUB_PERMISSIONS)[number];
+export type TClubPermissions = Record<TClubPermission, boolean>;
+
+export interface IClubEntitlements {
+    tier: TClubTier;
+    adminClubLimit: number;
+    memberLimit: number;
+    voteResultVisibility: 'ADMIN_HIDDEN' | 'ADMIN_CONFIGURABLE';
+}
+
+export interface IClubSummary {
+    id: string;
+    name: string;
+    description?: string;
+    hasAvatar: boolean;
+    avatarVersion?: string;
+    lifecycle: TClubLifecycle;
+    membershipRole: TClubRole;
+    selectionScaleMin: 0 | 1;
+    selectionScaleMax: number;
+    tier: TClubTier;
+}
+
+export interface IClubVisibility {
+    showNominationAuthors: boolean;
+    showNominationsBeforeSubmit: boolean;
+    showVoteResults: boolean;
+    showRatingResults: boolean;
+    useMonochromeMedia: boolean;
+}
+
+export interface IClubMember {
+    id: string;
+    displayName: string;
+    role: TClubRole;
+    joinedAt: string;
+}
+
+export const CLUB_AUDIT_ACTIONS = [
+    'MEMBERSHIP_ROLE_CHANGED',
+    'ADMIN_TRANSFERRED',
+    'CLUB_SETTINGS_UPDATED',
+    'CLUB_AVATAR_UPDATED',
+    'CLUB_ARCHIVED',
+    'CLUB_REACTIVATED',
+    'MEMBERSHIP_LEFT',
+    'CLUB_DELETED',
+] as const;
+
+export type TClubAuditAction = (typeof CLUB_AUDIT_ACTIONS)[number];
+
+export interface IClubAuditEvent {
+    id: string;
+    action: TClubAuditAction;
+    createdAt: string;
+}
+
+/** Everything the Manage Club page renders for the signed-in member. */
+export interface IClubSettings {
+    club: IClubSummary;
+    permissions: TClubPermissions;
+    entitlements: IClubEntitlements;
+    visibility: IClubVisibility;
+    members: IClubMember[];
+    auditEvents: IClubAuditEvent[];
+}
+
+/** Why a Club request conflicted with current state; the web maps each to recovery copy. */
+export const CLUB_CONFLICT_REASONS = [
+    'CONFIRMATION_MISMATCH',
+    'ADMIN_CLUB_LIMIT_REACHED',
+    'ADMIN_MUST_TRANSFER',
+    'SESSION_HISTORY',
+    'CLUB_ARCHIVED',
+    'TIER_SETTING_UNAVAILABLE',
+    'MEMBERSHIP_INELIGIBLE',
+] as const;
+
+export type TClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
