@@ -18,6 +18,7 @@ import type {
   FindAvatarReplayInput,
   LeaveClubInput,
   PersistClubSettingsInput,
+  StoredClubAvatarAccess,
   StoredClubManagementView,
   UpdateAvatarReferenceInput,
 } from "../club-management.types.js";
@@ -95,6 +96,10 @@ class ManagementRepository extends ClubManagementRepository {
       return stored("MEMBER");
     }
     return null;
+  }
+  async readAvatarAccess(userId: string): Promise<StoredClubAvatarAccess | null> {
+    const view = await this.readForUser(userId);
+    return view ? { subject: view.subject } : null;
   }
   async updateSettings(input: PersistClubSettingsInput) { return this.updateSettingsCall(input); }
   async changeLifecycle(input: ClubLifecycleInput) { return this.lifecycleCall(input); }
@@ -278,7 +283,7 @@ describe("Club management service", () => {
   it("returns an avatar replay before current authorization or storage", async () => {
     const fixture = service();
     fixture.repository.avatarReplayCall.mockResolvedValueOnce({ changed: true, replayed: true });
-    const authorization = vi.spyOn(fixture.repository, "readForUser");
+    const authorization = vi.spyOn(fixture.repository, "readAvatarAccess");
     const operationId = randomUUID();
     const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
 

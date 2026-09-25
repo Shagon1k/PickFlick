@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@pickflick/database";
 
+import { canonicalUuid } from "../common/validation/uuid.js";
+import { lockKeys } from "../database/advisory-lock.js";
 import { DatabaseService } from "../database/database.service.js";
 import { ClubAuthorizationError, ClubConflictError } from "./club.errors.js";
 import type {
@@ -11,6 +13,7 @@ import type {
   FindAvatarReplayInput,
   LeaveClubInput,
   PersistClubSettingsInput,
+  StoredClubAvatarAccess,
   StoredClubManagementView,
   UpdateAvatarReferenceInput,
 } from "./club-management.types.js";
@@ -27,16 +30,13 @@ export interface ClubAvatarReferenceResult extends ClubManagementResult {
 
 export abstract class ClubManagementRepository {
   abstract readForUser(userId: string, clubId: string): Promise<StoredClubManagementView | null>;
+  abstract readAvatarAccess(userId: string, clubId: string): Promise<StoredClubAvatarAccess | null>;
   abstract updateSettings(input: PersistClubSettingsInput): Promise<ClubManagementResult>;
   abstract changeLifecycle(input: ClubLifecycleInput): Promise<ClubManagementResult>;
   abstract leave(input: LeaveClubInput): Promise<ClubManagementResult>;
   abstract delete(input: DeleteClubInput): Promise<ClubAvatarReferenceResult>;
   abstract findAvatarReplay(input: FindAvatarReplayInput): Promise<ClubAvatarReferenceResult | null>;
   abstract updateAvatarReference(input: UpdateAvatarReferenceInput): Promise<ClubAvatarReferenceResult>;
-}
-
-function canonicalUuid(value: string): string {
-  return value.toLowerCase();
 }
 
 function avatarVersion(objectKey: string): string {
@@ -145,7 +145,34 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
         ...event,
         createdAt: event.createdAt.toISOString(),
       })),
-      ...(club.avatarObjectKey ? { avatarObjectKey: club.avatarObjectKey } : {}),
+    };
+  }
+
+  async readAvatarAccess(userId: string, clubId: string): Promise<StoredClubAvatarAccess | null> {
+    const user = await this.database.client.user.findUnique({
+      where: { id: canonicalUuid(userId) },
+      select: {
+        appRole: true,
+        status: true,
+        memberships: {
+          where: { clubId: canonicalUuid(clubId), status: "ACTIVE", club: { deletedAt: null } },
+          take: 1,
+          select: { role: true, club: { select: { avatarObjectKey: true, lifecycle: true } } },
+        },
+      },
+    });
+    const membership = user?.memberships[0];
+    if (!user || user.status !== "ACTIVE" || !membership) {
+      return null;
+    }
+    return {
+      subject: {
+        appRole: user.appRole,
+        clubRole: membership.role,
+        lifecycle: membership.club.lifecycle,
+        userStatus: user.status,
+      },
+      ...(membership.club.avatarObjectKey ? { avatarObjectKey: membership.club.avatarObjectKey } : {}),
     };
   }
 
@@ -154,8 +181,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const clubId = canonicalUuid(input.clubId);
     const operationId = canonicalUuid(input.operationId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const actor = await this.activeAdmin(transaction, actorUserId, clubId, true);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
@@ -215,11 +241,12 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const auditAction = input.action === "archive" ? "CLUB_ARCHIVED" : "CLUB_REACTIVATED";
     const nextLifecycle = input.action === "archive" ? "ARCHIVED" : "ACTIVE";
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      if (input.action === "reactivate") {
-        await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-creation:${actorUserId}`}, 0))`;
-      }
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(
+        transaction,
+        `club-operation:${operationId}`,
+        ...(input.action === "reactivate" ? [`club-creation:${actorUserId}`] : []),
+        `club:${clubId}`,
+      );
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
         await this.assertReplay(transaction, existing, actorUserId, clubId, auditAction, input.requestHash);
@@ -267,8 +294,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const clubId = canonicalUuid(input.clubId);
     const operationId = canonicalUuid(input.operationId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
         await this.assertReplay(transaction, existing, actorUserId, clubId, "MEMBERSHIP_LEFT", input.requestHash);
@@ -318,8 +344,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const clubId = canonicalUuid(input.clubId);
     const operationId = canonicalUuid(input.operationId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
         await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_DELETED", input.requestHash);
@@ -366,8 +391,7 @@ export class PrismaClubManagementRepository extends ClubManagementRepository {
     const clubId = canonicalUuid(input.clubId);
     const operationId = canonicalUuid(input.operationId);
     return this.database.client.$transaction(async (transaction) => {
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club-operation:${operationId}`}, 0))`;
-      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`club:${clubId}`}, 0))`;
+      await lockKeys(transaction, `club-operation:${operationId}`, `club:${clubId}`);
       const existing = await transaction.clubAuditEvent.findUnique({ where: { operationId } });
       if (existing) {
         await this.assertReplay(transaction, existing, actorUserId, clubId, "CLUB_AVATAR_UPDATED", input.requestHash);

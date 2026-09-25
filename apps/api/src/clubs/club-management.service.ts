@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 
 import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type {
-  ClubAvatarResponse,
+import {
+  CLUB_AVATAR_MAX_BYTES,
+  type ClubAvatarMediaType,
+  type ClubAvatarResponse,
   ClubOperationReceipt,
   ClubSettingsProjection,
   UpdateClubSettingsResponse,
@@ -29,11 +31,9 @@ import { projectClubPermissions } from "./club-policy.js";
 import { ClubTierResolver } from "./club-tiers.js";
 import { ClubRoleTransitionService } from "./clubs.service.js";
 
-export const CLUB_AVATAR_MAX_BYTES = 512 * 1024;
-
 interface ClubAvatarPayload {
   readonly body: Buffer;
-  readonly contentType: "image/jpeg" | "image/png" | "image/webp";
+  readonly contentType: ClubAvatarMediaType;
   readonly extension: "jpg" | "png" | "webp";
 }
 
@@ -270,8 +270,8 @@ export class ClubManagementService {
   }
 
   async getAvatar(principal: AuthenticatedPrincipal, clubId: string) {
-    const stored = await this.repository.readForUser(principal.userId, clubId);
-    if (!stored) {
+    const stored = await this.repository.readAvatarAccess(principal.userId, clubId);
+    if (!stored || !projectClubPermissions(stored.subject).viewClub) {
       throw new ForbiddenException();
     }
     if (!stored.avatarObjectKey) {
@@ -284,12 +284,11 @@ export class ClubManagementService {
     return avatar;
   }
 
-  private async authorizeAvatarManagement(principal: AuthenticatedPrincipal, clubId: string) {
-    const stored = await this.repository.readForUser(principal.userId, clubId);
+  private async authorizeAvatarManagement(principal: AuthenticatedPrincipal, clubId: string): Promise<void> {
+    const stored = await this.repository.readAvatarAccess(principal.userId, clubId);
     if (!stored || !projectClubPermissions(stored.subject).manageSettings) {
       throw new ForbiddenException();
     }
-    return stored;
   }
 
   private logChange(receipt: ClubManagementResult, event: string, message: string): void {
