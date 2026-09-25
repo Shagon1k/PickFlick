@@ -35,7 +35,9 @@ TYPE(SCOPE): IMPERATIVE SUBJECT
 - Use lowercase imperative wording, no trailing period, and a subject under 72 characters.
 - Keep one logical change per commit.
 - Structural refactors require approval and a separate behavior-neutral commit.
-- Never bypass a repository hook once hooks exist.
+- Wrap body and footer lines at 100 characters; commitlint rejects longer lines.
+- Never bypass a repository hook. Husky's `pre-commit` scans staged changes with gitleaks, formats
+  them with Prettier, and applies ESLint fixes; `commit-msg` runs commitlint.
 - Never commit without explicit developer approval.
 
 ## Pull requests

@@ -13,8 +13,9 @@ FROM toolchain AS builder
 ARG SOURCE_REVISION
 COPY . .
 RUN node scripts/write-image-revision.mjs "$SOURCE_REVISION" && rm -rf /workspace/.git
+# Git hooks are a developer convenience; the image has no repository to install them into.
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    HUSKY=0 pnpm install --frozen-lockfile
 ARG BACKEND_INTERNAL_URL=http://127.0.0.1:3001
 ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 RUN SOURCE_REVISION="$(cat .source-revision)" pnpm build

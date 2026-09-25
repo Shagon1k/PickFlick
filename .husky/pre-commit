@@ -1,0 +1,40 @@
+#!/usr/bin/env sh
+
+STAGED_FILES=$(git diff --name-only --diff-filter=ACMR --staged)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# Secret scan — block the commit if a credential is staged. If gitleaks is missing, auto-install
+# it via Homebrew (one-time, on first commit) and then scan. On a machine without Homebrew
+# (e.g. Linux CI) we can't auto-install, so we warn and continue — CI runs gitleaks as the hard
+# gate, so protection never depends on a developer's local setup.
+if ! command -v gitleaks >/dev/null 2>&1 && command -v brew >/dev/null 2>&1; then
+  echo "gitleaks not found — installing via Homebrew (one-time)…"
+  brew install gitleaks
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  if ! gitleaks git --staged --redact --no-banner; then
+    echo "✖ gitleaks found a potential secret in staged changes — commit blocked."
+    echo "  Remove the secret (use an env var) or, if it's a false positive, allowlist it."
+    exit 1
+  fi
+else
+  echo "⚠ gitleaks unavailable and no Homebrew to auto-install it — secret scan skipped."
+  echo "  Install gitleaks so local commits are scanned; CI enforces it regardless."
+fi
+
+# Format with Prettier (auto-fix + re-stage)
+echo "$STAGED_FILES" | tr '\n' '\0' | xargs -0 pnpm exec prettier --write --ignore-unknown
+echo "$STAGED_FILES" | tr '\n' '\0' | xargs -0 git add
+
+# Lint TS/TSX/JS files with ESLint (auto-fix what we can; block commit if errors remain)
+STAGED_TS=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|mjs)$' || true)
+if [ -n "$STAGED_TS" ]; then
+  echo "$STAGED_TS" | tr '\n' '\0' | xargs -0 pnpm exec eslint --fix
+  ESLINT_STATUS=$?
+  echo "$STAGED_TS" | tr '\n' '\0' | xargs -0 git add
+  exit $ESLINT_STATUS
+fi
