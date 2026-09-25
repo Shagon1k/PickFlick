@@ -1,79 +1,79 @@
 .eyebrow {
-  margin: 0;
-  color: var(--ivory-muted);
-  font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
+    margin: 0;
+    color: var(--ivory-muted);
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
 }
 
 .publicHero,
 .publicSections {
-  width: min(var(--container), calc(100% - (2 * var(--gutter))));
-  margin-inline: auto;
+    width: min(var(--container), calc(100% - (2 * var(--gutter))));
+    margin-inline: auto;
 }
 
 .publicHero {
-  min-height: min(720px, calc(100vh - 68px));
-  padding-block: clamp(var(--gap-xl), 10vw, var(--gap-2xl));
-  background: radial-gradient(circle at 76% 30%, var(--projector-wash), transparent 24rem);
+    min-height: min(720px, calc(100vh - 68px));
+    padding-block: clamp(var(--gap-xl), 10vw, var(--gap-2xl));
+    background: radial-gradient(circle at 76% 30%, var(--projector-wash), transparent 24rem);
 }
 
 .publicHero h1 {
-  max-width: 900px;
-  margin: var(--gap-sm) 0 var(--gap-md);
-  font: var(--fs-hero)/var(--lh-tight) var(--font-display);
-  letter-spacing: var(--tracking-tight);
+    max-width: 900px;
+    margin: var(--gap-sm) 0 var(--gap-md);
+    font: var(--fs-hero)/var(--lh-tight) var(--font-display);
+    letter-spacing: var(--tracking-tight);
 }
 
 .publicHero > p:not(.eyebrow) {
-  max-width: 62ch;
-  color: var(--fg-secondary);
-  font-size: var(--fs-lead);
-  line-height: var(--lh-body);
+    max-width: 62ch;
+    color: var(--fg-secondary);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-body);
 }
 
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap-sm);
-  margin-top: var(--gap-lg);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    margin-top: var(--gap-lg);
 }
 
 .publicSections,
 .productGrid,
 .sessionGrid,
 .adminGrid {
-  display: grid;
-  gap: var(--gap-md);
+    display: grid;
+    gap: var(--gap-md);
 }
 
 .publicSections {
-  padding-bottom: var(--gap-2xl);
+    padding-bottom: var(--gap-2xl);
 }
 
 .regionIntro {
-  margin-bottom: var(--gap-md) !important;
+    margin-bottom: var(--gap-md) !important;
 }
 
 @media (min-width: 768px) {
-  .productGrid,
-  .sessionGrid,
-  .adminGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+    .productGrid,
+    .sessionGrid,
+    .adminGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-  .adminGrid > :last-child {
-    grid-column: 1 / -1;
-  }
+    .adminGrid > :last-child {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (max-width: 575px) {
-  .publicHero,
-  .publicSections {
-    width: calc(100% - 32px);
-  }
+    .publicHero,
+    .publicSections {
+        width: calc(100% - 32px);
+    }
 
-  .actions > * {
-    width: 100%;
-  }
+    .actions > * {
+        width: 100%;
+    }
 }

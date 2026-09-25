@@ -1,6 +1,6 @@
 packages:
-  - apps/*
-  - packages/*
+    - apps/*
+    - packages/*
 
 autoInstallPeers: false
 
@@ -15,16 +15,16 @@ saveExact: true
 strictPeerDependencies: true
 
 catalog:
-  '@types/node': 22.20.1
-  '@types/react': 19.2.18
-  '@types/react-dom': 19.2.7
-  tsx: 4.23.13
-  typescript: 6.0.3
+    '@types/node': 22.20.1
+    '@types/react': 19.2.18
+    '@types/react-dom': 19.2.7
+    tsx: 4.23.13
+    typescript: 6.0.3
 
 allowBuilds:
-  '@prisma/engines': true
-  esbuild: true
-  prisma: true
+    '@prisma/engines': true
+    esbuild: true
+    prisma: true
 
 patchedDependencies:
-  better-auth@1.7.5: patches/better-auth@1.7.5.patch
+    better-auth@1.7.5: patches/better-auth@1.7.5.patch

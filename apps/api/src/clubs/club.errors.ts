@@ -1,17 +1,20 @@
-import type { ClubConflictReason } from "@pickflick/contracts";
+import type { ClubConflictReason } from '@pickflick/contracts';
 
 export class ClubAuthorizationError extends Error {
-  override readonly name = "ClubAuthorizationError";
+    override readonly name = 'ClubAuthorizationError';
 }
 
 export class ClubConflictError extends Error {
-  override readonly name = "ClubConflictError";
+    override readonly name = 'ClubConflictError';
 
-  constructor(readonly reason: ClubConflictReason, message: string) {
-    super(message);
-  }
+    constructor(
+        readonly reason: ClubConflictReason,
+        message: string,
+    ) {
+        super(message);
+    }
 }
 
 export class ClubValidationError extends Error {
-  override readonly name = "ClubValidationError";
+    override readonly name = 'ClubValidationError';
 }

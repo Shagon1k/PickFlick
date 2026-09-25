@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { AppController } from "../app.controller.js";
+import { AppController } from '../app.controller.js';
 
-describe("AppController", () => {
-  it("identifies the API scaffold", () => {
-    expect(new AppController().status()).toEqual({ service: "api", status: "scaffold" });
-  });
+describe('AppController', () => {
+    it('identifies the API scaffold', () => {
+        expect(new AppController().status()).toEqual({ service: 'api', status: 'scaffold' });
+    });
 });

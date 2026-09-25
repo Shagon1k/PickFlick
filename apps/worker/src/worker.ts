@@ -1,116 +1,122 @@
-import { SERVICE_NAMES, type ReadinessReport, type ServiceStatus } from "@pickflick/contracts";
-import { DrainController, runWithJobCorrelation, type ApplicationLogger } from "@pickflick/observability";
+import { SERVICE_NAMES, type ReadinessReport, type ServiceStatus } from '@pickflick/contracts';
+import {
+    DrainController,
+    runWithJobCorrelation,
+    type ApplicationLogger,
+} from '@pickflick/observability';
 
 export const workerStatus: ServiceStatus = {
-  service: SERVICE_NAMES.worker,
-  status: "scaffold",
+    service: SERVICE_NAMES.worker,
+    status: 'scaffold',
 };
 
 export interface WorkerRuntime {
-  readonly logger: ApplicationLogger;
-  readonly readiness: () => Promise<ReadinessReport>;
-  readonly drain: DrainController;
-  readonly shutdownTimeoutMilliseconds: number;
-  readonly work?: (signal: AbortSignal) => Promise<void>;
+    readonly logger: ApplicationLogger;
+    readonly readiness: () => Promise<ReadinessReport>;
+    readonly drain: DrainController;
+    readonly shutdownTimeoutMilliseconds: number;
+    readonly work?: (signal: AbortSignal) => Promise<void>;
 }
 
 export interface CorrelatedJob {
-  readonly id: string;
-  readonly correlationId?: string;
+    readonly id: string;
+    readonly correlationId?: string;
 }
 
 export class WorkerNotReadyError extends Error {
-  constructor() {
-    super("Worker dependencies are unavailable.");
-    this.name = "WorkerNotReadyError";
-  }
+    constructor() {
+        super('Worker dependencies are unavailable.');
+        this.name = 'WorkerNotReadyError';
+    }
 }
 
 export class WorkerDrainTimeoutError extends Error {
-  constructor() {
-    super("Worker did not finish active work before its shutdown deadline.");
-    this.name = "WorkerDrainTimeoutError";
-  }
+    constructor() {
+        super('Worker did not finish active work before its shutdown deadline.');
+        this.name = 'WorkerDrainTimeoutError';
+    }
 }
 
 export async function executeCorrelatedJob<T>(
-  job: CorrelatedJob,
-  logger: ApplicationLogger,
-  drain: DrainController,
-  handler: () => Promise<T>,
+    job: CorrelatedJob,
+    logger: ApplicationLogger,
+    drain: DrainController,
+    handler: () => Promise<T>,
 ): Promise<T> {
-  return drain.run(() => runWithJobCorrelation(job.id, job.correlationId, async () => {
-    logger.info({ event: "job.started" }, "Worker job started.");
-    try {
-      const result = await handler();
-      logger.info({ event: "job.completed" }, "Worker job completed.");
-      return result;
-    } catch (error) {
-      logger.error({ event: "job.failed" }, "Worker job failed.");
-      throw error;
-    }
-  }));
+    return drain.run(() =>
+        runWithJobCorrelation(job.id, job.correlationId, async () => {
+            logger.info({ event: 'job.started' }, 'Worker job started.');
+            try {
+                const result = await handler();
+                logger.info({ event: 'job.completed' }, 'Worker job completed.');
+                return result;
+            } catch (error) {
+                logger.error({ event: 'job.failed' }, 'Worker job failed.');
+                throw error;
+            }
+        }),
+    );
 }
 
 export async function runWorker(signal: AbortSignal, runtime: WorkerRuntime): Promise<void> {
-  if (signal.aborted) {
-    return;
-  }
-
-  const readiness = await runtime.readiness();
-  if (signal.aborted) {
-    return;
-  }
-  if (readiness.status === "not_ready") {
-    runtime.logger.error(
-      {
-        event: "service.not_ready",
-        unavailableDependencies: readiness.checks
-          .filter(({ status }) => status === "down")
-          .map(({ name }) => name),
-      },
-      "Worker dependencies are unavailable.",
-    );
-    throw new WorkerNotReadyError();
-  }
-
-  runtime.logger.info({ event: "service.ready" }, "Worker ready.");
-
-  let resolveAbort!: () => void;
-  const aborted = new Promise<void>((resolve) => {
-    resolveAbort = resolve;
-  });
-  const onAbort = () => {
-    runtime.drain.stopAccepting();
-    resolveAbort();
-  };
-  signal.addEventListener("abort", onAbort, { once: true });
-  if (signal.aborted) {
-    onAbort();
-  }
-  const keepAlive = runtime.work ? undefined : setInterval(() => undefined, 60_000);
-  const work = runtime.work ? runtime.work(signal) : aborted;
-
-  try {
-    await Promise.race([work, aborted]);
-  } finally {
-    signal.removeEventListener("abort", onAbort);
-    if (keepAlive) {
-      clearInterval(keepAlive);
+    if (signal.aborted) {
+        return;
     }
-  }
 
-  runtime.logger.info(
-    { event: "service.draining", activeWork: runtime.drain.activeWorkCount },
-    "Worker draining active work.",
-  );
-  if (!(await runtime.drain.waitForIdle(runtime.shutdownTimeoutMilliseconds))) {
-    runtime.logger.error(
-      { event: "service.shutdown.timeout", activeWork: runtime.drain.activeWorkCount },
-      "Worker shutdown timed out.",
+    const readiness = await runtime.readiness();
+    if (signal.aborted) {
+        return;
+    }
+    if (readiness.status === 'not_ready') {
+        runtime.logger.error(
+            {
+                event: 'service.not_ready',
+                unavailableDependencies: readiness.checks
+                    .filter(({ status }) => status === 'down')
+                    .map(({ name }) => name),
+            },
+            'Worker dependencies are unavailable.',
+        );
+        throw new WorkerNotReadyError();
+    }
+
+    runtime.logger.info({ event: 'service.ready' }, 'Worker ready.');
+
+    let resolveAbort!: () => void;
+    const aborted = new Promise<void>((resolve) => {
+        resolveAbort = resolve;
+    });
+    const onAbort = () => {
+        runtime.drain.stopAccepting();
+        resolveAbort();
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) {
+        onAbort();
+    }
+    const keepAlive = runtime.work ? undefined : setInterval(() => undefined, 60_000);
+    const work = runtime.work ? runtime.work(signal) : aborted;
+
+    try {
+        await Promise.race([work, aborted]);
+    } finally {
+        signal.removeEventListener('abort', onAbort);
+        if (keepAlive) {
+            clearInterval(keepAlive);
+        }
+    }
+
+    runtime.logger.info(
+        { event: 'service.draining', activeWork: runtime.drain.activeWorkCount },
+        'Worker draining active work.',
     );
-    throw new WorkerDrainTimeoutError();
-  }
-  await work;
-  runtime.logger.info({ event: "service.stopped" }, "Worker stopped.");
+    if (!(await runtime.drain.waitForIdle(runtime.shutdownTimeoutMilliseconds))) {
+        runtime.logger.error(
+            { event: 'service.shutdown.timeout', activeWork: runtime.drain.activeWorkCount },
+            'Worker shutdown timed out.',
+        );
+        throw new WorkerDrainTimeoutError();
+    }
+    await work;
+    runtime.logger.info({ event: 'service.stopped' }, 'Worker stopped.');
 }
