@@ -23,7 +23,8 @@ import { ClubManagementService } from "../club-management.service.js";
 import { ClubRepository } from "../club.repository.js";
 import { ClubTierResolver, StaticClubTierResolver } from "../club-tiers.js";
 import { ClubsController } from "../clubs.controller.js";
-import { ClubOnboardingService, ClubPolicyService } from "../clubs.service.js";
+import { ClubOnboardingService } from "../club-onboarding.service.js";
+import { ClubPolicyService } from "../club-policy.service.js";
 
 const clubId = "10000000-0000-4000-8000-000000000001";
 const users = {
@@ -70,14 +71,6 @@ class StubClubRepository extends ClubRepository {
 
   async readPolicySubject(userId: string): Promise<ClubPolicySubject> {
     return roles.get(userId) ?? { appRole: "USER", clubRole: null, lifecycle: null, userStatus: "ANONYMIZED" };
-  }
-
-  async changeMembershipRole(): Promise<never> {
-    throw new Error("Not used by this test.");
-  }
-
-  async transferAdministration(): Promise<never> {
-    throw new Error("Not used by this test.");
   }
 }
 

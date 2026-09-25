@@ -37,7 +37,8 @@ import {
 } from "../identity/authorization.types.js";
 import { ClubAuthorizationError, ClubConflictError, ClubValidationError } from "./club.errors.js";
 import { ClubManagementService } from "./club-management.service.js";
-import { ClubOnboardingService, ClubPolicyService } from "./clubs.service.js";
+import { ClubOnboardingService } from "./club-onboarding.service.js";
+import { ClubPolicyService } from "./club-policy.service.js";
 
 function principal(request: AuthenticatedRequest) {
   const authenticatedPrincipal = request[AUTHENTICATED_PRINCIPAL];
