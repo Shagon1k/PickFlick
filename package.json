@@ -37,7 +37,6 @@
         "typecheck": "pnpm -r --if-present typecheck",
         "ui:test": "playwright test --config playwright.ui.config.ts",
         "ui:test:update": "playwright test --config playwright.ui.config.ts --update-snapshots",
-        "ui:smoke": "node scripts/ui-preview-smoke.mjs",
         "ui:visual": "playwright test --config playwright.ui.config.ts tests/ui-preview/viewport-visual.spec.ts",
         "uat:deploy": "node scripts/deploy-uat.mjs",
         "uat:smoke": "node scripts/uat-browser-smoke.mjs",

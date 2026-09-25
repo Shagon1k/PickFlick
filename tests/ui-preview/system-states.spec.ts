@@ -1,21 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const NOT_FOUND_ROUTE = '/missing-reel-system-state-check';
 const ERROR_PREVIEW_ROUTE = '/ui-preview/error-recovery';
 const PRIVATE_DIAGNOSTIC = 'Preview provider failure with a deliberately long diagnostic payload';
-const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-const gapViewports = [
-    { height: 900, width: 640 },
-    { height: 900, width: 900 },
-    { height: 900, width: 1200 },
-] as const;
-
 async function waitForAssets(page: Page) {
     await page.evaluate(async () => {
         await globalThis.document.fonts.ready;
@@ -198,7 +187,7 @@ test('system-state reveals are removed when reduced motion is requested', async 
     expect(motion.animationDuration).toBeLessThanOrEqual(0.001);
 });
 
-for (const viewport of canonicalViewports) {
+for (const viewport of screenshotViewports) {
     test(`not-found matches the ${viewport.name} source-comparison capture`, async ({ page }) => {
         await openNotFound(page, viewport);
         await expect(page).toHaveScreenshot(`not-found-${viewport.name}.png`, {

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { canonicalViewports, expectMobileAdminEntry, openShell } from './shell-fixtures';
+import { expectMobileAdminEntry, openShell } from './shell-fixtures';
+import { canonicalViewports } from './viewports';
 
 test('mobile product menus stay in view, dismiss outside, and share the Alerts overlay', async ({
     page,

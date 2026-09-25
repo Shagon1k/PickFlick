@@ -1,7 +1,5 @@
 import { createServer, type AddressInfo, type Socket } from 'node:net';
 
-import { describe, expect, it } from 'vitest';
-
 import {
     SYNTHETIC_FIXTURES,
     assertSafeSeedOrResetTarget,
@@ -9,7 +7,7 @@ import {
 } from '../index.js';
 
 describe('database safety', () => {
-    it('allows only the positively identified local database', () => {
+    it('should allow only the positively identified local database', () => {
         expect(() =>
             assertSafeSeedOrResetTarget({
                 appEnvironment: 'local',
@@ -18,7 +16,7 @@ describe('database safety', () => {
         ).not.toThrow();
     });
 
-    it('allows a test database with an explicit test name', () => {
+    it('should allow a test database with an explicit test name', () => {
         expect(() =>
             assertSafeSeedOrResetTarget({
                 appEnvironment: 'test',
@@ -36,7 +34,7 @@ describe('database safety', () => {
         ).toThrow(`Database seed/reset is disabled for APP_ENV=${appEnvironment}`);
     });
 
-    it('refuses a local environment that points away from the loopback host', () => {
+    it('should refuse a local environment that points away from the loopback host', () => {
         expect(() =>
             assertSafeSeedOrResetTarget({
                 appEnvironment: 'local',
@@ -46,7 +44,7 @@ describe('database safety', () => {
         ).toThrow('Local seed/reset requires a loopback database host');
     });
 
-    it('refuses a database host override in the connection query', () => {
+    it('should refuse a database host override in the connection query', () => {
         expect(() =>
             assertSafeSeedOrResetTarget({
                 appEnvironment: 'local',
@@ -56,14 +54,14 @@ describe('database safety', () => {
         ).toThrow('Database seed/reset does not allow a host query parameter');
     });
 
-    it('uses deterministic synthetic fixture identifiers', () => {
+    it('should use deterministic synthetic fixture identifiers', () => {
         expect(SYNTHETIC_FIXTURES.club.id).toBe('10000000-0000-4000-8000-000000000001');
         expect(
             SYNTHETIC_FIXTURES.users.every(({ email }) => email.endsWith('@example.invalid')),
         ).toBe(true);
     });
 
-    it('cancels a database readiness connection at the driver deadline', async () => {
+    it('should cancel a database readiness connection at the driver deadline', async () => {
         const sockets = new Set<Socket>();
         const server = createServer((socket) => {
             sockets.add(socket);

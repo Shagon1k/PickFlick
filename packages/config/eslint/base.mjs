@@ -71,7 +71,7 @@ export default [
     },
     {
         // Screenshot and accessibility checks need every resource settled before they capture.
-        files: ['tests/ui-preview/**', 'scripts/ui-preview-smoke.mjs'],
+        files: ['tests/ui-preview/**'],
         rules: {
             'sonarjs/no-networkidle-wait': 'off',
         },

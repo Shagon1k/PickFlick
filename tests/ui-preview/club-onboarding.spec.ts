@@ -1,17 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-
-const canonicalViewports = [
-    { height: 844, name: 's-390', width: 390 },
-    { height: 1024, name: 'm-768', width: 768 },
-    { height: 768, name: 'l-1024', width: 1024 },
-    { height: 900, name: 'xl-1440', width: 1440 },
-] as const;
-const gapViewports = [
-    { height: 900, width: 640 },
-    { height: 900, width: 900 },
-    { height: 900, width: 1200 },
-] as const;
+import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
@@ -206,7 +195,7 @@ test('the no-Clubs action meets the touch target contract', async ({ browser }) 
     }
 });
 
-for (const viewport of canonicalViewports) {
+for (const viewport of screenshotViewports) {
     test(`no-Clubs matches the ${viewport.name} source-comparison capture`, async ({
         context,
         page,
