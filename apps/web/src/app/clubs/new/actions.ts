@@ -52,10 +52,12 @@ export async function createClub(
       tone: "warning",
     });
   }
-  if (response.status === 409 || response.code === "CONFLICT") {
+  if (response.status === 409) {
     return result(previous, {
       status: "error",
-      message: "Your Free plan already has a Club you administer. Your entries are still here.",
+      message: response.reason === "ADMIN_CLUB_LIMIT_REACHED"
+        ? "You already administer the most active Clubs your plan allows. Your entries are still here."
+        : "We couldn't create the Club right now. Your entries are still here — try again.",
       tone: "warning",
     });
   }

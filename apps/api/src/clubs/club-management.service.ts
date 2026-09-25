@@ -135,7 +135,7 @@ export class ClubManagementService {
   ): Promise<ClubOperationReceipt> {
     const parsed = parseClubOperation(value, action === "archive");
     if (action === "archive" && parsed.confirmation !== "ARCHIVE") {
-      throw new ClubConflictError("Archive confirmation does not match.");
+      throw new ClubConflictError("CONFIRMATION_MISMATCH", "Archive confirmation does not match.");
     }
     const requestHash = operationRequestHash(action, { confirmation: parsed.confirmation });
     const input = {
@@ -158,7 +158,7 @@ export class ClubManagementService {
   async leave(principal: AuthenticatedPrincipal, clubId: string, value: unknown): Promise<ClubOperationReceipt> {
     const parsed = parseClubOperation(value, true);
     if (parsed.confirmation !== "LEAVE") {
-      throw new ClubConflictError("Leave confirmation does not match.");
+      throw new ClubConflictError("CONFIRMATION_MISMATCH", "Leave confirmation does not match.");
     }
     const receipt = await this.repository.leave({
       actorUserId: principal.userId,

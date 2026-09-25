@@ -68,7 +68,7 @@ export class PrismaClubRepository extends ClubRepository {
         throw new ClubAuthorizationError("The current User cannot create a Club.");
       }
       if (creator.memberships.length >= adminClubLimit) {
-        throw new ClubConflictError("The current User has reached the administered Club limit.");
+        throw new ClubConflictError("ADMIN_CLUB_LIMIT_REACHED", "The current User has reached the administered Club limit.");
       }
 
       const club = await transaction.club.create({
@@ -200,7 +200,7 @@ export class PrismaClubRepository extends ClubRepository {
             ? { changed: true, auditEventId: existing.id, replayed: true }
             : { changed: false, replayed: true };
         }
-        throw new ClubConflictError("The operation identifier was already used for another transition.");
+        throw new ClubConflictError("OPERATION_REUSED", "The operation identifier was already used for another transition.");
       }
 
       const actor = await transaction.user.findUnique({
@@ -218,10 +218,10 @@ export class PrismaClubRepository extends ClubRepository {
         throw new ClubAuthorizationError("The current User cannot manage Club roles.");
       }
       if (actor.memberships[0].club.lifecycle !== "ACTIVE") {
-        throw new ClubConflictError("Archived Clubs do not allow Membership role changes.");
+        throw new ClubConflictError("CLUB_ARCHIVED", "Archived Clubs do not allow Membership role changes.");
       }
       if (!target || target.clubId !== clubId || target.status !== "ACTIVE" || target.role === "ADMIN") {
-        throw new ClubConflictError("The target is not an eligible active non-Admin Membership.");
+        throw new ClubConflictError("MEMBERSHIP_INELIGIBLE", "The target is not an eligible active non-Admin Membership.");
       }
       if (target.role === input.nextRole) {
         await transaction.clubAuditEvent.create({
@@ -302,7 +302,7 @@ export class PrismaClubRepository extends ClubRepository {
         ) {
           return { changed: true, auditEventId: existing.id, replayed: true };
         }
-        throw new ClubConflictError("The operation identifier was already used for another transition.");
+        throw new ClubConflictError("OPERATION_REUSED", "The operation identifier was already used for another transition.");
       }
 
       const actor = await transaction.user.findUnique({
@@ -324,7 +324,7 @@ export class PrismaClubRepository extends ClubRepository {
         target.user.status !== "ACTIVE" ||
         target.role === "ADMIN"
       ) {
-        throw new ClubConflictError("The target is not an eligible active non-Admin Membership.");
+        throw new ClubConflictError("MEMBERSHIP_INELIGIBLE", "The target is not an eligible active non-Admin Membership.");
       }
 
       await transaction.membership.update({

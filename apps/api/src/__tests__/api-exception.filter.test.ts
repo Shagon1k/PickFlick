@@ -5,6 +5,7 @@ import { Writable } from "node:stream";
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Module,
   Post,
@@ -77,6 +78,17 @@ describe("ApiExceptionFilter", () => {
     });
     expect(logs.output()).not.toContain("unsafe provider detail");
     expect(logs.output()).toContain(requestId);
+  });
+
+  it("passes through only a stable conflict reason code", () => {
+    const logger = createLogger({ service: "api", environment: "test", destination: captureLogs().destination });
+    const coded = responseHost();
+    new ApiExceptionFilter(logger).catch(new ConflictException({ reason: "SESSION_HISTORY" }), coded.host);
+    expect(coded.body()?.error).toMatchObject({ code: "CONFLICT", reason: "SESSION_HISTORY" });
+
+    const freeForm = responseHost();
+    new ApiExceptionFilter(logger).catch(new ConflictException({ reason: "leaked detail" }), freeForm.host);
+    expect(freeForm.body()?.error).not.toHaveProperty("reason");
   });
 
   it("does not expose unexpected error details", () => {

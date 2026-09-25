@@ -71,4 +71,15 @@ describe("Club settings actions", () => {
       operationId: crypto.randomUUID(),
     }))).resolves.toEqual(unavailable);
   });
+
+  it("explains a reactivation blocked by the administered Club limit", async () => {
+    api.submitClubOperation.mockResolvedValueOnce({ ok: false, reason: "ADMIN_CLUB_LIMIT_REACHED", status: 409 });
+
+    await expect(clubLifecycleAction(clubId, "reactivate", previous, formData({
+      operationId: crypto.randomUUID(),
+    }))).resolves.toMatchObject({
+      message: expect.stringContaining("most active Clubs your plan allows"),
+      status: "error",
+    });
+  });
 });

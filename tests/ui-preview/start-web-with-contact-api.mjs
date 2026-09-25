@@ -105,7 +105,7 @@ const api = createServer((request, response) => {
       request.on("data", (chunk) => (body += chunk));
       request.on("end", () => {
         if ((clubsBySession.get(token) ?? []).length > 0) {
-          sendJson(response, 409, { error: { code: "CONFLICT", message: "Conflict.", requestId: "request-club-limit" } });
+          sendJson(response, 409, { error: { code: "CONFLICT", message: "Conflict.", requestId: "request-club-limit", reason: "ADMIN_CLUB_LIMIT_REACHED" } });
           return;
         }
         const payload = JSON.parse(body);

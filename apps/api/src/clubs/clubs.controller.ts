@@ -62,7 +62,7 @@ async function command<T>(callback: () => Promise<T>): Promise<T> {
       throw new ForbiddenException();
     }
     if (error instanceof ClubConflictError) {
-      throw new ConflictException();
+      throw new ConflictException({ reason: error.reason });
     }
     throw error;
   }
@@ -92,17 +92,7 @@ export class ClubsController {
     if (!acceptsJsonBody(request)) {
       throw new UnsupportedMediaTypeException();
     }
-    try {
-      return await this.onboarding.create(principal(request), body);
-    } catch (error) {
-      if (error instanceof ClubValidationError) {
-        throw new BadRequestException();
-      }
-      if (error instanceof ClubConflictError) {
-        throw new ConflictException();
-      }
-      throw error;
-    }
+    return command(() => this.onboarding.create(principal(request), body));
   }
 
   @Get(":clubId/policy")
