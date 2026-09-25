@@ -6,8 +6,8 @@ import {
     projectorNoirHtmlProps,
 } from '@pickflick/ui';
 import '@pickflick/ui/styles.css';
-import { rootMetadata } from '../public-metadata';
-import './styles.css';
+import { rootMetadata } from '@/lib/public-metadata';
+import '@/styles/globals.scss';
 
 export const metadata = rootMetadata;
 

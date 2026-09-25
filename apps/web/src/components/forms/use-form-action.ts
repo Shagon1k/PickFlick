@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 
-import type { FormActionState, FormServerAction } from './form-action.types';
+import type { FormActionState, FormServerAction } from '@/components/forms/form-action.types';
 
 export function useFormAction<FieldName extends string>(
     action: FormServerAction<FieldName>,

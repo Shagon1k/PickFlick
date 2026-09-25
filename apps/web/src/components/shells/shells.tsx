@@ -2,10 +2,10 @@ import { Fragment, type ReactNode } from 'react';
 
 import { ActionLink, BrandImage, Pill, StatusBanner } from '@pickflick/ui';
 
-import { MobileProductNavigation } from './mobile-navigation';
-import { ProductHeaderActions, ProductSearch } from './product-header';
-import { ProductOverlayProvider } from './product-overlay';
-import { BoundedScrollRegion, SectionNavigation } from './section-navigation';
+import { MobileProductNavigation } from '@/components/shells/mobile-navigation';
+import { ProductHeaderActions, ProductSearch } from '@/components/shells/product-header';
+import { ProductOverlayProvider } from '@/components/shells/product-overlay';
+import { BoundedScrollRegion, SectionNavigation } from '@/components/shells/section-navigation';
 import {
     accountNavigation,
     canonicalRoutes,
@@ -15,8 +15,8 @@ import {
     type ShellArea,
     type ShellNavigationItem,
     type ShellRouteMap,
-} from './shell-navigation';
-import styles from './shells.module.css';
+} from '@/components/shells/shell-navigation';
+import styles from '@/components/shells/shells.module.scss';
 
 function Brand({ href = '/' }: Readonly<{ href?: string }>) {
     return (

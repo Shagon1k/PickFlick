@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { loadRepositoryEnvironmentFile } from '@pickflick/config/environment';
 import type { NextConfig } from 'next';
 
-import { NOINDEX_HEADER, NON_PUBLIC_INDEXING_BOUNDARIES } from './src/indexing';
+import { NOINDEX_HEADER, NON_PUBLIC_INDEXING_BOUNDARIES } from './src/lib/indexing';
 
 loadRepositoryEnvironmentFile();
 

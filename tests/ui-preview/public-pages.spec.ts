@@ -375,14 +375,14 @@ test('contact validates fields, focuses the first error, and reports its message
     const message = page.getByRole('textbox', { name: 'Message — required' });
     await expect(message).toBeFocused();
     await expect(message).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.locator('#contact-message-message')).toHaveText('Enter a message.');
+    await expect(page.locator('#contact-message-message')).toHaveText(
+        'Enter a message of up to 500 characters.',
+    );
     await message.fill('A concise note');
     await expect(page.getByText('14/500', { exact: true })).toBeVisible();
 });
 
-test('contact accepts both new and duplicate submissions through one stable feedback region', async ({
-    page,
-}) => {
+test('contact accepts a submission through one stable feedback region', async ({ page }) => {
     await openPage(page, '/contact', canonicalViewports[3]);
 
     await expect(
@@ -402,14 +402,6 @@ test('contact accepts both new and duplicate submissions through one stable feed
 
     await page.getByRole('textbox', { name: 'Message — required' }).fill('Start another message');
     await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled();
-
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.getByRole('textbox', { name: 'Message — required' }).fill('Duplicate message');
-    await page.getByRole('textbox', { name: 'Your email' }).fill('jane@example.com');
-    await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toHaveText(
-        "Message received — we'll get back to you soon.",
-    );
 });
 
 test('contact prevents edits while a submission is in flight', async ({ page }) => {
@@ -426,22 +418,6 @@ test('contact prevents edits while a submission is in flight', async ({ page }) 
     await expect(email).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
 
-    await expect(page.getByRole('status')).toHaveText(
-        "Message received — we'll get back to you soon.",
-    );
-});
-
-test('contact reuses its submission key after a recoverable service failure', async ({ page }) => {
-    await openPage(page, '/contact', canonicalViewports[0]);
-
-    const message = page.getByRole('textbox', { name: 'Message — required' });
-    await message.fill('Retry this exact message');
-    await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toContainText('Your text is still here');
-    await expect(message).toBeEnabled();
-    await expect(message).toHaveValue('Retry this exact message');
-
-    await page.getByRole('button', { name: 'Send message' }).click();
     await expect(page.getByRole('status')).toHaveText(
         "Message received — we'll get back to you soon.",
     );

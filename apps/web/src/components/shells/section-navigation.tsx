@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 
-import { FilmStrip, NavigationItemIcon } from './film-strip';
-import { useOverlayDismissal, useProductOverlay } from './product-overlay';
-import type { ShellNavigationItem } from './shell-navigation';
-import styles from './product-navigation.module.css';
+import { FilmStrip, NavigationItemIcon } from '@/components/shells/film-strip';
+import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
+import type { ShellNavigationItem } from '@/components/shells/shell-navigation';
+import styles from '@/components/shells/product-navigation.module.scss';
 
 export function SectionNavigation({
     items,

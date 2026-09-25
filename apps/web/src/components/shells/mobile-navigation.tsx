@@ -4,11 +4,15 @@ import { useEffect, useRef } from 'react';
 
 import { Icon } from '@pickflick/ui';
 
-import { FilmStrip } from './film-strip';
-import { NotificationsPanel } from './notifications-panel';
-import { useAnchoredMenus, useOverlayDismissal, useProductOverlay } from './product-overlay';
-import type { MobileNavigationEntry } from './shell-navigation';
-import styles from './product-navigation.module.css';
+import { FilmStrip } from '@/components/shells/film-strip';
+import { NotificationsPanel } from '@/components/shells/notifications-panel';
+import {
+    useAnchoredMenus,
+    useOverlayDismissal,
+    useProductOverlay,
+} from '@/components/shells/product-overlay';
+import type { MobileNavigationEntry } from '@/components/shells/shell-navigation';
+import styles from '@/components/shells/product-navigation.module.scss';
 
 export function MobileProductNavigation({
     entries,

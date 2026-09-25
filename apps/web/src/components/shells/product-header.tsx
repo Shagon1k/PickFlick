@@ -4,12 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@pickflick/ui';
 
-import { authClient } from '../auth/auth-client';
-import { FilmStrip } from './film-strip';
-import { NotificationsPanel } from './notifications-panel';
-import { useAnchoredMenus, useOverlayDismissal, useProductOverlay } from './product-overlay';
-import type { ShellMenuItem } from './shell-navigation';
-import styles from './product-navigation.module.css';
+import { authClient } from '@/lib/auth-client';
+import { FilmStrip } from '@/components/shells/film-strip';
+import { NotificationsPanel } from '@/components/shells/notifications-panel';
+import {
+    useAnchoredMenus,
+    useOverlayDismissal,
+    useProductOverlay,
+} from '@/components/shells/product-overlay';
+import type { ShellMenuItem } from '@/components/shells/shell-navigation';
+import styles from '@/components/shells/product-navigation.module.scss';
 
 /** Up to two initials from the viewer's display name; empty when no usable name exists. */
 function initialsFor(name: string | null | undefined): string {

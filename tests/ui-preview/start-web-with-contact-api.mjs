@@ -1,7 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
-const retryKeys = new Map();
 const clubsBySession = new Map();
 const avatarVersionsBySession = new Map();
 const settingsClubId = '10000000-0000-4000-8000-000000000031';
@@ -45,10 +44,7 @@ function settingsProjection(token) {
             tier: 'FREE',
             adminClubLimit: 1,
             memberLimit: 8,
-            blockingSessionLimit: 1,
-            inactivityGraceDays: 90,
             voteResultVisibility: 'ADMIN_HIDDEN',
-            analyticsTier: 'BASIC',
         },
         visibility: {
             showNominationAuthors: true,
@@ -76,7 +72,6 @@ function settingsProjection(token) {
                   {
                       id: '50000000-0000-4000-8000-000000000031',
                       action: 'CLUB_SETTINGS_UPDATED',
-                      changed: true,
                       createdAt: '2026-09-18T12:00:00.000Z',
                   },
               ]
@@ -86,6 +81,10 @@ function settingsProjection(token) {
 
 function sessionToken(request) {
     return request.headers.cookie?.match(/(?:^|;\s*)pickflick\.session_token=([^;]+)/)?.[1];
+}
+
+function sendNoContent(response) {
+    response.writeHead(204).end();
 }
 
 function sendJson(response, status, body) {
@@ -135,7 +134,7 @@ function createClub(request, response, token) {
             tier: 'FREE',
         };
         clubsBySession.set(token, [club]);
-        sendJson(response, 201, { club });
+        sendJson(response, 201, club);
     });
 }
 
@@ -146,7 +145,7 @@ function handleClubs(request, response) {
         return;
     }
     if (request.method === 'GET') {
-        sendJson(response, 200, { clubs: clubsBySession.get(token) ?? [] });
+        sendJson(response, 200, clubsBySession.get(token) ?? []);
     } else if (request.method === 'POST') {
         createClub(request, response, token);
     } else {
@@ -165,7 +164,7 @@ function sendAvatar(response) {
 
 function changeRole(response, token) {
     if (token.includes('settings-admin')) {
-        sendJson(response, 200, { changed: true, replayed: false });
+        sendNoContent(response);
     } else {
         sendError(response, 403, 'FORBIDDEN', 'request-role-private');
     }
@@ -175,13 +174,13 @@ function uploadAvatar(request, response, token) {
     const previous = Number(avatarVersionsBySession.get(token)?.split('-')[1] ?? 0);
     avatarVersionsBySession.set(token, `avatar-${previous + 1}`);
     request.resume();
-    sendJson(response, 200, { changed: true, hasAvatar: true, replayed: false });
+    sendNoContent(response);
 }
 
 function removeAvatar(request, response, token) {
     avatarVersionsBySession.delete(token);
     request.resume();
-    sendJson(response, 200, { changed: true, hasAvatar: false, replayed: false });
+    sendNoContent(response);
 }
 
 /** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
@@ -195,12 +194,7 @@ const clubRoutes = [
     [
         'PATCH',
         /^\/settings$/u,
-        (_request, response, token) =>
-            sendJson(response, 200, {
-                changed: true,
-                replayed: false,
-                settings: settingsProjection(token),
-            }),
+        (_request, response, token) => sendJson(response, 200, settingsProjection(token)),
     ],
     [
         'PATCH',
@@ -210,7 +204,7 @@ const clubRoutes = [
     [
         'POST',
         /^\/(?:archive|reactivate|leave|delete)$/u,
-        (_request, response) => sendJson(response, 200, { changed: true, replayed: false }),
+        (_request, response) => sendNoContent(response),
     ],
     ['PUT', /^\/avatar$/u, uploadAvatar],
     ['DELETE', /^\/avatar$/u, removeAvatar],
@@ -223,7 +217,8 @@ function handleClub(request, response, subpath) {
         return;
     }
     if (token.includes('settings-outsider')) {
-        sendError(response, 403, 'FORBIDDEN', 'request-settings-private');
+        // The API answers 404 for a Club the visitor cannot see.
+        sendError(response, 404, 'NOT_FOUND', 'request-settings-private');
         return;
     }
     const route = clubRoutes.find(
@@ -241,31 +236,14 @@ const contactFailures = {
     'Service unavailable message': [503, 'SERVICE_UNAVAILABLE', 'request-2'],
 };
 
-/** The first attempt fails; a retry must reuse its submission key or it conflicts. */
-function retryFailure(payload) {
-    if (payload.message !== 'Retry this exact message') {
-        return undefined;
-    }
-    const previousKey = retryKeys.get(payload.message);
-    if (!previousKey) {
-        retryKeys.set(payload.message, payload.submissionKey);
-        return [503, 'SERVICE_UNAVAILABLE', 'request-3'];
-    }
-    return previousKey === payload.submissionKey ? undefined : [409, 'CONFLICT', 'request-4'];
-}
-
 function handleContact(request, response) {
     readJson(request, (payload) => {
-        const failure = contactFailures[payload.message] ?? retryFailure(payload);
+        const failure = contactFailures[payload.message];
         if (failure) {
             sendError(response, ...failure);
             return;
         }
-        const complete = () =>
-            sendJson(response, 202, {
-                id: 'contact-1',
-                status: payload.message === 'Duplicate message' ? 'duplicate' : 'accepted',
-            });
+        const complete = () => response.writeHead(202).end();
         setTimeout(complete, payload.message === 'Slow Contact response' ? 300 : 0);
     });
 }

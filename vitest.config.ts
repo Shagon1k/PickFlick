@@ -7,9 +7,11 @@ const source = (path: string): string => fileURLToPath(new URL(path, import.meta
 export default defineConfig({
     resolve: {
         alias: {
+            '@/': source('./apps/web/src/'),
             '@pickflick/contracts': source('./packages/contracts/src/index.ts'),
-            '@pickflick/observability': source('./packages/observability/src/index.ts'),
             '@pickflick/database': source('./packages/database/src/index.ts'),
+            // Next swaps `server-only` for an empty module on the server; tests run on the server too.
+            'server-only': source('./apps/web/node_modules/server-only/empty.js'),
         },
     },
     test: {

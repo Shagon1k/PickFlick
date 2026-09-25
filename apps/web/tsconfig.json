@@ -1,6 +1,7 @@
 {
     "extends": "@pickflick/config/tsconfig/nextjs.json",
     "compilerOptions": {
+        "types": ["node", "vitest/globals"],
         "paths": {
             "@/*": ["./src/*"]
         }
