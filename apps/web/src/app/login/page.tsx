@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { resolveAuthReturnTarget } from "@pickflick/contracts";
-import { BrandImage, SprocketDivider } from "@pickflick/ui";
+import { BrandImage, Icon, SprocketDivider } from "@pickflick/ui";
 
 import { isAppleSignInEnabled, probeSession } from "../../auth-server";
 import { LoginActions } from "../../components/auth/login-actions";
@@ -35,9 +35,7 @@ export default async function LoginPage({
   return (
     <main className={styles.page}>
       <a className={styles.backLink} href="/">
-        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-          <path d="M19 12H5m7 7-7-7 7-7" stroke="currentColor" strokeWidth="1.8" />
-        </svg>
+        <Icon name="arrow-left" />
         Back
       </a>
       <section aria-labelledby="login-title" className={styles.scene}>
