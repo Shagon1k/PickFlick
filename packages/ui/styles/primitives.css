@@ -97,12 +97,12 @@
 }
 
 .pf-button--secondary-danger:hover {
-  background: rgba(169, 78, 74, 0.18);
+  background: var(--danger-hover-soft);
   border-color: var(--danger);
 }
 
 .pf-button--danger {
-  color: #fff4f2;
+  color: var(--danger-on);
   background: var(--danger);
   border-color: var(--danger);
 }
@@ -119,7 +119,7 @@
 }
 
 .pf-button[data-state="success"] {
-  color: #dcebd6;
+  color: var(--success-text-strong);
   background: var(--success-soft);
   border-color: var(--success-border);
 }
@@ -246,7 +246,7 @@
 }
 
 .pf-field__message[data-tone="success"] {
-  color: #a9c39d;
+  color: var(--success-text);
 }
 
 .pf-toggle {
@@ -641,7 +641,7 @@
   position: fixed;
   z-index: 200;
   inset: 0;
-  background: rgba(0, 0, 0, 0.76);
+  background: var(--scrim);
   backdrop-filter: blur(3px);
 }
 
@@ -822,7 +822,7 @@
   padding: 10px 14px;
   border: 1px solid var(--success-border);
   border-radius: var(--radius);
-  color: #dcebd6;
+  color: var(--success-text-strong);
   background: var(--success-soft);
   font-size: var(--fs-body-sm);
 }
@@ -880,9 +880,9 @@
   text-align: right;
 }
 
-.pf-table__empty {
+.pf-table .pf-table__empty {
   color: var(--muted);
-  text-align: center !important;
+  text-align: center;
 }
 
 .pf-empty-state {
@@ -963,13 +963,13 @@
 }
 
 .pf-pill[data-tone="success"] {
-  color: #a9c39d;
+  color: var(--success-text);
   border-color: var(--success-border);
   background: var(--success-soft);
 }
 
 .pf-pill[data-tone="warning"] {
-  color: #d6aa68;
+  color: var(--warn-text);
   border-color: var(--warn-border);
   background: var(--warn-soft);
 }

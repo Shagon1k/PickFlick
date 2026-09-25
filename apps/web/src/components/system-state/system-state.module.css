@@ -29,7 +29,7 @@
   width: min(620px, 58vw);
   aspect-ratio: 1.35;
   pointer-events: none;
-  background: radial-gradient(ellipse, rgba(200, 155, 85, 0.1), rgba(200, 155, 85, 0.028) 38%, transparent 72%);
+  background: radial-gradient(ellipse, var(--projector-wash), var(--projector-wash-faint) 38%, transparent 72%);
   translate: -50% -50%;
 }
 

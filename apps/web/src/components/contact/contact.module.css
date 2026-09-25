@@ -118,7 +118,7 @@
 }
 
 .feedback[data-tone="success"] {
-  color: #a9c39d;
+  color: var(--success-text);
 }
 
 .emailAlternative {
