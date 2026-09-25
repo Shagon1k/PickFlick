@@ -104,6 +104,12 @@ test("a valid Club creation opens the new Free Club with its configured scale", 
   await expect(scaleEnd).toHaveAttribute("min", "1");
   await scaleEnd.fill("7");
   await expect(page.getByText("Members score nominations 0–7")).toBeVisible();
+  const scaleHelp = page.getByRole("button", { name: "About the Selection score range" });
+  await scaleHelp.focus();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await expect(scaleHelp).toHaveAccessibleDescription(/highest score members can give/u);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("tooltip")).toBeHidden();
   await page.getByRole("button", { name: "Create Screening Room" }).click();
 
   await expect(page).toHaveURL(/\/app$/u);
