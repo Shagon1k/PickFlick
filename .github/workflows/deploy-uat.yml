@@ -27,95 +27,121 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    env:
+      UAT_URL: https://uat.pick-flick.app
+      SOURCE_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+      DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+      DOKPLOY_UAT_COMPOSE_ID: ${{ vars.DOKPLOY_UAT_COMPOSE_ID }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+
     steps:
-      - name: Resolve the triggering main revision
-        id: revision
-        shell: bash
-        env:
-          AUTOMATIC_REVISION: ${{ github.event.workflow_run.head_sha }}
-          EVENT_NAME: ${{ github.event_name }}
-          MANUAL_REVISION: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          revision="$AUTOMATIC_REVISION"
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            revision="$MANUAL_REVISION"
-          fi
-          [[ "$revision" =~ ^[0-9a-fA-F]{40}$ ]] || {
-            echo "The UAT revision must be a full 40-character hexadecimal Git SHA." >&2
-            exit 1
-          }
-          echo "revision=${revision,,}" >> "$GITHUB_OUTPUT"
-
-      - name: Check out trusted deployment controls
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
+          ref: ${{ env.SOURCE_REVISION }}
           fetch-depth: 0
-          ref: ${{ steps.revision.outputs.revision }}
 
+      # A newer successful CI run owns UAT once main moves on.
       - name: Confirm main has not advanced
-        shell: bash
-        env:
-          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
         run: |
-          set -euo pipefail
           git fetch --no-tags origin main
-          test "$(git rev-parse origin/main)" = "$SOURCE_REVISION" || {
-            echo "main advanced after this CI run; a newer successful run owns UAT." >&2
-            exit 1
-          }
+          test "$(git rev-parse origin/main)" = "${SOURCE_REVISION}"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
           cache: pnpm
 
-      - name: Install locked dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium for the browser smoke
+      - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Deploy the configured Dokploy UAT Compose resource
-        env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
-          DOKPLOY_UAT_COMPOSE_ID: ${{ vars.DOKPLOY_UAT_COMPOSE_ID }}
-          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
-          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
-        run: pnpm uat:deploy
+      - name: Deploy the UAT Compose resource
+        run: |
+          set -euo pipefail
+
+          dokploy() {
+              curl --fail-with-body --silent --show-error \
+                  --header "x-api-key: ${DOKPLOY_API_TOKEN}" \
+                  --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+                  --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
+                  "$@"
+          }
+          compose() {
+              dokploy --get "${DOKPLOY_URL}/api/compose.one" \
+                  --data-urlencode "composeId=${DOKPLOY_UAT_COMPOSE_ID}"
+          }
+
+          # The resource must build this repository's main branch from compose.deploy.yaml,
+          # and only this workflow may start its deployments.
+          before="$(compose)"
+          jq -e '
+              .sourceType == "github" and .owner == "Shagon1k" and .repository == "PickFlick"
+              and .branch == "main" and .autoDeploy == false
+              and .composeType == "docker-compose"
+              and (.composePath | ltrimstr("./")) == "compose.deploy.yaml"
+              and .composeStatus != "running"
+          ' <<<"${before}" >/dev/null || {
+              echo 'The Dokploy UAT resource does not match the UAT contract or is busy.' >&2
+              exit 1
+          }
+
+          dokploy --request POST "${DOKPLOY_URL}/api/compose.deploy" \
+              --header 'Content-Type: application/json' \
+              --data "$(jq -cn --arg composeId "${DOKPLOY_UAT_COMPOSE_ID}" \
+                  --arg title "PickFlick UAT ${SOURCE_REVISION:0:12}" \
+                  '{composeId: $composeId, title: $title}')" >/dev/null
+
+          started=false
+          for attempt in $(seq 1 180); do
+              sleep 5
+              status="$(compose | jq -r '.composeStatus // empty')"
+              echo "Dokploy Compose status: ${status}"
+              case "${status}" in
+                  running) started=true ;;
+                  done) [ "${started}" = true ] && exit 0 ;;
+                  idle) ;;
+                  error) echo 'Dokploy reported a failed deployment.' >&2; exit 1 ;;
+                  *) echo "Unexpected Dokploy Compose status: ${status}" >&2; exit 1 ;;
+              esac
+          done
+          echo 'Timed out waiting for Dokploy to finish the deployment.' >&2
+          exit 1
+
+      - name: Wait for the deployed revision to report ready
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 120); do
+              live="$(curl --silent --fail "${UAT_URL}/api/health/live" || true)"
+              ready="$(curl --silent --fail "${UAT_URL}/api/health/ready" || true)"
+              if jq -e --arg revision "${SOURCE_REVISION}" \
+                      '.status == "alive" and .revision == $revision' <<<"${live:-null}" >/dev/null \
+                  && jq -e '.status == "ready" and all(.checks[]; .status == "up")' \
+                      <<<"${ready:-null}" >/dev/null; then
+                  echo "UAT serves ${SOURCE_REVISION} with every dependency up."
+                  exit 0
+              fi
+              sleep 10
+          done
+          echo 'UAT did not report the deployed revision as ready within 20 minutes.' >&2
+          exit 1
 
       - name: Run desktop and mobile browser smoke
         env:
-          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
-          UAT_SMOKE_ARTIFACT_DIR: test-results/uat-preview
+          PLAYWRIGHT_BASE_URL: ${{ env.UAT_URL }}
         run: pnpm uat:smoke
 
-      - name: Upload UAT preview screenshots
-        if: ${{ always() }}
+      - name: Upload UAT screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
+          name: uat-${{ env.SOURCE_REVISION }}
+          path: test-results/uat/
           if-no-files-found: warn
-          name: uat-preview-${{ steps.revision.outputs.revision }}
-          path: test-results/uat-preview/
           retention-days: 14
-
-      - name: Record the review checkpoint
-        if: ${{ success() }}
-        shell: bash
-        env:
-          SOURCE_REVISION: ${{ steps.revision.outputs.revision }}
-        run: |
-          {
-            echo "## UAT evidence"
-            echo
-            echo "- Triggering main revision: \`$SOURCE_REVISION\`"
-            echo "- URL: https://uat.pick-flick.app"
-            echo "- Dokploy deployment, HTTPS liveness, readiness, desktop smoke, and mobile smoke passed."
-            echo "- Owner acknowledgement of the uploaded screenshots is still required."
-          } >> "$GITHUB_STEP_SUMMARY"

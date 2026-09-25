@@ -1,11 +1,9 @@
-import { describe, expect, it } from 'vitest';
-
 import { deployCompose } from '../deploy-compose.mjs';
 
 describe('deployment convergence', () => {
     const sourceRevision = 'a'.repeat(40);
 
-    it('uses native Compose release ordering', () => {
+    it('should use native Compose release ordering', () => {
         const commands: string[][] = [];
         const source = { APP_ENV: 'uat' };
 
@@ -29,7 +27,7 @@ describe('deployment convergence', () => {
         ]);
     });
 
-    it('surfaces a native Compose deployment failure', () => {
+    it('should surface a native Compose deployment failure', () => {
         const commands: string[][] = [];
         const source = { APP_ENV: 'uat' };
 
@@ -57,7 +55,7 @@ describe('deployment convergence', () => {
         ]);
     });
 
-    it('passes a validated revision so linked-worktree builds do not read the gitdir file', () => {
+    it('should pass a validated revision so linked-worktree builds do not read the gitdir file', () => {
         const environments: NodeJS.ProcessEnv[] = [];
         const source = { APP_ENV: 'uat', STORAGE_BUCKET: 'pickflick-uat' };
 
@@ -71,7 +69,7 @@ describe('deployment convergence', () => {
         expect(source).not.toHaveProperty('SOURCE_REVISION');
     });
 
-    it('does not start Compose when the source revision cannot be validated', () => {
+    it('should does not start Compose when the source revision cannot be validated', () => {
         const commands: string[][] = [];
 
         expect(() =>
@@ -86,7 +84,7 @@ describe('deployment convergence', () => {
         expect(commands).toEqual([]);
     });
 
-    it('refuses source-built production deployment', () => {
+    it('should refuses source-built production deployment', () => {
         const commands: string[][] = [];
 
         expect(() =>

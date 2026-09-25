@@ -27,78 +27,191 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      production_enabled: ${{ steps.promotion.outputs.production_enabled }}
-      release_sha: ${{ steps.promotion.outputs.release_sha }}
-      release_version: ${{ steps.promotion.outputs.release_version }}
-      uat_run_id: ${{ steps.promotion.outputs.uat_run_id }}
+      release_sha: ${{ steps.release.outputs.release_sha }}
+      release_version: ${{ steps.release.outputs.release_version }}
 
     steps:
-      - name: Check out trusted promotion controls
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: main
+          fetch-depth: 0
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
+      - name: Resolve the release from main
+        id: release
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: |
+          set -euo pipefail
 
-      - name: Resolve main and require exact successful UAT evidence
-        id: promotion
+          git fetch --force --tags origin main:refs/remotes/origin/main
+          latest_tag="$(git tag --list 'v[0-9]*' --sort=-v:refname \
+              | grep -Ex 'v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)' \
+              | head -n 1 || true)"
+          IFS=. read -r major minor patch <<<"${latest_tag:-v0.0.0}"
+          major="${major#v}"
+          case "${RELEASE_TYPE}" in
+              patch) version="v${major}.${minor}.$((patch + 1))" ;;
+              minor) version="v${major}.$((minor + 1)).0" ;;
+              major) version="v$((major + 1)).0.0" ;;
+          esac
+
+          echo "release_sha=$(git rev-parse origin/main)" >>"${GITHUB_OUTPUT}"
+          echo "release_version=${version}" >>"${GITHUB_OUTPUT}"
+
+      # Production only receives a revision whose own UAT deployment and smoke passed.
+      - name: Require a successful UAT E2E job for the release revision
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: node scripts/promote-production.mjs prepare
+          RELEASE_SHA: ${{ steps.release.outputs.release_sha }}
+        run: |
+          set -euo pipefail
 
-      - name: Record the inactive production checkpoint
-        if: ${{ steps.promotion.outputs.production_enabled != 'true' }}
+          checks="$(curl --fail-with-body --silent --show-error \
+              --header 'Accept: application/vnd.github+json' \
+              --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/commits/${RELEASE_SHA}/check-runs?check_name=UAT%20E2E")"
+          conclusion="$(jq -r '.check_runs | sort_by(.completed_at // "") | last | .conclusion // empty' \
+              <<<"${checks}")"
+          test "${conclusion}" = success || {
+              echo "No successful UAT E2E job exists for ${RELEASE_SHA}." >&2
+              exit 1
+          }
+
+      - name: Summarize the candidate
         env:
-          RELEASE_SHA: ${{ steps.promotion.outputs.release_sha }}
-          RELEASE_VERSION: ${{ steps.promotion.outputs.release_version }}
-          UAT_RUN_ID: ${{ steps.promotion.outputs.uat_run_id }}
-        shell: bash
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
+          RELEASE_SHA: ${{ steps.release.outputs.release_sha }}
+          RELEASE_VERSION: ${{ steps.release.outputs.release_version }}
         run: |
           {
-            echo "## Production promotion validation"
-            echo
-            echo "- Candidate: \`$RELEASE_VERSION\` at \`$RELEASE_SHA\`"
-            echo "- Exact successful UAT run: \`$UAT_RUN_ID\`"
-            echo "- Production deployment is disabled; no tag or Dokploy state was changed."
-          } >> "$GITHUB_STEP_SUMMARY"
+              echo "## Production candidate"
+              echo
+              echo "- \`${RELEASE_VERSION}\` at \`${RELEASE_SHA}\` passed UAT E2E."
+              if [ "${PRODUCTION_DEPLOY_ENABLED}" != true ]; then
+                  echo "- Production deployment is disabled; no tag or Dokploy state was changed."
+              fi
+          } >>"${GITHUB_STEP_SUMMARY}"
 
   deploy:
     name: Deploy approved production release
     needs: validate
-    if: ${{ needs.validate.outputs.production_enabled == 'true' }}
+    if: vars.PRODUCTION_DEPLOY_ENABLED == 'true'
     environment: production
-    permissions:
-      actions: read
-      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
+
+    env:
+      PRODUCTION_URL: https://pick-flick.app
+      RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
+      RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+      DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+      DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
     steps:
-      - name: Check out the validated release revision
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
+          ref: ${{ env.RELEASE_SHA }}
           fetch-depth: 0
-          ref: ${{ needs.validate.outputs.release_sha }}
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
+      - name: Confirm main has not advanced
+        run: |
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "${RELEASE_SHA}"
 
-      - name: Tag and deploy the production release
-        env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
-          DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
-          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
-          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
-          RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
-          RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
-        run: node scripts/promote-production.mjs deploy
+      - name: Create or verify the release tag
+        run: |
+          set -euo pipefail
+
+          tagged_sha="$(git ls-remote origin "refs/tags/${RELEASE_VERSION}^{}" | awk 'NR == 1 { print $1 }')"
+          if [ -n "${tagged_sha}" ]; then
+              test "${tagged_sha}" = "${RELEASE_SHA}" || {
+                  echo "${RELEASE_VERSION} points to ${tagged_sha}, not ${RELEASE_SHA}." >&2
+                  exit 1
+              }
+              exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag --annotate "${RELEASE_VERSION}" "${RELEASE_SHA}" --message "Release ${RELEASE_VERSION}"
+          git push origin "refs/tags/${RELEASE_VERSION}"
+
+      - name: Pin Dokploy to the tag and deploy it
+        run: |
+          set -euo pipefail
+
+          dokploy() {
+              curl --fail-with-body --silent --show-error \
+                  --header "x-api-key: ${DOKPLOY_API_TOKEN}" \
+                  --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+                  --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
+                  "$@"
+          }
+          compose() {
+              dokploy --get "${DOKPLOY_URL}/api/compose.one" \
+                  --data-urlencode "composeId=${DOKPLOY_PRODUCTION_COMPOSE_ID}"
+          }
+
+          jq -e '
+              .sourceType == "github" and .owner == "Shagon1k" and .repository == "PickFlick"
+              and .autoDeploy == false and .composeType == "docker-compose"
+              and (.composePath | ltrimstr("./")) == "compose.deploy.yaml"
+              and (.composeStatus == "idle" or .composeStatus == "done")
+          ' <<<"$(compose)" >/dev/null || {
+              echo 'The Dokploy production resource does not match the contract or is busy.' >&2
+              exit 1
+          }
+
+          dokploy --request POST "${DOKPLOY_URL}/api/compose.update" \
+              --header 'Content-Type: application/json' \
+              --data "$(jq -cn --arg composeId "${DOKPLOY_PRODUCTION_COMPOSE_ID}" \
+                  --arg branch "${RELEASE_VERSION}" \
+                  '{composeId: $composeId, branch: $branch, autoDeploy: false}')" >/dev/null
+          test "$(compose | jq -r '.branch')" = "${RELEASE_VERSION}" || {
+              echo 'Dokploy did not keep the production release tag.' >&2
+              exit 1
+          }
+
+          dokploy --request POST "${DOKPLOY_URL}/api/compose.deploy" \
+              --header 'Content-Type: application/json' \
+              --data "$(jq -cn --arg composeId "${DOKPLOY_PRODUCTION_COMPOSE_ID}" \
+                  --arg title "Deploy ${RELEASE_VERSION}" \
+                  '{composeId: $composeId, title: $title}')" >/dev/null
+
+          started=false
+          for attempt in $(seq 1 180); do
+              sleep 5
+              status="$(compose | jq -r '.composeStatus // empty')"
+              case "${status}" in
+                  running) started=true ;;
+                  done) [ "${started}" = true ] && exit 0 ;;
+                  idle) ;;
+                  error) echo 'Dokploy reported a failed production deployment.' >&2; exit 1 ;;
+                  *) echo "Unexpected Dokploy Compose status: ${status}" >&2; exit 1 ;;
+              esac
+          done
+          echo 'Timed out waiting for the production deployment.' >&2
+          exit 1
+
+      - name: Wait for the release revision to report ready
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 60); do
+              live="$(curl --silent --fail "${PRODUCTION_URL}/api/health/live" || true)"
+              ready="$(curl --silent --fail "${PRODUCTION_URL}/api/health/ready" || true)"
+              if jq -e --arg revision "${RELEASE_SHA}" \
+                      '.status == "alive" and .revision == $revision' <<<"${live:-null}" >/dev/null \
+                  && jq -e '.status == "ready" and all(.checks[]; .status == "up")' \
+                      <<<"${ready:-null}" >/dev/null; then
+                  echo "Production serves ${RELEASE_VERSION} (${RELEASE_SHA})."
+                  exit 0
+              fi
+              sleep 10
+          done
+          echo 'Production did not report the release revision as ready within 10 minutes.' >&2
+          exit 1
