@@ -94,7 +94,22 @@ export async function runContactDeliveryLoop(
   drain: DrainController,
 ): Promise<void> {
   while (!signal.aborted) {
-    const processed = await drain.run(() => deliverNextContactMessage(store, sender, logger));
+    let processed = false;
+    try {
+      processed = await drain.run(() => deliverNextContactMessage(store, sender, logger));
+    } catch (error) {
+      if (signal.aborted || !drain.acceptingWork) {
+        return;
+      }
+      // A transient store failure must not stop delivery; leases make the retried claim safe.
+      logger.error(
+        {
+          event: "contact.delivery.iteration_failed",
+          errorName: error instanceof Error ? error.name : "unknown",
+        },
+        "Contact delivery iteration failed; retrying after the poll interval.",
+      );
+    }
     if (!processed) {
       await waitForPoll(signal);
     }
