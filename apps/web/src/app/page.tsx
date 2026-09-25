@@ -105,6 +105,7 @@ export default function HomePage() {
               <div className={styles.handoffPrice}><strong>€0</strong><span>to start</span></div>
               <p className={styles.handoffNote}>No credit card required.</p>
               <ActionLink href="/login" variant="primary">Create your first Club</ActionLink>
+              <a className={styles.handoffLink} href="/pricing">Compare plans</a>
             </div>
           </div>
         </section>

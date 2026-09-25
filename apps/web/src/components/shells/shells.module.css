@@ -51,28 +51,25 @@
   height: 48px;
 }
 
+/* Resting links use --fg-secondary: the prototype's --muted reads as disabled on the dark header. */
 .publicNav,
 .productDesktopNav {
   display: flex;
   align-self: stretch;
   justify-content: center;
   gap: var(--gap-lg);
-  color: var(--muted);
+  color: var(--fg-secondary);
 }
 
-.productDesktopNav {
-  display: none;
-}
-
+/* Public links join the header from 821px; below it the header is the brand and Go to App only. */
+.productDesktopNav,
 .publicNav {
-  justify-content: flex-end;
-}
-
-.publicNav .desktopOnlyLink {
   display: none;
 }
 
 .publicHeaderAction {
+  grid-column: 3;
+  justify-self: end;
   white-space: nowrap;
 }
 
@@ -144,14 +141,14 @@
   box-shadow: inset 0 -1px var(--gold);
 }
 
-/* Club view tabs: muted at rest, foreground with a centre-out underline when hovered or current. */
+/* Club view tabs: secondary at rest, foreground with a centre-out underline when hovered or current. */
 .contextTabs a {
   position: relative;
   display: inline-flex;
   min-height: var(--hit);
   align-items: center;
   padding: 14px 22px;
-  color: var(--muted);
+  color: var(--fg-secondary);
   font-size: var(--fs-body-sm);
   font-weight: 500;
   white-space: nowrap;
@@ -267,7 +264,7 @@
   flex-wrap: wrap;
   column-gap: var(--gap-xs);
   align-items: center;
-  color: var(--muted);
+  color: var(--fg-secondary);
   font-size: var(--fs-body-sm);
 }
 
@@ -280,7 +277,7 @@
 
 .publicFooter nav a:hover,
 .publicFooter nav a:focus-visible {
-  color: var(--fg-secondary);
+  color: var(--fg);
 }
 
 .publicFooter nav span {
@@ -391,7 +388,7 @@
   height: var(--hit);
   padding: 0;
   border: 0;
-  color: var(--muted);
+  color: var(--fg-secondary);
   background: transparent;
   cursor: pointer;
   place-items: center;
@@ -403,7 +400,7 @@
   position: absolute;
   z-index: -1;
   inset: 5px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-lit);
   border-radius: 50%;
   content: "";
   transition: border-color 0.18s ease;
@@ -415,22 +412,27 @@
   isolation: isolate;
 }
 
+/* Header icons answer hover and open state the way the navigation links do: ivory with a gold accent. */
 .roundButton:hover,
+.roundButton:focus-visible,
 .roundButton[aria-expanded="true"],
 .avatarButton:hover,
+.avatarButton:focus-visible,
 .avatarButton[aria-expanded="true"] {
-  color: var(--fg);
+  color: var(--ivory);
 }
 
 .roundButton:hover::before,
+.roundButton:focus-visible::before,
 .roundButton[aria-expanded="true"]::before,
 .avatarButton:hover::before,
+.avatarButton:focus-visible::before,
 .avatarButton[aria-expanded="true"]::before {
-  border-color: var(--border-lit);
+  border-color: var(--gold-border);
 }
 
 .avatarButton {
-  color: var(--accent-dim);
+  color: var(--fg-secondary);
   font: 600 13px/1 var(--font-body);
 }
 
@@ -509,7 +511,7 @@
   padding: 0 9px;
   border: 0;
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--fg-secondary);
   background: none;
   font: var(--fs-micro) var(--font-body);
   cursor: pointer;
@@ -597,17 +599,17 @@
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-lit);
   border-radius: 50%;
-  color: var(--muted);
+  color: var(--fg-secondary);
   background: var(--surface);
   cursor: pointer;
   place-items: center;
 }
 
 .searchClose:hover {
-  border-color: var(--border-lit);
-  color: var(--fg);
+  border-color: var(--gold-border);
+  color: var(--ivory);
 }
 
 .searchResults {
@@ -679,7 +681,7 @@
   padding: 12px 0;
   border: 0;
   border-bottom: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--fg-secondary);
   background: none;
   font: inherit;
   text-align: center;
@@ -1006,7 +1008,7 @@
   min-height: 63px;
   padding: 0 4px;
   border: 0;
-  color: rgba(255, 255, 255, 0.46);
+  color: var(--fg-secondary);
   background: transparent;
   font: 500 var(--fs-micro)/1 var(--font-body);
   letter-spacing: var(--tracking-wide);
@@ -1023,9 +1025,13 @@
 }
 
 .navTrigger:hover,
-.navTrigger[aria-expanded="true"],
-.navTrigger[aria-current="page"] {
+.navTrigger:focus-visible,
+.navTrigger[aria-expanded="true"] {
   color: var(--fg);
+}
+
+.navTrigger[aria-current="page"] {
+  color: var(--ivory);
 }
 
 .navGlyph {
@@ -1106,10 +1112,6 @@
 
 @media (min-width: 821px) {
   .publicNav {
-    justify-content: center;
-  }
-
-  .publicNav .desktopOnlyLink {
     display: flex;
   }
 }
