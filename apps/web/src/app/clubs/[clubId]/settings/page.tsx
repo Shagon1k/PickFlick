@@ -9,7 +9,8 @@ import { loginPath } from "../../../../auth-server";
 import { loadClubSettings } from "../../../../components/clubs/club-api";
 import { ClubSettings } from "../../../../components/clubs/club-settings";
 import styles from "../../../../components/clubs/club-settings.module.css";
-import { clubNavigation, ProductFrame } from "../../../../components/shells/shells";
+import { clubNavigation } from "../../../../components/shells/shell-navigation";
+import { ProductFrame } from "../../../../components/shells/shells";
 
 export const metadata: Metadata = {
   title: "Club settings — PickFlick",

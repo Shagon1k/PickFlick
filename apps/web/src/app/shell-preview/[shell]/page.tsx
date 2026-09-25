@@ -11,8 +11,8 @@ import {
   SessionShell,
   SetupShell,
   ShellPlaceholder,
-  type ShellRouteMap,
 } from "../../../components/shells/shells";
+import type { ShellRouteMap } from "../../../components/shells/shell-navigation";
 import styles from "./page.module.css";
 
 const shellNames = ["public", "setup", "product", "session", "settings", "library", "admin"] as const;
