@@ -8,12 +8,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Web module boundaries
+## Web
 
-- Keep route `page.tsx` files focused on Next.js metadata, request-input resolution, and component
-  composition. Move error catalogs, reusable parsing, provider/API calls, and stateful interaction
-  logic into named files under the owning component or feature directory.
-- Route browser-to-backend calls through an owning `*.service.ts` or `*.api.ts` facade. Components
-  consume that facade instead of importing a generated or third-party client directly.
-- Extend shared UI primitives, including `Icon`, before adding page-local copies of an existing
-  visual pattern.
+Next.js App Router + Mantine. Routes live in route groups; a component sits next to the route that
+uses it (`_components/`) and moves to `src/components/` only when a second route needs it.
+
+## Rule index
+
+- TypeScript and React: `../../.agent-docs/rules/typescript.md`
+- CSS Modules and Mantine: `../../.agent-docs/rules/frontend-css.md`
+- Tests: `../../.agent-docs/rules/testing.md`
+
+## Structure
+
+- `src/app/(marketing)`, `(auth)`, `(product)` hold the real routes; `(internal)` holds the
+  component gallery, which production answers with 404.
+- A route folder owns its `page.tsx`, `page.module.scss`, `actions.ts`, and `_components/`.
+- `src/components/ui/<Name>/` is the UI kit (Mantine wrappers); `src/components/<area>/` holds
+  shared app pieces such as shells.
+- `src/api/<area>.server.ts` calls the backend from the server and starts with
+  `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
+- Import with the `@/` alias; images from `assets/brand` with `@brand/`.
+- Copy `src/app/(auth)/login` as the template for a new route.
