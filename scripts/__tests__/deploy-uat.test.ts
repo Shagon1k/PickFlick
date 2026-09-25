@@ -52,7 +52,6 @@ function readyHealth(pathname: string, revision = source.SOURCE_REVISION) {
         : {
               checks: [
                   { name: 'database', status: 'up' },
-                  { name: 'redis', status: 'up' },
                   { name: 'objectStorage', status: 'up' },
               ],
               status: 'ready',

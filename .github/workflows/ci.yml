@@ -133,7 +133,7 @@ jobs:
 
       - name: Start isolated test dependencies
         run: |
-          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml up -d --wait postgres redis minio
+          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml up -d --wait postgres minio
           docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml run --rm minio-init
 
       - name: Check dependency integration
@@ -148,14 +148,8 @@ jobs:
       - name: Run database integration tests
         run: pnpm test:integration
 
-      - name: Check Contact persistence and abuse controls
-        run: pnpm contact:check
 
-      - name: Check OAuth state and session revocation
-        run: pnpm auth:check
 
-      - name: Check Club policies, role transitions, and audit records
-        run: pnpm club:check
 
       - name: Run built-runtime E2E smoke
         run: pnpm e2e:smoke

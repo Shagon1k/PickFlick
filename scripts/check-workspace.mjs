@@ -5,11 +5,9 @@ import { fileURLToPath } from 'node:url';
 const expectedPackages = new Map([
     ['apps/api', '@pickflick/api'],
     ['apps/web', '@pickflick/web'],
-    ['apps/worker', '@pickflick/worker'],
     ['packages/config', '@pickflick/config'],
     ['packages/contracts', '@pickflick/contracts'],
     ['packages/database', '@pickflick/database'],
-    ['packages/observability', '@pickflick/observability'],
     ['packages/ui', '@pickflick/ui'],
 ]);
 

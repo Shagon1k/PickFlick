@@ -127,8 +127,6 @@ async function stopRuntime(runtime) {
     }
 }
 
-let workerReady = false;
-let workerOutput = '';
 const runtimes = [
     startRuntime('web', [
         '--filter',
@@ -140,10 +138,6 @@ const runtimes = [
         String(webPort),
     ]),
     startRuntime('api', ['--filter', '@pickflick/api', 'start']),
-    startRuntime('worker', ['--filter', '@pickflick/worker', 'start'], (chunk) => {
-        workerOutput = `${workerOutput}${chunk}`.slice(-4_096);
-        workerReady ||= workerOutput.includes('"event":"service.ready"');
-    }),
 ];
 
 try {
@@ -175,7 +169,6 @@ try {
             },
             runtimes,
         ),
-        waitFor('worker readiness', async () => workerReady, runtimes),
     ]);
     const appleAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
         body: JSON.stringify({ callbackURL: '/app', provider: 'apple' }),
@@ -208,7 +201,7 @@ try {
         );
     }
     console.log(
-        'E2E smoke passed: built web, API, worker, and Apple authentication boundary are ready against isolated dependencies.',
+        'E2E smoke passed: built web, API, and Apple authentication boundary are ready against isolated dependencies.',
     );
 } finally {
     await Promise.all(runtimes.map(stopRuntime));
