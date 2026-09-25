@@ -1,6 +1,6 @@
 import { loadDatabaseEnvironment } from '@pickflick/config/environment';
 
-import { checkDatabaseReadiness } from './client.js';
+import { checkDatabaseReadiness } from '../client.js';
 
 const environment = loadDatabaseEnvironment();
 await checkDatabaseReadiness(environment.databaseUrl, 2_000);

@@ -5,7 +5,7 @@
         "noEmit": true,
         "rewriteRelativeImportExtensions": true,
         "rootDir": "src",
-        "types": ["node"]
+        "types": ["node", "vitest/globals"]
     },
     "include": ["src/**/*.ts"]
 }

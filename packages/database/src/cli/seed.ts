@@ -1,8 +1,8 @@
 import { loadDatabaseEnvironment } from '@pickflick/config/environment';
 
-import { createDatabaseClient } from './client.js';
-import { SYNTHETIC_FIXTURES } from './fixtures.js';
-import { assertSafeSeedOrResetTarget } from './safety.js';
+import { createDatabaseClient } from '../client.js';
+import { SYNTHETIC_FIXTURES } from '../fixtures.js';
+import { assertSafeSeedOrResetTarget } from '../safety.js';
 
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);

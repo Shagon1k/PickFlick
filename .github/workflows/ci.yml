@@ -145,8 +145,8 @@ jobs:
       - name: Load deterministic synthetic fixtures
         run: pnpm seed
 
-      - name: Check migrations and database constraints
-        run: pnpm db:check
+      - name: Run database integration tests
+        run: pnpm test:integration
 
       - name: Check Contact persistence and abuse controls
         run: pnpm contact:check

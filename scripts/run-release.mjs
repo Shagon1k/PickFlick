@@ -9,12 +9,12 @@ export const releaseSteps = [
     {
         name: 'migrations',
         command: process.execPath,
-        arguments: ['dist/run-prisma.js', 'migrate', 'deploy'],
+        arguments: ['dist/cli/run-prisma.js', 'migrate', 'deploy'],
     },
     {
         name: 'required seed',
         command: process.execPath,
-        arguments: ['dist/seed-release.js'],
+        arguments: ['dist/cli/seed-release.js'],
     },
 ];
 

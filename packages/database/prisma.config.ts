@@ -23,7 +23,7 @@ export default defineConfig({
     schema: 'prisma/schema.prisma',
     migrations: {
         path: 'prisma/migrations',
-        seed: 'tsx src/seed.ts',
+        seed: 'tsx src/cli/seed.ts',
     },
     datasource: {
         url: process.env.DATABASE_URL ?? 'postgresql://invalid:invalid@127.0.0.1:1/invalid',
