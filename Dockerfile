@@ -24,10 +24,6 @@ FROM builder AS api-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm --config.strict-peer-dependencies=false --filter @pickflick/api deploy --prod --legacy /out/api
 
-FROM builder AS worker-package
-RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
-    pnpm --config.strict-peer-dependencies=false --filter @pickflick/worker deploy --prod --legacy /out/worker
-
 FROM builder AS release-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm --config.strict-peer-dependencies=false --filter @pickflick/database deploy --legacy /out/database
@@ -61,16 +57,6 @@ COPY --from=api-package --chown=node:node /out/api/ ./
 COPY --from=builder --chown=node:node /workspace/.source-revision ./.source-revision
 USER node
 EXPOSE 3001
-CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
-
-FROM ${RUNTIME_IMAGE} AS worker
-LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.title="PickFlick worker"
-ENV NODE_ENV=production
-WORKDIR /app
-COPY --from=worker-package --chown=node:node /out/worker/ ./
-COPY --from=builder --chown=node:node /workspace/.source-revision ./.source-revision
-USER node
 CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
 
 FROM ${RUNTIME_IMAGE} AS release

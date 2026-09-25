@@ -17,7 +17,7 @@ export const DOKPLOY_COMPOSE_PATH = 'compose.deploy.yaml';
 
 const githubRepository = 'Shagon1k/PickFlick';
 const composeIdPattern = /^[A-Za-z0-9_-]+$/;
-const expectedReadinessDependencies = ['database', 'redis', 'objectStorage'];
+const expectedReadinessDependencies = ['database', 'objectStorage'];
 
 export function validateDokployUrl(value) {
     let url;

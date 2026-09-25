@@ -8,9 +8,7 @@ x-build: &build
 
 x-runtime-environment: &runtime-environment
     APP_ENV: ${APP_ENV:?APP_ENV is required}
-    SHUTDOWN_TIMEOUT_MS: '10000'
     DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-    REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
     STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
     STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
     STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
@@ -21,7 +19,6 @@ x-runtime-environment: &runtime-environment
     RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
     RESEND_FROM: ${RESEND_FROM:?RESEND_FROM is required}
     CONTACT_DELIVERY_TO: ${CONTACT_DELIVERY_TO:?CONTACT_DELIVERY_TO is required}
-    CONTACT_HASH_SECRET: ${CONTACT_HASH_SECRET:?CONTACT_HASH_SECRET is required}
 
 x-application-service: &application-service
     cap_drop:
@@ -90,21 +87,6 @@ services:
             application:
                 aliases:
                     - pickflick-${APP_ENV:?APP_ENV is required}-api
-
-    worker:
-        <<: *application-service
-        build:
-            <<: *build
-            target: worker
-        environment: *runtime-environment
-        depends_on:
-            release:
-                condition: service_completed_successfully
-                required: true
-        networks:
-            application:
-                aliases:
-                    - pickflick-${APP_ENV:?APP_ENV is required}-worker
 
     web:
         <<: *application-service
