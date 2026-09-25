@@ -16,7 +16,7 @@ import {
   updateClubSettingsAction,
   uploadClubAvatarAction,
 } from "../../app/clubs/[clubId]/settings/actions";
-import { clubNavigation } from "../shells/shells";
+import { clubNavigation } from "../shells/shell-navigation";
 import { initialClubManagementState, type ClubManagementActionState } from "./club-management.types";
 import styles from "./club-settings.module.css";
 import { SelectionScaleField } from "./selection-scale-field";

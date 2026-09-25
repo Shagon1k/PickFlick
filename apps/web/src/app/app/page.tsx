@@ -9,7 +9,8 @@ import { ActionLink, BrandImage, Pill } from "@pickflick/ui";
 import { loginPath } from "../../auth-server";
 import { loadClubCollection } from "../../components/clubs/club-api";
 import styles from "../../components/clubs/club-onboarding.module.css";
-import { clubNavigation, ProductFrame } from "../../components/shells/shells";
+import { clubNavigation } from "../../components/shells/shell-navigation";
+import { ProductFrame } from "../../components/shells/shells";
 
 export const metadata: Metadata = {
   title: "Your Clubs — PickFlick",
