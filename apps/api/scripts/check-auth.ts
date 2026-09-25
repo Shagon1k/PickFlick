@@ -94,13 +94,13 @@ function deterministicGoogleProvider() {
             }
             const returning = tokens.idToken === 'returning-user';
             const conflict = tokens.idToken === 'email-conflict';
+            let providerEmail = returning ? `changed-${email}` : email;
+            if (conflict) {
+                providerEmail = conflictEmail.toUpperCase();
+            }
             const user = {
                 sub: conflict ? 'google-conflict-subject' : 'google-auth-check-subject',
-                email: conflict
-                    ? conflictEmail.toUpperCase()
-                    : returning
-                      ? `changed-${email}`
-                      : email,
+                email: providerEmail,
                 email_verified: !returning,
                 name: 'Auth Check User',
                 picture: 'https://images.example.invalid/auth-check.png',

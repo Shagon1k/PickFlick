@@ -61,6 +61,14 @@ export const CONTACT_MESSAGE_MAX_LENGTH = 500;
 export const CONTACT_NAME_MAX_LENGTH = 100;
 export const CONTACT_EMAIL_MAX_LENGTH = 254;
 
+// Domain labels exclude dots, so matching stays linear instead of backtracking over the domain.
+const emailAddressPattern = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/u;
+
+/** A plain `local@domain.tld` address; length limits are checked separately by each form. */
+export function isEmailAddress(value: string): boolean {
+    return emailAddressPattern.test(value);
+}
+
 export interface ContactSubmissionRequest {
     readonly submissionKey: string;
     readonly message: string;
@@ -98,10 +106,13 @@ export interface ClubTierProjection {
     readonly analyticsTier: 'BASIC' | 'EXTENDED';
 }
 
+export type ClubLifecycle = 'ACTIVE' | 'ARCHIVED';
+export type ClubRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
+
 export interface ClubPolicyProjection {
     readonly clubId: string;
-    readonly lifecycle: 'ACTIVE' | 'ARCHIVED';
-    readonly membershipRole: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+    readonly lifecycle: ClubLifecycle;
+    readonly membershipRole: ClubRole;
     readonly permissions: ClubPolicyPermissions;
     readonly entitlements: ClubTierProjection;
 }
@@ -133,8 +144,8 @@ export interface ClubSummary {
     readonly description?: string;
     readonly hasAvatar: boolean;
     readonly avatarVersion?: string;
-    readonly lifecycle: 'ACTIVE' | 'ARCHIVED';
-    readonly membershipRole: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+    readonly lifecycle: ClubLifecycle;
+    readonly membershipRole: ClubRole;
     readonly selectionScaleMin: 0 | 1;
     readonly selectionScaleMax: number;
     readonly tier: 'FREE' | 'PRO';
@@ -166,7 +177,7 @@ export interface ClubVisibilitySettings {
 export interface ClubMemberProjection {
     readonly id: string;
     readonly displayName: string;
-    readonly role: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+    readonly role: ClubRole;
     readonly joinedAt: string;
 }
 

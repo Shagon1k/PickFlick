@@ -306,7 +306,7 @@ function PreviewSection({
         <section
             aria-labelledby={`${id}-title`}
             className={styles.section}
-            id={id.includes('forms') ? 'forms' : id.includes('navigation') ? 'navigation' : id}
+            id={['forms', 'navigation'].find((anchor) => id.includes(anchor)) ?? id}
         >
             <header className={styles.sectionHeader}>
                 <div>

@@ -172,6 +172,50 @@ async function triggerDokploy(fetchImplementation, configuration) {
     }
 }
 
+/** The one deployment that appeared since the request; several at once make it ambiguous. */
+function newDeploymentId(deployments, previousDeploymentIds) {
+    const newDeployments = deployments.filter(
+        ({ deploymentId }) => !previousDeploymentIds.has(deploymentId),
+    );
+    if (newDeployments.length > 1) {
+        throw new Error(
+            'Dokploy reported multiple new deployments; the requested UAT deployment is ambiguous.',
+        );
+    }
+    return newDeployments[0]?.deploymentId;
+}
+
+/** True once the deployment finished for the requested revision; throws on any failed outcome. */
+function deploymentCompleted(deployment, sourceRevision) {
+    switch (deployment?.status) {
+        case 'done':
+            if (deployment.description === `Commit: ${sourceRevision}`) {
+                return true;
+            }
+            if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? '')) {
+                throw new Error('Dokploy deployed a different UAT source revision than requested.');
+            }
+            return false;
+        case 'error':
+        case 'cancelled':
+            throw new Error('Dokploy reported a failed UAT deployment.');
+        case 'running':
+        case undefined:
+            return false;
+        default:
+            throw new Error('Dokploy reported an unexpected UAT deployment status.');
+    }
+}
+
+function assertComposeInProgress(composeStatus) {
+    if (composeStatus === 'error') {
+        throw new Error('Dokploy reported a failed UAT deployment.');
+    }
+    if (!['done', 'idle', 'running'].includes(composeStatus)) {
+        throw new Error('Dokploy reported an unexpected UAT deployment status.');
+    }
+}
+
 export async function waitForDokployDeployment(
     configuration,
     previousDeploymentIds,
@@ -195,46 +239,14 @@ export async function waitForDokployDeployment(
             { headers: requestHeaders(dokployAuthentication(configuration)) },
         );
         const deployments = dokployDeploymentRecords(compose);
-        if (deploymentId === undefined) {
-            const newDeployments = deployments.filter(
-                ({ deploymentId: candidateId }) => !previousDeploymentIds.has(candidateId),
-            );
-            if (newDeployments.length > 1) {
-                throw new Error(
-                    'Dokploy reported multiple new deployments; the requested UAT deployment is ambiguous.',
-                );
-            }
-            deploymentId = newDeployments[0]?.deploymentId;
-        }
+        deploymentId ??= newDeploymentId(deployments, previousDeploymentIds);
         const deployment = deployments.find(
             ({ deploymentId: candidateId }) => candidateId === deploymentId,
         );
-        switch (deployment?.status) {
-            case 'done':
-                if (deployment.description === `Commit: ${configuration.sourceRevision}`) {
-                    return deploymentId;
-                }
-                if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? '')) {
-                    throw new Error(
-                        'Dokploy deployed a different UAT source revision than requested.',
-                    );
-                }
-                break;
-            case 'error':
-            case 'cancelled':
-                throw new Error('Dokploy reported a failed UAT deployment.');
-            case 'running':
-            case undefined:
-                break;
-            default:
-                throw new Error('Dokploy reported an unexpected UAT deployment status.');
+        if (deploymentCompleted(deployment, configuration.sourceRevision)) {
+            return deploymentId;
         }
-        if (compose.composeStatus === 'error') {
-            throw new Error('Dokploy reported a failed UAT deployment.');
-        }
-        if (!['done', 'idle', 'running'].includes(compose.composeStatus)) {
-            throw new Error('Dokploy reported an unexpected UAT deployment status.');
-        }
+        assertComposeInProgress(compose.composeStatus);
         await sleep(intervalMilliseconds);
     }
     throw new Error(`Dokploy did not complete the UAT deployment within ${timeoutMilliseconds}ms.`);

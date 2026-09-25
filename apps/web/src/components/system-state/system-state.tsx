@@ -33,9 +33,10 @@ export function SystemState({
     const destination = signedIn
         ? { href: '/app', label: 'Back to Hub' }
         : { href: '/', label: 'Back to main' };
+    const homeName = signedIn ? 'Hub' : 'main page';
     const description =
         variant === 'not-found'
-            ? `This page was cut from the final edit. Head back to the ${signedIn ? 'Hub' : 'main page'} and pick up where you left off.`
+            ? `This page was cut from the final edit. Head back to the ${homeName} and pick up where you left off.`
             : 'Something went wrong behind the scenes. Try again, or choose a safe route back to PickFlick.';
 
     const scene = (

@@ -1,4 +1,4 @@
-import { isAbsolute, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -7,11 +7,8 @@ import { defineConfig } from 'prisma/config';
 const packageRoot = fileURLToPath(new URL('./', import.meta.url));
 const repositoryRoot = resolve(packageRoot, '../..');
 const configuredEnvironmentFile = process.env.PICKFLICK_ENV_FILE?.trim();
-const environmentFile = configuredEnvironmentFile
-    ? isAbsolute(configuredEnvironmentFile)
-        ? configuredEnvironmentFile
-        : resolve(repositoryRoot, configuredEnvironmentFile)
-    : resolve(repositoryRoot, '.env');
+// resolve() keeps an absolute path as given and anchors a relative one at the repository.
+const environmentFile = resolve(repositoryRoot, configuredEnvironmentFile || '.env');
 
 try {
     loadEnvFile(environmentFile);

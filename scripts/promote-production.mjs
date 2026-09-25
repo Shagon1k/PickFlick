@@ -447,6 +447,52 @@ async function triggerProductionDeployment(fetchImplementation, configuration) {
     }
 }
 
+/** The one new deployment carrying this release's description; several make it ambiguous. */
+function correlatedDeploymentId(deployments, previousDeploymentIds, descriptions) {
+    const correlatedDeployments = deployments.filter(
+        (deployment) =>
+            !previousDeploymentIds.has(deployment.deploymentId) &&
+            descriptions.includes(deployment.description),
+    );
+    if (correlatedDeployments.length > 1) {
+        throw new Error('Dokploy reported multiple correlated production deployments.');
+    }
+    return correlatedDeployments[0]?.deploymentId;
+}
+
+/** True once the release finished at the requested revision; throws on any failed outcome. */
+function productionDeploymentCompleted(deployment, completedDescription) {
+    switch (deployment?.status) {
+        case 'done':
+            if (deployment.description === completedDescription) {
+                return true;
+            }
+            if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? '')) {
+                throw new Error(
+                    'Dokploy deployed a different production source revision than requested.',
+                );
+            }
+            return false;
+        case 'error':
+        case 'cancelled':
+            throw new Error('Dokploy reported a failed production deployment.');
+        case 'running':
+        case undefined:
+            return false;
+        default:
+            throw new Error('Dokploy reported an unexpected production deployment status.');
+    }
+}
+
+function assertProductionComposeInProgress(composeStatus) {
+    if (composeStatus === 'error') {
+        throw new Error('Dokploy reported a failed production deployment.');
+    }
+    if (!['done', 'idle', 'running'].includes(composeStatus)) {
+        throw new Error('Dokploy reported an unexpected production deployment status.');
+    }
+}
+
 export async function waitForProductionDeployment(
     configuration,
     previousDeploymentIds,
@@ -472,47 +518,17 @@ export async function waitForProductionDeployment(
             { headers: requestHeaders(dokployAuthentication(configuration)) },
         );
         const deployments = deploymentRecords(compose);
-        if (deploymentId === undefined) {
-            const correlatedDeployments = deployments.filter(
-                (deployment) =>
-                    !previousDeploymentIds.has(deployment.deploymentId) &&
-                    (deployment.description === requestedDescription ||
-                        deployment.description === completedDescription),
-            );
-            if (correlatedDeployments.length > 1) {
-                throw new Error('Dokploy reported multiple correlated production deployments.');
-            }
-            deploymentId = correlatedDeployments[0]?.deploymentId;
-        }
+        deploymentId ??= correlatedDeploymentId(deployments, previousDeploymentIds, [
+            requestedDescription,
+            completedDescription,
+        ]);
         const deployment = deployments.find(
             ({ deploymentId: candidate }) => candidate === deploymentId,
         );
-        switch (deployment?.status) {
-            case 'done':
-                if (deployment.description === completedDescription) {
-                    return deploymentId;
-                }
-                if (/^Commit: [0-9a-f]{40}$/i.test(deployment.description ?? '')) {
-                    throw new Error(
-                        'Dokploy deployed a different production source revision than requested.',
-                    );
-                }
-                break;
-            case 'error':
-            case 'cancelled':
-                throw new Error('Dokploy reported a failed production deployment.');
-            case 'running':
-            case undefined:
-                break;
-            default:
-                throw new Error('Dokploy reported an unexpected production deployment status.');
+        if (productionDeploymentCompleted(deployment, completedDescription)) {
+            return deploymentId;
         }
-        if (compose.composeStatus === 'error') {
-            throw new Error('Dokploy reported a failed production deployment.');
-        }
-        if (!['done', 'idle', 'running'].includes(compose.composeStatus)) {
-            throw new Error('Dokploy reported an unexpected production deployment status.');
-        }
+        assertProductionComposeInProgress(compose.composeStatus);
         await sleep(intervalMilliseconds);
     }
     throw new Error(

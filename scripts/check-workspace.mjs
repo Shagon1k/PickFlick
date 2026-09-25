@@ -78,15 +78,8 @@ async function misplacedTestFiles(root) {
     return misplaced.sort();
 }
 
-export async function checkWorkspace(root) {
-    const manifests = await workspaceManifests(root);
+function packageNamingErrors(manifests) {
     const errors = [];
-    const byName = new Map(manifests.map((entry) => [entry.manifest.name, entry]));
-
-    for (const path of await misplacedTestFiles(root)) {
-        errors.push(`${path} must be placed under a __tests__ directory`);
-    }
-
     for (const [directory, expectedName] of expectedPackages) {
         const entry = manifests.find((candidate) => candidate.directory === directory);
         if (!entry) {
@@ -95,46 +88,41 @@ export async function checkWorkspace(root) {
             errors.push(`${directory} must be named ${expectedName}`);
         }
     }
+    return errors;
+}
 
-    for (const { directory, manifest } of manifests) {
-        if (!manifest.private) {
-            errors.push(`${directory} must be private`);
+function internalDependencyErrors({ directory, manifest }, byName) {
+    const errors = [];
+    const internalDependencies = dependencyFields
+        .flatMap((field) => Object.entries(manifest[field] ?? {}))
+        .filter(([dependency]) => dependency.startsWith('@pickflick/'));
+    for (const [dependency, version] of internalDependencies) {
+        if (!byName.has(dependency)) {
+            errors.push(`${directory} references unknown workspace ${dependency}`);
         }
-
-        for (const field of dependencyFields) {
-            for (const [dependency, version] of Object.entries(manifest[field] ?? {})) {
-                if (!dependency.startsWith('@pickflick/')) {
-                    continue;
-                }
-                if (!byName.has(dependency)) {
-                    errors.push(`${directory} references unknown workspace ${dependency}`);
-                }
-                if (!String(version).startsWith('workspace:')) {
-                    errors.push(`${directory} must use workspace: for ${dependency}`);
-                }
-                if (dependency !== manifest.name) {
-                    const target = byName.get(dependency);
-                    if (target?.directory.startsWith('apps/')) {
-                        errors.push(
-                            `${directory} must not depend on application workspace ${target.directory}`,
-                        );
-                    }
-                }
-            }
+        if (!String(version).startsWith('workspace:')) {
+            errors.push(`${directory} must use workspace: for ${dependency}`);
+        }
+        const target = dependency === manifest.name ? undefined : byName.get(dependency);
+        if (target?.directory.startsWith('apps/')) {
+            errors.push(
+                `${directory} must not depend on application workspace ${target.directory}`,
+            );
         }
     }
+    return errors;
+}
 
-    const graph = new Map();
-    for (const { manifest } of manifests) {
-        const dependencies = dependencyFields.flatMap((field) =>
-            Object.keys(manifest[field] ?? {}),
-        );
-        graph.set(
+function dependencyCycleErrors(manifests, byName) {
+    const errors = [];
+    const graph = new Map(
+        manifests.map(({ manifest }) => [
             manifest.name,
-            dependencies.filter((dependency) => byName.has(dependency)),
-        );
-    }
-
+            dependencyFields
+                .flatMap((field) => Object.keys(manifest[field] ?? {}))
+                .filter((dependency) => byName.has(dependency)),
+        ]),
+    );
     const visiting = new Set();
     const visited = new Set();
     const visit = (name, path) => {
@@ -145,7 +133,6 @@ export async function checkWorkspace(root) {
         if (visited.has(name)) {
             return;
         }
-
         visiting.add(name);
         for (const dependency of graph.get(name) ?? []) {
             visit(dependency, [...path, name]);
@@ -153,12 +140,27 @@ export async function checkWorkspace(root) {
         visiting.delete(name);
         visited.add(name);
     };
-
     for (const name of graph.keys()) {
         visit(name, []);
     }
-
     return errors;
+}
+
+export async function checkWorkspace(root) {
+    const manifests = await workspaceManifests(root);
+    const byName = new Map(manifests.map((entry) => [entry.manifest.name, entry]));
+    const misplacedTests = (await misplacedTestFiles(root)).map(
+        (path) => `${path} must be placed under a __tests__ directory`,
+    );
+    return [
+        ...misplacedTests,
+        ...packageNamingErrors(manifests),
+        ...manifests.flatMap((entry) => [
+            ...(entry.manifest.private ? [] : [`${entry.directory} must be private`]),
+            ...internalDependencyErrors(entry, byName),
+        ]),
+        ...dependencyCycleErrors(manifests, byName),
+    ];
 }
 
 const currentFile = fileURLToPath(import.meta.url);

@@ -14,6 +14,8 @@ import {
     verifyExactUatEvidence,
 } from '../promote-production.mjs';
 
+type FetchInput = Parameters<typeof fetch>[0];
+
 const releaseSha = 'a'.repeat(40);
 const source = {
     CF_ACCESS_CLIENT_ID: 'cloudflare-client',
@@ -61,7 +63,7 @@ function uatJob(overrides = {}) {
 }
 
 function exactUatFetch(runOverrides = {}, jobOverrides = {}) {
-    return vi.fn(async (input: string | URL | Request) => {
+    return vi.fn(async (input: FetchInput) => {
         const url = new URL(String(input));
         if (url.pathname.endsWith('/actions/workflows/deploy-uat.yml/runs')) {
             return jsonResponse({ workflow_runs: [uatEvidence(runOverrides)] });
@@ -172,7 +174,7 @@ describe('exact UAT evidence', () => {
     });
 
     it('uses an older exact run when its UAT E2E job is the latest successful evidence', async () => {
-        const fetchImplementation = vi.fn(async (input: string | URL | Request) => {
+        const fetchImplementation = vi.fn(async (input: FetchInput) => {
             const url = new URL(String(input));
             if (url.pathname.endsWith('/actions/workflows/deploy-uat.yml/runs')) {
                 return jsonResponse({
@@ -345,65 +347,63 @@ describe('production deployment guard', () => {
         });
         let composeReads = 0;
         const requests: Array<{ body?: unknown; method: string; pathname: string }> = [];
-        const fetchImplementation = vi.fn(
-            async (input: string | URL | Request, init?: RequestInit) => {
-                const url = new URL(String(input));
-                const method = init?.method ?? 'GET';
-                requests.push({
-                    ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}),
-                    method,
-                    pathname: url.pathname,
-                });
-                if (url.pathname === '/api/compose.one') {
-                    composeReads += 1;
-                    const compose = productionCompose();
-                    if (composeReads === 2) {
-                        return jsonResponse({ ...compose, branch: 'v0.0.1' });
-                    }
-                    if (composeReads === 3) {
-                        return jsonResponse({
-                            ...compose,
-                            branch: 'v0.0.1',
-                            deployments: [
-                                ...compose.deployments,
-                                {
-                                    description: `Commit: ${'b'.repeat(40)}`,
-                                    deploymentId: 'deployment-external',
-                                    status: 'done',
-                                },
-                            ],
-                        });
-                    }
-                    if (composeReads === 4) {
-                        return jsonResponse({
-                            ...compose,
-                            branch: 'v0.0.1',
-                            deployments: [
-                                ...compose.deployments,
-                                {
-                                    description: `Commit: ${'b'.repeat(40)}`,
-                                    deploymentId: 'deployment-external',
-                                    status: 'done',
-                                },
-                                {
-                                    description: `Commit: ${releaseSha}`,
-                                    deploymentId: 'deployment-new',
-                                    status: 'done',
-                                },
-                            ],
-                        });
-                    }
-                    return jsonResponse(compose);
+        const fetchImplementation = vi.fn(async (input: FetchInput, init?: RequestInit) => {
+            const url = new URL(String(input));
+            const method = init?.method ?? 'GET';
+            requests.push({
+                ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}),
+                method,
+                pathname: url.pathname,
+            });
+            if (url.pathname === '/api/compose.one') {
+                composeReads += 1;
+                const compose = productionCompose();
+                if (composeReads === 2) {
+                    return jsonResponse({ ...compose, branch: 'v0.0.1' });
                 }
-                if (url.pathname === '/api/compose.update') {
-                    return jsonResponse({ autoDeploy: false, branch: 'v0.0.1' });
+                if (composeReads === 3) {
+                    return jsonResponse({
+                        ...compose,
+                        branch: 'v0.0.1',
+                        deployments: [
+                            ...compose.deployments,
+                            {
+                                description: `Commit: ${'b'.repeat(40)}`,
+                                deploymentId: 'deployment-external',
+                                status: 'done',
+                            },
+                        ],
+                    });
                 }
-                if (url.pathname === '/api/compose.deploy') {
-                    return jsonResponse({ composeId: 'compose_prod_123', success: true });
+                if (composeReads === 4) {
+                    return jsonResponse({
+                        ...compose,
+                        branch: 'v0.0.1',
+                        deployments: [
+                            ...compose.deployments,
+                            {
+                                description: `Commit: ${'b'.repeat(40)}`,
+                                deploymentId: 'deployment-external',
+                                status: 'done',
+                            },
+                            {
+                                description: `Commit: ${releaseSha}`,
+                                deploymentId: 'deployment-new',
+                                status: 'done',
+                            },
+                        ],
+                    });
                 }
-                throw new Error(`Unexpected request: ${method} ${url.href}`);
-            },
-        );
+                return jsonResponse(compose);
+            }
+            if (url.pathname === '/api/compose.update') {
+                return jsonResponse({ autoDeploy: false, branch: 'v0.0.1' });
+            }
+            if (url.pathname === '/api/compose.deploy') {
+                return jsonResponse({ composeId: 'compose_prod_123', success: true });
+            }
+            throw new Error(`Unexpected request: ${method} ${url.href}`);
+        });
 
         await expect(
             deployProduction(source, {
@@ -466,8 +466,8 @@ describe('production promotion workflow', () => {
 
     it('is manual and grants write permission only to the guarded production job', () => {
         expect(workflow).toContain('workflow_dispatch:');
-        expect(workflow).not.toMatch(/^\s+push:/m);
-        expect(workflow).not.toMatch(/^\s+workflow_run:/m);
+        expect(workflow).not.toMatch(/^[ \t]+push:/m);
+        expect(workflow).not.toMatch(/^[ \t]+workflow_run:/m);
         expect(workflow).toMatch(/permissions:\n\s{2}actions: read\n\s{2}contents: read/);
         expect(workflow).toMatch(
             /if: \$\{\{ needs\.validate\.outputs\.production_enabled == 'true' \}\}/,

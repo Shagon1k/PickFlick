@@ -65,6 +65,7 @@ function boundaryOwnsRateLimit(): false {
 }
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
+type AuthHookContext = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
 
 function serializedIdentityAdapter(
     database: ReturnType<typeof createDatabaseClient>,
@@ -126,6 +127,83 @@ export function createIdentityAuth(
     const sessionCookieName = environment.auth.secureCookies
         ? '__Host-pickflick.session_token'
         : 'pickflick.session_token';
+
+    const guardSocialSignIn = async (context: AuthHookContext): Promise<void> => {
+        if (!supportedProviders.has(context.body?.provider)) {
+            logger.warn(
+                { event: 'auth.provider.rejected' },
+                'Unsupported identity provider rejected.',
+            );
+            throw APIError.from('BAD_REQUEST', {
+                code: 'UNSUPPORTED_IDENTITY_PROVIDER',
+                message: 'This sign-in method is not available.',
+            });
+        }
+        if (!isAllowedAuthReturnTarget(context.body.callbackURL)) {
+            logger.warn(
+                { event: 'auth.return_target.rejected' },
+                'Unsafe authentication return target rejected.',
+            );
+            throw APIError.from('BAD_REQUEST', {
+                code: 'INVALID_RETURN_TARGET',
+                message: 'The sign-in destination is not allowed.',
+            });
+        }
+        const callbackURL = context.body.callbackURL;
+        context.body.scopes = undefined;
+        context.body.additionalParams = undefined;
+        context.body.errorCallbackURL = authenticationErrorCallback(
+            environment.auth.baseUrl,
+            callbackURL,
+        );
+        context.body.newUserCallbackURL = callbackURL;
+    };
+
+    const guardSocialLink = async (context: AuthHookContext): Promise<void> => {
+        if (!supportedProviders.has(context.body?.provider) || context.body?.idToken) {
+            logger.warn(
+                { event: 'auth.link.rejected' },
+                'Unsupported identity-link request rejected.',
+            );
+            throw APIError.from('BAD_REQUEST', {
+                code: 'UNSUPPORTED_IDENTITY_LINK',
+                message: 'This sign-in method cannot be linked.',
+            });
+        }
+        if (!isAllowedAuthReturnTarget(context.body.callbackURL)) {
+            logger.warn(
+                { event: 'auth.return_target.rejected' },
+                'Unsafe identity-link return target rejected.',
+            );
+            throw APIError.from('BAD_REQUEST', {
+                code: 'INVALID_RETURN_TARGET',
+                message: 'The linking destination is not allowed.',
+            });
+        }
+        const session = await getSessionFromCtx(context);
+        if (!session?.session) {
+            throw APIError.from('UNAUTHORIZED', {
+                code: 'UNAUTHORIZED',
+                message: 'Unauthorized',
+            });
+        }
+        if (!isFreshSession(session.session.createdAt)) {
+            throw APIError.from('FORBIDDEN', {
+                code: 'SESSION_NOT_FRESH',
+                message: 'The session is not fresh enough.',
+            });
+        }
+        await addOAuthServerContext({ pickFlickLinkSessionId: session.session.id });
+        const callbackURL = context.body.callbackURL;
+        context.body.scopes = undefined;
+        context.body.additionalParams = undefined;
+        context.body.additionalData = undefined;
+        context.body.loginHint = undefined;
+        context.body.errorCallbackURL = authenticationErrorCallback(
+            environment.auth.baseUrl,
+            callbackURL,
+        );
+    };
 
     return betterAuth({
         appName: 'PickFlick',
@@ -260,79 +338,10 @@ export function createIdentityAuth(
         hooks: {
             before: createAuthMiddleware(async (context) => {
                 if (context.path === '/sign-in/social') {
-                    if (!supportedProviders.has(context.body?.provider)) {
-                        logger.warn(
-                            { event: 'auth.provider.rejected' },
-                            'Unsupported identity provider rejected.',
-                        );
-                        throw APIError.from('BAD_REQUEST', {
-                            code: 'UNSUPPORTED_IDENTITY_PROVIDER',
-                            message: 'This sign-in method is not available.',
-                        });
-                    }
-                    if (!isAllowedAuthReturnTarget(context.body.callbackURL)) {
-                        logger.warn(
-                            { event: 'auth.return_target.rejected' },
-                            'Unsafe authentication return target rejected.',
-                        );
-                        throw APIError.from('BAD_REQUEST', {
-                            code: 'INVALID_RETURN_TARGET',
-                            message: 'The sign-in destination is not allowed.',
-                        });
-                    }
-                    const callbackURL = context.body.callbackURL;
-                    context.body.scopes = undefined;
-                    context.body.additionalParams = undefined;
-                    context.body.errorCallbackURL = authenticationErrorCallback(
-                        environment.auth.baseUrl,
-                        callbackURL,
-                    );
-                    context.body.newUserCallbackURL = callbackURL;
+                    await guardSocialSignIn(context);
                 }
                 if (context.path === '/link-social') {
-                    if (!supportedProviders.has(context.body?.provider) || context.body?.idToken) {
-                        logger.warn(
-                            { event: 'auth.link.rejected' },
-                            'Unsupported identity-link request rejected.',
-                        );
-                        throw APIError.from('BAD_REQUEST', {
-                            code: 'UNSUPPORTED_IDENTITY_LINK',
-                            message: 'This sign-in method cannot be linked.',
-                        });
-                    }
-                    if (!isAllowedAuthReturnTarget(context.body.callbackURL)) {
-                        logger.warn(
-                            { event: 'auth.return_target.rejected' },
-                            'Unsafe identity-link return target rejected.',
-                        );
-                        throw APIError.from('BAD_REQUEST', {
-                            code: 'INVALID_RETURN_TARGET',
-                            message: 'The linking destination is not allowed.',
-                        });
-                    }
-                    const session = await getSessionFromCtx(context);
-                    if (!session?.session) {
-                        throw APIError.from('UNAUTHORIZED', {
-                            code: 'UNAUTHORIZED',
-                            message: 'Unauthorized',
-                        });
-                    }
-                    if (!isFreshSession(session.session.createdAt)) {
-                        throw APIError.from('FORBIDDEN', {
-                            code: 'SESSION_NOT_FRESH',
-                            message: 'The session is not fresh enough.',
-                        });
-                    }
-                    await addOAuthServerContext({ pickFlickLinkSessionId: session.session.id });
-                    const callbackURL = context.body.callbackURL;
-                    context.body.scopes = undefined;
-                    context.body.additionalParams = undefined;
-                    context.body.additionalData = undefined;
-                    context.body.loginHint = undefined;
-                    context.body.errorCallbackURL = authenticationErrorCallback(
-                        environment.auth.baseUrl,
-                        callbackURL,
-                    );
+                    await guardSocialLink(context);
                 }
                 if (context.path === '/sign-out' && context.body?.callbackURL) {
                     context.body.callbackURL = '/login';
