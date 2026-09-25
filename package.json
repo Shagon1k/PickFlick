@@ -29,6 +29,7 @@
         "migrate": "pnpm --filter @pickflick/database migrate",
         "production:promote": "node scripts/promote-production.mjs",
         "release": "node scripts/run-release.mjs",
+        "prepare": "husky",
         "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
         "seed": "pnpm --filter @pickflick/database seed",
         "services:check": "pnpm --filter @pickflick/observability build && pnpm --filter @pickflick/database services:check",
@@ -47,10 +48,13 @@
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",
+        "@commitlint/cli": "21.0.1",
+        "@commitlint/config-conventional": "21.0.1",
         "@pickflick/config": "workspace:*",
         "@playwright/test": "1.63.0",
         "@types/node": "catalog:",
         "eslint": "10.10.0",
+        "husky": "9.1.7",
         "prettier": "3.8.3",
         "vite": "8.2.2",
         "vitest": "5.0.0"
