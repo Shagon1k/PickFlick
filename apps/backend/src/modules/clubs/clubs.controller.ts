@@ -142,7 +142,6 @@ export class ClubsController {
     ): Promise<StreamableFile> {
         const avatar = await this.avatarService.get(user.id, clubId);
         response.setHeader('Content-Type', avatar.contentType);
-        response.setHeader('X-Content-Type-Options', 'nosniff');
         return new StreamableFile(avatar.body);
     }
 

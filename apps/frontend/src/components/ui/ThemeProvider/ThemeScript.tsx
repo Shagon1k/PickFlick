@@ -1,6 +1,11 @@
 import { ColorSchemeScript } from '@mantine/core';
 
-// Projector Noir is dark only, so the scheme is forced before hydration.
-export default function ThemeScript() {
-    return <ColorSchemeScript defaultColorScheme="dark" forceColorScheme="dark" />;
+interface IThemeScriptProps {
+    nonce?: string;
+}
+
+// Projector Noir is dark only, so the scheme is forced before hydration. The inline script needs
+// the request's CSP nonce to run.
+export default function ThemeScript({ nonce }: IThemeScriptProps) {
+    return <ColorSchemeScript defaultColorScheme="dark" forceColorScheme="dark" nonce={nonce} />;
 }
