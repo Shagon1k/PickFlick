@@ -4,6 +4,7 @@ import { loadRepositoryEnvironmentFile } from '@pickflick/config/environment';
 import type { NextConfig } from 'next';
 
 import { NOINDEX_HEADER, NON_PUBLIC_INDEXING_BOUNDARIES } from './src/lib/indexing';
+import { SECURITY_HEADERS } from './src/lib/security-headers';
 
 loadRepositoryEnvironmentFile();
 
@@ -22,11 +23,13 @@ const nextConfig: NextConfig = {
     output: 'standalone',
     outputFileTracingRoot: resolve(import.meta.dirname, '../..'),
     poweredByHeader: false,
-    headers: async () =>
-        NON_PUBLIC_INDEXING_BOUNDARIES.map(({ headerSource }) => ({
+    headers: async () => [
+        { headers: [...SECURITY_HEADERS], source: '/:path*' },
+        ...NON_PUBLIC_INDEXING_BOUNDARIES.map(({ headerSource }) => ({
             headers: [NOINDEX_HEADER],
             source: headerSource,
         })),
+    ],
     rewrites: async () => [
         {
             source: '/api/auth/:path*',

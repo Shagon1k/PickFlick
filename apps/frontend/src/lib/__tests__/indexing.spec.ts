@@ -70,10 +70,12 @@ describe('public indexing boundaries', () => {
         const headers = await nextConfig.headers?.();
 
         expect(headers).toEqual(
-            NON_PUBLIC_INDEXING_BOUNDARIES.map(({ headerSource }) => ({
-                headers: [NOINDEX_HEADER],
-                source: headerSource,
-            })),
+            expect.arrayContaining(
+                NON_PUBLIC_INDEXING_BOUNDARIES.map(({ headerSource }) => ({
+                    headers: [NOINDEX_HEADER],
+                    source: headerSource,
+                })),
+            ),
         );
     });
 });

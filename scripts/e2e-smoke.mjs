@@ -180,6 +180,20 @@ try {
             runtimes,
         ),
     ]);
+    // The page gets its CSP from the frontend; the API sends its own restrictive headers.
+    const page = await fetch(`http://127.0.0.1:${webPort}/`, {
+        signal: AbortSignal.timeout(2_000),
+    });
+    const api = await fetch(`${apiOrigin}/health/live`, { signal: AbortSignal.timeout(2_000) });
+    if (
+        !page.headers.get('content-security-policy')?.includes("'nonce-") ||
+        page.headers.get('x-content-type-options') !== 'nosniff' ||
+        !api.headers.get('content-security-policy')?.startsWith("default-src 'none'") ||
+        api.headers.has('x-powered-by')
+    ) {
+        throw new Error('The built frontend or backend is missing its security headers.');
+    }
+
     const appleAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
         body: JSON.stringify({ callbackURL: '/app', provider: 'apple' }),
         headers: { 'content-type': 'application/json', origin: apiOrigin },
@@ -212,7 +226,7 @@ try {
         );
     }
     console.log(
-        'E2E smoke passed: built frontend, backend, and Apple authentication boundary are ready against isolated dependencies.',
+        'E2E smoke passed: built frontend, backend, security headers, and Apple authentication boundary are ready against isolated dependencies.',
     );
 } finally {
     await Promise.all(runtimes.map(stopRuntime));

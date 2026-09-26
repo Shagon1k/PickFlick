@@ -34,6 +34,7 @@ separately.
 | [ADR-012](#adr-012--validate-boundaries-with-shared-zod-schemas)                    | Validate boundaries with shared zod schemas                    | Accepted                                                                              | 2026-09-26 |
 | [ADR-013](#adr-013--keep-the-ui-kit-in-the-web-app-on-unstyled-mantine)             | Keep the UI kit in the web app on unstyled Mantine             | Accepted                                                                              | 2026-09-26 |
 | [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)             | Run two entrypoints until the first background job             | Accepted                                                                              | 2026-09-26 |
+| [ADR-015](#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)  | Send a nonce-based CSP and security headers from each runtime  | Accepted                                                                              | 2026-09-26 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -1084,3 +1085,55 @@ The entrypoints are named `apps/frontend` and `apps/backend`, matching TailorTal
 ### Alternatives considered
 
 - **Keep an idle worker and Redis.** Rejected: operating cost without a caller.
+
+## ADR-015 — Send a nonce-based CSP and security headers from each runtime
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Decider:** Developer (Alex)
+- **Owning issue:** [#32](https://github.com/Shagon1k/PickFlick/issues/32)
+
+### Context
+
+Responses carried no Content Security Policy, HSTS, or framing protection. Every page already
+renders per request (it reads the session), so a per-request nonce costs no static rendering. The
+frontend proxies `/api/*` to the backend, and Next.js does not add its configured headers to
+proxied responses.
+
+### Decision
+
+- **Pages.** `proxy.ts` generates a nonce per page request and sends a CSP that runs scripts only
+  with that nonce or when a nonced script loads them (`'strict-dynamic'`). The root layout passes
+  the nonce to Mantine's inline theme script. Styles allow `'unsafe-inline'`, because React and
+  Mantine set `style` attributes, which a nonce cannot cover. The policy also forbids plugins,
+  framing, foreign form targets, and foreign `<base>`.
+- **Every frontend response.** `next.config.ts` adds HSTS (one year, no subdomains),
+  `nosniff`, a same-origin-on-downgrade referrer policy, a permissions policy that turns off
+  camera, microphone, and geolocation, and a same-origin opener policy.
+- **API responses.** The backend sets its own headers in `configureApplication`: a CSP that allows
+  nothing (`default-src 'none'`), `no-referrer`, HSTS, and `nosniff`, and it drops `X-Powered-By`.
+- zod skips its `eval` probe (`jitless`) in the browser, set in `instrumentation-client.ts`, so the
+  strict policy raises no violations.
+
+### Consequences
+
+- An injected inline script or foreign script does not run, and no site can frame PickFlick.
+- A new third-party script, font, image host, or API origin needs an explicit policy change.
+- HSTS without `includeSubDomains` or `preload` stays reversible until every subdomain is known to
+  serve HTTPS.
+- The Playwright suite fails on any CSP violation on the built pages; `pnpm e2e:smoke` checks the
+  headers on the built frontend and backend.
+
+### Alternatives considered
+
+- **Static CSP with `'unsafe-inline'` scripts.** Rejected: it does not stop injected inline script,
+  the main thing a CSP is for.
+- **Hash-based CSP.** Rejected: Next.js emits per-page inline scripts whose hashes change every
+  build.
+- **`helmet` in the backend.** Rejected for now: four fixed headers do not justify a dependency.
+
+### Evidence
+
+- [Next.js Content Security Policy guide](https://nextjs.org/docs/app/guides/content-security-policy)
+- [MDN: Content-Security-Policy](https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy)
+- [OWASP HTTP Headers Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)

@@ -170,6 +170,12 @@ history and revokes every session.
   telemetry and alerts are Proposed.
 - **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared
   history. — Proposed
+- **Security headers:** every page gets a per-request nonce CSP from `proxy.ts` (scripts only with
+  the nonce, no framing, no plugins); every frontend response adds HSTS, `nosniff`, a referrer
+  policy, a permissions policy, and a same-origin opener policy; the backend sends its own
+  restrictive headers because Next.js does not add headers to proxied responses. See
+  [ADR-015](_docs/decisions/README.md#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime).
+  — Active
 - **Security baseline:** treat browser, provider, upload, and webhook input as untrusted; keep
   secrets server-side only and out of logs; render user text as text; hash invitation tokens; audit
   high-impact actions.
@@ -179,7 +185,7 @@ history and revokes every session.
 | Environment | Topology                                                           | Data                           |
 | ----------- | ------------------------------------------------------------------ | ------------------------------ |
 | Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker. | Synthetic seed; email disabled |
-| CI          | Lint, types, unit, integration (real PostgreSQL), UI, images.      | Ephemeral services             |
+| CI          | Audit, lint, knip, types, unit, integration, UI, images.           | Ephemeral services             |
 | UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data. | Synthetic; test-inbox email    |
 | Production  | Same shape, pinned to a SemVer tag.                                | Real users; live providers     |
 
