@@ -15,7 +15,9 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 
 import PreviewInteractions from './_components/PreviewInteractions/PreviewInteractions';
 import PreviewMenus from './_components/PreviewMenus/PreviewMenus';
+import PreviewSection from './_components/PreviewSection/PreviewSection';
 import ReviewFixInteractions from './_components/ReviewFixInteractions/ReviewFixInteractions';
+import StateCell from './_components/StateCell/StateCell';
 import styles from './page.module.scss';
 
 const tableColumns: ITableColumn[] = [
@@ -289,44 +291,5 @@ export default function UiPreviewPage() {
                 <ReviewFixInteractions />
             </PreviewSection>
         </main>
-    );
-}
-
-function PreviewSection({
-    children,
-    description,
-    kicker,
-    title,
-}: {
-    children: React.ReactNode;
-    description: string;
-    kicker: string;
-    title: string;
-}) {
-    const id = kicker.replaceAll(/[^a-z0-9]+/gi, '-').toLowerCase();
-    return (
-        <section
-            aria-labelledby={`${id}-title`}
-            className={styles.section}
-            id={['forms', 'navigation'].find((anchor) => id.includes(anchor)) ?? id}
-        >
-            <header className={styles.sectionHeader}>
-                <div>
-                    <span className={styles.sectionKicker}>{kicker}</span>
-                    <h2 id={`${id}-title`}>{title}</h2>
-                </div>
-                <p>{description}</p>
-            </header>
-            {children}
-        </section>
-    );
-}
-
-function StateCell({ children, label }: { children: React.ReactNode; label: string }) {
-    return (
-        <div className={styles.stateCell}>
-            <span className={styles.stateLabel}>{label}</span>
-            {children}
-        </div>
     );
 }

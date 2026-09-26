@@ -40,8 +40,15 @@ export default [
         rules: {
             curly: ['error', 'all'],
             'no-duplicate-imports': 'error',
-            // Soft guard against god-files: a signal to decompose, not a hard block.
-            'max-lines': ['warn', { max: 500, skipBlankLines: true, skipComments: true }],
+            // A file past 300 lines holds more than one idea; split it.
+            'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+        },
+    },
+    {
+        // A spec is a flat list of independent cases, so it gets more room before it must split.
+        files: ['**/__tests__/**', 'tests/**'],
+        rules: {
+            'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
         },
     },
     {
