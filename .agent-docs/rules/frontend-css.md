@@ -22,6 +22,8 @@
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
 - No `!important` (reduced motion in `globals.scss` is the exception) and no id selectors; lower a
   default's specificity with `:where()` instead. A `stylelint-disable` needs a reason after `--`.
+- Media queries use only the design-contract boundaries 576, 768, 1024, and 1400px (or one pixel
+  below); Stylelint enforces them. The public header keeps its owner-decided 821px.
 - Declarations follow the recess group order (position, box model, typography, visuals, motion);
   `pnpm lint:fix` sorts them.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.

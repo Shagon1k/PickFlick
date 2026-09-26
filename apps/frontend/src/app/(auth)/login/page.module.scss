@@ -182,7 +182,7 @@
     letter-spacing: var(--tracking-caps);
 }
 
-@media (width <= 480px) {
+@media (width <= 575px) {
     .page {
         padding-inline: 16px;
     }

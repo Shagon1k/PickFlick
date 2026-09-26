@@ -719,7 +719,7 @@
     }
 }
 
-@media (width <= 920px) {
+@media (width <= 1023px) {
     .featureHeader {
         grid-template-columns: 1fr;
         gap: var(--gap-xl);
@@ -766,7 +766,7 @@
     }
 }
 
-@media (width <= 820px) {
+@media (width <= 767px) {
     .pricingHero {
         min-height: auto;
     }

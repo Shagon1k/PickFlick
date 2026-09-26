@@ -8,6 +8,15 @@ export default {
     reportInvalidScopeDisables: true,
     reportNeedlessDisables: true,
     rules: {
+        // The design contract allows only the 576, 768, 1024, and 1400px boundaries
+        // (_docs/design/prototypes/DESIGN.md, "Breakpoint discipline").
+        'media-feature-name-value-allowed-list': [
+            { width: ['575px', '576px', '767px', '768px', '1023px', '1024px', '1399px', '1400px'] },
+            {
+                message:
+                    'Use a design-contract breakpoint: 576, 768, 1024, or 1400px (or one pixel below).',
+            },
+        ],
         'declaration-no-important': true,
         'selector-max-id': 0,
         // Class names follow .agent-docs/rules/frontend-css.md: `.componentName`,

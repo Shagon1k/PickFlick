@@ -278,7 +278,7 @@
     letter-spacing: var(--tracking-caps);
 }
 
-@media (width <= 960px) {
+@media (width <= 1023px) {
     .noClubsStage {
         grid-template-columns: 1fr;
         gap: 24px;

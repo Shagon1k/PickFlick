@@ -75,6 +75,7 @@
 }
 
 /* Matches the prototype: the small header action grows to a full touch target through tablet. */
+/* stylelint-disable-next-line media-feature-name-value-allowed-list -- the owner set 821px for the public header (Roadmap Decision Log, "Public marketing navigation"). */
 @media (width <= 820px) {
     .publicHeader .publicHeaderAction > a {
         min-height: var(--hit);
@@ -450,6 +451,7 @@
     }
 }
 
+/* stylelint-disable-next-line media-feature-name-value-allowed-list -- see the 820px query above. */
 @media (width >= 821px) {
     .publicNav {
         display: flex;
