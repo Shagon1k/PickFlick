@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import PublicShell from '@/components/shells/PublicShell/PublicShell';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -148,9 +150,9 @@ export default function HomePage() {
                             <ButtonLink href="/login" variant="primary">
                                 Create your first Club
                             </ButtonLink>
-                            <a className={styles.handoffLink} href="/pricing">
+                            <Link className={styles.handoffLink} href="/pricing">
                                 Compare plans
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </section>

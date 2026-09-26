@@ -1,6 +1,7 @@
 'use client';
 
 import { type IClubSettings } from '@pickflick/contracts';
+import Link from 'next/link';
 
 import { clubNavigation } from '@/components/shells/shell-navigation';
 
@@ -49,13 +50,13 @@ export default function ClubSettings({ projection }: { projection: IClubSettings
 
             <nav aria-label="Club sections" className={styles.tabs}>
                 {clubNavigation(projection.club.id, 'manage').map((item) => (
-                    <a
+                    <Link
                         aria-current={item.current ? 'page' : undefined}
                         href={item.href}
                         key={item.label}
                     >
                         {item.label}
-                    </a>
+                    </Link>
                 ))}
             </nav>
 

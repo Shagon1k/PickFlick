@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import Brand from '@/components/shells/Brand/Brand';
@@ -56,23 +57,23 @@ export default function ProductChrome({
                         <Brand href={routes.home} />
                         <nav aria-label="Product navigation" className={styles.productDesktopNav}>
                             {desktopItems.map((item) => (
-                                <a
+                                <Link
                                     aria-current={item.current ? 'page' : undefined}
                                     href={item.href}
                                     key={item.label}
                                 >
                                     {item.label}
-                                </a>
+                                </Link>
                             ))}
                         </nav>
                         <div className={styles.productHeaderControls}>
                             {sessionBackHref ? (
-                                <a
+                                <Link
                                     className={`${styles.secondaryAction} ${styles.sessionHeaderBack}`}
                                     href={sessionBackHref}
                                 >
                                     ← Back to Hub
-                                </a>
+                                </Link>
                             ) : null}
                             <ProductHeaderActions accountItems={accountNavigation(routes, admin)} />
                         </div>

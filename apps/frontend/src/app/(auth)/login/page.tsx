@@ -1,5 +1,6 @@
 import { resolveAuthReturnTarget } from '@pickflick/contracts';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
@@ -38,10 +39,10 @@ export default async function LoginPage({
 
     return (
         <main className={styles.page}>
-            <a className={styles.backLink} href="/">
+            <Link className={styles.backLink} href="/">
                 <Icon name="arrow-left" />
                 Back
-            </a>
+            </Link>
             <section aria-labelledby="login-title" className={styles.scene}>
                 <div aria-hidden="true" className={styles.spotlight} />
                 <BrandImage
@@ -61,8 +62,8 @@ export default async function LoginPage({
                     <LoginActions appleSignInEnabled={appleSignInEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}
-                        <a href="/legal/terms">Terms of Service</a> and{' '}
-                        <a href="/legal/privacy">Privacy Notice</a>.
+                        <Link href="/legal/terms">Terms of Service</Link> and{' '}
+                        <Link href="/legal/privacy">Privacy Notice</Link>.
                     </p>
                 </div>
                 <SprocketDivider />

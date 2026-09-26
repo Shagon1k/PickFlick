@@ -13,6 +13,9 @@ export interface IBrandImageProps extends Omit<
 export default function BrandImage({ alt, asset, loading = 'lazy', ...props }: IBrandImageProps) {
     const selected = BRAND_ASSETS[asset];
     return (
+        // Brand assets ship as pre-sized WebP files with fixed dimensions; the image optimizer would
+        // only re-encode them on the server.
+        // eslint-disable-next-line @next/next/no-img-element -- see above
         <img
             {...props}
             alt={alt}

@@ -34,7 +34,9 @@ export default function AvatarCard({ projection }: { projection: IClubSettings }
             <div className={styles.avatarLayout}>
                 <div className={styles.avatar}>
                     {projection.club.hasAvatar ? (
-                        // The authenticated API route performs the membership check before streaming the image.
+                        // The authenticated API route performs the membership check before streaming the
+                        // image; the optimizer would fetch it without the viewer's cookie.
+                        // eslint-disable-next-line @next/next/no-img-element -- see above
                         <img
                             alt={`${projection.club.name} avatar`}
                             src={`/api/clubs/${projection.club.id}/avatar${avatarVersion}`}

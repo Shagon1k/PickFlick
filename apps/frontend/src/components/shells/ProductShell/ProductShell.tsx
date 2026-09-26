@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import ProductChrome from '@/components/shells/ProductChrome/ProductChrome';
@@ -41,22 +42,22 @@ export default function ProductShell({
                         <p className={styles.eyebrow}>{eyebrow}</p>
                         <h1>{title}</h1>
                     </div>
-                    <a
+                    <Link
                         className={styles.headerCta}
                         href={routes?.session ?? canonicalRoutes.session}
                     >
                         Primary action
-                    </a>
+                    </Link>
                 </header>
                 <nav aria-label="Club sections" className={styles.contextTabs}>
                     {clubItems.map((item) => (
-                        <a
+                        <Link
                             aria-current={item.current ? 'page' : undefined}
                             href={item.href}
                             key={item.label}
                         >
                             {item.label}
-                        </a>
+                        </Link>
                     ))}
                 </nav>
                 {children}

@@ -1,4 +1,7 @@
+'use client';
+
 import { Button as MantineButton } from '@mantine/core';
+import Link from 'next/link';
 import type { AnchorHTMLAttributes } from 'react';
 
 import { buttonClassName, type TButtonSize, type TButtonVariant } from './Button';
@@ -32,6 +35,12 @@ export default function ButtonLink({
             href={disabled ? undefined : href}
             onClick={disabled ? (event) => event.preventDefault() : onClick}
             tabIndex={disabled ? -1 : tabIndex}
+            // Enabled links navigate client-side; a disabled one has no href, which Link requires.
+            renderRoot={
+                disabled || href === undefined
+                    ? undefined
+                    : (rootProps) => <Link {...rootProps} href={href} />
+            }
             unstyled
         >
             {children}
