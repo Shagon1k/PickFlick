@@ -27,7 +27,8 @@
   [design contract](_docs/design/prototypes/DESIGN.md), the
   [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
 - Before domain or backend work, read the [Roadmap business rules](ROADMAP.md#3-business-rules) and
-  [ARCHITECTURE.md](ARCHITECTURE.md).
+  [ARCHITECTURE.md](ARCHITECTURE.md). Before touching auth, headers, input handling, or secrets,
+  read [Security](_docs/security.md).
 - For a change over 5 files or about 100 lines, present a short impact and verification plan and get
   approval, unless an approved phase or task already covers it.
 - Group real requirement questions. When a safe, reversible assumption does not change scope, state
@@ -61,7 +62,7 @@ Run from the repository root with the Node and pnpm versions pinned in `.node-ve
 | Check / stop local services (volumes are kept)                | `pnpm services:check` / `pnpm services:down` |
 | Start the frontend and backend in development                 | `pnpm dev`                                   |
 | Start the built frontend and backend                          | `pnpm start`                                 |
-| Lint (enforces the house style) / autofix                     | `pnpm lint` / `pnpm lint:fix`                |
+| Lint with ESLint and Stylelint (the house style) / autofix    | `pnpm lint` / `pnpm lint:fix`                |
 | Format / check formatting                                     | `pnpm format` / `pnpm format:check`          |
 | Type-check                                                    | `pnpm typecheck`                             |
 | Find unused files, exports, and dependencies                  | `pnpm knip`                                  |

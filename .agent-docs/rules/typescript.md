@@ -3,10 +3,16 @@
 Write the obvious version. If a reader needs a comment to follow the control flow, simplify the
 code instead.
 
-`pnpm lint` enforces the `I`/`T` prefixes, the ban on `Readonly<>`, sorted imports, inline
-`type` imports for types (Nest constructor injections stay value imports), `*.spec.ts`
-test names, default-exported components, component folder names, JSX accessibility (`jsx-a11y-x` strict), a 300-line file limit (500 for
-specs), and the frontend import boundaries below. The pre-commit hook runs it on staged files.
+`pnpm lint` enforces these rules, and the pre-commit hook runs it on staged files:
+
+- the `I`/`T` prefixes and the ban on `Readonly<>`;
+- sorted imports and inline `type` imports for types (Nest constructor injections stay value
+  imports);
+- `*.spec.ts` test names;
+- default-exported components and `components/<group>/<Name>/` folder names;
+- JSX accessibility (`jsx-a11y-x` strict);
+- a 300-line file limit (500 for specs);
+- the frontend import boundaries below.
 
 ## General
 
