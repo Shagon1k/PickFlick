@@ -7,7 +7,7 @@ code instead.
 
 - the `I`/`T` prefixes and the ban on `Readonly<>`;
 - sorted imports and inline `type` imports for types (Nest constructor injections stay value
-  imports);
+  imports); `verbatimModuleSyntax` makes the compiler require them too;
 - `*.spec.ts` test names;
 - default-exported components and `components/<group>/<Name>/` folder names;
 - JSX accessibility (`jsx-a11y-x` strict);
