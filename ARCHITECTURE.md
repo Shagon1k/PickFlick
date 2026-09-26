@@ -79,7 +79,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).            | Active                        |
 | Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                              | Proposed                      |
 
-Copy `apps/api/src/modules/contact` for a new module; [apps/api/AGENTS.md](apps/api/AGENTS.md)
+Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
 
 ### Web
@@ -88,7 +88,7 @@ Route groups `(marketing)`, `(auth)`, `(product)`, and `(internal)` hold the rou
 its `page.module.scss`, `actions.ts`, and `_components/`. `src/components/ui/<Name>/` is the UI kit.
 Server code calls the API only through `src/api/<area>.server.ts`, which forwards the session cookie
 and client address. Forms use `@mantine/form` and call a server action that returns `TFormResult`.
-[apps/web/AGENTS.md](apps/web/AGENTS.md) holds the conventions.
+[apps/frontend/AGENTS.md](apps/frontend/AGENTS.md) holds the conventions.
 
 ## 3. Data
 

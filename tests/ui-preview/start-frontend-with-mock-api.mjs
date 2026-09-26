@@ -273,7 +273,7 @@ if (!apiAddress || typeof apiAddress === 'string') {
     throw new Error('The Contact test API did not bind a TCP port.');
 }
 
-const web = spawn(process.execPath, ['apps/web/.next/standalone/apps/web/server.js'], {
+const web = spawn(process.execPath, ['apps/frontend/.next/standalone/apps/frontend/server.js'], {
     env: {
         ...process.env,
         BACKEND_INTERNAL_URL: `http://127.0.0.1:${apiAddress.port}`,

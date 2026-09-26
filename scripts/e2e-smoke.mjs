@@ -138,22 +138,22 @@ async function stopRuntime(runtime) {
 }
 
 const runtimes = [
-    startRuntime('web', [
+    startRuntime('frontend', [
         '--filter',
-        '@pickflick/web',
+        '@pickflick/frontend',
         'start',
         '--hostname',
         '127.0.0.1',
         '--port',
         String(webPort),
     ]),
-    startRuntime('api', ['--filter', '@pickflick/api', 'start']),
+    startRuntime('backend', ['--filter', '@pickflick/backend', 'start']),
 ];
 
 try {
     await Promise.all([
         waitFor(
-            'web',
+            'frontend',
             async () => {
                 const response = await fetch(`http://127.0.0.1:${webPort}/`, {
                     signal: AbortSignal.timeout(2_000),
@@ -163,13 +163,13 @@ try {
             runtimes,
         ),
         waitFor(
-            'API liveness',
+            'backend liveness',
             async () =>
                 (await fetchJson(`http://127.0.0.1:${apiPort}/health/live`))?.status === 'alive',
             runtimes,
         ),
         waitFor(
-            'API readiness',
+            'backend readiness',
             async () => {
                 const report = await fetchJson(`http://127.0.0.1:${apiPort}/health/ready`);
                 return (
@@ -212,7 +212,7 @@ try {
         );
     }
     console.log(
-        'E2E smoke passed: built web, API, and Apple authentication boundary are ready against isolated dependencies.',
+        'E2E smoke passed: built frontend, backend, and Apple authentication boundary are ready against isolated dependencies.',
     );
 } finally {
     await Promise.all(runtimes.map(stopRuntime));

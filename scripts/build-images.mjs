@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const targets = ['web', 'api', 'release'];
+const targets = ['frontend', 'backend', 'release'];
 
 function run(command, arguments_) {
     const result = spawnSync(command, arguments_, { encoding: 'utf8', stdio: 'inherit' });

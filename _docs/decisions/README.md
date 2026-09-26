@@ -1028,7 +1028,7 @@ hand-rolled buttons, fields, and switches re-implemented behavior Mantine alread
 
 ### Decision
 
-Move the UI kit to `apps/web/src/components/ui/<Name>/`: one folder per component with its own SCSS
+Move the UI kit to `apps/frontend/src/components/ui/<Name>/`: one folder per component with its own SCSS
 module and a default export. Buttons, text fields, select, switch, tabs, modal, and menu wrap
 Mantine components rendered `unstyled`, so Projector Noir owns every slot's styling. Tokens live in
 `styles/tokens.scss`; the Mantine theme lives in `theme/mantine.ts`. Only the kit and theme import
@@ -1068,10 +1068,13 @@ nothing to do.
 
 ### Decision
 
-Keep the pnpm monorepo with two runtime entrypoints, `apps/web` and `apps/api`, plus the one-shot
+Keep the pnpm monorepo with two runtime entrypoints, `apps/frontend` and `apps/backend`, plus the one-shot
 release job. Remove the worker, Redis, the observability package, and the Contact outbox. The phase
 that introduces the first background job (Session deadlines or notifications) records a new ADR for
 its queue; a transactional outbox with BullMQ remains the default candidate.
+
+The entrypoints are named `apps/frontend` and `apps/backend`, matching TailorTales; they were
+`apps/web` and `apps/api` before Phase 6, and earlier ADRs use those names.
 
 ### Consequences
 

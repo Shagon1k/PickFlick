@@ -37,7 +37,7 @@ export default defineConfig({
     },
     webServer: {
         command:
-            'pnpm build:packages && BACKEND_INTERNAL_URL=http://127.0.0.1:42731 pnpm --filter @pickflick/web build && cp -R apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static && node tests/ui-preview/start-web-with-contact-api.mjs',
+            'pnpm build:packages && BACKEND_INTERNAL_URL=http://127.0.0.1:42731 pnpm --filter @pickflick/frontend build && cp -R apps/frontend/.next/static apps/frontend/.next/standalone/apps/frontend/.next/static && node tests/ui-preview/start-frontend-with-mock-api.mjs',
         reuseExistingServer: false,
         timeout: 180_000,
         url: `${baseURL}/ui-preview`,

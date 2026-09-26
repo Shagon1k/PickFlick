@@ -66,7 +66,7 @@ test names, and the web import boundaries below. The pre-commit hook runs it on 
 - Forms use `@mantine/form` with the shared zod-backed validator, and submit by calling their
   server action as an async function that returns `TFormResult` (`@/lib/form-errors`). Copy
   `app/(marketing)/contact/_components/ContactForm`.
-- In `apps/web`, import through `@/` instead of `../../../`; relative paths are for the route or
+- In `apps/frontend`, import through `@/` instead of `../../../`; relative paths are for the route or
   component folder you are in.
 - Don't use `React.FC`; type props and the return value explicitly.
 - Use `React.<Event>Event<HTML...Element>` for event handler types.
