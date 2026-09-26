@@ -16,6 +16,7 @@
         "e2e:smoke": "node scripts/e2e-smoke.mjs",
         "compose:check": "sh scripts/check-compose.sh",
         "images:build": "node scripts/build-images.mjs",
+        "knip": "knip",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
@@ -37,17 +38,19 @@
         "ui:test:update": "playwright test --config playwright.ui.config.ts --update-snapshots",
         "ui:visual": "playwright test --config playwright.ui.config.ts tests/ui-preview/viewport-visual.spec.ts",
         "uat:smoke": "playwright test --config playwright.uat.config.ts",
-        "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
+        "verify": "pnpm lint && pnpm knip && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",
         "@commitlint/cli": "21.0.1",
         "@commitlint/config-conventional": "21.0.1",
+        "@commitlint/types": "21.2.3",
         "@pickflick/config": "workspace:*",
         "@playwright/test": "1.63.0",
         "@types/node": "catalog:",
         "eslint": "10.10.0",
         "husky": "9.1.7",
+        "knip": "6.38.0",
         "prettier": "3.8.3",
         "vite": "8.2.2",
         "vitest": "5.0.0"

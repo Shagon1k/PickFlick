@@ -10,7 +10,7 @@ import { createAppleClientSecret } from './apple-client-secret.js';
 const DAY_SECONDS = 24 * 60 * 60;
 
 /** `cf-connecting-ip` is trusted only behind Cloudflare; local runs use the proxy chain. */
-export function clientAddressHeader(environment: TRuntimeEnvironment): string {
+function clientAddressHeader(environment: TRuntimeEnvironment): string {
     return environment.auth.secureCookies ? 'cf-connecting-ip' : 'x-forwarded-for';
 }
 
