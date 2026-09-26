@@ -72,12 +72,13 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 
 ## Run the checks
 
-| Goal                                          | Command                 |
-| --------------------------------------------- | ----------------------- |
-| Everything CI's static job runs               | `pnpm verify`           |
-| Database, auth, and Club integration specs    | `pnpm test:integration` |
-| Playwright accessibility and screenshot suite | `pnpm ui:test`          |
-| Smoke the built frontend and backend          | `pnpm e2e:smoke`        |
+| Goal                                          | Command                         |
+| --------------------------------------------- | ------------------------------- |
+| Lint, knip, formatting, types, tests, build   | `pnpm verify`                   |
+| Known high-severity vulnerabilities           | `pnpm audit --audit-level high` |
+| Database, auth, and Club integration specs    | `pnpm test:integration`         |
+| Playwright accessibility and screenshot suite | `pnpm ui:test`                  |
+| Smoke the built frontend and backend          | `pnpm e2e:smoke`                |
 
 `pnpm test:integration` needs the local services running. `pnpm ui:test` builds the frontend and
 serves it against a mock backend, so it needs no database; install its browser once with

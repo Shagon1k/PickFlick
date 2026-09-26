@@ -9,9 +9,10 @@ after moving anything durable into canonical guidance.
 - Branch `PF-32_verify-phases-1-5`, local macOS workstation, Node 24.15.0, pnpm 11.25.0, Chromium
   from Playwright 1.63.
 - Local PostgreSQL and MinIO from `compose.local.yaml`; email delivery disabled.
-- Gates run after the final change: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`,
-  `pnpm test:integration`, `pnpm build`, `pnpm e2e:smoke`, `pnpm compose:check`, and `pnpm ui:test`
-  (136 checks, 42 screenshot baselines at 390 and 1440 pixels).
+- Gates run after the final change: `pnpm audit --audit-level high`, `pnpm verify` (ESLint,
+  Stylelint, knip, formatting, types, unit tests, build), `pnpm test:integration`, `pnpm e2e:smoke`,
+  `pnpm images:build`, and `pnpm ui:test` (138 checks, 42 screenshot baselines at 390 and 1440
+  pixels).
 - Not yet exercised: UAT at `https://uat.pick-flick.app`, live Google sign-in, and live email.
 
 ## Register
@@ -61,12 +62,23 @@ Findings made while restructuring:
 | R3  | The UAT readiness check expected a health field the rewritten API no longer returns.              | Major    | Fixed; readiness now checks the deployed revision in `deploy-uat.yml`              |
 | R4  | CI's placeholder Apple key would crash the API, which now signs Apple's client secret at startup. | Major    | Fixed; any enabled Apple key is validated, and the smoke generates a throwaway key |
 
+### Quality gates and hardening
+
+| #   | Finding                                                                                            | Severity | Outcome                                                                   |
+| --- | -------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| H1  | Responses sent no CSP, HSTS, or framing protection.                                                | Major    | Fixed; nonce CSP and security headers, ADR-015, [Security](security.md)   |
+| H2  | The Prisma CLI pulled `mysql2` and `deepmerge-ts` versions with high-severity advisories.          | Minor    | Fixed with `overrides`; CI now fails on high advisories; Dependabot added |
+| H3  | The release image copied the Prisma engine from a path naming version 7.10.0.                      | Major    | Fixed; the version is resolved at build time                              |
+| H4  | Production CSS used breakpoints outside the design contract (480, 820, 920, 960px).                | Minor    | Fixed; contract breakpoints only, lint-enforced; public links from 768px  |
+| H5  | Documented house rules (default exports, CSS tokens, class names, folder names) were not enforced. | Minor    | Fixed; ESLint, Stylelint, and knip rules; violations corrected            |
+
 ## Deferrals
 
 | Item                                                                                             | Severity | Owner / revisit trigger                                     |
 | ------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------- |
 | UAT evidence: exact-revision delivery, failed-release gate, rollback, guard test.                | Major    | Alex; before Phase 6 closes (owner-run, needs live UAT)     |
-| Live Google sign-in and Contact email in UAT.                                                    | Major    | Alex; before Phase 6 closes                                 |
+| Live Google sign-in and Contact email in UAT, with no CSP violations in the browser console.     | Major    | Alex; before Phase 6 closes                                 |
+| Turn on Dependabot security updates in the repository settings.                                  | Minor    | Alex; GitHub Settings → Code security                       |
 | Point the Dokploy UAT domain route at `frontend:3000` (the service was `web` before the rename). | Major    | Alex; before the next UAT deployment                        |
 | Apple Sign In activation.                                                                        | —        | Product owner; Decision Log "Apple Sign In activation"      |
 | Explicit provider linking.                                                                       | —        | Decision Log "Explicit provider linking"                    |

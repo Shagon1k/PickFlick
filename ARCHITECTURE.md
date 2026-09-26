@@ -174,8 +174,8 @@ history and revokes every session.
   the nonce, no framing, no plugins); every frontend response adds HSTS, `nosniff`, a referrer
   policy, a permissions policy, and a same-origin opener policy; the backend sends its own
   restrictive headers because Next.js does not add headers to proxied responses. See
-  [ADR-015](_docs/decisions/README.md#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime).
-  — Active
+  [ADR-015](_docs/decisions/README.md#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)
+  and [Security](_docs/security.md). — Active
 - **Security baseline:** treat browser, provider, upload, and webhook input as untrusted; keep
   secrets server-side only and out of logs; render user text as text; hash invitation tokens; audit
   high-impact actions.

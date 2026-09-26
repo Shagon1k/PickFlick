@@ -2,7 +2,8 @@
 
 How PickFlick signs people in, keeps them signed in, and decides what they may do. The decisions
 behind it are [ADR-002](decisions/README.md#adr-002--keep-authentication-and-sessions-at-the-api-boundary)
-and [ADR-010](decisions/README.md#adr-010--use-better-auth-at-the-api-boundary).
+and [ADR-010](decisions/README.md#adr-010--use-better-auth-at-the-api-boundary). Headers, cross-site
+request defenses, and the rest of the security model are in [Security](security.md).
 
 ## The short version
 

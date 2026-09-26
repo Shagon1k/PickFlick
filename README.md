@@ -30,7 +30,7 @@ Before you open a pull request, run:
 pnpm verify
 ```
 
-It runs lint, formatting, type-checks, unit tests, and builds. [Develop locally](_docs/local-development.md)
+It runs lint, knip, formatting, type-checks, unit tests, and builds. [Develop locally](_docs/local-development.md)
 covers the other checks and common problems, and [Add a feature end to end](_docs/adding-a-feature.md)
 walks through every layer.
 
