@@ -36,7 +36,7 @@ export default function CreateClubForm() {
 
     const submit = form.onSubmit(
         (values, event) => {
-            const formElement = event?.currentTarget as HTMLFormElement | undefined;
+            const formElement = event?.currentTarget;
             if (!navigator.onLine) {
                 setFeedback({
                     message:
@@ -70,12 +70,12 @@ export default function CreateClubForm() {
                 }
             });
         },
-        () => {
+        (_errors, _values, event) => {
             setFeedback({
                 message: 'Review the highlighted fields and try again.',
                 tone: 'danger',
             });
-            focusFirstInvalid(event?.currentTarget as HTMLFormElement | undefined);
+            focusFirstInvalid(event?.currentTarget);
         },
     );
 

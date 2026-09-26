@@ -31,7 +31,7 @@ export default function ContactForm() {
 
     const submit = form.onSubmit(
         (values, event) => {
-            const formElement = event?.currentTarget as HTMLFormElement | undefined;
+            const formElement = event?.currentTarget;
             if (!navigator.onLine) {
                 setFeedback({
                     message:
@@ -66,7 +66,7 @@ export default function ContactForm() {
         },
         (_errors, _values, event) => {
             setFeedback({ message: 'Review the highlighted field and try again.', tone: 'danger' });
-            focusFirstInvalid(event?.currentTarget as HTMLFormElement | undefined);
+            focusFirstInvalid(event?.currentTarget);
         },
     );
 
