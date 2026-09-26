@@ -27,6 +27,15 @@ RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
 FROM builder AS release-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
     pnpm --config.strict-peer-dependencies=false --filter @pickflick/database deploy --legacy /out/database
+# pnpm deploy leaves out the schema engine Prisma downloaded for the build platform (amd64 or arm64).
+# The globs resolve the installed Prisma version, and `test -d` fails the build when either side
+# is missing or ambiguous.
+RUN set -eu; \
+    engines=node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines; \
+    source=$(echo /workspace/$engines); \
+    target=$(echo /out/database/$engines); \
+    test -d "$source" && test -d "$target"; \
+    cp "$source"/schema-engine-* "$target"/
 
 FROM toolchain AS openssl-files
 RUN mkdir /openssl-root && \
@@ -66,10 +75,6 @@ ENV NODE_ENV=production
 WORKDIR /workspace
 COPY --from=openssl-files /openssl-root/ /
 COPY --from=release-package --chown=node:node /out/database/ ./packages/database/
-# The glob picks the schema engine Prisma installed for the build platform (amd64 or arm64).
-COPY --from=builder --chown=node:node \
-    /workspace/node_modules/.pnpm/@prisma+engines@7.10.0/node_modules/@prisma/engines/schema-engine-* \
-    ./packages/database/node_modules/.pnpm/@prisma+engines@7.10.0/node_modules/@prisma/engines/
 COPY --from=builder --chown=node:node /workspace/scripts/run-release.mjs ./scripts/run-release.mjs
 USER node
 CMD ["node", "scripts/run-release.mjs"]
