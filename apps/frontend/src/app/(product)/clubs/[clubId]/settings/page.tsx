@@ -5,8 +5,8 @@ import { connection } from 'next/server';
 
 import { getClubSettings } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
+import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
 import { clubNavigation } from '@/components/shells/shell-navigation';
-import { ProductFrame } from '@/components/shells/shells';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 

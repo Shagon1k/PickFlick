@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-import { FilmStrip } from '@/components/shells/film-strip';
-import { NotificationsPanel } from '@/components/shells/notifications-panel';
+import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
+import NotificationsPanel from '@/components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '@/components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
@@ -13,11 +13,11 @@ import {
 import type { TMobileNavigationEntry } from '@/components/shells/shell-navigation';
 import Icon from '@/components/ui/Icon/Icon';
 
-export function MobileProductNavigation({
-    entries,
-}: {
+interface IMobileProductNavigationProps {
     entries: readonly TMobileNavigationEntry[];
-}) {
+}
+
+export default function MobileProductNavigation({ entries }: IMobileProductNavigationProps) {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const navigationRef = useRef<HTMLElement>(null);
     const notificationsRef = useRef<HTMLDivElement>(null);

@@ -16,8 +16,9 @@
 - A route's styles sit next to it (`page.module.scss`) and its `_components` may use them. A
   stylesheet shared by several routes of one group sits at the group root
   (`(marketing)/marketing.module.scss`). Never import another route's or feature's module.
-- `components/shells` is one layout system whose headers, navigation, and popovers share rules;
-  it keeps its two shared stylesheets instead of one per component.
+- `components/shells` is one layout system. Each shell and navigation piece has its own folder,
+  but they share `shells.module.scss` and `product-navigation.module.scss`, because their
+  selectors cross components (`.productHeader .brand`, `.accountPopover .filmStrip`).
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.
 

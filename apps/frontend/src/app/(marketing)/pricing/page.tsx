@@ -1,4 +1,4 @@
-import { PublicShell } from '@/components/shells/shells';
+import PublicShell from '@/components/shells/PublicShell/PublicShell';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';

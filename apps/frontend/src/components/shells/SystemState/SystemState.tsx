@@ -1,5 +1,6 @@
-import { ProductFrame, PublicShell } from '@/components/shells/shells';
-import styles from '@/components/SystemState/SystemState.module.scss';
+import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
+import PublicShell from '@/components/shells/PublicShell/PublicShell';
+import styles from '@/components/shells/SystemState/SystemState.module.scss';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -21,15 +22,13 @@ const systemStateContent = {
     },
 } as const;
 
-export function SystemState({
-    onRetry,
-    signedIn,
-    variant,
-}: {
+interface ISystemStateProps {
     onRetry?: () => void;
     signedIn: boolean;
     variant: TSystemStateVariant;
-}) {
+}
+
+export default function SystemState({ onRetry, signedIn, variant }: ISystemStateProps) {
     const content = systemStateContent[variant];
     const destination = signedIn
         ? { href: '/app', label: 'Back to Hub' }

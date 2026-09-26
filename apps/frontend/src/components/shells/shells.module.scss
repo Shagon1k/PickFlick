@@ -368,26 +368,6 @@
     border-bottom: 1px solid var(--border);
 }
 
-.placeholderPanel {
-    min-width: 0;
-    padding: clamp(var(--gap-md), 4vw, var(--gap-lg));
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--surface-glass-soft);
-}
-
-.placeholderPanel h2 {
-    margin: 0 0 var(--gap-md);
-    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
-}
-
-.placeholderPanel p {
-    max-width: 62ch;
-    margin: 0;
-    color: var(--fg-secondary);
-    line-height: var(--lh-body);
-}
-
 .sessionMain {
     display: grid;
     gap: var(--gap-md);
@@ -441,26 +421,6 @@
 
 .controlContent {
     min-width: 0;
-}
-
-.denseGrid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
-    min-width: 760px;
-}
-
-.denseGrid > * {
-    min-height: var(--hit);
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    color: var(--fg-secondary);
-    font-size: var(--fs-body-sm);
-}
-
-.denseGrid strong {
-    color: var(--ivory);
-    font-family: var(--font-mono);
-    font-size: var(--fs-caption);
 }
 
 @media (min-width: 768px) {
