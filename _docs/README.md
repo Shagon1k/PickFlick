@@ -1,71 +1,62 @@
-# PickFlick Documentation Map
+# Documentation map
 
-Start here before non-trivial product, design, architecture, implementation, or operational work.
+Start here before non-trivial product, design, architecture, implementation, or operations work.
 
-## Delivery tracking
+## Canonical documents
 
-[GitHub Project 3](https://github.com/users/Shagon1k/projects/3) is the canonical tracker for
-actionable active and deferred delivery work. `ROADMAP.md` remains the product/MVP/phase contract and
-phase-level acceptance record; do not copy issue status into it.
+| Document                                          | Owns                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log. |
+| [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.            |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                  |
+| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-014).                  |
+| [Environment reference](environment.md)           | Variables, local services, CI, images and Compose, health, errors, and logs.    |
+| [UAT operations](uat-operations.md)               | Provisioning UAT and how automatic delivery works.                              |
+| [Production operations](production-operations.md) | Keeping production inactive, provisioning, promotion, rollback, and recovery.   |
+| [UI quality checks](ui-quality.md)                | Running and reviewing the Playwright suite.                                     |
 
-| Process artifact                                            | Purpose                                                                      |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [Contributing guide](../CONTRIBUTING.md)                    | Human-facing issue, branch, commit, PR, and merge workflow.                  |
-| [Git rules](../.agent-docs/rules/git.md)                    | Canonical branch, commit, PR, and worktree rules.                            |
-| [GitHub issue rules](../.agent-docs/rules/github-issues.md) | Issue routing, Project status semantics, `human-control`, and phase linkage. |
+## Working rules
 
-## Canonical guidance
+| Document                                                                                                                                     | Purpose                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [AGENTS.md](../AGENTS.md) ([CLAUDE.md](../CLAUDE.md) imports it)                                                                             | Operating rules for agents and the documentation contract.        |
+| [Code style](../.agent-docs/rules/typescript.md), [CSS](../.agent-docs/rules/frontend-css.md), [tests](../.agent-docs/rules/testing.md)      | Conventions, most of them enforced by `pnpm lint`.                |
+| [CONTRIBUTING.md](../CONTRIBUTING.md), [Git rules](../.agent-docs/rules/git.md), [GitHub issue rules](../.agent-docs/rules/github-issues.md) | Issues, branches, commits, pull requests, and Project 3 statuses. |
 
-| Artifact                                                         | Purpose                                                                                                                            |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [ROADMAP.md](../ROADMAP.md)                                      | Product contract, business rules, routes, phases, and the Decision Log.                                                            |
-| [DESIGN.md](../DESIGN.md)                                        | Design authority, screens and states, components, responsive and accessibility QA.                                                 |
-| [ARCHITECTURE.md](../ARCHITECTURE.md)                            | Deployables, modules, data, interfaces, runtime, and delivery.                                                                     |
-| [Architecture Decision Records](decisions/README.md)             | Rationale for significant technical choices (ADR-001–ADR-014).                                                                     |
-| [Environment and runtime operations](environment.md)             | Variables, local services, CI, images and Compose, health, errors, logs.                                                           |
-| [UAT provisioning and delivery](uat-operations.md)               | Owner-run UAT setup and the automatic exact-revision delivery.                                                                     |
-| [Production preparation and promotion](production-operations.md) | Dormant production setup, guarded promotion, migrations, rollback.                                                                 |
-| [UI quality checks](ui-quality.md)                               | Playwright accessibility, interaction, viewport, and screenshot checks.                                                            |
-| [Code style rules](../.agent-docs/rules/typescript.md)           | TypeScript, [CSS](../.agent-docs/rules/frontend-css.md), and [test](../.agent-docs/rules/testing.md) conventions enforced by lint. |
-
-## Agent entrypoints
-
-| Artifact                  | Purpose                                                              |
-| ------------------------- | -------------------------------------------------------------------- |
-| [AGENTS.md](../AGENTS.md) | Shared repository operating rules and documentation-impact contract. |
-| [CLAUDE.md](../CLAUDE.md) | Thin Claude adapter importing `AGENTS.md`.                           |
+[GitHub Project 3](https://github.com/users/Shagon1k/projects/3) tracks actionable work and its
+status; the Roadmap does not repeat it.
 
 ## Design sources
 
-The design package remains flat and self-contained so its relative HTML/image links work. It is authoritative for visual and interaction intent, not production code structure.
+The package stays flat and self-contained so its relative links work. It is authoritative for visual
+and interaction intent, not for code structure.
 
-| Source                                                              | Use                                                                                       |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [Prototype package index](design/prototypes/index.html)             | Navigate canonical screens and supporting guides.                                         |
-| [Exact design contract](design/prototypes/DESIGN.md)                | Tokens, typography, components, navigation, motion, accessibility, and interaction rules. |
-| [Design system guide](design/prototypes/design-system.html)         | Visual component/state reference and markup examples.                                     |
-| [UX flow map](design/prototypes/ux-flow-map.html)                   | Cross-screen journeys, branches, and handoffs.                                            |
-| [Responsive baselines](design/prototypes/responsive-baselines.html) | S/M/L/XL composition contract.                                                            |
-| [Asset catalog](design/prototypes/asset-catalog.html)               | Prototype image consumers, fixture warnings, and duplicate awareness.                     |
-| [Asset manifest](design/prototypes/asset-manifest.json)             | Machine-readable prototype asset references.                                              |
-| [Brand specification](design/prototypes/brand-spec.md)              | Projector Noir and mascot intent.                                                         |
-| [Responsive critique data](design/prototypes/critique.json)         | Supporting review notes for the responsive-reference artifact.                            |
-| [Package handoff](design/prototypes/FINAL-PACKAGE.md)               | Package provenance, canonical files, and superseded references.                           |
-| [Production brand asset inventory](../assets/brand/README.md)       | Semantic filenames, dimensions, usage guidance, and machine manifest.                     |
+| Source                                                                                                   | Use                                                                |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [Prototype index](design/prototypes/index.html)                                                          | Every canonical screen and guide.                                  |
+| [Design contract](design/prototypes/DESIGN.md)                                                           | Tokens, typography, components, navigation, motion, accessibility. |
+| [Design system](design/prototypes/design-system.html)                                                    | Component and state reference with markup examples.                |
+| [UX flow map](design/prototypes/ux-flow-map.html)                                                        | Journeys, branches, and handoffs.                                  |
+| [Responsive baselines](design/prototypes/responsive-baselines.html)                                      | S/M/L/XL composition.                                              |
+| [Asset catalog](design/prototypes/asset-catalog.html), [manifest](design/prototypes/asset-manifest.json) | Prototype image use and fixture warnings.                          |
+| [Brand specification](design/prototypes/brand-spec.md)                                                   | Projector Noir and mascot intent.                                  |
+| [Responsive critique](design/prototypes/critique.json)                                                   | Review notes behind the responsive reference.                      |
+| [Package handoff](design/prototypes/FINAL-PACKAGE.md)                                                    | Provenance, canonical files, and superseded references.            |
+| [Production brand assets](../assets/brand/README.md)                                                     | Semantic filenames, dimensions, and usage.                         |
 
 ## Source precedence
 
 ```text
 latest explicit developer decision
-  -> ROADMAP / DESIGN / ARCHITECTURE ownership contract
-  -> canonical design package for visual and interaction intent
-  -> production code/config once implemented and verified
+  -> ROADMAP / DESIGN / ARCHITECTURE, each for what it owns
+  -> the design package for visual and interaction intent
+  -> production code and configuration once implemented and verified
 ```
 
-The retired blueprint was intentionally removed after synthesis; this repository does not keep it as a competing source of truth.
+The retired blueprint was removed after synthesis and is not a source of truth.
 
-## Active phase plan
+## Active phase
 
-| Plan                                                                           | Purpose                                                                   |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| [Phase 6 — Human Verification & Bug Fixing I](phase-6-human-verification-1.md) | Tested build, severity-classified register, and deferrals for Phases 1–5. |
+| Document                                                                       | Purpose                                                    |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| [Phase 6 — Human Verification & Bug Fixing I](phase-6-human-verification-1.md) | Tested build, severity-classified register, and deferrals. |

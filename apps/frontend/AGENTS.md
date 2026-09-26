@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Web
+## Frontend
 
 Next.js App Router + Mantine. Routes live in route groups; a component sits next to the route that
 uses it (`_components/`) and moves to `src/components/` only when a second route needs it.

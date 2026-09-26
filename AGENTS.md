@@ -1,207 +1,227 @@
 # PickFlick
 
-> Agent operating instructions for this repository. Phases 1–5 (foundations, design system, public
-> site, authentication, Clubs) are built; Phase 6 human verification is in progress.
+> Operating instructions for agents in this repository. Phases 1–5 (foundations, design system,
+> public site, authentication, Clubs) are built; Phase 6 human verification is in progress.
 
-## Core Contract
+## Core contract
 
-- The human provides intent, constraints, and acceptance criteria. The agent chooses the smallest safe route, executes, and proves the result.
-- Deliverables are complete or explicitly blocked. Never claim tests, builds, deployments, reviews, or file changes without evidence.
-- If quality, truth, security, privacy, billing correctness, design fidelity, or maintainability is at risk, state the concrete risk and the smallest safer alternative.
-- Keep one coherent objective per iteration. Do not mix unrelated refactors or cleanup into feature work.
-- Treat `Club`, `Session`, `Selection`, `SessionRating`, and `PersonalMovieRating` as canonical domain names; do not revive legacy “Group” or ambiguous “Vote phase” naming.
+- The human gives intent, constraints, and acceptance criteria. You choose the smallest safe route,
+  do the work, and prove the result.
+- Deliver complete work or say exactly what blocks it. Never claim a test, build, deployment, review,
+  or file change without evidence.
+- When quality, truth, security, privacy, billing, design fidelity, or maintainability is at risk,
+  name the risk and the smallest safer alternative.
+- Keep one objective per iteration; do not mix unrelated refactors into feature work.
+- Use the domain names `Club`, `Session`, `Selection`, `SessionRating`, and `PersonalMovieRating`.
+  Never revive "Group" or "Vote phase".
 
-## Start Here
+## Start here
 
-- For non-trivial work, read the [documentation map](_docs/README.md) and the artifacts relevant to the change.
-- For actionable delivery work, inspect [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) and read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
-- For GitHub task routing, Project 3 workflow, and run authorization, read [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md).
-- Inspect `git status --short` before editing and preserve unrelated user changes.
-- Before frontend work, inspect the canonical screen, [\_docs/design/prototypes/DESIGN.md](_docs/design/prototypes/DESIGN.md), the [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
-- Before domain or API work, inspect [ROADMAP.md](ROADMAP.md) business/state rules and [ARCHITECTURE.md](ARCHITECTURE.md) boundaries.
-- For changes touching more than 5 files or roughly 100 lines, present a short impact/verification plan and obtain approval unless an already-approved phase/task clearly covers that breadth.
-- Group genuine requirement questions. If a safe, reversible assumption does not change product scope, state it and proceed.
+- For non-trivial work, read the [documentation map](_docs/README.md) and the documents your change
+  touches.
+- For delivery work, check [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) and
+  [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md), which also covers run
+  authorization.
+- Run `git status --short` before editing and keep unrelated user changes.
+- Before frontend work, open the canonical screen, the
+  [design contract](_docs/design/prototypes/DESIGN.md), the
+  [responsive baseline](_docs/design/prototypes/responsive-baselines.html), and [DESIGN.md](DESIGN.md).
+- Before domain or backend work, read the [Roadmap business rules](ROADMAP.md#3-business-rules) and
+  [ARCHITECTURE.md](ARCHITECTURE.md).
+- For a change over 5 files or about 100 lines, present a short impact and verification plan and get
+  approval, unless an approved phase or task already covers it.
+- Group real requirement questions. When a safe, reversible assumption does not change scope, state
+  it and proceed.
 
-## Current Repository State
+## Repository state
 
-- A pnpm workspace with two runtime entrypoints — `apps/frontend` (Next.js) and `apps/backend` (NestJS) —
-  plus `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
-  (environment schema, TypeScript and ESLint presets). No worker or Redis until the first background
-  job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
+- A pnpm workspace with `apps/frontend` (Next.js) and `apps/backend` (NestJS), plus
+  `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
+  (environment schema, TypeScript and ESLint presets). There is no worker or Redis until the first
+  background job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club audit
   events, and the Session skeleton across nine reviewed migrations.
-- UAT deploys automatically after CI on `main`; production promotion is implemented but guarded off
-  (`PRODUCTION_DEPLOY_ENABLED` is false). Live production provisioning, deployment, and traffic are
-  not authorized.
-- Proposed architecture is not Active implementation. Approve significant choices through the ADR
-  registry before scaffolding makes them expensive to change.
-- The HTML prototypes are design specifications; do not copy their inline JavaScript, fixture data,
-  or page-local CSS into production.
+- UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
+  (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
+  authorized.
+- Proposed architecture is not implemented. Approve significant choices through the ADR registry
+  before code makes them expensive to change.
+- The HTML prototypes are design specifications. Do not copy their JavaScript, fixture data, or
+  page-local CSS into production.
 
-## Command Map
+## Commands
 
-Use the Node and pnpm versions pinned by `.node-version` and `package.json` from the repository root.
+Run from the repository root with the Node and pnpm versions pinned in `.node-version` and
+`package.json`. Copy `.env.example` to `.env` first.
 
-| Task                                                               | Command                             |
-| ------------------------------------------------------------------ | ----------------------------------- |
-| Install dependencies                                               | `pnpm install --frozen-lockfile`    |
-| Start local PostgreSQL and MinIO and create the bucket             | `pnpm services:up`                  |
-| Check local PostgreSQL and MinIO                                   | `pnpm services:check`               |
-| Stop local services and keep their volumes                         | `pnpm services:down`                |
-| Start web and API in development                                   | `pnpm dev`                          |
-| Start previously built web and API                                 | `pnpm start`                        |
-| Lint (house style is enforced here)                                | `pnpm lint`                         |
-| Apply ESLint autofixes                                             | `pnpm lint:fix`                     |
-| Format / check formatting                                          | `pnpm format` / `pnpm format:check` |
-| Type-check                                                         | `pnpm typecheck`                    |
-| Run unit tests                                                     | `pnpm test`                         |
-| Run database integration tests against local services              | `pnpm test:integration`             |
-| Build every package and app                                        | `pnpm build`                        |
-| Run UI accessibility, interaction, viewport, and screenshot checks | `pnpm ui:test`                      |
-| Update reviewed screenshot baselines                               | `pnpm ui:test:update`               |
-| Smoke the built web and API                                        | `pnpm e2e:smoke`                    |
-| Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`)               | `pnpm uat:smoke`                    |
-| Build the production images                                        | `pnpm images:build`                 |
-| Render the local, deploy, and preview Compose files                | `pnpm compose:check`                |
-| Converge UAT Compose from a clean checkout                         | `pnpm deploy:compose`               |
-| Run the quality gates                                              | `pnpm verify`                       |
-| Apply database migrations                                          | `pnpm migrate`                      |
-| Seed local or test data                                            | `pnpm seed`                         |
-| Reset a positively identified local/test database                  | `pnpm db:reset`                     |
+| Task                                                          | Command                                      |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| Install dependencies                                          | `pnpm install --frozen-lockfile`             |
+| Start local PostgreSQL and MinIO and create the bucket        | `pnpm services:up`                           |
+| Check / stop local services (volumes are kept)                | `pnpm services:check` / `pnpm services:down` |
+| Start the frontend and backend in development                 | `pnpm dev`                                   |
+| Start the built frontend and backend                          | `pnpm start`                                 |
+| Lint (enforces the house style) / autofix                     | `pnpm lint` / `pnpm lint:fix`                |
+| Format / check formatting                                     | `pnpm format` / `pnpm format:check`          |
+| Type-check                                                    | `pnpm typecheck`                             |
+| Unit tests                                                    | `pnpm test`                                  |
+| Database integration tests against local services             | `pnpm test:integration`                      |
+| Build everything                                              | `pnpm build`                                 |
+| All quality gates (lint, format, types, tests, build)         | `pnpm verify`                                |
+| UI accessibility, interaction, viewport, and screenshot tests | `pnpm ui:test`                               |
+| Update reviewed screenshot baselines                          | `pnpm ui:test:update`                        |
+| Smoke the built frontend and backend                          | `pnpm e2e:smoke`                             |
+| Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`)          | `pnpm uat:smoke`                             |
+| Build the production images                                   | `pnpm images:build`                          |
+| Render the local, deploy, and preview Compose files           | `pnpm compose:check`                         |
+| Converge UAT Compose from a clean checkout                    | `pnpm deploy:compose`                        |
+| Apply migrations / seed local or test data                    | `pnpm migrate` / `pnpm seed`                 |
+| Reset a positively identified local or test database          | `pnpm db:reset`                              |
 
 UAT deployment and production promotion run only in GitHub Actions (`deploy-uat.yml`,
-`promote-production.yml`). Copy `.env.example` to `.env` before running services or runtime
-commands. See [\_docs/environment.md](_docs/environment.md) for variables and reset safeguards.
+`promote-production.yml`). [\_docs/environment.md](_docs/environment.md) lists variables and reset
+safeguards.
 
-## Phase Workflow
+## Phase workflow
 
-- Before starting a Roadmap phase, create or confirm its focused Project 3 issues, then create `_docs/phase-N-short-name.md` and link it from `_docs/README.md` while active.
-- The phase document owns temporary implementation detail: dependencies, inherited behavior, shims/removals, exact subtasks, edge cases, commands, and evidence in progress.
-- It links owning issues but does not duplicate their live status. It must not replace Roadmap scope/acceptance, Design behavior, Architecture boundaries, or accepted ADR rationale.
-- At phase completion, consolidate durable knowledge into canonical guidance, record evidence/progress in `ROADMAP.md`, then delete the temporary phase document and its docs-map link.
-- Human Verification & Bug Fixing phases occur after each five-phase delivery block. They require a severity-classified issue register; resolve all Blockers/Majors before continuing and record every lower-severity deferral explicitly.
-- Stabilization gates supplement normal per-phase tests and checks; never defer ordinary quality work to the next gate.
+- Before a Roadmap phase starts, create or confirm its Project 3 issues, then create
+  `_docs/phase-N-short-name.md` and link it from `_docs/README.md` while the phase is active.
+- The phase document holds temporary detail: dependencies, inherited behavior, shims, subtasks, edge
+  cases, commands, and evidence in progress. It links issues without copying their status and never
+  replaces Roadmap acceptance, Design behavior, Architecture boundaries, or ADR rationale.
+- When the phase ends, move durable knowledge into canonical documents, record evidence in
+  `ROADMAP.md`, and delete the phase document and its link.
+- A Human Verification & Bug Fixing phase follows every five delivery phases. It keeps a
+  severity-classified register; fix every Blocker and Major before continuing and record each
+  lower-severity deferral.
+- Verification gates add to normal per-phase tests; never push ordinary quality work to the next
+  gate.
 
-## Code Style
+## Code style
 
-Write code that looks like the surrounding code and like TailorTales: obvious, short, and built on
-well-known libraries. The rules below are enforced by `pnpm lint` where possible; the rule files
-hold the details.
+Write code that looks like the code around it and like TailorTales: obvious, short, and built on
+well-known libraries. `pnpm lint` enforces what it can; the rule files hold the details.
 
-- No speculative code: no feature, option, lock, or retry without a current caller or real risk.
+- No speculative code: no feature, option, lock, or retry without a current caller or a real risk.
 - Validate input with zod schemas from `@pickflick/contracts`; throw Nest exceptions from services.
-- Interfaces `IName`, type aliases `TName`; no `Readonly<>` props; optional fields are `field?: T`.
-- Components are `components/ui/<Name>/<Name>.tsx` with a `<Name>.module.scss`, default export,
-  and Mantine underneath. Only the UI kit imports `@mantine/*`.
+- Interfaces are `IName`, type aliases `TName`; no `Readonly<>`; optional fields are `field?: T`.
+- UI components are `components/ui/<Name>/<Name>.tsx` with `<Name>.module.scss`, a default export,
+  and Mantine underneath. Only the UI kit imports `@mantine/*` (except `@mantine/form`).
 - Routes keep their styles and `_components/` next to `page.tsx`; import with `@/`.
-- Comment the why, never the what.
-- Templates to copy: API module `apps/backend/src/modules/contact`, UI component
-  `apps/frontend/src/components/ui/Button`, route `apps/frontend/src/app/(auth)/login`.
+- Comment why, never what.
+- Templates to copy: backend module `apps/backend/src/modules/contact`, UI component
+  `apps/frontend/src/components/ui/Button`, route `apps/frontend/src/app/(auth)/login`, form
+  `apps/frontend/src/app/(marketing)/contact/_components/ContactForm`.
 
-## Rule Index
+## Rule index
 
-- TypeScript, naming, validation, and scope: [.agent-docs/rules/typescript.md](.agent-docs/rules/typescript.md)
+- TypeScript, naming, validation, scope: [.agent-docs/rules/typescript.md](.agent-docs/rules/typescript.md)
 - CSS Modules and Mantine: [.agent-docs/rules/frontend-css.md](.agent-docs/rules/frontend-css.md)
 - Tests: [.agent-docs/rules/testing.md](.agent-docs/rules/testing.md)
-- API structure and requests: [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
-- Web structure: [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md)
-- Git branches, commits, PRs, and worktree safety: [.agent-docs/rules/git.md](.agent-docs/rules/git.md)
-- GitHub issue creation, Project statuses, routing, and phase linkage: [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md)
+- Backend structure: [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
+- Frontend structure: [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md)
+- Git branches, commits, PRs, worktrees: [.agent-docs/rules/git.md](.agent-docs/rules/git.md)
+- GitHub issues, Project statuses, phase linkage: [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md)
 
-## Execution Loop
+## Working loop
 
 ```text
-understand -> inspect source authority -> choose smallest useful move -> edit -> verify -> update guidance -> report evidence
+understand -> read the source of truth -> choose the smallest useful move -> edit -> verify -> update docs -> report evidence
 ```
 
-- Prefer direct, readable implementation over premature abstraction.
-- Add a dependency only with developer approval and a concrete requirement; prefer existing dependencies, platform APIs, or the standard library.
-- If evidence is inconclusive, perform one stronger confirming check before concluding.
-- Verify the affected layer: focused tests for logic, integration tests for boundaries, and visual/accessibility checks for UI.
+- Prefer direct, readable code over early abstraction.
+- Add a dependency only with developer approval and a concrete need; prefer what already exists.
+- When evidence is inconclusive, run one stronger check before concluding.
+- Verify the layer you changed: focused tests for logic, integration tests for boundaries, visual and
+  accessibility checks for UI.
 - After a CLI scaffold, audit every generated file before keeping it.
 
-## Product Invariants
+## Product invariants
 
-These rules are high-risk and require database/server enforcement plus focused tests:
+These need database or server enforcement and focused tests:
 
 - Registered users only; Google and Apple are the MVP identity providers.
-- App roles are User and App Admin only. Club roles are Admin, Moderator, and Member.
-- One Club may have at most one Session in Nomination, Selection, or Watching; Rating Sessions are non-blocking and unlimited.
-- Automatic phase transitions are idempotent and serialized. Watching moves to Rating manually.
+- App roles are User and App Admin; Club roles are Admin, Moderator, and Member.
+- A Club has at most one Session in Nomination, Selection, or Watching; Rating Sessions are
+  unlimited and non-blocking.
+- Automatic phase transitions are idempotent and serialized; Watching moves to Rating by hand.
 - Session invitations disclose nothing to non-members and never create Club membership.
-- Selection score range is inclusive with a Club-configured upper bound no greater than 10. New Clubs
-  start at `0`; the data model still accepts a stored `1` start, which existing Clubs keep.
+- The Selection scale is inclusive with a Club-set upper bound of at most 10. New Clubs start at
+  `0`; the data model still accepts a stored `1` start, which existing Clubs keep.
 - Historical Session Ratings are separate from editable Personal Ratings.
-- Account deletion anonymizes shared history; it does not erase other members’ Club/Session records.
-- Billing webhooks, background jobs, exports, ownership changes, suspension, and destructive actions are idempotent/audited where applicable.
+- Account deletion anonymizes shared history; it never erases other members' Club or Session
+  records.
+- Billing webhooks, background jobs, exports, ownership changes, suspension, and destructive actions
+  are idempotent and audited where applicable.
 
-## Frontend & Design Rules
+## Frontend and design rules
 
-- Canonical visual/behavior authority is the self-contained package under `_docs/design/prototypes`; the production-ready image inventory is under `assets/brand`.
-- Build Projector Noir through shared tokens/components. Do not hard-code near-duplicate values per screen.
-- Mobile is a first-class recomposition. Avoid horizontal page scrolling; bound table scrolling locally.
-- Mouse, keyboard, and touch must work. Preserve visible focus, semantic control names, dialog focus trap/return, live feedback, 44px touch targets, and reduced motion.
-- Implement applicable loading, empty, validation, error, unauthorized, read-only, offline, success, and destructive-confirmation states.
-- Do not bake new user-facing text into image assets. `panda-invited-2.webp` already contains English text and must be used only where that limitation is acceptable.
-- Fixture film images/content do not establish licensing, provider identifiers, business rules, roles, billing plans, or production copy.
+- The package under `_docs/design/prototypes` is the visual and behavior authority; production
+  images live in `assets/brand`.
+- Build Projector Noir through shared tokens and components; never hard-code near-duplicate values.
+- Mobile is recomposed, not shrunk. No horizontal page scrolling; tables scroll locally.
+- Mouse, keyboard, and touch all work. Keep visible focus, semantic names, dialog focus trap and
+  return, live feedback, 44px targets, and reduced motion.
+- Implement the applicable loading, empty, validation, error, unauthorized, read-only, offline,
+  success, and destructive-confirmation states.
+- Bake no new user-facing text into images. `panda-invited-2.webp` already has English text; use it
+  only where that is acceptable.
+- Fixture film images and content establish no licensing, provider IDs, rules, roles, plans, or copy.
 
-## Code, Data & Safety Rules
+## Code, data, and safety rules
 
-- Match surrounding conventions once code exists; write minimal, typed, readable code.
-- Keep growing modules readable by separating reusable types, errors, validation, persistence, and
-  provider adapters when those concerns would otherwise obscure the owning workflow.
-- Names carry meaning. Do not use one term for different concepts or multiple terms for the same concept.
-- Validate untrusted browser/provider/file/webhook input at boundaries and encode user/provider output contextually.
-- Enforce authorization at the server/data boundary; hidden UI is never a permission boundary.
-- Never hardcode or log secrets, tokens, credentials, raw invitation URLs, private keys, or unnecessary personal data.
-- New environment variables must enter `.env.example`, typed startup validation, and the environment inventory in the same change.
-- Never swallow errors or hide failure behind silent fallback. Surface, handle, retry, or log/rethrow intentionally.
-- Treat migrations, data deletion/anonymization, auth, billing, ownership, role changes, exports, and retention as high-risk; use stronger review and evidence.
-- Structural refactors require approval and should be separate from behavior changes. Small necessary cleanup within touched code is fine.
+- Keep growing modules readable by separating types, errors, validation, persistence, and provider
+  adapters when they would otherwise hide the workflow.
+- One name per concept, one concept per name.
+- Validate untrusted browser, provider, file, and webhook input at the boundary; encode output for
+  its context.
+- Enforce authorization on the server and in data access; hidden UI is never a permission boundary.
+- Never hard-code or log secrets, tokens, credentials, raw invitation URLs, private keys, or
+  unnecessary personal data.
+- A new environment variable goes into `.env.example`, the zod schema, and the environment
+  reference in the same change.
+- Never swallow errors or hide failure behind a silent fallback: handle, retry, or log and rethrow.
+- Treat migrations, deletion and anonymization, auth, billing, ownership, roles, exports, and
+  retention as high-risk and bring stronger evidence.
+- Structural refactors need approval and stay separate from behavior changes. Small cleanup inside
+  code you touch is fine.
 
-## Git & Worktree
+## Git
 
-- Branch naming: `PF-type-short-kebab-descriptor` unless the repository later adopts a different documented convention.
-- Use Conventional Commits and squash merge through a PR.
-- Link every delivery PR to its owning Project 3 issue.
-- One logical change per commit. Commit, push, and PR authorization for owner-started
-  Project 3 runs follows `.agent-docs/rules/github-issues.md`. Outside that narrow
-  issue-scoped exception, never commit, push, or open a PR without explicit developer
-  approval.
-- Never reset, revert, overwrite, or delete user work unless explicitly requested and exact targets are verified.
+- Branches are `PF-type-short-kebab-descriptor`.
+- Use Conventional Commits, one logical change per commit, and squash merge through a PR linked to
+  its Project 3 issue.
+- Commit, push, and PR authorization for owner-started Project 3 runs follows
+  `.agent-docs/rules/github-issues.md`. Otherwise never commit, push, or open a PR without explicit
+  developer approval.
+- Never reset, revert, overwrite, or delete user work unless asked and the exact targets are
+  verified.
 
-## Project Documentation
+## Documentation
 
-Guidance is part of implementation. Update every affected artifact in the same task.
+Documentation is part of the change. Update every affected document in the same task.
 
-| Artifact                                                         | Owns                                                                                                     | Update when the task changes                                                                           |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable active/deferred delivery issues and live task status.                                         | Work is created, selected, started, deferred, sent to review, completed, or reprioritized.             |
-| [ROADMAP.md](ROADMAP.md)                                         | Product scope, business rules, routes, phase sequence/status/evidence, and product Decision Log.         | Scope, behavior, limits, phase acceptance/status, or a durable product decision changes.               |
-| [DESIGN.md](DESIGN.md)                                           | Experience direction, sources, screens/states, components, responsive/accessibility contract, design QA. | Visible behavior/content, design foundations, component/state coverage, or QA status.                  |
-| [ARCHITECTURE.md](ARCHITECTURE.md)                               | Deployables/modules, data/interface ownership, integrations, runtime, security/reliability/operations.   | A boundary, dependency, schema/interface workflow, integration, environment, deployment, or guarantee. |
-| [\_docs/decisions/README.md](_docs/decisions/README.md)          | Durable rationale and supersession for significant technical choices.                                    | A meaningful alternative is accepted, rejected, superseded, or materially revisited.                   |
+| Document                                                         | Owns                                                                                   | Update when                                                                        |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable issues and their live status.                                               | Work is created, started, deferred, sent to review, completed, or reprioritized.   |
+| [ROADMAP.md](ROADMAP.md)                                         | Scope, business rules, routes, phases and their evidence, the Decision Log.            | Scope, behavior, limits, phase status, or a durable product decision changes.      |
+| [DESIGN.md](DESIGN.md)                                           | Experience direction, screens and states, components, responsive and accessibility QA. | Visible behavior, design foundations, component coverage, or QA status changes.    |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                               | Deployables, modules, data, interfaces, integrations, runtime, operations.             | A boundary, dependency, interface, integration, environment, or guarantee changes. |
+| [ADR registry](_docs/decisions/README.md)                        | Rationale and supersession of significant technical choices.                           | An alternative is accepted, rejected, superseded, or revisited.                    |
 
-Documentation impact check after implementation:
+After implementing:
 
-1. Update the owning Project issue and every affected artifact before reporting completion.
-2. Mark Roadmap work Done only with the acceptance evidence it requests.
-3. Describe verified implementation as Active/current and unimplemented direction as Proposed.
-4. Append/supersede accepted ADR history; never rewrite it to hide a changed decision.
-5. If no artifact is affected, report `Documentation impact: none` and one short reason.
+1. Update the Project issue and every affected document before reporting completion.
+2. Mark Roadmap work Done only with the evidence it asks for.
+3. Describe verified behavior as Active and unbuilt direction as Proposed.
+4. Append or supersede ADRs; never rewrite accepted history.
+5. If nothing is affected, report `Documentation impact: none` with one short reason.
 
-Do not copy issue lists or task status into Roadmap prose. Project 3 owns actionable work status;
-Roadmap owns phase-level product acceptance and evidence.
+Do not copy issue lists or task status into the Roadmap.
 
-## Reporting Back
+## Reporting
 
-Final reports include:
-
-- outcome and files changed;
-- owning issue and resulting Project status;
-- checks run and their results;
-- documentation impact;
-- anything not verified;
-- blockers or follow-up only when relevant.
-
-If blocked, report the blocker, attempted work, evidence, and the smallest decision/access needed next.
+A final report states the outcome and changed files, the owning issue and its Project status, the
+checks run and their results, the documentation impact, anything not verified, and blockers or
+follow-ups when relevant. If blocked, report the blocker, what you tried, the evidence, and the
+smallest decision or access needed next.

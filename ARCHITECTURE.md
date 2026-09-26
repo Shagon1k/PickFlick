@@ -23,8 +23,8 @@ PickFlick coordinates private Club movie nights and keeps shared and personal fi
 
 ```mermaid
 flowchart LR
-  User["Registered User / App Admin"] --> Web["Web (Next.js)"]
-  Web --> API["API (NestJS)"]
+  User["Registered User / App Admin"] --> Frontend["frontend (Next.js)"]
+  Frontend --> API["backend (NestJS)"]
   API --> DB["PostgreSQL"]
   API --> Objects["S3-compatible storage"]
   API --> OAuth["Google / Apple"]
@@ -35,10 +35,10 @@ flowchart LR
 
 | Concern    | Direction                                                                               | State                                                                                     | ADR               |
 | ---------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
-| Shape      | pnpm monorepo, two entrypoints (web, API) plus a one-shot release job.                  | Active                                                                                    | ADR-014           |
+| Shape      | pnpm monorepo, two entrypoints (frontend, backend) plus a one-shot release job.         | Active                                                                                    | ADR-014           |
 | Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.   | Partial — public site, login, Club onboarding and settings; other product routes Proposed | ADR-013           |
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                    | ADR-002, 010, 011 |
-| Validation | zod request schemas in `@pickflick/contracts`, shared by API and forms.                 | Active                                                                                    | ADR-012           |
+| Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                    | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars and exports.                                          | Partial — Club avatars                                                                    | —                 |
 | Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                  | ADR-014           |
@@ -49,10 +49,10 @@ flowchart LR
 
 ```text
 apps/
-  web/        Next.js routes, UI kit, server-side API client
-  api/        NestJS REST API, Better Auth, feature modules
+  frontend/   Next.js routes, UI kit, server-side API client
+  backend/    NestJS REST API, Better Auth, feature modules
 packages/
-  contracts/  zod request schemas and response interfaces shared by API and web
+  contracts/  zod request schemas and response interfaces shared by both apps
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
   config/     environment schema, TypeScript and ESLint presets
 assets/brand/ production brand imagery (imported as @brand/…)
@@ -61,9 +61,9 @@ _docs/        guides, decisions, design prototypes
 ```
 
 A package exists only while something consumes it. When a second entrypoint needs server-side
-domain code, extract a focused package rather than importing one app from another.
+domain code, extract a focused package instead of importing one app from another.
 
-### API
+### Backend
 
 `AppModule` composes infrastructure and feature modules. Runtime environment, `PrismaService`, and
 storage come from global modules; feature modules are non-global and export only what another
@@ -82,11 +82,11 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
 
-### Web
+### Frontend
 
 Route groups `(marketing)`, `(auth)`, `(product)`, and `(internal)` hold the routes; a route keeps
 its `page.module.scss`, `actions.ts`, and `_components/`. `src/components/ui/<Name>/` is the UI kit.
-Server code calls the API only through `src/api/<area>.server.ts`, which forwards the session cookie
+Server code calls the backend only through `src/api/<area>.server.ts`, which forwards the session cookie
 and client address. Forms use `@mantine/form` and call a server action that returns `TFormResult`.
 [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md) holds the conventions.
 
@@ -96,7 +96,7 @@ and client address. Forms use `@mantine/form` and call a server action that retu
 | --------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
 | PostgreSQL            | All domain state, sessions, audit.                     | Partial — local and CI; managed UAT/production Proposed |
 | S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
-| Bundled assets        | Brand imagery, versioned with the web build.           | Active                                                  |
+| Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
 
 The schema (`packages/database/prisma/schema.prisma`, nine reviewed migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
@@ -106,7 +106,7 @@ The schema (`packages/database/prisma/schema.prisma`, nine reviewed migrations) 
 - at most one Nomination/Selection/Watching Session per Club;
 - Club score scale bounds and lifecycle consistency.
 
-Remaining entities in the [Roadmap domain model](ROADMAP.md#domain-model) are Proposed.
+Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
 ## 4. Interfaces
 
@@ -117,9 +117,9 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#domain-model) are Pr
 | OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist              | Partial — Apple dormant  |
 | Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)  | Partial — Contact only   |
 | Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked | Active                   |
-| Live progress | Web → API                                    | SSE, re-fetch after gaps                            | Proposed                 |
+| Live progress | Frontend → API                               | SSE, re-fetch after gaps                            | Proposed                 |
 | TMDB, Paddle  | API → provider; Paddle → API webhook         | Adapters; signed, idempotent webhooks               | Proposed                 |
-| CSV           | Web ↔ API                                    | Versioned CSV schema                                | Proposed                 |
+| CSV           | Frontend ↔ API                               | Versioned CSV schema                                | Proposed                 |
 
 Planned flows (Proposed): a Session submission serializes on the Session row, persists, evaluates
 completion, and transitions at most once in one transaction; deadlines are enforced by a scheduled
@@ -158,9 +158,9 @@ history and revokes every session.
 
 | Environment | Topology                                                           | Data                           |
 | ----------- | ------------------------------------------------------------------ | ------------------------------ |
-| Local       | Web and API run natively; PostgreSQL and MinIO in Docker.          | Synthetic seed; email disabled |
+| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker. | Synthetic seed; email disabled |
 | CI          | Lint, types, unit, integration (real PostgreSQL), UI, images.      | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `api`, `web`) + managed data services. | Synthetic; preview email       |
+| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data. | Synthetic; preview email       |
 | Production  | Same shape, pinned to a SemVer tag.                                | Real users; live providers     |
 
 - **Configuration:** one zod schema in `@pickflick/config`; startup fails on invalid values.
@@ -171,7 +171,7 @@ history and revokes every session.
   `promote-production.yml` requires a successful `UAT E2E` check for the release revision, tags it,
   pins Dokploy to the tag, and deploys — only when `PRODUCTION_DEPLOY_ENABLED=true`. See the
   [UAT](_docs/uat-operations.md) and [production](_docs/production-operations.md) guides.
-- **Migrations:** reviewed Prisma migrations applied by the release job before the API starts.
+- **Migrations:** reviewed Prisma migrations applied by the release job before the backend starts.
 - **Rollback:** redeploy a previous tag when the schema is compatible; otherwise fix forward.
 - **Backups and restore drills:** Proposed, required before launch.
 
@@ -187,7 +187,7 @@ history and revokes every session.
 | 010 | Better Auth inside the API.                                      |
 | 011 | Feature modules; global infrastructure modules.                  |
 | 012 | Shared zod schemas at every boundary.                            |
-| 013 | UI kit in the web app on unstyled Mantine.                       |
+| 013 | UI kit in the frontend on unstyled Mantine.                      |
 | 014 | Two entrypoints until the first background job.                  |
 
 Superseded: ADR-001, 004, 005, 006. Update this document whenever a deployable, module, data owner,

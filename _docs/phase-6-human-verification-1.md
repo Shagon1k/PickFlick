@@ -10,8 +10,8 @@ after moving anything durable into canonical guidance.
   from Playwright 1.63.
 - Local PostgreSQL and MinIO from `compose.local.yaml`; email delivery disabled.
 - Gates run after the final change: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`,
-  `pnpm test:integration`, `pnpm build`, `pnpm compose:check`, and `pnpm ui:test` (136 checks, 42
-  screenshot baselines at 390 and 1440 pixels).
+  `pnpm test:integration`, `pnpm build`, `pnpm e2e:smoke`, `pnpm compose:check`, and `pnpm ui:test`
+  (136 checks, 42 screenshot baselines at 390 and 1440 pixels).
 - Not yet exercised: UAT at `https://uat.pick-flick.app`, live Google sign-in, and live email.
 
 ## Register
@@ -48,8 +48,9 @@ visible defect with a workaround; **Trivial** is cosmetic.
 
 Owner-approved simplification, recorded in ADR-012–ADR-014 and the Decision Log: zod contracts and
 environment, NestJS feature modules with nestjs-pino and the throttler, the UI kit moved into the web
-app on unstyled Mantine, `@mantine/form` forms, deployment logic in workflow steps, the worker, Redis,
-observability package, Contact storage, and operation IDs removed, and lint-enforced house style.
+frontend on unstyled Mantine, `@mantine/form` forms, deployment logic in workflow steps, the worker, Redis,
+observability package, Contact storage, and operation IDs removed, `apps/web` and `apps/api` renamed to
+`apps/frontend` and `apps/backend`, and lint-enforced house style.
 
 Findings made while restructuring:
 
@@ -62,17 +63,18 @@ Findings made while restructuring:
 
 ## Deferrals
 
-| Item                                                                              | Severity | Owner / revisit trigger                                           |
-| --------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- |
-| UAT evidence: exact-revision delivery, failed-release gate, rollback, guard test. | Major    | Alex; before Phase 6 closes (owner-run, needs live UAT)           |
-| Live Google sign-in and Contact email in UAT.                                     | Major    | Alex; before Phase 6 closes                                       |
-| Apple Sign In activation.                                                         | —        | Product owner; Decision Log "Apple Sign In activation"            |
-| Explicit provider linking.                                                        | —        | Decision Log "Explicit provider linking"                          |
-| Database still accepts a stored `1..N` scale start.                               | Trivial  | Separate reviewed migration if the schema is tightened            |
-| Sweep of abandoned avatar objects.                                                | Minor    | Before production retention is considered complete                |
-| `components/shells` keeps two shared stylesheets instead of one per component.    | Trivial  | When a shell is reworked; see `.agent-docs/rules/frontend-css.md` |
-| `/ui-preview` gallery textarea no longer stretches inside equal-height panels.    | Trivial  | Accepted; internal page only                                      |
-| Contact form lost no-JavaScript submission when it moved to `@mantine/form`.      | Minor    | Revisit if progressive enhancement becomes a requirement          |
+| Item                                                                                             | Severity | Owner / revisit trigger                                           |
+| ------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------------- |
+| UAT evidence: exact-revision delivery, failed-release gate, rollback, guard test.                | Major    | Alex; before Phase 6 closes (owner-run, needs live UAT)           |
+| Live Google sign-in and Contact email in UAT.                                                    | Major    | Alex; before Phase 6 closes                                       |
+| Point the Dokploy UAT domain route at `frontend:3000` (the service was `web` before the rename). | Major    | Alex; before the next UAT deployment                              |
+| Apple Sign In activation.                                                                        | —        | Product owner; Decision Log "Apple Sign In activation"            |
+| Explicit provider linking.                                                                       | —        | Decision Log "Explicit provider linking"                          |
+| Database still accepts a stored `1..N` scale start.                                              | Trivial  | Separate reviewed migration if the schema is tightened            |
+| Sweep of abandoned avatar objects.                                                               | Minor    | Before production retention is considered complete                |
+| `components/shells` keeps two shared stylesheets instead of one per component.                   | Trivial  | When a shell is reworked; see `.agent-docs/rules/frontend-css.md` |
+| `/ui-preview` gallery textarea no longer stretches inside equal-height panels.                   | Trivial  | Accepted; internal page only                                      |
+| Contact form lost no-JavaScript submission when it moved to `@mantine/form`.                     | Minor    | Revisit if progressive enhancement becomes a requirement          |
 
 ## Closing the phase
 
