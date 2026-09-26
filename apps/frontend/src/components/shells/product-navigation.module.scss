@@ -1,8 +1,8 @@
 .sectionSidebar a {
     min-height: var(--hit);
     padding: 12px 14px;
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
 }
 
 .sectionSidebar a:hover {
@@ -36,25 +36,25 @@
 .avatarButton {
     position: relative;
     display: grid;
+    place-items: center;
     width: var(--hit);
     height: var(--hit);
     padding: 0;
-    border: 0;
     color: var(--fg-secondary);
-    background: transparent;
     cursor: pointer;
-    place-items: center;
+    background: transparent;
+    border: 0;
     transition: color 0.18s ease;
 }
 
 .roundButton::before,
 .avatarButton::before {
     position: absolute;
-    z-index: -1;
     inset: 5px;
+    z-index: -1;
+    content: '';
     border: 1px solid var(--border-lit);
     border-radius: 50%;
-    content: '';
     transition: border-color 0.18s ease;
 }
 
@@ -84,8 +84,8 @@
 }
 
 .avatarButton {
-    color: var(--fg-secondary);
     font: 600 13px/1 var(--font-body);
+    color: var(--fg-secondary);
 }
 
 .avatarButton::before {
@@ -102,22 +102,22 @@
     width: 18px;
     height: 18px;
     stroke: currentColor;
+    stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 1.8;
 }
 
 .notifPopover {
     position: absolute;
-    z-index: 60;
     top: calc(100% + 8px);
     right: 0;
+    z-index: 60;
     display: none;
     width: min(344px, calc(100vw - 32px));
     overflow: hidden;
+    background: color-mix(in oklch, var(--surface) 96%, var(--bg));
     border: 1px solid var(--border-lit);
     border-radius: 16px;
-    background: color-mix(in oklch, var(--surface) 96%, var(--bg));
     box-shadow: var(--shadow-overlay);
 }
 
@@ -142,64 +142,64 @@
 
 .notifHeader h2 {
     margin: 0;
-    color: var(--fg);
     font: 700 17px/var(--lh-title) var(--font-body);
+    color: var(--fg);
     letter-spacing: 0;
 }
 
 .notifHeader span {
     display: block;
     margin-top: 4px;
-    color: var(--fg-secondary);
     font-size: var(--fs-caption);
+    color: var(--fg-secondary);
 }
 
 .notifHeader button {
-    min-height: 32px;
     flex: 0 0 auto;
+    min-height: 32px;
     padding: 0 9px;
+    font: var(--fs-micro) var(--font-body);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: none;
     border: 0;
     border-radius: 8px;
-    color: var(--fg-secondary);
-    background: none;
-    font: var(--fs-micro) var(--font-body);
-    cursor: pointer;
 }
 
 .notifHeader button:hover,
 .notifHeader button:focus-visible {
     color: var(--fg);
-    background: var(--accent-soft);
     outline: 1px solid var(--focus);
+    background: var(--accent-soft);
 }
 
 .notifHeader button:disabled {
     color: var(--muted);
+    cursor: default;
+    outline: none;
     background: transparent;
     opacity: 0.48;
-    outline: none;
-    cursor: default;
 }
 
 .overlayEmpty {
-    margin: 0;
     padding: 32px 16px;
-    color: var(--muted);
+    margin: 0;
     font-size: var(--fs-meta);
+    color: var(--muted);
     text-align: center;
 }
 
 .globalSearch {
     position: absolute;
-    z-index: 60;
     inset: 0;
+    z-index: 60;
     display: flex;
+    visibility: hidden;
     align-items: center;
     padding: 0 var(--gutter);
+    pointer-events: none;
     background: var(--bg);
     opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
     transform: translateY(-100%);
     transition:
         transform 0.3s cubic-bezier(0.2, 0, 0, 1),
@@ -208,9 +208,9 @@
 }
 
 .globalSearch[data-open] {
-    opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    opacity: 1;
     transform: translateY(0);
     transition:
         transform 0.3s cubic-bezier(0.2, 0, 0, 1),
@@ -230,16 +230,16 @@
 }
 
 .globalSearchInner .globalSearchInput {
+    flex: 0 1 480px;
     width: 100%;
     min-width: 0;
     min-height: var(--hit);
-    flex: 0 1 480px;
     padding: 10px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    font: var(--fs-body) / var(--lh-ui) var(--font-display);
     color: var(--fg);
     background: var(--surface);
-    font: var(--fs-body) / var(--lh-ui) var(--font-display);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     transition: border-color var(--motion-local) var(--ease-standard);
 
     &::placeholder {
@@ -247,8 +247,8 @@
     }
 
     &:focus {
-        border-color: var(--gold-border);
         outline: none;
+        border-color: var(--gold-border);
         box-shadow: 0 0 0 3px var(--gold-soft);
     }
 }
@@ -260,33 +260,33 @@
 .searchClose {
     position: relative;
     display: grid;
+    flex-shrink: 0;
+    place-items: center;
     width: 40px;
     height: 40px;
-    flex-shrink: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: 50%;
-    color: var(--fg-secondary);
-    background: var(--surface);
-    cursor: pointer;
-    place-items: center;
 }
 
 .searchClose:hover {
-    border-color: var(--gold-border);
     color: var(--ivory);
+    border-color: var(--gold-border);
 }
 
 .searchResults {
     position: absolute;
-    z-index: 1;
     top: calc(100% + 8px);
     left: 50%;
+    z-index: 1;
     width: min(100%, 532px);
     max-height: 400px;
     overflow-y: auto;
+    background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius);
-    background: var(--surface);
     box-shadow: var(--shadow-overlay);
     transform: translateX(-50%);
 }
@@ -298,9 +298,9 @@
 .filmStrip {
     position: relative;
     padding: 10px 22px;
+    background: var(--bg);
     border: 1px solid var(--border-lit);
     border-radius: 7px 7px 3px 3px;
-    background: var(--bg);
     box-shadow: var(--shadow-popover-above);
 }
 
@@ -310,7 +310,7 @@
     top: 8px;
     bottom: 8px;
     width: 9px;
-    border-radius: 2px;
+    pointer-events: none;
     content: '';
     background: repeating-linear-gradient(
         to bottom,
@@ -318,8 +318,8 @@
         var(--ivory-muted) 7px 14px,
         transparent 14px 22px
     );
+    border-radius: 2px;
     opacity: 0.82;
-    pointer-events: none;
 }
 
 .filmStrip::before {
@@ -348,13 +348,13 @@
     width: 100%;
     min-height: 48px;
     padding: 12px 0;
-    border: 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--fg-secondary);
-    background: none;
     font: inherit;
+    color: var(--fg-secondary);
     text-align: center;
     cursor: pointer;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--border);
     transition:
         color 0.16s ease,
         background-color 0.16s ease;
@@ -367,8 +367,8 @@
 .filmFrame:hover,
 .filmFrame:focus-visible {
     color: var(--fg);
-    background: color-mix(in sRGB, var(--surface-lit) 56%, transparent);
     outline: none;
+    background: color-mix(in sRGB, var(--surface-lit) 56%, transparent);
 }
 
 .filmFrame:focus-visible {
@@ -392,9 +392,9 @@
     bottom: 9px;
     left: 0;
     width: 2px;
-    border-radius: var(--radius-pill);
     content: '';
     background: var(--gold);
+    border-radius: var(--radius-pill);
 }
 
 .filmFrame .menuIcon {
@@ -406,22 +406,22 @@
 .signOutError {
     display: block;
     padding: 8px 4px 12px;
-    border-top: 1px solid var(--danger-border);
-    color: var(--danger-text);
-    background: var(--danger-soft);
     font-size: var(--fs-caption);
     line-height: var(--lh-body);
+    color: var(--danger-text);
     text-align: center;
+    background: var(--danger-soft);
+    border-top: 1px solid var(--danger-border);
 }
 
 .menuIcon {
+    flex: 0 0 auto;
     width: 18px;
     height: 18px;
-    flex: 0 0 auto;
     stroke: currentColor;
+    stroke-width: 1.7;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 1.7;
 }
 
 .filmTail {
@@ -430,25 +430,25 @@
     width: 42px;
     height: 10px;
     margin: 0 auto;
+    background: var(--bg);
     border: 1px solid var(--border-lit);
     border-top: 0;
     border-radius: 0 0 10px 10px;
-    background: var(--bg);
 }
 
 .accountPopover {
     --menu-shift: 0px;
 
     position: absolute;
-    z-index: 60;
     top: calc(100% + 4px);
     left: 50%;
-    width: 174px;
-    opacity: 0;
+    z-index: 60;
     visibility: hidden;
+    width: 174px;
     pointer-events: none;
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(8px);
+    opacity: 0;
     clip-path: inset(0 0 82% 0 round 0 0 7px 7px);
+    transform: translateX(calc(-50% + var(--menu-shift))) translateY(8px);
     transition:
         opacity 0.18s ease,
         visibility 0s linear var(--motion-menu),
@@ -457,11 +457,11 @@
 }
 
 .accountPopover[data-open] {
-    opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
+    opacity: 1;
     clip-path: inset(0 0 0 0 round 0 0 7px 7px);
+    transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
     transition:
         opacity 0.18s ease,
         visibility 0s linear 0s,
@@ -498,17 +498,17 @@
 
 .sectionMenuTrigger {
     display: inline-flex;
-    width: 100%;
-    min-height: var(--hit);
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    min-height: var(--hit);
     padding: 10px 14px;
+    font: 500 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+    color: var(--fg);
+    cursor: pointer;
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    color: var(--fg);
-    background: transparent;
-    font: 500 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
-    cursor: pointer;
 }
 
 .sectionMenuTrigger span {
@@ -531,22 +531,22 @@
 
 .sectionMobileMenu {
     position: absolute;
-    z-index: 20;
     top: calc(100% + 8px);
     right: 0;
     left: 0;
+    z-index: 20;
     animation: shell-menu-reveal var(--motion-menu) var(--ease-menu);
 }
 
 .mobileNavigation {
     position: fixed;
-    z-index: 45;
     right: 0;
     bottom: 0;
     left: 0;
+    z-index: 45;
     padding-bottom: env(safe-area-inset-bottom, 0);
-    border-top: 1px solid var(--bar-border);
     background: var(--bar-glass);
+    border-top: 1px solid var(--bar-border);
     backdrop-filter: blur(16px);
 }
 
@@ -572,20 +572,20 @@
     width: 100%;
     min-height: 63px;
     padding: 0 4px;
-    border: 0;
-    color: var(--fg-secondary);
-    background: transparent;
     font: 500 var(--fs-micro)/1 var(--font-body);
+    color: var(--fg-secondary);
     letter-spacing: var(--tracking-wide);
     cursor: pointer;
+    background: transparent;
+    border: 0;
     transition: color 0.18s ease;
 }
 
 .navTrigger span {
     max-width: 100%;
     overflow: hidden;
-    line-height: 1.3;
     text-overflow: ellipsis;
+    line-height: 1.3;
     white-space: nowrap;
 }
 
@@ -601,13 +601,13 @@
 
 .navGlyph {
     display: block;
+    flex: 0 0 auto;
     width: 22px;
     height: 22px;
-    flex: 0 0 auto;
     stroke: currentColor;
+    stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 1.5;
 }
 
 .filmMenu {
@@ -616,12 +616,12 @@
     position: absolute;
     bottom: calc(100% - 1px);
     left: 50%;
-    width: 174px;
-    opacity: 0;
     visibility: hidden;
+    width: 174px;
     pointer-events: none;
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(14px);
+    opacity: 0;
     clip-path: inset(82% 0 0 0 round 7px 7px 0 0);
+    transform: translateX(calc(-50% + var(--menu-shift))) translateY(14px);
     transition:
         opacity 0.18s ease,
         visibility 0s linear var(--motion-menu),
@@ -630,11 +630,11 @@
 }
 
 .navGroup[data-open] .filmMenu {
-    opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
+    opacity: 1;
     clip-path: inset(0 0 0 0 round 7px 7px 0 0);
+    transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
     transition:
         opacity 0.18s ease,
         visibility 0s linear 0s,
@@ -653,8 +653,8 @@
 
     .sectionSidebar {
         display: block;
-        grid-column: 1;
         grid-row: 2;
+        grid-column: 1;
     }
 
     .sectionSidebar nav {

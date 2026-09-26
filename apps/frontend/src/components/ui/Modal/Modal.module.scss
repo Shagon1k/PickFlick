@@ -11,16 +11,16 @@
 
 .modal__overlay {
     position: fixed;
-    z-index: 200;
     inset: 0;
+    z-index: 200;
     background: var(--scrim);
     backdrop-filter: blur(3px);
 }
 
 .modal__inner {
     position: fixed;
-    z-index: 200;
     inset: 0;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,12 +32,12 @@
     width: min(560px, calc(100vw - 32px));
     max-height: calc(100dvh - 32px);
     overflow: auto;
+    color: var(--fg);
+    pointer-events: all;
+    background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius-lg);
-    color: var(--fg);
-    background: var(--surface);
     box-shadow: var(--shadow-overlay);
-    pointer-events: all;
 }
 
 .modal.m-danger {
@@ -50,9 +50,9 @@
 
 .modal__header {
     display: flex;
+    gap: var(--gap-md);
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--gap-md);
     min-height: var(--hit);
     padding: clamp(20px, 5vw, 32px) clamp(20px, 5vw, 32px) 0;
     background: var(--surface);
@@ -60,23 +60,23 @@
 
 .modal__title {
     margin: 0;
-    color: var(--fg);
     font: var(--fs-section)/var(--lh-title) var(--font-display);
+    color: var(--fg);
     letter-spacing: var(--tracking-tight);
 }
 
 .modal__close {
     display: grid;
-    width: var(--hit);
-    height: var(--hit);
     flex: 0 0 auto;
     place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    font-size: 24px;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    color: var(--fg-secondary);
-    background: transparent;
-    font-size: 24px;
-    cursor: pointer;
 }
 
 .modal__close svg {
@@ -85,17 +85,17 @@
 }
 
 .modal__content {
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .modal__actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
     gap: var(--gap-sm);
-    margin-top: var(--gap-lg);
+    justify-content: flex-end;
     padding-top: var(--gap-md);
+    margin-top: var(--gap-lg);
     border-top: 1px solid var(--border);
 }
 

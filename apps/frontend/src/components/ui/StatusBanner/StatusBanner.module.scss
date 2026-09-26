@@ -1,45 +1,45 @@
 .statusBanner {
     display: flex;
-    align-items: flex-start;
     gap: var(--gap-sm);
+    align-items: flex-start;
     padding: 14px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--fg-secondary);
-    background: transparent;
     font-size: var(--fs-body-sm);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
 }
 
 .statusBanner[data-tone='success'] {
-    border-color: var(--success-border);
     background: var(--success-soft);
+    border-color: var(--success-border);
 }
 
 .statusBanner[data-tone='warning'] {
-    border-color: var(--warn-border);
     background: var(--warn-soft);
+    border-color: var(--warn-border);
 }
 
 .statusBanner[data-tone='danger'] {
-    border-color: var(--danger-border);
     background: var(--danger-soft);
+    border-color: var(--danger-border);
 }
 
 .statusBanner__icon {
     display: grid;
-    width: 20px;
-    height: 20px;
     flex: 0 0 auto;
     place-items: center;
+    width: 20px;
+    height: 20px;
+    font: 10px/1 var(--font-mono);
+    color: var(--ivory-muted);
     border: 1px solid currentColor;
     border-radius: 50%;
-    color: var(--ivory-muted);
-    font: 10px/1 var(--font-mono);
 }
 
 .statusBanner {
-    border-radius: 0;
     font-family: var(--font-mono);
     font-size: var(--fs-caption);
+    border-radius: 0;
 }

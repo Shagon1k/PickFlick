@@ -1,18 +1,20 @@
 .page {
     position: relative;
-    isolation: isolate;
     display: grid;
-    min-height: 100svh;
     place-items: center;
-    overflow: hidden;
+    min-height: 100svh;
     padding: 88px 24px 48px;
+    overflow: hidden;
     background: var(--bg-deep);
+    isolation: isolate;
 }
 
 .page::before {
     position: absolute;
-    z-index: -1;
     inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: '';
     background:
         radial-gradient(
             circle at 50% 8%,
@@ -20,25 +22,23 @@
             transparent 34rem
         ),
         linear-gradient(180deg, var(--bg), var(--bg-deep));
-    content: '';
-    pointer-events: none;
 }
 
 .backLink {
     position: absolute;
-    z-index: 2;
     top: 20px;
     left: 20px;
+    z-index: 2;
     display: inline-flex;
-    min-height: var(--hit);
-    align-items: center;
     gap: 6px;
+    align-items: center;
+    min-height: var(--hit);
     padding: 0 10px 0 8px;
-    border-radius: var(--radius);
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
     font-weight: 500;
+    color: var(--fg-secondary);
     text-decoration: none;
+    border-radius: var(--radius);
     transition:
         color var(--motion-local) var(--ease-standard),
         background-color var(--motion-local) var(--ease-standard);
@@ -64,13 +64,13 @@
 
 .spotlight {
     position: absolute;
-    z-index: -1;
     top: -20%;
     left: 50%;
+    z-index: -1;
     width: 500px;
     height: 500px;
-    background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
     pointer-events: none;
+    background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
     transform: translateX(-50%);
 }
 
@@ -88,9 +88,9 @@
     z-index: 1;
     width: 100%;
     padding: 40px 36px;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: var(--surface);
     box-shadow: var(--shadow-card);
 }
 
@@ -102,19 +102,19 @@
 
 .lead {
     margin: 0 0 var(--gap-lg);
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .errorBanner {
-    margin: calc(-1 * var(--gap-sm)) 0 var(--gap-md);
     padding: var(--gap-sm);
-    border: 1px solid var(--danger-border);
-    border-radius: var(--radius);
-    color: var(--danger-text);
-    background: var(--danger-soft);
+    margin: calc(-1 * var(--gap-sm)) 0 var(--gap-md);
     font-size: var(--fs-body-sm);
     line-height: var(--lh-body);
+    color: var(--danger-text);
+    background: var(--danger-soft);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius);
 }
 
 .actionArea,
@@ -128,9 +128,9 @@
     top: 50%;
     left: 24px;
     display: grid;
+    place-items: center;
     width: 30px;
     height: 30px;
-    place-items: center;
     transform: translateY(-50%);
 }
 
@@ -147,9 +147,9 @@
 .feedback {
     min-height: 20px;
     margin: 0;
-    color: var(--danger-text);
     font-size: var(--fs-body-sm);
     line-height: var(--lh-body);
+    color: var(--danger-text);
     opacity: 0;
 }
 
@@ -159,9 +159,9 @@
 
 .legal {
     margin: var(--gap-md) 0 0;
-    color: var(--muted);
     font-size: var(--fs-caption);
     line-height: var(--lh-body);
+    color: var(--muted);
 }
 
 .legal a {
@@ -176,10 +176,10 @@
 
 .ornament {
     margin: var(--gap-lg) 0 0;
-    color: var(--accent-dim);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--accent-dim);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 @media (width <= 480px) {

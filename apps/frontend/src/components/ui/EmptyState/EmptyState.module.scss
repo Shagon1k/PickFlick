@@ -8,8 +8,8 @@
 
 .emptyState h3 {
     margin: var(--gap-md) 0 var(--gap-xs);
-    color: var(--fg);
     font: var(--fs-section)/var(--lh-title) var(--font-display);
+    color: var(--fg);
 }
 
 .emptyState__action {
@@ -18,21 +18,21 @@
 
 .emptyState__sprocket {
     display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
     color: var(--accent-dim);
 }
 
 .emptyState__sprocket::before,
 .emptyState__sprocket::after {
     width: 44px;
-    border-top: 1px dashed currentColor;
     content: '';
+    border-top: 1px dashed currentColor;
 }
 
 .emptyState__sprocket i {
     width: 5px;
     height: 5px;
-    border-radius: 50%;
     background: currentColor;
+    border-radius: 50%;
 }

@@ -1,28 +1,28 @@
 .page {
     position: relative;
-    isolation: isolate;
     min-height: calc(100svh - 69px);
-    overflow: hidden;
     padding: clamp(72px, 9vw, 112px) var(--gutter) var(--gap-2xl);
+    overflow: hidden;
+    isolation: isolate;
 }
 
 /* The same projector spotlight as the Landing and Pricing heroes. */
 .page::before {
     position: absolute;
-    z-index: -1;
     top: -240px;
     left: 50%;
+    z-index: -1;
     width: min(940px, 96vw);
     height: 680px;
-    background: var(--spotlight-gold);
     content: '';
+    background: var(--spotlight-gold);
     transform: translateX(-50%);
 }
 
 .layout {
     display: grid;
-    width: min(100%, 920px);
     gap: var(--gap-xl);
+    width: min(100%, 920px);
     margin-inline: auto;
 }
 
@@ -39,10 +39,10 @@
 .eyebrow,
 .sectionIndex,
 .reviewLabel {
-    color: var(--gold-light);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--gold-light);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .eyebrow {
@@ -60,27 +60,27 @@
 .lead {
     max-width: 62ch;
     margin: var(--gap-md) 0 0;
-    color: var(--fg-secondary);
     font-size: var(--fs-lead);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .mascot {
+    justify-self: center;
     width: 210px;
     height: 210px;
-    justify-self: center;
+    pointer-events: none;
     object-fit: contain;
     opacity: 0.88;
-    pointer-events: none;
 }
 
 .reviewNotice {
     display: grid;
     gap: var(--gap-xs);
     padding: var(--gap-md);
+    background: var(--warn-soft);
     border: 1px solid var(--warn-border);
     border-radius: var(--radius);
-    background: var(--warn-soft);
 }
 
 .reviewLabel,
@@ -89,15 +89,15 @@
 }
 
 .reviewNotice p:last-child {
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .document {
     overflow: hidden;
+    background: var(--surface-glass-strong);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: var(--surface-glass-strong);
     box-shadow: var(--shadow-overlay);
 }
 
@@ -126,8 +126,8 @@
 .section p {
     max-width: 68ch;
     margin: 0;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .section p + p {
@@ -136,18 +136,18 @@
 
 .contact {
     margin: 0;
-    color: var(--muted);
     font-size: var(--fs-body-sm);
     line-height: var(--lh-body);
+    color: var(--muted);
     text-align: center;
 }
 
 .contact a {
     display: inline-flex;
-    min-height: var(--hit);
     align-items: center;
-    color: var(--fg-secondary);
+    min-height: var(--hit);
     font-family: var(--font-mono);
+    color: var(--fg-secondary);
 }
 
 .contact a:hover {

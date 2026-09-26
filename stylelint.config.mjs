@@ -1,6 +1,8 @@
 /** @type {import('stylelint').Config} */
 export default {
-    extends: ['stylelint-config-standard-scss'],
+    // recess-order groups declarations (position, box model, typography, visuals, motion), so every
+    // file reads in the same order whoever wrote it; `stylelint --fix` applies it.
+    extends: ['stylelint-config-standard-scss', 'stylelint-config-recess-order'],
     // A disable must name its reason and still be needed.
     reportDescriptionlessDisables: true,
     reportInvalidScopeDisables: true,

@@ -5,25 +5,25 @@
 
 .progress__copy {
     display: flex;
-    justify-content: space-between;
     gap: var(--gap-md);
-    color: var(--fg-secondary);
+    justify-content: space-between;
     font-size: var(--fs-meta);
+    color: var(--fg-secondary);
 }
 
 .progress__copy strong {
-    color: var(--ivory);
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    color: var(--ivory);
 }
 
 .progress progress {
     width: 100%;
     height: 12px;
     overflow: hidden;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 3px;
-    background: var(--surface);
 }
 
 .progress progress::-webkit-progress-bar {

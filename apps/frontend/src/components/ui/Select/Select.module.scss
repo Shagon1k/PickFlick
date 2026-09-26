@@ -2,10 +2,10 @@
     position: absolute;
     z-index: 200;
     padding: 6px;
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius);
     color: var(--fg-secondary);
     background: var(--surface);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
     box-shadow: var(--shadow-popover);
 }
 
@@ -16,9 +16,9 @@
 .select__option {
     min-height: var(--hit);
     padding: 10px 12px;
-    border-radius: calc(var(--radius) - 4px);
-    color: var(--fg-secondary);
     font: var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+    color: var(--fg-secondary);
+    border-radius: calc(var(--radius) - 4px);
 }
 
 .select__option:hover,
@@ -38,9 +38,9 @@
     top: 0;
     right: 0;
     display: grid;
+    place-items: center;
     width: 44px;
     height: 44px;
-    place-items: center;
     color: var(--ivory-muted);
     pointer-events: none;
 }

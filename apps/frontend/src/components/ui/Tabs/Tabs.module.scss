@@ -2,20 +2,20 @@
     display: flex;
     gap: 4px;
     overflow-x: auto;
-    border-bottom: 1px solid var(--border);
     scrollbar-width: thin;
+    border-bottom: 1px solid var(--border);
 }
 
 .tabs__tab {
     position: relative;
+    flex: 0 0 auto;
     min-height: var(--hit);
     padding: 10px 14px;
-    flex: 0 0 auto;
-    border: 0;
-    color: var(--fg-secondary);
-    background: transparent;
     font: 500 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+    color: var(--fg-secondary);
     cursor: pointer;
+    background: transparent;
+    border: 0;
 }
 
 .tabs__tab::after {
@@ -48,8 +48,8 @@
 }
 
 .tabs__tab:disabled {
-    opacity: 0.42;
     cursor: not-allowed;
+    opacity: 0.42;
 }
 
 .tabs__panel {

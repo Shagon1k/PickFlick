@@ -1,23 +1,23 @@
 .sprocketDivider {
     display: flex;
-    width: min(100%, 240px);
-    align-items: center;
     gap: var(--gap-sm);
+    align-items: center;
+    width: min(100%, 240px);
     margin: var(--gap-xl) auto 0;
 }
 
 .sprocketDivider::before,
 .sprocketDivider::after {
-    height: 1px;
     flex: 1;
-    background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
+    height: 1px;
     content: '';
+    background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
 }
 
 .sprocketDivider i {
+    flex-shrink: 0;
     width: 4px;
     height: 4px;
-    flex-shrink: 0;
-    border-radius: 50%;
     background: var(--border);
+    border-radius: 50%;
 }

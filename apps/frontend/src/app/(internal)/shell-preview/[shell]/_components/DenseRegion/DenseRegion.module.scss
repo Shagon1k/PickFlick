@@ -1,9 +1,9 @@
 .denseRegion {
     max-width: 100%;
     overflow-x: auto;
+    scrollbar-width: thin;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    scrollbar-width: thin;
 }
 
 .denseGrid {
@@ -15,13 +15,13 @@
 .denseGrid > * {
     min-height: var(--hit);
     padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+    border-bottom: 1px solid var(--border);
 }
 
 .denseGrid strong {
-    color: var(--ivory);
     font-family: var(--font-mono);
     font-size: var(--fs-caption);
+    color: var(--ivory);
 }

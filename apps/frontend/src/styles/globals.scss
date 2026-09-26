@@ -11,20 +11,20 @@ html {
 body {
     min-height: 100vh;
     margin: 0;
+    font-family: var(--font-body);
     color: var(--fg);
     background: var(--bg);
-    font-family: var(--font-body);
 }
 
 /* Projector Noir film grain: a fixed 2.5% texture over every screen that never takes input. */
 body::after {
     position: fixed;
-    z-index: 2147483000;
     inset: 0;
+    z-index: 2147483000;
+    pointer-events: none;
     content: '';
     background: repeating-radial-gradient(circle at 17% 32%, var(--fg), var(--bg) 0.15%);
     opacity: 0.025;
-    pointer-events: none;
 }
 
 :focus-visible {
@@ -33,20 +33,20 @@ body::after {
 }
 
 .scaffold-panel {
-    width: min(100% - 2rem, 72rem);
-    min-height: 100vh;
-    margin: 0 auto;
     display: grid;
     align-content: center;
+    width: min(100% - 2rem, 72rem);
+    min-height: 100vh;
     padding-block: 4rem;
+    margin: 0 auto;
 }
 
 .scaffold-panel__eyebrow {
     margin: 0 0 1rem;
-    color: var(--ivory-muted);
     font: 0.75rem/1.2 var(--font-mono);
-    letter-spacing: 0.12em;
+    color: var(--ivory-muted);
     text-transform: uppercase;
+    letter-spacing: 0.12em;
 }
 
 .scaffold-panel h1 {
@@ -57,11 +57,11 @@ body::after {
 
 .scaffold-panel__body {
     max-width: 36rem;
-    margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--gold-border);
-    color: var(--fg-secondary);
+    margin-top: 1.5rem;
     line-height: 1.55;
+    color: var(--fg-secondary);
+    border-top: 1px solid var(--gold-border);
 }
 
 @media (width >= 48rem) {
@@ -89,7 +89,7 @@ body::after {
     padding: 0;
     margin: -1px;
     overflow: hidden;
-    clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+    clip: rect(0, 0, 0, 0);
 }
