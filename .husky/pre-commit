@@ -26,9 +26,13 @@ else
   echo "  Install gitleaks so local commits are scanned; CI enforces it regardless."
 fi
 
-# Format with Prettier (auto-fix + re-stage)
-echo "$STAGED_FILES" | tr '\n' '\0' | xargs -0 pnpm exec prettier --write --ignore-unknown
-echo "$STAGED_FILES" | tr '\n' '\0' | xargs -0 git add
+# Format with Prettier (auto-fix + re-stage). Symlinks such as .claude/skills/* are skipped:
+# Prettier refuses them and their targets are staged as ordinary files.
+FORMAT_FILES=$(echo "$STAGED_FILES" | while IFS= read -r file; do [ -L "$file" ] || echo "$file"; done)
+if [ -n "$FORMAT_FILES" ]; then
+  echo "$FORMAT_FILES" | tr '\n' '\0' | xargs -0 pnpm exec prettier --write --ignore-unknown
+  echo "$FORMAT_FILES" | tr '\n' '\0' | xargs -0 git add
+fi
 
 # Lint TS/TSX/JS files with ESLint (auto-fix what we can; block commit if errors remain)
 STAGED_TS=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|mjs)$' || true)

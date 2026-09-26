@@ -22,3 +22,6 @@ patches
 
 # `next dev` rewrites its block in this file; formatting it would only create churn.
 apps/frontend/AGENTS.md
+
+# Vendored agent skills stay byte-identical to their source.
+.agents/skills/*/
