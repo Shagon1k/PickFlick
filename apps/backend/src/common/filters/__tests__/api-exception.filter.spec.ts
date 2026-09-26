@@ -1,4 +1,4 @@
-import { ArgumentsHost, ConflictException, NotFoundException } from '@nestjs/common';
+import { type ArgumentsHost, ConflictException, NotFoundException } from '@nestjs/common';
 
 import { ApiExceptionFilter } from '../api-exception.filter.js';
 

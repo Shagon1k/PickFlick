@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import type AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
 import { canonicalViewports } from './viewports';

@@ -62,6 +62,11 @@ export default [
         plugins: { 'check-file': checkFile, 'simple-import-sort': simpleImportSort },
         rules: {
             'simple-import-sort/imports': 'error',
+            // Type-only imports are marked inline (`import { type IUser }`) so builds can drop them.
+            '@typescript-eslint/consistent-type-imports': [
+                'error',
+                { fixStyle: 'inline-type-imports', prefer: 'type-imports' },
+            ],
             'simple-import-sort/exports': 'error',
             '@typescript-eslint/naming-convention': [
                 'error',
@@ -114,6 +119,14 @@ export default [
                 },
                 { ignoreWords: ['clubs', 'navigation', 'shells', 'ui'] },
             ],
+        },
+    },
+    {
+        // Nest injects constructor parameters by their emitted class metadata, so those imports
+        // are values; the parser must know to keep consistent-type-imports from rewriting them.
+        files: ['apps/backend/**/*.ts'],
+        languageOptions: {
+            parserOptions: { emitDecoratorMetadata: true, experimentalDecorators: true },
         },
     },
     {

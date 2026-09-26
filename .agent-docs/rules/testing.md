@@ -4,6 +4,9 @@
 
 - Tests must be fast, isolated, repeatable, and self-validating. Cover meaningful behaviour (happy
   path, edge cases, error states), not coverage numbers.
+- Prove each behaviour at the lowest layer that can: unit before integration before Playwright.
+  Do not repeat the same case in several layers; a higher layer checks only what the lower one
+  cannot, such as wiring, rendering, or the real database.
 - One test file covers one source file.
 - Never commit an unconditional `.skip` or `.only`.
 

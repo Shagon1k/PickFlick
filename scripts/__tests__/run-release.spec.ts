@@ -1,4 +1,4 @@
-import { assertReleaseEnvironment, releaseSteps, runReleaseSteps } from '../run-release.mjs';
+import { assertReleaseEnvironment, type releaseSteps, runReleaseSteps } from '../run-release.mjs';
 
 describe('release gate', () => {
     it('should run migrations before the required seed step', async () => {
