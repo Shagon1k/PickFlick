@@ -20,9 +20,9 @@ ARG BACKEND_INTERNAL_URL=http://127.0.0.1:3001
 ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 RUN SOURCE_REVISION="$(cat .source-revision)" pnpm build
 
-FROM builder AS api-package
+FROM builder AS backend-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
-    pnpm --config.strict-peer-dependencies=false --filter @pickflick/api deploy --prod --legacy /out/api
+    pnpm --config.strict-peer-dependencies=false --filter @pickflick/backend deploy --prod --legacy /out/backend
 
 FROM builder AS release-package
 RUN --mount=type=cache,id=pickflick-pnpm,target=/pnpm/store \
@@ -37,23 +37,23 @@ RUN mkdir /openssl-root && \
       /usr/lib/ssl/openssl.cnf \
       /openssl-root
 
-FROM ${RUNTIME_IMAGE} AS web
+FROM ${RUNTIME_IMAGE} AS frontend
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.title="PickFlick web"
+      org.opencontainers.image.title="PickFlick frontend"
 ENV HOSTNAME=0.0.0.0 NODE_ENV=production PORT=3000
 WORKDIR /app
-COPY --from=builder --chown=node:node /workspace/apps/web/.next/standalone/ ./
-COPY --from=builder --chown=node:node /workspace/apps/web/.next/static/ ./apps/web/.next/static/
+COPY --from=builder --chown=node:node /workspace/apps/frontend/.next/standalone/ ./
+COPY --from=builder --chown=node:node /workspace/apps/frontend/.next/static/ ./apps/frontend/.next/static/
 USER node
 EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "apps/frontend/server.js"]
 
-FROM ${RUNTIME_IMAGE} AS api
+FROM ${RUNTIME_IMAGE} AS backend
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
-      org.opencontainers.image.title="PickFlick API"
+      org.opencontainers.image.title="PickFlick backend"
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=api-package --chown=node:node /out/api/ ./
+COPY --from=backend-package --chown=node:node /out/backend/ ./
 COPY --from=builder --chown=node:node /workspace/.source-revision ./.source-revision
 USER node
 EXPOSE 3001

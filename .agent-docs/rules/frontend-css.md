@@ -2,11 +2,11 @@
 
 ## Layers
 
-1. `apps/web/src/styles/tokens.scss` holds CSS custom properties only (Projector Noir tokens). It is
+1. `apps/frontend/src/styles/tokens.scss` holds CSS custom properties only (Projector Noir tokens). It is
    loaded once through `globals.scss`; never import it anywhere else.
-2. `apps/web/src/styles/globals.scss` holds the reset, body, focus, and the `.visually-hidden`
+2. `apps/frontend/src/styles/globals.scss` holds the reset, body, focus, and the `.visually-hidden`
    utility.
-3. `apps/web/src/theme/mantine.ts` maps tokens onto Mantine with `createTheme()`.
+3. `apps/frontend/src/theme/mantine.ts` maps tokens onto Mantine with `createTheme()`.
 4. Every component and route gets its own `*.module.scss`, consuming tokens through `var(--token)`.
 
 ## CSS Modules
@@ -33,7 +33,7 @@ Apply modifiers with `clsx(styles.button, styles[`m-${variant}`])`.
 
 ## Mantine
 
-- Only `apps/web/src/components/ui` and `theme/` import `@mantine/*` (lint-enforced). Feature code
+- Only `apps/frontend/src/components/ui` and `theme/` import `@mantine/*` (lint-enforced). Feature code
   uses the UI components; `@mantine/form` is the one exception.
 - UI kit wrappers render Mantine components `unstyled` and style every slot themselves.
 - Global defaults go in `createTheme()`. Variants and sizes are compound classes on the base class

@@ -26,7 +26,7 @@ export class AppModule {
                 LoggerModule.forRoot({
                     pinoHttp: {
                         level: environment.appEnvironment === 'test' ? 'silent' : 'info',
-                        base: { service: 'api', environment: environment.appEnvironment },
+                        base: { service: 'backend', environment: environment.appEnvironment },
                         // Reuse a caller's request ID only when it is a UUID; otherwise mint one.
                         genReqId: (request, response) => {
                             const incoming = request.headers['x-request-id'];

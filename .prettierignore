@@ -21,4 +21,4 @@ assets
 patches
 
 # `next dev` rewrites its block in this file; formatting it would only create churn.
-apps/web/AGENTS.md
+apps/frontend/AGENTS.md

@@ -94,11 +94,11 @@ services:
                 condition: service_healthy
         restart: 'no'
 
-    api:
+    backend:
         <<: *application-service
         build:
             <<: *build
-            target: api
+            target: backend
         environment:
             <<: *runtime-environment
             API_HOST: 0.0.0.0
@@ -133,20 +133,20 @@ services:
             timeout: 3s
             retries: 20
 
-    web:
+    frontend:
         <<: *application-service
         build:
             <<: *build
-            target: web
+            target: frontend
             args:
                 SOURCE_REVISION: ${SOURCE_REVISION:?SOURCE_REVISION must be the exact CI SHA}
-                BACKEND_INTERNAL_URL: http://api:3001
+                BACKEND_INTERNAL_URL: http://backend:3001
         environment:
             APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
-            BACKEND_INTERNAL_URL: http://api:3001
+            BACKEND_INTERNAL_URL: http://backend:3001
             NODE_ENV: production
         depends_on:
-            api:
+            backend:
                 condition: service_healthy
         ports:
             - '127.0.0.1:${FRONTEND_PORT:?FRONTEND_PORT is required}:3000'
@@ -163,7 +163,7 @@ services:
             retries: 20
         tmpfs:
             - /tmp
-            - /app/apps/web/.next/cache
+            - /app/apps/frontend/.next/cache
 
 volumes:
     postgres-data:

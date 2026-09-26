@@ -48,11 +48,11 @@ services:
                     - pickflick-${APP_ENV:?APP_ENV is required}-release
         restart: 'no'
 
-    api:
+    backend:
         <<: *application-service
         build:
             <<: *build
-            target: api
+            target: backend
         environment:
             <<: *runtime-environment
             API_HOST: 0.0.0.0
@@ -86,23 +86,23 @@ services:
         networks:
             application:
                 aliases:
-                    - pickflick-${APP_ENV:?APP_ENV is required}-api
+                    - pickflick-${APP_ENV:?APP_ENV is required}-backend
 
-    web:
+    frontend:
         <<: *application-service
         build:
             <<: *build
-            target: web
+            target: frontend
             args:
-                BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
+                BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-backend:3001
                 SOURCE_REVISION: ${SOURCE_REVISION:-}
         environment:
             APP_ENV: ${APP_ENV:?APP_ENV is required}
             APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
-            BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-api:3001
+            BACKEND_INTERNAL_URL: http://pickflick-${APP_ENV:?APP_ENV is required}-backend:3001
             NODE_ENV: production
         depends_on:
-            api:
+            backend:
                 condition: service_healthy
         expose:
             - '3000'
@@ -120,10 +120,10 @@ services:
         networks:
             application:
                 aliases:
-                    - pickflick-${APP_ENV:?APP_ENV is required}-web
+                    - pickflick-${APP_ENV:?APP_ENV is required}-frontend
         tmpfs:
             - /tmp
-            - /app/apps/web/.next/cache
+            - /app/apps/frontend/.next/cache
 
 networks:
     application:

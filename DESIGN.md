@@ -1,7 +1,7 @@
 # PickFlick — Design Reference
 
 > Current UI/UX direction, source authority, screen behavior, and design QA contract.
-> Exact approved visual values are implemented in `apps/web/src/styles/tokens.scss`; the self-contained
+> Exact approved visual values are implemented in `apps/frontend/src/styles/tokens.scss`; the self-contained
 > canonical design package remains their visual and interaction source.
 
 | Document owner | Last reviewed |
@@ -72,8 +72,8 @@ screens are **not started**. Prototype quality is not production QA.
 
 ## 3. Foundations
 
-Production values live in [`apps/web/src/styles/tokens.scss`](apps/web/src/styles/tokens.scss) and
-the UI kit in [`apps/web/src/components/ui`](apps/web/src/components/ui); both remain
+Production values live in [`apps/frontend/src/styles/tokens.scss`](apps/frontend/src/styles/tokens.scss) and
+the UI kit in [`apps/frontend/src/components/ui`](apps/frontend/src/components/ui); both remain
 traceable to the [canonical design contract](_docs/design/prototypes/DESIGN.md). Do not copy partial
 token sets into feature files.
 
@@ -110,7 +110,7 @@ token sets into feature files.
 | Personal settings/library | Authenticated global shell plus local tabs/sidebar, tables/cards, stable feedback regions.                                                                                                                                                                                                                                                                    | Sidebar becomes mobile menu; tables scroll inside bounded regions.                                                                                                                                                                                                                                                                                                                                                                                                                     | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
 | App administration        | Protected admin sidebar, overview panels, searchable tables, operational settings, typed confirmations.                                                                                                                                                                                                                                                       | Admin views remain task-complete through mobile admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                                                                         | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
 
-The reusable shells live under `apps/web/src/components/shells`. `/shell-preview` exposes public,
+The reusable shells live under `apps/frontend/src/components/shells`. `/shell-preview` exposes public,
 setup, product, Session, Settings, Library, and App Admin compositions without feature data. The
 shells default to canonical product routes; the preview supplies its own route map.
 

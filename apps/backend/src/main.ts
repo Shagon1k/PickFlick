@@ -30,7 +30,7 @@ try {
     process.stderr.write(
         `${JSON.stringify({
             level: 'fatal',
-            service: 'api',
+            service: 'backend',
             event: failures ? 'configuration.invalid' : 'service.start.failed',
             ...(failures ? { failures } : {}),
             time: new Date().toISOString(),

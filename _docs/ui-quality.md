@@ -1,7 +1,7 @@
 # UI quality checks
 
 `pnpm ui:test` builds the web app, starts it on loopback against a mock API
-(`tests/ui-preview/start-web-with-contact-api.mjs`), and runs the Playwright suite in Chromium over
+(`tests/ui-preview/start-frontend-with-mock-api.mjs`), and runs the Playwright suite in Chromium over
 the public pages, Login, Club onboarding and settings, the recovery states, the `/ui-preview`
 component gallery, and the seven `/shell-preview/*` shells.
 

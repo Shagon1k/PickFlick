@@ -24,7 +24,7 @@
 
 ## Current Repository State
 
-- A pnpm workspace with two runtime entrypoints — `apps/web` (Next.js) and `apps/api` (NestJS) —
+- A pnpm workspace with two runtime entrypoints — `apps/frontend` (Next.js) and `apps/backend` (NestJS) —
   plus `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
   (environment schema, TypeScript and ESLint presets). No worker or Redis until the first background
   job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
@@ -95,16 +95,16 @@ hold the details.
   and Mantine underneath. Only the UI kit imports `@mantine/*`.
 - Routes keep their styles and `_components/` next to `page.tsx`; import with `@/`.
 - Comment the why, never the what.
-- Templates to copy: API module `apps/api/src/modules/contact`, UI component
-  `apps/web/src/components/ui/Button`, route `apps/web/src/app/(auth)/login`.
+- Templates to copy: API module `apps/backend/src/modules/contact`, UI component
+  `apps/frontend/src/components/ui/Button`, route `apps/frontend/src/app/(auth)/login`.
 
 ## Rule Index
 
 - TypeScript, naming, validation, and scope: [.agent-docs/rules/typescript.md](.agent-docs/rules/typescript.md)
 - CSS Modules and Mantine: [.agent-docs/rules/frontend-css.md](.agent-docs/rules/frontend-css.md)
 - Tests: [.agent-docs/rules/testing.md](.agent-docs/rules/testing.md)
-- API structure and requests: [apps/api/AGENTS.md](apps/api/AGENTS.md)
-- Web structure: [apps/web/AGENTS.md](apps/web/AGENTS.md)
+- API structure and requests: [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
+- Web structure: [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md)
 - Git branches, commits, PRs, and worktree safety: [.agent-docs/rules/git.md](.agent-docs/rules/git.md)
 - GitHub issue creation, Project statuses, routing, and phase linkage: [.agent-docs/rules/github-issues.md](.agent-docs/rules/github-issues.md)
 

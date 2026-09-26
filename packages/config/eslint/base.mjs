@@ -66,7 +66,7 @@ export default [
         },
     },
     {
-        files: ['apps/web/**/*.{ts,tsx}'],
+        files: ['apps/frontend/**/*.{ts,tsx}'],
         rules: {
             'no-restricted-imports': [
                 'error',
@@ -85,21 +85,21 @@ export default [
             ],
             'check-file/folder-naming-convention': [
                 'error',
-                { 'apps/web/src/components/ui/*/': 'PASCAL_CASE' },
+                { 'apps/frontend/src/components/ui/*/': 'PASCAL_CASE' },
             ],
         },
     },
     {
         // The UI kit and theme own Mantine; tests may reach files outside src such as next.config.
         files: [
-            'apps/web/src/components/ui/**',
-            'apps/web/src/theme/**',
-            'apps/web/**/__tests__/**',
+            'apps/frontend/src/components/ui/**',
+            'apps/frontend/src/theme/**',
+            'apps/frontend/**/__tests__/**',
         ],
         rules: { 'no-restricted-imports': 'off' },
     },
     {
-        files: ['apps/web/**/*.{ts,tsx}'],
+        files: ['apps/frontend/**/*.{ts,tsx}'],
         ...reactConfig,
         languageOptions: {
             ...reactConfig.languageOptions,

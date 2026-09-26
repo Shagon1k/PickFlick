@@ -10,7 +10,7 @@ Normalized, implementation-ready starting inventory for the Projector Noir panda
 - Decorative instances use empty alternative text. Meaningful instances use concise contextual alternative text and must not repeat nearby headings.
 - Do not bake new localized copy into images. `panda-invited-2.webp` already contains English lettering and is unsuitable for locale-neutral reuse.
 - `panda-logo.webp` is the large illustrated mark. `panda-mark.png` is the flat black-and-white icon source: transparent, with a thin white outline so the black hat and ears read on dark browser chrome. The favicon and every `icons/` derivative come from it.
-- The web app serves `favicon.ico` (16/32/48), `icon.png` (192), and `apple-icon.png` (180, opaque `--bg`) through Next.js file conventions in `apps/web/src/app`. `icons/` holds the future PWA manifest set: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (mark inside the 80% safe zone on `--bg`), and `apple-touch-icon-180.png`.
+- The web app serves `favicon.ico` (16/32/48), `icon.png` (192), and `apple-icon.png` (180, opaque `--bg`) through Next.js file conventions in `apps/frontend/src/app`. `icons/` holds the future PWA manifest set: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (mark inside the 80% safe zone on `--bg`), and `apple-touch-icon-180.png`.
 - Film posters/stills in the prototype package are fixtures, not part of this production brand inventory.
 - Confirm asset provenance/licensing before public launch; “production-ready” here means naming/format/visual readiness, not a recorded legal rights audit.
 
