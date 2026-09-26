@@ -16,6 +16,11 @@ function runDocker(arguments_, environment) {
     }
 }
 
+/**
+ * @param {(arguments_: string[], environment: NodeJS.ProcessEnv) => unknown} [run]
+ * @param {NodeJS.ProcessEnv} [source]
+ * @param {(source: NodeJS.ProcessEnv) => string} [resolveRevision]
+ */
 export function deployCompose(
     run = runDocker,
     source = process.env,

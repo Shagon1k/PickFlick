@@ -21,6 +21,11 @@ function validateRevision(revision) {
     return revision;
 }
 
+/**
+ * @param {Record<string, string | undefined>} [source]
+ * @param {(arguments_: string[]) => { status: number | null; stdout: string }} [runGit]
+ * @returns {string}
+ */
 export function sourceRevision(
     source = process.env,
     runGit = (arguments_) => spawnSync('git', arguments_, { encoding: 'utf8' }),

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function authenticate(context: BrowserContext, token: string) {
@@ -16,26 +17,10 @@ async function authenticate(context: BrowserContext, token: string) {
     ]);
 }
 
-async function waitForAssets(page: Page) {
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
-}
-
 async function open(page: Page, route: string, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'networkidle' });
-    await waitForAssets(page);
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
 }
 
 function widths(page: Page) {

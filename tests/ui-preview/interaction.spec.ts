@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, test } from '@playwright/test';
 
+import { settle } from './settle';
+
 const PREVIEW_PATH = '/ui-preview';
 
 async function assertVisibleFocus(locator: Locator, label: string) {
@@ -39,7 +41,7 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     page,
 }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
-    const browserErrors = [];
+    const browserErrors: string[] = [];
     page.on('console', (message) => {
         if (message.type() === 'error') {
             browserErrors.push(message.text());
@@ -47,7 +49,8 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     });
     page.on('pageerror', (error) => browserErrors.push(error.message));
 
-    await page.goto(PREVIEW_PATH, { waitUntil: 'networkidle' });
+    await page.goto(PREVIEW_PATH, { waitUntil: 'load' });
+    await settle(page);
     await expect(page.locator('html')).toHaveAttribute('data-mantine-color-scheme', 'dark');
 
     const accessibilityResults = await new AxeBuilder({ page }).analyze();
@@ -306,7 +309,8 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(PREVIEW_PATH, { waitUntil: 'networkidle' });
+    await page.goto(PREVIEW_PATH, { waitUntil: 'load' });
+    await settle(page);
     await page.getByRole('button', { name: 'Open Club menu' }).click();
     const animationDuration = await page
         .getByRole('menu', { name: 'Club menu' })

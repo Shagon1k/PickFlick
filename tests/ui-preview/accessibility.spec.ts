@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { settle } from './settle';
+
 function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
     return violations
         .map(
@@ -22,7 +24,8 @@ for (const profile of [
         page,
     }, testInfo) => {
         await page.setViewportSize({ height: profile.height, width: profile.width });
-        await page.goto('/ui-preview', { waitUntil: 'networkidle' });
+        await page.goto('/ui-preview', { waitUntil: 'load' });
+        await settle(page);
 
         const results = await new AxeBuilder({ page }).analyze();
         await testInfo.attach(`axe-${profile.name}.json`, {

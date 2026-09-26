@@ -1,5 +1,7 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { settle } from './settle';
+
 const clubId = '10000000-0000-4000-8000-000000000031';
 const publicRoutes = ['/', '/pricing', '/contact', '/legal/privacy', '/login', '/ui-preview'];
 const signedInRoutes = ['/app', '/clubs/new', `/clubs/${clubId}/settings`];
@@ -46,7 +48,8 @@ test('pages send the security headers and a fresh CSP nonce', async ({ page }) =
 test('pages sign every inline script and raise no CSP violations', async ({ context, page }) => {
     await authenticate(context);
     for (const route of [...publicRoutes, ...signedInRoutes]) {
-        await page.goto(route, { waitUntil: 'networkidle' });
+        await page.goto(route, { waitUntil: 'load' });
+        await settle(page);
 
         // Inline scripts need the nonce; chunks that trusted scripts load pass via strict-dynamic.
         const unsigned = await page.evaluate(

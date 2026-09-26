@@ -1,23 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function openStablePreview(page: Page, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
-    await page.goto('/ui-preview', { waitUntil: 'networkidle' });
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
+    await page.goto('/ui-preview', { waitUntil: 'load' });
+    await settle(page);
 }
 
 for (const profile of [...canonicalViewports, ...gapViewports]) {

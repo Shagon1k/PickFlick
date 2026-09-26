@@ -64,13 +64,17 @@ Findings made while restructuring:
 
 ### Quality gates and hardening
 
-| #   | Finding                                                                                            | Severity | Outcome                                                                   |
-| --- | -------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------- |
-| H1  | Responses sent no CSP, HSTS, or framing protection.                                                | Major    | Fixed; nonce CSP and security headers, ADR-015, [Security](security.md)   |
-| H2  | The Prisma CLI pulled `mysql2` and `deepmerge-ts` versions with high-severity advisories.          | Minor    | Fixed with `overrides`; CI now fails on high advisories; Dependabot added |
-| H3  | The release image copied the Prisma engine from a path naming version 7.10.0.                      | Major    | Fixed; the version is resolved at build time                              |
-| H4  | Production CSS used breakpoints outside the design contract (480, 820, 920, 960px).                | Minor    | Fixed; contract breakpoints only, lint-enforced; public links from 768px  |
-| H5  | Documented house rules (default exports, CSS tokens, class names, folder names) were not enforced. | Minor    | Fixed; ESLint, Stylelint, and knip rules; violations corrected            |
+| #   | Finding                                                                                                       | Severity | Outcome                                                                   |
+| --- | ------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| H1  | Responses sent no CSP, HSTS, or framing protection.                                                           | Major    | Fixed; nonce CSP and security headers, ADR-015, [Security](security.md)   |
+| H2  | The Prisma CLI pulled `mysql2` and `deepmerge-ts` versions with high-severity advisories.                     | Minor    | Fixed with `overrides`; CI now fails on high advisories; Dependabot added |
+| H3  | The release image copied the Prisma engine from a path naming version 7.10.0.                                 | Major    | Fixed; the version is resolved at build time                              |
+| H4  | Production CSS used breakpoints outside the design contract (480, 820, 920, 960px).                           | Minor    | Fixed; contract breakpoints only, lint-enforced; public links from 768px  |
+| H5  | Documented house rules (default exports, CSS tokens, class names, folder names) were not enforced.            | Minor    | Fixed; ESLint, Stylelint, and knip rules; violations corrected            |
+| H6  | Internal links were plain `<a>`, so every navigation reloaded the whole page.                                 | Minor    | Fixed; `next/link` throughout, Next.js lint rules                         |
+| H7  | Create Club's invalid-submit handler read the global `window.event`, so focus never moved to the first error. | Minor    | Fixed; found by type-aware lint                                           |
+| H8  | Playwright specs, script tests, and configs were outside every tsconfig, so `tsc` never checked them.         | Minor    | Fixed; root `tsconfig.json`, 22 type errors corrected                     |
+| H9  | A root-layout failure fell back to Next.js's unbranded error page.                                            | Trivial  | Fixed; `app/global-error.tsx`                                             |
 
 ## Deferrals
 

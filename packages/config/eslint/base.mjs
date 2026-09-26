@@ -1,15 +1,20 @@
 import eslint from '@eslint/js';
 import reactPlugin from '@eslint-react/eslint-plugin';
 import prettier from 'eslint-config-prettier';
+import nextPlugin from '@next/eslint-plugin-next';
+import vitest from '@vitest/eslint-plugin';
 import checkFile from 'eslint-plugin-check-file';
 import jsxA11y from 'eslint-plugin-jsx-a11y-x';
+import playwright from 'eslint-plugin-playwright';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import sonarjs from 'eslint-plugin-sonarjs';
 import globals from 'globals';
+import { resolve } from 'node:path';
 import tseslint from 'typescript-eslint';
 
 const reactConfig = reactPlugin.configs['recommended-typescript'];
+const repositoryRoot = resolve(import.meta.dirname, '../../..');
 
 const noReadonlyWrapper = {
     selector: "TSTypeReference[typeName.name='Readonly']",
@@ -32,7 +37,32 @@ export default [
         ],
     },
     eslint.configs.recommended,
-    ...tseslint.configs.recommended,
+    // Type-aware rules catch what syntax cannot: unawaited promises, async callbacks where a sync one
+    // is expected, and non-exhaustive switches. Every TypeScript file must belong to a tsconfig.
+    ...tseslint.configs.recommendedTypeChecked,
+    {
+        languageOptions: {
+            parserOptions: { projectService: true, tsconfigRootDir: repositoryRoot },
+        },
+        rules: {
+            // A default branch covers the remaining cases on purpose.
+            '@typescript-eslint/switch-exhaustiveness-check': [
+                'error',
+                { considerDefaultExhaustiveForUnions: true },
+            ],
+            // React ignores a handler's returned promise; our async handlers catch their own errors.
+            '@typescript-eslint/no-misused-promises': [
+                'error',
+                { checksVoidReturn: { attributes: false } },
+            ],
+            // Async implementations of promise-returning interfaces read better than Promise.resolve.
+            '@typescript-eslint/require-await': 'off',
+        },
+    },
+    {
+        files: ['**/*.{js,mjs,cjs}'],
+        ...tseslint.configs.disableTypeChecked,
+    },
     // The rules SonarQube for IDE reports, so the editor, hooks, and CI agree.
     sonarjs.configs.recommended,
     {
@@ -44,6 +74,8 @@ export default [
         },
         rules: {
             curly: ['error', 'all'],
+            // Props are plain types in this codebase (see .agent-docs/rules/typescript.md).
+            'sonarjs/prefer-read-only-props': 'off',
             'no-duplicate-imports': 'error',
             // A file past 300 lines holds more than one idea; split it.
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
@@ -197,11 +229,29 @@ export default [
         },
     },
     {
-        // Screenshot and accessibility checks need every resource settled before they capture.
-        files: ['tests/ui-preview/**'],
+        // Next.js's own rules: next/link for internal navigation, no sync scripts, and the like.
+        files: ['apps/frontend/**/*.{ts,tsx}'],
+        plugins: { '@next/next': nextPlugin },
+        settings: { next: { rootDir: 'apps/frontend' } },
+        rules: nextPlugin.configs['core-web-vitals'].rules,
+    },
+    {
+        files: ['**/__tests__/**/*.{ts,tsx}'],
+        plugins: { vitest },
         rules: {
-            'sonarjs/no-networkidle-wait': 'off',
+            ...vitest.configs.recommended.rules,
+            // Helpers named expect* (expectConstraint, expectAccepted) assert on the test's behalf.
+            'vitest/expect-expect': ['error', { assertFunctionNames: ['expect*'] }],
+            // vitest/unbound-method understands `expect(mock.method)`; the TypeScript rule does not.
+            '@typescript-eslint/unbound-method': 'off',
+            'vitest/unbound-method': 'error',
+            // Vitest types asymmetric matchers such as expect.stringContaining as `any`.
+            '@typescript-eslint/no-unsafe-assignment': 'off',
         },
+    },
+    {
+        files: ['tests/**/*.ts'],
+        ...playwright.configs['flat/recommended'],
     },
     {
         // Developer and CI tooling deliberately resolves pnpm, docker, and git from PATH.

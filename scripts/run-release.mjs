@@ -18,6 +18,7 @@ export const releaseSteps = [
     },
 ];
 
+/** @param {(typeof releaseSteps)[number]} step */
 export async function runCommand(step) {
     console.log(`Release step started: ${step.name}.`);
     const exitCode = await new Promise((resolveExit, reject) => {
@@ -38,6 +39,7 @@ export async function runCommand(step) {
     console.log(`Release step completed: ${step.name}.`);
 }
 
+/** @param {(step: (typeof releaseSteps)[number]) => Promise<void>} [runner] */
 export async function runReleaseSteps(runner = runCommand) {
     for (const step of releaseSteps) {
         await runner(step);

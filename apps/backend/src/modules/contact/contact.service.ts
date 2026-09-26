@@ -30,7 +30,7 @@ export class ContactService {
         } catch (error) {
             // Nothing is stored; the visitor keeps their text and retries.
             this.logger.error(
-                `Contact email failed: ${error instanceof Error ? error.message : error}`,
+                `Contact email failed: ${error instanceof Error ? error.message : String(error)}`,
             );
             throw new ServiceUnavailableException();
         }
