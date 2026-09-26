@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef } from 'react';
 
 import styles from '../../marketing.module.scss';
 
-export function LandingRevealRoot({ children }: { children: ReactNode }) {
+export default function LandingReveal({ children }: { children: ReactNode }) {
     const rootRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

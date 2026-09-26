@@ -13,11 +13,9 @@ import Tabs from '@/components/ui/Tabs/Tabs';
 import Textarea from '@/components/ui/Textarea/Textarea';
 import TextInput from '@/components/ui/TextInput/TextInput';
 
-import {
-    PreviewInteractions,
-    PreviewMenus,
-    ReviewFixInteractions,
-} from './_components/PreviewInteractions/PreviewInteractions';
+import PreviewInteractions from './_components/PreviewInteractions/PreviewInteractions';
+import PreviewMenus from './_components/PreviewMenus/PreviewMenus';
+import ReviewFixInteractions from './_components/ReviewFixInteractions/ReviewFixInteractions';
 import styles from './page.module.scss';
 
 const tableColumns: ITableColumn[] = [

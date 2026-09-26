@@ -8,7 +8,7 @@ import Icon from '@/components/ui/Icon/Icon';
  * Returns to the previous PickFlick page. Direct visits, external referrers, and modified clicks
  * follow `fallbackHref` instead, so the link never leaves the app or dead-ends.
  */
-export function BackLink({
+export default function BackLink({
     className,
     fallbackHref,
 }: {

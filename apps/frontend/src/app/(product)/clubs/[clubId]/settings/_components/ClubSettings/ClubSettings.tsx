@@ -5,8 +5,10 @@ import { type IClubSettings } from '@pickflick/contracts';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
-import { DangerZone } from './ClubDangerZone';
-import { AvatarCard, ClubInfoCard, VisibilityCard } from './ClubSettingsCards';
+import AvatarCard from './AvatarCard';
+import ClubDangerZone from './ClubDangerZone';
+import ClubInfoCard from './ClubInfoCard';
+import VisibilityCard from './VisibilityCard';
 
 const roleLabels: Record<IClubSettings['club']['membershipRole'], string> = {
     ADMIN: 'Admin',
@@ -14,7 +16,7 @@ const roleLabels: Record<IClubSettings['club']['membershipRole'], string> = {
     MEMBER: 'Member',
 };
 
-export function ClubSettings({ projection }: { projection: IClubSettings }) {
+export default function ClubSettings({ projection }: { projection: IClubSettings }) {
     const active = projection.club.lifecycle === 'ACTIVE';
     const role = projection.club.membershipRole;
     const roleLabel = roleLabels[role];
@@ -72,7 +74,7 @@ export function ClubSettings({ projection }: { projection: IClubSettings }) {
                 <ClubInfoCard projection={projection} />
                 <VisibilityCard projection={projection} />
                 <AvatarCard projection={projection} />
-                <DangerZone projection={projection} />
+                <ClubDangerZone projection={projection} />
             </div>
         </main>
     );

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getSessionState, loginPath } from '@/api/session.server';
-import { BackLink } from '@/components/navigation/BackLink/BackLink';
+import BackLink from '@/components/navigation/BackLink/BackLink';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';

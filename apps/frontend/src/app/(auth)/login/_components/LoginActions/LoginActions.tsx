@@ -13,7 +13,7 @@ interface ILoginActionsProps {
     readonly returnTo: string;
 }
 
-export function LoginActions({ appleSignInEnabled, returnTo }: ILoginActionsProps) {
+export default function LoginActions({ appleSignInEnabled, returnTo }: ILoginActionsProps) {
     const [pendingProvider, setPendingProvider] = useState<TIdentityProvider>();
     const [error, setError] = useState('');
 

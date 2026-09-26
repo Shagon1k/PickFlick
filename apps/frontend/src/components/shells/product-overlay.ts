@@ -1,24 +1,13 @@
 'use client';
 
-import {
-    createContext,
-    type ReactNode,
-    type RefObject,
-    use,
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { createContext, type RefObject, use, useEffect, useLayoutEffect } from 'react';
 
 /**
  * One product overlay (search, notifications, account, or a navigation strip) is open at a time.
  * Opening another closes the first, and closing returns focus to the trigger that opened it.
  */
 type THeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search';
-type TProductOverlay = THeaderOverlay | `mobile:${string}` | `section:${string}`;
+export type TProductOverlay = THeaderOverlay | `mobile:${string}` | `section:${string}`;
 
 interface IProductOverlayContextValue {
     readonly activeOverlay: TProductOverlay | null;
@@ -26,35 +15,10 @@ interface IProductOverlayContextValue {
     readonly toggleOverlay: (overlay: TProductOverlay, trigger: HTMLElement) => void;
 }
 
-const ProductOverlayContext = createContext<IProductOverlayContextValue | null>(null);
+export const ProductOverlayContext = createContext<IProductOverlayContextValue | null>(null);
 
 const focusableSelector =
     "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
-
-export function ProductOverlayProvider({ children }: { children: ReactNode }) {
-    const [activeOverlay, setActiveOverlay] = useState<TProductOverlay | null>(null);
-    const returnFocusRef = useRef<HTMLElement | null>(null);
-
-    const closeOverlay = useCallback((returnFocus = true) => {
-        const returnTarget = returnFocusRef.current;
-        setActiveOverlay(null);
-        if (returnFocus) {
-            requestAnimationFrame(() => returnTarget?.focus());
-        }
-    }, []);
-
-    const toggleOverlay = useCallback((overlay: TProductOverlay, trigger: HTMLElement) => {
-        returnFocusRef.current = trigger;
-        setActiveOverlay((current) => (current === overlay ? null : overlay));
-    }, []);
-
-    const value = useMemo(
-        () => ({ activeOverlay, closeOverlay, toggleOverlay }),
-        [activeOverlay, closeOverlay, toggleOverlay],
-    );
-
-    return <ProductOverlayContext value={value}>{children}</ProductOverlayContext>;
-}
 
 export function useProductOverlay() {
     const context = use(ProductOverlayContext);

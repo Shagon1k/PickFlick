@@ -4,7 +4,8 @@ Write the obvious version. If a reader needs a comment to follow the control flo
 code instead.
 
 `pnpm lint` enforces the `I`/`T` prefixes, the ban on `Readonly<>`, sorted imports, `*.spec.ts`
-test names, and the frontend import boundaries below. The pre-commit hook runs it on staged files.
+test names, default-exported components, component folder names, and the frontend import
+boundaries below. The pre-commit hook runs it on staged files.
 
 ## General
 
@@ -62,7 +63,8 @@ test names, and the frontend import boundaries below. The pre-commit hook runs i
 ## React
 
 - Props interface: `I<ComponentName>Props`, declared next to the component.
-- Components are `export default function Name(...)`; hooks and utilities use named exports.
+- Components are `export default function Name(...)`, one per file; hooks and utilities use named
+  exports. Related components may share a folder (`Button/ButtonLink.tsx`).
 - Forms use `@mantine/form` with the shared zod-backed validator, and submit by calling their
   server action as an async function that returns `TFormResult` (`@/lib/form-errors`). Copy
   `app/(marketing)/contact/_components/ContactForm`.

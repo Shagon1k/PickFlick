@@ -11,7 +11,7 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 import { initialClubActionState } from '../../action-state';
 import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
 import styles from '../../page.module.scss';
-import { ActionStatus } from './club-settings-shared';
+import ActionStatus from './ActionStatus';
 
 function MemberRoleForm({
     clubId,
@@ -163,7 +163,7 @@ function ReactivateAction({ clubId }: { clubId: string }) {
     );
 }
 
-export function DangerZone({ projection }: { projection: IClubSettings }) {
+export default function ClubDangerZone({ projection }: { projection: IClubSettings }) {
     const active = projection.club.lifecycle === 'ACTIVE';
     const isAdmin = projection.club.membershipRole === 'ADMIN';
     const clubId = projection.club.id;
