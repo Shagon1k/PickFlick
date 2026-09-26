@@ -90,6 +90,29 @@ Server code calls the backend only through `src/api/<area>.server.ts`, which for
 and client address. Forms use `@mantine/form` and call a server action that returns `TFormResult`.
 [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md) holds the conventions.
 
+### How a request flows
+
+```mermaid
+sequenceDiagram
+  actor Browser
+  participant N as frontend (Next.js server)
+  participant A as backend (NestJS)
+  participant DB as PostgreSQL
+
+  Browser->>N: Submit a form (server action)
+  N->>N: Validate with the shared zod schema
+  N->>A: apiRequest() with cookie and client address
+  A->>A: ThrottlerGuard, then AuthGuard resolves the session
+  A->>A: ZodValidationPipe validates the body again
+  A->>DB: Service reads and writes through PrismaService
+  A-->>N: JSON, or the error envelope
+  N-->>Browser: TFormResult rendered by the form
+```
+
+Pages read data the same way: a server component calls `src/api/<area>.server.ts` during render.
+The browser itself calls the backend only for sign-in (`/api/auth/*`), which the frontend proxies
+to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks through each layer.
+
 ## 3. Data
 
 | Store                 | Holds                                                  | State                                                   |
@@ -129,15 +152,11 @@ history and revokes every session.
 
 ## 5. Cross-cutting contracts
 
-- **Authentication:** Better Auth in the API; identities keyed by provider subject; implicit
-  linking disabled and explicit linking deferred; opaque database sessions in host-only secure
-  cookies; revocation on suspension. Next.js renders and redirects but never authorizes. — Partial
-- **Sessions:** seven-day rolling expiry refreshed daily; production cookie
-  `__Host-pickflick.session_token` (`Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, no `Domain`);
-  OAuth state stored in the database; provider tokens encrypted and never sent to the browser;
-  only Google/Apple sign-in scopes (`openid email profile`); email/password disabled. A new User is
-  created only from a verified provider email, and a signed-out email match returns
-  `account_not_linked` instead of merging.
+- **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
+  linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed
+  daily) in a host-only `__Host-` cookie; provider tokens never stored; suspension revokes every
+  session. Next.js renders and redirects but never authorizes. See
+  [Authentication and sessions](_docs/authentication.md). — Partial (Apple dormant)
 - **Authorization:** deny by default. App roles User and App Admin; Club roles Admin, Moderator,
   Member re-read from the database on every command. A Club the caller cannot see answers `404`;
   App Admin does not inherit Club rights. — Active for built routes
@@ -145,7 +164,8 @@ history and revokes every session.
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the
   visitor address Express resolves by trusting two proxy hops (the Next.js rewrite and the
-  Cloudflare entry); Better Auth limits its own routes. — Active
+  Cloudflare entry); Better Auth limits its own routes to 60 a minute (10 for social sign-in). —
+  Active
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
 - **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared
@@ -160,12 +180,38 @@ history and revokes every session.
 | ----------- | ------------------------------------------------------------------ | ------------------------------ |
 | Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker. | Synthetic seed; email disabled |
 | CI          | Lint, types, unit, integration (real PostgreSQL), UI, images.      | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data. | Synthetic; preview email       |
+| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data. | Synthetic; test-inbox email    |
 | Production  | Same shape, pinned to a SemVer tag.                                | Real users; live providers     |
+
+```mermaid
+flowchart LR
+  subgraph Dokploy["Dokploy project (one per environment), dokploy-network"]
+    Release["release<br/>(migrate, seed)"] -->|completes| Backend["backend :3001"]
+    Backend -->|healthy| Frontend["frontend :3000"]
+    PG[("Managed PostgreSQL")]
+  end
+  Internet["Cloudflare → Traefik"] --> Frontend
+  Frontend -->|"/api/* rewrite"| Backend
+  Release --> PG
+  Backend --> PG
+  Backend --> S3[("S3 / MinIO")]
+  Backend --> Resend["Resend"]
+```
 
 - **Configuration:** one zod schema in `@pickflick/config`; startup fails on invalid values.
   [\_docs/environment.md](_docs/environment.md) lists every variable. Secrets live only in the
   platform's secret store.
+
+```mermaid
+flowchart LR
+  Push["Push to main"] --> CI["ci.yml<br/>Delivery gate"]
+  CI -->|success| UAT["deploy-uat.yml<br/>job UAT E2E"]
+  UAT --> D1["Dokploy deploys the SHA"] --> H1["/health/live reports the SHA,<br/>ready is up"] --> Smoke["Playwright smoke"]
+  Manual["Run Promote to Production"] --> V["Validate: version,<br/>UAT E2E passed for the SHA"]
+  V -->|"PRODUCTION_DEPLOY_ENABLED = true<br/>and approval"| P["Tag, pin Dokploy,<br/>deploy, check health"]
+  V -->|guard off| Stop["Stop: nothing changes"]
+```
+
 - **Deployment:** after CI passes on `main`, `deploy-uat.yml` deploys that exact revision, waits
   until `/health/live` reports it with every dependency ready, and runs the Playwright UAT smoke.
   `promote-production.yml` requires a successful `UAT E2E` check for the release revision, tags it,
