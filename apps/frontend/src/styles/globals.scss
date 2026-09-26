@@ -64,7 +64,7 @@ body::after {
     border-top: 1px solid var(--gold-border);
 }
 
-@media (width >= 48rem) {
+@media (width >= 768px) {
     .scaffold-panel {
         width: min(100% - 3rem, 72rem);
     }
