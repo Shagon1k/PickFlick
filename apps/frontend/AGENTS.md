@@ -30,5 +30,9 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Import with the `@/` alias; images from `assets/brand` with `@brand/`.
+- Navigate inside the app with `next/link` (or `ButtonLink`, which wraps it). A plain `<a>` is for
+  `mailto:`, in-page `#` anchors, and `BackLink`, whose history check needs a real page load.
+- `app/error.tsx` handles failures inside pages; `app/global-error.tsx` replaces the root layout
+  when the layout itself fails, so it uses no Mantine or shell.
 - Copy `src/app/(auth)/login` as the template for a new route and
   `src/app/(marketing)/contact/_components/ContactForm` for a form.

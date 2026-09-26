@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import Brand from '@/components/shells/Brand/Brand';
@@ -22,9 +23,9 @@ export default function SetupShell({
             <header className={styles.compactHeader}>
                 <div className={styles.headerInner}>
                     <Brand href={routes.home} />
-                    <a className={styles.compactLink} href={routes.home}>
+                    <Link className={styles.compactLink} href={routes.home}>
                         Back to main
-                    </a>
+                    </Link>
                 </div>
             </header>
             <main className={styles.setupMain}>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
@@ -34,14 +35,14 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
             <aside aria-label={label} className={styles.sectionSidebar}>
                 <nav>
                     {items.map((item) => (
-                        <a
+                        <Link
                             aria-current={item.current ? 'page' : undefined}
                             href={item.href}
                             key={item.label}
                         >
                             <NavigationItemIcon label={item.label} />
                             {item.label}
-                        </a>
+                        </Link>
                     ))}
                 </nav>
             </aside>

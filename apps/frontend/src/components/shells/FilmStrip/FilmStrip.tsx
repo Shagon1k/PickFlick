@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
 import NavigationItemIcon from '@/components/shells/NavigationItemIcon/NavigationItemIcon';
@@ -16,13 +17,13 @@ function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     );
 
     return 'href' in item ? (
-        <a
+        <Link
             aria-current={item.current ? 'page' : undefined}
             className={styles.filmFrame}
             href={item.href}
         >
             {content}
-        </a>
+        </Link>
     ) : (
         <SignOutMenuItem content={content} />
     );
@@ -59,6 +60,8 @@ function SignOutMenuItem({ content }: { content: ReactNode }) {
                 setPending(false);
                 return;
             }
+            // A full load after sign-out drops every cached signed-in page.
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- see above
             window.location.assign('/login');
         } catch {
             setError('Sign out failed. Please try again.');

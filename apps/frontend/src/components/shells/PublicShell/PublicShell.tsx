@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import Brand from '@/components/shells/Brand/Brand';
@@ -28,13 +29,13 @@ export default function PublicShell({
                     <Brand href={routes.home} />
                     <nav aria-label="Public navigation" className={styles.publicNav}>
                         {publicNavigation(routes, currentPage).map((item) => (
-                            <a
+                            <Link
                                 aria-current={item.current ? 'page' : undefined}
                                 href={item.href}
                                 key={item.label}
                             >
                                 {item.label}
-                            </a>
+                            </Link>
                         ))}
                     </nav>
                     <div className={styles.publicHeaderAction}>
