@@ -1,6 +1,6 @@
-# API
+# Backend
 
-NestJS (TypeScript, ESM). Feature modules live in `src/modules/`; a global authentication guard
+NestJS (TypeScript, ESM) serving the REST API. Feature modules live in `src/modules/`; a global authentication guard
 protects every route unless it has `@Public()`.
 
 ## Rule index

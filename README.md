@@ -1,27 +1,15 @@
 # PickFlick
 
-PickFlick helps private film clubs nominate, select, watch, rate, and remember films together,
-while giving each registered user a personal film library.
+PickFlick helps private film clubs nominate, select, watch, rate, and remember films together, and
+gives each registered user a personal film library.
 
-The web app (Next.js) and API (NestJS) run with authentication, Clubs, the public site, and
-Contact. Sessions, the film library, billing, and the rest of the product are future phases; see
+Today the frontend (Next.js) and backend (NestJS) run the public site, Contact, sign-in, and Club
+creation and management. Sessions, the film library, billing, and the rest are later phases; see
 the [Roadmap](ROADMAP.md).
-
-## Start here
-
-| Need                                                       | Source                                                                                 |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Select or track actionable work                            | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3)                       |
-| Understand MVP scope, business rules, and phase sequencing | [ROADMAP.md](ROADMAP.md)                                                               |
-| Implement or review the experience                         | [DESIGN.md](DESIGN.md) and the [prototype package](_docs/design/prototypes/index.html) |
-| Understand proposed technical boundaries                   | [ARCHITECTURE.md](ARCHITECTURE.md)                                                     |
-| Navigate repository guidance                               | [\_docs/README.md](_docs/README.md)                                                    |
-| Contribute a change                                        | [CONTRIBUTING.md](CONTRIBUTING.md)                                                     |
 
 ## Run locally
 
-Use the Node version pinned in `.node-version`, then enable the package manager pinned in
-`package.json`:
+You need Docker and the Node version in `.node-version`.
 
 ```bash
 corepack enable
@@ -30,36 +18,43 @@ pnpm install --frozen-lockfile
 pnpm services:up
 pnpm migrate
 pnpm seed
-pnpm services:check
 pnpm dev
 ```
 
-The development command builds the internal packages, then starts the web app and API. Run the
-quality gates with `pnpm verify`, database integration tests with `pnpm test:integration`, and the
-Playwright UI suite with `pnpm ui:test`. The [environment reference](_docs/environment.md) covers
-configuration, database safety, health endpoints, and logs; the [UI quality guide](_docs/ui-quality.md)
-covers browser setup and baselines.
+Open `http://127.0.0.1:3000`. `pnpm services:up` starts PostgreSQL and MinIO; `pnpm dev` builds the
+shared packages and starts the frontend on port 3000 and the backend on port 3001.
 
-## Build and deploy
+Before you open a pull request, run:
 
 ```bash
-pnpm images:build
-pnpm compose:check
+pnpm verify
 ```
 
-`pnpm images:build` builds the web, API, and release images tagged with the short revision.
-`pnpm compose:check` renders the local, deploy, and preview Compose files. After CI passes on
-`main`, GitHub Actions deploys that revision to UAT; production promotion is a guarded manual
-workflow. See the [UAT](_docs/uat-operations.md) and [production](_docs/production-operations.md)
-guides.
+It runs lint, formatting, type-checks, unit tests, and builds. `pnpm test:integration` checks the
+database against local services, and `pnpm ui:test` runs the Playwright suite. `AGENTS.md` lists
+every command.
 
-## Delivery workflow
+## Repository
 
-1. Select or create a focused issue in Project 3.
-2. Use `Deferred` only with an observable activation trigger; ready work belongs in `Backlog`.
-3. Branch from `main` using `PF-TYPE-SHORT-DESCRIPTOR`.
-4. Open a focused PR that links the issue and reports acceptance evidence.
-5. Squash merge after review.
+```text
+apps/frontend      Next.js app and UI kit
+apps/backend       NestJS API
+packages/          contracts (zod schemas), database (Prisma), config
+tests/             Playwright suites
+_docs/             guides, decisions, design prototypes
+```
 
-Project 3 is the canonical tracker for actionable active and deferred delivery work. The Roadmap
-remains the product and phase contract; it is not the task inbox.
+## Where to look
+
+| Need                                  | Document                                                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Pick up or track work                 | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3)                                                            |
+| Scope, business rules, phases         | [ROADMAP.md](ROADMAP.md)                                                                                                    |
+| Screens, components, design QA        | [DESIGN.md](DESIGN.md) and the [prototypes](_docs/design/prototypes/index.html)                                             |
+| System structure and delivery         | [ARCHITECTURE.md](ARCHITECTURE.md)                                                                                          |
+| Configuration, CI, images, deployment | [Environment reference](_docs/environment.md), [UAT](_docs/uat-operations.md), [production](_docs/production-operations.md) |
+| Code style and contribution workflow  | [AGENTS.md](AGENTS.md) and [CONTRIBUTING.md](CONTRIBUTING.md)                                                               |
+| Everything else                       | [Documentation map](_docs/README.md)                                                                                        |
+
+After CI passes on `main`, GitHub Actions deploys that revision to `https://uat.pick-flick.app`.
+Production promotion is a manual workflow that stays disabled until the owner enables it.
