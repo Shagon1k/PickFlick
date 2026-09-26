@@ -30,30 +30,3 @@ export default function FieldMessage(props: IFieldMessageProps) {
         </span>
     );
 }
-
-/**
- * Repeats errors and successes into live regions. They sit outside the control's description so
- * a screen reader announces the change without reading the message twice.
- */
-export function FieldAnnouncements({ error, success }: { error?: ReactNode; success?: string }) {
-    return (
-        <>
-            <span
-                aria-atomic="true"
-                aria-live="assertive"
-                className="visually-hidden"
-                data-field-live="error"
-            >
-                {error}
-            </span>
-            <span
-                aria-atomic="true"
-                aria-live="polite"
-                className="visually-hidden"
-                data-field-live="success"
-            >
-                {success}
-            </span>
-        </>
-    );
-}

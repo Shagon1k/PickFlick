@@ -5,7 +5,7 @@ import { useId, useState } from 'react';
 import styles from '@/app/(marketing)/marketing.module.scss';
 import { pricingFaqs } from '@/app/(marketing)/marketing-content';
 
-export function PricingFaq() {
+export default function PricingFaq() {
     const instanceId = useId();
     const [openIndex, setOpenIndex] = useState(0);
 

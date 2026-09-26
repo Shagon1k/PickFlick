@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 
 import Brand from '@/components/shells/Brand/Brand';
 import MobileProductNavigation from '@/components/shells/MobileProductNavigation/MobileProductNavigation';
-import { ProductOverlayProvider } from '@/components/shells/product-overlay';
 import ProductHeaderActions from '@/components/shells/ProductHeaderActions/ProductHeaderActions';
+import ProductOverlayProvider from '@/components/shells/ProductOverlayProvider/ProductOverlayProvider';
 import ProductSearch from '@/components/shells/ProductSearch/ProductSearch';
 import {
     accountNavigation,

@@ -4,7 +4,7 @@ import ButtonLink from '@/components/ui/Button/ButtonLink';
 import Icon from '@/components/ui/Icon/Icon';
 import { createPublicMetadata } from '@/lib/public-metadata';
 
-import { LandingRevealRoot } from './_components/LandingReveal/LandingReveal';
+import LandingReveal from './_components/LandingReveal/LandingReveal';
 import styles from './marketing.module.scss';
 import { landingFeatures, landingSteps } from './marketing-content';
 
@@ -21,7 +21,7 @@ function SprocketDivider() {
 export default function HomePage() {
     return (
         <PublicShell>
-            <LandingRevealRoot>
+            <LandingReveal>
                 <section
                     aria-labelledby="landing-title"
                     className={`${styles.hero} ${styles.reveal}`}
@@ -154,7 +154,7 @@ export default function HomePage() {
                         </div>
                     </div>
                 </section>
-            </LandingRevealRoot>
+            </LandingReveal>
         </PublicShell>
     );
 }

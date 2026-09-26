@@ -10,6 +10,11 @@ import tseslint from 'typescript-eslint';
 
 const reactConfig = reactPlugin.configs['recommended-typescript'];
 
+const noReadonlyWrapper = {
+    selector: "TSTypeReference[typeName.name='Readonly']",
+    message: 'Write plain types; props and data are not wrapped in Readonly<>.',
+};
+
 export default [
     {
         ignores: [
@@ -51,13 +56,7 @@ export default [
                 { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
                 { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
             ],
-            'no-restricted-syntax': [
-                'error',
-                {
-                    selector: "TSTypeReference[typeName.name='Readonly']",
-                    message: 'Write plain types; props and data are not wrapped in Readonly<>.',
-                },
-            ],
+            'no-restricted-syntax': ['error', noReadonlyWrapper],
             'check-file/filename-naming-convention': [
                 'error',
                 { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
@@ -68,6 +67,16 @@ export default [
     {
         files: ['apps/frontend/**/*.{ts,tsx}'],
         rules: {
+            // Restating the rule replaces the shared entry, so the Readonly ban is listed again.
+            'no-restricted-syntax': [
+                'error',
+                noReadonlyWrapper,
+                {
+                    selector: 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^[A-Z]/]',
+                    message:
+                        'Export a component as the default export of its own file (export default function Name).',
+                },
+            ],
             'no-restricted-imports': [
                 'error',
                 {

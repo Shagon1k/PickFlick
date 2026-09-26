@@ -8,7 +8,7 @@ import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import Icon from '@/components/ui/Icon/Icon';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
-import { LoginActions } from './_components/LoginActions/LoginActions';
+import LoginActions from './_components/LoginActions/LoginActions';
 import { firstSearchValue } from './login.utils';
 import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
 import styles from './page.module.scss';

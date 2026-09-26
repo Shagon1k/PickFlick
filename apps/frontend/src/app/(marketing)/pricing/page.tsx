@@ -11,7 +11,7 @@ import {
     type IPlanFeature,
     proPlanFeatures,
 } from '../marketing-content';
-import { PricingFaq } from './_components/PricingFaq/PricingFaq';
+import PricingFaq from './_components/PricingFaq/PricingFaq';
 
 export const metadata = createPublicMetadata({
     title: 'Pricing — PickFlick',

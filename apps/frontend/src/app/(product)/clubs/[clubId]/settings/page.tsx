@@ -10,7 +10,7 @@ import { clubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 
-import { ClubSettings } from './_components/ClubSettings/ClubSettings';
+import ClubSettings from './_components/ClubSettings/ClubSettings';
 import styles from './page.module.scss';
 
 export const metadata: Metadata = {
