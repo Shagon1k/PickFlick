@@ -216,7 +216,10 @@ test('dense regions scroll locally without widening the page', async ({ page }) 
         expect(widths.scroll).toBeGreaterThan(widths.client);
         await region.focus();
         await page.keyboard.press('ArrowRight');
-        expect(await region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+        // The browser scrolls a focused region natively and smoothly, so wait for it to move.
+        await expect
+            .poll(() => region.evaluate((element) => element.scrollLeft))
+            .toBeGreaterThan(0);
     }
 });
 

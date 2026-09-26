@@ -120,6 +120,7 @@ export default function ScaleControl({
     return (
         <fieldset className={styles.scale} disabled={disabled}>
             <legend>{label}</legend>
+            {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
             <div
                 aria-describedby={feedbackId}
                 aria-invalid={constraintInvalid || undefined}
