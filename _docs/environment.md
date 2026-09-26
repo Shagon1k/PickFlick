@@ -86,13 +86,18 @@ redacted. Log operational metadata, never message bodies or personal data.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Lint, type-check, test** — ESLint, Prettier, `tsc`, Vitest, workspace build, artifact drift.
+- **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Prettier, `tsc`, Vitest,
+  workspace build, artifact drift.
 - **Integration** — `pnpm compose:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm e2e:smoke` against the built frontend and backend.
 - **UI** — `pnpm ui:test`; failures upload screenshots, diffs, traces, and the HTML report.
 - **Images** — `pnpm images:build`.
 
 A terminal `Delivery gate` job requires all of them; UAT deployment waits for it.
+
+[Dependabot](../.github/dependabot.yml) opens weekly grouped updates for npm packages and GitHub
+Actions. When Prisma pins a vulnerable transitive package, `overrides` in `pnpm-workspace.yaml`
+forces the fixed version; remove the entry once Prisma catches up.
 
 ## Images and Compose
 
