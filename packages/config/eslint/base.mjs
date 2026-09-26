@@ -17,6 +17,10 @@ const noReadonlyWrapper = {
 
 export default [
     {
+        // A disable directive that no longer suppresses anything fails the lint.
+        linterOptions: { reportUnusedDisableDirectives: 'error' },
+    },
+    {
         ignores: [
             '**/.next/**',
             '**/coverage/**',

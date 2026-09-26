@@ -1,7 +1,13 @@
 /** @type {import('stylelint').Config} */
 export default {
     extends: ['stylelint-config-standard-scss'],
+    // A disable must name its reason and still be needed.
+    reportDescriptionlessDisables: true,
+    reportInvalidScopeDisables: true,
+    reportNeedlessDisables: true,
     rules: {
+        'declaration-no-important': true,
+        'selector-max-id': 0,
         // Class names follow .agent-docs/rules/frontend-css.md: `.componentName`,
         // `.componentName__element-name`, and `.m-modifier`, which may repeat a kebab-case prop value.
         'selector-class-pattern': [
@@ -32,9 +38,10 @@ export default {
             rules: { 'function-disallowed-list': null },
         },
         {
-            // The global utility keeps its conventional name.
+            // The global utility keeps its conventional name, and reduced motion must override
+            // every component transition.
             files: ['apps/frontend/src/styles/globals.scss'],
-            rules: { 'selector-class-pattern': null },
+            rules: { 'selector-class-pattern': null, 'declaration-no-important': null },
         },
     ],
 };
