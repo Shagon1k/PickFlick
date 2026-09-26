@@ -1,0 +1,19 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "workspaces": {
+        ".": {
+            // The Playwright plugin would execute playwright.uat.config.ts, which refuses to load
+            // without PLAYWRIGHT_BASE_URL, so the suites are listed as plain entry files instead.
+            "entry": ["playwright.*.config.ts", "tests/**/*.spec.ts", "tests/ui-preview/*.mjs"],
+            "playwright": false,
+        },
+        "packages/config": {
+            // The shared Next.js tsconfig names the `next` plugin; the frontend that extends it installs next.
+            "ignoreUnresolved": ["next"],
+        },
+        "packages/database": {
+            // Only the generated client imports it, and knip skips the git-ignored generated folder.
+            "ignoreDependencies": ["@prisma/client"],
+        },
+    },
+}

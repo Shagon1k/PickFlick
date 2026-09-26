@@ -64,10 +64,11 @@ Run from the repository root with the Node and pnpm versions pinned in `.node-ve
 | Lint (enforces the house style) / autofix                     | `pnpm lint` / `pnpm lint:fix`                |
 | Format / check formatting                                     | `pnpm format` / `pnpm format:check`          |
 | Type-check                                                    | `pnpm typecheck`                             |
+| Find unused files, exports, and dependencies                  | `pnpm knip`                                  |
 | Unit tests                                                    | `pnpm test`                                  |
 | Database integration tests against local services             | `pnpm test:integration`                      |
 | Build everything                                              | `pnpm build`                                 |
-| All quality gates (lint, format, types, tests, build)         | `pnpm verify`                                |
+| All quality gates (lint, knip, format, types, tests, build)   | `pnpm verify`                                |
 | UI accessibility, interaction, viewport, and screenshot tests | `pnpm ui:test`                               |
 | Update reviewed screenshot baselines                          | `pnpm ui:test:update`                        |
 | Smoke the built frontend and backend                          | `pnpm e2e:smoke`                             |

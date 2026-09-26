@@ -5,7 +5,7 @@ import { type ReactNode, useState } from 'react';
 
 import styles from './Tabs.module.scss';
 
-export interface ITabItem {
+interface ITabItem {
     id: string;
     label: string;
     content: ReactNode;

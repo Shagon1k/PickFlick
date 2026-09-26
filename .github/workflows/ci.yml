@@ -64,6 +64,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Reject unused files, exports, and dependencies
+        run: pnpm knip
+
       - name: Check formatting
         run: pnpm format:check
 

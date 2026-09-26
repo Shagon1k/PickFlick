@@ -14,7 +14,7 @@ interface IFilmStripMenuItemBase {
     danger?: boolean;
 }
 
-export type TFilmStripMenuItem = IFilmStripMenuItemBase &
+type TFilmStripMenuItem = IFilmStripMenuItemBase &
     ({ href: string; onSelect?: never } | { href?: never; onSelect: () => void });
 
 export interface IFilmStripMenuProps {

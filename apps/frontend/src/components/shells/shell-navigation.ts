@@ -9,7 +9,7 @@ export interface IShellNavigationItem {
     readonly current?: boolean;
 }
 
-export interface IShellActionItem {
+interface IShellActionItem {
     readonly action: 'sign-out';
     readonly label: string;
     readonly current?: never;
@@ -17,7 +17,7 @@ export interface IShellActionItem {
 
 export type TShellMenuItem = IShellActionItem | IShellNavigationItem;
 
-export interface IMobileNavigationMenu {
+interface IMobileNavigationMenu {
     readonly icon: TIconName;
     readonly id: string;
     readonly items: readonly TShellMenuItem[];
@@ -28,7 +28,7 @@ export interface IMobileNavigationMenu {
     readonly current?: boolean;
 }
 
-export interface IMobileNavigationAlerts {
+interface IMobileNavigationAlerts {
     readonly id: 'alerts';
     readonly label: string;
     readonly overlay: 'notifications';
