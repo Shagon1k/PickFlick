@@ -11,7 +11,8 @@
     font: var(--fs-card-title)/var(--lh-title) var(--font-display);
 }
 
-.placeholderPanel p {
+/* :where keeps this default below any class a paragraph carries, such as .regionIntro. */
+:where(.placeholderPanel) p {
     max-width: 62ch;
     margin: 0;
     color: var(--fg-secondary);

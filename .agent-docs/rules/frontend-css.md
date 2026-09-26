@@ -20,6 +20,8 @@
   but they share `shells.module.scss` and `product-navigation.module.scss`, because their
   selectors cross components (`.productHeader .brand`, `.accountPopover .filmStrip`).
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
+- No `!important` (reduced motion in `globals.scss` is the exception) and no id selectors; lower a
+  default's specificity with `:where()` instead. A `stylelint-disable` needs a reason after `--`.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.
   Stylelint rejects hex colours and `rgb()`/`hsl()` outside `tokens.scss`; the internal galleries
   are exempt from the `rgb()` ban.
