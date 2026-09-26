@@ -109,7 +109,8 @@ well-known libraries. `pnpm lint` enforces what it can; the rule files hold the 
   and Mantine underneath. Only the UI kit imports `@mantine/*` (except `@mantine/form`).
 - Routes keep their styles and `_components/` next to `page.tsx`; import with `@/`.
 - Comment why, never what.
-- Templates to copy: backend module `apps/backend/src/modules/contact`, UI component
+- [Add a feature end to end](_docs/adding-a-feature.md) walks through every layer. Templates to
+  copy: backend module `apps/backend/src/modules/contact`, UI component
   `apps/frontend/src/components/ui/Button`, route `apps/frontend/src/app/(auth)/login`, form
   `apps/frontend/src/app/(marketing)/contact/_components/ContactForm`.
 
@@ -197,7 +198,7 @@ These need database or server enforcement and focused tests:
 - Never reset, revert, overwrite, or delete user work unless asked and the exact targets are
   verified.
 
-## Documentation
+## Project Documentation
 
 Documentation is part of the change. Update every affected document in the same task.
 

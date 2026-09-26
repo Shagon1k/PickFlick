@@ -1,44 +1,8 @@
-# Environment and runtime operations
+# Environment reference
 
-How PickFlick is configured and run locally, in CI, in previews, and in deployed environments.
-Live UAT and production procedures live in the [UAT](uat-operations.md) and
-[production](production-operations.md) guides.
-
-## Start locally
-
-Use the Node and pnpm versions pinned in `.node-version` and `package.json`. The checked-in values
-are synthetic.
-
-```bash
-cp .env.example .env
-pnpm install --frozen-lockfile
-pnpm services:up
-pnpm migrate
-pnpm seed
-pnpm dev
-```
-
-- `pnpm services:up` starts PostgreSQL and MinIO from `compose.local.yaml` and creates the bucket.
-  Host ports avoid the defaults: PostgreSQL `15432`, MinIO `19000` (API) and `19001` (console);
-  every port binds to `127.0.0.1`.
-- `pnpm services:check` confirms PostgreSQL answers and MinIO is live.
-- `pnpm services:down` stops the containers and keeps their volumes.
-- Open `http://127.0.0.1:3000`, which matches `AUTH_BASE_URL` and the local Google callback.
-- The backend dev command rebuilds with `tsc` and restarts under `nodemon`; `tsx` cannot run the
-  Nest app because it does not emit decorator metadata.
-
-Processes read `.env` from the repository root without overriding variables already set. Set
-`PICKFLICK_ENV_FILE` to use a different file.
-
-## Database commands
-
-- `pnpm migrate` runs `prisma migrate deploy` over the nine reviewed migrations; never `db push`.
-- `pnpm seed` is idempotent, uses stable IDs and `example.invalid` addresses, and runs only when
-  `APP_ENV` is `local` (database `pickflick_local` on a loopback host) or `test`
-  (`pickflick_test`).
-- `pnpm db:reset` is destructive and applies the same guards before `prisma migrate reset`.
-- `pnpm test:integration` runs the `*.int.spec.ts` suites (database constraints, auth, Clubs)
-  against the local services.
+Reference for PickFlick's configuration, runtime contracts, CI, images, and Compose files. To run
+the app, see [Develop locally](local-development.md); for deployed environments, see the
+[UAT](uat-operations.md) and [production](production-operations.md) guides.
 
 ## Runtime variables
 
