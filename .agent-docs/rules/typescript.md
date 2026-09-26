@@ -4,8 +4,8 @@ Write the obvious version. If a reader needs a comment to follow the control flo
 code instead.
 
 `pnpm lint` enforces the `I`/`T` prefixes, the ban on `Readonly<>`, sorted imports, `*.spec.ts`
-test names, default-exported components, component folder names, and the frontend import
-boundaries below. The pre-commit hook runs it on staged files.
+test names, default-exported components, component folder names, a 300-line file limit (500 for
+specs), and the frontend import boundaries below. The pre-commit hook runs it on staged files.
 
 ## General
 
