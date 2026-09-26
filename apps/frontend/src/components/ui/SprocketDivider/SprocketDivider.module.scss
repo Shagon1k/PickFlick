@@ -1,4 +1,4 @@
-.sprocket-divider {
+.sprocketDivider {
     display: flex;
     width: min(100%, 240px);
     align-items: center;
@@ -6,15 +6,15 @@
     margin: var(--gap-xl) auto 0;
 }
 
-.sprocket-divider::before,
-.sprocket-divider::after {
+.sprocketDivider::before,
+.sprocketDivider::after {
     height: 1px;
     flex: 1;
     background: repeating-linear-gradient(90deg, var(--border) 0 3px, transparent 3px 10px);
     content: '';
 }
 
-.sprocket-divider i {
+.sprocketDivider i {
     width: 4px;
     height: 4px;
     flex-shrink: 0;

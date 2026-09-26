@@ -1,4 +1,4 @@
-.status-banner {
+.statusBanner {
     display: flex;
     align-items: flex-start;
     gap: var(--gap-sm);
@@ -11,22 +11,22 @@
     line-height: var(--lh-body);
 }
 
-.status-banner[data-tone='success'] {
+.statusBanner[data-tone='success'] {
     border-color: var(--success-border);
     background: var(--success-soft);
 }
 
-.status-banner[data-tone='warning'] {
+.statusBanner[data-tone='warning'] {
     border-color: var(--warn-border);
     background: var(--warn-soft);
 }
 
-.status-banner[data-tone='danger'] {
+.statusBanner[data-tone='danger'] {
     border-color: var(--danger-border);
     background: var(--danger-soft);
 }
 
-.status-banner__icon {
+.statusBanner__icon {
     display: grid;
     width: 20px;
     height: 20px;
@@ -38,7 +38,7 @@
     font: 10px/1 var(--font-mono);
 }
 
-.status-banner {
+.statusBanner {
     border-radius: 0;
     font-family: var(--font-mono);
     font-size: var(--fs-caption);

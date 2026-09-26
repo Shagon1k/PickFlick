@@ -57,7 +57,7 @@
     text-align: center;
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .table th,
     .table td {
         padding-inline: 12px;

@@ -61,7 +61,7 @@
     padding: var(--gap-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: rgba(22, 22, 22, 0.44);
+    background: rgb(22 22 22 / 44%);
 }
 
 .card h3,
@@ -83,13 +83,13 @@
     margin-top: auto;
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
     .hero {
         grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
     }
@@ -99,7 +99,7 @@
     }
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .page {
         width: calc(100% - 32px);
     }

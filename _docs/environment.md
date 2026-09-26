@@ -86,7 +86,7 @@ redacted. Log operational metadata, never message bodies or personal data.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, knip, Prettier, `tsc`,
+- **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm compose:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm e2e:smoke` against the built frontend and backend.

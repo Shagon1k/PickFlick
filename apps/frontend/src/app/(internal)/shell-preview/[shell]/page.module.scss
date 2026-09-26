@@ -55,7 +55,7 @@
     margin-bottom: var(--gap-md) !important;
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
     .productGrid,
     .sessionGrid,
     .adminGrid {
@@ -67,7 +67,7 @@
     }
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .publicHero,
     .publicSections {
         width: calc(100% - 32px);

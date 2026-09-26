@@ -72,7 +72,7 @@
     max-height: var(--mascot-optical-height);
     filter: grayscale(1) contrast(1.05);
     opacity: 0.94;
-    mask-image: linear-gradient(to bottom, #000 0%, #000 86%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
 }
 
 .body {
@@ -127,7 +127,7 @@
     padding: clamp(var(--gap-lg), 5vw, var(--gap-xl));
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--gold-soft), rgba(22, 22, 22, 0.7) 52%);
+    background: linear-gradient(135deg, var(--gold-soft), var(--surface-glass) 52%);
 }
 
 .readyCard h1 {
@@ -204,7 +204,7 @@
 .backLink svg {
     width: 18px;
     height: 18px;
-    stroke: currentcolor;
+    stroke: currentColor;
     stroke-width: 1.8;
 }
 
@@ -278,76 +278,91 @@
     text-transform: uppercase;
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
     .noClubsStage {
         grid-template-columns: 1fr;
         max-width: 680px;
         gap: 24px;
         margin-inline: auto;
     }
+
     .noClubsStage::before {
         top: 30%;
         left: 50%;
     }
+
     .illustration {
         width: min(430px, 72vw);
         height: 300px;
         margin-inline: auto;
     }
+
     .body {
         text-align: center;
     }
+
     .body h1,
     .copy {
         margin-inline: auto;
     }
+
     .actions {
         justify-content: center;
     }
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .noClubsMain,
     .readyMain {
         width: calc(100% - 32px);
         min-height: calc(100svh - 60px - 64px);
         padding-block: 34px 48px;
     }
+
     .illustration {
         width: min(390px, 88vw);
         height: 240px;
     }
+
     .body h1 {
         font-size: clamp(36px, 11vw, 50px);
     }
+
     .copy {
         margin-block: 14px 26px;
     }
+
     .actions {
         width: 100%;
     }
+
     .actions > * {
         width: min(100%, 320px);
     }
+
     .facts {
         grid-template-columns: 1fr;
     }
+
     .setupMain {
         padding: 72px 16px 40px;
     }
+
     .backLink {
         top: 12px;
         left: 8px;
     }
+
     .mascot {
         width: 140px;
     }
+
     .createCard {
         padding: 32px 24px;
     }
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
     .noClubsMain,
     .readyMain {
         min-height: calc(100svh - 69px);

@@ -34,6 +34,13 @@ if [ -n "$FORMAT_FILES" ]; then
   echo "$FORMAT_FILES" | tr '\n' '\0' | xargs -0 git add
 fi
 
+# Lint staged stylesheets with Stylelint (auto-fix what it can; block the commit if errors remain)
+STAGED_SCSS=$(echo "$STAGED_FILES" | grep -E '\.scss$' || true)
+if [ -n "$STAGED_SCSS" ]; then
+  echo "$STAGED_SCSS" | tr '\n' '\0' | xargs -0 pnpm exec stylelint --fix || exit 1
+  echo "$STAGED_SCSS" | tr '\n' '\0' | xargs -0 git add
+fi
+
 # Lint TS/TSX/JS files with ESLint (auto-fix what we can; block commit if errors remain)
 STAGED_TS=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|mjs)$' || true)
 if [ -n "$STAGED_TS" ]; then

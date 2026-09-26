@@ -64,7 +64,7 @@ body::after {
     line-height: 1.55;
 }
 
-@media (min-width: 48rem) {
+@media (width >= 48rem) {
     .scaffold-panel {
         width: min(100% - 3rem, 72rem);
     }

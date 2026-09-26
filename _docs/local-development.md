@@ -84,7 +84,7 @@ serves it against a mock backend, so it needs no database; install its browser o
 `pnpm exec playwright install chromium`. See [UI quality checks](ui-quality.md) for baselines.
 
 The pre-commit hook scans staged files with gitleaks, formats them with Prettier, and fixes what
-ESLint can. Commit messages follow Conventional Commits.
+Stylelint and ESLint can. Commit messages follow Conventional Commits.
 
 ## Common problems
 
