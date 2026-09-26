@@ -99,7 +99,7 @@
     height: auto;
     max-height: var(--mascot-optical-height);
     filter: grayscale(1) contrast(1.04);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 82%, transparent 100%);
 }
 
 .body {

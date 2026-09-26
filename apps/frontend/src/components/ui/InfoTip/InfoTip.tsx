@@ -45,7 +45,7 @@ export default function InfoTip({ children, label }: IInfoTipProps) {
 
     return (
         <span
-            className={styles['info-tip']}
+            className={styles.infoTip}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
             ref={rootRef}
@@ -54,16 +54,16 @@ export default function InfoTip({ children, label }: IInfoTipProps) {
                 aria-describedby={tipId}
                 aria-expanded={open}
                 aria-label={label}
-                className={styles['info-tip__trigger']}
+                className={styles.infoTip__trigger}
                 onBlur={() => setOpen(false)}
                 onClick={() => setOpen(true)}
                 onFocus={() => setOpen(true)}
                 type="button"
             >
-                <Icon className={styles['info-tip__icon']} name="question" />
+                <Icon className={styles.infoTip__icon} name="question" />
             </button>
             <span
-                className={styles['info-tip__bubble']}
+                className={styles.infoTip__bubble}
                 data-open={open || undefined}
                 id={tipId}
                 role="tooltip"

@@ -21,14 +21,16 @@
   selectors cross components (`.productHeader .brand`, `.accountPopover .filmStrip`).
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.
+  Stylelint rejects hex colours and `rgb()`/`hsl()` outside `tokens.scss`; the internal galleries
+  are exempt from the `rgb()` ban.
 
 ## Class names
 
-| Class type       | Pattern                        | Example             |
-| ---------------- | ------------------------------ | ------------------- |
-| Base             | `.componentName`               | `.button`           |
-| Modifier         | `.m-modifierName`              | `.m-primary`        |
-| Internal element | `.componentName__element-name` | `.card__action-btn` |
+| Class type       | Pattern                          | Example               |
+| ---------------- | -------------------------------- | --------------------- |
+| Base             | `.componentName`                 | `.button`             |
+| Modifier         | `.m-modifier`, as the prop value | `.m-secondary-danger` |
+| Internal element | `.componentName__element-name`   | `.card__action-btn`   |
 
 Apply modifiers with `clsx(styles.button, styles[`m-${variant}`])`.
 

@@ -16,10 +16,10 @@
     background:
         radial-gradient(
             circle at 50% 8%,
-            color-mix(in srgb, var(--gold-soft) 32%, transparent),
+            color-mix(in sRGB, var(--gold-soft) 32%, transparent),
             transparent 34rem
         ),
-        linear-gradient(180deg, var(--bg), #090909);
+        linear-gradient(180deg, var(--bg), var(--bg-deep));
     content: '';
     pointer-events: none;
 }
@@ -52,7 +52,7 @@
 .backLink svg {
     width: 18px;
     height: 18px;
-    stroke: currentcolor;
+    stroke: currentColor;
     stroke-width: 1.8;
 }
 
@@ -182,7 +182,7 @@
     text-transform: uppercase;
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
     .page {
         padding-inline: 16px;
     }

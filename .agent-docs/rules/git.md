@@ -37,7 +37,7 @@ TYPE(SCOPE): IMPERATIVE SUBJECT
 - Structural refactors require approval and a separate behavior-neutral commit.
 - Wrap body and footer lines at 100 characters; commitlint rejects longer lines.
 - Never bypass a repository hook. Husky's `pre-commit` scans staged changes with gitleaks, formats
-  them with Prettier, and applies ESLint fixes; `commit-msg` runs commitlint.
+  them with Prettier, and applies Stylelint and ESLint fixes; `commit-msg` runs commitlint.
 - Never commit without explicit developer approval.
 
 ## Pull requests

@@ -1,9 +1,9 @@
-.loading-state {
+.loadingState {
     display: grid;
     gap: var(--gap-sm);
 }
 
-.loading-state__line {
+.loadingState__line {
     display: block;
     width: 100%;
     height: var(--hit);
@@ -18,12 +18,12 @@
     animation: skeleton 1.4s ease-in-out infinite;
 }
 
-.loading-state__line:nth-of-type(3) {
+.loadingState__line:nth-of-type(3) {
     width: 72%;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .loading-state__line {
+    .loadingState__line {
         animation-duration: 0.01ms;
         animation-iteration-count: 1;
     }
@@ -33,6 +33,7 @@
     from {
         background-position: 200% 0;
     }
+
     to {
         background-position: -200% 0;
     }

@@ -138,7 +138,7 @@
     animation: spin 700ms linear infinite;
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .button.m-small {
         min-height: var(--hit);
     }

@@ -154,7 +154,7 @@
     color: var(--fg);
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
     .hero {
         grid-template-columns: minmax(0, 1fr) 240px;
     }
@@ -165,7 +165,7 @@
     }
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
     .page {
         padding-inline: 16px;
         padding-top: 56px;

@@ -20,8 +20,8 @@
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
+        "lint": "eslint . && stylelint \"apps/frontend/src/**/*.scss\"",
+        "lint:fix": "eslint . --fix && stylelint \"apps/frontend/src/**/*.scss\" --fix",
         "migrate": "pnpm --filter @pickflick/database migrate",
         "release": "node scripts/run-release.mjs",
         "prepare": "husky",
@@ -52,6 +52,8 @@
         "husky": "9.1.7",
         "knip": "6.38.0",
         "prettier": "3.8.3",
+        "stylelint": "17.15.0",
+        "stylelint-config-standard-scss": "17.0.0",
         "vite": "8.2.2",
         "vitest": "5.0.0"
     }

@@ -1,5 +1,6 @@
 .switch {
     display: flex;
+
     /* Mantine renders the track first; the label reads first. */
     flex-direction: row-reverse;
     align-items: center;

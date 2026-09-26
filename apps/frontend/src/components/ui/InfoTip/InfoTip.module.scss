@@ -1,11 +1,11 @@
 /* InfoTip: a 21px "?" mark with a 44px target and a small bubble above it. */
-.info-tip {
+.infoTip {
     position: relative;
     display: inline-flex;
     vertical-align: middle;
 }
 
-.info-tip__trigger {
+.infoTip__trigger {
     position: relative;
     display: inline-grid;
     width: 21px;
@@ -22,30 +22,30 @@
         border-color var(--motion-local) var(--ease-standard);
 }
 
-.info-tip__trigger::before {
+.infoTip__trigger::before {
     position: absolute;
     inset: -12px;
     content: '';
 }
 
-.info-tip__icon {
+.infoTip__icon {
     display: block;
     width: 15px;
     height: 15px;
-    stroke: currentcolor;
+    stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2.2;
 }
 
-.info-tip__trigger:hover,
-.info-tip__trigger:focus-visible,
-.info-tip__trigger[aria-expanded='true'] {
+.infoTip__trigger:hover,
+.infoTip__trigger:focus-visible,
+.infoTip__trigger[aria-expanded='true'] {
     border-color: var(--gold-border);
     color: var(--ivory);
 }
 
-.info-tip__bubble {
+.infoTip__bubble {
     position: absolute;
     z-index: 30;
     bottom: calc(100% + 10px);
@@ -70,7 +70,7 @@
         visibility 0s linear var(--motion-local);
 }
 
-.info-tip__bubble[data-open] {
+.infoTip__bubble[data-open] {
     opacity: 1;
     visibility: visible;
     transform: translate(-50%, 0);
@@ -81,8 +81,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .info-tip__trigger,
-    .info-tip__bubble {
+    .infoTip__trigger,
+    .infoTip__bubble {
         transition-duration: 0.01ms;
     }
 }

@@ -16,8 +16,8 @@ export default function StatusBanner({
     tone = 'neutral',
 }: IStatusBannerProps) {
     return (
-        <section aria-label={label} className={styles['status-banner']} data-tone={tone}>
-            <span aria-hidden="true" className={styles['status-banner__icon']}>
+        <section aria-label={label} className={styles.statusBanner} data-tone={tone}>
+            <span aria-hidden="true" className={styles.statusBanner__icon}>
                 i
             </span>
             <span>{children}</span>
