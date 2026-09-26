@@ -33,7 +33,7 @@
         "start": "pnpm --parallel --stream --filter @pickflick/frontend --filter @pickflick/backend start",
         "test": "vitest run",
         "test:integration": "vitest run --config vitest.integration.config.ts",
-        "typecheck": "pnpm -r --if-present typecheck",
+        "typecheck": "pnpm -r --if-present typecheck && tsc -p tsconfig.json",
         "ui:test": "playwright test --config playwright.ui.config.ts",
         "ui:test:update": "playwright test --config playwright.ui.config.ts --update-snapshots",
         "ui:visual": "playwright test --config playwright.ui.config.ts tests/ui-preview/viewport-visual.spec.ts",
@@ -56,6 +56,7 @@
         "stylelint-config-recess-order": "7.8.0",
         "stylelint-config-standard-scss": "17.0.0",
         "stylelint-order": "8.1.1",
+        "typescript": "catalog:",
         "vite": "8.2.2",
         "vitest": "5.0.0"
     }

@@ -5,6 +5,10 @@ import { pathToFileURL } from 'node:url';
 const revisionPattern = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
 const symbolicHeadPattern = /^ref: (refs\/heads\/[A-Za-z0-9._/-]+)$/;
 
+/**
+ * @param {string | undefined} configuredRevision
+ * @param {(path: string, encoding: 'utf8') => string} [readFile]
+ */
 export function resolveImageRevision(configuredRevision, readFile = readFileSync) {
     let revision = configuredRevision?.trim();
     if (!revision) {

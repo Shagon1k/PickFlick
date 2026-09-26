@@ -48,8 +48,7 @@ function statusOf(exception: unknown): number {
 /** Passes through only a stable upper-case reason code, never free-form exception text. */
 function reasonOf(exception: unknown): string | undefined {
     const body = exception instanceof HttpException ? exception.getResponse() : undefined;
-    const reason =
-        typeof body === 'object' && body !== null && 'reason' in body ? body.reason : undefined;
+    const reason = typeof body === 'object' && 'reason' in body ? body.reason : undefined;
     return typeof reason === 'string' && /^[A-Z][A-Z_]{0,63}$/u.test(reason) ? reason : undefined;
 }
 

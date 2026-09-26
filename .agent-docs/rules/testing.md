@@ -33,9 +33,16 @@
 - Mock what you own. Wrap a third-party client (Resend, S3, Better Auth) behind a module or
   injection token and mock that.
 - Type mocks with `vi.fn<(input: IInput) => Promise<IResult>>()` instead of unused parameters.
+- `@vitest/eslint-plugin` enforces focused-test bans, valid titles, and at least one assertion per
+  test; a helper named `expect*` (such as `expectConstraint`) counts as one.
 
 ## Playwright
 
 - Prefer role and label locators. Assert with web-first assertions (`toBeVisible`, `toHaveURL`).
+- After `page.goto(…, { waitUntil: 'load' })`, call `settle(page)` from `settle.ts` before measuring
+  layout, contrast, or pixels: it waits for fonts, images, and finite animations. Never wait for
+  `networkidle`; link prefetching keeps the network busy.
+- `eslint-plugin-playwright` enforces awaited actions and assertions, no focused or conditional
+  tests, and web-first assertions.
 - Screenshot baselines are taken at two widths: mobile 390 and desktop 1440.
 - Update baselines only after a reviewed visual change: `pnpm ui:test:update`.

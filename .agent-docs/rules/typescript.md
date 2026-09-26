@@ -10,9 +10,16 @@ code instead.
   imports); `verbatimModuleSyntax` makes the compiler require them too;
 - `*.spec.ts` test names;
 - default-exported components and `components/<group>/<Name>/` folder names;
-- JSX accessibility (`jsx-a11y-x` strict);
+- type-aware checks (`recommended-type-checked`): no unawaited promises, no async callback where
+  a sync one is expected, and exhaustive `switch` statements;
+- JSX accessibility (`jsx-a11y-x` strict) and the Next.js rules (`core-web-vitals`), including
+  `next/link` for internal navigation;
+- the Vitest and Playwright plugin rules for tests (see [testing.md](testing.md));
 - a 300-line file limit (500 for specs);
 - the frontend import boundaries below.
+
+`pnpm typecheck` covers every package plus the root `tsconfig.json`, which holds the Playwright
+specs, script tests, and config files.
 
 ## General
 

@@ -1,24 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
-async function openLogin(page: Page, viewport = canonicalViewports[0], route = '/login') {
+async function openLogin(
+    page: Page,
+    viewport: { height: number; width: number } = canonicalViewports[0],
+    route = '/login',
+) {
     await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'networkidle' });
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
 }
 
 test('Login is accessible with Google while dormant Apple Sign In stays hidden', async ({

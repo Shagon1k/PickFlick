@@ -7,6 +7,7 @@ import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
 import Select from '@/components/ui/Select/Select';
 import Tabs from '@/components/ui/Tabs/Tabs';
 import TextInput from '@/components/ui/TextInput/TextInput';
+import { formText } from '@/lib/form-data';
 
 import styles from '../../page.module.scss';
 
@@ -39,7 +40,7 @@ export default function ReviewFixInteractions() {
                 onSubmit={(event) => {
                     event.preventDefault();
                     setSubmittedValue(
-                        String(new FormData(event.currentTarget).get('required-range')),
+                        formText(new FormData(event.currentTarget), 'required-range'),
                     );
                 }}
             >
@@ -88,7 +89,7 @@ export default function ReviewFixInteractions() {
                 onSubmit={(event) => {
                     event.preventDefault();
                     setSubmittedScore(
-                        String(new FormData(event.currentTarget).get('required-score')),
+                        formText(new FormData(event.currentTarget), 'required-score'),
                     );
                 }}
             >

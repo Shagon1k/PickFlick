@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const pages = [
@@ -12,20 +13,8 @@ const pages = [
 ] as const;
 async function openPage(page: Page, route: string, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'networkidle' });
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
 }
 
 function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
@@ -41,23 +30,33 @@ function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>
         .join('\n');
 }
 
+/** The landing hero fades in; axe must not judge it half-transparent. */
+async function waitForLandingHero(page: Page, name: string) {
+    if (name !== 'landing') {
+        return;
+    }
+    const heroContent = page.locator('main section').first().locator(':scope > div:last-child');
+    await expect
+        .poll(() => heroContent.evaluate((element) => globalThis.getComputedStyle(element).opacity))
+        .toBe('1');
+}
+
+/** Landing sections reveal on scroll; visit each so the full-page capture shows them all. */
+async function revealLandingSections(page: Page, name: string) {
+    if (name !== 'landing') {
+        return;
+    }
+    for (const section of await page.locator('main section').all()) {
+        await section.scrollIntoViewIfNeeded();
+    }
+    await page.evaluate(() => globalThis.scrollTo(0, 0));
+}
+
 for (const publicPage of pages) {
     test(`${publicPage.name} has no automated accessibility violations`, async ({ page }) => {
         for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await openPage(page, publicPage.route, viewport);
-            if (publicPage.name === 'landing') {
-                const heroContent = page
-                    .locator('main section')
-                    .first()
-                    .locator(':scope > div:last-child');
-                await expect
-                    .poll(() =>
-                        heroContent.evaluate(
-                            (element) => globalThis.getComputedStyle(element).opacity,
-                        ),
-                    )
-                    .toBe('1');
-            }
+            await waitForLandingHero(page, publicPage.name);
             const results = await new AxeBuilder({ page }).analyze();
             expect(
                 results.violations,
@@ -92,13 +91,7 @@ for (const publicPage of pages) {
             page,
         }) => {
             await openPage(page, publicPage.route, viewport);
-
-            if (publicPage.name === 'landing') {
-                for (const section of await page.locator('main section').all()) {
-                    await section.scrollIntoViewIfNeeded();
-                }
-                await page.evaluate(() => globalThis.scrollTo(0, 0));
-            }
+            await revealLandingSections(page, publicPage.name);
 
             await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
                 animations: 'disabled',
@@ -213,7 +206,8 @@ test('landing content remains visible when JavaScript is unavailable', async ({ 
     const page = await context.newPage();
 
     try {
-        await page.goto('/', { waitUntil: 'networkidle' });
+        await page.goto('/', { waitUntil: 'load' });
+        await settle(page);
         const revealState = await page.locator('main > div').getAttribute('data-reveal');
         const opacity = await page
             .locator('#features')

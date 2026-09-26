@@ -1,37 +1,23 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const NOT_FOUND_ROUTE = '/missing-reel-system-state-check';
 const ERROR_PREVIEW_ROUTE = '/ui-preview/error-recovery';
 const PRIVATE_DIAGNOSTIC = 'Preview provider failure with a deliberately long diagnostic payload';
-async function waitForAssets(page: Page) {
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
-}
-
 async function openNotFound(page: Page, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
-    const response = await page.goto(NOT_FOUND_ROUTE, { waitUntil: 'networkidle' });
-    await waitForAssets(page);
+    const response = await page.goto(NOT_FOUND_ROUTE, { waitUntil: 'load' });
+    await settle(page);
     return response;
 }
 
 async function openApplicationError(page: Page, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
-    await page.goto(ERROR_PREVIEW_ROUTE, { waitUntil: 'networkidle' });
+    await page.goto(ERROR_PREVIEW_ROUTE, { waitUntil: 'load' });
+    await settle(page);
     await page.getByRole('button', { name: 'Simulate provider failure' }).click();
     await expect(
         page.getByRole('heading', { level: 1, name: 'Projector Malfunction' }),
@@ -49,7 +35,7 @@ async function openApplicationError(page: Page, viewport: { height: number; widt
                 ),
             );
         });
-    await waitForAssets(page);
+    await settle(page);
 }
 
 function pageWidths(page: Page) {

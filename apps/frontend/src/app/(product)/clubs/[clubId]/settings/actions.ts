@@ -19,6 +19,7 @@ import {
 } from '@/api/clubs.server';
 import { clubValues } from '@/components/clubs/club-form.validation';
 import { ApiError } from '@/lib/api.server';
+import { formText } from '@/lib/form-data';
 
 import type { IClubActionState } from './action-state';
 import { clubFailureMessage } from './club-errors';
@@ -103,7 +104,7 @@ export async function clubLifecycleAction(
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
-    const confirmation = String(formData.get('confirmation') ?? '');
+    const confirmation = formText(formData, 'confirmation');
     const result = await run(
         previous,
         () => changeClubLifecycle(clubId, action, confirmation),

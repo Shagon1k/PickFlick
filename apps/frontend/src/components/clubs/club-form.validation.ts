@@ -11,6 +11,7 @@ import type {
     TClubFieldErrors,
     TClubFieldName,
 } from '@/components/clubs/club-form.types';
+import { formText } from '@/lib/form-data';
 import { fieldErrors } from '@/lib/form-errors';
 
 const FIELD_MESSAGES: Record<TClubFieldName, string> = {
@@ -22,10 +23,10 @@ const FIELD_MESSAGES: Record<TClubFieldName, string> = {
 
 export function clubValues(formData: FormData): IClubFormValues {
     return {
-        name: String(formData.get('name') ?? ''),
-        description: String(formData.get('description') ?? ''),
-        selectionScaleMin: String(formData.get('selectionScaleMin') ?? ''),
-        selectionScaleMax: String(formData.get('selectionScaleMax') ?? ''),
+        name: formText(formData, 'name'),
+        description: formText(formData, 'description'),
+        selectionScaleMin: formText(formData, 'selectionScaleMin'),
+        selectionScaleMax: formText(formData, 'selectionScaleMax'),
     };
 }
 

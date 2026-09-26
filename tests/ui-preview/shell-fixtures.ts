@@ -1,6 +1,7 @@
 import type AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 export const shellRoutes = [
@@ -23,20 +24,8 @@ export async function openShell(
     viewport: { height: number; width: number },
 ) {
     await page.setViewportSize(viewport);
-    await page.goto(`/shell-preview/${shell}`, { waitUntil: 'networkidle' });
-    await page.evaluate(async () => {
-        await globalThis.document.fonts.ready;
-        await Promise.all(
-            [...globalThis.document.images].map((image) =>
-                image.complete
-                    ? Promise.resolve()
-                    : new Promise<void>((resolveImage) => {
-                          image.addEventListener('load', () => resolveImage(), { once: true });
-                          image.addEventListener('error', () => resolveImage(), { once: true });
-                      }),
-            ),
-        );
-    });
+    await page.goto(`/shell-preview/${shell}`, { waitUntil: 'load' });
+    await settle(page);
 }
 
 export function formatViolations(

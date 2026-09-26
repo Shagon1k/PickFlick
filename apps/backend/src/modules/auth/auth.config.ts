@@ -99,15 +99,21 @@ export function createAuth(
                 if (context.path !== '/sign-in/social') {
                     return;
                 }
-                const returnTo: unknown = context.body?.callbackURL;
+                // Better Auth types the body as `any`; name the fields this hook reads and sets.
+                const body = context.body as {
+                    callbackURL?: unknown;
+                    errorCallbackURL?: string;
+                    newUserCallbackURL?: string;
+                };
+                const returnTo = body.callbackURL;
                 if (!isAllowedAuthReturnTarget(returnTo)) {
                     throw APIError.from('BAD_REQUEST', {
                         code: 'INVALID_RETURN_TARGET',
                         message: 'The sign-in destination is not allowed.',
                     });
                 }
-                context.body.newUserCallbackURL = returnTo;
-                context.body.errorCallbackURL = loginPath(returnTo);
+                body.newUserCallbackURL = returnTo;
+                body.errorCallbackURL = loginPath(returnTo);
             }),
         },
         databaseHooks: {

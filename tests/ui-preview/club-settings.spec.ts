@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const clubId = '10000000-0000-4000-8000-000000000031';
@@ -18,10 +19,13 @@ async function authenticate(context: BrowserContext, token: string) {
     ]);
 }
 
-async function open(page: Page, viewport = canonicalViewports[0]) {
+async function open(
+    page: Page,
+    viewport: { height: number; width: number } = canonicalViewports[0],
+) {
     await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'networkidle' });
-    await page.evaluate(() => globalThis.document.fonts.ready);
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
 }
 
 test('Club settings redirects an unauthenticated visitor and withholds outsider data', async ({
