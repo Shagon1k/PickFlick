@@ -1,23 +1,23 @@
 .scene {
     position: relative;
-    isolation: isolate;
     display: grid;
-    min-height: calc(100svh - 69px);
     place-items: center;
-    overflow: hidden;
+    min-height: calc(100svh - 69px);
     padding: clamp(72px, 9vw, 112px) var(--gutter) var(--gap-2xl);
+    overflow: hidden;
     text-align: center;
+    isolation: isolate;
 }
 
 .scene::before {
     position: absolute;
-    z-index: -1;
     top: -20px;
     left: 50%;
+    z-index: -1;
     width: min(500px, 100vw);
     height: 500px;
-    background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
     content: '';
+    background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
     transform: translateX(-50%);
 }
 
@@ -32,8 +32,8 @@
     width: 180px;
     height: auto;
     margin: 0 auto -30px;
-    opacity: 0.85;
     pointer-events: none;
+    opacity: 0.85;
 }
 
 .card {
@@ -41,24 +41,24 @@
     z-index: 1;
     width: 100%;
     padding: 40px 36px;
+    text-align: left;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: var(--surface);
     box-shadow: var(--shadow-overlay);
-    text-align: left;
 }
 
 .card h1 {
     margin: 0 0 var(--gap-xs);
     font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
-    letter-spacing: var(--tracking-tight);
     text-align: center;
+    letter-spacing: var(--tracking-tight);
 }
 
 .lead {
     margin: 0 0 var(--gap-lg);
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
     text-align: center;
 }
 
@@ -69,20 +69,20 @@
 
 .submitZone {
     display: grid;
-    margin-top: var(--gap-xs);
-    align-items: center;
     gap: var(--gap-xs);
+    align-items: center;
+    margin-top: var(--gap-xs);
 }
 
 .feedback {
     min-height: 20px;
     margin: 0;
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
     font-weight: 500;
     line-height: var(--lh-ui);
-    opacity: 0;
+    color: var(--fg-secondary);
     text-align: center;
+    opacity: 0;
     transform: translateY(4px);
     transition:
         opacity var(--motion-local) var(--ease-standard),
@@ -113,17 +113,17 @@
 
 .emailAlternative {
     margin: var(--gap-md) 0 0;
-    color: var(--muted);
     font-size: var(--fs-caption);
+    color: var(--muted);
     text-align: center;
 }
 
 .emailAlternative a {
     display: inline-flex;
-    min-height: var(--hit);
     align-items: center;
-    color: var(--fg-secondary);
+    min-height: var(--hit);
     font: var(--fs-caption)/var(--lh-ui) var(--font-mono);
+    color: var(--fg-secondary);
 }
 
 .emailAlternative a:hover {
@@ -132,10 +132,10 @@
 
 .ornament {
     margin: var(--gap-lg) 0 0;
-    color: var(--accent-dim);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--accent-dim);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 @media (width <= 480px) {

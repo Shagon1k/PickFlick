@@ -1,9 +1,9 @@
 .placeholderPanel {
     min-width: 0;
     padding: clamp(var(--gap-md), 4vw, var(--gap-lg));
+    background: var(--surface-glass-soft);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: var(--surface-glass-soft);
 }
 
 .placeholderPanel h2 {
@@ -15,6 +15,6 @@
 :where(.placeholderPanel) p {
     max-width: 62ch;
     margin: 0;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }

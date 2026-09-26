@@ -8,15 +8,15 @@
 .infoTip__trigger {
     position: relative;
     display: inline-grid;
+    place-items: center;
     width: 21px;
     height: 21px;
     padding: 0;
+    color: var(--fg-secondary);
+    cursor: help;
+    background: transparent;
     border: 1px solid var(--border-lit);
     border-radius: 50%;
-    color: var(--fg-secondary);
-    background: transparent;
-    cursor: help;
-    place-items: center;
     transition:
         color var(--motion-local) var(--ease-standard),
         border-color var(--motion-local) var(--ease-standard);
@@ -33,36 +33,36 @@
     width: 15px;
     height: 15px;
     stroke: currentColor;
+    stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 2.2;
 }
 
 .infoTip__trigger:hover,
 .infoTip__trigger:focus-visible,
 .infoTip__trigger[aria-expanded='true'] {
-    border-color: var(--gold-border);
     color: var(--ivory);
+    border-color: var(--gold-border);
 }
 
 .infoTip__bubble {
     position: absolute;
-    z-index: 30;
     bottom: calc(100% + 10px);
     left: 50%;
+    z-index: 30;
+    visibility: hidden;
     width: max-content;
     max-width: min(240px, 70vw);
     padding: 8px 10px;
+    font: 400 var(--fs-caption)/var(--lh-body) var(--font-body);
+    color: var(--fg-secondary);
+    text-align: left;
+    pointer-events: none;
+    background: var(--surface-lit);
     border: 1px solid var(--border-lit);
     border-radius: 8px;
-    color: var(--fg-secondary);
-    background: var(--surface-lit);
     box-shadow: var(--shadow-popover);
-    font: 400 var(--fs-caption)/var(--lh-body) var(--font-body);
-    text-align: left;
     opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
     transform: translate(-50%, 4px);
     transition:
         opacity var(--motion-local) var(--ease-standard),
@@ -71,8 +71,8 @@
 }
 
 .infoTip__bubble[data-open] {
-    opacity: 1;
     visibility: visible;
+    opacity: 1;
     transform: translate(-50%, 0);
     transition:
         opacity var(--motion-local) var(--ease-standard),

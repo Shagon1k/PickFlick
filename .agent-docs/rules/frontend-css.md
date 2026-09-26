@@ -22,6 +22,8 @@
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
 - No `!important` (reduced motion in `globals.scss` is the exception) and no id selectors; lower a
   default's specificity with `:where()` instead. A `stylelint-disable` needs a reason after `--`.
+- Declarations follow the recess group order (position, box model, typography, visuals, motion);
+  `pnpm lint:fix` sorts them.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.
   Stylelint rejects hex colours and `rgb()`/`hsl()` outside `tokens.scss`; the internal galleries
   are exempt from the `rgb()` ban.

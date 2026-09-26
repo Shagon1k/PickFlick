@@ -1,13 +1,13 @@
 .scale {
     display: grid;
-    min-width: 0;
     gap: 6px;
+    min-width: 0;
 }
 
 .label {
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
     font-weight: 500;
+    color: var(--fg-secondary);
 }
 
 .labelRow {
@@ -18,16 +18,16 @@
 
 .value {
     display: inline-flex;
-    width: var(--hit);
-    height: var(--hit);
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    width: var(--hit);
+    height: var(--hit);
+    font: 500 var(--fs-lead)/1 var(--font-mono);
     color: var(--accent);
     background: var(--bg);
-    font: 500 var(--fs-lead)/1 var(--font-mono);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
 }
 
 .rangeRow {
@@ -40,40 +40,40 @@
     width: 100%;
     min-height: var(--hit);
     margin: 0;
-    background: transparent;
-    cursor: pointer;
     appearance: none;
+    cursor: pointer;
+    background: transparent;
 }
 
 .range::-webkit-slider-runnable-track {
     height: 4px;
-    border-radius: 2px;
     background: var(--border);
+    border-radius: 2px;
 }
 
 .range::-moz-range-track {
     height: 4px;
-    border-radius: 2px;
     background: var(--border);
+    border-radius: 2px;
 }
 
 .range::-webkit-slider-thumb {
     width: 20px;
     height: 20px;
     margin-top: -8px;
+    appearance: none;
+    background: var(--accent);
     border: 2px solid var(--bg);
     border-radius: 50%;
-    background: var(--accent);
     transition: box-shadow var(--motion-local) var(--ease-standard);
-    appearance: none;
 }
 
 .range::-moz-range-thumb {
     width: 20px;
     height: 20px;
+    background: var(--accent);
     border: 2px solid var(--bg);
     border-radius: 50%;
-    background: var(--accent);
 }
 
 .range:hover::-webkit-slider-thumb {
@@ -108,15 +108,15 @@
 
 .summary {
     margin: 0;
-    color: var(--fg-secondary);
     font-size: var(--fs-caption);
+    color: var(--fg-secondary);
 }
 
 .error {
     margin: 0;
-    color: var(--danger-text);
     font-size: var(--fs-meta);
     line-height: var(--lh-body);
+    color: var(--danger-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,22 +4,22 @@
 }
 
 .eyebrow {
-    color: var(--ivory-muted);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--ivory-muted);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .scene {
     position: relative;
     display: grid;
     grid-template-columns: minmax(340px, 0.92fr) minmax(420px, 1.08fr);
-    width: min(var(--container), calc(100% - (2 * var(--gutter))));
-    min-height: calc(100svh - 69px);
     gap: clamp(44px, 6vw, 86px);
     align-items: center;
-    margin-inline: auto;
+    width: min(var(--container), calc(100% - (2 * var(--gutter))));
+    min-height: calc(100svh - 69px);
     padding-block: clamp(48px, 7vw, 84px);
+    margin-inline: auto;
 }
 
 .spotlight {
@@ -43,11 +43,11 @@
 
     position: relative;
     display: grid;
+    place-items: end center;
     width: 100%;
     height: clamp(310px, 33vw, 410px);
-    overflow: hidden;
     container-type: inline-size;
-    place-items: end center;
+    overflow: hidden;
     animation: state-reveal var(--motion-panel) var(--ease-standard) both;
 }
 
@@ -57,9 +57,9 @@
     z-index: 2;
     width: 54px;
     height: 54px;
+    pointer-events: none;
     content: '';
     opacity: 0.72;
-    pointer-events: none;
 }
 
 .visual::before {
@@ -78,16 +78,16 @@
 
 .code {
     position: absolute;
-    z-index: 0;
     top: 2%;
     left: 50%;
-    color: var(--fg);
+    z-index: 0;
     font: clamp(136px, 16vw, 220px)/0.82 var(--font-display);
+    color: var(--fg);
     letter-spacing: -0.07em;
-    opacity: 0.09;
-    user-select: none;
-    translate: -50%;
     white-space: nowrap;
+    user-select: none;
+    opacity: 0.09;
+    translate: -50%;
 }
 
 /* The mascot keeps the prototype's optical height so the status code stays visible above it. */
@@ -106,11 +106,11 @@
     position: relative;
     z-index: 1;
     display: flex;
-    min-width: 0;
     flex-direction: column;
     align-items: flex-start;
-    animation: state-reveal var(--motion-panel) var(--ease-standard) 80ms both;
+    min-width: 0;
     text-align: left;
+    animation: state-reveal var(--motion-panel) var(--ease-standard) 80ms both;
 }
 
 .eyebrow {
@@ -121,11 +121,11 @@
 .body h1 {
     max-width: 620px;
     margin: 0;
-    color: var(--fg);
     font: 600 clamp(44px, 5vw, 64px)/0.98 var(--font-display);
+    color: var(--fg);
     letter-spacing: var(--tracking-tight);
-    overflow-wrap: anywhere;
     text-wrap: balance;
+    overflow-wrap: anywhere;
 }
 
 .body h1:focus {
@@ -136,11 +136,11 @@
 .description {
     max-width: 520px;
     margin: 20px 0 28px;
-    color: var(--fg-secondary);
     font-size: var(--fs-body);
     line-height: var(--lh-body);
-    overflow-wrap: anywhere;
+    color: var(--fg-secondary);
     text-wrap: pretty;
+    overflow-wrap: anywhere;
 }
 
 .actions {
@@ -163,8 +163,8 @@
 @media (width <= 960px) {
     .scene {
         grid-template-columns: 1fr;
-        width: min(680px, calc(100% - (2 * var(--gutter))));
         gap: 24px;
+        width: min(680px, calc(100% - (2 * var(--gutter))));
     }
 
     .spotlight {
@@ -194,9 +194,9 @@
 
 @media (width <= 820px) {
     .scene {
+        gap: 22px;
         width: min(620px, calc(100% - 32px));
         min-height: calc(100svh - 69px);
-        gap: 22px;
         padding-block: 34px 48px;
     }
 
@@ -238,8 +238,8 @@
     }
 
     .actions {
-        width: min(100%, 280px);
         flex-direction: column;
+        width: min(100%, 280px);
     }
 
     .actions > * {

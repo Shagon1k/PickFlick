@@ -3,9 +3,9 @@
 
     /* Mantine renders the track first; the label reads first. */
     flex-direction: row-reverse;
+    gap: var(--gap-md);
     align-items: center;
     justify-content: space-between;
-    gap: var(--gap-md);
     min-height: var(--hit);
     color: var(--fg);
     cursor: pointer;
@@ -23,9 +23,9 @@
 }
 
 .switch__description {
-    color: var(--fg-secondary);
     font-size: var(--fs-meta);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .switch__input {
@@ -38,12 +38,12 @@
 
 .switch__track {
     position: relative;
+    flex: 0 0 auto;
     width: 48px;
     height: 28px;
-    flex: 0 0 auto;
+    background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius-pill);
-    background: var(--surface);
     transition:
         background-color var(--motion-local) var(--ease-standard),
         border-color var(--motion-local) var(--ease-standard);
@@ -55,21 +55,21 @@
     left: 4px;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
     background: var(--fg-secondary);
+    border-radius: 50%;
     transition:
         transform var(--motion-emphasis) var(--ease-standard),
         background-color var(--motion-local) var(--ease-standard);
 }
 
 .switch__input:checked + .switch__track {
-    border-color: var(--gold-border);
     background: var(--gold-soft);
+    border-color: var(--gold-border);
 }
 
 .switch__input:checked + .switch__track .switch__thumb {
-    transform: translateX(20px);
     background: var(--ivory);
+    transform: translateX(20px);
 }
 
 .switch__input:focus-visible + .switch__track {
@@ -78,8 +78,8 @@
 }
 
 .switch:has(.switch__input:disabled) {
-    opacity: 0.5;
     cursor: not-allowed;
+    opacity: 0.5;
 }
 
 @media (prefers-reduced-motion: reduce) {

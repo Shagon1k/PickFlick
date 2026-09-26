@@ -1,11 +1,11 @@
 .noClubsMain,
 .readyMain {
     display: grid;
+    align-items: center;
     width: min(var(--container), calc(100% - (2 * var(--gutter))));
     min-height: calc(100svh - 69px - 78px);
-    align-items: center;
-    margin-inline: auto;
     padding-block: clamp(48px, 7vw, 84px);
+    margin-inline: auto;
     overflow: hidden;
 }
 
@@ -23,8 +23,8 @@
     left: 24%;
     width: min(620px, 58vw);
     aspect-ratio: 1.35;
-    content: '';
     pointer-events: none;
+    content: '';
     background: radial-gradient(ellipse, var(--projector-wash), transparent 72%);
     translate: -50% -50%;
 }
@@ -34,9 +34,9 @@
 
     position: relative;
     display: grid;
+    place-items: end center;
     width: 100%;
     height: clamp(310px, 33vw, 410px);
-    place-items: end center;
     container-type: inline-size;
 }
 
@@ -70,8 +70,8 @@
     max-width: 100%;
     height: auto;
     max-height: var(--mascot-optical-height);
-    filter: grayscale(1) contrast(1.05);
     opacity: 0.94;
+    filter: grayscale(1) contrast(1.05);
     mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
 }
 
@@ -82,10 +82,10 @@
 
 .kicker {
     margin: 0 0 14px;
-    color: var(--gold-light);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--gold-light);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .body h1 {
@@ -99,8 +99,8 @@
 .copy {
     max-width: 520px;
     margin: 20px 0 28px;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
     text-wrap: pretty;
 }
 
@@ -116,18 +116,18 @@
 
 .note {
     margin: 16px 0 0;
-    color: var(--muted);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--muted);
     letter-spacing: var(--tracking-wide);
 }
 
 .readyCard {
     width: min(100%, 760px);
-    margin-inline: auto;
     padding: clamp(var(--gap-lg), 5vw, var(--gap-xl));
+    margin-inline: auto;
+    background: linear-gradient(135deg, var(--gold-soft), var(--surface-glass) 52%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--gold-soft), var(--surface-glass) 52%);
 }
 
 .readyCard h1 {
@@ -138,16 +138,16 @@
 
 .readyCard > p:not(.kicker) {
     max-width: 60ch;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .facts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1px;
-    margin: var(--gap-lg) 0 0;
     padding: 1px;
+    margin: var(--gap-lg) 0 0;
     background: var(--border);
 }
 
@@ -157,10 +157,10 @@
 }
 
 .facts dt {
-    color: var(--muted);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--muted);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .facts dd {
@@ -175,27 +175,27 @@
 .setupMain {
     position: relative;
     display: grid;
+    place-items: start center;
     min-height: 100svh;
     padding: 96px var(--gutter) 48px;
-    place-items: start center;
     overflow: hidden;
 }
 
 .backLink {
     position: absolute;
-    z-index: 3;
     top: 20px;
     left: 20px;
+    z-index: 3;
     display: inline-flex;
-    min-height: var(--hit);
-    align-items: center;
     gap: 6px;
+    align-items: center;
+    min-height: var(--hit);
     padding: 0 10px 0 8px;
-    border-radius: var(--radius);
-    color: var(--fg-secondary);
     font-size: var(--fs-body-sm);
     font-weight: 500;
+    color: var(--fg-secondary);
     text-decoration: none;
+    border-radius: var(--radius);
     transition:
         color var(--motion-local) var(--ease-standard),
         background-color var(--motion-local) var(--ease-standard);
@@ -217,19 +217,19 @@
     position: relative;
     z-index: 1;
     display: grid;
-    width: min(100%, 432px);
     justify-items: center;
+    width: min(100%, 432px);
 }
 
 .createScene::before {
     position: absolute;
-    z-index: -1;
     top: -20%;
     left: 50%;
+    z-index: -1;
     width: min(500px, 100vw);
     height: 500px;
-    content: '';
     pointer-events: none;
+    content: '';
     background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
     translate: -50% 0;
 }
@@ -249,40 +249,40 @@
     z-index: 1;
     width: 100%;
     padding: 40px 36px;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: var(--surface);
     box-shadow: var(--shadow-card);
 }
 
 .createCard h1 {
     margin: 0 0 var(--gap-xs);
     font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
-    letter-spacing: var(--tracking-tight);
     text-align: center;
+    letter-spacing: var(--tracking-tight);
 }
 
 .lead {
     margin: 0 0 var(--gap-lg);
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
     text-align: center;
 }
 
 .sceneOrnament {
     position: relative;
     margin: var(--gap-lg) 0 0;
-    color: var(--accent-dim);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--accent-dim);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 @media (width <= 960px) {
     .noClubsStage {
         grid-template-columns: 1fr;
-        max-width: 680px;
         gap: 24px;
+        max-width: 680px;
         margin-inline: auto;
     }
 

@@ -1,9 +1,9 @@
 .eyebrow {
     margin: 0;
-    color: var(--ivory-muted);
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    color: var(--ivory-muted);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .publicHero,
@@ -27,9 +27,9 @@
 
 .publicHero > p:not(.eyebrow) {
     max-width: 62ch;
-    color: var(--fg-secondary);
     font-size: var(--fs-lead);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .actions {

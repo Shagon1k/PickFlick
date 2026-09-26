@@ -1,7 +1,7 @@
 .page {
     width: min(var(--container), calc(100% - (2 * var(--gutter))));
-    margin: 0 auto;
     padding: clamp(var(--gap-xl), 8vw, var(--gap-2xl)) 0 var(--gap-2xl);
+    margin: 0 auto;
 }
 
 .hero {
@@ -17,8 +17,8 @@
 
 .hero::before {
     position: absolute;
-    z-index: -1;
     inset: -120px 0 -40px 45%;
+    z-index: -1;
     content: '';
     background: radial-gradient(circle, var(--gold-soft), transparent 64%);
     opacity: 0.72;
@@ -27,11 +27,11 @@
 .eyebrow,
 .sectionKicker,
 .stateLabel {
-    color: var(--ivory-muted);
     font-family: var(--font-mono);
     font-size: var(--fs-micro);
-    letter-spacing: var(--tracking-caps);
+    color: var(--ivory-muted);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .hero h1 {
@@ -43,9 +43,9 @@
 
 .hero p:not(.eyebrow) {
     max-width: 620px;
-    color: var(--fg-secondary);
     font-size: var(--fs-lead);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .heroImage {
@@ -75,8 +75,8 @@
 
 .sectionHeader p {
     margin: 0;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 .tokenGrid,
@@ -95,20 +95,20 @@
 .token {
     min-height: 116px;
     padding: var(--gap-sm);
+    background: var(--token-color);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--token-color);
     box-shadow: inset 0 -42px rgb(0 0 0 / 46%);
 }
 
 .token span {
     display: block;
     width: fit-content;
-    margin-top: 70px;
     padding: 2px 4px;
+    margin-top: 70px;
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--fg);
     background: var(--bg);
-    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
 }
 
 .grid {
@@ -131,9 +131,9 @@
 .stateCell {
     min-width: 0;
     padding: var(--gap-md);
+    background: rgb(22 22 22 / 42%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background: rgb(22 22 22 / 42%);
 }
 
 .panel h3 {
@@ -143,8 +143,8 @@
 
 .stateCell {
     display: grid;
-    align-content: start;
     gap: var(--gap-sm);
+    align-content: start;
 }
 
 .buttonRow,
@@ -167,8 +167,8 @@
 .tabCopy {
     max-width: 60ch;
     margin: 0;
-    color: var(--fg-secondary);
     line-height: var(--lh-body);
+    color: var(--fg-secondary);
 }
 
 @media (width <= 1023px) {

@@ -7,7 +7,6 @@
     display: block;
     width: 100%;
     height: var(--hit);
-    border-radius: var(--radius);
     background: linear-gradient(
         90deg,
         var(--surface) 25%,
@@ -15,6 +14,7 @@
         var(--surface) 75%
     );
     background-size: 200% 100%;
+    border-radius: var(--radius);
     animation: skeleton 1.4s ease-in-out infinite;
 }
 
