@@ -1,0 +1,27 @@
+.denseRegion {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    scrollbar-width: thin;
+}
+
+.denseGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    min-width: 760px;
+}
+
+.denseGrid > * {
+    min-height: var(--hit);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-secondary);
+    font-size: var(--fs-body-sm);
+}
+
+.denseGrid strong {
+    color: var(--ivory);
+    font-family: var(--font-mono);
+    font-size: var(--fs-caption);
+}

@@ -2,43 +2,10 @@
 
 import { type ReactNode, useState } from 'react';
 
+import NavigationItemIcon from '@/components/shells/NavigationItemIcon/NavigationItemIcon';
 import styles from '@/components/shells/product-navigation.module.scss';
 import type { TShellMenuItem } from '@/components/shells/shell-navigation';
-import Icon, { type TIconName } from '@/components/ui/Icon/Icon';
 import { authClient } from '@/lib/auth-client';
-
-export function NavigationItemIcon({ label }: { label: string }) {
-    const iconByLabel: Record<string, TIconName> = {
-        'Admin Panel': 'admin',
-        'Application settings': 'settings',
-        'Contact Us': 'contact',
-        'Create a Club': 'overview',
-        'Import & Export': 'import-export',
-        'Join a Club': 'user-plus',
-        'Manage Club': 'settings',
-        'My Library': 'book',
-        'My Ratings': 'ratings',
-        Achievements: 'achievements',
-        Clubs: 'club-building',
-        Manage: 'settings',
-        Members: 'members',
-        Notifications: 'bell',
-        Overview: 'overview',
-        Pricing: 'pricing',
-        Privacy: 'privacy',
-        'Privacy & data': 'privacy',
-        Profile: 'profile',
-        Ratings: 'ratings',
-        Sessions: 'sessions',
-        Settings: 'settings',
-        'Sign out': 'sign-out',
-        Subscription: 'credit-card',
-        Users: 'members',
-        Watchlist: 'watchlist',
-    };
-
-    return <Icon className={styles.menuIcon} name={iconByLabel[label] ?? 'circle'} />;
-}
 
 function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     const content = (
@@ -61,7 +28,12 @@ function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     );
 }
 
-export function FilmStrip({ items, label }: { items: readonly TShellMenuItem[]; label: string }) {
+interface IFilmStripProps {
+    items: readonly TShellMenuItem[];
+    label: string;
+}
+
+export default function FilmStrip({ items, label }: IFilmStripProps) {
     return (
         <div className={styles.filmStrip}>
             <nav aria-label={label}>

@@ -94,7 +94,8 @@ Tokens live in [`tokens.scss`](apps/frontend/src/styles/tokens.scss) and compone
 
 ### Shells and navigation
 
-The shells live in `apps/frontend/src/components/shells`. `/shell-preview` shows the public, setup,
+The shells live in `apps/frontend/src/components/shells`, one folder per shell or navigation piece.
+`/shell-preview` shows the public, setup,
 product, Session, Settings, Library, and App Admin compositions without feature data; the shells
 default to the product routes and the preview supplies its own route map.
 

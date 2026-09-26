@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { PublicShell } from '@/components/shells/shells';
+import PublicShell from '@/components/shells/PublicShell/PublicShell';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import { createPublicMetadata } from '@/lib/public-metadata';
 

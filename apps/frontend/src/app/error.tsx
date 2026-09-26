@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { SystemState } from '@/components/SystemState/SystemState';
+import SystemState from '@/components/shells/SystemState/SystemState';
 import { authClient } from '@/lib/auth-client';
 
 export default function ApplicationError({

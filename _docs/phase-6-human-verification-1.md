@@ -63,18 +63,18 @@ Findings made while restructuring:
 
 ## Deferrals
 
-| Item                                                                                             | Severity | Owner / revisit trigger                                           |
-| ------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------------- |
-| UAT evidence: exact-revision delivery, failed-release gate, rollback, guard test.                | Major    | Alex; before Phase 6 closes (owner-run, needs live UAT)           |
-| Live Google sign-in and Contact email in UAT.                                                    | Major    | Alex; before Phase 6 closes                                       |
-| Point the Dokploy UAT domain route at `frontend:3000` (the service was `web` before the rename). | Major    | Alex; before the next UAT deployment                              |
-| Apple Sign In activation.                                                                        | —        | Product owner; Decision Log "Apple Sign In activation"            |
-| Explicit provider linking.                                                                       | —        | Decision Log "Explicit provider linking"                          |
-| Database still accepts a stored `1..N` scale start.                                              | Trivial  | Separate reviewed migration if the schema is tightened            |
-| Sweep of abandoned avatar objects.                                                               | Minor    | Before production retention is considered complete                |
-| `components/shells` keeps two shared stylesheets instead of one per component.                   | Trivial  | When a shell is reworked; see `.agent-docs/rules/frontend-css.md` |
-| `/ui-preview` gallery textarea no longer stretches inside equal-height panels.                   | Trivial  | Accepted; internal page only                                      |
-| Contact form lost no-JavaScript submission when it moved to `@mantine/form`.                     | Minor    | Revisit if progressive enhancement becomes a requirement          |
+| Item                                                                                             | Severity | Owner / revisit trigger                                     |
+| ------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------- |
+| UAT evidence: exact-revision delivery, failed-release gate, rollback, guard test.                | Major    | Alex; before Phase 6 closes (owner-run, needs live UAT)     |
+| Live Google sign-in and Contact email in UAT.                                                    | Major    | Alex; before Phase 6 closes                                 |
+| Point the Dokploy UAT domain route at `frontend:3000` (the service was `web` before the rename). | Major    | Alex; before the next UAT deployment                        |
+| Apple Sign In activation.                                                                        | —        | Product owner; Decision Log "Apple Sign In activation"      |
+| Explicit provider linking.                                                                       | —        | Decision Log "Explicit provider linking"                    |
+| Database still accepts a stored `1..N` scale start.                                              | Trivial  | Separate reviewed migration if the schema is tightened      |
+| Sweep of abandoned avatar objects.                                                               | Minor    | Before production retention is considered complete          |
+| `components/shells` keeps two shared stylesheets instead of one per component.                   | Trivial  | Accepted: selectors cross components; see `frontend-css.md` |
+| `/ui-preview` gallery textarea no longer stretches inside equal-height panels.                   | Trivial  | Accepted; internal page only                                |
+| Contact form lost no-JavaScript submission when it moved to `@mantine/form`.                     | Minor    | Revisit if progressive enhancement becomes a requirement    |
 
 ## Closing the phase
 

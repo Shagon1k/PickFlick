@@ -1,0 +1,19 @@
+.placeholderPanel {
+    min-width: 0;
+    padding: clamp(var(--gap-md), 4vw, var(--gap-lg));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-glass-soft);
+}
+
+.placeholderPanel h2 {
+    margin: 0 0 var(--gap-md);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+}
+
+.placeholderPanel p {
+    max-width: 62ch;
+    margin: 0;
+    color: var(--fg-secondary);
+    line-height: var(--lh-body);
+}

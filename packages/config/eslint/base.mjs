@@ -83,9 +83,15 @@ export default [
                     ],
                 },
             ],
+            // components/<group>/<Name>/<Name>.tsx: one PascalCase folder per component, inside a
+            // group listed in ignoreWords (the rule would otherwise check the group name too).
             'check-file/folder-naming-convention': [
                 'error',
-                { 'apps/frontend/src/components/ui/*/': 'PASCAL_CASE' },
+                {
+                    'apps/frontend/src/components/*/': 'KEBAB_CASE',
+                    'apps/frontend/src/components/*/!(__tests__)/': 'PASCAL_CASE',
+                },
+                { ignoreWords: ['clubs', 'navigation', 'shells', 'ui'] },
             ],
         },
     },

@@ -2,17 +2,19 @@ import type { RefObject } from 'react';
 
 import styles from '@/components/shells/product-navigation.module.scss';
 
-export function NotificationsPanel({
-    id,
-    mobile = false,
-    open,
-    panelRef,
-}: {
+interface INotificationsPanelProps {
     id: string;
     mobile?: boolean;
     open: boolean;
     panelRef: RefObject<HTMLDivElement | null>;
-}) {
+}
+
+export default function NotificationsPanel({
+    id,
+    mobile = false,
+    open,
+    panelRef,
+}: INotificationsPanelProps) {
     return (
         <div
             aria-label="Notifications"

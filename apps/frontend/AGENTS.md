@@ -24,8 +24,9 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
 - `src/app/(marketing)`, `(auth)`, `(product)` hold the real routes; `(internal)` holds the
   component gallery, which production answers with 404.
 - A route folder owns its `page.tsx`, `page.module.scss`, `actions.ts`, and `_components/`.
-- `src/components/ui/<Name>/` is the UI kit (Mantine wrappers); `src/components/<area>/` holds
-  shared app pieces such as shells.
+- `src/components/ui/<Name>/` is the UI kit (Mantine wrappers). Shared app pieces live in
+  `src/components/<group>/<Name>/<Name>.tsx`, such as `shells/PublicShell`; lint enforces the
+  folder names, and a new group joins the rule's `ignoreWords`.
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Import with the `@/` alias; images from `assets/brand` with `@brand/`.

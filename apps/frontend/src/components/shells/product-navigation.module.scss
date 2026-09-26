@@ -540,14 +540,6 @@
     animation: shell-menu-reveal var(--motion-menu) var(--ease-menu);
 }
 
-.denseRegion {
-    max-width: 100%;
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    scrollbar-width: thin;
-}
-
 .mobileNavigation {
     position: fixed;
     z-index: 45;

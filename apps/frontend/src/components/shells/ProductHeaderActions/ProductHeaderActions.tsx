@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { FilmStrip } from '@/components/shells/film-strip';
-import { NotificationsPanel } from '@/components/shells/notifications-panel';
+import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
+import NotificationsPanel from '@/components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '@/components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
@@ -24,11 +24,11 @@ function initialsFor(name: string | null | undefined): string {
     return initials.toUpperCase();
 }
 
-export function ProductHeaderActions({
-    accountItems,
-}: {
+interface IProductHeaderActionsProps {
     accountItems: readonly TShellMenuItem[];
-}) {
+}
+
+export default function ProductHeaderActions({ accountItems }: IProductHeaderActionsProps) {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const accountRef = useRef<HTMLDivElement>(null);
     const actionsRef = useRef<HTMLDivElement>(null);
@@ -106,71 +106,6 @@ export function ProductHeaderActions({
                 >
                     <span aria-hidden="true" className={styles.filmTail} />
                     <FilmStrip items={accountItems} label="Account navigation" />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export function ProductSearch() {
-    const { activeOverlay, closeOverlay } = useProductOverlay();
-    const open = activeOverlay === 'search';
-    const rootRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const [query, setQuery] = useState('');
-    const [wasOpen, setWasOpen] = useState(open);
-
-    if (wasOpen !== open) {
-        setWasOpen(open);
-        if (!open) {
-            setQuery('');
-        }
-    }
-
-    useOverlayDismissal(open, rootRef, closeOverlay, true);
-
-    useEffect(() => {
-        if (open) {
-            inputRef.current?.focus({ preventScroll: true });
-        }
-    }, [open]);
-
-    return (
-        <div
-            aria-label="Film search"
-            className={styles.globalSearch}
-            data-open={open || undefined}
-            id="shell-search"
-            inert={!open}
-            ref={rootRef}
-            role="search"
-        >
-            <div className={styles.globalSearchInner}>
-                <label className="visually-hidden" htmlFor="shell-search-input">
-                    Search films
-                </label>
-                <input
-                    autoComplete="off"
-                    className={styles.globalSearchInput}
-                    id="shell-search-input"
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search films…"
-                    ref={inputRef}
-                    type="search"
-                    value={query}
-                />
-                <button
-                    aria-label="Close search"
-                    className={styles.searchClose}
-                    onClick={() => closeOverlay()}
-                    type="button"
-                >
-                    <Icon className={styles.roundIcon} name="close" />
-                </button>
-                <div className={styles.searchResults} role="status">
-                    {query.trim() ? (
-                        <p className={styles.overlayEmpty}>Film search isn’t available yet.</p>
-                    ) : null}
                 </div>
             </div>
         </div>
