@@ -150,10 +150,10 @@ test('landing calls to action and public navigation use canonical destinations',
     );
 });
 
-test('public header keeps only the app entry through tablet without a bottom menu', async ({
+test('public header keeps only the app entry below tablet without a bottom menu', async ({
     page,
 }) => {
-    for (const viewport of [canonicalViewports[0], canonicalViewports[1]]) {
+    for (const viewport of [canonicalViewports[0], { height: 900, width: 767 }]) {
         await openPage(page, '/', viewport);
         const publicNavigation = page.getByRole('navigation', {
             exact: true,
@@ -176,7 +176,7 @@ test('public header keeps only the app entry through tablet without a bottom men
         expect(appEntry?.width).toBeLessThan(viewport.width / 2);
     }
 
-    await openPage(page, '/', { height: 900, width: 821 });
+    await openPage(page, '/', canonicalViewports[1]);
     const publicNavigation = page.getByRole('navigation', {
         exact: true,
         name: 'Public navigation',
