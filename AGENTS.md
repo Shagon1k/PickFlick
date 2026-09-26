@@ -202,10 +202,6 @@ These need database or server enforcement and focused tests:
 
 Documentation is part of the change. Update every affected document in the same task.
 
-Write and review documentation, PR descriptions, and code comments with the technical-writing skill
-in `.agents/skills/technical-writing/SKILL.md` (Codex finds it there; Claude Code through
-`.claude/skills/`). Repository rules win where they differ.
-
 | Document                                                         | Owns                                                                                   | Update when                                                                        |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [GitHub Project 3](https://github.com/users/Shagon1k/projects/3) | Actionable issues and their live status.                                               | Work is created, started, deferred, sent to review, completed, or reprioritized.   |
