@@ -109,15 +109,20 @@ default to the product routes and the preview supplies its own route map.
 
 ### Key flows
 
-```text
-Landing -> sign in -> No Clubs -> Create Club -> Club Hub
-Club invite -> sign in if needed -> Accept -> Club Hub
-Club Hub -> Create Session -> Nomination -> Selection -> Watching -> Rating -> Completed
-                               (auto close)  (auto close)            (auto or manual close)
-Club Hub -> Log Past Session -> Attendees + optional history -> Completed
-Global Search -> Movie Details -> Personal Rating or Watchlist -> My Library
-Pricing or Settings -> Paddle Checkout -> Return -> Subscription state
+```mermaid
+flowchart LR
+  Landing --> SignIn["Sign in"] --> NoClubs["No Clubs"] --> Create["Create Club"] --> Hub["Club Hub"]
+  Invite["Club invite"] --> SignIn2["Sign in if needed"] --> Accept --> Hub
+  Hub --> NewSession["Create Session"] --> Nomination --> Selection --> Watching --> Rating --> Completed
+  Nomination -. "one film" .-> Watching
+  Hub --> Past["Log Past Session"] --> Completed
+  Search["Global Search"] --> Movie["Movie Details"] --> Library["My Library"]
+  Pricing["Pricing or Settings"] --> Checkout["Paddle Checkout"] --> Subscription["Subscription state"]
 ```
+
+Nomination and Selection close automatically when every participant has acted or the deadline
+passes; Watching moves to Rating only by hand; Rating closes when everyone has rated or an operator
+finishes it.
 
 The [UX flow map](_docs/design/prototypes/ux-flow-map.html) is the visual source; edge rules live in
 the [Roadmap](ROADMAP.md#3-business-rules).

@@ -414,6 +414,22 @@ Fixing gate follows every five delivery phases; gates add to, never replace, eac
 - A verification gate keeps a severity-classified register. Fix every Blocker and Major before
   continuing; a lower-severity deferral needs a Decision Log entry or a later owning phase.
 
+```mermaid
+flowchart LR
+  P0["0 Guidance"] --> P1["1 Foundation"] --> P2["2 Design system"] --> P3["3 Public site"]
+  P2 --> P4["4 Auth"] --> P5["5 Clubs"]
+  P3 --> G1{{"6 Verify I"}}
+  P5 --> G1
+  G1 --> P7["7 Hub & invites"] --> P9["9 Sessions"]
+  G1 --> P8["8 Movies"] --> P9
+  P9 --> P10["10 Nomination"] --> P11["11 Selection"] --> G2{{"12 Verify II"}}
+  G2 --> P13["13 Watch & rate"] --> P14["14 Past Sessions"] --> P15["15 Library"] --> P16["16 Stats & achievements"] --> P17["17 Notifications"] --> G3{{"18 Verify III"}}
+  G3 --> P19["19 Privacy"] --> P20["20 Billing"] --> P21["21 App Admin"] --> P22["22 PWA"] --> P23["23 Release readiness"] --> G4{{"24 Verify IV"}} --> P25["25 Production"]
+```
+
+Hexagons are verification gates. The graph shows the main dependencies; each phase lists all of
+its own.
+
 ### Phase 0 — Guidance Baseline · Done
 
 **Goal:** One coherent, source-backed product, design, and architecture contract.
