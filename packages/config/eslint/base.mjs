@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import reactPlugin from '@eslint-react/eslint-plugin';
 import prettier from 'eslint-config-prettier';
 import checkFile from 'eslint-plugin-check-file';
+import jsxA11y from 'eslint-plugin-jsx-a11y-x';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import sonarjs from 'eslint-plugin-sonarjs';
@@ -113,6 +114,32 @@ export default [
                 },
                 { ignoreWords: ['clubs', 'navigation', 'shells', 'ui'] },
             ],
+        },
+    },
+    {
+        // Static accessibility checks; axe in the Playwright suite covers the rendered result.
+        files: ['apps/frontend/**/*.tsx'],
+        plugins: jsxA11y.configs.strict.plugins,
+        rules: {
+            ...jsxA11y.configs.strict.rules,
+            // Strict counts every handler; focus and hover delegation on a container (close when
+            // focus leaves, preview on hover) is not an interaction, so only activation counts.
+            'jsx-a11y-x/no-static-element-interactions': [
+                'error',
+                {
+                    handlers: [
+                        'onClick',
+                        'onMouseDown',
+                        'onMouseUp',
+                        'onKeyPress',
+                        'onKeyDown',
+                        'onKeyUp',
+                    ],
+                },
+            ],
+            // A scrollable region must take focus so keyboard users can scroll it (axe
+            // scrollable-region-focusable).
+            'jsx-a11y-x/no-noninteractive-tabindex': ['error', { roles: ['region', 'tabpanel'] }],
         },
     },
     {
