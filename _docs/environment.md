@@ -78,7 +78,9 @@ Errors use one envelope; `reason` appears only for stable conflict codes such as
 Codes come from `API_ERROR_CODES` in `@pickflick/contracts`. Every response carries
 `x-request-id`: a caller's UUID is reused, anything else is replaced. Logs are nestjs-pino JSON with
 `service`, `environment`, and the request ID; cookies, authorization headers, and `set-cookie` are
-redacted. Log operational metadata, never message bodies or personal data.
+redacted. Log operational metadata, never message bodies or personal data. When the backend cannot
+start (`configuration.invalid`, `service.start.failed`) or meets an unhandled promise rejection
+(`process.unhandled_rejection`), it writes one `fatal` JSON line to stderr and exits with status 1.
 
 ## Continuous integration
 
