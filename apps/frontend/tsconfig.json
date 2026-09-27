@@ -1,7 +1,7 @@
 {
     "extends": "@pickflick/config/tsconfig/nextjs.json",
     "compilerOptions": {
-        "types": ["node", "vitest/globals"],
+        "types": ["node", "vitest/globals", "next/image-types/global"],
         "paths": {
             "@/*": ["./src/*"],
             "@brand/*": ["../../assets/brand/*"]
