@@ -39,6 +39,10 @@ separately.
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
+Earlier ADRs use the command names from before Phase 6 (`pnpm compose:check`, `pnpm deploy:compose`,
+`pnpm e2e:smoke`, `pnpm ui:test`); they are now `deploy:check`, `deploy:uat`, `test:e2e`, and
+`test:ui`. [AGENTS.md](../../AGENTS.md#commands) lists the current commands.
+
 ## ADR-001 — Use a pnpm modular monorepo with three runtime entrypoints
 
 - **Status:** Superseded by [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)
@@ -1121,7 +1125,7 @@ proxied responses.
 - A new third-party script, font, image host, or API origin needs an explicit policy change.
 - HSTS without `includeSubDomains` or `preload` stays reversible until every subdomain is known to
   serve HTTPS.
-- The Playwright suite fails on any CSP violation on the built pages; `pnpm e2e:smoke` checks the
+- The Playwright suite fails on any CSP violation on the built pages; `pnpm test:e2e` checks the
   headers on the built frontend and backend.
 
 ### Alternatives considered

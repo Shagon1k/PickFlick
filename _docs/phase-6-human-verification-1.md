@@ -10,8 +10,8 @@ after moving anything durable into canonical guidance.
   from Playwright 1.63.
 - Local PostgreSQL and MinIO from `compose.local.yaml`; email delivery disabled.
 - Gates run after the final change: `pnpm audit --audit-level high`, `pnpm verify` (ESLint,
-  Stylelint, knip, formatting, types, unit tests, build), `pnpm test:integration`, `pnpm e2e:smoke`,
-  `pnpm images:build`, and `pnpm ui:test` (138 checks, 42 screenshot baselines at 390 and 1440
+  Stylelint, knip, formatting, types, unit tests, build), `pnpm test:integration`, `pnpm test:e2e`,
+  `pnpm build:images`, and `pnpm test:ui` (138 checks, 42 screenshot baselines at 390 and 1440
   pixels).
 - Not yet exercised: UAT at `https://uat.pick-flick.app`, live Google sign-in, and live email.
 

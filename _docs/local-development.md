@@ -34,8 +34,8 @@ corepack enable
 4. Apply the migrations and load the synthetic seed.
 
     ```bash
-    pnpm migrate
-    pnpm seed
+    pnpm db:migrate
+    pnpm db:seed
     ```
 
 5. Start the frontend and backend.
@@ -62,9 +62,9 @@ containers and keeps their data.
 
 ## Work with the database
 
-- `pnpm migrate` applies the reviewed migrations with `prisma migrate deploy`. Never use `db push`.
-- `pnpm seed` loads stable synthetic data with `example.invalid` addresses and can run repeatedly.
-- `pnpm db:reset` deletes all data and reapplies the migrations; run `pnpm seed` afterwards.
+- `pnpm db:migrate` applies the reviewed migrations with `prisma migrate deploy`. Never use `db push`.
+- `pnpm db:seed` loads stable synthetic data with `example.invalid` addresses and can run repeatedly.
+- `pnpm db:reset` deletes all data and reapplies the migrations; run `pnpm db:seed` afterwards.
 
 Seed and reset refuse to run unless `APP_ENV` is `local` with the database `pickflick_local` on a
 loopback host, or `test` with `pickflick_test`. To change the schema, follow
@@ -77,10 +77,10 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Lint, knip, formatting, types, tests, build   | `pnpm verify`                   |
 | Known high-severity vulnerabilities           | `pnpm audit --audit-level high` |
 | Database, auth, and Club integration specs    | `pnpm test:integration`         |
-| Playwright accessibility and screenshot suite | `pnpm ui:test`                  |
-| Smoke the built frontend and backend          | `pnpm e2e:smoke`                |
+| Playwright accessibility and screenshot suite | `pnpm test:ui`                  |
+| Smoke the built frontend and backend          | `pnpm test:e2e`                 |
 
-`pnpm test:integration` needs the local services running. `pnpm ui:test` builds the frontend and
+`pnpm test:integration` needs the local services running. `pnpm test:ui` builds the frontend and
 serves it against a mock backend, so it needs no database; install its browser once with
 `pnpm exec playwright install chromium`. See [UI quality checks](ui-quality.md) for baselines.
 

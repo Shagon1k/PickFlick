@@ -74,7 +74,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm test:unit
 
       - name: Build workspaces
         run: pnpm build
@@ -130,7 +130,7 @@ jobs:
         run: pnpm build
 
       - name: Validate deployment definitions
-        run: pnpm compose:check
+        run: pnpm deploy:check
 
       - name: Start isolated test dependencies
         run: |
@@ -141,16 +141,16 @@ jobs:
         run: pnpm services:check
 
       - name: Apply migrations
-        run: pnpm migrate
+        run: pnpm db:migrate
 
       - name: Load deterministic synthetic fixtures
-        run: pnpm seed
+        run: pnpm db:seed
 
       - name: Run database integration tests
         run: pnpm test:integration
 
       - name: Run built-runtime E2E smoke
-        run: pnpm e2e:smoke
+        run: pnpm test:e2e
 
       - name: Stop isolated test dependencies
         if: ${{ always() }}
@@ -183,7 +183,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run UI accessibility, interaction, viewport, and visual checks
-        run: pnpm ui:test
+        run: pnpm test:ui
 
       - name: Upload UI failure evidence
         if: ${{ failure() }}
@@ -216,7 +216,7 @@ jobs:
       - name: Build production image targets
         env:
           SOURCE_REVISION: ${{ github.sha }}
-        run: pnpm images:build
+        run: pnpm build:images
 
   delivery-gate:
     name: Delivery gate

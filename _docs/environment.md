@@ -13,7 +13,7 @@ variable, never its value.
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------ |
 | `APP_ENV`                                          | `local`, `test`, `uat`, or `production`. Production hides `/ui-preview` and `/shell-preview`. | No     |
 | `SOURCE_REVISION`                                  | Optional full Git SHA; images set it and `/health/live` reports it.                           | No     |
-| `API_HOST`, `API_PORT`                             | Backend bind address and port.                                                                | No     |
+| `BACKEND_HOST`, `BACKEND_PORT`                     | Backend bind address and port.                                                                | No     |
 | `DATABASE_URL`                                     | `postgres(ql)://` URL with host and database.                                                 | Yes    |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`               | S3 API URL and signing region (`us-east-1` for MinIO).                                        | No     |
 | `STORAGE_BUCKET`                                   | Lowercase S3 bucket name.                                                                     | No     |
@@ -90,10 +90,10 @@ toolchain:
 - **Secret scan** — gitleaks over history.
 - **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
-- **Integration** — `pnpm compose:check`, isolated PostgreSQL and MinIO, migrations, seed,
-  `pnpm test:integration`, and `pnpm e2e:smoke` against the built frontend and backend.
-- **UI** — `pnpm ui:test`; failures upload screenshots, diffs, traces, and the HTML report.
-- **Images** — `pnpm images:build`.
+- **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
+  `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend.
+- **UI** — `pnpm test:ui`; failures upload screenshots, diffs, traces, and the HTML report.
+- **Images** — `pnpm build:images`.
 
 A terminal `Delivery gate` job requires all of them; UAT deployment waits for it.
 
@@ -105,23 +105,23 @@ forces the fixed version; remove the entry once Prisma catches up.
 
 `Dockerfile` builds three targets from the locked workspace: `frontend` (Next.js standalone, port
 3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), and `release` (runs
-migrations, then the required seed step). `pnpm images:build` builds them from a clean checkout and tags them
+migrations, then the required seed step). `pnpm build:images` builds them from a clean checkout and tags them
 with the short revision.
 
-| File                   | Purpose                                                                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                   |
-| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `frontend`. Dokploy manages the data services.                                      |
-| `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `BACKEND_PORT` and `FRONTEND_PORT`. |
+| File                   | Purpose                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                                   |
+| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `frontend`. Dokploy manages the data services.                                                      |
+| `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
-`pnpm compose:check` renders all three with synthetic values. In `compose.deploy.yaml`, `release`
+`pnpm deploy:check` renders all three with synthetic values. In `compose.deploy.yaml`, `release`
 must finish before `backend` starts, and `frontend` waits for backend health. Containers are
 read-only, drop all capabilities, and publish no host ports. Dokploy supplies `DATABASE_URL` and the
 storage values; every service joins Dokploy's shared `dokploy-network` under an alias such as
 `pickflick-uat-backend`. UAT and production use separate projects, credentials, buckets, and Resend
 identities. Never save rendered Compose output; it contains secrets.
 
-`pnpm deploy:compose` converges `compose.deploy.yaml` for UAT from a clean workstation checkout;
+`pnpm deploy:uat` converges `compose.deploy.yaml` for UAT from a clean workstation checkout;
 production is deployed only by its workflow.
 
 ### Deployment settings in GitHub

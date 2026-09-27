@@ -33,7 +33,7 @@ async function bootstrap(): Promise<void> {
     });
     app.useLogger(app.get(Logger));
     configureApplication(app);
-    await app.listen(environment.apiPort, environment.apiHost);
+    await app.listen(environment.backendPort, environment.backendHost);
 }
 
 try {

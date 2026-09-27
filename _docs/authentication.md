@@ -109,7 +109,7 @@ flowchart LR
 - `src/api/session.server.ts` asks the backend for the session and returns `authenticated`,
   `anonymous`, or `unavailable`. `unavailable` (timeout, rate limit, outage) is never treated as
   signed out: pages show a retry state instead of silently logging the person out.
-- `src/lib/auth.service.ts` starts sign-in in the browser with the Better Auth client.
+- `src/lib/auth-client.ts` holds the Better Auth client and `startSocialSignIn`, which starts sign-in in the browser.
 - Server-side API calls (`src/lib/api.server.ts`) forward only the cookie and the client address
   headers; a `401` from the backend sends the page to `/login` with a return target.
 - The Apple button appears only when `APPLE_SIGN_IN_ENABLED=true`, the same flag that registers
@@ -135,5 +135,5 @@ validation instead of crashing later.
 `apps/backend/src/modules/auth/__tests__/auth.int.spec.ts` runs against the local database
 (`pnpm test:integration`) and covers allowed and rejected return targets, reading the signed-in User,
 forged cookies, suspension, refused sessions for suspended Users, sign-out, and the 404 for
-unexposed routes. `pnpm e2e:smoke` confirms the built backend starts the Apple flow and that Better
+unexposed routes. `pnpm test:e2e` confirms the built backend starts the Apple flow and that Better
 Auth parses request bodies itself.

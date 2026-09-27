@@ -16,9 +16,9 @@
   `<name>.spec.ts` (`<name>.spec.tsx` for components).
 - Database integration tests are named `<name>.int.spec.ts` and run with `pnpm test:integration`
   against the local services.
-- Browser tests are Playwright `*.spec.ts` files: `tests/ui-preview/` runs against a local
-  production build with a mock API (`pnpm ui:test`), `tests/uat/` smokes a deployed environment
-  (`pnpm uat:smoke`). Shared viewports live in `tests/ui-preview/viewports.ts`.
+- Browser tests are Playwright `*.spec.ts` files: `tests/ui/` runs against a local
+  production build with a mock API (`pnpm test:ui`), `tests/uat/` smokes a deployed environment
+  (`pnpm test:uat`). Shared viewports live in `tests/ui/viewports.ts`.
 - Build test data with small factory functions instead of repeating inline objects.
 
 ## Naming and structure
@@ -45,4 +45,4 @@
 - `eslint-plugin-playwright` enforces awaited actions and assertions, no focused or conditional
   tests, and web-first assertions.
 - Screenshot baselines are taken at two widths: mobile 390 and desktop 1440.
-- Update baselines only after a reviewed visual change: `pnpm ui:test:update`.
+- Update baselines only after a reviewed visual change: `pnpm test:ui:update`.

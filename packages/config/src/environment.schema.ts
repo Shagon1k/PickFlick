@@ -91,8 +91,8 @@ const rawRuntimeEnvironmentSchema = z.object({
         .regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/iu, 'must be a full hexadecimal source revision')
         .optional()
         .or(z.literal('').transform(() => undefined)),
-    API_HOST: required.regex(/^\S+$/u, 'must not contain whitespace'),
-    API_PORT: z.coerce.number().int().min(1).max(65_535),
+    BACKEND_HOST: required.regex(/^\S+$/u, 'must not contain whitespace'),
+    BACKEND_PORT: z.coerce.number().int().min(1).max(65_535),
     DATABASE_URL: databaseUrl,
     STORAGE_ENDPOINT: httpUrl,
     STORAGE_REGION: required,
@@ -221,8 +221,8 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .transform((env) => ({
         appEnvironment: env.APP_ENV,
         sourceRevision: env.SOURCE_REVISION,
-        apiHost: env.API_HOST,
-        apiPort: env.API_PORT,
+        backendHost: env.BACKEND_HOST,
+        backendPort: env.BACKEND_PORT,
         databaseUrl: env.DATABASE_URL,
         storage: {
             endpoint: env.STORAGE_ENDPOINT,

@@ -9,8 +9,8 @@ import {
 
 const local = {
     APP_ENV: 'local',
-    API_HOST: '127.0.0.1',
-    API_PORT: '3001',
+    BACKEND_HOST: '127.0.0.1',
+    BACKEND_PORT: '3001',
     DATABASE_URL: 'postgresql://pickflick:secret@127.0.0.1:15432/pickflick_local',
     STORAGE_ENDPOINT: 'http://127.0.0.1:19000',
     STORAGE_REGION: 'us-east-1',
@@ -51,7 +51,7 @@ describe('parseRuntimeEnvironment', () => {
     it('should build the typed runtime environment', () => {
         expect(parseRuntimeEnvironment(local)).toMatchObject({
             appEnvironment: 'local',
-            apiPort: 3001,
+            backendPort: 3001,
             storage: { forcePathStyle: true, bucket: 'pickflick-local' },
             resend: { deliveryEnabled: false },
             auth: {

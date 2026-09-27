@@ -19,7 +19,7 @@ After CI passes on a push to `main`, `deploy-uat.yml`:
 3. Starts one deployment and waits for Dokploy to finish it.
 4. Waits until `/api/health/live` reports that SHA and `/api/health/ready` reports every dependency
    up.
-5. Runs the desktop and mobile Playwright smoke (`pnpm uat:smoke`) and uploads its screenshots.
+5. Runs the desktop and mobile Playwright smoke (`pnpm test:uat`) and uploads its screenshots.
 
 The workflow never creates tags, changes the Compose branch, or touches the environment. The job is
 named `UAT E2E`; production promotion requires it to have passed for the release revision.

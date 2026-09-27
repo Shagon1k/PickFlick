@@ -11,7 +11,7 @@ async function availablePort(configuredPort, excludedPorts = []) {
     if (configuredPort) {
         const port = Number(configuredPort);
         if (excludedPorts.includes(port)) {
-            throw new Error('E2E_WEB_PORT and E2E_API_PORT must be different.');
+            throw new Error('E2E_WEB_PORT and E2E_BACKEND_PORT must be different.');
         }
         return port;
     }
@@ -35,17 +35,17 @@ async function availablePort(configuredPort, excludedPorts = []) {
 }
 
 const webPort = await availablePort(process.env.E2E_WEB_PORT);
-const apiPort = await availablePort(process.env.E2E_API_PORT, [webPort]);
-const apiOrigin = `http://127.0.0.1:${apiPort}`;
+const backendPort = await availablePort(process.env.E2E_BACKEND_PORT, [webPort]);
+const backendOrigin = `http://127.0.0.1:${backendPort}`;
 // A throwaway key lets the smoke prove the dormant Apple flow without real credentials.
 const syntheticAppleKey = generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
     .privateKey.export({ format: 'pem', type: 'pkcs8' })
     .toString();
 const runtimeEnvironment = {
     ...process.env,
-    API_HOST: '127.0.0.1',
-    API_PORT: String(apiPort),
-    AUTH_BASE_URL: apiOrigin,
+    BACKEND_HOST: '127.0.0.1',
+    BACKEND_PORT: String(backendPort),
+    AUTH_BASE_URL: backendOrigin,
     APPLE_SIGN_IN_ENABLED: 'true',
     APPLE_CLIENT_ID: 'synthetic-smoke-apple-client',
     APPLE_KEY_ID: 'SYNTHKEY1',
@@ -165,13 +165,14 @@ try {
         waitFor(
             'backend liveness',
             async () =>
-                (await fetchJson(`http://127.0.0.1:${apiPort}/health/live`))?.status === 'alive',
+                (await fetchJson(`http://127.0.0.1:${backendPort}/health/live`))?.status ===
+                'alive',
             runtimes,
         ),
         waitFor(
             'backend readiness',
             async () => {
-                const report = await fetchJson(`http://127.0.0.1:${apiPort}/health/ready`);
+                const report = await fetchJson(`http://127.0.0.1:${backendPort}/health/ready`);
                 return (
                     report?.status === 'ready' &&
                     report.checks.every(({ status }) => status === 'up')
@@ -184,7 +185,7 @@ try {
     const page = await fetch(`http://127.0.0.1:${webPort}/`, {
         signal: AbortSignal.timeout(2_000),
     });
-    const api = await fetch(`${apiOrigin}/health/live`, { signal: AbortSignal.timeout(2_000) });
+    const api = await fetch(`${backendOrigin}/health/live`, { signal: AbortSignal.timeout(2_000) });
     if (
         !page.headers.get('content-security-policy')?.includes("'nonce-") ||
         page.headers.get('x-content-type-options') !== 'nosniff' ||
@@ -194,9 +195,9 @@ try {
         throw new Error('The built frontend or backend is missing its security headers.');
     }
 
-    const appleAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
+    const appleAuthResponse = await fetch(`${backendOrigin}/api/auth/sign-in/social`, {
         body: JSON.stringify({ callbackURL: '/app', provider: 'apple' }),
-        headers: { 'content-type': 'application/json', origin: apiOrigin },
+        headers: { 'content-type': 'application/json', origin: backendOrigin },
         method: 'POST',
         signal: AbortSignal.timeout(2_000),
     });
@@ -209,9 +210,9 @@ try {
         throw new Error('The built API did not start the reviewed Apple authorization flow.');
     }
 
-    const unsupportedAuthResponse = await fetch(`${apiOrigin}/api/auth/sign-in/social`, {
+    const unsupportedAuthResponse = await fetch(`${backendOrigin}/api/auth/sign-in/social`, {
         body: JSON.stringify({ callbackURL: '/app', provider: 'github' }),
-        headers: { 'content-type': 'application/json', origin: apiOrigin },
+        headers: { 'content-type': 'application/json', origin: backendOrigin },
         method: 'POST',
         signal: AbortSignal.timeout(2_000),
     });

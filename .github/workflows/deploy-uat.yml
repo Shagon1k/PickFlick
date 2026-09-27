@@ -135,7 +135,7 @@ jobs:
       - name: Run desktop and mobile browser smoke
         env:
           PLAYWRIGHT_BASE_URL: ${{ env.UAT_URL }}
-        run: pnpm uat:smoke
+        run: pnpm test:uat
 
       - name: Upload UAT screenshots
         if: always()

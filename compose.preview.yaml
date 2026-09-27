@@ -101,8 +101,8 @@ services:
             target: backend
         environment:
             <<: *runtime-environment
-            API_HOST: 0.0.0.0
-            API_PORT: 3001
+            BACKEND_HOST: 0.0.0.0
+            BACKEND_PORT: 3001
             AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
             AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
             APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}
@@ -120,7 +120,7 @@ services:
             release:
                 condition: service_completed_successfully
         ports:
-            - '127.0.0.1:${BACKEND_PORT:?BACKEND_PORT is required}:3001'
+            - '127.0.0.1:${PREVIEW_BACKEND_PORT:?PREVIEW_BACKEND_PORT is required}:3001'
         healthcheck:
             test:
                 [
@@ -149,7 +149,7 @@ services:
             backend:
                 condition: service_healthy
         ports:
-            - '127.0.0.1:${FRONTEND_PORT:?FRONTEND_PORT is required}:3000'
+            - '127.0.0.1:${PREVIEW_FRONTEND_PORT:?PREVIEW_FRONTEND_PORT is required}:3000'
         healthcheck:
             test:
                 [
