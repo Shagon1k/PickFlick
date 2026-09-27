@@ -48,5 +48,7 @@ proof that a visual change is right.
 
 ## CI
 
-The `UI accessibility and visual regression` job runs `pnpm test:ui` from a clean checkout, retries
-a failure once, and still fails on flaky tests. The delivery gate requires it.
+The `UI accessibility and visual regression` job runs on macOS, where the screenshot baselines were
+captured. The system fonts differ on Linux and change text width, page height, and some overflow
+results. CI runs `pnpm test:ui` from a clean checkout, retries a failure once, and still fails on
+flaky tests. The delivery gate requires it.

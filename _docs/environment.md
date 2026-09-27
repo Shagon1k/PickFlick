@@ -91,8 +91,10 @@ toolchain:
 - **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
-  `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend.
-- **UI** — `pnpm test:ui`; failures upload screenshots, diffs, traces, and the HTML report.
+  `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
+  `compose.ci.yaml` over the local file to use pullable, pinned test images.
+- **UI** — `pnpm test:ui` on macOS, where the screenshot baselines were captured; failures upload
+  screenshots, diffs, traces, and the HTML report.
 - **Images** — `pnpm build:images`.
 
 A terminal `Delivery gate` job requires all of them; UAT deployment waits for it.
@@ -111,6 +113,7 @@ with the short revision.
 | File                   | Purpose                                                                                                                                       |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                                   |
+| `compose.ci.yaml`      | CI-only MinIO image and health-check overrides for the isolated integration stack.                                                            |
 | `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `frontend`. Dokploy manages the data services.                                                      |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
