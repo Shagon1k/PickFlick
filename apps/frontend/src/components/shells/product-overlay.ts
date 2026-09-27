@@ -98,7 +98,9 @@ function alignToAnchor(menu: HTMLElement, anchor: HTMLElement) {
     const anchorBox = anchor.getBoundingClientRect();
     const centered = anchorBox.left + (anchorBox.width - menu.offsetWidth) / 2;
     const clamped = Math.min(Math.max(centered, 8), window.innerWidth - menu.offsetWidth - 8);
-    menu.style.setProperty('--menu-shift', `${clamped - centered}px`);
+    const initialLeft =
+        menu.dataset.menuAlign === 'right' ? anchorBox.right - menu.offsetWidth : centered;
+    menu.style.setProperty('--menu-shift', `${clamped - initialLeft}px`);
 }
 
 /**

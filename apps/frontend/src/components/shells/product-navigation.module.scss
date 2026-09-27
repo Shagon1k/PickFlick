@@ -441,14 +441,14 @@
 
     position: absolute;
     top: calc(100% + 4px);
-    left: 50%;
+    right: 0;
     z-index: 60;
     visibility: hidden;
     width: 174px;
     pointer-events: none;
     opacity: 0;
     clip-path: inset(0 0 82% 0 round 0 0 7px 7px);
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(8px);
+    transform: translateX(var(--menu-shift)) translateY(8px);
     transition:
         opacity 0.18s ease,
         visibility 0s linear var(--motion-menu),
@@ -461,7 +461,7 @@
     pointer-events: auto;
     opacity: 1;
     clip-path: inset(0 0 0 0 round 0 0 7px 7px);
-    transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
+    transform: translateX(var(--menu-shift)) translateY(0);
     transition:
         opacity 0.18s ease,
         visibility 0s linear 0s,
