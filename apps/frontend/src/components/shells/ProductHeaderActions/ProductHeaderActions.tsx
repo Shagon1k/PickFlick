@@ -99,6 +99,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                 <div
                     className={styles.accountPopover}
                     data-anchored-menu="account"
+                    data-menu-align="right"
                     data-open={accountOpen || undefined}
                     id="shell-account-menu"
                     inert={!accountOpen}
