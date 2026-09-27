@@ -43,7 +43,7 @@ Before you start, read the business rule the feature implements in the
 ## 2. Change the database, if the feature stores data
 
 1. Edit `packages/database/prisma/schema.prisma`.
-2. Start from a local database with every existing migration applied (`pnpm migrate`).
+2. Start from a local database with every existing migration applied (`pnpm db:migrate`).
 3. Generate the SQL for your change:
 
     ```bash
@@ -53,7 +53,7 @@ Before you start, read the business rule the feature implements in the
 
 4. Save the output as `prisma/migrations/<YYYYMMDDHHMMSS>_<name>/migration.sql`. Add any constraint
    Prisma cannot express (partial unique indexes, checks) by hand.
-5. Run `pnpm migrate`, then run the diff again; it must print an empty migration.
+5. Run `pnpm db:migrate`, then run the diff again; it must print an empty migration.
 6. Add a case to `src/__tests__/constraints.int.spec.ts` for each new constraint.
 
 Migrations are high-risk: keep them additive, and review them against the running revision (see
@@ -113,18 +113,18 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 
 | Layer         | Test                                                                                                                           | Run                     |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
-| Schema        | `packages/contracts/src/<area>/__tests__/*.spec.ts`                                                                            | `pnpm test`             |
-| Service       | `modules/<feature>/__tests__/<feature>.service.spec.ts`, with injected fakes (see `contact.service.spec.ts`)                   | `pnpm test`             |
+| Schema        | `packages/contracts/src/<area>/__tests__/*.spec.ts`                                                                            | `pnpm test:unit`        |
+| Service       | `modules/<feature>/__tests__/<feature>.service.spec.ts`, with injected fakes (see `contact.service.spec.ts`)                   | `pnpm test:unit`        |
 | Endpoint      | `modules/<feature>/__tests__/<feature>.int.spec.ts` with `startTestApi()` and `createUser()` from `src/testing/integration.ts` | `pnpm test:integration` |
-| Server action | `app/.../__tests__/actions.spec.ts`, mocking `@/api/*.server`                                                                  | `pnpm test`             |
-| Screen        | A Playwright spec in `tests/ui-preview/`, with any new backend answers added to `start-frontend-with-mock-api.mjs`             | `pnpm ui:test`          |
+| Server action | `app/.../__tests__/actions.spec.ts`, mocking `@/api/*.server`                                                                  | `pnpm test:unit`        |
+| Screen        | A Playwright spec in `tests/ui/`, with any new backend answers added to `start-frontend-with-mock-api.mjs`                     | `pnpm test:ui`          |
 
 `startTestApi()` boots the real application against the local database; send
 `{ userId }` with a request to act as that User.
 
 ## 6. Finish
 
-1. Run `pnpm verify`, `pnpm test:integration`, and `pnpm ui:test`.
+1. Run `pnpm verify`, `pnpm test:integration`, and `pnpm test:ui`.
 2. If you added an environment variable, add it to `.env.example`, `environment.schema.ts` in
    `@pickflick/config`, and the [environment reference](environment.md) in the same change.
 3. Update the documents the feature touches: the Roadmap rule, the DESIGN screen status, and

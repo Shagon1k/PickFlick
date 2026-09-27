@@ -55,8 +55,8 @@ services:
             target: backend
         environment:
             <<: *runtime-environment
-            API_HOST: 0.0.0.0
-            API_PORT: 3001
+            BACKEND_HOST: 0.0.0.0
+            BACKEND_PORT: 3001
             AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
             AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
             APPLE_SIGN_IN_ENABLED: ${APPLE_SIGN_IN_ENABLED:-false}

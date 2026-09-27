@@ -4,7 +4,13 @@
         ".": {
             // The Playwright plugin would execute playwright.uat.config.ts, which refuses to load
             // without PLAYWRIGHT_BASE_URL, so the suites are listed as plain entry files instead.
-            "entry": ["playwright.*.config.ts", "tests/**/*.spec.ts", "tests/ui-preview/*.mjs"],
+            "entry": [
+                "playwright.*.config.ts",
+                // CLI scripts that the Dockerfile, CI, or package scripts run directly.
+                "scripts/*.mjs",
+                "tests/**/*.spec.ts",
+                "tests/ui/*.mjs",
+            ],
             "playwright": false,
         },
         "packages/config": {

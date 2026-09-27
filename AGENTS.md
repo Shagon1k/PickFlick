@@ -55,30 +55,28 @@
 Run from the repository root with the Node and pnpm versions pinned in `.node-version` and
 `package.json`. Copy `.env.example` to `.env` first.
 
-| Task                                                          | Command                                      |
-| ------------------------------------------------------------- | -------------------------------------------- |
-| Install dependencies                                          | `pnpm install --frozen-lockfile`             |
-| Start local PostgreSQL and MinIO and create the bucket        | `pnpm services:up`                           |
-| Check / stop local services (volumes are kept)                | `pnpm services:check` / `pnpm services:down` |
-| Start the frontend and backend in development                 | `pnpm dev`                                   |
-| Start the built frontend and backend                          | `pnpm start`                                 |
-| Lint with ESLint and Stylelint (the house style) / autofix    | `pnpm lint` / `pnpm lint:fix`                |
-| Format / check formatting                                     | `pnpm format` / `pnpm format:check`          |
-| Type-check                                                    | `pnpm typecheck`                             |
-| Find unused files, exports, and dependencies                  | `pnpm knip`                                  |
-| Unit tests                                                    | `pnpm test`                                  |
-| Database integration tests against local services             | `pnpm test:integration`                      |
-| Build everything                                              | `pnpm build`                                 |
-| All quality gates (lint, knip, format, types, tests, build)   | `pnpm verify`                                |
-| UI accessibility, interaction, viewport, and screenshot tests | `pnpm ui:test`                               |
-| Update reviewed screenshot baselines                          | `pnpm ui:test:update`                        |
-| Smoke the built frontend and backend                          | `pnpm e2e:smoke`                             |
-| Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`)          | `pnpm uat:smoke`                             |
-| Build the production images                                   | `pnpm images:build`                          |
-| Render the local, deploy, and preview Compose files           | `pnpm compose:check`                         |
-| Converge UAT Compose from a clean checkout                    | `pnpm deploy:compose`                        |
-| Apply migrations / seed local or test data                    | `pnpm migrate` / `pnpm seed`                 |
-| Reset a positively identified local or test database          | `pnpm db:reset`                              |
+Scripts are named `area:action`; the area says what they touch.
+
+| Area     | Command                                                 | Does                                                                   |
+| -------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Setup    | `pnpm install --frozen-lockfile`                        | Install the locked dependencies.                                       |
+| Services | `pnpm services:up` / `services:check` / `services:down` | Start, check, or stop local PostgreSQL and MinIO (volumes are kept).   |
+| Run      | `pnpm dev` / `pnpm start`                               | Run the frontend and backend in development, or the built ones.        |
+| Quality  | `pnpm lint` / `lint:fix`                                | ESLint and Stylelint (the house style), or their autofixes.            |
+|          | `pnpm format` / `format:check`                          | Format with Prettier, or check formatting.                             |
+|          | `pnpm typecheck`                                        | Type-check every package, the tests, and the configs.                  |
+|          | `pnpm knip`                                             | Find unused files, exports, and dependencies.                          |
+|          | `pnpm verify`                                           | All of the above, unit tests, and the build: the static CI gate.       |
+| Test     | `pnpm test:unit`                                        | Vitest unit tests.                                                     |
+|          | `pnpm test:integration`                                 | Database and API tests against the local services.                     |
+|          | `pnpm test:ui` / `test:ui:update`                       | Playwright accessibility, interaction, viewport, and screenshot tests. |
+|          | `pnpm test:e2e`                                         | Smoke the built frontend and backend against isolated services.        |
+|          | `pnpm test:uat`                                         | Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`).                  |
+| Build    | `pnpm build` / `build:packages` / `build:images`        | Build everything, only the shared packages, or the production images.  |
+| Deploy   | `pnpm deploy:check`                                     | Render the local, deploy, and preview Compose files.                   |
+|          | `pnpm deploy:uat`                                       | Converge UAT Compose from a clean checkout.                            |
+| Database | `pnpm db:migrate` / `db:seed`                           | Apply the migrations, or load local or test seed data.                 |
+|          | `pnpm db:reset`                                         | Reset a positively identified local or test database.                  |
 
 UAT deployment and production promotion run only in GitHub Actions (`deploy-uat.yml`,
 `promote-production.yml`). [\_docs/environment.md](_docs/environment.md) lists variables and reset

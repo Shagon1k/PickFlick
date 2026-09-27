@@ -1418,7 +1418,7 @@ the MVP
 | ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
 | 0 — Guidance Baseline                                  | Done        | Guidance, prototype-link, JSON, and 24-asset checks passed on 2026-07-22.                                                 |
 | 1 — Infrastructure, Repository & Deployment Foundation | In progress | Local and CI gates pass; owner-run UAT delivery, failed-release, rollback, and guard evidence pending (Phase 6 register). |
-| 2 — Production Design System & App Shells              | In progress | UI kit and shells verified by `pnpm ui:test` (136 checks, 42 baselines); owner visual acknowledgement pending.            |
+| 2 — Production Design System & App Shells              | In progress | UI kit and shells verified by `pnpm test:ui` (136 checks, 42 baselines); owner visual acknowledgement pending.            |
 | 3 — Public Site & System States                        | In progress | Public pages, Contact, and recovery states verified locally; live email evidence pending.                                 |
 | 4 — Authentication & Account Onboarding                | In progress | Google sign-in and session integration specs pass; Apple dormant; owner sandbox/UAT evidence pending.                     |
 | 5 — Clubs, Membership & Roles                          | In progress | Club integration specs (role matrix, lifecycle, avatars, `404` privacy) and UI checks pass locally; UAT evidence pending. |

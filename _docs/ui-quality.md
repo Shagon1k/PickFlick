@@ -1,7 +1,7 @@
 # UI quality checks
 
-`pnpm ui:test` builds the web app, starts it on loopback against a mock API
-(`tests/ui-preview/start-frontend-with-mock-api.mjs`), and runs the Playwright suite in Chromium over
+`pnpm test:ui` builds the web app, starts it on loopback against a mock API
+(`tests/ui/start-frontend-with-mock-api.mjs`), and runs the Playwright suite in Chromium over
 the public pages, Login, Club onboarding and settings, the recovery states, the `/ui-preview`
 component gallery, and the seven `/shell-preview/*` shells.
 
@@ -10,7 +10,7 @@ component gallery, and the seven `/shell-preview/*` shells.
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec playwright install chromium
-pnpm ui:test
+pnpm test:ui
 ```
 
 The suite checks:
@@ -24,7 +24,7 @@ The suite checks:
 - exact screenshot matches at 390 and 1440 pixels (42 baselines);
 - collapsed motion when reduced motion is requested.
 
-Viewports are defined once in `tests/ui-preview/viewports.ts`.
+Viewports are defined once in `tests/ui/viewports.ts`.
 
 ## Review a failure
 
@@ -40,13 +40,13 @@ pnpm exec playwright show-report test-results/ui-report
 Change baselines only after the rendered result matches the canonical design:
 
 ```bash
-pnpm ui:test:update
+pnpm test:ui:update
 ```
 
-Inspect every changed PNG and rerun `pnpm ui:test` before committing. An updated baseline is not
+Inspect every changed PNG and rerun `pnpm test:ui` before committing. An updated baseline is not
 proof that a visual change is right.
 
 ## CI
 
-The `UI accessibility and visual regression` job runs `pnpm ui:test` from a clean checkout, retries
+The `UI accessibility and visual regression` job runs `pnpm test:ui` from a clean checkout, retries
 a failure once, and still fails on flaky tests. The delivery gate requires it.

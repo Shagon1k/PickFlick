@@ -16,8 +16,8 @@ corepack enable
 cp .env.example .env
 pnpm install --frozen-lockfile
 pnpm services:up
-pnpm migrate
-pnpm seed
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
