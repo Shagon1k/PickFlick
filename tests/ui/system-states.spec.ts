@@ -175,25 +175,31 @@ test('system-state reveals are removed when reduced motion is requested', async 
 });
 
 for (const viewport of screenshotViewports) {
-    test(`not-found matches the ${viewport.name} source-comparison capture`, async ({ page }) => {
-        await openNotFound(page, viewport);
-        await expect(page).toHaveScreenshot(`not-found-${viewport.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
-            fullPage: true,
-            scale: 'css',
-        });
-    });
+    test(
+        `not-found matches the ${viewport.name} source-comparison capture`,
+        { tag: '@visual' },
+        async ({ page }) => {
+            await openNotFound(page, viewport);
+            await expect(page).toHaveScreenshot(`not-found-${viewport.name}.png`, {
+                animations: 'disabled',
+                caret: 'hide',
+                fullPage: true,
+                scale: 'css',
+            });
+        },
+    );
 
-    test(`application error matches the ${viewport.name} source-comparison capture`, async ({
-        page,
-    }) => {
-        await openApplicationError(page, viewport);
-        await expect(page).toHaveScreenshot(`application-error-${viewport.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
-            fullPage: true,
-            scale: 'css',
-        });
-    });
+    test(
+        `application error matches the ${viewport.name} source-comparison capture`,
+        { tag: '@visual' },
+        async ({ page }) => {
+            await openApplicationError(page, viewport);
+            await expect(page).toHaveScreenshot(`application-error-${viewport.name}.png`, {
+                animations: 'disabled',
+                caret: 'hide',
+                fullPage: true,
+                scale: 'css',
+            });
+        },
+    );
 }

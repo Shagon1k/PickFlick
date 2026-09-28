@@ -182,12 +182,12 @@ history and revokes every session.
 
 ## 6. Runtime and delivery
 
-| Environment | Topology                                                           | Data                           |
-| ----------- | ------------------------------------------------------------------ | ------------------------------ |
-| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker. | Synthetic seed; email disabled |
-| CI          | Audit, lint, knip, types, unit, integration, UI, images.           | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data. | Synthetic; test-inbox email    |
-| Production  | Same shape, pinned to a SemVer tag.                                | Real users; live providers     |
+| Environment | Topology                                                                                              | Data                           |
+| ----------- | ----------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker.                                    | Synthetic seed; email disabled |
+| CI          | Audit, lint, knip, types, unit, integration, UI contract, images; main/manual adds visual regression. | Ephemeral services             |
+| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data.                                    | Synthetic; test-inbox email    |
+| Production  | Same shape, pinned to a SemVer tag.                                                                   | Real users; live providers     |
 
 ```mermaid
 flowchart LR
@@ -218,7 +218,8 @@ flowchart LR
   V -->|guard off| Stop["Stop: nothing changes"]
 ```
 
-- **Deployment:** after CI passes on `main`, `deploy-uat.yml` deploys that exact revision, waits
+- **Deployment:** after CI passes on `main`, including Linux visual regression,
+  `deploy-uat.yml` deploys that exact revision, waits
   until `/health/live` reports it with every dependency ready, and runs the Playwright UAT smoke.
   `promote-production.yml` requires a successful `UAT E2E` check for the release revision, tags it,
   pins Dokploy to the tag, and deploys — only when `PRODUCTION_DEPLOY_ENABLED=true`. See the

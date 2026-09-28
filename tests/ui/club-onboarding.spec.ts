@@ -182,31 +182,33 @@ test('the no-Clubs action meets the touch target contract', async ({ browser }) 
 });
 
 for (const viewport of screenshotViewports) {
-    test(`no-Clubs matches the ${viewport.name} source-comparison capture`, async ({
-        context,
-        page,
-    }) => {
-        await authenticate(context, `valid-no-clubs-${viewport.name}`);
-        await open(page, '/app', viewport);
-        await expect(page).toHaveScreenshot(`no-clubs-${viewport.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
-            fullPage: true,
-            scale: 'css',
-        });
-    });
+    test(
+        `no-Clubs matches the ${viewport.name} source-comparison capture`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, `valid-no-clubs-${viewport.name}`);
+            await open(page, '/app', viewport);
+            await expect(page).toHaveScreenshot(`no-clubs-${viewport.name}.png`, {
+                animations: 'disabled',
+                caret: 'hide',
+                fullPage: true,
+                scale: 'css',
+            });
+        },
+    );
 
-    test(`Create Club matches the ${viewport.name} source-comparison capture`, async ({
-        context,
-        page,
-    }) => {
-        await authenticate(context, `valid-create-club-${viewport.name}`);
-        await open(page, '/clubs/new', viewport);
-        await expect(page).toHaveScreenshot(`create-club-${viewport.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
-            fullPage: true,
-            scale: 'css',
-        });
-    });
+    test(
+        `Create Club matches the ${viewport.name} source-comparison capture`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, `valid-create-club-${viewport.name}`);
+            await open(page, '/clubs/new', viewport);
+            await expect(page).toHaveScreenshot(`create-club-${viewport.name}.png`, {
+                animations: 'disabled',
+                caret: 'hide',
+                fullPage: true,
+                scale: 'css',
+            });
+        },
+    );
 }

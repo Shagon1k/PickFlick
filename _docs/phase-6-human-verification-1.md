@@ -9,10 +9,16 @@ after moving anything durable into canonical guidance.
 - Branch `PF-32_verify-phases-1-5`, local macOS workstation, Node 24.15.0, pnpm 11.25.0, Chromium
   from Playwright 1.63.
 - Local PostgreSQL and MinIO from `compose.local.yaml`; email delivery disabled.
-- Gates run after the final change: `pnpm audit --audit-level high`, `pnpm verify` (ESLint,
-  Stylelint, knip, formatting, types, unit tests, build), `pnpm test:integration`, `pnpm test:e2e`,
+- Phase implementation gates run before the CI policy change: `pnpm audit --audit-level high`,
+  `pnpm verify` (ESLint, Stylelint, knip, formatting, types, unit tests, build),
+  `pnpm test:integration`, `pnpm test:e2e`,
   `pnpm build:images`, and `pnpm test:ui` (138 checks, 42 screenshot baselines at 390 and 1440
   pixels).
+- CI policy verification in the digest-pinned Linux Playwright image: 96 UI contract checks pass;
+  all 42 screenshot baselines were reviewed and regenerated for Linux, then 42 visual checks pass
+  without update mode. Changed files pass Prettier and ESLint, workspace typecheck passes, and
+  `actionlint` accepts `ci.yml` and `deploy-uat.yml`. Remote Actions verification is pending; the
+  previous Delivery gate did not start because of GitHub's account payment or spending-limit block.
 - Not yet exercised: UAT at `https://uat.pick-flick.app`, live Google sign-in, and live email.
 
 ## Register

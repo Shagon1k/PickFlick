@@ -1,7 +1,7 @@
 # UI quality checks
 
-`pnpm test:ui` builds the web app, starts it on loopback against a mock API
-(`tests/ui/start-frontend-with-mock-api.mjs`), and runs the Playwright suite in Chromium over
+The UI scripts build the web app, start it on loopback against a mock API
+(`tests/ui/start-frontend-with-mock-api.mjs`), and run Playwright in Chromium over
 the public pages, Login, Club onboarding and settings, the recovery states, the `/ui-preview`
 component gallery, and the seven `/shell-preview/*` shells.
 
@@ -10,8 +10,14 @@ component gallery, and the seven `/shell-preview/*` shells.
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec playwright install chromium
-pnpm test:ui
+pnpm test:ui:contract
+pnpm test:ui:visual
 ```
+
+`pnpm test:ui` runs both selections. Screenshot comparisons use the Playwright `@visual` tag;
+`test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
+accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
+reduced motion, and other behavior assertions.
 
 The suite checks:
 
@@ -21,7 +27,7 @@ The suite checks:
 - 44px touch targets and locally scrolling dense regions;
 - no horizontal page overflow at every breakpoint and gap width (390, 640, 768, 900, 1024, 1200,
   1440);
-- exact screenshot matches at 390 and 1440 pixels (42 baselines);
+- exact screenshot matches at 390 and 1440 pixels (42 baselines, visual selection);
 - collapsed motion when reduced motion is requested.
 
 Viewports are defined once in `tests/ui/viewports.ts`.
@@ -37,18 +43,25 @@ pnpm exec playwright show-report test-results/ui-report
 
 ## Update baselines
 
-Change baselines only after the rendered result matches the canonical design:
+Change baselines only after the rendered result matches the canonical design. Run this in the
+digest-pinned Linux Playwright image used by CI, with Node 24.15.0 from `.node-version`:
 
 ```bash
 pnpm test:ui:update
 ```
 
-Inspect every changed PNG and rerun `pnpm test:ui` before committing. An updated baseline is not
-proof that a visual change is right.
+Inspect every changed PNG and rerun `pnpm test:ui:visual` in that image before committing. An
+updated baseline is not proof that a visual change is right.
 
 ## CI
 
-The `UI accessibility and visual regression` job runs on macOS, where the screenshot baselines were
-captured. The system fonts differ on Linux and change text width, page height, and some overflow
-results. CI runs `pnpm test:ui` from a clean checkout, retries a failure once, and still fails on
-flaky tests. The delivery gate requires it.
+The `UI contract` job runs on every PR, `main` push, and manual CI run. The `UI visual regression`
+job runs on `main` pushes and manual CI runs; it is skipped on ordinary PR updates. Both run on
+Linux in `mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in `ci.yml`, so fonts and
+browser dependencies do not drift with the GitHub runner. CI uses the locked Node and pnpm versions,
+retries a failure once, and fails on flaky tests.
+
+To compare a branch's screenshots before merging, open **Actions → CI → Run workflow**, select the
+branch, and run it. The manual run requires both UI jobs. On `main`, visual regression must pass the
+Delivery gate before `deploy-uat.yml` can start its automatic deployment. PRs require the contract
+job; the Delivery gate accepts only an intentionally skipped visual job.
