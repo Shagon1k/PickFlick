@@ -73,15 +73,19 @@ test('Login has no horizontal overflow at canonical and bridge widths', async ({
 });
 
 for (const viewport of screenshotViewports) {
-    test(`Login matches the ${viewport.name} source-comparison capture`, async ({ page }) => {
-        await openLogin(page, viewport);
-        await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
-            fullPage: true,
-            scale: 'css',
-        });
-    });
+    test(
+        `Login matches the ${viewport.name} source-comparison capture`,
+        { tag: '@visual' },
+        async ({ page }) => {
+            await openLogin(page, viewport);
+            await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
+                animations: 'disabled',
+                caret: 'hide',
+                fullPage: true,
+                scale: 'css',
+            });
+        },
+    );
 }
 
 test('Google sign-in sends only an allowlisted return target and stores no token material', async ({

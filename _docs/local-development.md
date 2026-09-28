@@ -72,17 +72,20 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 
 ## Run the checks
 
-| Goal                                          | Command                         |
-| --------------------------------------------- | ------------------------------- |
-| Lint, knip, formatting, types, tests, build   | `pnpm verify`                   |
-| Known high-severity vulnerabilities           | `pnpm audit --audit-level high` |
-| Database, auth, and Club integration specs    | `pnpm test:integration`         |
-| Playwright accessibility and screenshot suite | `pnpm test:ui`                  |
-| Smoke the built frontend and backend          | `pnpm test:e2e`                 |
+| Goal                                        | Command                         |
+| ------------------------------------------- | ------------------------------- |
+| Lint, knip, formatting, types, tests, build | `pnpm verify`                   |
+| Known high-severity vulnerabilities         | `pnpm audit --audit-level high` |
+| Database, auth, and Club integration specs  | `pnpm test:integration`         |
+| Playwright PR behavior checks               | `pnpm test:ui:contract`         |
+| Playwright screenshot comparisons           | `pnpm test:ui:visual`           |
+| Both Playwright selections                  | `pnpm test:ui`                  |
+| Smoke the built frontend and backend        | `pnpm test:e2e`                 |
 
-`pnpm test:integration` needs the local services running. `pnpm test:ui` builds the frontend and
-serves it against a mock backend, so it needs no database; install its browser once with
-`pnpm exec playwright install chromium`. See [UI quality checks](ui-quality.md) for baselines.
+`pnpm test:integration` needs the local services running. The UI selections build the frontend and
+serve it against a mock backend, so they need no database. Install Chromium once with
+`pnpm exec playwright install chromium`. Run screenshot comparisons in the pinned Linux image;
+see [UI quality checks](ui-quality.md).
 
 The pre-commit hook scans staged files with gitleaks, formats them with Prettier, and fixes what
 Stylelint and ESLint can. Commit messages follow Conventional Commits.

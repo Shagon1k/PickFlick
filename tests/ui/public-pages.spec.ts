@@ -87,19 +87,21 @@ for (const publicPage of pages) {
     });
 
     for (const viewport of screenshotViewports) {
-        test(`${publicPage.name} matches the ${viewport.name} source-comparison capture`, async ({
-            page,
-        }) => {
-            await openPage(page, publicPage.route, viewport);
-            await revealLandingSections(page, publicPage.name);
+        test(
+            `${publicPage.name} matches the ${viewport.name} source-comparison capture`,
+            { tag: '@visual' },
+            async ({ page }) => {
+                await openPage(page, publicPage.route, viewport);
+                await revealLandingSections(page, publicPage.name);
 
-            await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
-                fullPage: true,
-                scale: 'css',
-            });
-        });
+                await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
+                    animations: 'disabled',
+                    caret: 'hide',
+                    fullPage: true,
+                    scale: 'css',
+                });
+            },
+        );
     }
 }
 

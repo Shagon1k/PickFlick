@@ -37,17 +37,19 @@ for (const shell of shellRoutes) {
     });
 
     for (const viewport of screenshotViewports) {
-        test(`${shell} shell matches the ${viewport.name} source-comparison capture`, async ({
-            page,
-        }) => {
-            await openShell(page, shell, viewport);
-            await expect(page).toHaveScreenshot(`shell-${shell}-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
-                fullPage: true,
-                scale: 'css',
-            });
-        });
+        test(
+            `${shell} shell matches the ${viewport.name} source-comparison capture`,
+            { tag: '@visual' },
+            async ({ page }) => {
+                await openShell(page, shell, viewport);
+                await expect(page).toHaveScreenshot(`shell-${shell}-${viewport.name}.png`, {
+                    animations: 'disabled',
+                    caret: 'hide',
+                    fullPage: true,
+                    scale: 'css',
+                });
+            },
+        );
     }
 }
 

@@ -156,9 +156,11 @@ jobs:
         if: ${{ always() }}
         run: docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml -f compose.ci.yaml down --volumes
 
-  ui-quality:
-    name: UI accessibility and visual regression
-    runs-on: macos-15
+  ui-contract:
+    name: UI contract
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
     timeout-minutes: 45
 
     steps:
@@ -179,18 +181,53 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium
-        run: pnpm exec playwright install chromium
-
-      - name: Run UI accessibility, interaction, viewport, and visual checks
-        run: pnpm test:ui
+      - name: Run UI accessibility, interaction, CSP, and viewport checks
+        run: pnpm test:ui:contract
 
       - name: Upload UI failure evidence
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: warn
-          name: ui-quality-${{ github.sha }}
+          name: ui-contract-${{ github.sha }}
+          path: test-results/
+          retention-days: 14
+
+  ui-visual:
+    name: UI visual regression
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compare screenshot baselines
+        run: pnpm test:ui:visual
+
+      - name: Upload UI visual failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          name: ui-visual-${{ github.sha }}
           path: test-results/
           retention-days: 14
 
@@ -221,22 +258,29 @@ jobs:
   delivery-gate:
     name: Delivery gate
     if: ${{ always() }}
-    needs: [secret-scan, static, integration, images, ui-quality]
+    needs: [secret-scan, static, integration, images, ui-contract, ui-visual]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Require every quality job
+      - name: Require quality jobs for this event
         env:
+          EVENT_NAME: ${{ github.event_name }}
           IMAGES_RESULT: ${{ needs.images.result }}
           INTEGRATION_RESULT: ${{ needs.integration.result }}
           SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
           STATIC_RESULT: ${{ needs.static.result }}
-          UI_QUALITY_RESULT: ${{ needs.ui-quality.result }}
+          UI_CONTRACT_RESULT: ${{ needs.ui-contract.result }}
+          UI_VISUAL_RESULT: ${{ needs.ui-visual.result }}
         shell: bash
         run: |
           test "$IMAGES_RESULT" = "success"
           test "$INTEGRATION_RESULT" = "success"
           test "$SECRET_SCAN_RESULT" = "success"
           test "$STATIC_RESULT" = "success"
-          test "$UI_QUALITY_RESULT" = "success"
+          test "$UI_CONTRACT_RESULT" = "success"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+              test "$UI_VISUAL_RESULT" = "skipped"
+          else
+              test "$UI_VISUAL_RESULT" = "success"
+          fi

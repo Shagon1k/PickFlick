@@ -30,7 +30,7 @@ for (const profile of [...canonicalViewports, ...gapViewports]) {
 }
 
 for (const profile of screenshotViewports) {
-    test(`matches the ${profile.name} visual baseline`, async ({ page }) => {
+    test(`matches the ${profile.name} visual baseline`, { tag: '@visual' }, async ({ page }) => {
         await openStablePreview(page, profile);
 
         await expect(page).toHaveScreenshot(`ui-preview-${profile.name}.png`, {
