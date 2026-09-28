@@ -144,14 +144,18 @@ test('public legal links use distinct canonical destinations', async ({ page }) 
     );
 });
 
-test('product primary action opens the Session destination', async ({ page }) => {
-    await openShell(page, 'product', canonicalViewports[2]);
-    const primaryAction = page.getByRole('link', { name: 'Primary action' });
-    await expect(primaryAction).toHaveAttribute('href', '/shell-preview/session');
-    await primaryAction.click();
-    await expect(page).toHaveURL(/\/shell-preview\/session$/);
-    await expect(page.getByRole('heading', { name: 'Film and Session context' })).toBeVisible();
-});
+test(
+    'product primary action opens the Session destination',
+    { tag: '@smoke' },
+    async ({ page }) => {
+        await openShell(page, 'product', canonicalViewports[2]);
+        const primaryAction = page.getByRole('link', { name: 'Primary action' });
+        await expect(primaryAction).toHaveAttribute('href', '/shell-preview/session');
+        await primaryAction.click();
+        await expect(page).toHaveURL(/\/shell-preview\/session$/);
+        await expect(page.getByRole('heading', { name: 'Film and Session context' })).toBeVisible();
+    },
+);
 
 test('compact and Session headers match their canonical navigation variants', async ({ page }) => {
     await openShell(page, 'product', canonicalViewports[1]);

@@ -10,23 +10,28 @@ async function openStablePreview(page: Page, viewport: { height: number; width: 
 }
 
 for (const profile of [...canonicalViewports, ...gapViewports]) {
-    test(`has no horizontal page overflow at ${profile.name}`, async ({ page }) => {
-        await openStablePreview(page, profile);
+    test(
+        `has no horizontal page overflow at ${profile.name}`,
+        profile.width === 1024 ? { tag: '@smoke' } : {},
+        async ({ page }) => {
+            await openStablePreview(page, profile);
 
-        const dimensions = await page.evaluate(() => ({
-            bodyWidth: globalThis.document.body.scrollWidth,
-            clientWidth: globalThis.document.documentElement.clientWidth,
-            documentWidth: globalThis.document.documentElement.scrollWidth,
-        }));
+            const dimensions = await page.evaluate(() => ({
+                bodyWidth: globalThis.document.body.scrollWidth,
+                clientWidth: globalThis.document.documentElement.clientWidth,
+                documentWidth: globalThis.document.documentElement.scrollWidth,
+            }));
 
-        expect(
-            dimensions.documentWidth,
-            `document overflowed at ${profile.width}px`,
-        ).toBeLessThanOrEqual(dimensions.clientWidth);
-        expect(dimensions.bodyWidth, `body overflowed at ${profile.width}px`).toBeLessThanOrEqual(
-            dimensions.clientWidth,
-        );
-    });
+            expect(
+                dimensions.documentWidth,
+                `document overflowed at ${profile.width}px`,
+            ).toBeLessThanOrEqual(dimensions.clientWidth);
+            expect(
+                dimensions.bodyWidth,
+                `body overflowed at ${profile.width}px`,
+            ).toBeLessThanOrEqual(dimensions.clientWidth);
+        },
+    );
 }
 
 for (const profile of screenshotViewports) {

@@ -10,11 +10,14 @@ component gallery, and the seven `/shell-preview/*` shells.
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec playwright install chromium
+pnpm test:ui:smoke
 pnpm test:ui:contract
 pnpm test:ui:visual
 ```
 
-`pnpm test:ui` runs both selections. Screenshot comparisons use the Playwright `@visual` tag;
+`pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects six PR checks with
+`test:ui:smoke`: security headers and CSP, landing accessibility, a pricing interaction, product
+shell navigation, and overflow at 1024px. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
 reduced motion, and other behavior assertions.
@@ -55,13 +58,13 @@ updated baseline is not proof that a visual change is right.
 
 ## CI
 
-The `UI contract` job runs on every PR, `main` push, and manual CI run. The `UI visual regression`
-job runs on `main` pushes and manual CI runs; it is skipped on ordinary PR updates. Both run on
+The `UI smoke` job runs on ordinary PR updates. The full `UI contract` and `UI visual regression`
+jobs run on `main` pushes and manual CI runs; both are skipped on ordinary PR updates. All run on
 Linux in `mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in `ci.yml`, so fonts and
 browser dependencies do not drift with the GitHub runner. CI uses the locked Node and pnpm versions,
 retries a failure once, and fails on flaky tests.
 
 To compare a branch's screenshots before merging, open **Actions → CI → Run workflow**, select the
-branch, and run it. The manual run requires both UI jobs. On `main`, visual regression must pass the
-Delivery gate before `deploy-uat.yml` can start its automatic deployment. PRs require the contract
-job; the Delivery gate accepts only an intentionally skipped visual job.
+branch, and run it. The manual run requires both full UI jobs. On `main`, contract and visual
+regression must pass the Delivery gate before `deploy-uat.yml` can start its automatic deployment.
+PRs require the smoke job; the Delivery gate accepts skipped full UI jobs only on PRs.

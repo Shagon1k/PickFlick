@@ -182,12 +182,12 @@ history and revokes every session.
 
 ## 6. Runtime and delivery
 
-| Environment | Topology                                                                                              | Data                           |
-| ----------- | ----------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker.                                    | Synthetic seed; email disabled |
-| CI          | Audit, lint, knip, types, unit, integration, UI contract, images; main/manual adds visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data.                                    | Synthetic; test-inbox email    |
-| Production  | Same shape, pinned to a SemVer tag.                                                                   | Real users; live providers     |
+| Environment | Topology                                                                                                                    | Data                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker.                                                          | Synthetic seed; email disabled |
+| CI          | Audit, lint, knip, types, unit, integration, images; PRs run UI smoke, main/manual run full contract and visual regression. | Ephemeral services             |
+| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data.                                                          | Synthetic; test-inbox email    |
+| Production  | Same shape, pinned to a SemVer tag.                                                                                         | Real users; live providers     |
 
 ```mermaid
 flowchart LR

@@ -53,17 +53,21 @@ async function revealLandingSections(page: Page, name: string) {
 }
 
 for (const publicPage of pages) {
-    test(`${publicPage.name} has no automated accessibility violations`, async ({ page }) => {
-        for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
-            await openPage(page, publicPage.route, viewport);
-            await waitForLandingHero(page, publicPage.name);
-            const results = await new AxeBuilder({ page }).analyze();
-            expect(
-                results.violations,
-                `${publicPage.name} at ${viewport.name}\n${formatViolations(results.violations)}`,
-            ).toEqual([]);
-        }
-    });
+    test(
+        `${publicPage.name} has no automated accessibility violations`,
+        publicPage.name === 'landing' ? { tag: '@smoke' } : {},
+        async ({ page }) => {
+            for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
+                await openPage(page, publicPage.route, viewport);
+                await waitForLandingHero(page, publicPage.name);
+                const results = await new AxeBuilder({ page }).analyze();
+                expect(
+                    results.violations,
+                    `${publicPage.name} at ${viewport.name}\n${formatViolations(results.violations)}`,
+                ).toEqual([]);
+            }
+        },
+    );
 
     test(`${publicPage.name} has no page overflow across canonical and gap widths`, async ({
         page,
@@ -320,7 +324,7 @@ test('pricing comparison scroll stays local on mobile', async ({ page }) => {
     expect(dimensions.scroll).toBeGreaterThan(dimensions.client);
 });
 
-test('pricing FAQ expands, collapses, and preserves focus', async ({ page }) => {
+test('pricing FAQ expands, collapses, and preserves focus', { tag: '@smoke' }, async ({ page }) => {
     await openPage(page, '/pricing', canonicalViewports[0]);
     const firstQuestion = page.getByRole('button', { name: 'Can I switch plans anytime?' });
     const secondQuestion = page.getByRole('button', { name: 'What happens when I downgrade?' });

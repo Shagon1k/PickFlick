@@ -69,7 +69,8 @@ Scripts are named `area:action`; the area says what they touch.
 |          | `pnpm verify`                                           | All of the above, unit tests, and the build: the static CI gate.      |
 | Test     | `pnpm test:unit`                                        | Vitest unit tests.                                                    |
 |          | `pnpm test:integration`                                 | Database and API tests against the local services.                    |
-|          | `pnpm test:ui:contract` / `test:ui:visual`              | PR behavior checks, or release screenshot comparisons.                |
+|          | `pnpm test:ui:smoke`                                    | Tagged PR behavior checks.                                            |
+|          | `pnpm test:ui:contract` / `test:ui:visual`              | Full behavior checks, or release screenshot comparisons.              |
 |          | `pnpm test:ui` / `test:ui:update`                       | Both UI selections, or update visual baselines after review.          |
 |          | `pnpm test:e2e`                                         | Smoke the built frontend and backend against isolated services.       |
 |          | `pnpm test:uat`                                         | Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`).                 |
