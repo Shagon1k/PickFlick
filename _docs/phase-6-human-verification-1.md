@@ -19,6 +19,11 @@ after moving anything durable into canonical guidance.
   without update mode. Changed files pass Prettier and ESLint, workspace typecheck passes, and
   `actionlint` accepts `ci.yml` and `deploy-uat.yml`. Remote Actions verification is pending; the
   previous Delivery gate did not start because of GitHub's account payment or spending-limit block.
+- Follow-up PR policy verification in the same Linux image with Node 24.15.0: the tagged smoke
+  selection passes 6 checks in 1.7 minutes (143 seconds for the local command, including setup and
+  build). The full contract and visual selections still list 96 and 42 checks. `actionlint` accepts
+  `ci.yml`; the Delivery gate accepts PR, `main`, and manual success results and rejects missing or
+  unexpected UI job results.
 - Not yet exercised: UAT at `https://uat.pick-flick.app`, live Google sign-in, and live email.
 
 ## Register

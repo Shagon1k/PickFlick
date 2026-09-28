@@ -93,15 +93,17 @@ toolchain:
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
   `compose.ci.yaml` over the local file to use pullable, pinned test images.
-- **UI contract** — `pnpm test:ui:contract` on every PR and `main` push, including accessibility,
-  interaction, CSP, and responsive behavior checks.
-- **UI visual** — `pnpm test:ui:visual` on `main` pushes and manual CI dispatches. Both UI jobs use
+- **UI smoke** — six tagged checks with `pnpm test:ui:smoke` on PRs, covering security headers,
+  CSP, public accessibility and interaction, product navigation, and 1024px overflow.
+- **UI contract** — the full `pnpm test:ui:contract` selection on `main` pushes and manual CI runs,
+  including accessibility, interaction, CSP, and responsive behavior checks.
+- **UI visual** — `pnpm test:ui:visual` on `main` pushes and manual CI dispatches. All UI jobs use
   the same digest-pinned Linux Playwright image; failures upload screenshots, diffs, traces, and
   the HTML report.
 - **Images** — `pnpm build:images`.
 
-A terminal `Delivery gate` job requires every PR job and the intentionally skipped visual job on
-PRs. On `main` pushes and manual runs, it requires both UI jobs. UAT deployment waits for a
+A terminal `Delivery gate` job requires the smoke job and skipped full UI jobs on PRs. On `main`
+pushes and manual runs, it requires both full UI jobs and a skipped smoke job. UAT deployment waits for a
 successful `main` push CI run, including visual regression. The production image build remains on
 PRs because it verifies all three release targets; path gating would remove that check from some
 code changes without equivalent release-image evidence.

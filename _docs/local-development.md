@@ -77,7 +77,8 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Lint, knip, formatting, types, tests, build | `pnpm verify`                   |
 | Known high-severity vulnerabilities         | `pnpm audit --audit-level high` |
 | Database, auth, and Club integration specs  | `pnpm test:integration`         |
-| Playwright PR behavior checks               | `pnpm test:ui:contract`         |
+| Playwright PR smoke checks                  | `pnpm test:ui:smoke`            |
+| Full Playwright behavior checks             | `pnpm test:ui:contract`         |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`           |
 | Both Playwright selections                  | `pnpm test:ui`                  |
 | Smoke the built frontend and backend        | `pnpm test:e2e`                 |
