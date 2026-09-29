@@ -64,3 +64,4 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 | Document                                                                       | Purpose                                                    |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | [Phase 6 — Human Verification & Bug Fixing I](phase-6-human-verification-1.md) | Tested build, severity-classified register, and deferrals. |
+| [Phase 7 — Club Hub and invitations](phase-7-club-hub.md)                      | Club Hub, invitations, and membership delivery details.    |

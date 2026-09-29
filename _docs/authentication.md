@@ -45,7 +45,7 @@ on one origin and the cookie is first-party.
 Rules the backend enforces during sign-in (`apps/backend/src/modules/auth/auth.config.ts`):
 
 - **Return targets.** `callbackURL` must match `isAllowedAuthReturnTarget` in
-  `@pickflick/contracts`: `/app`, `/clubs/new`, a Club's settings page, or an invitation. Anything
+  `@pickflick/contracts`: `/app`, `/clubs/new`, a Club's Hub or settings page, or an invitation. Anything
   else is rejected with `INVALID_RETURN_TARGET`, and pages build login links with
   `resolveAuthReturnTarget`, which falls back to `/app`.
 - **Identity.** An account is the pair (provider, provider subject), stored in `ProviderAccount`.

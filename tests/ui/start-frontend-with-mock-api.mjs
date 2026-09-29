@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 const clubsBySession = new Map();
 const avatarVersionsBySession = new Map();
 const settingsClubId = '10000000-0000-4000-8000-000000000031';
+const secondClubId = '10000000-0000-4000-8000-000000000032';
 const avatarPng = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     'base64',
@@ -79,6 +80,56 @@ function settingsProjection(token) {
     };
 }
 
+function hubClubs(token) {
+    if (!token?.includes('hub')) {
+        return clubsBySession.get(token) ?? [];
+    }
+    const first = settingsProjection(token).club;
+    const second = {
+        ...first,
+        id: secondClubId,
+        name: 'Second Screening Room',
+        description: 'A different Club.',
+        membershipRole: 'MEMBER',
+    };
+    return token.includes('revoked') ? [first] : [first, second];
+}
+
+function hubProjection(token, clubId) {
+    const club = hubClubs(token).find(({ id }) => id === clubId);
+    if (!club) {
+        return null;
+    }
+    if (clubId !== settingsClubId && clubId !== secondClubId) {
+        return {
+            club,
+            memberCount: 1,
+            sessionCount: 0,
+            completedSessionCount: 0,
+            recentSessions: [],
+        };
+    }
+    const second = clubId === secondClubId;
+    const session = {
+        id: second
+            ? '30000000-0000-4000-8000-000000000032'
+            : '30000000-0000-4000-8000-000000000031',
+        phase: second ? 'RATING' : 'NOMINATION',
+        topic: second ? 'Second Club private screening' : 'Midnight private screening',
+        scheduledAt: '2026-10-01T20:00:00.000Z',
+        location: second ? 'Room B' : 'Room A',
+        updatedAt: '2026-09-29T12:00:00.000Z',
+    };
+    return {
+        club,
+        memberCount: second ? 4 : 2,
+        sessionCount: second ? 7 : 1,
+        completedSessionCount: second ? 3 : 0,
+        activeSession: session,
+        recentSessions: [session],
+    };
+}
+
 function sessionToken(request) {
     return request.headers.cookie?.match(/(?:^|;\s*)pickflick\.session_token=([^;]+)/)?.[1];
 }
@@ -145,7 +196,7 @@ function handleClubs(request, response) {
         return;
     }
     if (request.method === 'GET') {
-        sendJson(response, 200, clubsBySession.get(token) ?? []);
+        sendJson(response, 200, hubClubs(token));
     } else if (request.method === 'POST') {
         createClub(request, response, token);
     } else {
@@ -187,6 +238,18 @@ function removeAvatar(request, response, token) {
 const clubRoutes = [
     [
         'GET',
+        /^\/hub$/u,
+        (_request, response, token, clubId) => {
+            const projection = hubProjection(token, clubId);
+            if (projection) {
+                sendJson(response, 200, projection);
+            } else {
+                sendError(response, 404, 'NOT_FOUND', 'request-hub-private');
+            }
+        },
+    ],
+    [
+        'GET',
         /^\/settings$/u,
         (_request, response, token) => sendJson(response, 200, settingsProjection(token)),
     ],
@@ -210,7 +273,7 @@ const clubRoutes = [
     ['DELETE', /^\/avatar$/u, removeAvatar],
 ];
 
-function handleClub(request, response, subpath) {
+function handleClub(request, response, clubId, subpath) {
     const token = sessionToken(request);
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-settings-auth');
@@ -225,7 +288,7 @@ function handleClub(request, response, subpath) {
         ([method, path]) => method === request.method && path.test(subpath),
     );
     if (route) {
-        route[2](request, response, token);
+        route[2](request, response, token, clubId);
     } else {
         response.writeHead(404).end();
     }
@@ -250,13 +313,13 @@ function handleContact(request, response) {
 
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
-    const clubPrefix = `/clubs/${settingsClubId}`;
+    const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
     if (request.method === 'GET' && pathname === '/api/auth/get-session') {
         handleSession(request, response);
     } else if (pathname === '/clubs') {
         handleClubs(request, response);
-    } else if (pathname.startsWith(clubPrefix)) {
-        handleClub(request, response, pathname.slice(clubPrefix.length));
+    } else if (clubMatch) {
+        handleClub(request, response, clubMatch[1], clubMatch[2] ?? '');
     } else if (request.method === 'POST' && pathname === '/contact') {
         handleContact(request, response);
     } else {

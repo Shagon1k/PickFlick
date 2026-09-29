@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type {
+    IClubHub,
     IClubSettings,
     IClubSummary,
     TChangeMemberRoleRequest,
@@ -11,6 +12,8 @@ import type {
 import { apiRequest } from '@/lib/api.server';
 
 export const listClubs = (): Promise<IClubSummary[]> => apiRequest('/clubs');
+
+export const getClubHub = (clubId: string): Promise<IClubHub> => apiRequest(`/clubs/${clubId}/hub`);
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>
     apiRequest('/clubs', { method: 'POST', json: input });

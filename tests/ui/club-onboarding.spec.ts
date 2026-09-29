@@ -155,7 +155,7 @@ test('a valid Club creation opens the new Free Club with its configured scale', 
     await expect(page.getByRole('tooltip')).toBeHidden();
     await page.getByRole('button', { name: 'Create Screening Room' }).click();
 
-    await expect(page).toHaveURL(/\/app$/u);
+    await expect(page).toHaveURL(/\/clubs\/10000000-0000-4000-8000-000000000099$/u);
     await expect(page.getByRole('heading', { level: 1, name: 'Midnight Society' })).toBeVisible();
     await expect(page.getByText('Free Club')).toBeVisible();
     await expect(page.getByText('0–7')).toBeVisible();

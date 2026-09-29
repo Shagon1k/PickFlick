@@ -81,6 +81,25 @@ export interface IClubSettings {
     auditEvents: IClubAuditEvent[];
 }
 
+export interface IClubHubSession {
+    id: string;
+    phase: 'NOMINATION' | 'SELECTION' | 'WATCHING' | 'RATING' | 'COMPLETED' | 'CANCELLED';
+    topic?: string;
+    scheduledAt?: string;
+    location?: string;
+    updatedAt: string;
+}
+
+/** One authorized snapshot for every contextual section of the Club Hub. */
+export interface IClubHub {
+    club: IClubSummary;
+    memberCount: number;
+    sessionCount: number;
+    completedSessionCount: number;
+    activeSession?: IClubHubSession;
+    recentSessions: IClubHubSession[];
+}
+
 /** Why a Club request conflicted with current state; the web maps each to recovery copy. */
 export const CLUB_CONFLICT_REASONS = [
     'CONFIRMATION_MISMATCH',

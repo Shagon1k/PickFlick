@@ -33,17 +33,17 @@ flowchart LR
   API -. Proposed .-> Paddle["Paddle"]
 ```
 
-| Concern    | Direction                                                                               | State                                                                                     | ADR               |
-| ---------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
-| Shape      | pnpm monorepo, two entrypoints (frontend, backend) plus a one-shot release job.         | Active                                                                                    | ADR-014           |
-| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.   | Partial — public site, login, Club onboarding and settings; other product routes Proposed | ADR-013           |
-| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                    | ADR-002, 010, 011 |
-| Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                    | ADR-012           |
-| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton; other entities Proposed                   | ADR-003           |
-| Objects    | S3-compatible storage for avatars and exports.                                          | Partial — Club avatars                                                                    | —                 |
-| Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                  | ADR-014           |
-| Real-time  | SSE from the API for Session progress.                                                  | Proposed                                                                                  | —                 |
-| Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.          | Partial — repository-verified; live production not provisioned                            | ADR-007, 008      |
+| Concern    | Direction                                                                               | State                                                                                                    | ADR               |
+| ---------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------- |
+| Shape      | pnpm monorepo, two entrypoints (frontend, backend) plus a one-shot release job.         | Active                                                                                                   | ADR-014           |
+| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.   | Partial — public site, login, Club onboarding, Hub overview, and settings; other product routes Proposed | ADR-013           |
+| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                                   | ADR-002, 010, 011 |
+| Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                                   | ADR-012           |
+| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton; other entities Proposed                                  | ADR-003           |
+| Objects    | S3-compatible storage for avatars and exports.                                          | Partial — Club avatars                                                                                   | —                 |
+| Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                                 | ADR-014           |
+| Real-time  | SSE from the API for Session progress.                                                  | Proposed                                                                                                 | —                 |
+| Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.          | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
 ## 2. Repository
 
@@ -69,15 +69,15 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                                   | Owns                                                                                 | State                         |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------- |
-| auth                                                                                     | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles. | Partial — Apple not activated |
-| clubs                                                                                    | Club creation, settings, avatar, roles, archive/reactivate, leave, delete, audit.    | Active                        |
-| contact                                                                                  | `POST /contact`, rate-limited, sent directly through the email module.               | Active                        |
-| email                                                                                    | Resend client; a logging stub when delivery is disabled.                             | Active                        |
-| storage                                                                                  | S3 put/get/delete/ping (AWS SDK).                                                    | Active                        |
-| health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).            | Active                        |
-| Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                              | Proposed                      |
+| Module                                                                                   | Owns                                                                                              | State                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------- |
+| auth                                                                                     | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.              | Partial — Apple not activated |
+| clubs                                                                                    | Club creation, Hub projection, settings, avatar, roles, archive/reactivate, leave, delete, audit. | Active                        |
+| contact                                                                                  | `POST /contact`, rate-limited, sent directly through the email module.                            | Active                        |
+| email                                                                                    | Resend client; a logging stub when delivery is disabled.                                          | Active                        |
+| storage                                                                                  | S3 put/get/delete/ping (AWS SDK).                                                                 | Active                        |
+| health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).                         | Active                        |
+| Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                           | Proposed                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -133,16 +133,16 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 
 ## 4. Interfaces
 
-| Interface     | Path                                         | Contract                                            | State                    |
-| ------------- | -------------------------------------------- | --------------------------------------------------- | ------------------------ |
-| Browser → API | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses     | Partial — Contact, Clubs |
-| Errors        | API → callers                                | `{ error: { code, message, requestId, reason? } }`  | Active                   |
-| OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist              | Partial — Apple dormant  |
-| Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)  | Partial — Contact only   |
-| Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked | Active                   |
-| Live progress | Frontend → API                               | SSE, re-fetch after gaps                            | Proposed                 |
-| TMDB, Paddle  | API → provider; Paddle → API webhook         | Adapters; signed, idempotent webhooks               | Proposed                 |
-| CSV           | Frontend ↔ API                               | Versioned CSV schema                                | Proposed                 |
+| Interface     | Path                                         | Contract                                            | State                                  |
+| ------------- | -------------------------------------------- | --------------------------------------------------- | -------------------------------------- |
+| Browser → API | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses     | Partial — Contact, Clubs, Hub overview |
+| Errors        | API → callers                                | `{ error: { code, message, requestId, reason? } }`  | Active                                 |
+| OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist              | Partial — Apple dormant                |
+| Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)  | Partial — Contact only                 |
+| Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked | Active                                 |
+| Live progress | Frontend → API                               | SSE, re-fetch after gaps                            | Proposed                               |
+| TMDB, Paddle  | API → provider; Paddle → API webhook         | Adapters; signed, idempotent webhooks               | Proposed                               |
+| CSV           | Frontend ↔ API                               | Versioned CSV schema                                | Proposed                               |
 
 Planned flows (Proposed): a Session submission serializes on the Session row, persists, evaluates
 completion, and transitions at most once in one transaction; deadlines are enforced by a scheduled
@@ -160,6 +160,10 @@ history and revokes every session.
 - **Authorization:** deny by default. App roles User and App Admin; Club roles Admin, Moderator,
   Member re-read from the database on every command. A Club the caller cannot see answers `404`;
   App Admin does not inherit Club rights. — Active for built routes
+- **Club Hub:** `GET /clubs/:clubId/hub` reads one current Membership and its Club counts and
+  Sessions in a repeatable-read transaction. The API marks the response private and no-store;
+  Next.js fetches it without a cache. `/app` checks current Memberships before using the
+  browser's last-Club cookie. — Active for the Overview route
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the

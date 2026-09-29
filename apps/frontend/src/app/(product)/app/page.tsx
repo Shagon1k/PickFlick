@@ -1,15 +1,14 @@
 import type { IClubSummary } from '@pickflick/contracts';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { listClubs } from '@/api/clubs.server';
 import { loginPath } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import { clubNavigation } from '@/components/shells/shell-navigation';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Pill from '@/components/ui/Pill/Pill';
 import { ApiError } from '@/lib/api.server';
 
 import styles from '../onboarding.module.scss';
@@ -49,47 +48,6 @@ function NoClubs() {
     );
 }
 
-function ClubReady({ club }: { club: IClubSummary }) {
-    return (
-        <ProductFrame clubItems={clubNavigation(club.id, 'overview')}>
-            <main className={styles.readyMain}>
-                <section aria-labelledby="club-ready-title" className={styles.readyCard}>
-                    <p className={styles.kicker}>Opening night</p>
-                    <Pill tone="warm">{club.tier === 'FREE' ? 'Free Club' : 'Pro Club'}</Pill>
-                    <h1 id="club-ready-title">{club.name}</h1>
-                    <p>
-                        Your Club is ready. Session creation and the full Club Hub arrive in their
-                        owning delivery phases.
-                    </p>
-                    <dl className={styles.facts}>
-                        <div>
-                            <dt>Your role</dt>
-                            <dd>
-                                {club.membershipRole === 'ADMIN' ? 'Admin' : club.membershipRole}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>Selection scale</dt>
-                            <dd>
-                                {club.selectionScaleMin}–{club.selectionScaleMax}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>Status</dt>
-                            <dd>{club.lifecycle === 'ACTIVE' ? 'Active' : 'Archived'}</dd>
-                        </div>
-                    </dl>
-                    <div className={styles.actions}>
-                        <ButtonLink href={`/clubs/${club.id}/settings`} variant="primary">
-                            Manage Club
-                        </ButtonLink>
-                    </div>
-                </section>
-            </main>
-        </ProductFrame>
-    );
-}
-
 function ClubsUnavailable() {
     return (
         <ProductFrame>
@@ -120,5 +78,10 @@ export default async function AppPage() {
         }
         return <ClubsUnavailable />;
     }
-    return clubs[0] ? <ClubReady club={clubs[0]} /> : <NoClubs />;
+    const lastClubId = (await cookies()).get('pickflick.last_club')?.value;
+    const club = clubs.find(({ id }) => id === lastClubId) ?? clubs[0];
+    if (!club) {
+        return <NoClubs />;
+    }
+    redirect(`/clubs/${club.id}`);
 }

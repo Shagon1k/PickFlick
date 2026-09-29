@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { contentSecurityPolicy } from '@/lib/security-headers';
 
 const PREVIEW_PREFIXES = ['/ui-preview', '/shell-preview'];
+const CLUB_PATH =
+    /^\/clubs\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/iu;
 
 /**
  * Gives every page response a fresh CSP nonce. Next.js reads the policy from the request headers
@@ -27,6 +29,16 @@ export function proxy(request: NextRequest): NextResponse {
           })
         : NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set('Content-Security-Policy', policy);
+    const clubId = CLUB_PATH.exec(request.nextUrl.pathname)?.[1];
+    if (clubId) {
+        // /app checks current Memberships before using this preference; a stale value is harmless.
+        response.cookies.set('pickflick.last_club', clubId, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        });
+    }
     return response;
 }
 
