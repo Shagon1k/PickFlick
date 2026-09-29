@@ -1,5 +1,7 @@
 'use server';
 
+import { cookies } from 'next/headers';
+
 import { createClub } from '@/api/clubs.server';
 import type { IClubFormValues, TClubFieldName } from '@/components/clubs/club-form.types';
 import { parseClubValues, validateClubValues } from '@/components/clubs/club-form.validation';
@@ -20,7 +22,13 @@ export async function createClubAction(
     }
 
     try {
-        await createClub(parsed.data);
+        const club = await createClub(parsed.data);
+        (await cookies()).set('pickflick.last_club', club.id, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        });
         return { ok: true };
     } catch (error) {
         if (error instanceof ApiError && error.status === 401) {

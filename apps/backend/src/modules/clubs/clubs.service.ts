@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
 import type {
+    IClubHub,
+    IClubHubSession,
     IClubSettings,
     IClubSummary,
     TChangeMemberRoleRequest,
@@ -28,6 +30,45 @@ export class ClubsService {
             select: { role: true, club: true },
         });
         return memberships.map(({ club, role }) => toClubSummary(club, role));
+    }
+
+    async getHub(userId: string, clubId: string): Promise<IClubHub> {
+        return this.prisma.$transaction(
+            async (transaction) => {
+                const membership = await findMembership(transaction, userId, clubId);
+                const [memberCount, sessionCount, completedSessionCount, blockingSession, recent] =
+                    await Promise.all([
+                        transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
+                        transaction.session.count({
+                            where: { clubId, phase: { not: 'CANCELLED' } },
+                        }),
+                        transaction.session.count({ where: { clubId, phase: 'COMPLETED' } }),
+                        transaction.session.findFirst({
+                            where: {
+                                clubId,
+                                phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] },
+                            },
+                            orderBy: { createdAt: 'desc' },
+                        }),
+                        transaction.session.findMany({
+                            where: { clubId, phase: { not: 'CANCELLED' } },
+                            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                            take: 5,
+                        }),
+                    ]);
+                const activeSession =
+                    blockingSession ?? recent.find(({ phase }) => phase === 'RATING');
+                return {
+                    club: toClubSummary(membership.club, membership.role),
+                    memberCount,
+                    sessionCount,
+                    completedSessionCount,
+                    ...(activeSession ? { activeSession: toHubSession(activeSession) } : {}),
+                    recentSessions: recent.map(toHubSession),
+                };
+            },
+            { isolationLevel: 'RepeatableRead' },
+        );
     }
 
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
@@ -156,6 +197,24 @@ export class ClubsService {
             });
         });
     }
+}
+
+function toHubSession(session: {
+    id: string;
+    phase: IClubHubSession['phase'];
+    topic: string | null;
+    location: string | null;
+    scheduledAt: Date | null;
+    updatedAt: Date;
+}): IClubHubSession {
+    return {
+        id: session.id,
+        phase: session.phase,
+        ...(session.topic ? { topic: session.topic } : {}),
+        ...(session.location ? { location: session.location } : {}),
+        ...(session.scheduledAt ? { scheduledAt: session.scheduledAt.toISOString() } : {}),
+        updatedAt: session.updatedAt.toISOString(),
+    };
 }
 
 /** Free Admins may run one active Club; the lock makes concurrent creations count each other. */

@@ -676,7 +676,7 @@ in UAT
 
 **Out of scope:** New capability unrelated to verification findings.
 
-### Phase 7 — Club Hub & Club Invitations · Not started
+### Phase 7 — Club Hub & Club Invitations · In progress
 
 **Goal:** Clubs you can navigate, understand, and join through the Hub and invitations.
 

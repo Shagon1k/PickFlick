@@ -110,21 +110,14 @@ export function accountNavigation(
     ];
 }
 
-/**
- * Club Hub views; views beyond Overview and Manage Club arrive with the Club Hub phase.
- * Every member keeps Manage Club: it is read-only for them and carries Leave Club.
- */
+/** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
 export function clubNavigation(
     clubId: string,
     current: 'overview' | 'manage',
 ): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [
-        { href: canonicalRoutes.product, label: 'Overview', current: current === 'overview' },
-        { href: sectionHref(hub, 'sessions'), label: 'Sessions' },
-        { href: sectionHref(hub, 'ratings'), label: 'Ratings' },
-        { href: sectionHref(hub, 'members'), label: 'Members' },
-        { href: sectionHref(hub, 'achievements'), label: 'Achievements' },
+        { href: hub, label: 'Overview', current: current === 'overview' },
         { href: `${hub}/settings`, label: 'Manage Club', current: current === 'manage' },
     ];
 }

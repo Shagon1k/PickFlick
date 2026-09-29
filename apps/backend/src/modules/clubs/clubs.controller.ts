@@ -19,6 +19,7 @@ import {
     changeMemberRoleSchema,
     confirmClubActionSchema,
     createClubSchema,
+    type IClubHub,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
@@ -52,6 +53,15 @@ export class ClubsController {
     @Header(...PRIVATE)
     list(@CurrentUser() user: IAuthUser): Promise<IClubSummary[]> {
         return this.clubsService.list(user.id);
+    }
+
+    @Get(':clubId/hub')
+    @Header(...PRIVATE)
+    getHub(
+        @CurrentUser() user: IAuthUser,
+        @Param('clubId', clubIdParam) clubId: string,
+    ): Promise<IClubHub> {
+        return this.clubsService.getHub(user.id, clubId);
     }
 
     @Post()
