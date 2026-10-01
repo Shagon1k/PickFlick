@@ -162,8 +162,10 @@ history and revokes every session.
   App Admin does not inherit Club rights. — Active for built routes
 - **Club Hub:** `GET /clubs/:clubId/hub` reads one current Membership and its Club counts and
   Sessions in a repeatable-read transaction. The API marks the response private and no-store;
-  Next.js fetches it without a cache. `/app` checks current Memberships before using the
-  browser's last-Club cookie. — Active for the Overview route
+  Next.js fetches it without a cache. Active Rating lookup is independent of the recent-activity
+  limit. Direct visits and Club switches save the last-Club cookie only after API Hub authorization;
+  a switch that loses Membership returns to `/app`. `/app` checks current Memberships before using
+  the cookie. — Active for the Overview route
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the

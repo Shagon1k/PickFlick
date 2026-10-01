@@ -36,28 +36,37 @@ export class ClubsService {
         return this.prisma.$transaction(
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
-                const [memberCount, sessionCount, completedSessionCount, blockingSession, recent] =
-                    await Promise.all([
-                        transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
-                        transaction.session.count({
-                            where: { clubId, phase: { not: 'CANCELLED' } },
-                        }),
-                        transaction.session.count({ where: { clubId, phase: 'COMPLETED' } }),
-                        transaction.session.findFirst({
-                            where: {
-                                clubId,
-                                phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] },
-                            },
-                            orderBy: { createdAt: 'desc' },
-                        }),
-                        transaction.session.findMany({
-                            where: { clubId, phase: { not: 'CANCELLED' } },
-                            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                            take: 5,
-                        }),
-                    ]);
-                const activeSession =
-                    blockingSession ?? recent.find(({ phase }) => phase === 'RATING');
+                const [
+                    memberCount,
+                    sessionCount,
+                    completedSessionCount,
+                    blockingSession,
+                    ratingSession,
+                    recent,
+                ] = await Promise.all([
+                    transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
+                    transaction.session.count({
+                        where: { clubId, phase: { not: 'CANCELLED' } },
+                    }),
+                    transaction.session.count({ where: { clubId, phase: 'COMPLETED' } }),
+                    transaction.session.findFirst({
+                        where: {
+                            clubId,
+                            phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] },
+                        },
+                        orderBy: { createdAt: 'desc' },
+                    }),
+                    transaction.session.findFirst({
+                        where: { clubId, phase: 'RATING' },
+                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                    }),
+                    transaction.session.findMany({
+                        where: { clubId, phase: { not: 'CANCELLED' } },
+                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                        take: 5,
+                    }),
+                ]);
+                const activeSession = blockingSession ?? ratingSession;
                 return {
                     club: toClubSummary(membership.club, membership.role),
                     memberCount,

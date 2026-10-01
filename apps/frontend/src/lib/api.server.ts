@@ -30,8 +30,9 @@ interface IApiRequestInit {
 export async function apiRequest<TResponse = void>(
     path: string,
     init: IApiRequestInit = {},
+    incomingHeaders?: Headers,
 ): Promise<TResponse> {
-    const incoming = await headers();
+    const incoming = incomingHeaders ?? (await headers());
     const outgoing = new Headers();
     for (const name of FORWARDED_HEADERS) {
         const value = incoming.get(name);

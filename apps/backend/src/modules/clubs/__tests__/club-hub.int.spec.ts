@@ -84,6 +84,48 @@ describe('Club Hub projection', () => {
         expect(JSON.stringify(secondHub)).not.toContain('First Club private Session');
     });
 
+    it('should retain open Rating Sessions beyond recent activity and prefer a blocking Session', async () => {
+        const ratingId = randomUUID();
+        await api.prisma.session.createMany({
+            data: [
+                { id: randomUUID(), clubId: first, type: 'FULL_CYCLE', phase: 'RATING' },
+                {
+                    id: randomUUID(),
+                    clubId: second,
+                    type: 'FULL_CYCLE',
+                    phase: 'RATING',
+                    updatedAt: new Date('2026-01-01T00:00:00Z'),
+                },
+                {
+                    id: ratingId,
+                    clubId: second,
+                    type: 'FULL_CYCLE',
+                    phase: 'RATING',
+                    updatedAt: new Date('2026-01-02T00:00:00Z'),
+                },
+                ...Array.from({ length: 5 }, () => ({
+                    id: randomUUID(),
+                    clubId: second,
+                    type: 'PAST' as const,
+                    phase: 'COMPLETED' as const,
+                    updatedAt: new Date('2026-02-01T00:00:00Z'),
+                })),
+            ],
+        });
+
+        const firstHub = (await (
+            await api.request(`/clubs/${first}/hub`, { userId: admin })
+        ).json()) as IClubHub;
+        const secondHub = (await (
+            await api.request(`/clubs/${second}/hub`, { userId: admin })
+        ).json()) as IClubHub;
+
+        expect(firstHub.activeSession?.phase).toBe('NOMINATION');
+        expect(secondHub.activeSession).toMatchObject({ id: ratingId, phase: 'RATING' });
+        expect(secondHub.recentSessions).toHaveLength(5);
+        expect(secondHub.recentSessions.every(({ phase }) => phase === 'COMPLETED')).toBe(true);
+    });
+
     it('should hide a stale Hub after Membership removal', async () => {
         await api.prisma.membership.update({
             where: { id: secondMembership },
