@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { getClubHub } from '@/api/clubs.server';
+import { ApiError } from '@/lib/api.server';
 import { contentSecurityPolicy } from '@/lib/security-headers';
 
 const PREVIEW_PREFIXES = ['/ui-preview', '/shell-preview'];
@@ -13,7 +15,7 @@ const CLUB_PATH =
  * Component and shell previews ship in every image because one image is promoted from UAT to
  * production. Production answers them with the ordinary 404 at request time.
  */
-export function proxy(request: NextRequest): NextResponse {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
     const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
     const requestHeaders = new Headers(request.headers);
@@ -31,7 +33,15 @@ export function proxy(request: NextRequest): NextResponse {
     response.headers.set('Content-Security-Policy', policy);
     const clubId = CLUB_PATH.exec(request.nextUrl.pathname)?.[1];
     if (clubId) {
-        // /app checks current Memberships before using this preference; a stale value is harmless.
+        try {
+            await getClubHub(clubId, request.headers);
+        } catch (error) {
+            if (!(error instanceof ApiError && [400, 401, 404].includes(error.status))) {
+                console.error('Club preference authorization failed.');
+            }
+            // The page owns access and service-failure states; keep the previous preference.
+            return response;
+        }
         response.cookies.set('pickflick.last_club', clubId, {
             httpOnly: true,
             sameSite: 'lax',

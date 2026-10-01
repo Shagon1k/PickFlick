@@ -71,6 +71,23 @@ test(
     },
 );
 
+test(
+    'direct authorized visits save the preference and inaccessible visits preserve it',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await authenticate(context, 'valid-hub-preference');
+        await page.goto(`/clubs/${secondClubId}`);
+        await expect(
+            page.getByRole('heading', { level: 1, name: 'Second Screening Room' }),
+        ).toBeVisible();
+
+        await page.goto('/clubs/10000000-0000-4000-8000-000000000033');
+        await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
+        await page.goto('/app');
+        await expect(page).toHaveURL(new RegExp(`/clubs/${secondClubId}$`, 'u'));
+    },
+);
+
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
     await authenticate(context, 'valid-hub-archived');
     await page.goto(`/clubs/${firstClubId}`);

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { getClubHub, listClubs } from '@/api/clubs.server';
+import { ApiError } from '@/lib/api.server';
 
 /** Save the preference only after both the list and the Hub authorize this Membership. */
 export async function selectClubAction(formData: FormData): Promise<void> {
@@ -13,7 +14,14 @@ export async function selectClubAction(formData: FormData): Promise<void> {
     if (!club) {
         redirect('/app');
     }
-    await getClubHub(club.id);
+    try {
+        await getClubHub(club.id);
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+            redirect('/app');
+        }
+        throw error;
+    }
     (await cookies()).set('pickflick.last_club', club.id, {
         httpOnly: true,
         sameSite: 'lax',

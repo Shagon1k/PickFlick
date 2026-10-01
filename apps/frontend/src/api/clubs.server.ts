@@ -13,7 +13,8 @@ import { apiRequest } from '@/lib/api.server';
 
 export const listClubs = (): Promise<IClubSummary[]> => apiRequest('/clubs');
 
-export const getClubHub = (clubId: string): Promise<IClubHub> => apiRequest(`/clubs/${clubId}/hub`);
+export const getClubHub = (clubId: string, incomingHeaders?: Headers): Promise<IClubHub> =>
+    apiRequest(`/clubs/${clubId}/hub`, {}, incomingHeaders);
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>
     apiRequest('/clubs', { method: 'POST', json: input });

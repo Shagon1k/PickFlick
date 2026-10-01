@@ -5,9 +5,20 @@ import {
 } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 
+import { ApiError } from '@/lib/api.server';
 import { config, proxy } from '@/proxy';
 
+const api = vi.hoisted(() => ({ getClubHub: vi.fn() }));
+vi.mock('@/api/clubs.server', () => api);
+
+const clubId = '10000000-0000-4000-8000-000000000031';
+
 describe('proxy', () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+        api.getClubHub.mockResolvedValue(undefined);
+    });
+
     afterEach(() => {
         vi.unstubAllEnvs();
     });
@@ -37,9 +48,9 @@ describe('proxy', () => {
         ).toBe(true);
     });
 
-    it('should give each page a fresh nonce in its policy and request headers', () => {
-        const first = proxy(new NextRequest('https://pick-flick.app/pricing'));
-        const second = proxy(new NextRequest('https://pick-flick.app/pricing'));
+    it('should give each page a fresh nonce in its policy and request headers', async () => {
+        const first = await proxy(new NextRequest('https://pick-flick.app/pricing'));
+        const second = await proxy(new NextRequest('https://pick-flick.app/pricing'));
         const policy = first.headers.get('Content-Security-Policy');
         const nonce = first.headers.get('x-middleware-request-x-nonce');
 
@@ -49,16 +60,52 @@ describe('proxy', () => {
         expect(second.headers.get('Content-Security-Policy')).not.toBe(policy);
     });
 
-    it('should hide previews in production and serve them elsewhere', () => {
+    it('should save a direct Club visit only after the Hub authorizes the request', async () => {
+        const request = new NextRequest(`https://pick-flick.app/clubs/${clubId}`, {
+            headers: { cookie: 'pickflick.session_token=test-session' },
+        });
+        const response = await proxy(request);
+
+        expect(api.getClubHub).toHaveBeenCalledWith(clubId, request.headers);
+        expect(response.cookies.get('pickflick.last_club')?.value).toBe(clubId);
+    });
+
+    it.each([401, 404])('should preserve the last Club when the Hub returns %s', async (status) => {
+        api.getClubHub.mockRejectedValueOnce(new ApiError(status));
+        const request = new NextRequest(`https://pick-flick.app/clubs/${clubId}/settings`, {
+            headers: { cookie: 'pickflick.last_club=previous-club' },
+        });
+        const response = await proxy(request);
+
+        expect(response.cookies.get('pickflick.last_club')).toBeUndefined();
+        expect(response.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
+    });
+
+    it('should preserve the preference and report a failed authorization check', async () => {
+        api.getClubHub.mockRejectedValueOnce(new TypeError('fetch failed'));
+        const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const response = await proxy(new NextRequest(`https://pick-flick.app/clubs/${clubId}`));
+
+            expect(response.cookies.get('pickflick.last_club')).toBeUndefined();
+            expect(log).toHaveBeenCalledWith('Club preference authorization failed.');
+        } finally {
+            log.mockRestore();
+        }
+    });
+
+    it('should hide previews in production and serve them elsewhere', async () => {
         vi.stubEnv('APP_ENV', 'production');
-        const hidden = proxy(new NextRequest('https://pick-flick.app/ui-preview/error-recovery'));
+        const hidden = await proxy(
+            new NextRequest('https://pick-flick.app/ui-preview/error-recovery'),
+        );
         expect(isRewrite(hidden)).toBe(true);
         expect(getRewrittenUrl(hidden)).toBe('https://pick-flick.app/__preview-unavailable');
         expect(hidden.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
 
         vi.stubEnv('APP_ENV', 'uat');
-        expect(isRewrite(proxy(new NextRequest('https://uat.pick-flick.app/ui-preview')))).toBe(
-            false,
-        );
+        expect(
+            isRewrite(await proxy(new NextRequest('https://uat.pick-flick.app/ui-preview'))),
+        ).toBe(false);
     });
 });

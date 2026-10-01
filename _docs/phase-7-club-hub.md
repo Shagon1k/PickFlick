@@ -11,12 +11,17 @@ Project 3 owns live issue status.
 - `/app` loads current Memberships and opens the last used Club. If the preference is stale, it
   opens the first current Club; with no Memberships, it keeps the no-Clubs state.
 - The switcher submits one Club choice through a server action. The action checks the current
-  Membership and Hub response before saving the preference. Direct Club visits also update the
-  preference; `/app` never trusts the cookie without checking Memberships.
+  Membership and Hub response before saving the preference. If access is revoked between those
+  checks, it returns to `/app` without changing the preference. Direct Club visits update the
+  preference only after the API authorizes the Hub request; denied or failed requests preserve the
+  previous preference. `/app` never trusts the cookie without checking Memberships.
 - `GET /clubs/:clubId/hub` returns one membership-scoped snapshot: Club summary, member and Session
   counts, an active Session when one exists, and five recent Sessions. It uses a repeatable-read
   transaction and private, no-store responses. The frontend fetches without a cache and renders
   the complete projection for one Club route.
+- The active Session query prefers Nomination, Selection, or Watching, then the most recently
+  updated Rating Session. Rating lookup is independent of the five recent Sessions, so newer
+  Completed Sessions cannot hide an unfinished Rating Session from the Call Sheet.
 - The Session skeleton has no Movie, runtime, genre, nominations, attendance, or ratings yet. The
   Call Sheet and activity show only fields that exist. The empty state names what will appear when
   Sessions are created. Scheduled call time is labelled UTC until the Session scheduling flow owns
@@ -36,5 +41,11 @@ Project 3 owns live issue status.
   image at 390 and 1440 pixels. The Hub images and changed Club settings images were inspected.
 - Static gate: `pnpm verify` passed, including lint, formatting, unused-code check, type checks,
   130 unit tests, and production builds.
+- Review fix round 1: `pnpm verify` passed with 138 unit tests and production builds. All 43
+  database/API integration tests passed against isolated PostgreSQL with the nine existing
+  migrations and synthetic seed. The smoke selection and Hub behavior checks passed 11/11,
+  including direct-visit preference preservation, keyboard, touch, accessibility, and responsive
+  checks. Unit tests cover revocation between the Club list and Hub requests; the Hub integration
+  test covers Rating Sessions older than five recent Completed Sessions and blocking priority.
 - Completion remains pending until the exact head SHA is on preview and the owner acknowledges the
   visual review required by issue #33.
