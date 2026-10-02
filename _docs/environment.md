@@ -92,7 +92,7 @@ toolchain:
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
-  `compose.ci.yaml` over the local file to use pullable, pinned test images.
+  `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
 - **UI smoke** — six tagged checks with `pnpm test:ui:smoke` on PRs, covering security headers,
   CSP, public accessibility and interaction, product navigation, and 1024px overflow.
 - **UI contract** — the full `pnpm test:ui:contract` selection on `main` pushes and manual CI runs,
@@ -122,9 +122,25 @@ with the short revision.
 | File                   | Purpose                                                                                                                                       |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                                   |
-| `compose.ci.yaml`      | CI-only MinIO image and health-check overrides for the isolated integration stack.                                                            |
+| `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                      |
 | `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `frontend`. Dokploy manages the data services.                                                      |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
+
+Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
+`cgr.dev/chainguard/minio-client` pair already selected in `compose.ci.yaml`, replacing the
+inaccessible Quay release tags. Sharing these pins keeps CI, local development, and previews on
+the same tested storage binaries. These are
+[Chainguard's Wolfi-based MinIO images](https://edu.chainguard.dev/chainguard/containers/getting-started/web-and-data-services/minio/);
+their OCI labels identify Chainguard as vendor and link its image sources.
+
+Verified on 2026-10-02 with registry pulls and actual containers on Linux amd64: the server reports
+`RELEASE.2026-09-22T19-25-18Z` (Wolfi package `0.20260922.192518-r0`); the client reports
+`DEVELOPMENT.GOGET`, with Wolfi package `mc` version `0.20250813.083541-r24`. Both run as UID 65532.
+The server includes wget rather than curl, so its healthcheck uses CI's
+`wget --quiet --spider` against the same `/minio/health/live` endpoint with unchanged timing.
+Isolated local and preview dependency stacks passed their unmodified shell bucket initializers,
+repeated initialization, S3 put/get/delete, and object persistence across server recreation.
+Their test containers, volumes, and networks were removed afterward.
 
 `pnpm deploy:check` renders all three with synthetic values. In `compose.deploy.yaml`, `release`
 must finish before `backend` starts, and `frontend` waits for backend health. Containers are
