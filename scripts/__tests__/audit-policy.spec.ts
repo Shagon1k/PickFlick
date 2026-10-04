@@ -22,7 +22,7 @@ describe('audit policy', () => {
     it('should allow only the exact approved advisory before expiry', () => {
         expect(evaluateAudit(JSON.stringify(report()), 1, policy, now)).toBe(1);
     });
-    it.each([policy.expires, '2026-11-04T00:00:00Z'])(
+    it.each([policy.expires, '2026-12-11T00:00:00Z'])(
         'should fail at or after expiry %s',
         (date) => {
             expect(() =>

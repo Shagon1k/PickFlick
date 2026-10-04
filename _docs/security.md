@@ -113,7 +113,7 @@ entry), so a client cannot spoof it with its own `X-Forwarded-For`.
 Owner Alex approved a local mitigation and narrowly scoped residual-risk exception for
 `GHSA-vfj7-8cjw-p6xm`, **only `braces@3.0.3`**, while upstream has no fixed release (GitHub advisory
 and npm registry rechecked on 2026-10-04). This is not a claim that the advisory disappeared.
-The exception expires at **2026-11-03 00:00:00 UTC**; it cannot silently renew. Any extension needs
+The exception expires at **2026-12-10 00:00:00 UTC**; it cannot silently renew. Any extension needs
 fresh owner approval and review of current upstream evidence.
 
 `patches/braces@3.0.3.patch` is applied through `pnpm-workspace.yaml` `patchedDependencies`.

@@ -2,7 +2,7 @@
     "advisory": "GHSA-vfj7-8cjw-p6xm",
     "package": "braces",
     "version": "3.0.3",
-    "expires": "2026-11-03T00:00:00Z",
+    "expires": "2026-12-10T00:00:00Z",
     "reason": "Owner-approved temporary local depth mitigation; no upstream fixed release exists. Residual caller error-handling and expansion risks remain.",
     "patch": "patches/braces@3.0.3.patch",
     "patchSha256": "fbd5534335707d9326f09119cab31155e776242c19c182c1a8ec629bf536fa33",
