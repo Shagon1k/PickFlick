@@ -138,6 +138,9 @@ Club lifecycle, current Membership, and member limit; the Membership, audit even
 response commit together. Historical departed Memberships remain intact. Links expire after seven
 days and one User can accept or decline each link. Unsafe states omit Club data; preview is available
 only to authenticated Users. The invitation page and API responses are private and uncached.
+Manager lists include the 20 most recent records and every live pending invitation, so older links
+remain reachable for revocation. The creation action preserves its returned token if a subsequent
+list refresh fails; the UI shows the link and a separate refresh warning.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 

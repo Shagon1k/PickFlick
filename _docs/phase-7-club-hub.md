@@ -57,6 +57,8 @@ Project 3 owns live issue status.
   Creating a shareable link does not reserve a seat. The UI displays its raw link once and can copy
   it; neither local storage nor the invitation row keeps the token. Recent invitation rows contain only
   IDs, expiry, and state. Creating and revoking links append Club audit events.
+  The list includes the newest 20 records plus every live pending link. Creation preserves its
+  returned token when list refresh fails, showing a separate warning and keeping revocation available.
 - Ten migrations now include `ClubInvite`: a unique SHA-256 digest of 32 random bytes, Club,
   inviter, optional target, expiry, revocation, and the responder's decision and timestamp.
   Membership creation and its audit record share the response transaction. Decline records the
@@ -73,6 +75,8 @@ Project 3 owns live issue status.
   valid, success, decline, and recovery states. Sign-in returns to the invitation and leaves the
   acceptance decision to the User. Success opens the authorized Club Hub. Network failures leave
   the choice available for retry. The page is noindex, private/no-store, and no-referrer.
+  Maximum-length Club names are visually ellipsized on one line, with the full heading text still
+  accessible, so acceptance and decline keep the same card dimensions.
 - Token input travels in POST bodies to fixed API paths. HTTP logs redact request URLs, referrers,
   cookies, authorization, redirect locations, and set-cookie headers. No raw token is added to
   invitation or Membership audit records.
@@ -98,3 +102,14 @@ Project 3 owns live issue status.
 - All 66 visual comparisons passed in the digest-pinned Linux Playwright image. Exact-SHA hosted
   preview and owner visual acknowledgement remain required before completion. This run did not
   execute the separate built-stack `pnpm test:e2e` smoke command.
+
+### Review fix round 1 verification (2026-10-04)
+
+- `pnpm verify` passed, including 231 unit tests and workspace builds. The sandbox run used a writable
+  copy of pnpm's store metadata; installed dependencies were unchanged. The final stylesheet also
+  passed Stylelint, Prettier, and a fresh frontend build after limiting text clipping to the horizontal axis.
+- All 54 database/API integration tests passed against the isolated `pickflick_test` database.
+  Regressions cover an older pending link after 20 newer revocations and more than 20 pending links.
+- All 10 PR smoke checks passed. All 28 invitation browser checks passed in the pinned Playwright
+  image, including list-refresh failure, maximum-length Club names across seven widths, and all 22
+  unchanged screenshot baselines. Long-name previews were inspected at 390 and 1440 pixels.

@@ -5,7 +5,12 @@ import { z } from 'zod';
 
 type TInvitationResult =
     | { ok: false; message: string }
-    | { ok: true; invitations: IManagedInvitation[]; created?: ICreatedInvitation };
+    | {
+          ok: true;
+          invitations?: IManagedInvitation[];
+          created?: ICreatedInvitation;
+          refreshError?: string;
+      };
 
 import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
 import { ApiError } from '@/lib/api.server';
@@ -34,7 +39,15 @@ export async function manageInvitationsAction(
             return { ok: true as const, invitations: await listInvitations(clubId) };
         }
         const created = await createInvitation(clubId);
-        return { ok: true as const, created, invitations: await listInvitations(clubId) };
+        const refreshed = await loadInvitationsAction(clubId);
+        return refreshed.ok
+            ? { ok: true as const, created, invitations: refreshed.invitations }
+            : {
+                  ok: true as const,
+                  created,
+                  refreshError:
+                      'Invitation list could not be refreshed. Use Recent invitations to try again.',
+              };
     } catch (error) {
         return { ok: false as const, message: failure(error) };
     }

@@ -265,3 +265,7 @@ only Club name, member count, and inviter; Session totals are omitted. Accept an
 pending and retry feedback. Success and already-member states open the authorized Hub. Manage Club
 lets Admins and Moderators create, copy, inspect, and revoke links; the pending-invite popover remains
 in issue #35. Owner review of the exact hosted head SHA remains required.
+Long Club names use a single-line ellipsis in the invitation preview while keeping the full heading
+text accessible. Accepting or declining a maximum-length name keeps the card dimensions stable.
+Manage Club keeps a newly created link visible and revocable when list refresh fails, with a warning
+that directs the manager to reload Recent invitations. Older live pending links remain in that list.

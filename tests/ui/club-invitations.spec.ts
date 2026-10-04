@@ -163,6 +163,73 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
     }
 });
 
+test('Maximum-length Club names keep invitation geometry after acceptance and decline', async ({
+    context,
+    page,
+}, testInfo) => {
+    for (const viewport of [...canonicalViewports, ...gapViewports]) {
+        await page.setViewportSize(viewport);
+        for (const decision of ['accept', 'decline'] as const) {
+            await signIn(context, `long-name-${decision}-${viewport.name}`);
+            await page.goto(invitationPath(), { waitUntil: 'load' });
+            const name = page.getByRole('heading', { level: 2, name: 'W'.repeat(100) });
+            await expect(name).toBeVisible();
+            await settle(page);
+            const card = page.locator('[aria-label="Club invitation"] [aria-busy]');
+            const original = await card.boundingBox();
+            const dimensions = await page.evaluate(() => ({
+                scroll: document.documentElement.scrollWidth,
+                width: document.documentElement.clientWidth,
+            }));
+            expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
+            expect(await name.evaluate((heading) => heading.scrollWidth)).toBeGreaterThan(
+                await name.evaluate((heading) => heading.clientWidth),
+            );
+            await page.screenshot({
+                path: testInfo.outputPath(`long-name-${decision}-${viewport.name}.png`),
+                fullPage: true,
+            });
+            await page
+                .getByRole('button', {
+                    name: decision === 'accept' ? 'Accept Invitation' : "No thanks, I'll pass",
+                })
+                .click();
+            await expect(
+                page.getByRole('heading', {
+                    name: decision === 'accept' ? 'Welcome to the Club' : 'Invitation declined',
+                }),
+            ).toBeVisible();
+            await settle(page);
+            const result = await card.boundingBox();
+            expect(result?.height).toBe(original?.height);
+            expect(result?.width).toBe(original?.width);
+            await expect(name).toHaveCount(0);
+        }
+    }
+});
+
+test('Club Admin keeps a created link usable when refreshing invitations fails', async ({
+    context,
+    page,
+}) => {
+    await signIn(context, 'refresh-failure');
+    await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
+    await page.getByRole('button', { name: 'Create invitation' }).click();
+    const link = page.getByLabel('Invitation link');
+    await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
+    await expect(page.getByRole('status').last()).toContainText(
+        'Invitation created. Share this link',
+    );
+    await expect(page.getByRole('status').last()).toContainText('could not be refreshed');
+    await expect(page.getByRole('button', { name: 'Revoke invitation' })).toBeVisible();
+    const original = await link.inputValue();
+    await page.getByRole('button', { name: 'Recent invitations' }).click();
+    await expect(page.getByRole('status').last()).toHaveText('Recent invitations loaded.');
+    await expect(link).toHaveValue(original);
+    await page.getByRole('button', { name: 'Revoke invitation' }).click();
+    await expect(link).toHaveCount(0);
+});
+
 test('Club Admin creates, copies, and revokes a link through Manage Club', async ({
     context,
     page,

@@ -134,6 +134,55 @@ describe('Club invitations', () => {
         expect(await listed.text()).not.toContain(invitation.token);
     });
 
+    it('should keep older pending invitations reachable after twenty newer links are revoked', async () => {
+        const original = await create();
+        for (let index = 0; index < 20; index++) {
+            const newer = await create();
+            expect(
+                (
+                    await api.request(`/clubs/${clubId}/invitations/${newer.id}/revoke`, {
+                        userId: admin,
+                        method: 'POST',
+                    })
+                ).status,
+            ).toBe(204);
+        }
+
+        const response = await api.request(`/clubs/${clubId}/invitations`, { userId: admin });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(
+            expect.arrayContaining([
+                { id: original.id, expiresAt: original.expiresAt, state: 'pending' },
+            ]),
+        );
+        expect(
+            (
+                await api.request(`/clubs/${clubId}/invitations/${original.id}/revoke`, {
+                    userId: admin,
+                    method: 'POST',
+                })
+            ).status,
+        ).toBe(204);
+        expect(await preview(original.token)).toEqual({ state: 'revoked' });
+    });
+
+    it('should return every pending invitation even when there are more than twenty', async () => {
+        const created = [];
+        for (let index = 0; index < 21; index++) created.push(await create());
+
+        const response = await api.request(`/clubs/${clubId}/invitations`, { userId: admin });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(
+            expect.arrayContaining(
+                created.map((invite) => ({
+                    id: invite.id,
+                    expiresAt: invite.expiresAt,
+                    state: 'pending',
+                })),
+            ),
+        );
+    });
+
     it('should create exactly one Membership and audit under concurrent acceptance', async () => {
         const invitation = await create();
         const responses = await Promise.all(

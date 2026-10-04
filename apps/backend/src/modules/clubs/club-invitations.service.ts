@@ -90,10 +90,21 @@ export class ClubInvitationsService {
 
     async list(userId: string, clubId: string): Promise<IManagedInvitation[]> {
         await manager(this.prisma, userId, clubId);
-        const invitations = await this.prisma.clubInvite.findMany({
+        const recent = await this.prisma.clubInvite.findMany({
             where: { clubId },
             orderBy: { createdAt: 'desc' },
             take: 20,
+            select: { id: true },
+        });
+        const invitations = await this.prisma.clubInvite.findMany({
+            where: {
+                clubId,
+                OR: [
+                    { id: { in: recent.map(({ id }) => id) } },
+                    { revokedAt: null, respondedAt: null, expiresAt: { gt: new Date() } },
+                ],
+            },
+            orderBy: { createdAt: 'desc' },
         });
         return invitations.map((invite) => {
             let state: IManagedInvitation['state'] = 'pending';

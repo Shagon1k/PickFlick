@@ -236,6 +236,7 @@ function removeAvatar(request, response, token) {
 
 /** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
 const managedInvites = new Map();
+const failedInvitationRefreshes = new Set();
 function manageInvitation(request, response, session) {
     readJson(request, () => {
         const id = '60000000-0000-4000-8000-000000000034';
@@ -254,7 +255,14 @@ const clubRoutes = [
     [
         'GET',
         /^\/invitations$/u,
-        (_request, response, session) => sendJson(response, 200, managedInvites.get(session) ?? []),
+        (_request, response, session) => {
+            if (session.includes('refresh-failure') && !failedInvitationRefreshes.has(session)) {
+                failedInvitationRefreshes.add(session);
+                sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-refresh');
+                return;
+            }
+            sendJson(response, 200, managedInvites.get(session) ?? []);
+        },
     ],
     [
         'POST',
@@ -376,7 +384,7 @@ function handleInvitation(request, response, pathname) {
             if (state === 'valid')
                 preview = {
                     state: 'valid',
-                    clubName: 'Midnight Society',
+                    clubName: session.includes('long-name') ? 'W'.repeat(100) : 'Midnight Society',
                     memberCount: 2,
                     inviterName: 'Avery Admin',
                     expiresAt: '2026-10-10T12:00:00.000Z',

@@ -29,12 +29,24 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 setMessage(result.message);
                 return;
             }
-            setInvitations(result.invitations);
+            if (result.invitations) setInvitations(result.invitations);
             if ('created' in result && result.created) {
+                const created = result.created;
+                if (!result.invitations) {
+                    setInvitations((current) => [
+                        { id: created.id, expiresAt: created.expiresAt, state: 'pending' },
+                        ...current,
+                    ]);
+                }
                 setLink(`${globalThis.location.origin}/invite/club/${result.created.token}`);
                 setCreatedId(result.created.id);
                 setMessage(
-                    'Invitation created. Share this link with one person; it expires in seven days.',
+                    [
+                        'Invitation created. Share this link with one person; it expires in seven days.',
+                        result.refreshError,
+                    ]
+                        .filter(Boolean)
+                        .join(' '),
                 );
             } else {
                 if (inviteId === createdId) setLink('');
