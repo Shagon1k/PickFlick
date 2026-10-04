@@ -61,6 +61,9 @@ export const CLUB_AUDIT_ACTIONS = [
     'CLUB_REACTIVATED',
     'MEMBERSHIP_LEFT',
     'CLUB_DELETED',
+    'CLUB_INVITE_CREATED',
+    'CLUB_INVITE_REVOKED',
+    'MEMBERSHIP_JOINED',
 ] as const;
 
 export type TClubAuditAction = (typeof CLUB_AUDIT_ACTIONS)[number];

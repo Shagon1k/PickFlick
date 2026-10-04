@@ -74,6 +74,23 @@ describe('AuthService', () => {
             expect(new URL(body.url ?? '').hostname).toBe('accounts.google.com');
         });
 
+        it('should retain invitation continuation in transient state without sending it to the provider', async () => {
+            const callbackURL = '/invite/club/' + 'x'.repeat(43);
+            const response = await signIn(callbackURL);
+            const body = (await response.json()) as { url: string };
+            expect(response.status).toBe(200);
+            expect(new URL(body.url).hostname).toBe('accounts.google.com');
+            expect(body.url).not.toContain(callbackURL);
+            const state = new URL(body.url).searchParams.get('state');
+            const verification = await prisma.authVerification.findFirstOrThrow({
+                where: { identifier: state ?? '' },
+            });
+            expect(verification.value).toContain(callbackURL);
+            expect(verification.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(
+                10 * 60 * 1000,
+            );
+        });
+
         it('should reject a return target outside the allowlist', async () => {
             expect((await signIn('https://evil.example/app')).status).toBe(400);
         });

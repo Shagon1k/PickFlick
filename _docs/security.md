@@ -121,3 +121,18 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 - Data export and account deletion that anonymizes shared history.
 - HSTS `includeSubDomains` and `preload`.
 - Apple Sign In, which stays off until the owner approves it.
+
+## Club invitation links
+
+Invitation tokens contain 32 random bytes and expire after seven days. The API stores only a
+SHA-256 digest; it returns the token once to the authorized Admin or Moderator creating the link.
+Preview and response require authentication, validate the optional recipient, and reveal no Club
+data for unsafe states. Accept, decline, and revoke serialize on the Club row; acceptance checks
+member capacity and writes the Membership, audit event, and invitation response atomically.
+
+Tokens travel in POST bodies to fixed API paths. HTTP logging omits request URLs, referrers, and
+redirect locations as well as authentication headers. Invitation pages send `no-referrer`, private
+no-store responses, and noindex metadata. The UI holds a newly created link in component state for
+copying; it never persists it in browser storage. Recent-invitation API responses contain no token
+or digest. Better Auth's short-lived OAuth state retains the allowlisted return path during sign-in;
+provider log messages and error arguments are omitted to keep that path out of logs.

@@ -16,6 +16,16 @@ import { StorageModule } from './modules/storage/storage.module.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
+// Invitation URLs can also arrive as a sign-in callback or a same-origin referrer.
+export const HTTP_LOG_REDACTIONS = [
+    'req.url',
+    'req.headers.referer',
+    'res.headers.location',
+    'req.headers.cookie',
+    'req.headers.authorization',
+    'res.headers["set-cookie"]',
+];
+
 @Module({})
 export class AppModule {
     static register(environment: TRuntimeEnvironment): DynamicModule {
@@ -37,11 +47,7 @@ export class AppModule {
                             response.setHeader('x-request-id', id);
                             return id;
                         },
-                        redact: [
-                            'req.headers.cookie',
-                            'req.headers.authorization',
-                            'res.headers["set-cookie"]',
-                        ],
+                        redact: HTTP_LOG_REDACTIONS,
                     },
                 }),
                 ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),

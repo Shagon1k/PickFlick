@@ -587,3 +587,40 @@
         width: 100%;
     }
 }
+
+.invitationActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+}
+
+.invitationLink {
+    display: grid;
+    gap: var(--gap-xs);
+    margin-block: var(--gap-md);
+}
+
+.invitationLink input {
+    width: 100%;
+    min-height: var(--hit);
+    padding: var(--gap-sm);
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.invitationList {
+    display: grid;
+    gap: var(--gap-sm);
+    padding: 0;
+    list-style: none;
+}
+
+.invitationList li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+}

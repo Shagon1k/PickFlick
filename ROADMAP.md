@@ -196,6 +196,13 @@ launch-critical risk.
 | Only a Club without Session history can be deleted, and deletion keeps an audit tombstone.        | One person cannot erase shared history.                       | `SESSION_HISTORY` conflict; soft deletion.                   |
 | Free Clubs cannot show Selection results to ordinary members.                                     | A Pro entitlement.                                            | `TIER_SETTING_UNAVAILABLE` conflict.                         |
 
+Club membership invitation links expire after seven days and are single-use. An Admin or Moderator
+creates a shareable link or targets a registered User. Only an eligible registered User sees a minimal
+preview; accepting creates one active Membership and declining consumes the link without joining.
+Seats are checked when the response commits, so a link never reserves capacity. Invalid, expired,
+revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
+a separate member-only flow.
+
 ### Automatic phase transitions
 
 `N` is the phase's current participant roster; leaving or removal updates it before completion is

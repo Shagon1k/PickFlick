@@ -31,6 +31,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
           })
         : NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set('Content-Security-Policy', policy);
+    if (request.nextUrl.pathname.startsWith('/invite/')) {
+        response.headers.set('Referrer-Policy', 'no-referrer');
+        response.headers.set('Cache-Control', 'private, no-store');
+    }
     const clubId = CLUB_PATH.exec(request.nextUrl.pathname)?.[1];
     if (clubId) {
         try {

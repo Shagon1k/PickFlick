@@ -2,8 +2,8 @@
 
 The UI scripts build the web app, start it on loopback against a mock API
 (`tests/ui/start-frontend-with-mock-api.mjs`), and run Playwright in Chromium over
-the public pages, Login, Club onboarding, Hub overview and settings, the recovery states, the `/ui-preview`
-component gallery, and the seven `/shell-preview/*` shells.
+the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
+states, the `/ui-preview` component gallery, and the seven `/shell-preview/*` shells.
 
 ## Run it
 
@@ -15,9 +15,10 @@ pnpm test:ui:contract
 pnpm test:ui:visual
 ```
 
-`pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects eight PR checks with
-`test:ui:smoke`: security headers and CSP, Club switching and stale access, landing accessibility,
-a pricing interaction, product shell navigation, and overflow at 1024px. Screenshot comparisons use the `@visual` tag;
+`pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects ten PR checks with
+`test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
+continuation, landing accessibility, a pricing interaction, product shell navigation, and overflow
+at 1024px. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
 reduced motion, and other behavior assertions.
@@ -30,7 +31,7 @@ The suite checks:
 - 44px touch targets and locally scrolling dense regions;
 - no horizontal page overflow at every breakpoint and gap width (390, 640, 768, 900, 1024, 1200,
   1440);
-- exact screenshot matches at 390 and 1440 pixels (44 baselines, visual selection);
+- exact screenshot matches at 390 and 1440 pixels (66 baselines, visual selection);
 - collapsed motion when reduced motion is requested.
 
 Viewports are defined once in `tests/ui/viewports.ts`.

@@ -121,13 +121,22 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
 | Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, nine reviewed migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, ten migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, and `Session`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, and `Session`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
 - Club score scale bounds and lifecycle consistency.
+- unique invitation token digests, expiry order, and consistent response attribution.
+
+Club invitations store only a SHA-256 digest of 32 random bytes. A raw token is returned once at
+creation and sent back only in POST bodies. Admin/Moderator creation and revocation are
+membership-scoped. Acceptance locks the Club row before re-checking expiry, revocation, target,
+Club lifecycle, current Membership, and member limit; the Membership, audit event, and invitation
+response commit together. Historical departed Memberships remain intact. Links expire after seven
+days and one User can accept or decline each link. Unsafe states omit Club data; preview is available
+only to authenticated Users. The invitation page and API responses are private and uncached.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 

@@ -235,7 +235,41 @@ function removeAvatar(request, response, token) {
 }
 
 /** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
+const managedInvites = new Map();
+function manageInvitation(request, response, session) {
+    readJson(request, () => {
+        const id = '60000000-0000-4000-8000-000000000034';
+        const created = {
+            id,
+            token: invitationTokens.valid,
+            expiresAt: '2026-10-10T12:00:00.000Z',
+        };
+        managedInvites.set(session, [{ id, expiresAt: created.expiresAt, state: 'pending' }]);
+        sendJson(response, 201, created);
+    });
+}
+
 const clubRoutes = [
+    ['POST', /^\/invitations$/u, manageInvitation],
+    [
+        'GET',
+        /^\/invitations$/u,
+        (_request, response, session) => sendJson(response, 200, managedInvites.get(session) ?? []),
+    ],
+    [
+        'POST',
+        /^\/invitations\/[^/]+\/revoke$/u,
+        (_request, response, session) => {
+            managedInvites.set(
+                session,
+                (managedInvites.get(session) ?? []).map((invite) => ({
+                    ...invite,
+                    state: 'revoked',
+                })),
+            );
+            sendNoContent(response);
+        },
+    ],
     [
         'GET',
         /^\/hub$/u,
@@ -311,10 +345,69 @@ function handleContact(request, response) {
     });
 }
 
+const invitationResponses = new Map();
+const invitationTokens = {
+    valid: 'v'.repeat(43),
+    expired: 'e'.repeat(43),
+    revoked: 'r'.repeat(43),
+    full: 'f'.repeat(43),
+    member: 'm'.repeat(43),
+    paused: 'p'.repeat(43),
+    invalid: 'i'.repeat(43),
+};
+
+function handleInvitation(request, response, pathname) {
+    const session = sessionToken(request);
+    if (!session?.startsWith('valid')) {
+        sendError(response, 401, 'UNAUTHORIZED', 'request-invitation-auth');
+        return;
+    }
+    readJson(request, ({ token, decision }) => {
+        if (token === 'z'.repeat(43)) {
+            sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-unavailable');
+            return;
+        }
+        const key = `${session}:${token}`;
+        let preview = invitationResponses.get(key);
+        if (!preview) {
+            const state = Object.entries(invitationTokens).find(
+                ([, value]) => value === token,
+            )?.[0];
+            if (state === 'valid')
+                preview = {
+                    state: 'valid',
+                    clubName: 'Midnight Society',
+                    memberCount: 2,
+                    inviterName: 'Avery Admin',
+                    expiresAt: '2026-10-10T12:00:00.000Z',
+                };
+            else if (state === 'member')
+                preview = { state: 'already-member', clubId: settingsClubId };
+            else
+                preview = {
+                    state:
+                        { full: 'over-limit', paused: 'unavailable' }[state] ?? state ?? 'invalid',
+                };
+        }
+        if (pathname.endsWith('/respond') && preview.state === 'valid') {
+            preview =
+                decision === 'accept'
+                    ? { state: 'accepted', clubId: settingsClubId }
+                    : { state: 'declined' };
+            invitationResponses.set(key, preview);
+            if (decision === 'accept')
+                clubsBySession.set(session, [settingsProjection(session).club]);
+        }
+        sendJson(response, 200, preview);
+    });
+}
+
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
-    if (request.method === 'GET' && pathname === '/api/auth/get-session') {
+    if (request.method === 'POST' && pathname.startsWith('/club-invitations/')) {
+        handleInvitation(request, response, pathname);
+    } else if (request.method === 'GET' && pathname === '/api/auth/get-session') {
         handleSession(request, response);
     } else if (pathname === '/clubs') {
         handleClubs(request, response);
