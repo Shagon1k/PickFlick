@@ -72,16 +72,16 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 
 ## Run the checks
 
-| Goal                                        | Command                         |
-| ------------------------------------------- | ------------------------------- |
-| Lint, knip, formatting, types, tests, build | `pnpm verify`                   |
-| Known high-severity vulnerabilities         | `pnpm audit --audit-level high` |
-| Database, auth, and Club integration specs  | `pnpm test:integration`         |
-| Playwright PR smoke checks                  | `pnpm test:ui:smoke`            |
-| Full Playwright behavior checks             | `pnpm test:ui:contract`         |
-| Playwright screenshot comparisons           | `pnpm test:ui:visual`           |
-| Both Playwright selections                  | `pnpm test:ui`                  |
-| Smoke the built frontend and backend        | `pnpm test:e2e`                 |
+| Goal                                        | Command                 |
+| ------------------------------------------- | ----------------------- |
+| Lint, knip, formatting, types, tests, build | `pnpm verify`           |
+| Known high-severity vulnerabilities         | `pnpm security:audit`   |
+| Database, auth, and Club integration specs  | `pnpm test:integration` |
+| Playwright PR smoke checks                  | `pnpm test:ui:smoke`    |
+| Full Playwright behavior checks             | `pnpm test:ui:contract` |
+| Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
+| Both Playwright selections                  | `pnpm test:ui`          |
+| Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
 `pnpm test:integration` needs the local services running. The UI selections build the frontend and
 serve it against a mock backend, so they need no database. Install Chromium once with

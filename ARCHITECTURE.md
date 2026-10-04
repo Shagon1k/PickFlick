@@ -54,7 +54,8 @@ apps/
 packages/
   contracts/  zod request schemas and response interfaces shared by both apps
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
-  config/     environment schema, TypeScript and ESLint presets
+  config/     environment schema and TypeScript presets
+  eslint-config/ dev-only ESLint presets and plugins
 assets/brand/ production brand imagery (imported as @brand/…)
 tests/        Playwright: ui-preview (local build + mock API) and uat (deployed smoke)
 _docs/        guides, decisions, design prototypes

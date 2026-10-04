@@ -59,7 +59,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Reject dependencies with known high or critical vulnerabilities
-        run: pnpm audit --audit-level high
+        run: pnpm security:audit
 
       - name: Lint
         run: pnpm lint

@@ -14,7 +14,7 @@ import { resolve } from 'node:path';
 import tseslint from 'typescript-eslint';
 
 const reactConfig = reactPlugin.configs['recommended-typescript'];
-const repositoryRoot = resolve(import.meta.dirname, '../../..');
+const repositoryRoot = resolve(import.meta.dirname, '../..');
 
 const noReadonlyWrapper = {
     selector: "TSTypeReference[typeName.name='Readonly']",

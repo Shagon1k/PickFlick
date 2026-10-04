@@ -20,7 +20,7 @@
         "format:check": "prettier --check .",
         "typecheck": "pnpm -r --if-present typecheck && tsc -p tsconfig.json",
         "knip": "knip",
-        "verify": "pnpm lint && pnpm knip && pnpm format:check && pnpm typecheck && pnpm test:unit && pnpm build",
+        "verify": "pnpm security:audit && pnpm lint && pnpm knip && pnpm format:check && pnpm typecheck && pnpm test:unit && pnpm build",
         "test:unit": "vitest run",
         "test:integration": "vitest run --config vitest.integration.config.ts",
         "test:ui": "playwright test --config playwright.ui.config.ts",
@@ -39,14 +39,15 @@
         "deploy:uat": "node scripts/deploy-compose.mjs",
         "deploy:check": "sh scripts/check-compose.sh",
         "prepare": "husky",
-        "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate"
+        "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
+        "security:audit": "node scripts/security-audit.mjs"
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",
         "@commitlint/cli": "21.0.1",
         "@commitlint/config-conventional": "21.0.1",
         "@commitlint/types": "21.2.3",
-        "@pickflick/config": "workspace:*",
+        "@pickflick/eslint-config": "workspace:*",
         "@playwright/test": "1.63.0",
         "@types/node": "catalog:",
         "eslint": "10.10.0",

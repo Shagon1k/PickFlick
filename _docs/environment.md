@@ -91,7 +91,7 @@ and exits with status 1.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Stylelint, knip, Prettier, `tsc`,
+- **Lint, type-check, test** — `pnpm security:audit` (full raw audit with the verified temporary braces exception; see [Security](security.md)), ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
