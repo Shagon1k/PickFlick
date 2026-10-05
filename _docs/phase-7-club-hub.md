@@ -160,3 +160,17 @@ The audit enum migration is additive and has been applied to a fresh isolated te
 - All 76 strict visual comparisons passed in the pinned image against fresh mock state. The
   separate built-stack `pnpm test:e2e` command has not been run.
 - Exact-SHA hosted preview and owner visual acknowledgement remain required before completion.
+
+### Review fix round 1
+
+- The [snapshotted invitation-card finding](https://github.com/Shagon1k/PickFlick/pull/158#discussion_r4184277515)
+  on source head `697e148aa62da4a1892921f0dfe3cc55d060f03a` is covered by separate creation and
+  management gates. Existing server permissions are unchanged.
+- Both UI regressions passed: an over-limit Admin and an adminless Moderator inspect and revoke
+  existing invitations with keyboard input while creation stays hidden. Each case checks axe and
+  page overflow at 390 and 1440 pixels.
+- `pnpm verify` passed, including all 234 unit tests and production builds. Lint reports one existing
+  ref-naming warning in `ClubMembers.tsx`, outside this fix.
+- All 117 browser contracts passed, including all 12 PR smoke checks, with the mock server and
+  Chromium together in the digest-pinned Playwright image. All six Manage Club visual comparisons
+  passed. The four restricted-state invitation-card captures were inspected at 390 and 1440 pixels.

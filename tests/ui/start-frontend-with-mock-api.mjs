@@ -209,6 +209,15 @@ const clubRoutes = [
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-refresh');
                 return;
             }
+            if (session.includes('restricted-invitations') && !managedInvites.has(session)) {
+                managedInvites.set(session, [
+                    {
+                        id: '60000000-0000-4000-8000-000000000034',
+                        expiresAt: '2026-10-10T12:00:00.000Z',
+                        state: 'pending',
+                    },
+                ]);
+            }
             sendJson(response, 200, managedInvites.get(session) ?? []);
         },
     ],
