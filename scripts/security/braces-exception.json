@@ -1,0 +1,19 @@
+{
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "package": "braces",
+    "version": "3.0.3",
+    "expires": "2026-12-10T00:00:00Z",
+    "reason": "Owner-approved temporary local depth mitigation; no upstream fixed release exists. Residual caller error-handling and expansion risks remain.",
+    "patch": "patches/braces@3.0.3.patch",
+    "patchSha256": "fbd5534335707d9326f09119cab31155e776242c19c182c1a8ec629bf536fa33",
+    "files": {
+        "lib/parse.js": "58bbd3fa953b490a49d39c850b6367c56aedf0ce6abcd87f109840ad46848c17",
+        "lib/validate-depth.js": "18e4071fde3bd01c9717164ed506514119e4381409901524e6aee07fd2d89de0",
+        "lib/compile.js": "82d4386b052cc68e388c70e85ad2a6ca0d5c94294dc539748a7067fdee052c67",
+        "lib/expand.js": "0295a772cbe7355e9f6a8f30d3d1ff50fdcefd2419164d92fefbde220bc408cd",
+        "lib/stringify.js": "7f46c5f669377484b77193e8e41de9786c719445281e90c7d8f024575dbb0f59",
+        "index.js": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+        "lib/utils.js": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+        "lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b"
+    }
+}

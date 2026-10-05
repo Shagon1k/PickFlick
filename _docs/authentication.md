@@ -137,3 +137,17 @@ validation instead of crashing later.
 forged cookies, suspension, refused sessions for suspended Users, sign-out, and the 404 for
 unexposed routes. `pnpm test:e2e` confirms the built backend starts the Apple flow and that Better
 Auth parses request bodies itself.
+
+## Club invitation continuation
+
+A signed-out visitor sees a generic invitation card without Club details. Its sign-in action uses the
+allowlisted `/invite/club/[token]` return target. After sign-in, the page requests an authenticated,
+uncached preview; the User still chooses Accept or Decline. Accepting opens the correct Club Hub,
+where the normal Membership check and last-used Club preference apply. Expired sessions return the
+User to sign-in without discarding the invitation intent.
+
+Better Auth's existing database-backed OAuth state temporarily holds the allowlisted return path,
+which includes the invitation token. This differs from `ClubInvite`, which holds only the digest.
+Provider logs retain severity with a fixed event message and omit provider text and error arguments,
+so database or provider failures cannot print the return path. HTTP logs also redact referrer and
+redirect-location headers.

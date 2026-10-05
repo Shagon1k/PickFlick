@@ -46,6 +46,9 @@ enum ClubAuditAction {
   CLUB_REACTIVATED
   MEMBERSHIP_LEFT
   CLUB_DELETED
+  CLUB_INVITE_CREATED
+  CLUB_INVITE_REVOKED
+  MEMBERSHIP_JOINED
 }
 
 enum SessionType {
@@ -74,6 +77,9 @@ model User {
   locale                   String            @default("en")
   createdAt                DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt                DateTime          @updatedAt @db.Timestamptz(3)
+  createdClubInvites       ClubInvite[]      @relation("ClubInviteCreator")
+  targetedClubInvites      ClubInvite[]      @relation("ClubInviteTarget")
+  answeredClubInvites      ClubInvite[]      @relation("ClubInviteResponder")
   memberships              Membership[]
   authSessions             AuthSession[]
   providerAccounts         ProviderAccount[]
@@ -152,6 +158,7 @@ model Club {
   memberships                 Membership[]
   sessions                    Session[]
   auditEvents                 ClubAuditEvent[]
+  invitations                 ClubInvite[]
 }
 
 model Membership {
@@ -212,4 +219,24 @@ model Session {
   club         Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
 
   @@index([clubId, phase])
+}
+
+model ClubInvite {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenDigest  String    @unique @db.Char(64)
+  clubId       String    @db.Uuid
+  inviterId    String    @db.Uuid
+  targetUserId String?   @db.Uuid
+  responderId  String?   @db.Uuid
+  expiresAt    DateTime  @db.Timestamptz(3)
+  revokedAt    DateTime? @db.Timestamptz(3)
+  respondedAt  DateTime? @db.Timestamptz(3)
+  accepted     Boolean?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  club         Club      @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  inviter      User      @relation("ClubInviteCreator", fields: [inviterId], references: [id], onDelete: Restrict)
+  target       User?     @relation("ClubInviteTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+  responder    User?     @relation("ClubInviteResponder", fields: [responderId], references: [id], onDelete: Restrict)
+
+  @@index([clubId, createdAt])
 }

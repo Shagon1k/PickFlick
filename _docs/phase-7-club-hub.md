@@ -49,3 +49,67 @@ Project 3 owns live issue status.
   test covers Rating Sessions older than five recent Completed Sessions and blocking priority.
 - Completion remains pending until the exact head SHA is on preview and the owner acknowledges the
   visual review required by issue #33.
+
+## Issue #34: Club invitation lifecycle
+
+- Admins and Moderators create seven-day, single-use invitation links from Manage Club. The API
+  also supports a registered recipient ID; another account gets the same generic invalid state.
+  Creating a shareable link does not reserve a seat. The UI displays its raw link once and can copy
+  it; neither local storage nor the invitation row keeps the token. Recent invitation rows contain only
+  IDs, expiry, and state. Creating and revoking links append Club audit events.
+  The list includes the newest 20 records plus every live pending link. Creation preserves its
+  returned token when list refresh fails, showing a separate warning and keeping revocation available.
+- Ten migrations now include `ClubInvite`: a unique SHA-256 digest of 32 random bytes, Club,
+  inviter, optional target, expiry, revocation, and the responder's decision and timestamp.
+  Membership creation and its audit record share the response transaction. Decline records the
+  decision on the invitation and creates no Membership.
+- Every invitation API requires an authenticated registered User. Preview returns only the Club
+  name, active member count, inviter display name, and expiry for a usable invitation. Invalid,
+  wrong-target, consumed-by-another-user, expired, revoked, full, archived, deleted, and adminless
+  invitations disclose no Club details. An already active member receives only their Club route.
+- Accept, decline, and revoke lock the Club row, then re-read eligibility. This serializes
+  acceptance across different links and lifecycle writes. The existing active-Membership unique
+  index remains the final duplicate guard. Rejoining creates a new Membership and preserves the
+  departed row. Entitlements still use the existing Free/seeded Pro projection until Phase 20.
+- `/invite/club/[token]` preserves the same mascot and card structure across loading, sign-in,
+  valid, success, decline, and recovery states. Sign-in returns to the invitation and leaves the
+  acceptance decision to the User. Success opens the authorized Club Hub. Network failures leave
+  the choice available for retry. The page is noindex, private/no-store, and no-referrer.
+  Maximum-length Club names are visually ellipsized on one line, with the full heading text still
+  accessible, so acceptance and decline keep the same card dimensions.
+- Token input travels in POST bodies to fixed API paths. HTTP logs redact request URLs, referrers,
+  cookies, authorization, redirect locations, and set-cookie headers. No raw token is added to
+  invitation or Membership audit records.
+- The pending-invite ticket/popover and Hub Members view remain in issue #35; Session invites
+  remain in Phase 9.
+
+### Invitation verification
+
+- All ten migrations applied to a new isolated local test PostgreSQL database.
+- All 52 database/API integration tests passed, including eight invitation tests for authorization,
+  privacy, expiry/revocation, decline retries, historical rejoin, five concurrent accepts, and two
+  distinct links competing for the eighth Free seat, and accept/revoke serialization.
+- `pnpm verify` passed: lint, formatting, unused-code and type checks, 142 unit tests, and production
+  builds. Logging tests exercise actual HTTP redaction and discard provider error arguments.
+- The Google authorization initiation test preserves the invitation return path in the existing
+  short-lived OAuth state and keeps it out of the provider authorization URL. Browser continuation
+  uses a mocked provider callback; a live provider exchange has not been verified.
+- The full browser contract selection passed 105/105. All 26 focused invitation checks passed after
+  correcting the heading to avoid implying reserved capacity, including sign-in continuation,
+  keyboard acceptance into the correct Hub, offline retry, manager controls, privacy, accessibility,
+  and stable geometry across seven widths. The 22 invitation captures and six changed Manage Club
+  captures were inspected at 390 and 1440 pixels.
+- All 66 visual comparisons passed in the digest-pinned Linux Playwright image. Exact-SHA hosted
+  preview and owner visual acknowledgement remain required before completion. This run did not
+  execute the separate built-stack `pnpm test:e2e` smoke command.
+
+### Review fix round 1 verification (2026-10-04)
+
+- `pnpm verify` passed, including 231 unit tests and workspace builds. The sandbox run used a writable
+  copy of pnpm's store metadata; installed dependencies were unchanged. The final stylesheet also
+  passed Stylelint, Prettier, and a fresh frontend build after limiting text clipping to the horizontal axis.
+- All 54 database/API integration tests passed against the isolated `pickflick_test` database.
+  Regressions cover an older pending link after 20 newer revocations and more than 20 pending links.
+- All 10 PR smoke checks passed. All 28 invitation browser checks passed in the pinned Playwright
+  image, including list-refresh failure, maximum-length Club names across seven widths, and all 22
+  unchanged screenshot baselines. Long-name previews were inspected at 390 and 1440 pixels.

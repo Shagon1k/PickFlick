@@ -6,6 +6,7 @@ import { APIError, betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 
 import { createAppleClientSecret } from './apple-client-secret.js';
+import { authLogger } from './auth-logger.js';
 
 const DAY_SECONDS = 24 * 60 * 60;
 
@@ -158,6 +159,7 @@ export function createAuth(
         onAPIError: { errorURL: `${auth.baseUrl}/login` },
         plugins,
         telemetry: { enabled: false },
+        logger: authLogger,
     });
 }
 

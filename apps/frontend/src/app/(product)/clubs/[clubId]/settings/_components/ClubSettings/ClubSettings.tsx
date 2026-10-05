@@ -9,6 +9,7 @@ import styles from '../../page.module.scss';
 import AvatarCard from './AvatarCard';
 import ClubDangerZone from './ClubDangerZone';
 import ClubInfoCard from './ClubInfoCard';
+import InvitationCard from './InvitationCard';
 import VisibilityCard from './VisibilityCard';
 
 const roleLabels: Record<IClubSettings['club']['membershipRole'], string> = {
@@ -75,6 +76,7 @@ export default function ClubSettings({ projection }: { projection: IClubSettings
                 <ClubInfoCard projection={projection} />
                 <VisibilityCard projection={projection} />
                 <AvatarCard projection={projection} />
+                <InvitationCard projection={projection} />
                 <ClubDangerZone projection={projection} />
             </div>
         </main>

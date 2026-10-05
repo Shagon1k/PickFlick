@@ -40,8 +40,8 @@
   `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
   (environment schema, TypeScript and ESLint presets). There is no worker or Redis until the first
   background job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
-- The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club audit
-  events, and the Session skeleton across nine reviewed migrations.
+- The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
+  audit events, and the Session skeleton across ten migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.

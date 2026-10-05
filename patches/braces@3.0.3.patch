@@ -1,0 +1,93 @@
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -55,6 +55,10 @@
+ 
+   const advance = () => input[index++];
+   const push = node => {
++    // Bound both brace and parenthesis nodes before any recursive walker runs.
++    if (Array.isArray(node.nodes) && stack.length > 100) {
++      throw new SyntaxError('Input nesting exceeds maximum depth (100)');
++    }
+     if (node.type === 'text' && prev.type === 'dot') {
+       prev.type = 'text';
+     }
+diff --git a/lib/validate-depth.js b/lib/validate-depth.js
+new file mode 100644
+--- /dev/null
++++ b/lib/validate-depth.js
+@@ -0,0 +1,27 @@
++'use strict';
++
++// Caller-supplied ASTs bypass parse. Walk only child edges, never parent/prev links.
++module.exports = ast => {
++  const active = new Set();
++  let visits = 0;
++  const stack = [{ node: ast, depth: ast && ast.type === 'root' ? 0 : 1, exit: false }];
++  while (stack.length) {
++    const { node, depth, exit } = stack.pop();
++    if (!exit && ++visits > 200000) throw new SyntaxError('Input AST exceeds maximum work (200000)');
++    if (!node || !Array.isArray(node.nodes)) continue;
++    if (exit) {
++      active.delete(node);
++      continue;
++    }
++    if (active.has(node)) throw new SyntaxError('Cyclic braces AST');
++    if (depth > 100) {
++      throw new SyntaxError('Input nesting exceeds maximum depth (100)');
++    }
++    if (visits + stack.length + node.nodes.length + 1 > 200000) throw new SyntaxError('Input AST exceeds maximum work (200000)');
++    active.add(node);
++    stack.push({ node, depth, exit: true });
++    for (let i = node.nodes.length - 1; i >= 0; i--) {
++      stack.push({ node: node.nodes[i], depth: depth + 1, exit: false });
++    }
++  }
++};
+diff --git a/lib/compile.js b/lib/compile.js
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -2,8 +2,10 @@
+ 
+ const fill = require('fill-range');
+ const utils = require('./utils');
++const validateDepth = require('./validate-depth');
+ 
+ const compile = (ast, options = {}) => {
++  validateDepth(ast);
+   const walk = (node, parent = {}) => {
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+diff --git a/lib/expand.js b/lib/expand.js
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -3,6 +3,7 @@
+ const fill = require('fill-range');
+ const stringify = require('./stringify');
+ const utils = require('./utils');
++const validateDepth = require('./validate-depth');
+ 
+ const append = (queue = '', stash = '', enclose = false) => {
+   const result = [];
+@@ -31,6 +32,7 @@
+ };
+ 
+ const expand = (ast, options = {}) => {
++  validateDepth(ast);
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+   const walk = (node, parent = {}) => {
+diff --git a/lib/stringify.js b/lib/stringify.js
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -1,8 +1,10 @@
+ 'use strict';
+ 
+ const utils = require('./utils');
++const validateDepth = require('./validate-depth');
+ 
+ module.exports = (ast, options = {}) => {
++  validateDepth(ast);
+   const stringify = (node, parent = {}) => {
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;

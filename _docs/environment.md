@@ -78,9 +78,12 @@ Errors use one envelope; `reason` appears only for stable conflict codes such as
 Codes come from `API_ERROR_CODES` in `@pickflick/contracts`. Every response carries
 `x-request-id`: a caller's UUID is reused, anything else is replaced. Logs are nestjs-pino JSON with
 `service`, `environment`, and the request ID; cookies, authorization headers, and `set-cookie` are
-redacted. Log operational metadata, never message bodies or personal data. When the backend cannot
-start (`configuration.invalid`, `service.start.failed`) or meets an unhandled promise rejection
-(`process.unhandled_rejection`), it writes one `fatal` JSON line to stderr and exits with status 1.
+redacted. Request URLs, referrers, and redirect locations are also redacted because they can carry
+invitation tokens. Provider logging preserves severity with a fixed event message and omits raw
+provider messages and error arguments. Log operational metadata, never message bodies or personal
+data. When the backend cannot start (`configuration.invalid`, `service.start.failed`) or meets an
+unhandled promise rejection (`process.unhandled_rejection`), it writes one `fatal` JSON line to stderr
+and exits with status 1.
 
 ## Continuous integration
 
@@ -88,7 +91,7 @@ start (`configuration.invalid`, `service.start.failed`) or meets an unhandled pr
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Lint, type-check, test** — `pnpm audit` at high severity, ESLint, Stylelint, knip, Prettier, `tsc`,
+- **Lint, type-check, test** — `pnpm security:audit` (full raw audit with the verified temporary braces exception; see [Security](security.md)), ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
