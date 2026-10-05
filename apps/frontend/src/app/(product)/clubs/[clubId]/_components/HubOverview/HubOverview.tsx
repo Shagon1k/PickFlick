@@ -2,7 +2,7 @@ import type { IClubHub, IClubHubSession, IClubSummary } from '@pickflick/contrac
 import Link from 'next/link';
 
 import { selectClubAction } from '@/app/(product)/app/actions';
-import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
+import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
 
 import styles from '../../page.module.scss';
 
@@ -174,16 +174,13 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                 </section>
             </div>
 
-            {club.lifecycle === 'ARCHIVED' ? (
-                <StatusBanner label="Club status" tone="warning">
-                    This Club is archived. Its Hub is read-only.
-                </StatusBanner>
-            ) : null}
+            <ClubStatus access={hub.access} />
 
             <nav aria-label="Club sections" className={styles.tabs}>
                 <Link aria-current="page" href={`/clubs/${club.id}`}>
                     Overview
                 </Link>
+                <Link href={`/clubs/${club.id}/members`}>Members</Link>
                 <Link href={`/clubs/${club.id}/settings`}>Manage Club</Link>
             </nav>
 

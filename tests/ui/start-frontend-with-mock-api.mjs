@@ -1,7 +1,12 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
+import { settingsProjection as clubSettingsProjection } from './club-projections.mjs';
+import { readJson, sendError, sendJson } from './mock-http.mjs';
+import { handlePendingInvitation } from './pending-invites.mjs';
+
 const clubsBySession = new Map();
+const removedMembersBySession = new Set();
 const avatarVersionsBySession = new Map();
 const settingsClubId = '10000000-0000-4000-8000-000000000031';
 const secondClubId = '10000000-0000-4000-8000-000000000032';
@@ -10,75 +15,12 @@ const avatarPng = Buffer.from(
     'base64',
 );
 
-function settingsProjection(token) {
-    const role =
-        ['member', 'moderator'].find((name) => token?.includes(name))?.toUpperCase() ?? 'ADMIN';
-    const lifecycle = token?.includes('archived') ? 'ARCHIVED' : 'ACTIVE';
-    const admin = role === 'ADMIN';
-    const active = lifecycle === 'ACTIVE';
-    const avatarVersion = avatarVersionsBySession.get(token);
-    return {
-        club: {
-            id: settingsClubId,
-            name: 'Midnight Society',
-            description: 'Noir, classics, and arguments.',
-            hasAvatar: Boolean(avatarVersion),
-            ...(avatarVersion ? { avatarVersion } : {}),
-            lifecycle,
-            membershipRole: role,
-            selectionScaleMin: 0,
-            selectionScaleMax: 7,
-            tier: 'FREE',
-        },
-        permissions: {
-            viewClub: true,
-            participate: active,
-            leaveClub: !admin,
-            manageSessions: active && role !== 'MEMBER',
-            manageMembers: active && admin,
-            manageRoles: active && admin,
-            manageSettings: active && admin,
-            manageLifecycle: admin,
-            viewAudit: admin,
-        },
-        entitlements: {
-            tier: 'FREE',
-            adminClubLimit: 1,
-            memberLimit: 8,
-            voteResultVisibility: 'ADMIN_HIDDEN',
-        },
-        visibility: {
-            showNominationAuthors: true,
-            showNominationsBeforeSubmit: true,
-            showVoteResults: false,
-            showRatingResults: true,
-            useMonochromeMedia: true,
-        },
-        members: [
-            {
-                id: '20000000-0000-4000-8000-000000000031',
-                displayName: 'Avery Admin',
-                role: 'ADMIN',
-                joinedAt: '2026-01-01T00:00:00.000Z',
-            },
-            {
-                id: '20000000-0000-4000-8000-000000000032',
-                displayName: 'Morgan Member',
-                role: 'MEMBER',
-                joinedAt: '2026-02-01T00:00:00.000Z',
-            },
-        ],
-        auditEvents: admin
-            ? [
-                  {
-                      id: '50000000-0000-4000-8000-000000000031',
-                      action: 'CLUB_SETTINGS_UPDATED',
-                      createdAt: '2026-09-18T12:00:00.000Z',
-                  },
-              ]
-            : [],
-    };
-}
+const settingsProjection = (token) =>
+    clubSettingsProjection(
+        token,
+        avatarVersionsBySession.get(token),
+        removedMembersBySession.has(token),
+    );
 
 function hubClubs(token) {
     if (!token?.includes('hub')) {
@@ -103,6 +45,8 @@ function hubProjection(token, clubId) {
     if (clubId !== settingsClubId && clubId !== secondClubId) {
         return {
             club,
+            access: settingsProjection(token).access,
+            permissions: settingsProjection(token).permissions,
             memberCount: 1,
             sessionCount: 0,
             completedSessionCount: 0,
@@ -122,6 +66,8 @@ function hubProjection(token, clubId) {
     };
     return {
         club,
+        access: settingsProjection(token).access,
+        permissions: settingsProjection(token).permissions,
         memberCount: second ? 4 : 2,
         sessionCount: second ? 7 : 1,
         completedSessionCount: second ? 3 : 0,
@@ -136,24 +82,6 @@ function sessionToken(request) {
 
 function sendNoContent(response) {
     response.writeHead(204).end();
-}
-
-function sendJson(response, status, body) {
-    response.writeHead(status, { 'content-type': 'application/json' });
-    response.end(JSON.stringify(body));
-}
-
-function sendError(response, status, code, requestId, reason) {
-    sendJson(response, status, {
-        error: { code, message: code, requestId, ...(reason ? { reason } : {}) },
-    });
-}
-
-function readJson(request, onBody) {
-    let body = '';
-    request.setEncoding('utf8');
-    request.on('data', (chunk) => (body += chunk));
-    request.on('end', () => onBody(JSON.parse(body)));
 }
 
 function handleSession(request, response) {
@@ -251,6 +179,26 @@ function manageInvitation(request, response, session) {
 }
 
 const clubRoutes = [
+    [
+        'POST',
+        /^\/members\/[^/]+\/remove$/u,
+        (request, response, token) => {
+            readJson(request, ({ confirmation }) => {
+                if (confirmation !== 'REMOVE') {
+                    sendError(
+                        response,
+                        409,
+                        'CONFLICT',
+                        'request-member-remove',
+                        'CONFIRMATION_MISMATCH',
+                    );
+                    return;
+                }
+                removedMembersBySession.add(token);
+                sendNoContent(response);
+            });
+        },
+    ],
     ['POST', /^\/invitations$/u, manageInvitation],
     [
         'GET',
@@ -413,6 +361,13 @@ function handleInvitation(request, response, pathname) {
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
+    if (
+        handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>
+            clubsBySession.set(token, [settingsProjection(token).club]),
+        )
+    ) {
+        return;
+    }
     if (request.method === 'POST' && pathname.startsWith('/club-invitations/')) {
         handleInvitation(request, response, pathname);
     } else if (request.method === 'GET' && pathname === '/api/auth/get-session') {

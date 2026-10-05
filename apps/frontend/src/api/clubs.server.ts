@@ -56,3 +56,13 @@ export const replaceClubAvatar = async (clubId: string, file: File): Promise<voi
 
 export const removeClubAvatar = (clubId: string): Promise<void> =>
     apiRequest(`/clubs/${clubId}/avatar`, { method: 'DELETE' });
+
+export const removeClubMember = (
+    clubId: string,
+    membershipId: string,
+    confirmation: string,
+): Promise<void> =>
+    apiRequest(`/clubs/${clubId}/members/${membershipId}/remove`, {
+        method: 'POST',
+        json: { confirmation },
+    });

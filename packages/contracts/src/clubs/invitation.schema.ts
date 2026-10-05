@@ -2,9 +2,13 @@ import { z } from 'zod';
 
 export const invitationTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/u);
 export const previewInvitationSchema = z.object({ token: invitationTokenSchema }).strict();
-export const respondInvitationSchema = previewInvitationSchema.extend({
-    decision: z.enum(['accept', 'decline']),
-});
+export const invitationDecisionSchema = z
+    .object({ decision: z.enum(['accept', 'decline']) })
+    .strict();
+export type TInvitationDecision = z.infer<typeof invitationDecisionSchema>;
+export const respondInvitationSchema = previewInvitationSchema.extend(
+    invitationDecisionSchema.shape,
+);
 export const createInvitationSchema = z.object({ targetUserId: z.uuid().optional() }).strict();
 export type TCreateInvitation = z.infer<typeof createInvitationSchema>;
 export type TRespondInvitation = z.infer<typeof respondInvitationSchema>;
@@ -32,4 +36,12 @@ export interface IManagedInvitation {
     id: string;
     expiresAt: string;
     state: 'pending' | 'expired' | 'revoked' | 'accepted' | 'declined';
+}
+
+export interface IPendingClubInvitation {
+    id: string;
+    clubName: string;
+    memberCount: number;
+    inviterName: string;
+    expiresAt: string;
 }

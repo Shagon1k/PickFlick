@@ -6,7 +6,7 @@ import { createContext, type RefObject, use, useEffect, useLayoutEffect } from '
  * One product overlay (search, notifications, account, or a navigation strip) is open at a time.
  * Opening another closes the first, and closing returns focus to the trigger that opened it.
  */
-type THeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search';
+type THeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search' | 'invites';
 export type TProductOverlay = THeaderOverlay | `mobile:${string}` | `section:${string}`;
 
 interface IProductOverlayContextValue {

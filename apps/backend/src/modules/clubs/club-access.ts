@@ -1,4 +1,5 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 const clubColumns = {
@@ -57,4 +58,25 @@ export async function recordAudit(
     event: TAuditEvent,
 ): Promise<void> {
     await transaction.clubAuditEvent.create({ data: { ...event, changed: true } });
+}
+
+/** Shares the invitation lock with membership and lifecycle writes before authorization is read. */
+export async function lockClub(
+    transaction: Prisma.TransactionClient,
+    clubId: string,
+): Promise<void> {
+    await transaction.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId}::uuid FOR UPDATE`;
+}
+
+export function clubAccess(
+    lifecycle: TClubLifecycle,
+    hasAdmin: boolean,
+    memberCount: number,
+    memberLimit: number,
+): IClubAccess {
+    const reasons: IClubAccess['reasons'] = [];
+    if (lifecycle === 'ARCHIVED') reasons.push('ARCHIVED');
+    if (!hasAdmin) reasons.push('ADMINLESS');
+    if (memberCount > memberLimit) reasons.push('MEMBER_LIMIT');
+    return { adminless: !hasAdmin, newWorkAllowed: reasons.length === 0, reasons };
 }

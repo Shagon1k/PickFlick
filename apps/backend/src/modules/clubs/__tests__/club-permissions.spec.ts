@@ -6,6 +6,7 @@ describe('clubPermissions', () => {
             viewClub: true,
             participate: true,
             leaveClub: false,
+            createInvitations: true,
             manageSessions: true,
             manageMembers: true,
             manageRoles: true,

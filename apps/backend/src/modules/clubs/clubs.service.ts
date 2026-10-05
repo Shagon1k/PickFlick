@@ -15,7 +15,14 @@ import type { Prisma } from '@pickflick/database';
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { toClubSummary } from './club.mapper.js';
-import { assertActive, assertAdmin, findMembership, recordAudit } from './club-access.js';
+import {
+    assertActive,
+    assertAdmin,
+    clubAccess,
+    findMembership,
+    lockClub,
+    recordAudit,
+} from './club-access.js';
 import { clubPermissions } from './club-permissions.js';
 import { clubEntitlements, tierEntitlements } from './club-tiers.js';
 
@@ -43,6 +50,7 @@ export class ClubsService {
                     blockingSession,
                     ratingSession,
                     recent,
+                    admin,
                 ] = await Promise.all([
                     transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
                     transaction.session.count({
@@ -65,11 +73,27 @@ export class ClubsService {
                         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
                         take: 5,
                     }),
+                    transaction.membership.findFirst({
+                        where: { clubId, role: 'ADMIN', status: 'ACTIVE' },
+                        select: { id: true },
+                    }),
                 ]);
+                const access = clubAccess(
+                    membership.club.lifecycle,
+                    Boolean(admin),
+                    memberCount,
+                    clubEntitlements(clubId).memberLimit,
+                );
                 const activeSession = blockingSession ?? ratingSession;
                 return {
                     club: toClubSummary(membership.club, membership.role),
                     memberCount,
+                    access,
+                    permissions: clubPermissions(
+                        membership.role,
+                        membership.club.lifecycle,
+                        access,
+                    ),
                     sessionCount,
                     completedSessionCount,
                     ...(activeSession ? { activeSession: toHubSession(activeSession) } : {}),
@@ -97,51 +121,64 @@ export class ClubsService {
     }
 
     async getSettings(userId: string, clubId: string): Promise<IClubSettings> {
-        const membership = await findMembership(this.prisma, userId, clubId);
-        const { club, role } = membership;
-        const [members, auditEvents] = await Promise.all([
-            this.prisma.membership.findMany({
-                where: { clubId, status: 'ACTIVE' },
-                orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-                select: {
-                    id: true,
-                    role: true,
-                    joinedAt: true,
-                    user: { select: { displayName: true } },
-                },
-            }),
-            role === 'ADMIN'
-                ? this.prisma.clubAuditEvent.findMany({
-                      where: { clubId },
-                      orderBy: { createdAt: 'desc' },
-                      take: 20,
-                      select: { id: true, action: true, createdAt: true },
-                  })
-                : [],
-        ]);
+        return this.prisma.$transaction(
+            async (transaction) => {
+                const membership = await findMembership(transaction, userId, clubId);
+                const { club, role } = membership;
+                const [members, auditEvents] = await Promise.all([
+                    transaction.membership.findMany({
+                        where: { clubId, status: 'ACTIVE' },
+                        orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+                        select: {
+                            id: true,
+                            role: true,
+                            joinedAt: true,
+                            user: { select: { displayName: true } },
+                        },
+                    }),
+                    role === 'ADMIN'
+                        ? transaction.clubAuditEvent.findMany({
+                              where: { clubId },
+                              orderBy: { createdAt: 'desc' },
+                              take: 20,
+                              select: { id: true, action: true, createdAt: true },
+                          })
+                        : [],
+                ]);
 
-        return {
-            club: toClubSummary(club, role),
-            permissions: clubPermissions(role, club.lifecycle),
-            entitlements: clubEntitlements(clubId),
-            visibility: {
-                showNominationAuthors: club.showNominationAuthors,
-                showNominationsBeforeSubmit: club.showNominationsBeforeSubmit,
-                showVoteResults: club.showVoteResults,
-                showRatingResults: club.showRatingResults,
-                useMonochromeMedia: club.useMonochromeMedia,
+                const access = clubAccess(
+                    club.lifecycle,
+                    members.some((member) => member.role === 'ADMIN'),
+                    members.length,
+                    clubEntitlements(clubId).memberLimit,
+                );
+                return {
+                    access,
+                    currentMembershipId: membership.id,
+                    club: toClubSummary(club, role),
+                    permissions: clubPermissions(role, club.lifecycle, access),
+                    entitlements: clubEntitlements(clubId),
+                    visibility: {
+                        showNominationAuthors: club.showNominationAuthors,
+                        showNominationsBeforeSubmit: club.showNominationsBeforeSubmit,
+                        showVoteResults: club.showVoteResults,
+                        showRatingResults: club.showRatingResults,
+                        useMonochromeMedia: club.useMonochromeMedia,
+                    },
+                    members: members.map((member) => ({
+                        id: member.id,
+                        displayName: member.user.displayName,
+                        role: member.role,
+                        joinedAt: member.joinedAt.toISOString(),
+                    })),
+                    auditEvents: auditEvents.map((event) => ({
+                        ...event,
+                        createdAt: event.createdAt.toISOString(),
+                    })),
+                };
             },
-            members: members.map((member) => ({
-                id: member.id,
-                displayName: member.user.displayName,
-                role: member.role,
-                joinedAt: member.joinedAt.toISOString(),
-            })),
-            auditEvents: auditEvents.map((event) => ({
-                ...event,
-                createdAt: event.createdAt.toISOString(),
-            })),
-        };
+            { isolationLevel: 'RepeatableRead' },
+        );
     }
 
     async updateSettings(
@@ -150,6 +187,7 @@ export class ClubsService {
         input: TUpdateClubSettingsRequest,
     ): Promise<IClubSettings> {
         await this.prisma.$transaction(async (transaction) => {
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);
@@ -181,6 +219,7 @@ export class ClubsService {
         { role }: TChangeMemberRoleRequest,
     ): Promise<void> {
         await this.prisma.$transaction(async (transaction) => {
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);

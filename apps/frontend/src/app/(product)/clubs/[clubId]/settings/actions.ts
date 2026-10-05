@@ -13,6 +13,7 @@ import {
     changeClubLifecycle,
     changeMemberRole,
     removeClubAvatar,
+    removeClubMember,
     replaceClubAvatar,
     type TClubLifecycleAction,
     updateClubSettings,
@@ -94,7 +95,7 @@ export async function changeClubMemberRoleAction(
         () => changeMemberRole(clubId, membershipId, parsed.data),
         'Member role updated.',
     );
-    revalidatePath(`/clubs/${clubId}/settings`);
+    revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
 }
 
@@ -114,7 +115,7 @@ export async function clubLifecycleAction(
     if (result.status === 'success' && (action === 'delete' || action === 'leave')) {
         redirect('/app');
     }
-    revalidatePath(`/clubs/${clubId}/settings`);
+    revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
 }
 
@@ -137,7 +138,7 @@ export async function uploadClubAvatarAction(
         () => replaceClubAvatar(clubId, file),
         'Club avatar updated.',
     );
-    revalidatePath(`/clubs/${clubId}/settings`);
+    revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
 }
 
@@ -146,6 +147,21 @@ export async function removeClubAvatarAction(
     previous: IClubActionState,
 ): Promise<IClubActionState> {
     const result = await run(previous, () => removeClubAvatar(clubId), 'Club avatar removed.');
-    revalidatePath(`/clubs/${clubId}/settings`);
+    revalidatePath(`/clubs/${clubId}`, 'layout');
+    return result;
+}
+
+export async function removeClubMemberAction(
+    clubId: string,
+    membershipId: string,
+    previous: IClubActionState,
+    formData: FormData,
+): Promise<IClubActionState> {
+    const result = await run(
+        previous,
+        () => removeClubMember(clubId, membershipId, formText(formData, 'confirmation')),
+        'Member removed. Shared history is preserved.',
+    );
+    revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
 }

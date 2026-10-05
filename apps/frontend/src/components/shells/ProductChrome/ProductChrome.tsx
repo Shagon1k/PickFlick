@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import PendingInvites from '@/components/clubs/PendingInvites/PendingInvites';
 import Brand from '@/components/shells/Brand/Brand';
 import MobileProductNavigation from '@/components/shells/MobileProductNavigation/MobileProductNavigation';
 import ProductHeaderActions from '@/components/shells/ProductHeaderActions/ProductHeaderActions';
@@ -82,6 +83,7 @@ export default function ProductChrome({
                 </header>
                 {children}
                 <SiteFooter routes={routes} />
+                <PendingInvites />
                 <MobileProductNavigation
                     entries={mobileNavigation({
                         admin,

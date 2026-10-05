@@ -10,9 +10,11 @@ import {
 } from '@nestjs/common';
 import {
     createInvitationSchema,
+    invitationDecisionSchema,
     previewInvitationSchema,
     respondInvitationSchema,
     type TCreateInvitation,
+    type TInvitationDecision,
     type TRespondInvitation,
 } from '@pickflick/contracts';
 
@@ -51,6 +53,23 @@ export class ClubInvitationsController {
         @Param('inviteId', uuid) inviteId: string,
     ) {
         return this.invitations.revoke(user.id, clubId, inviteId);
+    }
+
+    @Get('club-invitations/pending')
+    @Header('Cache-Control', 'private, no-store')
+    pending(@CurrentUser() user: IAuthUser) {
+        return this.invitations.pending(user.id);
+    }
+
+    @Post('club-invitations/:inviteId/respond')
+    @HttpCode(200)
+    @Header('Cache-Control', 'private, no-store')
+    respondPending(
+        @CurrentUser() user: IAuthUser,
+        @Param('inviteId', uuid) inviteId: string,
+        @Body(new ZodValidationPipe(invitationDecisionSchema)) input: TInvitationDecision,
+    ) {
+        return this.invitations.respondPending(user.id, inviteId, input);
     }
 
     @Post('club-invitations/preview')

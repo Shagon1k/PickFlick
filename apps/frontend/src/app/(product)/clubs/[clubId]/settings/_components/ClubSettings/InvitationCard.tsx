@@ -14,8 +14,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [createdId, setCreatedId] = useState('');
     const [pending, setPending] = useState(false);
     const [message, setMessage] = useState('');
-    const allowed =
-        projection.club.lifecycle === 'ACTIVE' && projection.club.membershipRole !== 'MEMBER';
+    const allowed = projection.permissions.createInvitations;
 
     async function run(kind: 'create' | 'load', inviteId?: string) {
         setPending(true);

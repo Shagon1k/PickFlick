@@ -101,6 +101,18 @@ export class ClubsController {
         return this.clubsService.changeMemberRole(user.id, clubId, membershipId, input);
     }
 
+    @Post(':clubId/members/:membershipId/remove')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    removeMember(
+        @CurrentUser() user: IAuthUser,
+        @Param('clubId', clubIdParam) clubId: string,
+        @Param('membershipId', clubIdParam) membershipId: string,
+        @Body(new ZodValidationPipe(confirmClubActionSchema))
+        { confirmation }: TConfirmClubActionRequest,
+    ): Promise<void> {
+        return this.lifecycleService.removeMember(user.id, clubId, membershipId, confirmation);
+    }
+
     @Post(':clubId/archive')
     @HttpCode(HttpStatus.NO_CONTENT)
     archive(

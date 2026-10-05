@@ -113,3 +113,44 @@ Project 3 owns live issue status.
 - All 10 PR smoke checks passed. All 28 invitation browser checks passed in the pinned Playwright
   image, including list-refresh failure, maximum-length Club names across seven widths, and all 22
   unchanged screenshot baselines. Long-name previews were inspected at 390 and 1440 pixels.
+
+## Issue #35: Hub membership and restricted states
+
+Run `r_1e245139ae6347b53491` uses the managed issue branch. The Members route reads the existing
+membership-scoped Manage Club snapshot, including current Membership, permissions, and access reasons.
+Role management and typed leave stay in Manage Club; removal adds typed confirmation and one audited
+transition to `REMOVED`. Club locks serialize membership writes with invitation and lifecycle checks.
+No Session participant or denominator model exists yet; its integration belongs to the Session phase.
+
+The shared ticket lists recipient-targeted invitations without token material. Token-link and ticket
+responses share locked eligibility and Membership creation. Shareable invitations cannot be discovered
+for a recipient without a target, so their existing link flow remains the entry point.
+
+Adminless notices appear for every member in the three Hub views. Over-limit projections use fixture
+entitlements and do not choose among an Admin's excess Clubs or implement billing or ownership recovery.
+The audit enum migration is additive and has been applied to a fresh isolated test database.
+
+### Membership verification in progress
+
+- All eleven migrations applied; synthetic seed loaded into isolated `pickflick_test` PostgreSQL.
+- All 65 database/API integration tests passed. New checks cover role boundaries, typed removal,
+  repeated removal with one audit event, simultaneous promotion/removal, history and access after
+  removal/leave, adminless and over-limit projections, archived restrictions, targeted invitation
+  privacy, decline, stale states, and concurrent link/ticket acceptance.
+- `pnpm verify` passed: dependency audit under its existing approved exception, lint, formatting,
+  unused-code and type checks, 234 unit tests, and frontend/backend production builds.
+- The staged change passed `gitleaks git --staged --redact`; no leaks were found.
+- All 114 browser contract checks passed in the digest-pinned Linux Playwright image. The seven
+  new checks cover removal intent and focus, role/restricted states, targeted invite responses,
+  Moderator dialog accessibility, overlay exclusivity, retry/empty states, and touch, accessibility,
+  and viewport bounds at seven widths. This selection includes all 12 PR smoke checks.
+- Final invite-count copy, mobile safe-area spacing, and repeatable test fixtures also passed focused
+  ESLint, Stylelint, root type checks, and a fresh frontend build after the full static gate.
+- The removal/focus regression passed three consecutive runs after moving the focus handoff to the
+  dialog exit callback; cancellation still returns focus to its trigger.
+- All 30 changed baseline PNGs were inspected at 390 and 1440 pixels, including ten new member and
+  invite-popover captures and the affected Hub, Manage Club, no-Clubs, and product-shell captures.
+  Removal and Moderator dialogs were also inspected in the local preview.
+- All 76 strict visual comparisons passed in the pinned image against fresh mock state. The
+  separate built-stack `pnpm test:e2e` command has not been run.
+- Exact-SHA hosted preview and owner visual acknowledgement remain required before completion.
