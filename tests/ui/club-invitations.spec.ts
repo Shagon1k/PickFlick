@@ -47,6 +47,7 @@ test(
         await expect(page.getByText('Midnight Society')).toHaveCount(0);
         await page.getByRole('link', { name: 'Sign in to continue' }).click();
         let callback: unknown;
+        const session = `valid-invitation-auth-continuation-${test.info().repeatEachIndex}-${test.info().retry}`;
         await page.route('**/api/auth/sign-in/social', async (route) => {
             const body = route.request().postDataJSON() as { callbackURL: string };
             callback = body.callbackURL;
@@ -54,8 +55,7 @@ test(
                 status: 200,
                 contentType: 'application/json',
                 headers: {
-                    'set-cookie':
-                        'pickflick.session_token=valid-invitation-auth-continuation; Path=/; HttpOnly; SameSite=Lax',
+                    'set-cookie': `pickflick.session_token=${session}; Path=/; HttpOnly; SameSite=Lax`,
                 },
                 body: JSON.stringify({ redirect: true, url: body.callbackURL }),
             });
@@ -63,8 +63,9 @@ test(
         await page.getByRole('button', { name: 'Continue with Google' }).click();
         await expect(page.getByRole('heading', { name: 'You are invited' })).toBeVisible();
         expect(callback).toBe(destination);
-        await page.getByRole('button', { name: 'Accept Invitation' }).focus();
-        await page.keyboard.press('Enter');
+        const accept = page.getByRole('button', { name: 'Accept Invitation' });
+        await expect(accept).toBeEnabled();
+        await accept.press('Enter');
         await expect(page.getByRole('heading', { name: 'Welcome to the Club' })).toBeVisible();
         await page.getByRole('link', { name: 'Open Screening Room' }).click();
         await expect(page).toHaveURL(/\/clubs\/10000000-0000-4000-8000-000000000031$/);
@@ -73,6 +74,29 @@ test(
         ).toBeVisible();
     },
 );
+
+test('Club invitation waits for hydration before accepting keyboard input', async ({
+    context,
+    page,
+}) => {
+    await signIn(context, `hydration-${test.info().repeatEachIndex}-${test.info().retry}`);
+    let releaseScripts!: () => void;
+    const scriptsReady = new Promise<void>((resolve) => {
+        releaseScripts = resolve;
+    });
+    await page.route('**/_next/static/chunks/*.js', async (route) => {
+        await scriptsReady;
+        await route.continue();
+    });
+    await page.goto(invitationPath(), { waitUntil: 'commit' });
+    const accept = page.getByRole('button', { name: 'Accept Invitation' });
+    await expect(accept).toBeVisible();
+    await expect(accept).toBeDisabled();
+    releaseScripts();
+    await expect(accept).toBeEnabled();
+    await accept.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Welcome to the Club' })).toBeVisible();
+});
 
 test('Club invitation declines without membership and keeps network failures retryable', async ({
     context,

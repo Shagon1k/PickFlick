@@ -263,7 +263,8 @@ Club invitation states use one setup scene with the invitation mascot, reserved 
 stable recovery actions. Its heading says "You are invited" because invitation links do not reserve
 capacity. Signed-out and unsafe states omit Club details. The usable preview shows
 only Club name, member count, and inviter; Session totals are omitted. Accept and Decline have visible
-pending and retry feedback. Success and already-member states open the authorized Hub. Manage Club
+pending and retry feedback; both wait for hydration before enabling their decision handlers.
+Success and already-member states open the authorized Hub. Manage Club
 lets Admins and Moderators create, copy, inspect, and revoke links. The shared pending-invite ticket
 and popover are active for recipient-targeted Club invitations. Owner review of the exact hosted head
 SHA remains required.

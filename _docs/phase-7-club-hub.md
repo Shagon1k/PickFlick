@@ -148,6 +148,12 @@ The audit enum migration is additive and has been applied to a fresh isolated te
   ESLint, Stylelint, root type checks, and a fresh frontend build after the full static gate.
 - The removal/focus regression passed three consecutive runs after moving the focus handoff to the
   dialog exit callback; cancellation still returns focus to its trigger.
+- The first PR CI run exposed keyboard input before invitation hydration: the trace showed no
+  acceptance request while scripts were still loading. Decision buttons now wait for their handlers.
+  The sign-in continuation and delayed-script regression each passed five consecutive runs with CI's
+  flaky-test gate enabled. Focused lint, formatting, type checks, and a fresh frontend build passed.
+  All 18 follow-up browser checks passed, covering every invitation contract and all 12 PR smoke checks.
+  All 22 invitation visual comparisons also passed against the existing baselines after this fix.
 - All 30 changed baseline PNGs were inspected at 390 and 1440 pixels, including ten new member and
   invite-popover captures and the affected Hub, Manage Club, no-Clubs, and product-shell captures.
   Removal and Moderator dialogs were also inspected in the local preview.
