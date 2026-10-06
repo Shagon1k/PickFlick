@@ -174,3 +174,24 @@ The audit enum migration is additive and has been applied to a fresh isolated te
 - All 117 browser contracts passed, including all 12 PR smoke checks, with the mock server and
   Chromium together in the digest-pinned Playwright image. All six Manage Club visual comparisons
   passed. The four restricted-state invitation-card captures were inspected at 390 and 1440 pixels.
+
+### Review fix round 2
+
+- The [snapshotted dialog-focus finding](https://github.com/Shagon1k/PickFlick/pull/158#discussion_r4195147680)
+  on source head `172c1636e17f7bb9f6c7b7ff9cfea0876651f67e` is covered by focusing Close before
+  invitation response controls are disabled or removed. The popover keeps keyboard focus while
+  the request runs and after the final invitation disappears.
+- The keyboard-decline regression checks focus after the response, Tab and Shift+Tab containment,
+  Escape dismissal, and focus return to the ticket at 390 and 1440 pixels.
+- Both regressions failed on the original implementation at the focus assertion after the decline
+  response removed the row.
+- `pnpm verify` stopped at the security audit: the unchanged dependency tree reports unapproved
+  advisories for `source-map-js` (high, `GHSA-68fv-2mgg-jv7q`), `proxy-addr` (critical,
+  `GHSA-jqcg-44mw-7w3h`), and `sharp` (high, `GHSA-wq5f-xc86-pv6w`). Dependency remediation is
+  outside this bounded review fix.
+- The remaining static checks passed separately: lint, Knip, formatting, type checks, all 234 unit
+  tests, and production builds. Lint reports the existing ref-naming warning in `ClubMembers.tsx`.
+- All 29 selected browser checks passed in the digest-pinned Playwright image: all 12 PR smoke
+  checks, both keyboard-decline regressions, membership accessibility/responsive checks, and ten
+  member/popover screenshot comparisons. No screenshot baselines changed.
+- CI for this fix, exact-SHA hosted preview, and owner visual acknowledgement remain pending.

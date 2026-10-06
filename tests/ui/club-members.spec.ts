@@ -101,6 +101,41 @@ test(
     },
 );
 
+for (const viewport of screenshotViewports) {
+    test(`keyboard decline preserves dialog focus and Escape dismissal at ${viewport.name}`, async ({
+        context,
+        page,
+    }) => {
+        await authenticate(
+            context,
+            `valid-pending-focus-${viewport.name}-${test.info().repeatEachIndex}-${test.info().retry}`,
+        );
+        await page.setViewportSize(viewport);
+        await page.goto('/app');
+        const trigger = page.getByRole('button', { name: 'Open pending invites' });
+        await trigger.focus();
+        await page.keyboard.press('Enter');
+        const dialog = page.getByRole('dialog', { name: 'Pending invites' });
+        const decline = dialog.getByRole('button', { name: 'Decline', exact: true });
+        const close = dialog.getByRole('button', { name: 'Close', exact: true });
+        await expect(decline).toBeEnabled();
+        await expect(close).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(decline).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(dialog.getByRole('status')).toContainText('Invitation declined');
+        await expect(decline).toHaveCount(0);
+        await expect(close).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(close).toBeFocused();
+        await page.keyboard.press('Shift+Tab');
+        await expect(close).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+    });
+}
+
 test('Moderator management remains accessible and keeps keyboard focus inside its dialog', async ({
     context,
     page,

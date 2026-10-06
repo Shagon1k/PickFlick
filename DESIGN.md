@@ -289,7 +289,9 @@ history and existing participation while disabling new Sessions and invites; ros
 available. Account deletion, administration recovery, and billing delivery remain in their owning phases.
 
 The shared product shell displays the pending-invite ticket and an anchored dialog with trapped and
-returned focus. It supports loading, empty, retry, acceptance, decline, and stale-invitation feedback.
+returned focus. Responding moves focus to Close before invitation controls are disabled or removed,
+preserving the focus trap and Escape dismissal even after the final invitation is declined.
+It supports loading, empty, retry, acceptance, decline, and stale-invitation feedback.
 Only eligible invitations targeted to the signed-in account appear. Shareable links stay in the link
 flow; Session invitation rows arrive in Phase 9. The ticket and popover use shared UI components and
 tokens, with a mobile position above the fixed navigation.

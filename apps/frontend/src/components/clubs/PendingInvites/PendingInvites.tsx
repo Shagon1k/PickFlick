@@ -14,6 +14,7 @@ export default function PendingInvites() {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const open = activeOverlay === 'invites';
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const headerRef = useRef<HTMLDivElement>(null);
     const [invitations, setInvitations] = useState<IPendingClubInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
     const [loaded, setLoaded] = useState(false);
@@ -46,6 +47,9 @@ export default function PendingInvites() {
         }
     }
     function respond(invitationId: string, decision: 'accept' | 'decline') {
+        headerRef.current
+            ?.querySelector<HTMLButtonElement>('button')
+            ?.focus({ preventScroll: true });
         startTransition(async () => {
             try {
                 const result = await respondPendingInviteAction(invitationId, decision);
@@ -99,7 +103,7 @@ export default function PendingInvites() {
                     </button>
                 }
             >
-                <div className={styles.header}>
+                <div className={styles.header} ref={headerRef}>
                     <h2>Pending invites</h2>
                     <Button onClick={() => closeOverlay()} size="small" variant="secondary">
                         Close
