@@ -35,6 +35,32 @@ jobs:
           GITLEAKS_ENABLE_COMMENTS: "false"
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
 
+  dependency-security:
+    name: Dependency security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Reject dependencies with known high or critical vulnerabilities
+        run: pnpm security:audit
+
   static:
     name: Lint, type-check, test
     runs-on: ubuntu-latest
@@ -57,9 +83,6 @@ jobs:
 
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Reject dependencies with known high or critical vulnerabilities
-        run: pnpm security:audit
 
       - name: Lint
         run: pnpm lint
@@ -297,13 +320,14 @@ jobs:
   delivery-gate:
     name: Delivery gate
     if: ${{ always() }}
-    needs: [secret-scan, static, integration, images, ui-smoke, ui-contract, ui-visual]
+    needs: [secret-scan, dependency-security, static, integration, images, ui-smoke, ui-contract, ui-visual]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
       - name: Require quality jobs for this event
         env:
+          DEPENDENCY_SECURITY_RESULT: ${{ needs.dependency-security.result }}
           EVENT_NAME: ${{ github.event_name }}
           IMAGES_RESULT: ${{ needs.images.result }}
           INTEGRATION_RESULT: ${{ needs.integration.result }}
@@ -314,6 +338,7 @@ jobs:
           UI_VISUAL_RESULT: ${{ needs.ui-visual.result }}
         shell: bash
         run: |
+          test "$DEPENDENCY_SECURITY_RESULT" = "success"
           test "$IMAGES_RESULT" = "success"
           test "$INTEGRATION_RESULT" = "success"
           test "$SECRET_SCAN_RESULT" = "success"
