@@ -37,7 +37,7 @@ jobs:
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.SOURCE_REVISION }}
           fetch-depth: 0
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload UAT screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: uat-${{ env.SOURCE_REVISION }}
           path: test-results/uat/
