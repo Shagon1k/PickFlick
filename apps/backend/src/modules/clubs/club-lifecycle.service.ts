@@ -1,9 +1,9 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { StorageService } from '../storage/storage.service.js';
-import { assertAdmin, findMembership, recordAudit } from './club-access.js';
+import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
 import { clubEntitlements } from './club-tiers.js';
 import { assertBelowAdminLimit } from './clubs.service.js';
 
@@ -35,6 +35,7 @@ export class ClubLifecycleService {
     async leave(userId: string, clubId: string, confirmation: string): Promise<void> {
         assertConfirmed(confirmation, 'LEAVE');
         await this.prisma.$transaction(async (transaction) => {
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             if (membership.role === 'ADMIN') {
                 throw new ConflictException({ reason: 'ADMIN_MUST_TRANSFER' });
@@ -54,9 +55,49 @@ export class ClubLifecycleService {
         });
     }
 
+    async removeMember(
+        userId: string,
+        clubId: string,
+        membershipId: string,
+        confirmation: string,
+    ): Promise<void> {
+        assertConfirmed(confirmation, 'REMOVE');
+        await this.prisma.$transaction(async (transaction) => {
+            await lockClub(transaction, clubId);
+            const actor = await findMembership(transaction, userId, clubId);
+            if (actor.role === 'MEMBER') throw new ForbiddenException();
+            assertActive(actor);
+            const target = await transaction.membership.findFirst({
+                where: { id: membershipId, clubId },
+            });
+            if (
+                !target ||
+                target.role === 'ADMIN' ||
+                target.id === actor.id ||
+                (actor.role === 'MODERATOR' && target.role !== 'MEMBER')
+            ) {
+                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
+            }
+            if (target.status !== 'ACTIVE') return;
+            await transaction.membership.update({
+                where: { id: target.id },
+                data: { status: 'REMOVED', leftAt: new Date() },
+            });
+            await recordAudit(transaction, {
+                clubId,
+                actorUserId: userId,
+                subjectUserId: target.userId,
+                subjectMembershipId: target.id,
+                action: 'MEMBERSHIP_REMOVED',
+                previousRole: target.role,
+            });
+        });
+    }
+
     /** Deletes an empty Club: members lose access, while the audit trail stays. */
     async delete(userId: string, clubId: string, confirmation: string): Promise<void> {
         const avatarKey = await this.prisma.$transaction(async (transaction) => {
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertConfirmed(confirmation, membership.club.name);
@@ -97,6 +138,7 @@ export class ClubLifecycleService {
             if (next === 'ACTIVE') {
                 await lockKey(transaction, `club-admin:${userId}`);
             }
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             const previous = membership.club.lifecycle;

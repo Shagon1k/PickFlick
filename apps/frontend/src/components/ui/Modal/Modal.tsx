@@ -12,6 +12,7 @@ export interface IModalProps {
     children: ReactNode;
     actions?: ReactNode;
     onClose: () => void;
+    onExitTransitionEnd?: () => void;
     dismissible?: boolean;
     tone?: 'neutral' | 'danger';
 }
@@ -21,6 +22,7 @@ export default function Modal({
     children,
     dismissible = true,
     onClose,
+    onExitTransitionEnd,
     open,
     title,
     tone = 'neutral',
@@ -42,6 +44,7 @@ export default function Modal({
             closeOnClickOutside={dismissible}
             closeOnEscape={dismissible}
             onClose={onClose}
+            onExitTransitionEnd={onExitTransitionEnd}
             opened={open}
             padding={0}
             returnFocus

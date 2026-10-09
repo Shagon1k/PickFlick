@@ -3,6 +3,7 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import Link from 'next/link';
 
+import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
@@ -66,11 +67,7 @@ export default function ClubSettings({ projection }: { projection: IClubSettings
                     You can review this Club&apos;s settings. Only the Club Admin can change them.
                 </p>
             ) : null}
-            {!active ? (
-                <p className={styles.notice}>
-                    This Club is archived. History remains visible, but ordinary changes are paused.
-                </p>
-            ) : null}
+            <ClubStatus access={projection.access} />
 
             <div className={styles.grid}>
                 <ClubInfoCard projection={projection} />

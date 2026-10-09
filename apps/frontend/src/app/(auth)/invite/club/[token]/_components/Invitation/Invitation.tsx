@@ -1,7 +1,7 @@
 'use client';
 
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -43,9 +43,15 @@ const messages = {
     'already-member': ['You are already a member', 'Open your Club to continue.'],
 } as const;
 
+const subscribe = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [pending, setPending] = useState(false);
+    // Server-rendered buttons must wait until their decision handlers are attached.
+    const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
     const [failure, setFailure] = useState('');
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
@@ -94,6 +100,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 {view.state === 'valid' ? (
                     <>
                         <Button
+                            disabled={!ready}
                             fullWidth
                             loading={pending}
                             size="large"
@@ -102,7 +109,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                             Accept Invitation
                         </Button>
                         <Button
-                            disabled={pending}
+                            disabled={!ready || pending}
                             fullWidth
                             onClick={() => respond('decline')}
                             variant="ghost"

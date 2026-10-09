@@ -91,7 +91,9 @@ and exits with status 1.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Lint, type-check, test** — `pnpm security:audit` (full raw audit with the verified temporary braces exception; see [Security](security.md)), ESLint, Stylelint, knip, Prettier, `tsc`,
+- **Dependency security** — `pnpm security:audit` (full raw audit with the verified temporary braces
+  exception; see [Security](security.md)), independently of the static checks.
+- **Lint, type-check, test** — ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
   `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
@@ -105,7 +107,8 @@ toolchain:
   the HTML report.
 - **Images** — `pnpm build:images`.
 
-A terminal `Delivery gate` job requires the smoke job and skipped full UI jobs on PRs. On `main`
+A terminal `Delivery gate` job always requires successful secret scan, dependency security, static,
+integration, and image jobs. It requires the smoke job and skipped full UI jobs on PRs. On `main`
 pushes and manual runs, it requires both full UI jobs and a skipped smoke job. UAT deployment waits for a
 successful `main` push CI run, including visual regression. The production image build remains on
 PRs because it verifies all three release targets; path gating would remove that check from some

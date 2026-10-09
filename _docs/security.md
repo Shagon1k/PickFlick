@@ -98,15 +98,24 @@ entry), so a client cannot spoof it with its own `X-Forwarded-For`.
 
 ## Dependencies and supply chain
 
-- CI and `pnpm verify` run `pnpm security:audit`: raw full-workspace `pnpm audit --audit-level high --json`
+- CI runs `pnpm security:audit` in the independent **Dependency security** job, required by the
+  Delivery gate on every event. Local `pnpm verify` still includes the same audit. Raw full-workspace
+  `pnpm audit --audit-level high --json`
   findings stay visible, and every high or critical advisory blocks except the single temporary
   owner-approved mitigation below. Registry/process failures and incomplete evidence fail closed.
 - Dependabot opens weekly grouped updates for npm packages and GitHub Actions, skipping releases
   younger than a week.
-- When a transitive dependency lags behind a fix, `overrides` in `pnpm-workspace.yaml` pins the
-  fixed version until the parent catches up.
+- Prefer narrow lockfile updates within the parent's declared range for transitive fixes. When that
+  range cannot accept a fix, `overrides` in `pnpm-workspace.yaml` pins a reviewed compatible version
+  until the parent catches up.
 - The Dockerfile pins its base images by digest, and every install uses the locked
   `pnpm-lock.yaml`.
+
+On 2026-10-06, the official GitHub advisories and npm registry confirmed patched releases for
+`source-map-js` (`GHSA-68fv-2mgg-jv7q`, 1.2.2), `proxy-addr` (`GHSA-jqcg-44mw-7w3h`, 2.0.8),
+and `sharp` (`GHSA-wq5f-xc86-pv6w`, 0.35.5). The lockfile resolves those versions within existing
+parent ranges, including sharp's matching optional native packages; no new override or exception
+is used. This does not retire or broaden the separate braces mitigation below.
 
 ### Temporary braces mitigation
 

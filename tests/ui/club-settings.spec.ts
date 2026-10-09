@@ -165,6 +165,41 @@ test('avatar replacements refresh the image and removal keeps the latest status'
     await expect(avatar).toHaveCount(0);
 });
 
+for (const state of ['admin-over-limit', 'adminless']) {
+    test(`Club ${state} manager can inspect and revoke invitations while creation is paused`, async ({
+        context,
+        page,
+    }) => {
+        for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
+            await authenticate(
+                context,
+                `valid-settings-${state}-restricted-invitations-${viewport.name}`,
+            );
+            await open(page, viewport);
+            const card = page.getByRole('region', { name: 'Invite to this Club' });
+            await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
+            const recent = card.getByRole('button', { name: 'Recent invitations' });
+            await recent.focus();
+            await page.keyboard.press('Enter');
+            await expect(card.getByRole('status')).toHaveText('Recent invitations loaded.');
+            await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
+            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+            const widths = await page.evaluate(() => ({
+                body: globalThis.document.body.scrollWidth,
+                client: globalThis.document.documentElement.clientWidth,
+                document: globalThis.document.documentElement.scrollWidth,
+            }));
+            expect(widths.document).toBeLessThanOrEqual(widths.client);
+            expect(widths.body).toBeLessThanOrEqual(widths.client);
+            await card.getByRole('button', { name: 'Revoke invitation' }).focus();
+            await page.keyboard.press('Enter');
+            await expect(card.getByRole('status')).toHaveText('Invitation revoked.');
+            await expect(card.getByText('revoked · expires 2026-10-10')).toBeVisible();
+            await expect(card.getByRole('button', { name: 'Revoke invitation' })).toHaveCount(0);
+        }
+    });
+}
+
 test('Member sees read-only controls and can confirm leaving', async ({ context, page }) => {
     await authenticate(context, 'valid-settings-member-actions');
     await open(page);
@@ -172,6 +207,7 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
     await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Upload' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Leave Club' }).click();
     const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
     await dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' }).fill('LEAVE');
@@ -219,6 +255,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await authenticate(context, `valid-settings-archived-${viewport.name}`);
             await open(page, viewport);
             await expect(page.getByRole('button', { name: 'Reactivate Club' })).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
             await page.getByRole('button', { name: 'Delete Club' }).click();
             await expect(
                 page

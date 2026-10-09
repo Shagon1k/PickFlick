@@ -70,15 +70,15 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                                   | Owns                                                                                              | State                         |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------- |
-| auth                                                                                     | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.              | Partial — Apple not activated |
-| clubs                                                                                    | Club creation, Hub projection, settings, avatar, roles, archive/reactivate, leave, delete, audit. | Active                        |
-| contact                                                                                  | `POST /contact`, rate-limited, sent directly through the email module.                            | Active                        |
-| email                                                                                    | Resend client; a logging stub when delivery is disabled.                                          | Active                        |
-| storage                                                                                  | S3 put/get/delete/ping (AWS SDK).                                                                 | Active                        |
-| health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).                         | Active                        |
-| Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                           | Proposed                      |
+| Module                                                                                   | Owns                                                                                                                | State                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| auth                                                                                     | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated |
+| clubs                                                                                    | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                        |
+| contact                                                                                  | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                        |
+| email                                                                                    | Resend client; a logging stub when delivery is disabled.                                                            | Active                        |
+| storage                                                                                  | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                        |
+| health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                        |
+| Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -122,7 +122,7 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
 | Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, ten migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, eleven migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, and `Session`. Database-enforced invariants:
 
@@ -141,6 +141,26 @@ only to authenticated Users. The invitation page and API responses are private a
 Manager lists include the 20 most recent records and every live pending invitation, so older links
 remain reachable for revocation. The creation action preserves its returned token if a subsequent
 list refresh fails; the UI shows the link and a separate refresh warning.
+
+The eleventh migration adds `MEMBERSHIP_REMOVED` to the audit enum. `POST
+/clubs/:clubId/members/:membershipId/remove` validates typed `REMOVE` confirmation, locks the Club,
+and re-reads actor and target roles. Admins remove non-Admins; Moderators remove Members. Self-removal
+uses Leave Club. A repeated removal creates no extra event. Leave and role changes share the Club lock
+with invitations and lifecycle writes; the historical Membership and Session rows remain intact.
+
+`GET /club-invitations/pending` returns only eligible, recipient-targeted invitations in a
+repeatable-read snapshot. Responses contain IDs and minimal preview fields, without tokens or digests.
+`POST /club-invitations/:inviteId/respond` resolves the invitation only for its target User and shares
+the token response's locked eligibility check and Membership transaction. Shareable links cannot be
+listed for a recipient. Existing unsafe-state privacy rules apply to both flows.
+
+Hub and Manage Club projections carry `IClubAccess` (`adminless`, `newWorkAllowed`, and restriction
+`reasons`) and role permissions. Manage Club also identifies the caller's Membership. The access
+resolver currently uses lifecycle, active administration, member count, and fixture plan limits.
+Phase 20 can replace entitlement input without making browser state an authorization boundary.
+`MEMBER_LIMIT` means excess roster size: history and existing participation stay available, and removal
+and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.
+The unresolved choice among excess administered Clubs is not implemented.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
@@ -178,7 +198,8 @@ history and revokes every session.
   Next.js fetches it without a cache. Active Rating lookup is independent of the recent-activity
   limit. Direct visits and Club switches save the last-Club cookie only after API Hub authorization;
   a switch that loses Membership returns to `/app`. `/app` checks current Memberships before using
-  the cookie. — Active for the Overview route
+  the cookie. — Active for Overview. Members and Manage Club use the repeatable-read settings
+  projection with the same access contract.
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the

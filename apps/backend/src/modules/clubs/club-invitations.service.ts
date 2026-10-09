@@ -9,21 +9,20 @@ import {
 import type {
     ICreatedInvitation,
     IManagedInvitation,
+    IPendingClubInvitation,
     TCreateInvitation,
+    TInvitationDecision,
     TInvitationPreview,
     TRespondInvitation,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { assertActive, findMembership, recordAudit } from './club-access.js';
+import { assertActive, findMembership, lockClub, recordAudit } from './club-access.js';
+import { inspectInvitation } from './club-invitation-access.js';
 import { clubEntitlements } from './club-tiers.js';
 
 const digest = (token: string) => createHash('sha256').update(token).digest('hex');
-
-async function lockClub(transaction: Prisma.TransactionClient, clubId: string) {
-    await transaction.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId}::uuid FOR UPDATE`;
-}
 
 async function manager(transaction: Prisma.TransactionClient, userId: string, clubId: string) {
     const membership = await findMembership(transaction, userId, clubId);
@@ -141,23 +140,85 @@ export class ClubInvitationsService {
 
     async preview(userId: string, token: string): Promise<TInvitationPreview> {
         return this.prisma.$transaction(
-            async (transaction) => (await this.inspect(transaction, userId, token)).preview,
+            async (transaction) =>
+                (await inspectInvitation(transaction, userId, digest(token))).preview,
             { isolationLevel: 'RepeatableRead' },
         );
     }
 
+    async pending(userId: string): Promise<IPendingClubInvitation[]> {
+        return this.prisma.$transaction(
+            async (transaction) => {
+                const invitations = await transaction.clubInvite.findMany({
+                    where: {
+                        targetUserId: userId,
+                        revokedAt: null,
+                        respondedAt: null,
+                        expiresAt: { gt: new Date() },
+                    },
+                    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+                    select: { id: true, tokenDigest: true },
+                });
+                const pending: IPendingClubInvitation[] = [];
+                for (const invitation of invitations) {
+                    const { preview } = await inspectInvitation(
+                        transaction,
+                        userId,
+                        invitation.tokenDigest,
+                    );
+                    if (preview.state === 'valid') {
+                        pending.push({
+                            id: invitation.id,
+                            clubName: preview.clubName,
+                            memberCount: preview.memberCount,
+                            inviterName: preview.inviterName,
+                            expiresAt: preview.expiresAt,
+                        });
+                    }
+                }
+                return pending;
+            },
+            { isolationLevel: 'RepeatableRead' },
+        );
+    }
+
+    async respondPending(
+        userId: string,
+        inviteId: string,
+        input: TInvitationDecision,
+    ): Promise<TInvitationPreview> {
+        const invitation = await this.prisma.clubInvite.findFirst({
+            where: { id: inviteId, targetUserId: userId },
+            select: { tokenDigest: true },
+        });
+        if (!invitation) return { state: 'invalid' };
+        return this.respondDigest(userId, invitation.tokenDigest, input.decision);
+    }
+
     async respond(userId: string, input: TRespondInvitation): Promise<TInvitationPreview> {
+        return this.respondDigest(userId, digest(input.token), input.decision);
+    }
+
+    private async respondDigest(
+        userId: string,
+        tokenDigest: string,
+        decision: TInvitationDecision['decision'],
+    ): Promise<TInvitationPreview> {
         return this.prisma.$transaction(async (transaction) => {
             const found = await transaction.clubInvite.findUnique({
-                where: { tokenDigest: digest(input.token) },
+                where: { tokenDigest },
                 select: { clubId: true },
             });
             if (!found) return { state: 'invalid' };
             // The Club row serializes accepts across different links, revocation, and lifecycle writes.
             await lockClub(transaction, found.clubId);
-            const { invitation, preview } = await this.inspect(transaction, userId, input.token);
+            const { invitation, preview } = await inspectInvitation(
+                transaction,
+                userId,
+                tokenDigest,
+            );
             if (!invitation || preview.state !== 'valid') return preview;
-            const accepted = input.decision === 'accept';
+            const accepted = decision === 'accept';
             if (accepted) {
                 const membership = await transaction.membership.create({
                     data: {
@@ -186,51 +247,6 @@ export class ClubInvitationsService {
             return accepted
                 ? { state: 'accepted', clubId: invitation.clubId }
                 : { state: 'declined' };
-        });
-    }
-
-    private async inspect(transaction: Prisma.TransactionClient, userId: string, token: string) {
-        const invitation = await transaction.clubInvite.findUnique({
-            where: { tokenDigest: digest(token) },
-            include: { club: true, inviter: { select: { displayName: true } } },
-        });
-        const result = (preview: TInvitationPreview) => ({ invitation, preview });
-        if (!invitation || (invitation.targetUserId && invitation.targetUserId !== userId)) {
-            return result({ state: 'invalid' });
-        }
-        if (invitation.club.deletedAt) return result({ state: 'invalid' });
-        if (invitation.revokedAt) return result({ state: 'revoked' });
-        if (invitation.expiresAt <= new Date()) return result({ state: 'expired' });
-        const membership = await transaction.membership.findFirst({
-            where: { clubId: invitation.clubId, userId, status: 'ACTIVE' },
-            select: { id: true },
-        });
-        if (membership) return result({ state: 'already-member', clubId: invitation.clubId });
-        if (invitation.respondedAt) {
-            return result({
-                state:
-                    invitation.responderId === userId && !invitation.accepted
-                        ? 'declined'
-                        : 'invalid',
-            });
-        }
-        if (invitation.club.lifecycle !== 'ACTIVE') return result({ state: 'unavailable' });
-        const memberCount = await transaction.membership.count({
-            where: { clubId: invitation.clubId, status: 'ACTIVE' },
-        });
-        const admin = await transaction.membership.findFirst({
-            where: { clubId: invitation.clubId, role: 'ADMIN', status: 'ACTIVE' },
-            select: { id: true },
-        });
-        if (!admin) return result({ state: 'unavailable' });
-        if (memberCount >= clubEntitlements(invitation.clubId).memberLimit)
-            return result({ state: 'over-limit' });
-        return result({
-            state: 'valid',
-            clubName: invitation.club.name,
-            memberCount,
-            inviterName: invitation.inviter.displayName,
-            expiresAt: invitation.expiresAt.toISOString(),
         });
     }
 }

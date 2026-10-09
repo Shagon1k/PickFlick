@@ -180,28 +180,39 @@ launch-critical risk.
 
 ### Club and Session invariants
 
-| Rule                                                                                              | Why                                                           | Enforcement                                                  |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
-| A Club has at most one blocking Session (Nomination, Selection, or Watching).                     | Members focus on one decision at a time.                      | Database invariant plus a transactional state change.        |
-| Any number of Sessions may stay in Rating while a new blocking Session runs.                      | Slow raters must not block the next movie night.              | Rating is non-blocking.                                      |
-| An Admin or Moderator may close Rating early.                                                     | Participation is voluntary.                                   | Confirmed action; received ratings stay immutable.           |
-| Each participant submits one nomination in a full-cycle Session.                                  | Keeps influence balanced.                                     | Unique Session/participant nomination.                       |
-| A submitted Selection ballot is immutable.                                                        | Preserves trust and makes completion deterministic.           | Unique ballot plus a closed submission state.                |
-| Session Ratings are history; Personal Ratings are editable summaries.                             | Club history does not change when someone changes their mind. | Separate entities and aggregates.                            |
-| Past Sessions may record partial evidence.                                                        | Old movie nights rarely have complete data.                   | Optional nominations, ballots, and ratings with provenance.  |
-| A Club you are not an active member of does not exist for you.                                    | Private Clubs disclose nothing, not even their existence.     | `404` from every Club route; App Admin gains no Club access. |
-| Archived Clubs are read-only until their Admin reactivates them.                                  | Archiving pauses a Club without losing it.                    | Every Club command checks the lifecycle.                     |
-| Archive, leave, and delete need a typed confirmation: `ARCHIVE`, `LEAVE`, or the exact Club name. | Destructive actions must be deliberate.                       | The server compares the confirmation.                        |
-| The Admin cannot leave; they transfer administration or delete the Club.                          | A Club keeps its owner unless an account is deleted.          | `ADMIN_MUST_TRANSFER` conflict.                              |
-| Only a Club without Session history can be deleted, and deletion keeps an audit tombstone.        | One person cannot erase shared history.                       | `SESSION_HISTORY` conflict; soft deletion.                   |
-| Free Clubs cannot show Selection results to ordinary members.                                     | A Pro entitlement.                                            | `TIER_SETTING_UNAVAILABLE` conflict.                         |
+| Rule                                                                                                               | Why                                                           | Enforcement                                                  |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| A Club has at most one blocking Session (Nomination, Selection, or Watching).                                      | Members focus on one decision at a time.                      | Database invariant plus a transactional state change.        |
+| Any number of Sessions may stay in Rating while a new blocking Session runs.                                       | Slow raters must not block the next movie night.              | Rating is non-blocking.                                      |
+| An Admin or Moderator may close Rating early.                                                                      | Participation is voluntary.                                   | Confirmed action; received ratings stay immutable.           |
+| Each participant submits one nomination in a full-cycle Session.                                                   | Keeps influence balanced.                                     | Unique Session/participant nomination.                       |
+| A submitted Selection ballot is immutable.                                                                         | Preserves trust and makes completion deterministic.           | Unique ballot plus a closed submission state.                |
+| Session Ratings are history; Personal Ratings are editable summaries.                                              | Club history does not change when someone changes their mind. | Separate entities and aggregates.                            |
+| Past Sessions may record partial evidence.                                                                         | Old movie nights rarely have complete data.                   | Optional nominations, ballots, and ratings with provenance.  |
+| A Club you are not an active member of does not exist for you.                                                     | Private Clubs disclose nothing, not even their existence.     | `404` from every Club route; App Admin gains no Club access. |
+| Archived Clubs are read-only until their Admin reactivates them.                                                   | Archiving pauses a Club without losing it.                    | Every Club command checks the lifecycle.                     |
+| Archive, leave, removal, and delete need typed confirmation: `ARCHIVE`, `LEAVE`, `REMOVE`, or the exact Club name. | Destructive actions must be deliberate.                       | The server compares the confirmation.                        |
+| The Admin cannot leave; they transfer administration or delete the Club.                                           | A Club keeps its owner unless an account is deleted.          | `ADMIN_MUST_TRANSFER` conflict.                              |
+| Only a Club without Session history can be deleted, and deletion keeps an audit tombstone.                         | One person cannot erase shared history.                       | `SESSION_HISTORY` conflict; soft deletion.                   |
+| Free Clubs cannot show Selection results to ordinary members.                                                      | A Pro entitlement.                                            | `TIER_SETTING_UNAVAILABLE` conflict.                         |
 
 Club membership invitation links expire after seven days and are single-use. An Admin or Moderator
 creates a shareable link or targets a registered User. Only an eligible registered User sees a minimal
 preview; accepting creates one active Membership and declining consumes the link without joining.
-Seats are checked when the response commits, so a link never reserves capacity. Invalid, expired,
+Seats are checked when the response commits, so a link never reserves capacity. The pending-invite
+ticket lists only eligible invitations targeted to the signed-in User; shareable links stay in their
+link flow. Invalid, expired,
 revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
 a separate member-only flow.
+
+Club Admins may remove Members and Moderators; Moderators may remove Members. Neither route can
+remove the Admin or the caller. Removal ends access while keeping the departed Membership and shared
+history, and records one audit event. Archived Clubs allow leaving but reject roster and role changes.
+Adminless notices appear in every built Hub view; ownership recovery remains with App Admin operations.
+The Hub projects lifecycle, missing administration, and excess member count as explicit new-work
+restrictions. An over-limit Club keeps history and existing participation; roster recovery stays
+available. Billing will supply entitlements in Phase 20; choosing among an Admin's excess Clubs
+remains undecided.
 
 ### Automatic phase transitions
 

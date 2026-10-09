@@ -1,0 +1,11 @@
+.popover {
+    position: fixed;
+    max-height: min(600px, 70dvh);
+    padding: var(--gap-md);
+    overflow-y: auto;
+    color: var(--fg);
+    background: var(--surface-lit);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-popover);
+}

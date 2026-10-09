@@ -113,3 +113,85 @@ Project 3 owns live issue status.
 - All 10 PR smoke checks passed. All 28 invitation browser checks passed in the pinned Playwright
   image, including list-refresh failure, maximum-length Club names across seven widths, and all 22
   unchanged screenshot baselines. Long-name previews were inspected at 390 and 1440 pixels.
+
+## Issue #35: Hub membership and restricted states
+
+Run `r_1e245139ae6347b53491` uses the managed issue branch. The Members route reads the existing
+membership-scoped Manage Club snapshot, including current Membership, permissions, and access reasons.
+Role management and typed leave stay in Manage Club; removal adds typed confirmation and one audited
+transition to `REMOVED`. Club locks serialize membership writes with invitation and lifecycle checks.
+No Session participant or denominator model exists yet; its integration belongs to the Session phase.
+
+The shared ticket lists recipient-targeted invitations without token material. Token-link and ticket
+responses share locked eligibility and Membership creation. Shareable invitations cannot be discovered
+for a recipient without a target, so their existing link flow remains the entry point.
+
+Adminless notices appear for every member in the three Hub views. Over-limit projections use fixture
+entitlements and do not choose among an Admin's excess Clubs or implement billing or ownership recovery.
+The audit enum migration is additive and has been applied to a fresh isolated test database.
+
+### Membership verification in progress
+
+- All eleven migrations applied; synthetic seed loaded into isolated `pickflick_test` PostgreSQL.
+- All 65 database/API integration tests passed. New checks cover role boundaries, typed removal,
+  repeated removal with one audit event, simultaneous promotion/removal, history and access after
+  removal/leave, adminless and over-limit projections, archived restrictions, targeted invitation
+  privacy, decline, stale states, and concurrent link/ticket acceptance.
+- `pnpm verify` passed: dependency audit under its existing approved exception, lint, formatting,
+  unused-code and type checks, 234 unit tests, and frontend/backend production builds.
+- The staged change passed `gitleaks git --staged --redact`; no leaks were found.
+- All 114 browser contract checks passed in the digest-pinned Linux Playwright image. The seven
+  new checks cover removal intent and focus, role/restricted states, targeted invite responses,
+  Moderator dialog accessibility, overlay exclusivity, retry/empty states, and touch, accessibility,
+  and viewport bounds at seven widths. This selection includes all 12 PR smoke checks.
+- Final invite-count copy, mobile safe-area spacing, and repeatable test fixtures also passed focused
+  ESLint, Stylelint, root type checks, and a fresh frontend build after the full static gate.
+- The removal/focus regression passed three consecutive runs after moving the focus handoff to the
+  dialog exit callback; cancellation still returns focus to its trigger.
+- The first PR CI run exposed keyboard input before invitation hydration: the trace showed no
+  acceptance request while scripts were still loading. Decision buttons now wait for their handlers.
+  The sign-in continuation and delayed-script regression each passed five consecutive runs with CI's
+  flaky-test gate enabled. Focused lint, formatting, type checks, and a fresh frontend build passed.
+  All 18 follow-up browser checks passed, covering every invitation contract and all 12 PR smoke checks.
+  All 22 invitation visual comparisons also passed against the existing baselines after this fix.
+- All 30 changed baseline PNGs were inspected at 390 and 1440 pixels, including ten new member and
+  invite-popover captures and the affected Hub, Manage Club, no-Clubs, and product-shell captures.
+  Removal and Moderator dialogs were also inspected in the local preview.
+- All 76 strict visual comparisons passed in the pinned image against fresh mock state. The
+  separate built-stack `pnpm test:e2e` command has not been run.
+- Exact-SHA hosted preview and owner visual acknowledgement remain required before completion.
+
+### Review fix round 1
+
+- The [snapshotted invitation-card finding](https://github.com/Shagon1k/PickFlick/pull/158#discussion_r4184277515)
+  on source head `697e148aa62da4a1892921f0dfe3cc55d060f03a` is covered by separate creation and
+  management gates. Existing server permissions are unchanged.
+- Both UI regressions passed: an over-limit Admin and an adminless Moderator inspect and revoke
+  existing invitations with keyboard input while creation stays hidden. Each case checks axe and
+  page overflow at 390 and 1440 pixels.
+- `pnpm verify` passed, including all 234 unit tests and production builds. Lint reports one existing
+  ref-naming warning in `ClubMembers.tsx`, outside this fix.
+- All 117 browser contracts passed, including all 12 PR smoke checks, with the mock server and
+  Chromium together in the digest-pinned Playwright image. All six Manage Club visual comparisons
+  passed. The four restricted-state invitation-card captures were inspected at 390 and 1440 pixels.
+
+### Review fix round 2
+
+- The [snapshotted dialog-focus finding](https://github.com/Shagon1k/PickFlick/pull/158#discussion_r4195147680)
+  on source head `172c1636e17f7bb9f6c7b7ff9cfea0876651f67e` is covered by focusing Close before
+  invitation response controls are disabled or removed. The popover keeps keyboard focus while
+  the request runs and after the final invitation disappears.
+- The keyboard-decline regression checks focus after the response, Tab and Shift+Tab containment,
+  Escape dismissal, and focus return to the ticket at 390 and 1440 pixels.
+- Both regressions failed on the original implementation at the focus assertion after the decline
+  response removed the row.
+- `pnpm verify` stopped at the security audit: the unchanged dependency tree reports unapproved
+  advisories for `source-map-js` (high, `GHSA-68fv-2mgg-jv7q`), `proxy-addr` (critical,
+  `GHSA-jqcg-44mw-7w3h`), and `sharp` (high, `GHSA-wq5f-xc86-pv6w`). Dependency remediation is
+  outside this bounded review fix.
+- The remaining static checks passed separately: lint, Knip, formatting, type checks, all 234 unit
+  tests, and production builds. Lint reports the existing ref-naming warning in `ClubMembers.tsx`.
+- All 29 selected browser checks passed in the digest-pinned Playwright image: all 12 PR smoke
+  checks, both keyboard-decline regressions, membership accessibility/responsive checks, and ten
+  member/popover screenshot comparisons. No screenshot baselines changed.
+- CI for this fix, exact-SHA hosted preview, and owner visual acknowledgement remain pending.

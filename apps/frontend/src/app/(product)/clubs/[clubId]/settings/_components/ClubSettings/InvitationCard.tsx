@@ -14,8 +14,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [createdId, setCreatedId] = useState('');
     const [pending, setPending] = useState(false);
     const [message, setMessage] = useState('');
-    const allowed =
-        projection.club.lifecycle === 'ACTIVE' && projection.club.membershipRole !== 'MEMBER';
+    const allowed = projection.permissions.manageMembers;
 
     async function run(kind: 'create' | 'load', inviteId?: string) {
         setPending(true);
@@ -82,16 +81,24 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 <p>Invitations require an active Club and an Admin or Moderator.</p>
             ) : (
                 <>
+                    {!projection.permissions.createInvitations ? (
+                        <p>
+                            New invitations are paused. You can still inspect and revoke existing
+                            links.
+                        </p>
+                    ) : null}
                     <div className={styles.invitationActions}>
-                        <Button
-                            disabled={
-                                pending ||
-                                projection.members.length >= projection.entitlements.memberLimit
-                            }
-                            onClick={() => run('create')}
-                        >
-                            Create invitation
-                        </Button>
+                        {projection.permissions.createInvitations ? (
+                            <Button
+                                disabled={
+                                    pending ||
+                                    projection.members.length >= projection.entitlements.memberLimit
+                                }
+                                onClick={() => run('create')}
+                            >
+                                Create invitation
+                            </Button>
+                        ) : null}
                         <Button disabled={pending} onClick={() => run('load')} variant="secondary">
                             Recent invitations
                         </Button>

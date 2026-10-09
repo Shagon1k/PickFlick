@@ -15,6 +15,8 @@ const projectorGold: MantineColorsTuple = [
 ];
 
 export const theme = createTheme({
+    // A dialog header must not become a second page banner.
+    components: { ModalHeader: { defaultProps: { role: 'presentation' } } },
     colors: { projectorGold },
     primaryColor: 'projectorGold',
     cursorType: 'pointer',

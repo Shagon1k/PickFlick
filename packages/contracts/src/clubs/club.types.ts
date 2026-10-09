@@ -7,6 +7,7 @@ export const CLUB_PERMISSIONS = [
     'participate',
     'leaveClub',
     'manageSessions',
+    'createInvitations',
     'manageMembers',
     'manageRoles',
     'manageSettings',
@@ -60,6 +61,7 @@ export const CLUB_AUDIT_ACTIONS = [
     'CLUB_ARCHIVED',
     'CLUB_REACTIVATED',
     'MEMBERSHIP_LEFT',
+    'MEMBERSHIP_REMOVED',
     'CLUB_DELETED',
     'CLUB_INVITE_CREATED',
     'CLUB_INVITE_REVOKED',
@@ -75,7 +77,15 @@ export interface IClubAuditEvent {
 }
 
 /** Everything the Manage Club page renders for the signed-in member. */
+export interface IClubAccess {
+    adminless: boolean;
+    newWorkAllowed: boolean;
+    reasons: ('ARCHIVED' | 'ADMINLESS' | 'MEMBER_LIMIT')[];
+}
+
 export interface IClubSettings {
+    access: IClubAccess;
+    currentMembershipId: string;
     club: IClubSummary;
     permissions: TClubPermissions;
     entitlements: IClubEntitlements;
@@ -95,6 +105,8 @@ export interface IClubHubSession {
 
 /** One authorized snapshot for every contextual section of the Club Hub. */
 export interface IClubHub {
+    access: IClubAccess;
+    permissions: TClubPermissions;
     club: IClubSummary;
     memberCount: number;
     sessionCount: number;
