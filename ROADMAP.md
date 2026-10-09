@@ -403,16 +403,16 @@ hidden from normal history unless product copy exposes it.
 | Jobs       | None yet; the first job's phase records the queue decision (outbox + BullMQ is the default).    | ADR-014           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.      | ADR-007, 008      |
 
-| Provider              | Purpose                                                             | Status                                                           |
-| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Google OAuth          | Registered identity.                                                | Built; owner sandbox/UAT evidence pending                        |
-| Apple Sign in         | Registered identity after approved activation.                      | Built but dormant; needs owner approval and sandbox/UAT evidence |
-| TMDB                  | Film search, metadata, credits, images, related titles.             | Planned                                                          |
-| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax. | Planned                                                          |
-| Resend                | Transactional and opted-in email.                                   | Contact delivery built; notifications planned                    |
-| S3-compatible storage | Avatars and expiring exports.                                       | Club avatars built; User avatars and exports planned             |
-| Sentry                | Error and performance visibility with privacy-safe context.         | Planned                                                          |
-| IMDb/Wikipedia links  | Optional outbound Movie Details links from trusted identifiers.     | Planned                                                          |
+| Provider              | Purpose                                                             | Status                                                                             |
+| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Google OAuth          | Registered identity.                                                | Built; owner sandbox/UAT evidence pending                                          |
+| Apple Sign in         | Registered identity after approved activation.                      | Built but dormant; needs owner approval and sandbox/UAT evidence                   |
+| TMDB                  | Film search, metadata, credits, images, related titles.             | Partial — internal adapter and canonical cache; refresh worker and screens pending |
+| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax. | Planned                                                                            |
+| Resend                | Transactional and opted-in email.                                   | Contact delivery built; notifications planned                                      |
+| S3-compatible storage | Avatars and expiring exports.                                       | Club avatars built; User avatars and exports planned                               |
+| Sentry                | Error and performance visibility with privacy-safe context.         | Planned                                                                            |
+| IMDb/Wikipedia links  | Optional outbound Movie Details links from trusted identifiers.     | Planned                                                                            |
 
 ## 8. Phase plan
 
@@ -727,7 +727,7 @@ adminless, and read-only states
 
 **Out of scope:** Session creation, advanced statistics, leaderboard, and achievements.
 
-### Phase 8 — Movie Catalog, TMDB & Global Search · Not started
+### Phase 8 — Movie Catalog, TMDB & Global Search · In progress
 
 **Goal:** One trusted Movie identity, search, and detail layer for nominations, history, and the
 Library.

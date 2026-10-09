@@ -30,6 +30,9 @@ x-runtime-environment: &runtime-environment
     RESEND_API_KEY: preview-disabled
     RESEND_FROM: PickFlick UAT <notifications@uat.pick-flick.app>
     CONTACT_DELIVERY_TO: contact@example.invalid
+    TMDB_ENABLED: 'false'
+    TMDB_REFRESH_HOURS: ${TMDB_REFRESH_HOURS:-24}
+    TMDB_STALE_HOURS: ${TMDB_STALE_HOURS:-168}
 
 services:
     postgres:

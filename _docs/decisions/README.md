@@ -35,6 +35,7 @@ separately.
 | [ADR-013](#adr-013--keep-the-ui-kit-in-the-web-app-on-unstyled-mantine)             | Keep the UI kit in the web app on unstyled Mantine             | Accepted                                                                              | 2026-09-26 |
 | [ADR-014](#adr-014--run-two-entrypoints-until-the-first-background-job)             | Run two entrypoints until the first background job             | Accepted                                                                              | 2026-09-26 |
 | [ADR-015](#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)  | Send a nonce-based CSP and security headers from each runtime  | Accepted                                                                              | 2026-09-26 |
+| [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -1141,3 +1142,54 @@ proxied responses.
 - [Next.js Content Security Policy guide](https://nextjs.org/docs/app/guides/content-security-policy)
 - [MDN: Content-Security-Policy](https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy)
 - [OWASP HTTP Headers Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
+
+## ADR-016 — Use a PostgreSQL queue for Movie refresh
+
+- **Status:** Proposed; developer approval required before queue implementation
+- **Date:** 2026-10-09
+- **Owning issue:** [#36](https://github.com/Shagon1k/PickFlick/issues/36)
+- **Decision context:** first background job under ADR-014
+
+### Context
+
+Movie metadata needs durable, idempotent refresh jobs. ADR-014 removed the unused worker and
+Redis and left BullMQ with a transactional outbox as the default candidate for the first job.
+The current workspace already has PostgreSQL and Prisma. This job refreshes one canonical
+record and has no external irreversible side effect.
+
+### Proposed decision
+
+Use a PostgreSQL `MovieRefreshJob` table with one row per Movie and a separate worker process
+built from the backend package. Keep API and worker composition separate, sharing the catalog
+module rather than introducing a domain package with no second code consumer.
+
+The queue must provide:
+
+- an atomic uniqueness boundary that coalesces repeated enqueue requests;
+- transactional due-job claims with `FOR UPDATE SKIP LOCKED`, bounded leases, and claim tokens;
+- compare-and-set completion so an expired owner cannot finish another worker's job;
+- retry times honoring provider `Retry-After`, bounded exponential retries, and visible terminal
+  failure; removed Movies keep identity and stop automatic retry;
+- persisted attempt counts, safe reason codes, last start/finish times, next run, and structured
+  events without provider response text or credentials;
+- a validated refresh-cadence settings contract reused by the later Admin layer, with no new
+  Admin endpoint or permission grant in #36;
+- startup/reconciliation scans for stale Movies and expired claims, and graceful shutdown.
+
+### Consequences
+
+No new runtime dependency or data service is needed. Deployment adds a worker entrypoint from
+an existing package/image. Queue writes and canonical identity remain in one database.
+This is a small Movie-specific queue, not a general scheduling framework. Session deadlines
+and notification delivery must assess their own delivery and transactional-outbox guarantees.
+
+### Alternatives
+
+- **BullMQ plus Redis and transactional outbox:** ADR-014's default candidate. Better established
+  queue operations and tooling, with new dependencies and a Redis service. Requires explicit
+  dependency and topology approval.
+- **API-only timer:** rejected for this proposal; no independent worker, durable claims, or
+  crash recovery.
+
+The engineering run has requested the developer's queue choice. This proposal does not claim
+an accepted decision or implemented refresh-job acceptance.

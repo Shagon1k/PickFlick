@@ -108,6 +108,16 @@ const rawRuntimeEnvironmentSchema = z.object({
     AUTH_SECRET: required.min(32, 'must contain at least 32 characters'),
     GOOGLE_CLIENT_ID: required,
     GOOGLE_CLIENT_SECRET: required,
+    TMDB_ENABLED: flag.default(false),
+    TMDB_READ_TOKEN: z
+        .string()
+        .trim()
+        .max(8192)
+        .regex(/^\S*$/u, 'must not contain whitespace')
+        .optional(),
+    TMDB_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(5000),
+    TMDB_REFRESH_HOURS: z.coerce.number().int().min(1).max(720).default(24),
+    TMDB_STALE_HOURS: z.coerce.number().int().min(1).max(2160).default(168),
     APPLE_SIGN_IN_ENABLED: optionalFlag,
     APPLE_CLIENT_ID: z.string().trim().optional(),
     APPLE_KEY_ID: z.string().trim().optional(),
@@ -133,6 +143,16 @@ const RUNTIME_ENVIRONMENT_RULES: {
     message: string;
     broken: (env: TRawRuntimeEnvironment) => boolean;
 }[] = [
+    {
+        variable: 'TMDB_READ_TOKEN',
+        message: 'is required when TMDB is enabled',
+        broken: (env) => env.TMDB_ENABLED && !env.TMDB_READ_TOKEN,
+    },
+    {
+        variable: 'TMDB_STALE_HOURS',
+        message: 'must be at least TMDB_REFRESH_HOURS',
+        broken: (env) => env.TMDB_STALE_HOURS < env.TMDB_REFRESH_HOURS,
+    },
     // Email: local and test never send, UAT may preview, production always delivers live.
     {
         variable: 'RESEND_DELIVERY_MODE',
@@ -239,6 +259,13 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
         },
         contact: { deliveryTo: env.CONTACT_DELIVERY_TO },
+        tmdb: {
+            enabled: env.TMDB_ENABLED,
+            readToken: env.TMDB_READ_TOKEN,
+            timeoutMs: env.TMDB_TIMEOUT_MS,
+            refreshHours: env.TMDB_REFRESH_HOURS,
+            staleHours: env.TMDB_STALE_HOURS,
+        },
         auth: {
             baseUrl: env.AUTH_BASE_URL,
             secret: env.AUTH_SECRET,
