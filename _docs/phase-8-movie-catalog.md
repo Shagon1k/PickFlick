@@ -56,10 +56,13 @@ implemented. No Admin routes or permissions are introduced here.
   concurrency, monotonic upsert, incomplete-detail, removal races, payload validation, and
   completeness constraints. All twelve migrations applied; rerunning found no pending migrations.
 - Lint, knip, formatting, type checking, full workspace build, and Compose validation passed.
-- `pnpm verify` stopped at the dependency-security gate because the existing `next@16.3.6`
-  is affected by [GHSA-cjq9-62q9-8jv4](https://github.com/advisories/GHSA-cjq9-62q9-8jv4).
-  The GitHub advisory API confirms `16.3.8` as the first patched release. No dependency upgrade
-  or security-policy exception is included in this issue.
+- Bounded CI repair upgrades `next@16.3.6` to the published `16.3.8` patch for
+  [GHSA-cjq9-62q9-8jv4](https://github.com/advisories/GHSA-cjq9-62q9-8jv4), including matching
+  environment and SWC packages. Frozen install, `pnpm security:audit`, and 43 focused audit-policy
+  and frontend security tests passed on 2026-10-09. The existing braces exception remains guarded.
+- Post-repair `pnpm verify` passed, including all 280 unit tests and the Next.js 16.3.8 production
+  build. Lint reports one existing frontend ref-name warning and no errors.
+- Post-repair `pnpm test:ui:smoke`: all 12 existing browser checks passed against Next.js 16.3.8.
 - Live TMDB calls, user-facing screens, and refresh jobs: not verified.
 
 ## Provider terms
