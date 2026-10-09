@@ -144,6 +144,53 @@ describe('TmdbClient', () => {
         expect((await client.details(100)).tmdbId).toBe(100);
     });
 
+    it('should retain the longest cooldown from overlapping rate-limited requests', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-10-09T12:00:00Z'));
+        const responses: ((response: Response) => void)[] = [];
+        request.mockImplementation(
+            () => new Promise<Response>((resolve) => responses.push(resolve)),
+        );
+        const longRequest = client.details(100).catch((error: unknown) => error);
+        const shortRequest = client.details(101).catch((error: unknown) => error);
+        expect(responses).toHaveLength(2);
+        responses[0]?.(new Response(null, { status: 429, headers: { 'Retry-After': '120' } }));
+        expect(await longRequest).toMatchObject({
+            reason: 'RATE_LIMITED',
+            retryAt: new Date('2026-10-09T12:02:00Z'),
+        });
+        responses[1]?.(new Response(null, { status: 429, headers: { 'Retry-After': '1' } }));
+        expect(await shortRequest).toMatchObject({
+            reason: 'RATE_LIMITED',
+            retryAt: new Date('2026-10-09T12:02:00Z'),
+        });
+
+        await vi.advanceTimersByTimeAsync(1001);
+        await expect(client.details(100)).rejects.toMatchObject({ reason: 'RATE_LIMITED' });
+        expect(request).toHaveBeenCalledTimes(2);
+        await vi.advanceTimersByTimeAsync(119_000);
+        request.mockResolvedValue(Response.json(tmdbDetails()));
+        expect((await client.details(100)).tmdbId).toBe(100);
+    });
+
+    it('should accept a genre name at the canonical limit', async () => {
+        const response = { ...tmdbDetails(), genres: [{ id: 1, name: 'x'.repeat(200) }] };
+        request.mockResolvedValue(Response.json(response));
+        expect((await client.details(100)).genres).toEqual(response.genres);
+    });
+
+    it('should translate a genre name exceeding the canonical limit to an invalid response', async () => {
+        request.mockResolvedValue(
+            Response.json({
+                ...tmdbDetails(),
+                genres: [{ id: 1, name: 'x'.repeat(201) }],
+            }),
+        );
+        await expect(client.details(100)).rejects.toEqual(
+            new MovieProviderError('INVALID_RESPONSE'),
+        );
+    });
+
     it.each(['Fri, 09 Oct 2026 12:02:00 GMT', 'invalid'])(
         'should handle Retry-After %s',
         async (header) => {

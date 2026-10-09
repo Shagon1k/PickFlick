@@ -193,12 +193,16 @@ history and revokes every session.
   Summary and detail freshness are independent, so search cannot make incomplete credits or
   media appear fresh. Exact normalized query/page snapshots live in `MovieSearchCache`.
   Cached payloads are validated when read. Provider removal invalidates detail and search
-  snapshots while preserving the Movie identity. — Active for the internal service
+  snapshots while preserving the Movie identity. Restoring availability requires a detail request
+  started strictly after removal; an equal timestamp preserves the tombstone. — Active for the internal service
 - **Provider fallback:** callers receive `fresh`, `stale`, or `unavailable`. Stale data requires
   explicit opt-in, a validated complete payload within `TMDB_STALE_HOURS`, and a timeout,
   rate limit, or transient unavailability. Invalid payloads, authentication failures, disabled
   configuration, and removal never use stale fallback. A process-local cooldown honors
-  `Retry-After`; request timeouts cover the response body too. No provider error text is logged.
+  the longest `Retry-After` deadline from overlapping responses; request timeouts cover the
+  response body too. Interrupted body transport is transient unavailability; malformed JSON
+  and invalid mapped payloads are invalid responses. The adapter validates both provider and
+  canonical payloads before returning them. No provider error text is logged.
   — Active; worker/queue approval pending [ADR-016](_docs/decisions/README.md#adr-016--use-a-postgresql-queue-for-movie-refresh)
 
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit

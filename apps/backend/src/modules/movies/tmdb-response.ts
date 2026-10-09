@@ -21,19 +21,25 @@ export async function readTmdbResponse(response: Response, signal: AbortSignal):
             }
             bytes += value.byteLength;
             if (bytes > MAX_RESPONSE_BYTES) {
-                await reader.cancel();
+                await reader.cancel().catch(() => {
+                    throw new MovieProviderError('INVALID_RESPONSE');
+                });
                 throw new MovieProviderError('INVALID_RESPONSE');
             }
             chunks.push(value);
         }
-        const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-        return body;
     } catch (error) {
         if (error instanceof MovieProviderError) {
             throw error;
         }
-        throw new MovieProviderError(signal.aborted ? 'TIMEOUT' : 'INVALID_RESPONSE');
+        throw new MovieProviderError(signal.aborted ? 'TIMEOUT' : 'UNAVAILABLE');
     } finally {
         reader.releaseLock();
+    }
+    try {
+        const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        return body;
+    } catch {
+        throw new MovieProviderError('INVALID_RESPONSE');
     }
 }

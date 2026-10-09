@@ -1,4 +1,6 @@
 import {
+    movieDetailsSchema,
+    movieSearchResultsSchema,
     movieSearchSchema,
     tmdbDetailsSchema,
     tmdbIdSchema,
@@ -55,7 +57,16 @@ export class TmdbClient implements IMovieProvider {
                     .map((movie) => [movie.id, summary(movie)]),
             ).values(),
         ];
-        return { movies, page, totalPages: result.total_pages, totalResults: result.total_results };
+        const parsed = movieSearchResultsSchema.safeParse({
+            movies,
+            page,
+            totalPages: result.total_pages,
+            totalResults: result.total_results,
+        });
+        if (!parsed.success) {
+            throw new MovieProviderError('INVALID_RESPONSE');
+        }
+        return parsed.data;
     }
 
     async details(tmdbId: number): Promise<TMovieDetails> {
@@ -66,7 +77,7 @@ export class TmdbClient implements IMovieProvider {
         if (movie.id !== tmdbId) {
             throw new MovieProviderError('INVALID_RESPONSE');
         }
-        return {
+        const parsed = movieDetailsSchema.safeParse({
             ...summary(movie),
             runtime: movie.runtime,
             genres: movie.genres,
@@ -96,7 +107,11 @@ export class TmdbClient implements IMovieProvider {
                     official,
                     site: 'YouTube' as const,
                 })),
-        };
+        });
+        if (!parsed.success) {
+            throw new MovieProviderError('INVALID_RESPONSE');
+        }
+        return parsed.data;
     }
 
     private async get<TData>(
@@ -147,7 +162,7 @@ export class TmdbClient implements IMovieProvider {
             const bounded = Number.isFinite(delay)
                 ? Math.min(86_400_000, Math.max(1000, delay))
                 : 60_000;
-            this.retryAt = new Date(Date.now() + bounded);
+            this.retryAt = new Date(Math.max(this.retryAt?.getTime() ?? 0, Date.now() + bounded));
             throw new MovieProviderError('RATE_LIMITED', this.retryAt);
         }
         if (response.status === 404) {
