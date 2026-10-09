@@ -117,6 +117,13 @@ and `sharp` (`GHSA-wq5f-xc86-pv6w`, 0.35.5). The lockfile resolves those version
 parent ranges, including sharp's matching optional native packages; no new override or exception
 is used. This does not retire or broaden the separate braces mitigation below.
 
+On 2026-10-09, the [GitHub advisory](https://github.com/advisories/GHSA-cjq9-62q9-8jv4)
+and npm registry confirmed `next@16.3.8` fixes Image Optimization SSRF. The frontend pins that
+patch release, including its matching environment and SWC packages in the lockfile. Its Node and
+peer requirements remain compatible with the installed stack. The app configures no
+`images.remotePatterns`, so the advisory's exposure condition is absent; the full-workspace audit
+still requires the fixed version.
+
 ### Temporary braces mitigation
 
 Owner Alex approved a local mitigation and narrowly scoped residual-risk exception for
