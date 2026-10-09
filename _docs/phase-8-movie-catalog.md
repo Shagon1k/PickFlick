@@ -22,16 +22,20 @@ the existing global authentication guard remains the boundary for future HTTP ro
 - Only fixed TMDB HTTPS endpoints receive the server-held read token. Redirects fail, and
   only validated relative image paths and YouTube trailer keys enter the canonical payload.
   Response bodies are capped at 4 MiB. Retry delays default to 60 seconds and are bounded
-  between one second and one day before creating a cooldown timestamp.
+  between one second and one day before creating a cooldown timestamp. Overlapping rate-limit
+  responses retain the latest deadline. The adapter validates mapped canonical payloads;
+  provider genre names share the canonical 200-character limit.
 - Provider failure is an explicit `unavailable` state. Validated cached data can be `stale`
   only after caller opt-in, within the configured age, for timeout, rate-limit, or transient
   availability failures. Invalid responses, removal, authentication, and disabled integration
-  do not qualify.
+  do not qualify. An interrupted response body is transient unavailability; malformed JSON
+  remains an invalid response.
 - Native transactional upserts enforce one UUID per TMDB identity. Search summary freshness
   never refreshes details. Request start times prevent late older responses replacing newer
   metadata. Provider removal preserves a tombstone even before first ingestion, invalidates
-  cached reads, and cannot be weakened by an older removal observation. Successful writes
-  and stale fallbacks re-read the saved state before returning data.
+  cached reads, and cannot be weakened by an older removal observation. Clearing a tombstone
+  requires a detail request started strictly after removal; timestamp ties retain it. Successful
+  writes and stale fallbacks re-read the saved state before returning data.
 - The additive migration creates `Movie` and `MovieSearchCache`; it does not change historical
   Session rows. Fixtures use synthetic metadata and no production poster imports.
 
@@ -48,6 +52,15 @@ recovery, observable outcomes, and a validated cadence setting for the later Adm
 Refresh-job acceptance remains unverified until that checkpoint is resolved and the worker is
 implemented. No Admin routes or permissions are introduced here.
 
+## Review round 1 boundary
+
+[PR #160's identity and provider request](https://github.com/Shagon1k/PickFlick/pull/160#discussion_r4231984082)
+requires Movies without TMDB IDs and separately unique external-source mappings while preserving
+existing UUIDs. The snapshot's database requires a positive, unique, non-null `Movie.tmdbId`.
+Review run `r_23e9c899592b8e4f7a67` prohibits migration changes, so that request remains unimplemented.
+Completing it requires a revised scope that permits the identity migration and provider configuration
+change. ADR-016 remains the separate refresh queue checkpoint.
+
 ## Verification evidence
 
 - Full unit suite, including provider, service, environment, body-size, timeout, and input-contract
@@ -63,6 +76,11 @@ implemented. No Admin routes or permissions are introduced here.
 - Post-repair `pnpm verify` passed, including all 280 unit tests and the Next.js 16.3.8 production
   build. Lint reports one existing frontend ref-name warning and no errors.
 - Post-repair `pnpm test:ui:smoke`: all 12 existing browser checks passed against Next.js 16.3.8.
+- Review round 1: `pnpm verify` passed with 286 unit tests; the full database/API integration
+  suite passed all 77 tests on isolated PostgreSQL 17 after applying the existing migrations
+  and synthetic seed. Regression coverage includes equal-timestamp tombstones, interrupted
+  body transport, overlapping cooldowns, and the canonical genre-name boundary. Lint retains
+  the existing frontend ref-name warning. `pnpm test:ui:smoke` passed all 12 browser checks.
 - Live TMDB calls, user-facing screens, and refresh jobs: not verified.
 
 ## Provider terms

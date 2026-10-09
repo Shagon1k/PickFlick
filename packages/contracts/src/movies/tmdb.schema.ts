@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { movieImagePathSchema, tmdbIdSchema } from './movie.schema.js';
+import { movieDetailsSchema, movieImagePathSchema, tmdbIdSchema } from './movie.schema.js';
 
 const text = z.string().max(1000);
 const releaseDate = z.union([z.iso.date(), z.literal('')]).transform((value) => value || null);
@@ -29,7 +29,14 @@ export const tmdbSearchSchema = z.object({
 
 export const tmdbDetailsSchema = tmdbMovieSchema.extend({
     runtime: z.number().int().nonnegative().nullable(),
-    genres: z.array(z.object({ id: tmdbIdSchema, name: text })).max(100),
+    genres: z
+        .array(
+            z.object({
+                id: tmdbIdSchema,
+                name: movieDetailsSchema.shape.genres.element.shape.name,
+            }),
+        )
+        .max(100),
     imdb_id: z
         .string()
         .regex(/^tt\d{7,12}$/u)

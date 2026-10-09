@@ -76,7 +76,7 @@ export class MoviesRepository {
                     "detailsFetchedAt" = ${fetchedAt}, "unavailableAt" = NULL
                 WHERE "tmdbId" = ${parsed.tmdbId}
                     AND ("detailsFetchedAt" IS NULL OR "detailsFetchedAt" <= ${fetchedAt})
-                    AND ("unavailableAt" IS NULL OR "unavailableAt" <= ${fetchedAt})`;
+                    AND ("unavailableAt" IS NULL OR "unavailableAt" < ${fetchedAt})`;
         });
     }
 

@@ -1,6 +1,26 @@
 import { readTmdbResponse } from '../tmdb-response.js';
 
 describe('readTmdbResponse', () => {
+    it('should translate a body transport failure to unavailability without raw diagnostics', async () => {
+        const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode('{'));
+            },
+            pull(controller) {
+                controller.error(new Error('private diagnostics'));
+            },
+        });
+        await expect(
+            readTmdbResponse(new Response(stream), new AbortController().signal),
+        ).rejects.toMatchObject({ reason: 'UNAVAILABLE', message: 'Movie provider: UNAVAILABLE' });
+    });
+
+    it('should reject malformed JSON as an invalid response', async () => {
+        await expect(
+            readTmdbResponse(new Response('{broken'), new AbortController().signal),
+        ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
+    });
+
     it('should reject oversized responses even without a content-length header', async () => {
         const response = new Response('x'.repeat(4 * 1024 * 1024 + 1));
         await expect(
@@ -21,5 +41,19 @@ describe('readTmdbResponse', () => {
         const result = readTmdbResponse(new Response(stream), controller.signal);
         controller.abort();
         await expect(result).rejects.toMatchObject({ reason: 'TIMEOUT' });
+    });
+
+    it('should keep an oversized body invalid even when cancellation fails', async () => {
+        const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(new Uint8Array(4 * 1024 * 1024 + 1));
+            },
+            cancel() {
+                throw new Error('private transport diagnostics');
+            },
+        });
+        await expect(
+            readTmdbResponse(new Response(stream), new AbortController().signal),
+        ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
     });
 });

@@ -140,6 +140,42 @@ describe('MoviesRepository', () => {
         expect(await repository.cachedDetails(data.tmdbId)).not.toBeNull();
     });
 
+    it.each([false, true])(
+        'should preserve removal at equal timestamps with prior ingestion %s',
+        async (ingested) => {
+            const data = fixture();
+            const searchKey = key();
+            const fetchedAt = new Date('2026-10-09T12:00:00Z');
+            if (ingested) {
+                await repository.saveDetails(data, new Date(fetchedAt.getTime() - 1000));
+            }
+            await repository.markUnavailable(data.tmdbId, fetchedAt);
+            const removed = await prisma.movie.findUniqueOrThrow({
+                where: { tmdbId: data.tmdbId },
+            });
+            const search = {
+                movies: [movieSummarySchema.strip().parse(data)],
+                page: 1,
+                totalPages: 1,
+                totalResults: 1,
+            };
+            await repository.saveDetails(data, fetchedAt);
+            await repository.saveSearch(searchKey, search, fetchedAt);
+
+            expect(await repository.cachedDetails(data.tmdbId)).toBeNull();
+            expect(await repository.cachedSearch(searchKey)).toBeNull();
+            expect(
+                await prisma.movie.findUniqueOrThrow({ where: { tmdbId: data.tmdbId } }),
+            ).toMatchObject({
+                id: removed.id,
+                unavailableAt: fetchedAt,
+            });
+            await repository.saveDetails(data, new Date(fetchedAt.getTime() + 1));
+            expect(await repository.cachedDetails(data.tmdbId)).not.toBeNull();
+            expect(await repository.cachedSearch(searchKey)).not.toBeNull();
+        },
+    );
+
     it('should reject unsafe persisted provider payloads', async () => {
         const data = fixture();
         await repository.saveDetails(data, new Date());
