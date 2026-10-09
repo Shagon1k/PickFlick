@@ -1,6 +1,6 @@
 # Phase 8 — Movie catalog
 
-Phase scope and acceptance live in [ROADMAP.md](../ROADMAP.md#phase-8--movie-catalog-tmdb--global-search--in-progress).
+Phase scope and acceptance live in [ROADMAP.md](../ROADMAP.md#phase-8--movie-catalog-sources--global-search--in-progress).
 [Project 3](https://github.com/users/Shagon1k/projects/3) owns live issue status.
 
 ## Delivery boundaries
@@ -16,28 +16,23 @@ the existing global authentication guard remains the boundary for future HTTP ro
 
 ## Provider and cache contract
 
-- The adapter uses TMDB v3 search and details with appended credits/videos in `en-US`.
-  Search excludes adult titles and deduplicates IDs. Text stays plain text; consumers must
-  escape it for their output context.
-- Only fixed TMDB HTTPS endpoints receive the server-held read token. Redirects fail, and
-  only validated relative image paths and YouTube trailer keys enter the canonical payload.
-  Response bodies are capped at 4 MiB. Retry delays default to 60 seconds and are bounded
-  between one second and one day before creating a cooldown timestamp. Overlapping rate-limit
-  responses retain the latest deadline. The adapter validates mapped canonical payloads;
-  provider genre names share the canonical 200-character limit.
-- Provider failure is an explicit `unavailable` state. Validated cached data can be `stale`
-  only after caller opt-in, within the configured age, for timeout, rate-limit, or transient
-  availability failures. Invalid responses, removal, authentication, and disabled integration
-  do not qualify. An interrupted response body is transient unavailability; malformed JSON
-  remains an invalid response.
-- Native transactional upserts enforce one UUID per TMDB identity. Search summary freshness
-  never refreshes details. Request start times prevent late older responses replacing newer
-  metadata. Provider removal preserves a tombstone even before first ingestion, invalidates
-  cached reads, and cannot be weakened by an older removal observation. Clearing a tombstone
-  requires a detail request started strictly after removal; timestamp ties retain it. Successful
-  writes and stale fallbacks re-read the saved state before returning data.
-- The additive migration creates `Movie` and `MovieSearchCache`; it does not change historical
-  Session rows. Fixtures use synthetic metadata and no production poster imports.
+The implementation follows [ADR-017](decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources):
+
+- `MoviesService` remains the facade; public DTOs and `details(movieId)` use canonical UUIDs.
+- `MOVIE_PROVIDER` selects TMDB or the default PoiskKino + TheTVDB configuration.
+- Search uses PoiskKino. Details enrich through confirmed IMDb/TheTVDB mappings and cached
+  source snapshots. Title/year never merges Movies; absent English descriptions remain null.
+- External correspondences are separately unique. Transactions preserve UUIDs under concurrency,
+  reject contradictory mappings and serialize overlapping batches to avoid lock inversion.
+- Images support trusted HTTPS CDN URLs; ratings retain source/scale; trailers remain links.
+  Poster/S3 copying and live response completeness are separate follow-ups.
+- Every detail source retains its own locale/time. Search does not refresh details, and primary
+  refresh does not renew enrichment. Failure and source removal are explicit in provenance.
+- Stale use requires opt-in, bounded age and transient failure. Source tombstones preserve UUIDs,
+  are monotonic, and require a strictly newer detail success for restoration.
+- The additive source migration preserves UUIDs, valid external links and removal observations;
+  legacy provider JSON caches are refilled under the new contract. Conflicting IMDb links fail
+  migration for reviewed reconciliation. No Session history is rewritten.
 
 ## Refresh decision checkpoint
 
@@ -52,14 +47,11 @@ recovery, observable outcomes, and a validated cadence setting for the later Adm
 Refresh-job acceptance remains unverified until that checkpoint is resolved and the worker is
 implemented. No Admin routes or permissions are introduced here.
 
-## Review round 1 boundary
+## PR #160 source correction
 
-[PR #160's identity and provider request](https://github.com/Shagon1k/PickFlick/pull/160#discussion_r4231984082)
-requires Movies without TMDB IDs and separately unique external-source mappings while preserving
-existing UUIDs. The snapshot's database requires a positive, unique, non-null `Movie.tmdbId`.
-Review run `r_23e9c899592b8e4f7a67` prohibits migration changes, so that request remains unimplemented.
-Completing it requires a revised scope that permits the identity migration and provider configuration
-change. ADR-016 remains the separate refresh queue checkpoint.
+The original review run prohibited migrations and left the developer's source/identity request
+unimplemented. This correction includes the required additive migration, provider configuration,
+normalized DTOs, independent source cache, adapter tests and ADR-017. ADR-016 remains separate.
 
 ## Verification evidence
 
@@ -81,7 +73,20 @@ change. ADR-016 remains the separate refresh queue checkpoint.
   and synthetic seed. Regression coverage includes equal-timestamp tombstones, interrupted
   body transport, overlapping cooldowns, and the canonical genre-name boundary. Lint retains
   the existing frontend ref-name warning. `pnpm test:ui:smoke` passed all 12 browser checks.
-- Live TMDB calls, user-facing screens, and refresh jobs: not verified.
+- Source correction: all 340 unit tests and all 82 database/API integration tests passed on
+  2026-10-09. Coverage includes the one-logical-adapter boundary, provider switching without UUID
+  changes, concurrent cross-source ingestion, conflicting records, missing English text,
+  enrichment failure, independent source clocks and safe stale/removal races.
+- The source migration was exercised against legacy Movie rows and preserved UUIDs, TMDB/IMDb
+  mappings and removal observations. All thirteen migrations applied to the isolated PostgreSQL
+  17 database; synthetic seed passed.
+- Source correction: lint, knip, formatting, type checking, full workspace build,
+  `pnpm security:audit`, Compose validation and all 12 browser smoke checks passed.
+- Catalog simplification retained all 340 unit and 82 integration checks. Source clients now
+  return direct normalized snapshots; the composite builds the unified result once. One shared
+  HTTP transport serves all three APIs. The root contains module, service and repository;
+  adapter code and tests are grouped under `providers/`.
+- Live provider responses, user-facing screens, poster copying, and refresh jobs: not verified.
 
 ## Provider terms
 

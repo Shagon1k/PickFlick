@@ -78,7 +78,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                       |
 | storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                       |
 | health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                       |
-| movies                                                                           | TMDB adapter, canonical Movie upserts, search snapshots, explicit freshness and provider failure states.            | Partial — internal catalog service; refresh worker and public routes pending |
+| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — internal catalog service; refresh worker and public routes pending |
 | Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                     |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -123,9 +123,9 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
 | Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, twelve migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, thirteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `Movie`, and `MovieSearchCache`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -167,17 +167,17 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 
 ## 4. Interfaces
 
-| Interface     | Path                                         | Contract                                                                      | State                                                          |
-| ------------- | -------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Browser → API | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                               | Partial — Contact, Clubs, Hub overview                         |
-| Errors        | API → callers                                | `{ error: { code, message, requestId, reason? } }`                            | Active                                                         |
-| OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                        | Partial — Apple dormant                                        |
-| Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                            | Partial — Contact only                                         |
-| Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                           | Active                                                         |
-| Live progress | Frontend → API                               | SSE, re-fetch after gaps                                                      | Proposed                                                       |
-| TMDB          | Backend → provider                           | Fixed HTTPS adapter; validated search, details, credits, and trailer mapping. | Active — disabled until configured; live provider not verified |
-| Paddle        | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                   | Proposed                                                       |
-| CSV           | Frontend ↔ API                               | Versioned CSV schema                                                          | Proposed                                                       |
+| Interface         | Path                                         | Contract                                                                       | State                                                          |
+| ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| Browser → API     | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                                | Partial — Contact, Clubs, Hub overview                         |
+| Errors            | API → callers                                | `{ error: { code, message, requestId, reason? } }`                             | Active                                                         |
+| OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                        |
+| Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                         |
+| Club avatar       | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                         |
+| Live progress     | Frontend → API                               | SSE, re-fetch after gaps                                                       | Proposed                                                       |
+| Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active — disabled until configured; live provider not verified |
+| Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                       |
+| CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                       |
 
 Planned flows (Proposed): a Session submission serializes on the Session row, persists, evaluates
 completion, and transitions at most once in one transaction; deadlines are enforced by a scheduled
@@ -187,24 +187,27 @@ history and revokes every session.
 
 ## 5. Cross-cutting contracts
 
-- **Movie catalog:** `MoviesService` is the internal boundary for later search/detail routes.
-  PostgreSQL `Movie.tmdbId` is unique; transactional SQL upserts preserve the canonical UUID
-  under concurrent search/detail ingestion and reject older payloads overwriting newer ones.
-  Summary and detail freshness are independent, so search cannot make incomplete credits or
-  media appear fresh. Exact normalized query/page snapshots live in `MovieSearchCache`.
-  Cached payloads are validated when read. Provider removal invalidates detail and search
-  snapshots while preserving the Movie identity. Restoring availability requires a detail request
-  started strictly after removal; an equal timestamp preserves the tombstone. — Active for the internal service
-- **Provider fallback:** callers receive `fresh`, `stale`, or `unavailable`. Stale data requires
-  explicit opt-in, a validated complete payload within `TMDB_STALE_HOURS`, and a timeout,
-  rate limit, or transient unavailability. Invalid payloads, authentication failures, disabled
-  configuration, and removal never use stale fallback. A process-local cooldown honors
-  the longest `Retry-After` deadline from overlapping responses; request timeouts cover the
-  response body too. Interrupted body transport is transient unavailability; malformed JSON
-  and invalid mapped payloads are invalid responses. The adapter validates both provider and
-  canonical payloads before returning them. No provider error text is logged.
-  — Active; worker/queue approval pending [ADR-016](_docs/decisions/README.md#adr-016--use-a-postgresql-queue-for-movie-refresh)
-
+- **Movie catalog:** `MoviesService` accepts canonical Movie UUIDs and exposes normalized PickFlick
+  DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
+  owns enrichment and source-cache reuse; the service consumes an aggregate cache status.
+  The module keeps service and persistence in its root; `providers/` contains the shared
+  contract, composite, three API clients and their common HTTP transport. Source clients return
+  normalized snapshots directly; only the selected adapter builds the unified provider result.
+  Verified external-ID mappings
+  deduplicate concurrent ingestion; title/year never establishes identity. Movie UUIDs survive
+  source changes. Public links and future Session/Library relationships use those UUIDs.
+  [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources)
+  defines matching, section precedence and missing English metadata behavior. Source snapshots
+  retain independent locale/clock values; search cannot renew details. Projection/search keys
+  include the provider configuration/merge version and locale. — Active internal service
+- **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Source failures
+  stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source data.
+  Stale fallback requires opt-in, validated data within `CATALOG_STALE_HOURS` and a transient
+  error. Invalid payloads, authentication, disabled configuration and removal cannot reuse stale
+  source data. Removal observations are monotonic; timestamp ties retain the source tombstone.
+  Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
+  Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
+  Live source completeness and the ADR-016 refresh worker remain unverified.
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
   linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed
   daily) in a host-only `__Host-` cookie; provider tokens never stored; suspension revokes every

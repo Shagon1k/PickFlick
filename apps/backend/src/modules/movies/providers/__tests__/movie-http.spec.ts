@@ -1,6 +1,6 @@
-import { readTmdbResponse } from '../tmdb-response.js';
+import { readMovieResponse } from '../movie-http.js';
 
-describe('readTmdbResponse', () => {
+describe('readMovieResponse', () => {
     it('should translate a body transport failure to unavailability without raw diagnostics', async () => {
         const stream = new ReadableStream<Uint8Array>({
             start(controller) {
@@ -11,20 +11,20 @@ describe('readTmdbResponse', () => {
             },
         });
         await expect(
-            readTmdbResponse(new Response(stream), new AbortController().signal),
+            readMovieResponse(new Response(stream), new AbortController().signal),
         ).rejects.toMatchObject({ reason: 'UNAVAILABLE', message: 'Movie provider: UNAVAILABLE' });
     });
 
     it('should reject malformed JSON as an invalid response', async () => {
         await expect(
-            readTmdbResponse(new Response('{broken'), new AbortController().signal),
+            readMovieResponse(new Response('{broken'), new AbortController().signal),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
     });
 
     it('should reject oversized responses even without a content-length header', async () => {
         const response = new Response('x'.repeat(4 * 1024 * 1024 + 1));
         await expect(
-            readTmdbResponse(response, new AbortController().signal),
+            readMovieResponse(response, new AbortController().signal),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
     });
 
@@ -38,7 +38,7 @@ describe('readTmdbResponse', () => {
                 );
             },
         });
-        const result = readTmdbResponse(new Response(stream), controller.signal);
+        const result = readMovieResponse(new Response(stream), controller.signal);
         controller.abort();
         await expect(result).rejects.toMatchObject({ reason: 'TIMEOUT' });
     });
@@ -53,7 +53,7 @@ describe('readTmdbResponse', () => {
             },
         });
         await expect(
-            readTmdbResponse(new Response(stream), new AbortController().signal),
+            readMovieResponse(new Response(stream), new AbortController().signal),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
     });
 });

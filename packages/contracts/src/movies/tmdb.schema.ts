@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { movieDetailsSchema, movieImagePathSchema, tmdbIdSchema } from './movie.schema.js';
+import { movieImagePathSchema, tmdbIdSchema } from './movie.schema.js';
 
 const text = z.string().max(1000);
 const releaseDate = z.union([z.iso.date(), z.literal('')]).transform((value) => value || null);
@@ -33,7 +33,7 @@ export const tmdbDetailsSchema = tmdbMovieSchema.extend({
         .array(
             z.object({
                 id: tmdbIdSchema,
-                name: movieDetailsSchema.shape.genres.element.shape.name,
+                name: z.string().min(1).max(200),
             }),
         )
         .max(100),

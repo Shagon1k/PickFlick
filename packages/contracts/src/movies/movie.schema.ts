@@ -1,59 +1,80 @@
 import { z } from 'zod';
 
+export const movieIdSchema = z.uuid();
 export const tmdbIdSchema = z.number().int().positive().max(2_147_483_647);
+export const movieSourceSchema = z.enum(['tmdb', 'poiskkino', 'thetvdb']);
+export type TMovieSource = z.infer<typeof movieSourceSchema>;
+export const movieExternalIdSchema = z
+    .strictObject({
+        source: z.enum(['tmdb', 'poiskkino', 'thetvdb', 'imdb']),
+        externalId: z.string().regex(/^(?:[1-9]\d{0,15}|tt\d{7,12})$/u),
+    })
+    .refine(({ source, externalId }) =>
+        source === 'imdb' ? /^tt\d{7,12}$/u.test(externalId) : /^[1-9]\d{0,15}$/u.test(externalId),
+    );
+export type TMovieExternalId = z.infer<typeof movieExternalIdSchema>;
 export const movieSearchSchema = z.strictObject({
     query: z.string().trim().min(1).max(200),
     page: z.number().int().min(1).max(500).default(1),
+    locale: z.literal('en-US').default('en-US'),
 });
 export type TMovieSearch = z.infer<typeof movieSearchSchema>;
 
+// TMDB wire format only. Public media use complete, allowlisted HTTPS URLs.
 export const movieImagePathSchema = z
     .string()
     .regex(/^\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)$/u)
     .nullable();
-
-export const movieSummarySchema = z.strictObject({
-    tmdbId: tmdbIdSchema,
-    title: z.string().min(1).max(1000),
-    originalTitle: z.string().min(1).max(1000),
-    overview: z.string().max(20_000),
-    releaseDate: z.iso.date().nullable(),
-    adult: z.boolean(),
-    originalLanguage: z.string().max(10),
-    posterPath: movieImagePathSchema,
-    backdropPath: movieImagePathSchema,
-    voteAverage: z.number().min(0).max(10),
-    voteCount: z.number().int().nonnegative(),
-});
-export type TMovieSummary = z.infer<typeof movieSummarySchema>;
-
-export const movieDetailsSchema = movieSummarySchema.extend({
-    runtime: z.number().int().nonnegative().nullable(),
-    genres: z.array(z.strictObject({ id: tmdbIdSchema, name: z.string().max(200) })),
-    imdbId: z
-        .string()
-        .regex(/^tt\d{7,12}$/u)
-        .nullable(),
-    directors: z.array(z.strictObject({ id: tmdbIdSchema, name: z.string().max(1000) })),
-    cast: z.array(
-        z.strictObject({
-            id: tmdbIdSchema,
-            name: z.string().max(1000),
-            character: z.string().max(1000),
-            profilePath: movieImagePathSchema,
-        }),
-    ),
-    trailers: z.array(
-        z.strictObject({
-            key: z.string().regex(/^[a-zA-Z0-9_-]{6,64}$/u),
-            name: z.string().max(1000),
-            site: z.literal('YouTube'),
-            official: z.boolean(),
-        }),
-    ),
-});
-export type TMovieDetails = z.infer<typeof movieDetailsSchema>;
-
+export const movieImageUrlSchema = z
+    .url()
+    .max(2048)
+    .refine((value) => {
+        if (!URL.canParse(value)) return false;
+        const url = new URL(value);
+        return (
+            url.protocol === 'https:' &&
+            !url.username &&
+            !url.password &&
+            !url.port &&
+            !url.search &&
+            !url.hash &&
+            !/%(?:2f|5c|2e)/iu.test(value) &&
+            [
+                'image.tmdb.org',
+                'image.openmoviedb.com',
+                'st.kp.yandex.net',
+                'avatars.mds.yandex.net',
+                'artworks.thetvdb.com',
+            ].includes(url.hostname) &&
+            (/^\/[a-zA-Z0-9_./-]+\.(?:jpg|jpeg|png|webp)$/u.test(url.pathname) ||
+                (['image.openmoviedb.com', 'avatars.mds.yandex.net'].includes(url.hostname) &&
+                    /^\/[a-zA-Z0-9_./-]+\/(?:orig|[1-9]\d{1,3}x[1-9]\d{1,3})$/u.test(url.pathname)))
+        );
+    });
+export const movieTrailerUrlSchema = z
+    .url()
+    .max(2048)
+    .refine((value) => {
+        if (!URL.canParse(value)) return false;
+        const url = new URL(value);
+        return (
+            url.protocol === 'https:' &&
+            !url.username &&
+            !url.password &&
+            !url.port &&
+            !url.hash &&
+            ((['www.youtube.com', 'youtube.com'].includes(url.hostname) &&
+                url.pathname === '/watch' &&
+                [...url.searchParams.keys()].length === 1 &&
+                /^[a-zA-Z0-9_-]{6,64}$/u.test(url.searchParams.get('v') ?? '')) ||
+                (['www.youtube.com', 'youtube.com'].includes(url.hostname) &&
+                    !url.search &&
+                    /^\/embed\/[a-zA-Z0-9_-]{6,64}$/u.test(url.pathname)) ||
+                (url.hostname === 'youtu.be' &&
+                    !url.search &&
+                    /^\/[a-zA-Z0-9_-]{6,64}$/u.test(url.pathname)))
+        );
+    });
 export const movieProviderReasonSchema = z.enum([
     'DISABLED',
     'TIMEOUT',
@@ -62,11 +83,94 @@ export const movieProviderReasonSchema = z.enum([
     'INVALID_RESPONSE',
     'NOT_FOUND',
     'AUTHENTICATION',
+    'IDENTITY_CONFLICT',
+    'MISSING_EXTERNAL_ID',
 ]);
 export type TMovieProviderReason = z.infer<typeof movieProviderReasonSchema>;
-
+export const movieProvenanceSchema = z.strictObject({
+    source: movieSourceSchema,
+    fetchedAt: z.iso.datetime().nullable(),
+    reason: movieProviderReasonSchema.nullable(),
+    sections: z.array(z.enum(['metadata', 'media', 'ratings', 'similar'])),
+});
+export type TMovieProvenance = z.infer<typeof movieProvenanceSchema>;
+const text = z.string().min(1).max(1000).nullable();
+export const movieMetadataSchema = z.strictObject({
+    title: text,
+    originalTitle: text,
+    overview: z.string().min(1).max(20_000).nullable(),
+    releaseDate: z.iso.date().nullable(),
+    releaseYear: z.number().int().min(1800).max(3000).nullable(),
+    adult: z.boolean().nullable(),
+    originalLanguage: z.string().min(2).max(10).nullable(),
+    posterUrl: movieImageUrlSchema.nullable(),
+    backdropUrl: movieImageUrlSchema.nullable(),
+    ratings: z
+        .array(
+            z
+                .strictObject({
+                    source: z.string().min(1).max(50),
+                    value: z.number().nonnegative(),
+                    scale: z.number().positive(),
+                    voteCount: z.number().int().nonnegative().nullable(),
+                })
+                .refine(({ value, scale }) => value <= scale),
+        )
+        .max(20),
+    runtime: z.number().int().positive().nullable(),
+    genres: z.array(z.string().min(1).max(200)).max(100).nullable(),
+    directors: z
+        .array(z.strictObject({ name: z.string().min(1).max(1000) }))
+        .max(100)
+        .nullable(),
+    cast: z
+        .array(
+            z.strictObject({
+                name: z.string().min(1).max(1000),
+                character: text,
+                profileUrl: movieImageUrlSchema.nullable(),
+            }),
+        )
+        .max(50)
+        .nullable(),
+    trailers: z
+        .array(
+            z.strictObject({
+                url: movieTrailerUrlSchema,
+                name: text,
+                official: z.boolean().nullable(),
+            }),
+        )
+        .max(100)
+        .nullable(),
+});
+export type TMovieMetadata = z.infer<typeof movieMetadataSchema>;
+export const movieSummarySchema = movieMetadataSchema
+    .pick({
+        title: true,
+        originalTitle: true,
+        overview: true,
+        releaseDate: true,
+        releaseYear: true,
+        adult: true,
+        originalLanguage: true,
+        posterUrl: true,
+        backdropUrl: true,
+        ratings: true,
+    })
+    .extend({
+        id: movieIdSchema,
+        provenance: z.array(movieProvenanceSchema).max(3),
+    });
+export type TMovieSummary = z.infer<typeof movieSummarySchema>;
+export const movieDetailsSchema = movieMetadataSchema.extend({
+    id: movieIdSchema,
+    provenance: z.array(movieProvenanceSchema).max(3),
+    similarMovieIds: z.array(movieIdSchema).max(100).nullable(),
+});
+export type TMovieDetails = z.infer<typeof movieDetailsSchema>;
 export type TMovieResult<TData> =
-    | { state: 'fresh'; data: TData; fetchedAt: string }
+    | { state: 'fresh' | 'partial'; data: TData; fetchedAt: string }
     | {
           state: 'stale';
           data: TData;
@@ -75,7 +179,6 @@ export type TMovieResult<TData> =
           retryAt?: string;
       }
     | { state: 'unavailable'; reason: TMovieProviderReason; retryAt?: string };
-
 export const movieSearchResultsSchema = z.strictObject({
     movies: z.array(movieSummarySchema).max(100),
     page: z.number().int().min(1).max(500),

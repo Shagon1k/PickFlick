@@ -81,7 +81,7 @@ out when listed under Out.
 
 - Full-cycle, pre-selected, and past Session modes.
 - Member-only Session invitations and a participant roster.
-- Nomination through TMDB search, one nomination per participant, and a reusable Club Bench.
+- Nomination through the catalog facade, one nomination per participant, and a reusable Club Bench.
 - Scored Selection on the Club's `0..N` scale (N from 1 to 10; see Selection rules).
 - Deterministic tie-breaking and result visibility set by plan and Club settings.
 - Optional nomination deadline and the automatic transitions in section 3.
@@ -94,7 +94,7 @@ out when listed under Out.
 
 **Personal film memory**
 
-- Global film search and TMDB-backed Movie Details.
+- Global film search and normalized Movie Details, initially PoiskKino + TheTVDB.
 - One editable Personal Rating per User and Movie; completed Session Ratings stay immutable history.
 - Watchlist with Low, Medium, and High priority.
 - My Library ratings, Watchlist, statistics, search and filters, and personal achievements.
@@ -109,7 +109,7 @@ out when listed under Out.
 - Free and monthly Pro plans through Paddle checkout, portal, and webhooks; downgrade and read-only
   behavior; recurring billing anchored to the first payment date.
 - App Admin overview, activity, User suspension/reinstatement, Club ownership transfer and deletion,
-  registration controls, maintenance mode, TMDB refresh settings, and audit retention settings.
+  registration controls, maintenance mode, catalog refresh settings, and audit retention settings.
 - An installable, online-first PWA; mutations need a connection and fail with an explicit message
   offline.
 - Responsive S/M/L/XL layouts and accessible keyboard, touch, focus, validation, dialog, and
@@ -318,7 +318,7 @@ the same result rules and cannot advance Nomination with no films.
 | Session                | Club, type, phase, date, location, topic, notes, selected Movie, deadline, closure metadata | Type is Full Cycle, Pre-selected, or Past; the phase decides whether it blocks. |
 | SessionParticipant     | Session, Membership, invitation and attendance state                                        | Owns the phase denominator and the attendance snapshot.                         |
 | SessionInvite          | token digest, Session, invited Membership, expiry, state                                    | Valid only for an existing member.                                              |
-| Movie                  | TMDB ID, title, release data, credits, media, refresh state                                 | Cached provider record; the TMDB ID is the external identity.                   |
+| Movie                  | UUID, external-source mappings, normalized metadata, media, source freshness                | Canonical UUID; source IDs are separately unique external mappings.             |
 | ClubBenchItem          | Club, Movie, creator, time                                                                  | Shortcut for a future nomination.                                               |
 | Nomination             | Session, participant, Movie, submitted time, provenance                                     | One per participant; imported past data is marked.                              |
 | SelectionBallot        | Session, participant, submitted time                                                        | Immutable after submission.                                                     |
@@ -384,7 +384,7 @@ hidden from normal history unless product copy exposes it.
 | `/clubs/[clubId]/sessions/past/new` | Log a past screening.                                                                                                                                            |
 | `/sessions/[sessionId]`             | Phase-aware Session detail.                                                                                                                                      |
 | `/library`                          | Personal ratings, Watchlist, statistics, and achievements.                                                                                                       |
-| `/movies/[tmdbId]`                  | Movie Details, personal rating, Watchlist priority, and related films.                                                                                           |
+| `/movies/[movieId]`                 | Movie Details, personal rating, Watchlist priority, and related films.                                                                                           |
 | `/settings`                         | Profile, notifications, subscription, Privacy & data, and import/export. Privacy & data holds the data summary and rights actions and links to `/legal/privacy`. |
 | `/admin`                            | App Admin overview, Users, Clubs, and application settings.                                                                                                      |
 | `not-found`, `error`                | Branded 404 and application-error states with safe navigation and retry.                                                                                         |
@@ -403,16 +403,16 @@ hidden from normal history unless product copy exposes it.
 | Jobs       | None yet; the first job's phase records the queue decision (outbox + BullMQ is the default).    | ADR-014           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.      | ADR-007, 008      |
 
-| Provider              | Purpose                                                             | Status                                                                             |
-| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Google OAuth          | Registered identity.                                                | Built; owner sandbox/UAT evidence pending                                          |
-| Apple Sign in         | Registered identity after approved activation.                      | Built but dormant; needs owner approval and sandbox/UAT evidence                   |
-| TMDB                  | Film search, metadata, credits, images, related titles.             | Partial — internal adapter and canonical cache; refresh worker and screens pending |
-| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax. | Planned                                                                            |
-| Resend                | Transactional and opted-in email.                                   | Contact delivery built; notifications planned                                      |
-| S3-compatible storage | Avatars and expiring exports.                                       | Club avatars built; User avatars and exports planned                               |
-| Sentry                | Error and performance visibility with privacy-safe context.         | Planned                                                                            |
-| IMDb/Wikipedia links  | Optional outbound Movie Details links from trusted identifiers.     | Planned                                                                            |
+| Provider              | Purpose                                                                                    | Status                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Google OAuth          | Registered identity.                                                                       | Built; owner sandbox/UAT evidence pending                                          |
+| Apple Sign in         | Registered identity after approved activation.                                             | Built but dormant; needs owner approval and sandbox/UAT evidence                   |
+| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata; TMDB alternative. | Partial — internal adapter and canonical cache; refresh worker and screens pending |
+| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                        | Planned                                                                            |
+| Resend                | Transactional and opted-in email.                                                          | Contact delivery built; notifications planned                                      |
+| S3-compatible storage | Avatars and expiring exports.                                                              | Club avatars built; User avatars and exports planned                               |
+| Sentry                | Error and performance visibility with privacy-safe context.                                | Planned                                                                            |
+| IMDb/Wikipedia links  | Optional outbound Movie Details links from trusted identifiers.                            | Planned                                                                            |
 
 ## 8. Phase plan
 
@@ -727,29 +727,29 @@ adminless, and read-only states
 
 **Out of scope:** Session creation, advanced statistics, leaderboard, and achievements.
 
-### Phase 8 — Movie Catalog, TMDB & Global Search · In progress
+### Phase 8 — Movie Catalog, Sources & Global Search · In progress
 
 **Goal:** One trusted Movie identity, search, and detail layer for nominations, history, and the
 Library.
 
 **Dependencies:** Phase 1 database; Phase 2 shell and search primitives; Phase 4 authentication.
 
-**Tickets:** [#36](https://github.com/Shagon1k/PickFlick/issues/36) TMDB and cached Movie records ·
+**Tickets:** [#36](https://github.com/Shagon1k/PickFlick/issues/36) source adapters and canonical Movie records ·
 [#37](https://github.com/Shagon1k/PickFlick/issues/37) global Movie search ·
 [#38](https://github.com/Shagon1k/PickFlick/issues/38) Movie Details, credits, trailers, links,
 related titles
 
 **Scope:**
 
-- [ ] Implement the TMDB adapter with server-held credentials, search, detail, credits, and media
+- [ ] Implement configurable catalog adapters with server-held credentials, normalized search/details and media
       mapping, rate-limit handling, and cache freshness.
-- [ ] Key the canonical Movie record by TMDB identity with transactional upsert and deduplication.
+- [ ] Preserve canonical Movie UUIDs and resolve separately unique verified external IDs transactionally across sources.
 - [ ] Implement authenticated global search with loading, no-results, stale-safe, provider-error, and
       keyboard behavior.
 - [ ] Implement Movie Details metadata, trailer, credits, trusted outbound links, and related titles.
 - [ ] Add refresh jobs and the refresh-cadence setting for Phase 21. If no earlier phase has, this
       introduces the worker and queue (ADR-014).
-- [ ] Keep fixture posters out of production data and record TMDB attribution and usage terms.
+- [ ] Keep fixture posters out of production data and record each source’s attribution and usage terms.
 
 **Acceptance:**
 
@@ -760,6 +760,12 @@ related titles
 - [ ] Movie Details matches the design without implying AI personalization.
 
 **Out of scope:** Personal Rating, Watchlist changes, AI recommendations, and nominations.
+
+The internal catalog structure follows
+[ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources).
+The default source combination is PoiskKino + TheTVDB. Provider switching retains UUIDs and
+requires filling missing external correspondences; live response completeness remains separate.
+Refresh jobs remain the ADR-016 checkpoint.
 
 ### Phase 9 — Session Creation & Participant Roster · Not started
 
@@ -814,7 +820,7 @@ live progress events
 
 **Scope:**
 
-- [ ] Implement Nomination and Club Bench with one nomination per participant, TMDB selection, and
+- [ ] Implement Nomination and Club Bench with one nomination per participant, catalog selection, and
       Bench shortcuts.
 - [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
@@ -887,7 +893,7 @@ in UAT
 - [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
 - [ ] Exercise concurrent tabs and users, process and job restarts, SSE reconnect and fallback, stale
-      data, TMDB failures, and permission changes mid-flow.
+      data, provider failures, and permission changes mid-flow.
 - [ ] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.
 - [ ] Fix every Blocker and Major and retest the affected domain, job, API, and UI boundaries.
@@ -1195,7 +1201,7 @@ indicators
 - [ ] Implement User search and filters, suspend and reinstate, session revocation, and status.
 - [ ] Implement Club search and filters, ownership transfer, deletion, and plan and usage views.
 - [ ] Implement registration and verified-email defaults, maintenance mode, the Free member default,
-      TMDB refresh cadence, and audit retention settings.
+      catalog refresh cadence, and audit retention settings.
 - [ ] Require typed-name confirmations, validate transfer targets, make sensitive operations
       idempotent, and record AdminAuditEvents.
 - [ ] Show the health, job, and provider indicators operations need, without a Support role.
@@ -1315,7 +1321,7 @@ drain · [#85](https://github.com/Shagon1k/PickFlick/issues/85) threat model and
       set, owners, and a severity-classified register.
 - [ ] Run every public, auth, Club, Session, Library, Settings, Billing, Admin, and PWA flow across
       roles, devices, and failure states.
-- [ ] Verify real OAuth, TMDB, the Paddle sandbox, Resend, storage, jobs and deadlines, SSE,
+- [ ] Verify real OAuth, catalog providers, the Paddle sandbox, Resend, storage, jobs and deadlines, SSE,
       monitoring, backup and restore, and rollback.
 - [ ] Run the production-like edge drill through the chosen proxy: client identity, abuse handling,
       drain, public crawlers, and release and rollback handoffs.
@@ -1409,7 +1415,7 @@ the MVP
 | --- | ----------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | 1   | Recalculate Personal Ratings from history | A new Session Rating updates the Personal Rating; later edits never rewrite history. | Users need averages, per-viewing trends, or a rebuild action.  |
 | 2   | Adminless Club recovery                   | Keep history and disable owner-only actions.                                         | First real case, support load, or ownership-recovery planning. |
-| 3   | Recommendation algorithm                  | TMDB related titles with a deterministic fallback.                                   | AI recommendations start or provider quality falls short.      |
+| 3   | Recommendation algorithm                  | Provider related titles with a deterministic fallback.                               | AI recommendations start or provider quality falls short.      |
 | 4   | Annual billing                            | Not implemented; the offer is monthly.                                               | Commercial validation supports it.                             |
 | 5   | Offline mutations                         | Reject or disable network-required actions with clear recovery; never queue them.    | Real offline demand appears.                                   |
 | 6   | Localization                              | Externalize copy and formats; ship English.                                          | Russian is scheduled.                                          |
