@@ -9,31 +9,39 @@ the app, see [Develop locally](local-development.md); for deployed environments,
 The backend validates these at startup with one zod schema (`@pickflick/config`). Errors name the
 variable, never its value.
 
-| Variable                                           | Contract                                                                                                                 | Secret |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `APP_ENV`                                          | `local`, `test`, `uat`, or `production`. Production hides `/ui-preview` and `/shell-preview`.                            | No     |
-| `SOURCE_REVISION`                                  | Optional full Git SHA; images set it and `/health/live` reports it.                                                      | No     |
-| `BACKEND_HOST`, `BACKEND_PORT`                     | Backend bind address and port.                                                                                           | No     |
-| `DATABASE_URL`                                     | `postgres(ql)://` URL with host and database.                                                                            | Yes    |
-| `STORAGE_ENDPOINT`, `STORAGE_REGION`               | S3 API URL and signing region (`us-east-1` for MinIO).                                                                   | No     |
-| `STORAGE_BUCKET`                                   | Lowercase S3 bucket name.                                                                                                | No     |
-| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`         | Application storage credentials.                                                                                         | Yes    |
-| `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                    | No     |
-| `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                         | No     |
-| `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                              | Yes    |
-| `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                | No     |
-| `CONTACT_DELIVERY_TO`                              | Contact inbox: `hello@pick-flick.app` in production, an approved test inbox in UAT.                                      | Yes\*  |
-| `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                    | No     |
-| `AUTH_SECRET`                                      | At least 32 characters.                                                                                                  | Yes    |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`         | Google OAuth client for this environment.                                                                                | Yes    |
-| `APPLE_SIGN_IN_ENABLED`                            | Default `false`; the backend registers Apple and the frontend shows it only when `true`.                                 | No     |
-| `APPLE_CLIENT_ID`, `APPLE_KEY_ID`, `APPLE_TEAM_ID` | Required only when Apple is enabled.                                                                                     | Yes    |
-| `APPLE_PRIVATE_KEY`                                | EC P-256 PKCS#8 PEM (`\n` line breaks accepted); required only when enabled.                                             | Yes    |
-| `TMDB_ENABLED`                                     | Default `false`; the adapter returns `DISABLED` without outbound requests.                                               | No     |
-| `TMDB_READ_TOKEN`                                  | Server-held TMDB API read access token, required when enabled. Never a browser variable.                                 | Yes    |
-| `TMDB_TIMEOUT_MS`                                  | Request and response-body timeout, 100–30000 ms; default 5000.                                                           | No     |
-| `TMDB_REFRESH_HOURS`                               | Cache freshness age, 1–720 hours; default 24. The worker cadence decision is pending ADR-016.                            | No     |
-| `TMDB_STALE_HOURS`                                 | Maximum total cache age for explicit transient-failure fallback, 1–2160 hours and at least the refresh age; default 168. | No     |
+| Variable                                           | Contract                                                                                                                       | Secret |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| `APP_ENV`                                          | `local`, `test`, `uat`, or `production`. Production hides `/ui-preview` and `/shell-preview`.                                  | No     |
+| `SOURCE_REVISION`                                  | Optional full Git SHA; images set it and `/health/live` reports it.                                                            | No     |
+| `BACKEND_HOST`, `BACKEND_PORT`                     | Backend bind address and port.                                                                                                 | No     |
+| `DATABASE_URL`                                     | `postgres(ql)://` URL with host and database.                                                                                  | Yes    |
+| `STORAGE_ENDPOINT`, `STORAGE_REGION`               | S3 API URL and signing region (`us-east-1` for MinIO).                                                                         | No     |
+| `STORAGE_BUCKET`                                   | Lowercase S3 bucket name.                                                                                                      | No     |
+| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`         | Application storage credentials.                                                                                               | Yes    |
+| `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                          | No     |
+| `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                               | No     |
+| `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                                    | Yes    |
+| `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                      | No     |
+| `CONTACT_DELIVERY_TO`                              | Contact inbox: `hello@pick-flick.app` in production, an approved test inbox in UAT.                                            | Yes\*  |
+| `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                          | No     |
+| `AUTH_SECRET`                                      | At least 32 characters.                                                                                                        | Yes    |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`         | Google OAuth client for this environment.                                                                                      | Yes    |
+| `APPLE_SIGN_IN_ENABLED`                            | Default `false`; the backend registers Apple and the frontend shows it only when `true`.                                       | No     |
+| `APPLE_CLIENT_ID`, `APPLE_KEY_ID`, `APPLE_TEAM_ID` | Required only when Apple is enabled.                                                                                           | Yes    |
+| `APPLE_PRIVATE_KEY`                                | EC P-256 PKCS#8 PEM (`\n` line breaks accepted); required only when enabled.                                                   | Yes    |
+| `CATALOG_PROVIDER`                                 | `poiskkino-thetvdb` (default) or `tmdb`; determines the injected catalog adapter.                                              | No     |
+| `CATALOG_LOCALE`                                   | `en-US` only initially; unsupported locales fail validation.                                                                   | No     |
+| `POISKKINO_ENABLED`                                | Default `false`; explicit enable gate for PoiskKino.                                                                           | No     |
+| `POISKKINO_API_KEY`                                | Server-held X-API-KEY, required when PoiskKino is enabled.                                                                     | Yes    |
+| `POISKKINO_TIMEOUT_MS`                             | Request/body timeout, 100–30000 ms; default 5000.                                                                              | No     |
+| `THETVDB_ENABLED`                                  | Default `false`; explicit enable gate for English enrichment.                                                                  | No     |
+| `THETVDB_READ_TOKEN`                               | Server-held TheTVDB v4 bearer token, required when enabled; refresh/provision through the provider's login flow before expiry. | Yes    |
+| `THETVDB_TIMEOUT_MS`                               | Request/body timeout, 100–30000 ms; default 5000.                                                                              | No     |
+| `TMDB_ENABLED`                                     | Default `false`; the adapter returns `DISABLED` without outbound requests.                                                     | No     |
+| `TMDB_READ_TOKEN`                                  | Server-held TMDB API read access token, required when enabled. Never a browser variable.                                       | Yes    |
+| `TMDB_TIMEOUT_MS`                                  | Request and response-body timeout, 100–30000 ms; default 5000.                                                                 | No     |
+| `CATALOG_REFRESH_HOURS`                            | Cache freshness age, 1–720 hours; default 24. The worker cadence decision is pending ADR-016.                                  | No     |
+| `CATALOG_STALE_HOURS`                              | Maximum total cache age for explicit transient-failure fallback, 1–2160 hours and at least the refresh age; default 168.       | No     |
 
 \* Except the published production address.
 
@@ -68,11 +76,18 @@ checked against the file signature, readable only by active members.
 
 ## Health, errors, and logs
 
-TMDB is disabled in the synthetic preview. Deployment Compose passes its enabled flag, token,
-timeout, and cache ages to the backend only. This change does not provision a token or enable
-the integration in any environment. The adapter uses fixed HTTPS TMDB endpoints, keeps its token
-in an authorization header, rejects redirects, and logs only fixed failure reasons. Provider
-errors never include response bodies or raw fetch diagnostics.
+All catalog adapters are disabled in the synthetic preview. Deployment Compose passes source
+credentials/timeouts and provider-independent cache policy to the backend only. No credentials
+are provisioned by this change. Adapter requests use fixed HTTPS endpoints, credentials in headers,
+reject redirects, and return safe reason codes without response bodies or raw fetch diagnostics.
+
+To switch providers, set `CATALOG_PROVIDER`, enable that adapter's credentials, and fill missing
+verified `MovieExternalId` mappings while retaining `movieId`. Never invent correspondences from
+title/year. The new migration retains UUIDs and legacy mappings while invalidating old TMDB JSON
+caches. Conflicting legacy IMDb mappings require reconciliation before migration. See
+[ADR-017](decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources).
+The previous `TMDB_REFRESH_HOURS`/`TMDB_STALE_HOURS` variables are replaced by the catalog variables;
+update deployed environment values when applying this migration.
 
 | Endpoint (public path `/api/…`) | Answer                                                                         |
 | ------------------------------- | ------------------------------------------------------------------------------ |

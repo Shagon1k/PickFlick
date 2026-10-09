@@ -9,7 +9,7 @@ Start here before non-trivial product, design, architecture, implementation, or 
 | [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log.      |
 | [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.                 |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                       |
-| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-016).                       |
+| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-017).                       |
 | [Develop locally](local-development.md)           | How-to: run the app, work with the database, run the checks, fix common problems.    |
 | [Add a feature end to end](adding-a-feature.md)   | How-to: schema, backend module, frontend call, form, and tests, using Contact.       |
 | [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                    |
@@ -61,8 +61,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 
 ## Active phase
 
-| Document                                                                       | Purpose                                                           |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [Phase 6 — Human Verification & Bug Fixing I](phase-6-human-verification-1.md) | Tested build, severity-classified register, and deferrals.        |
-| [Phase 7 — Club Hub and invitations](phase-7-club-hub.md)                      | Club Hub, invitations, and membership delivery details.           |
-| [Phase 8 — Movie catalog](phase-8-movie-catalog.md)                            | TMDB, canonical cache, refresh decision, and acceptance evidence. |
+| Document                                                                       | Purpose                                                                                     |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [Phase 6 — Human Verification & Bug Fixing I](phase-6-human-verification-1.md) | Tested build, severity-classified register, and deferrals.                                  |
+| [Phase 7 — Club Hub and invitations](phase-7-club-hub.md)                      | Club Hub, invitations, and membership delivery details.                                     |
+| [Phase 8 — Movie catalog](phase-8-movie-catalog.md)                            | Catalog sources, canonical UUIDs, source caches, refresh decision, and acceptance evidence. |

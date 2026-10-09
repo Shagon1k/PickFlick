@@ -37,6 +37,8 @@ separately.
 | [ADR-015](#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)  | Send a nonce-based CSP and security headers from each runtime  | Accepted                                                                              | 2026-09-26 |
 | [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
+| [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160 | 2026-10-09 |
+
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
@@ -1193,3 +1195,108 @@ and notification delivery must assess their own delivery and transactional-outbo
 
 The engineering run has requested the developer's queue choice. This proposal does not claim
 an accepted decision or implemented refresh-job acceptance.
+
+## ADR-017 — Keep Movie identity independent of catalog sources
+
+- **Status:** Accepted; implements the developer's [PR #160 request](https://github.com/Shagon1k/PickFlick/pull/160#discussion_r4231984082)
+- **Date:** 2026-10-09
+- **Owning issue:** [#36](https://github.com/Shagon1k/PickFlick/issues/36)
+
+### Context
+
+The first catalog adapter exposed TMDB IDs, paths and ratings directly. That made switching
+sources change domain identity and public links. PickFlick starts with PoiskKino search/media
+and TheTVDB English enrichment; TMDB must remain a selectable alternative.
+
+### Decision
+
+`MoviesService` remains the catalog facade. Public search results, details and related links
+use `Movie.id` UUID; future Session and Library relationships reference that same UUID.
+`IMovieProvider` owns API adaptation, matching and section precedence. Provider records contain
+normalized metadata and verified external IDs, and never allocate public UUIDs.
+
+There are two concrete adapter configurations: `CompositeMovieProvider` wraps PoiskKino and
+TheTVDB as one logical provider; `TmdbClient` implements the same `IMovieProvider` with one API.
+The composite owns search, enrichment, matching, field priorities, source errors and reuse of
+internal source snapshots. `MoviesService` receives one normalized record and an aggregate
+projection-cache status; it neither loads source snapshots nor checks individual source clocks.
+UUID resolution and persistence remain shared domain responsibilities. No arbitrary provider
+combination engine is introduced.
+
+`MovieExternalId(movieId, source, externalId)` uniquely identifies `(source, externalId)` and
+allows one ID per source for a Movie. All ingestion paths resolve verified IDs in a transaction.
+A shared IMDb or an explicit cross-provider ID permits reuse; title/year never establishes
+identity. Conflicting IDs or already separate canonical UUIDs require reviewed reconciliation,
+not an automatic merge that could reassign domain links.
+
+The additive migration preserves existing UUIDs, TMDB links, valid IMDb links and source
+removal observations. Contradictory legacy IMDb links fail migration for reconciliation.
+Legacy JSON/search snapshots are invalidated and refilled; they are caches, not identity.
+No existing Session or other domain rows are rewritten.
+
+The initial configuration is `CATALOG_PROVIDER=poiskkino-thetvdb`. Search calls PoiskKino only.
+Details enrich through a known TheTVDB ID or an IMDb remote-ID lookup; the extended movie must
+confirm that IMDb. Missing or ambiguous mappings stay explicit.
+
+| Section                         | Composite precedence                               | Missing data                                                                          |
+| ------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| English title                   | TheTVDB `eng` translation, then PoiskKino `enName` | `null`; never `name` or an unlabelled `alternativeName`                               |
+| English overview                | TheTVDB `eng` overview translation only            | `null`; never a Russian description                                                   |
+| Original title                  | Verified normalized source value                   | `null` when adapters cannot establish it                                              |
+| Release date and language       | TheTVDB, then verified PoiskKino value             | `null`; a year does not become January 1                                              |
+| Release year and runtime        | PoiskKino year; TheTVDB runtime before PoiskKino   | `null` when unknown                                                                   |
+| Genres, directors and cast      | TheTVDB English metadata                           | `null` when absent                                                                    |
+| Posters, backdrops and trailers | PoiskKino                                          | `null` when absent; allowlisted HTTPS images and YouTube links only                   |
+| External ratings                | PoiskKino                                          | An empty list; each known rating retains source, value, scale and optional vote count |
+| Similar movies                  | PoiskKino                                          | `null` when absent; external links resolve to Movie UUIDs                             |
+| Adult-content flag              | A verified normalized flag                         | `null`; age classification is not an adult flag                                       |
+
+TMDB normalizes into the same fields with TMDB provenance. Images are complete HTTPS URLs;
+provider paths and person/genre IDs stay behind the adapter. Unknown values remain nullable.
+Poster storage in S3 can be added behind the same URL contract with a configured trusted origin
+and a reviewed download/retention policy; no poster or trailer copying is implemented here.
+
+`MovieSourceCache` stores each source's normalized detail snapshot, locale and request-start
+clock. `MovieDetailsCache` stores the public projection per provider-configuration/locale key;
+`MovieSearchCache` additionally keys normalized query/page and adult-filter policy. Adapter
+configuration keys include a merge-policy version, so changing that policy invalidates projections.
+Credentials and timeouts belong to adapters; `CATALOG_REFRESH_HOURS` and `CATALOG_STALE_HOURS`
+are provider-independent. Only `en-US` is supported initially; unsupported locale input fails
+validation instead of entering another locale's cache.
+
+A source removal keeps its external mapping and monotonically advances only that source's
+tombstone. A success started strictly after removal can restore it; timestamp ties cannot.
+Search never refreshes detail snapshots. Newer primary data cannot renew old enrichment.
+The service re-reads saved state and stale candidates to account for concurrent removal.
+
+TheTVDB failures produce explicit provenance and a `partial` primary result. Reusing old
+English metadata requires caller opt-in, bounded age and a transient source error, and produces
+`stale`. NOT_FOUND, authentication, invalid responses and disabled adapters discard old data.
+If PoiskKino is removed but verified TheTVDB data exists, its normalized details remain usable;
+no single-source NOT_FOUND marks the Movie UUID globally unavailable.
+
+Catalog writes use a short transaction-level advisory lock to serialize overlapping multi-record
+batches. This avoids cross-source/related-title lock inversion and favors correctness at the
+initial catalog volume; higher ingestion throughput may require a measured finer-lock design.
+
+### Consequences and alternatives
+
+Switch to `CATALOG_PROVIDER=tmdb` and enable its credentials after filling any missing TMDB
+correspondences. Switch back after filling PoiskKino/IMDb correspondences. UUIDs, domain links
+and the public contract remain unchanged; only source-specific projections are refilled.
+
+Keeping a nullable TMDB ID on Movie was rejected: a dedicated mapping table treats all sources
+consistently. Fuzzy title/year merging was rejected because remakes and localized titles can
+refer to different works. English fallback from Russian descriptions was rejected because it
+misrepresents locale completeness. All-source global tombstones were rejected because one
+provider's removal does not establish another provider's absence.
+
+Live response completeness remains a separate check; synthetic adapter tests verify the
+structure and omission rules. Provider attribution/usage rights remain owner work before
+public exposure. Queue/worker selection remains separately Proposed in ADR-016.
+
+### API references
+
+- [PoiskKino OpenAPI](https://api.poiskkino.dev/documentation-json)
+- [TheTVDB v4 OpenAPI](https://thetvdb.github.io/v4-api/)
+- [TMDB movie details](https://developer.themoviedb.org/reference/movie-details)

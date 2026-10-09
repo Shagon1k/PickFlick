@@ -81,15 +81,13 @@ describe('parseRuntimeEnvironment', () => {
         expect(parseRuntimeEnvironment(local).tmdb).toMatchObject({
             enabled: false,
             timeoutMs: 5000,
-            refreshHours: 24,
-            staleHours: 168,
         });
         expect(failuresOf({ ...local, TMDB_ENABLED: 'true' })).toContain(
             'TMDB_READ_TOKEN is required when TMDB is enabled',
         );
         expect(
-            failuresOf({ ...local, TMDB_REFRESH_HOURS: '200', TMDB_STALE_HOURS: '168' }),
-        ).toContain('TMDB_STALE_HOURS must be at least TMDB_REFRESH_HOURS');
+            failuresOf({ ...local, CATALOG_REFRESH_HOURS: '200', CATALOG_STALE_HOURS: '168' }),
+        ).toContain('CATALOG_STALE_HOURS must be at least CATALOG_REFRESH_HOURS');
         expect(failuresOf({ ...local, TMDB_TIMEOUT_MS: '0' }).join(' ')).toContain(
             'TMDB_TIMEOUT_MS',
         );
@@ -175,6 +173,26 @@ describe('parseDatabaseEnvironment', () => {
     it('should throw an EnvironmentValidationError', () => {
         expect(() => parseDatabaseEnvironment({ APP_ENV: 'staging' })).toThrow(
             EnvironmentValidationError,
+        );
+    });
+    it('should validate source-specific credentials and shared catalog policy', () => {
+        expect(parseRuntimeEnvironment(local).catalog).toEqual({
+            provider: 'poiskkino-thetvdb',
+            locale: 'en-US',
+            refreshHours: 24,
+            staleHours: 168,
+        });
+        expect(
+            parseRuntimeEnvironment({ ...local, CATALOG_PROVIDER: 'tmdb' }).catalog.provider,
+        ).toBe('tmdb');
+        expect(failuresOf({ ...local, POISKKINO_ENABLED: 'true' })).toContain(
+            'POISKKINO_API_KEY is required when PoiskKino is enabled',
+        );
+        expect(failuresOf({ ...local, THETVDB_ENABLED: 'true' })).toContain(
+            'THETVDB_READ_TOKEN is required when TheTVDB is enabled',
+        );
+        expect(failuresOf({ ...local, CATALOG_LOCALE: 'ru-RU' }).join(' ')).toContain(
+            'CATALOG_LOCALE',
         );
     });
 });

@@ -30,9 +30,13 @@ x-runtime-environment: &runtime-environment
     RESEND_API_KEY: preview-disabled
     RESEND_FROM: PickFlick UAT <notifications@uat.pick-flick.app>
     CONTACT_DELIVERY_TO: contact@example.invalid
+    CATALOG_PROVIDER: poiskkino-thetvdb
+    CATALOG_LOCALE: en-US
+    POISKKINO_ENABLED: 'false'
+    THETVDB_ENABLED: 'false'
     TMDB_ENABLED: 'false'
-    TMDB_REFRESH_HOURS: ${TMDB_REFRESH_HOURS:-24}
-    TMDB_STALE_HOURS: ${TMDB_STALE_HOURS:-168}
+    CATALOG_REFRESH_HOURS: ${CATALOG_REFRESH_HOURS:-24}
+    CATALOG_STALE_HOURS: ${CATALOG_STALE_HOURS:-168}
 
 services:
     postgres:

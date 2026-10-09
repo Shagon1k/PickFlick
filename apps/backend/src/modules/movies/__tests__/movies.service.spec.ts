@@ -1,40 +1,60 @@
 import { Test } from '@nestjs/testing';
-import type { TMovieDetails, TMovieSearchResults } from '@pickflick/contracts';
 
 import { RUNTIME_ENVIRONMENT } from '../../../config/runtime.module.js';
-import { movieDetails } from '../../../testing/movie-fixtures.js';
-import { MOVIE_PROVIDER, MovieProviderError } from '../movie-provider.js';
-import { MoviesRepository } from '../movies.repository.js';
+import {
+    canonicalDetails,
+    MOVIE_ID,
+    movieDetails,
+    movieLookup,
+} from '../../../testing/movie-fixtures.js';
+import { inspectDetailsCache, MoviesRepository } from '../movies.repository.js';
 import { MoviesService } from '../movies.service.js';
+import {
+    MOVIE_PROVIDER,
+    MovieProviderError,
+    type TProviderRecord,
+    type TProviderSearch,
+} from '../providers/movie-provider.js';
 
 describe('MoviesService', () => {
     const provider = {
-        search: vi.fn<() => Promise<TMovieSearchResults>>(),
-        details: vi.fn<() => Promise<TMovieDetails>>(),
+        configurationKey: 'tmdb:v1',
+        search: vi.fn<() => Promise<TProviderSearch>>(),
+        details: vi.fn<() => Promise<TProviderRecord>>(),
     };
     const repository = {
         cachedSearch: vi.fn<MoviesRepository['cachedSearch']>(),
         cachedDetails: vi.fn<MoviesRepository['cachedDetails']>(),
         saveSearch: vi.fn<MoviesRepository['saveSearch']>(),
         saveDetails: vi.fn<MoviesRepository['saveDetails']>(),
+        lookup: vi.fn<MoviesRepository['lookup']>(),
         markUnavailable: vi.fn<MoviesRepository['markUnavailable']>(),
     };
     let service: MoviesService;
     const now = new Date('2026-10-09T12:00:00Z');
     const old = new Date('2026-10-07T12:00:00Z');
+    const cached = (value: Parameters<typeof inspectDetailsCache>[0]) =>
+        inspectDetailsCache(value, { refreshHours: 24, staleHours: 168 });
 
     beforeEach(async () => {
         vi.resetAllMocks();
+        provider.configurationKey = 'tmdb:v1';
         vi.useFakeTimers();
         vi.setSystemTime(now);
         repository.cachedDetails.mockResolvedValue(null);
+        repository.lookup.mockResolvedValue(movieLookup());
         repository.cachedSearch.mockResolvedValue(null);
-        repository.saveDetails.mockImplementation((data, fetchedAt) => {
-            repository.cachedDetails.mockResolvedValue({ data, fetchedAt });
+        repository.saveDetails.mockImplementation((_id, _key, data, fetchedAt) => {
+            repository.cachedDetails.mockResolvedValue(
+                cached({
+                    data: { ...canonicalDetails(), ...data.data, provenance: data.provenance },
+                    fetchedAt,
+                }),
+            );
             return Promise.resolve();
         });
         repository.saveSearch.mockImplementation((_key, data, fetchedAt) => {
-            repository.cachedSearch.mockResolvedValue({ data, fetchedAt });
+            repository.cachedSearch.mockResolvedValue({ data: { ...data, movies: [] }, fetchedAt });
             return Promise.resolve();
         });
         const moduleRef = await Test.createTestingModule({
@@ -44,7 +64,7 @@ describe('MoviesService', () => {
                 { provide: MoviesRepository, useValue: repository },
                 {
                     provide: RUNTIME_ENVIRONMENT,
-                    useValue: { tmdb: { refreshHours: 24, staleHours: 168 } },
+                    useValue: { catalog: { locale: 'en-US', refreshHours: 24, staleHours: 168 } },
                 },
             ],
         }).compile();
@@ -54,44 +74,61 @@ describe('MoviesService', () => {
     afterEach(() => vi.useRealTimers());
 
     it('should return fresh details without calling the provider', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt: now });
-        expect(await service.details(100)).toMatchObject({ state: 'fresh', data: { tmdbId: 100 } });
+        repository.cachedDetails.mockResolvedValue(
+            cached({ data: canonicalDetails(), fetchedAt: now }),
+        );
+        expect(await service.details(MOVIE_ID)).toMatchObject({
+            state: 'fresh',
+            data: { id: MOVIE_ID },
+        });
         expect(provider.details).not.toHaveBeenCalled();
     });
 
     it('should persist complete details and expose their freshness', async () => {
         provider.details.mockResolvedValue(movieDetails());
-        expect(await service.details(100)).toMatchObject({
+        expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'fresh',
             fetchedAt: now.toISOString(),
         });
-        expect(repository.saveDetails).toHaveBeenCalledWith(movieDetails(), now);
+        expect(repository.saveDetails).toHaveBeenCalledWith(
+            MOVIE_ID,
+            expect.any(String),
+            movieDetails(),
+            now,
+        );
     });
 
     it('should refresh a fresh Movie when explicitly forced', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt: now });
+        repository.cachedDetails.mockResolvedValue(
+            cached({ data: canonicalDetails(), fetchedAt: now }),
+        );
         provider.details.mockResolvedValue(movieDetails());
-        await service.details(100, { forceRefresh: true });
-        expect(provider.details).toHaveBeenCalledWith(100);
+        await service.details(MOVIE_ID, { forceRefresh: true });
+        expect(provider.details).toHaveBeenCalledWith({ ...movieLookup(), forceRefresh: true });
     });
 
     it('should never return a successful response invalidated by a newer removal', async () => {
         provider.details.mockResolvedValue(movieDetails());
         repository.saveDetails.mockResolvedValue(undefined);
-        expect(await service.details(100)).toMatchObject({
+        expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'unavailable',
             reason: 'NOT_FOUND',
         });
     });
 
     it('should require opt-in before serving stale details', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt: old });
+        repository.cachedDetails.mockResolvedValue(
+            cached({
+                data: canonicalDetails(100, old.toISOString()),
+                fetchedAt: old,
+            }),
+        );
         provider.details.mockRejectedValue(new MovieProviderError('TIMEOUT'));
-        expect(await service.details(100)).toMatchObject({
+        expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'unavailable',
             reason: 'TIMEOUT',
         });
-        expect(await service.details(100, { allowStale: true })).toMatchObject({
+        expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
             state: 'stale',
             reason: 'TIMEOUT',
             fetchedAt: old.toISOString(),
@@ -100,9 +137,14 @@ describe('MoviesService', () => {
 
     it('should preserve the provider retry time in a safe stale response', async () => {
         const retryAt = new Date(now.getTime() + 60_000);
-        repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt: old });
+        repository.cachedDetails.mockResolvedValue(
+            cached({
+                data: canonicalDetails(100, old.toISOString()),
+                fetchedAt: old,
+            }),
+        );
         provider.details.mockRejectedValue(new MovieProviderError('RATE_LIMITED', retryAt));
-        expect(await service.details(100, { allowStale: true })).toMatchObject({
+        expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
             state: 'stale',
             reason: 'RATE_LIMITED',
             retryAt: retryAt.toISOString(),
@@ -112,9 +154,14 @@ describe('MoviesService', () => {
     it.each(['NOT_FOUND', 'AUTHENTICATION', 'INVALID_RESPONSE', 'DISABLED'] as const)(
         'should never use stale data after %s',
         async (reason) => {
-            repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt: old });
+            repository.cachedDetails.mockResolvedValue(
+                cached({
+                    data: canonicalDetails(100, old.toISOString()),
+                    fetchedAt: old,
+                }),
+            );
             provider.details.mockRejectedValue(new MovieProviderError(reason));
-            expect(await service.details(100, { allowStale: true })).toMatchObject({
+            expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
                 state: 'unavailable',
                 reason,
             });
@@ -122,17 +169,22 @@ describe('MoviesService', () => {
     );
 
     it('should invalidate cached data when the provider removes a Movie', async () => {
-        provider.details.mockRejectedValue(new MovieProviderError('NOT_FOUND'));
-        await service.details(100);
-        expect(repository.markUnavailable).toHaveBeenCalledWith(100, now);
+        provider.details.mockRejectedValue(new MovieProviderError('NOT_FOUND', undefined, 'tmdb'));
+        await service.details(MOVIE_ID);
+        expect(repository.markUnavailable).toHaveBeenCalledWith(MOVIE_ID, 'tmdb', now);
     });
 
     it('should recheck stale data after a concurrent request invalidates it', async () => {
         repository.cachedDetails
-            .mockResolvedValueOnce({ data: movieDetails(), fetchedAt: old })
+            .mockResolvedValueOnce(
+                cached({
+                    data: canonicalDetails(100, old.toISOString()),
+                    fetchedAt: old,
+                }),
+            )
             .mockResolvedValueOnce(null);
         provider.details.mockRejectedValue(new MovieProviderError('TIMEOUT'));
-        expect(await service.details(100, { allowStale: true })).toMatchObject({
+        expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
             state: 'unavailable',
             reason: 'TIMEOUT',
         });
@@ -141,9 +193,14 @@ describe('MoviesService', () => {
     it.each([new Date('2026-10-01T12:00:00Z'), new Date('2026-10-10T12:00:00Z')])(
         'should reject unsafe cache age %#',
         async (fetchedAt) => {
-            repository.cachedDetails.mockResolvedValue({ data: movieDetails(), fetchedAt });
+            repository.cachedDetails.mockResolvedValue(
+                cached({
+                    data: canonicalDetails(100, fetchedAt.toISOString()),
+                    fetchedAt,
+                }),
+            );
             provider.details.mockRejectedValue(new MovieProviderError('UNAVAILABLE'));
-            expect(await service.details(100, { allowStale: true })).toMatchObject({
+            expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
                 state: 'unavailable',
             });
         },
@@ -152,15 +209,15 @@ describe('MoviesService', () => {
     it('should keep search cache keys specific to trimmed query and page', async () => {
         const data = { movies: [], page: 1, totalPages: 0, totalResults: 0 };
         provider.search.mockResolvedValue(data);
-        await service.search({ query: ' film ', page: 1 });
+        await service.search({ query: ' film ', page: 1, locale: 'en-US' });
         repository.cachedSearch.mockResolvedValue(null);
-        await service.search({ query: 'film', page: 1 });
+        await service.search({ query: 'film', page: 1, locale: 'en-US' });
         repository.cachedSearch.mockResolvedValue(null);
-        await service.search({ query: 'film', page: 2 });
+        await service.search({ query: 'film', page: 2, locale: 'en-US' });
         const calls = repository.saveSearch.mock.calls;
         expect(calls[0]?.[0]).toBe(calls[1]?.[0]);
         expect(calls[0]?.[0]).not.toBe(calls[2]?.[0]);
-        expect(provider.search).toHaveBeenCalledWith({ query: 'film', page: 1 });
+        expect(provider.search).toHaveBeenCalledWith({ query: 'film', page: 1, locale: 'en-US' });
     });
 
     it('should return explicit no-results and reuse a fresh search snapshot', async () => {
@@ -168,7 +225,7 @@ describe('MoviesService', () => {
             data: { movies: [], page: 1, totalPages: 0, totalResults: 0 },
             fetchedAt: now,
         });
-        expect(await service.search({ query: 'unknown', page: 1 })).toMatchObject({
+        expect(await service.search({ query: 'unknown', page: 1, locale: 'en-US' })).toMatchObject({
             state: 'fresh',
             data: { movies: [] },
         });
@@ -181,10 +238,12 @@ describe('MoviesService', () => {
             fetchedAt: old,
         });
         provider.search.mockRejectedValue(new MovieProviderError('UNAVAILABLE'));
-        expect(await service.search({ query: 'film', page: 1 })).toMatchObject({
+        expect(await service.search({ query: 'film', page: 1, locale: 'en-US' })).toMatchObject({
             state: 'unavailable',
         });
-        expect(await service.search({ query: 'film', page: 1 }, true)).toMatchObject({
+        expect(
+            await service.search({ query: 'film', page: 1, locale: 'en-US' }, true),
+        ).toMatchObject({
             state: 'stale',
         });
     });
@@ -192,6 +251,87 @@ describe('MoviesService', () => {
     it('should propagate persistence failure instead of calling it provider unavailability', async () => {
         provider.details.mockResolvedValue(movieDetails());
         repository.saveDetails.mockRejectedValue(new Error('database write failed'));
-        await expect(service.details(100)).rejects.toThrow('database write failed');
+        await expect(service.details(MOVIE_ID)).rejects.toThrow('database write failed');
+    });
+    it('should isolate search caches by active source configuration', async () => {
+        provider.search.mockResolvedValue({ movies: [], page: 1, totalPages: 0, totalResults: 0 });
+        await service.search({ query: 'film', page: 1, locale: 'en-US' });
+        const firstKey = repository.saveSearch.mock.calls[0]?.[0];
+        repository.cachedSearch.mockResolvedValue(null);
+        provider.configurationKey = 'composite:v1:poiskkino:thetvdb';
+        await service.search({ query: 'film', page: 1, locale: 'en-US' });
+        expect(repository.saveSearch.mock.calls[1]?.[0]).not.toBe(firstKey);
+    });
+    it('should refresh details when one source is old even after a recent projection write', async () => {
+        const data = canonicalDetails();
+        data.provenance.push({
+            source: 'thetvdb',
+            fetchedAt: old.toISOString(),
+            reason: null,
+            sections: ['metadata'],
+        });
+        repository.cachedDetails.mockResolvedValue(cached({ data, fetchedAt: now }));
+        provider.details.mockResolvedValue(movieDetails());
+        await service.details(MOVIE_ID);
+        expect(provider.details).toHaveBeenCalledOnce();
+    });
+    it('should reject unsafe stale source age after a recent primary update', async () => {
+        const data = canonicalDetails();
+        data.provenance.push({
+            source: 'thetvdb',
+            fetchedAt: '2026-10-01T12:00:00.000Z',
+            reason: null,
+            sections: ['metadata'],
+        });
+        repository.cachedDetails.mockResolvedValue(cached({ data, fetchedAt: now }));
+        provider.details.mockRejectedValue(new MovieProviderError('TIMEOUT'));
+        expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
+            state: 'unavailable',
+            reason: 'TIMEOUT',
+        });
+    });
+    it('should expose partial enrichment and distinguish explicitly allowed stale enrichment', async () => {
+        const record = movieDetails();
+        record.provenance.push({
+            source: 'thetvdb',
+            fetchedAt: null,
+            reason: 'TIMEOUT',
+            sections: ['metadata'],
+        });
+        provider.details.mockResolvedValue(record);
+        expect(await service.details(MOVIE_ID)).toMatchObject({ state: 'partial' });
+        record.provenance[1]!.fetchedAt = old.toISOString();
+        expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
+            state: 'stale',
+            reason: 'TIMEOUT',
+        });
+    });
+    it('should translate invalid normalized provider payloads to an explicit failure', async () => {
+        provider.details.mockResolvedValue({
+            ...movieDetails(),
+            data: { ...movieDetails().data, posterUrl: 'https://evil.invalid/a.jpg' },
+        });
+        expect(await service.details(MOVIE_ID)).toMatchObject({
+            state: 'unavailable',
+            reason: 'INVALID_RESPONSE',
+        });
+    });
+    it('should not return a concurrent stale projection to a caller without opt-in', async () => {
+        provider.details.mockResolvedValue(movieDetails());
+        const data = canonicalDetails();
+        data.provenance.push({
+            source: 'thetvdb',
+            fetchedAt: old.toISOString(),
+            reason: 'TIMEOUT',
+            sections: ['metadata'],
+        });
+        repository.saveDetails.mockImplementation(() => {
+            repository.cachedDetails.mockResolvedValue(cached({ data, fetchedAt: now }));
+            return Promise.resolve();
+        });
+        expect(await service.details(MOVIE_ID)).toMatchObject({
+            state: 'unavailable',
+            reason: 'TIMEOUT',
+        });
     });
 });

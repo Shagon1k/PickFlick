@@ -108,6 +108,14 @@ const rawRuntimeEnvironmentSchema = z.object({
     AUTH_SECRET: required.min(32, 'must contain at least 32 characters'),
     GOOGLE_CLIENT_ID: required,
     GOOGLE_CLIENT_SECRET: required,
+    CATALOG_PROVIDER: z.enum(['tmdb', 'poiskkino-thetvdb']).default('poiskkino-thetvdb'),
+    CATALOG_LOCALE: z.literal('en-US').default('en-US'),
+    POISKKINO_ENABLED: flag.default(false),
+    POISKKINO_API_KEY: z.string().trim().max(8192).regex(/^\S*$/u).optional(),
+    POISKKINO_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
+    THETVDB_ENABLED: flag.default(false),
+    THETVDB_READ_TOKEN: z.string().trim().max(8192).regex(/^\S*$/u).optional(),
+    THETVDB_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
     TMDB_ENABLED: flag.default(false),
     TMDB_READ_TOKEN: z
         .string()
@@ -116,8 +124,8 @@ const rawRuntimeEnvironmentSchema = z.object({
         .regex(/^\S*$/u, 'must not contain whitespace')
         .optional(),
     TMDB_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(5000),
-    TMDB_REFRESH_HOURS: z.coerce.number().int().min(1).max(720).default(24),
-    TMDB_STALE_HOURS: z.coerce.number().int().min(1).max(2160).default(168),
+    CATALOG_REFRESH_HOURS: z.coerce.number().int().min(1).max(720).default(24),
+    CATALOG_STALE_HOURS: z.coerce.number().int().min(1).max(2160).default(168),
     APPLE_SIGN_IN_ENABLED: optionalFlag,
     APPLE_CLIENT_ID: z.string().trim().optional(),
     APPLE_KEY_ID: z.string().trim().optional(),
@@ -149,9 +157,19 @@ const RUNTIME_ENVIRONMENT_RULES: {
         broken: (env) => env.TMDB_ENABLED && !env.TMDB_READ_TOKEN,
     },
     {
-        variable: 'TMDB_STALE_HOURS',
-        message: 'must be at least TMDB_REFRESH_HOURS',
-        broken: (env) => env.TMDB_STALE_HOURS < env.TMDB_REFRESH_HOURS,
+        variable: 'CATALOG_STALE_HOURS',
+        message: 'must be at least CATALOG_REFRESH_HOURS',
+        broken: (env) => env.CATALOG_STALE_HOURS < env.CATALOG_REFRESH_HOURS,
+    },
+    {
+        variable: 'POISKKINO_API_KEY',
+        message: 'is required when PoiskKino is enabled',
+        broken: (env) => env.POISKKINO_ENABLED && !env.POISKKINO_API_KEY,
+    },
+    {
+        variable: 'THETVDB_READ_TOKEN',
+        message: 'is required when TheTVDB is enabled',
+        broken: (env) => env.THETVDB_ENABLED && !env.THETVDB_READ_TOKEN,
     },
     // Email: local and test never send, UAT may preview, production always delivers live.
     {
@@ -259,12 +277,26 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
         },
         contact: { deliveryTo: env.CONTACT_DELIVERY_TO },
+        catalog: {
+            provider: env.CATALOG_PROVIDER,
+            locale: env.CATALOG_LOCALE,
+            refreshHours: env.CATALOG_REFRESH_HOURS,
+            staleHours: env.CATALOG_STALE_HOURS,
+        },
+        poiskkino: {
+            enabled: env.POISKKINO_ENABLED,
+            apiKey: env.POISKKINO_API_KEY,
+            timeoutMs: env.POISKKINO_TIMEOUT_MS,
+        },
+        thetvdb: {
+            enabled: env.THETVDB_ENABLED,
+            readToken: env.THETVDB_READ_TOKEN,
+            timeoutMs: env.THETVDB_TIMEOUT_MS,
+        },
         tmdb: {
             enabled: env.TMDB_ENABLED,
             readToken: env.TMDB_READ_TOKEN,
             timeoutMs: env.TMDB_TIMEOUT_MS,
-            refreshHours: env.TMDB_REFRESH_HOURS,
-            staleHours: env.TMDB_STALE_HOURS,
         },
         auth: {
             baseUrl: env.AUTH_BASE_URL,
