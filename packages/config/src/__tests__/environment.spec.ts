@@ -77,6 +77,24 @@ describe('parseRuntimeEnvironment', () => {
         expect(failures.join(' ')).not.toContain('short-secret-value');
     });
 
+    it('should keep TMDB disabled by default and validate enabled configuration safely', () => {
+        expect(parseRuntimeEnvironment(local).tmdb).toMatchObject({
+            enabled: false,
+            timeoutMs: 5000,
+            refreshHours: 24,
+            staleHours: 168,
+        });
+        expect(failuresOf({ ...local, TMDB_ENABLED: 'true' })).toContain(
+            'TMDB_READ_TOKEN is required when TMDB is enabled',
+        );
+        expect(
+            failuresOf({ ...local, TMDB_REFRESH_HOURS: '200', TMDB_STALE_HOURS: '168' }),
+        ).toContain('TMDB_STALE_HOURS must be at least TMDB_REFRESH_HOURS');
+        expect(failuresOf({ ...local, TMDB_TIMEOUT_MS: '0' }).join(' ')).toContain(
+            'TMDB_TIMEOUT_MS',
+        );
+    });
+
     it.each([
         [
             { ...local, RESEND_DELIVERY_MODE: 'live' },

@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { ClubsModule } from './modules/clubs/clubs.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { MoviesModule } from './modules/movies/movies.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -57,6 +58,7 @@ export class AppModule {
                 ClubsModule,
                 ContactModule,
                 HealthModule,
+                MoviesModule,
             ],
             providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
         };

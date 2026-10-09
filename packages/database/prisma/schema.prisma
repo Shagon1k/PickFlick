@@ -241,3 +241,22 @@ model ClubInvite {
 
   @@index([clubId, createdAt])
 }
+
+model Movie {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tmdbId           Int       @unique
+  summary          Json?
+  summaryFetchedAt DateTime? @db.Timestamptz(3)
+  details          Json?
+  detailsFetchedAt DateTime? @db.Timestamptz(3)
+  unavailableAt    DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([detailsFetchedAt])
+}
+
+model MovieSearchCache {
+  key       String   @id @db.Char(64)
+  data      Json
+  fetchedAt DateTime @db.Timestamptz(3)
+}

@@ -29,7 +29,7 @@ flowchart LR
   API --> Objects["S3-compatible storage"]
   API --> OAuth["Google / Apple"]
   API --> Email["Resend"]
-  API -. Proposed .-> TMDB["TMDB"]
+  API --> TMDB["TMDB (disabled until configured)"]
   API -. Proposed .-> Paddle["Paddle"]
 ```
 
@@ -39,7 +39,7 @@ flowchart LR
 | Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.   | Partial — public site, login, Club onboarding, Hub overview, and settings; other product routes Proposed | ADR-013           |
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                                   | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                                   | ADR-012           |
-| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton; other entities Proposed                                  | ADR-003           |
+| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars and exports.                                          | Partial — Club avatars                                                                                   | —                 |
 | Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                                 | ADR-014           |
 | Real-time  | SSE from the API for Session progress.                                                  | Proposed                                                                                                 | —                 |
@@ -70,15 +70,16 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                                   | Owns                                                                                                                | State                         |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| auth                                                                                     | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated |
-| clubs                                                                                    | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                        |
-| contact                                                                                  | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                        |
-| email                                                                                    | Resend client; a logging stub when delivery is disabled.                                                            | Active                        |
-| storage                                                                                  | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                        |
-| health                                                                                   | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                        |
-| Sessions, Movies, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                      |
+| Module                                                                           | Owns                                                                                                                | State                                                                        |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                |
+| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                       |
+| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                       |
+| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                       |
+| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                       |
+| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                       |
+| movies                                                                           | TMDB adapter, canonical Movie upserts, search snapshots, explicit freshness and provider failure states.            | Partial — internal catalog service; refresh worker and public routes pending |
+| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                     |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -122,9 +123,9 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
 | Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, eleven migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, twelve migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, and `Session`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `Movie`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -166,16 +167,17 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 
 ## 4. Interfaces
 
-| Interface     | Path                                         | Contract                                            | State                                  |
-| ------------- | -------------------------------------------- | --------------------------------------------------- | -------------------------------------- |
-| Browser → API | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses     | Partial — Contact, Clubs, Hub overview |
-| Errors        | API → callers                                | `{ error: { code, message, requestId, reason? } }`  | Active                                 |
-| OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist              | Partial — Apple dormant                |
-| Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)  | Partial — Contact only                 |
-| Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked | Active                                 |
-| Live progress | Frontend → API                               | SSE, re-fetch after gaps                            | Proposed                               |
-| TMDB, Paddle  | API → provider; Paddle → API webhook         | Adapters; signed, idempotent webhooks               | Proposed                               |
-| CSV           | Frontend ↔ API                               | Versioned CSV schema                                | Proposed                               |
+| Interface     | Path                                         | Contract                                                                      | State                                                          |
+| ------------- | -------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Browser → API | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                               | Partial — Contact, Clubs, Hub overview                         |
+| Errors        | API → callers                                | `{ error: { code, message, requestId, reason? } }`                            | Active                                                         |
+| OAuth         | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                        | Partial — Apple dormant                                        |
+| Email         | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                            | Partial — Contact only                                         |
+| Club avatar   | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                           | Active                                                         |
+| Live progress | Frontend → API                               | SSE, re-fetch after gaps                                                      | Proposed                                                       |
+| TMDB          | Backend → provider                           | Fixed HTTPS adapter; validated search, details, credits, and trailer mapping. | Active — disabled until configured; live provider not verified |
+| Paddle        | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                   | Proposed                                                       |
+| CSV           | Frontend ↔ API                               | Versioned CSV schema                                                          | Proposed                                                       |
 
 Planned flows (Proposed): a Session submission serializes on the Session row, persists, evaluates
 completion, and transitions at most once in one transaction; deadlines are enforced by a scheduled
@@ -184,6 +186,20 @@ are verified, stored by provider ID, and applied idempotently; account deletion 
 history and revokes every session.
 
 ## 5. Cross-cutting contracts
+
+- **Movie catalog:** `MoviesService` is the internal boundary for later search/detail routes.
+  PostgreSQL `Movie.tmdbId` is unique; transactional SQL upserts preserve the canonical UUID
+  under concurrent search/detail ingestion and reject older payloads overwriting newer ones.
+  Summary and detail freshness are independent, so search cannot make incomplete credits or
+  media appear fresh. Exact normalized query/page snapshots live in `MovieSearchCache`.
+  Cached payloads are validated when read. Provider removal invalidates detail and search
+  snapshots while preserving the Movie identity. — Active for the internal service
+- **Provider fallback:** callers receive `fresh`, `stale`, or `unavailable`. Stale data requires
+  explicit opt-in, a validated complete payload within `TMDB_STALE_HOURS`, and a timeout,
+  rate limit, or transient unavailability. Invalid payloads, authentication failures, disabled
+  configuration, and removal never use stale fallback. A process-local cooldown honors
+  `Retry-After`; request timeouts cover the response body too. No provider error text is logged.
+  — Active; worker/queue approval pending [ADR-016](_docs/decisions/README.md#adr-016--use-a-postgresql-queue-for-movie-refresh)
 
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
   linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed
