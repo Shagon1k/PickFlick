@@ -53,7 +53,15 @@ for (const shell of shellRoutes) {
     }
 }
 
-test('header overlays are mutually exclusive and return focus', async ({ page }) => {
+test('header overlays are mutually exclusive and return focus', async ({ context, page }) => {
+    await context.addCookies([
+        {
+            name: 'pickflick.session_token',
+            value: 'valid-shell-overlays',
+            domain: '127.0.0.1',
+            path: '/',
+        },
+    ]);
     await openShell(page, 'product', canonicalViewports[2]);
 
     const searchTrigger = page.getByRole('button', { name: 'Search films' });
@@ -62,17 +70,18 @@ test('header overlays are mutually exclusive and return focus', async ({ page })
     const notifications = page.locator('#shell-notifications');
     await searchTrigger.click();
     await expect(searchOverlay).toBeVisible();
-    await expect(page.getByRole('searchbox', { name: 'Search films' })).toBeFocused();
+    await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('button', { name: 'Close search' })).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('searchbox', { name: 'Search films' })).toBeFocused();
-    await page.getByRole('searchbox', { name: 'Search films' }).fill('Dune');
-    await expect(searchOverlay.getByRole('status')).toHaveText('Film search isn’t available yet.');
+    await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
+    await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
+    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found.');
+    await expect(searchOverlay.getByRole('option')).toHaveCount(2);
     await page.getByRole('button', { name: 'Close search' }).click();
     await expect(searchTrigger).toBeFocused();
     await expect(
-        page.getByRole('searchbox', { name: 'Search films', includeHidden: true }),
+        page.getByRole('combobox', { name: 'Search films', includeHidden: true }),
     ).toHaveValue('');
 
     await notificationsTrigger.click();
