@@ -28,6 +28,7 @@ export const tmdbSearchSchema = z.object({
 });
 
 export const tmdbDetailsSchema = tmdbMovieSchema.extend({
+    similar: tmdbSearchSchema.optional(),
     runtime: z.number().int().nonnegative().nullable(),
     genres: z
         .array(

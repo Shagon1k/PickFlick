@@ -154,7 +154,7 @@ All canonical screens are MVP and approved as direction.
 | Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                             | Not checked                                                                      |
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                             | Not checked                                                                      |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                             | Not checked                                                                      |
-| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Not started                                                                             | Not checked                                                                      |
+| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Read-only details implemented; Personal Rating and Watchlist remain Phase 16            | Hosted preview and owner review pending                                          |
 | `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                             | Not checked                                                                      |
 | `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                             | Not checked                                                                      |
 | `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                    | Passed locally                                                                   |
@@ -307,7 +307,29 @@ Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits
 
 Search uses neutral PF poster placeholders until production media delivery is available. Catalog
 credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
-route currently checks the session and displays a handoff for #38. Local search keyboard, touch,
+route checks the session and now renders the read-only details described below. Local search keyboard, touch,
 axe and overflow checks passed at 390, 768, 1024 and 1440px on 2026-10-10. Personal Ratings, Watchlist,
 metadata and related films remain outside this change. Exact-SHA hosted preview and owner visual
 acknowledgement remain required before #37 is complete.
+
+## Read-only Movie Details
+
+The canonical UUID route renders title, year, language, runtime, genres, source-labelled ratings,
+poster, directors, cast, synopsis and outbound trailers. Desktop places poster/trailer above
+credits/synopsis in one flat grid. Mobile centers the title, pairs poster with credits, then places
+synopsis and trailer beneath. Long provider text wraps; no fixture posters or stills are bundled.
+Missing or failed media, absent English synopsis, provider outage/rate limits, unconfigured
+catalog, partial details and bounded stale details have explicit feedback. Loading related titles
+is independent of the main detail page. Unknown Movies use the existing not-found surface.
+
+Catalog credits reuse the approved TMDB logo and notice, plus attribution for contributing
+PoiskKino/TheTVDB sources. Related titles are provider-supplied, with up to six canonical links;
+they make no personalization claim. IMDb links use verified stored identifiers. Wikipedia is
+labelled as a title search because no verified article correspondence is available. Trailer links
+open YouTube in a new tab and announce that behavior. Personal Ratings and Watchlist controls
+remain outside #38. Hosted exact-head preview and owner visual acknowledgement are still required.
+
+Local verification on 2026-10-10 passed Movie Details axe and overflow checks at 390, 768,
+1024 and 1440px, desktop equal-width credits/synopsis and 16:9 trailer geometry, missing-media
+and provider-failure checks. Mobile and desktop screenshots were inspected. Existing visual
+baselines were not changed; hosted preview and owner review remain pending.

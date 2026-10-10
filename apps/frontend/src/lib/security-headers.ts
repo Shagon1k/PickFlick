@@ -20,7 +20,7 @@ export function contentSecurityPolicy(nonce: string, development: boolean): stri
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ''}`,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: blob:",
+        "img-src 'self' data: blob: https://image.tmdb.org https://image.openmoviedb.com https://st.kp.yandex.net https://avatars.mds.yandex.net https://artworks.thetvdb.com",
         "font-src 'self'",
         "connect-src 'self'",
         "object-src 'none'",

@@ -61,7 +61,10 @@ for (const width of [390, 768, 1024, 1440]) {
             await input.press('Enter');
             await expect(page).toHaveURL(`/movies/${movieId}`);
             await expect(
-                page.getByRole('heading', { name: 'Movie Details', exact: true }),
+                page.getByRole('heading', {
+                    name: '<script>alert(1)</script> & Film',
+                    exact: true,
+                }),
             ).toBeVisible();
         },
     );

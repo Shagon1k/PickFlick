@@ -214,7 +214,13 @@ history and revokes every session.
   60-request/minute endpoint limit apply. The header calls it through a server action and
   `apiRequest`, keeping credentials and provider calls on the server. Debounced queries discard
   obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
-  UUIDs; the authenticated destination is a handoff pending Movie Details delivery in #38.
+  UUIDs. Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
+  detail state with stored external identifiers; it has the same private/no-store and rate-limit
+  boundary. Movie Details validates the response and opts into the existing bounded stale policy.
+  A separate streamed section resolves up to six deduplicated related UUIDs through the same
+  endpoint. TMDB appends similar-title identifiers; the canonical repository resolves them.
+  Posters load directly from validated CDN URLs without server-side image optimization;
+  trailers remain outbound links. No background refresh, migration or new configuration is added.
   Live source completeness and the ADR-016 refresh worker remain unverified.
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
   linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed

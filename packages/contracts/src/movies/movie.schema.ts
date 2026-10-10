@@ -186,3 +186,27 @@ export const movieSearchResultsSchema = z.strictObject({
     totalResults: z.number().int().nonnegative(),
 });
 export type TMovieSearchResults = z.infer<typeof movieSearchResultsSchema>;
+
+export const movieDetailsResponseSchema = z.strictObject({
+    result: z.discriminatedUnion('state', [
+        z.strictObject({
+            state: z.enum(['fresh', 'partial']),
+            data: movieDetailsSchema,
+            fetchedAt: z.iso.datetime(),
+        }),
+        z.strictObject({
+            state: z.literal('stale'),
+            data: movieDetailsSchema,
+            fetchedAt: z.iso.datetime(),
+            reason: movieProviderReasonSchema,
+            retryAt: z.iso.datetime().optional(),
+        }),
+        z.strictObject({
+            state: z.literal('unavailable'),
+            reason: movieProviderReasonSchema,
+            retryAt: z.iso.datetime().optional(),
+        }),
+    ]),
+    externalIds: z.array(movieExternalIdSchema).max(10),
+});
+export type TMovieDetailsResponse = z.infer<typeof movieDetailsResponseSchema>;

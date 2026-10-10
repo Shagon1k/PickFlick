@@ -11,6 +11,15 @@ describe('contentSecurityPolicy', () => {
         expect(policy).not.toContain('unsafe-eval');
     });
 
+    it('should allow only the catalog image origins without enabling third-party connections or frames', () => {
+        const policy = contentSecurityPolicy('abc123', false);
+        expect(policy).toContain('https://image.tmdb.org');
+        expect(policy).toContain('https://artworks.thetvdb.com');
+        expect(policy).toContain("connect-src 'self'");
+        expect(policy).toContain("default-src 'self'");
+        expect(policy).not.toContain('https:;');
+    });
+
     it('should allow eval only in development', () => {
         expect(contentSecurityPolicy('abc123', true)).toContain("'unsafe-eval'");
     });

@@ -34,13 +34,13 @@ rest. Next.js does not add its headers to responses it proxies, so the backend s
 
 The page CSP allows:
 
-| Directive                                                             | Meaning                                                                                                          |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `script-src 'self' 'nonce-…' 'strict-dynamic'`                        | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
-| `style-src 'self' 'unsafe-inline'`                                    | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
-| `img-src 'self' data: blob:`, `font-src 'self'`, `connect-src 'self'` | Images, fonts, and requests only from PickFlick.                                                                 |
-| `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`          | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
-| `frame-ancestors 'none'`                                              | No site may embed PickFlick in a frame.                                                                          |
+| Directive                                                                                      | Meaning                                                                                                          |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `script-src 'self' 'nonce-…' 'strict-dynamic'`                                                 | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
+| `style-src 'self' 'unsafe-inline'`                                                             | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
+| `img-src 'self' data: blob:` plus catalog CDN origins; `font-src 'self'`, `connect-src 'self'` | Images from PickFlick and the catalog allowlist; fonts and API requests stay same-origin.                        |
+| `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`                                   | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
+| `frame-ancestors 'none'`                                                                       | No site may embed PickFlick in a frame.                                                                          |
 
 A new third-party script, image host, font, or API origin needs a change to
 `contentSecurityPolicy()` in `apps/frontend/src/lib/security-headers.ts`, a matching test, and a
@@ -209,3 +209,16 @@ no-store responses, and noindex metadata. The UI holds a newly created link in c
 copying; it never persists it in browser storage. Recent-invitation API responses contain no token
 or digest. Better Auth's short-lived OAuth state retains the allowlisted return path during sign-in;
 provider log messages and error arguments are omitted to keep that path out of logs.
+
+## Catalog media and outbound links
+
+Movie Details renders validated HTTPS poster URLs directly in the browser, with no server-side
+image optimizer fetch. CSP permits only the catalog schema's five image hosts: `image.tmdb.org`,
+`image.openmoviedb.com`, `st.kp.yandex.net`, `avatars.mds.yandex.net`, and `artworks.thetvdb.com`.
+Missing or failed images become text placeholders. Provider text is escaped by React; the API
+response schema rejects unsafe media and mismatched Movie identities before rendering.
+
+Trailers stay outbound YouTube links. IMDb URLs use stored validated IMDb identifiers.
+Wikipedia links explicitly search an encoded title on the fixed English Wikipedia origin;
+they do not assert a verified article correspondence. External detail links use
+`noopener noreferrer`. Third-party scripts, frames and API connections remain disallowed.
