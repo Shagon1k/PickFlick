@@ -150,13 +150,13 @@ GitHub deployment was available at preparation; local screenshots do not satisfy
 ## Movie Details delivery (#38)
 
 Run `r_56f259d52bb49b2a7422` delivers the shared read-only canonical UUID route. The detail
-endpoint reuses `MoviesService.details` with bounded stale opt-in and exposes stored identifiers.
+endpoint reuses `MoviesService.details` with bounded stale opt-in and returns backend-built links.
 The browser receives schema-validated data and escaped text; missing/failed posters use neutral
 placeholders. Responsive composition follows the canonical Movie Details hero, with outbound
 YouTube trailers under the existing adapter contract. TMDB related identifiers now resolve through
 the canonical repository; a streamed section loads up to six related titles independently.
 
-IMDb links use stored identifiers. Wikipedia is an explicitly labelled title search on a fixed
+IMDb links are built on the backend from stored identifiers. Wikipedia is an explicitly labelled title search on a fixed
 trusted origin; providers currently supply no verified article mapping. No article URL is inferred.
 TMDB credits reuse the approved logo and required notice in a visible Catalog credits section,
 following the [TMDB FAQ](https://developer.themoviedb.org/docs/faq) rechecked on 2026-10-10.
@@ -188,3 +188,34 @@ Verification on 2026-10-10:
   desktop screenshots were inspected; no existing visual baselines were changed.
 - Live provider credentials/content, hosted exact-head preview and owner visual acknowledgement
   remain unverified. Local screenshots do not satisfy the hosted-review acceptance criterion.
+
+## Movie Details review fix round 1 (#38)
+
+The owner-approved snapshot at `7601b2fc104500054c37b335b60ff02d364759bf` covers three
+threads on PR #164. Details now return backend-built `links.imdb` without external IDs.
+The backend copies catalog media into private S3-compatible storage and returns authenticated
+same-origin image paths; CSP no longer permits provider image hosts. Downloads reject redirects,
+validate raster signatures, and enforce five-second and 5 MiB limits. Existing objects are reused;
+failed downloads retain the missing-media presentation, and storage failures propagate.
+Provider URLs remain in internal caches, so no migration or infrastructure change is needed.
+
+The detail transport deadline is 100 seconds: three provider calls can each consume the configured
+30-second maximum, followed by concurrent image downloads and response overhead. Other API calls
+keep their ten-second deadline. Delayed-provider regressions cover complete details after three
+four-second calls and partial details after late enrichment timeout.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint (three existing frontend warnings), knip, formatting,
+  type checking, all 376 unit tests, and the workspace production build.
+- The audit used a temporary writable copy of pnpm's shared SQLite store metadata, as in the
+  original run. Installed dependencies, lockfile and audit policy were unchanged.
+- All 85 database/API integration checks passed on an isolated, seeded PostgreSQL 17 database
+  with the existing thirteen migrations. The first attempt lacked runtime test configuration;
+  the rerun used the repository's synthetic environment defaults.
+- All 26 browser smoke checks passed, including Movie Details links, missing/failed media,
+  rate-limit/disabled feedback, accessibility and overflow at four widths. The first browser run
+  exposed an old inline external-ID field in the mock; the corrected fixture and final code passed
+  the full static gate and the smoke rerun. No visual baselines were changed.
+- Live provider content, live S3 media delivery, hosted exact-head preview and owner visual
+  acknowledgement remain unverified. Storage is mocked in the focused image checks.

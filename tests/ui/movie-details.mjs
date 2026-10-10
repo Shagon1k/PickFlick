@@ -16,12 +16,15 @@ export function handleMovieDetails(request, response, pathname, token) {
     if (id.endsWith('038') && token === 'valid-movie-related-unavailable') {
         sendJson(response, 200, {
             result: { state: 'unavailable', reason: 'UNAVAILABLE' },
-            externalIds: [],
+            links: { imdb: null },
         });
         return true;
     }
     if (reason) {
-        sendJson(response, 200, { result: { state: 'unavailable', reason }, externalIds: [] });
+        sendJson(response, 200, {
+            result: { state: 'unavailable', reason },
+            links: { imdb: null },
+        });
         return true;
     }
     const missing = token === 'valid-movie-missing';
@@ -34,7 +37,7 @@ export function handleMovieDetails(request, response, pathname, token) {
     if (result.state === 'stale') result.reason = 'TIMEOUT';
     sendJson(response, 200, {
         result,
-        externalIds: missing ? [] : [{ source: 'imdb', externalId: 'tt1234567' }],
+        links: { imdb: missing ? null : 'https://www.imdb.com/title/tt1234567/' },
     });
     return true;
 }
@@ -49,7 +52,7 @@ function movieData(id, missing, related) {
         releaseYear: missing ? null : 2026,
         adult: false,
         originalLanguage: 'en',
-        posterUrl: missing ? null : 'https://image.tmdb.org/t/p/original/synthetic.jpg',
+        posterUrl: missing ? null : `/api/movies/images/${'a'.repeat(64)}`,
         backdropUrl: null,
         ratings: missing ? [] : [{ source: 'tmdb', value: 7, scale: 10, voteCount: 10 }],
         runtime: missing ? null : 120,

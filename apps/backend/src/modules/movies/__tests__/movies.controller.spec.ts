@@ -3,8 +3,10 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
+import { canonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
+import { MovieImagesService } from '../movie-images.service.js';
 import { MoviesController } from '../movies.controller.js';
 import { MoviesService } from '../movies.service.js';
 
@@ -12,6 +14,8 @@ describe('MoviesController', () => {
     let app: NestExpressApplication;
     let url: string;
     const detailsResponse = vi.fn<MoviesService['detailsResponse']>();
+    const getImage = vi.fn<MovieImagesService['get']>();
+    const storeMedia = vi.fn<MovieImagesService['storeMedia']>();
     const search = vi.fn<MoviesService['search']>();
 
     beforeAll(async () => {
@@ -19,6 +23,7 @@ describe('MoviesController', () => {
             controllers: [MoviesController],
             providers: [
                 AuthGuard,
+                { provide: MovieImagesService, useValue: { get: getImage, storeMedia } },
                 { provide: MoviesService, useValue: { search, detailsResponse } },
                 {
                     provide: AuthService,
@@ -36,6 +41,8 @@ describe('MoviesController', () => {
     });
     beforeEach(() => {
         search.mockReset();
+        getImage.mockReset();
+        storeMedia.mockReset();
         detailsResponse.mockReset();
     });
     afterAll(() => app.close());
@@ -61,15 +68,64 @@ describe('MoviesController', () => {
         expect(detailsResponse).not.toHaveBeenCalled();
         detailsResponse.mockResolvedValue({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            externalIds: [],
+            links: { imdb: null },
         });
         const response = await fetch(detailsUrl, { headers: { 'x-test-user': 'user' } });
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            externalIds: [],
+            links: { imdb: null },
         });
         expect(detailsResponse).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000100');
+    });
+
+    it('should guard stored images, validate keys and serve bytes from storage', async () => {
+        const key = 'a'.repeat(64);
+        const imageUrl = url.replace('/search', `/images/${key}`);
+        expect((await fetch(imageUrl)).status).toBe(401);
+        expect(
+            (
+                await fetch(url.replace('/search', '/images/invalid'), {
+                    headers: { 'x-test-user': 'user' },
+                })
+            ).status,
+        ).toBe(400);
+        expect(getImage).not.toHaveBeenCalled();
+        getImage.mockResolvedValue({
+            body: Buffer.from('synthetic-image'),
+            contentType: 'image/png',
+        });
+        const response = await fetch(imageUrl, { headers: { 'x-test-user': 'user' } });
+        expect(response.headers.get('content-type')).toBe('image/png');
+        expect(response.headers.get('cache-control')).toBe('private, max-age=86400');
+        expect(await response.text()).toBe('synthetic-image');
+        expect(getImage).toHaveBeenCalledWith(key);
+    });
+
+    it('should replace internal image URLs in successful detail and search responses', async () => {
+        const data = canonicalDetails();
+        const stored = { ...data, posterUrl: `/api/movies/images/${'a'.repeat(64)}` };
+        storeMedia.mockResolvedValue(stored);
+        detailsResponse.mockResolvedValue({
+            result: { state: 'fresh', data, fetchedAt: '2026-10-10T12:00:00.000Z' },
+            links: { imdb: null },
+        });
+        const details = await fetch(url.replace('/search', `/${MOVIE_ID}`), {
+            headers: { 'x-test-user': 'user' },
+        });
+        expect(await details.json()).toMatchObject({
+            result: { data: { posterUrl: stored.posterUrl } },
+            links: { imdb: null },
+        });
+        search.mockResolvedValue({
+            state: 'fresh',
+            data: { movies: [data], page: 1, totalPages: 1, totalResults: 1 },
+            fetchedAt: '2026-10-10T12:00:00.000Z',
+        });
+        expect(await (await request({ query: 'Film' })).json()).toMatchObject({
+            data: { movies: [{ posterUrl: stored.posterUrl }] },
+        });
+        expect(storeMedia).toHaveBeenCalledWith(data);
     });
 
     it('should reject anonymous search before calling the catalog', async () => {

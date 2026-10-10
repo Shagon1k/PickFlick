@@ -56,6 +56,33 @@ describe('CompositeMovieProvider', () => {
         );
     });
     afterEach(() => vi.useRealTimers());
+    it.each([false, true])(
+        'should preserve available details after delayed primary, remote-ID and enrichment calls (timeout=%s)',
+        async (timeout) => {
+            const delay = (milliseconds: number) =>
+                new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+            primary.details.mockImplementation(async () => {
+                await delay(4000);
+                return record('poiskkino');
+            });
+            enrichment.details.mockImplementation(async () => {
+                await delay(4000);
+                await delay(timeout ? 5000 : 4000);
+                if (timeout) throw new MovieProviderError('TIMEOUT', undefined, 'thetvdb');
+                return record('thetvdb');
+            });
+            const pending = provider.details({ ...movieLookup(), forceRefresh: true });
+            await vi.advanceTimersByTimeAsync(13_000);
+            const result = await pending;
+            expect(result.data.title).toBe(timeout ? 'English primary title' : 'English title');
+            expect(result.provenance.find(({ source }) => source === 'thetvdb')?.reason).toBe(
+                timeout ? 'TIMEOUT' : null,
+            );
+            expect(primary.details).toHaveBeenCalledOnce();
+            expect(enrichment.details).toHaveBeenCalledOnce();
+        },
+    );
+
     it('should search only through PoiskKino without requesting enrichment', async () => {
         primary.search.mockResolvedValue({ movies: [], page: 1, totalPages: 0, totalResults: 0 });
         expect(await provider.search({ query: 'film', page: 1, locale: 'en-US' })).toMatchObject({

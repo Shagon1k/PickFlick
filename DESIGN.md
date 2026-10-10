@@ -305,7 +305,7 @@ feedback. Query changes remove obsolete results immediately. Arrow keys select r
 stays in the combobox; Enter opens the selected canonical Movie UUID route. Results also support
 Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits the viewport.
 
-Search uses neutral PF poster placeholders until production media delivery is available. Catalog
+Search uses neutral PF poster placeholders. Catalog
 credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
 route checks the session and now renders the read-only details described below. Local search keyboard, touch,
 axe and overflow checks passed at 390, 768, 1024 and 1440px on 2026-10-10. Personal Ratings, Watchlist,
@@ -324,7 +324,9 @@ is independent of the main detail page. Unknown Movies use the existing not-foun
 
 Catalog credits reuse the approved TMDB logo and notice, plus attribution for contributing
 PoiskKino/TheTVDB sources. Related titles are provider-supplied, with up to six canonical links;
-they make no personalization claim. IMDb links use verified stored identifiers. Wikipedia is
+they make no personalization claim. IMDb links arrive as backend-built URLs from verified stored identifiers.
+Catalog images are served from private storage through authenticated same-origin paths; failed
+ingestion uses the existing missing-media presentation. Wikipedia is
 labelled as a title search because no verified article correspondence is available. Trailer links
 open YouTube in a new tab and announce that behavior. Personal Ratings and Watchlist controls
 remain outside #38. Hosted exact-head preview and owner visual acknowledgement are still required.

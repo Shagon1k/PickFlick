@@ -58,7 +58,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     }
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
-    const imdb = response?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
+    const imdb = response?.links.imdb;
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
         .filter((id) => id !== movieId)
         .slice(0, 6);
@@ -85,11 +85,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 <MovieHero movie={movie} title={title} />
                 <nav className={styles.links} aria-label="Movie links">
                     {imdb ? (
-                        <a
-                            href={`https://www.imdb.com/title/${imdb}/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
+                        <a href={imdb} target="_blank" rel="noopener noreferrer">
                             IMDb ↗<span className="visually-hidden"> (opens in a new tab)</span>
                         </a>
                     ) : null}

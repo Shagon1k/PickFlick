@@ -410,7 +410,7 @@ hidden from normal history unless product copy exposes it.
 | Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
 | Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                        | Planned                                                                                  |
 | Resend                | Transactional and opted-in email.                                                          | Contact delivery built; notifications planned                                            |
-| S3-compatible storage | Avatars and expiring exports.                                                              | Club avatars built; User avatars and exports planned                                     |
+| S3-compatible storage | Avatars, catalog images and expiring exports.                                              | Club avatars and catalog images built; User avatars and exports planned                  |
 | Sentry                | Error and performance visibility with privacy-safe context.                                | Planned                                                                                  |
 | IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.   | Active read-only surface                                                                 |
 

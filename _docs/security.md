@@ -212,13 +212,17 @@ provider log messages and error arguments are omitted to keep that path out of l
 
 ## Catalog media and outbound links
 
-Movie Details renders validated HTTPS poster URLs directly in the browser, with no server-side
-image optimizer fetch. CSP permits only the catalog schema's five image hosts: `image.tmdb.org`,
-`image.openmoviedb.com`, `st.kp.yandex.net`, `avatars.mds.yandex.net`, and `artworks.thetvdb.com`.
-Missing or failed images become text placeholders. Provider text is escaped by React; the API
-response schema rejects unsafe media and mismatched Movie identities before rendering.
+The backend downloads catalog images from the five validated provider hosts into private
+S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
+only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
+contain opaque same-origin `/api/movies/images/:key` paths. The authenticated image endpoint
+serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
+and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
+Provider text is escaped by React; the response schema rejects provider image URLs and mismatched
+Movie identities before rendering.
 
-Trailers stay outbound YouTube links. IMDb URLs use stored validated IMDb identifiers.
+Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
+identifiers; details responses expose no external identifiers.
 Wikipedia links explicitly search an encoded title on the fixed English Wikipedia origin;
 they do not assert a verified article correspondence. External detail links use
 `noopener noreferrer`. Third-party scripts, frames and API connections remain disallowed.

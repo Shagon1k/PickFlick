@@ -19,7 +19,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     path: '/',
                 },
             ]);
-            await page.route('https://image.tmdb.org/**', (route) =>
+            await page.route('**/api/movies/images/**', (route) =>
                 route.fulfill({
                     status: 200,
                     contentType: 'image/png',
@@ -90,7 +90,7 @@ for (const [state, message] of [
                 path: '/',
             },
         ]);
-        await page.route('https://image.tmdb.org/**', (route) => route.abort());
+        await page.route('**/api/movies/images/**', (route) => route.abort());
         await page.goto(`/movies/${movieId}`);
         await expect(page.getByText(message, { exact: false }).first()).toBeVisible();
     });
@@ -116,7 +116,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
     await context.addCookies([
         { name: 'pickflick.session_token', value: 'valid-movie', domain: '127.0.0.1', path: '/' },
     ]);
-    await page.route('https://image.tmdb.org/**', (route) => route.abort());
+    await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.reload();
     await expect(page.getByText('Poster unavailable').first()).toBeVisible();
 });
@@ -145,7 +145,7 @@ test('unknown or malformed Movie identity uses safe recovery; related failure pr
             path: '/',
         },
     ]);
-    await page.route('https://image.tmdb.org/**', (route) => route.abort());
+    await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.goto(`/movies/${movieId}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
         '<script>alert(1)</script> & Film',

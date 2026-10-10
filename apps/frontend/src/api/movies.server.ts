@@ -15,7 +15,8 @@ export const searchMovies = (input: TMovieSearch): Promise<TMovieResult<TMovieSe
 
 export async function getMovieDetails(movieId: string): Promise<TMovieDetailsResponse> {
     try {
-        const response = await apiRequest<unknown>(`/movies/${movieId}`);
+        // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
+        const response = await apiRequest<unknown>(`/movies/${movieId}`, { timeoutMs: 100_000 });
         const parsed = movieDetailsResponseSchema.safeParse(response);
         if (
             !parsed.success ||
@@ -23,23 +24,29 @@ export async function getMovieDetails(movieId: string): Promise<TMovieDetailsRes
         )
             return {
                 result: { state: 'unavailable', reason: 'INVALID_RESPONSE' },
-                externalIds: [],
+                links: { imdb: null },
             };
         return parsed.data;
     } catch (error) {
         if (error instanceof SyntaxError)
             return {
                 result: { state: 'unavailable', reason: 'INVALID_RESPONSE' },
-                externalIds: [],
+                links: { imdb: null },
             };
         if (error instanceof ApiError && error.status === 429)
-            return { result: { state: 'unavailable', reason: 'RATE_LIMITED' }, externalIds: [] };
+            return {
+                result: { state: 'unavailable', reason: 'RATE_LIMITED' },
+                links: { imdb: null },
+            };
         if (
             (error instanceof ApiError && error.status >= 500) ||
             error instanceof TypeError ||
             (error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name))
         )
-            return { result: { state: 'unavailable', reason: 'UNAVAILABLE' }, externalIds: [] };
+            return {
+                result: { state: 'unavailable', reason: 'UNAVAILABLE' },
+                links: { imdb: null },
+            };
         throw error;
     }
 }

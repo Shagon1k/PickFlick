@@ -65,7 +65,11 @@ export class MoviesService {
         const result = await this.details(movieId, { allowStale: true });
         const lookup =
             result.state === 'unavailable' ? null : await this.repository.lookup(movieId);
-        return { result, externalIds: lookup?.externalIds ?? [] };
+        const imdb = lookup?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
+        return {
+            result,
+            links: { imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null },
+        };
     }
     async details(
         movieId: string,

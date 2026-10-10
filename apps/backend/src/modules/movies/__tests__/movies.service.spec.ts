@@ -73,7 +73,7 @@ describe('MoviesService', () => {
 
     afterEach(() => vi.useRealTimers());
 
-    it('should return stored external identifiers with details and none for unavailable Movies', async () => {
+    it('should return backend-built IMDb links without exposing identifiers', async () => {
         repository.cachedDetails.mockResolvedValue(
             cached({ data: canonicalDetails(), fetchedAt: now }),
         );
@@ -82,13 +82,13 @@ describe('MoviesService', () => {
         });
         expect(await service.detailsResponse(MOVIE_ID)).toMatchObject({
             result: { state: 'fresh', data: { id: MOVIE_ID } },
-            externalIds: [{ source: 'imdb', externalId: 'tt0000100' }],
+            links: { imdb: 'https://www.imdb.com/title/tt0000100/' },
         });
         repository.cachedDetails.mockResolvedValue(null);
         repository.lookup.mockResolvedValue(null);
         expect(await service.detailsResponse(MOVIE_ID)).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            externalIds: [],
+            links: { imdb: null },
         });
     });
 
