@@ -100,7 +100,7 @@ export class TmdbClient implements IMovieProvider {
         const fetchedAt = new Date().toISOString();
         const movie = await this.get(`/movie/${tmdbId}`, tmdbDetailsSchema, {
             language: input.locale,
-            append_to_response: 'credits,videos',
+            append_to_response: 'credits,videos,similar',
         });
         if (movie.id !== tmdbId) throw new MovieProviderError('INVALID_RESPONSE');
         const externalIds: TMovieExternalId[] = [{ source: 'tmdb', externalId }];
@@ -110,7 +110,15 @@ export class TmdbClient implements IMovieProvider {
             locale: input.locale,
             fetchedAt,
             externalIds,
-            similarExternalIds: null,
+            similarExternalIds: movie.similar
+                ? [
+                      ...new Set(
+                          movie.similar.results
+                              .filter((related) => !related.adult && related.id !== tmdbId)
+                              .map((related) => related.id),
+                      ),
+                  ].map((id) => [{ source: 'tmdb' as const, externalId: String(id) }])
+                : null,
             data: {
                 ...summary(movie),
                 runtime: movie.runtime || null,

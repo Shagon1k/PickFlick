@@ -11,6 +11,15 @@ describe('contentSecurityPolicy', () => {
         expect(policy).not.toContain('unsafe-eval');
     });
 
+    it('should restrict images and connections to our own origin', () => {
+        const policy = contentSecurityPolicy('abc123', false);
+        expect(policy).toContain("img-src 'self' data: blob:;");
+        expect(policy).not.toContain('https://');
+        expect(policy).toContain("connect-src 'self'");
+        expect(policy).toContain("default-src 'self'");
+        expect(policy).not.toContain('https:;');
+    });
+
     it('should allow eval only in development', () => {
         expect(contentSecurityPolicy('abc123', true)).toContain("'unsafe-eval'");
     });

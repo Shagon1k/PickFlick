@@ -20,7 +20,7 @@ export const movieSearchSchema = z.strictObject({
 });
 export type TMovieSearch = z.infer<typeof movieSearchSchema>;
 
-// TMDB wire format only. Public media use complete, allowlisted HTTPS URLs.
+// Provider wire media stay private; browser responses use stored image paths.
 export const movieImagePathSchema = z
     .string()
     .regex(/^\/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)$/u)
@@ -186,3 +186,47 @@ export const movieSearchResultsSchema = z.strictObject({
     totalResults: z.number().int().nonnegative(),
 });
 export type TMovieSearchResults = z.infer<typeof movieSearchResultsSchema>;
+
+export const movieStoredImageKeySchema = z.string().regex(/^[a-f0-9]{64}$/u);
+const storedImageUrlSchema = z.string().regex(/^\/api\/movies\/images\/[a-f0-9]{64}$/u);
+const publicDetailsSchema = movieDetailsSchema.extend({
+    posterUrl: storedImageUrlSchema.nullable(),
+    backdropUrl: storedImageUrlSchema.nullable(),
+    cast: movieMetadataSchema.shape.cast
+        .unwrap()
+        .element.extend({
+            profileUrl: storedImageUrlSchema.nullable(),
+        })
+        .array()
+        .max(50)
+        .nullable(),
+});
+
+export const movieDetailsResponseSchema = z.strictObject({
+    result: z.discriminatedUnion('state', [
+        z.strictObject({
+            state: z.enum(['fresh', 'partial']),
+            data: publicDetailsSchema,
+            fetchedAt: z.iso.datetime(),
+        }),
+        z.strictObject({
+            state: z.literal('stale'),
+            data: publicDetailsSchema,
+            fetchedAt: z.iso.datetime(),
+            reason: movieProviderReasonSchema,
+            retryAt: z.iso.datetime().optional(),
+        }),
+        z.strictObject({
+            state: z.literal('unavailable'),
+            reason: movieProviderReasonSchema,
+            retryAt: z.iso.datetime().optional(),
+        }),
+    ]),
+    links: z.strictObject({
+        imdb: z
+            .string()
+            .regex(/^https:\/\/www\.imdb\.com\/title\/tt\d{7,12}\/$/u)
+            .nullable(),
+    }),
+});
+export type TMovieDetailsResponse = z.infer<typeof movieDetailsResponseSchema>;

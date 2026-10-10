@@ -40,7 +40,7 @@ flowchart LR
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                                   | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                                   | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
-| Objects    | S3-compatible storage for avatars and exports.                                          | Partial — Club avatars                                                                                   | —                 |
+| Objects    | S3-compatible storage for avatars, catalog images and exports.                          | Partial — Club avatars and catalog images                                                                | —                 |
 | Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                                 | ADR-014           |
 | Real-time  | SSE from the API for Session progress.                                                  | Proposed                                                                                                 | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.          | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
@@ -70,16 +70,16 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                           | Owns                                                                                                                | State                                                                                                 |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                                         |
-| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                                                |
-| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                                                |
-| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                                                |
-| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                                |
-| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                                |
-| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search and internal catalog service; refresh worker and details route pending |
-| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                              |
+| Module                                                                           | Owns                                                                                                                | State                                                                                    |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                            |
+| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                                   |
+| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                                   |
+| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                                   |
+| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                   |
+| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                   |
+| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search/details and stored catalog images; refresh worker pending |
+| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                 |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -117,11 +117,11 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 
 ## 3. Data
 
-| Store                 | Holds                                                  | State                                                   |
-| --------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| PostgreSQL            | All domain state, sessions, audit.                     | Partial — local and CI; managed UAT/production Proposed |
-| S3-compatible storage | Club avatars under private opaque keys; later exports. | Partial — Club avatars                                  |
-| Bundled assets        | Brand imagery, versioned with the frontend build.      | Active                                                  |
+| Store                 | Holds                                                                     | State                                                   |
+| --------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| PostgreSQL            | All domain state, sessions, audit.                                        | Partial — local and CI; managed UAT/production Proposed |
+| S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images               |
+| Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                  |
 
 The schema (`packages/database/prisma/schema.prisma`, thirteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
@@ -209,12 +209,27 @@ history and revokes every session.
   clocks use the individual source attempt start; timestamp ties retain the source tombstone.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
+  Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.
+  Source cache data retain provider URLs; detail posters use an authenticated
+  `/api/movies/images/:key` path through the existing frontend rewrite. Search returns null poster
+  and backdrop fields without image I/O; details return null backdrops and cast portraits. Image
+  downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
+  downloads return missing media; storage failures propagate. Existing objects are reused.
+  Details expose `links.imdb`, built on the backend, without external identifiers. The frontend
+  detail transport allows 100 seconds for three provider requests (each configured up to 30 seconds),
+  a five-second poster download and response overhead; other API calls retain ten seconds.
   Authenticated `POST /movies/search` validates the shared search schema and opts into bounded
   stale cache use. Responses are private/no-store; the existing global auth guard and a
   60-request/minute endpoint limit apply. The header calls it through a server action and
   `apiRequest`, keeping credentials and provider calls on the server. Debounced queries discard
   obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
-  UUIDs; the authenticated destination is a handoff pending Movie Details delivery in #38.
+  UUIDs. Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
+  detail state with backend-built outbound links; it has the same private/no-store and rate-limit
+  boundary. Movie Details validates the response and opts into the existing bounded stale policy.
+  A separate streamed section resolves up to six deduplicated related UUIDs through the same
+  endpoint. TMDB appends similar-title identifiers; the canonical repository resolves them.
+  Posters load from the authenticated stored-image endpoint without Next.js image optimization;
+  trailers remain outbound links. No background refresh, migration or new configuration is added.
   Live source completeness and the ADR-016 refresh worker remain unverified.
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
   linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed

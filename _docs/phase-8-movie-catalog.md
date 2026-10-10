@@ -12,8 +12,7 @@ Phase scope and acceptance live in [ROADMAP.md](../ROADMAP.md#phase-8--movie-cat
   trusted links, and provider attribution in the visible experience.
 
 The catalog module exposes authenticated `POST /movies/search` and exports `MoviesService` for
-other backend modules. The existing global authentication guard protects search. Movie Details
-and the refresh worker remain separate delivery boundaries.
+other backend modules. The existing global authentication guard protects search. Movie Details uses the same authenticated catalog service. The refresh worker remains a separate delivery boundary.
 
 ## Provider and cache contract
 
@@ -147,3 +146,100 @@ Verification on 2026-10-10:
 Hosted exact-head preview, live provider credentials/content and owner visual acknowledgement
 remain unverified. No preview workflow or
 GitHub deployment was available at preparation; local screenshots do not satisfy hosted review.
+
+## Movie Details delivery (#38)
+
+Run `r_56f259d52bb49b2a7422` delivers the shared read-only canonical UUID route. The detail
+endpoint reuses `MoviesService.details` with bounded stale opt-in and returns backend-built links.
+The browser receives schema-validated data and escaped text; missing/failed posters use neutral
+placeholders. Responsive composition follows the canonical Movie Details hero, with outbound
+YouTube trailers under the existing adapter contract. TMDB related identifiers now resolve through
+the canonical repository; a streamed section loads up to six related titles independently.
+
+IMDb links are built on the backend from stored identifiers. Wikipedia is an explicitly labelled title search on a fixed
+trusted origin; providers currently supply no verified article mapping. No article URL is inferred.
+TMDB credits reuse the approved logo and required notice in a visible Catalog credits section,
+following the [TMDB FAQ](https://developer.themoviedb.org/docs/faq) rechecked on 2026-10-10.
+TMDB's [similar-title endpoint](https://developer.themoviedb.org/reference/movie-similar) supplies
+related identifiers without AI personalization. Credits do not settle commercial licensing or
+image rights in #89. No prototype film images/stills ship as production data.
+
+No dependency, migration, refresh job, provider setting, Personal Rating or Watchlist operation
+is introduced. Exact-head hosted preview and owner acknowledgement remain required before
+completion. The repository has no preview workflow and GitHub reported no deployments at preparation.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint, knip, formatting, type checking, all 361 unit
+  tests and the workspace production build. Lint has one existing ClubMembers warning and two
+  index-key warnings on immutable provider lists, with no errors.
+- The sandbox initially blocked pnpm's dependency listing because it opens the shared SQLite
+  package-store index for writing. The unchanged gate passed with a temporary writable copy of
+  that package metadata; installed dependency bytes, lockfile and audit policy were unchanged.
+  Generated pnpm metadata was restored after verification.
+- All 85 database/API integration checks passed on a new isolated PostgreSQL 17 database after
+  applying all thirteen existing migrations and the synthetic seed. The seed guard first rejected
+  a noncanonical test database name; the rerun used the required `pickflick_test` database.
+- All 26 browser smoke checks passed. After the desktop grid correction, all 19 focused Movie
+  Details/search checks passed on the final code, including missing media, failed posters,
+  missing identifiers, stale/partial/error states, unknown UUIDs, malformed routes, related-provider
+  failure, keyboard/touch navigation and desktop media/credits geometry.
+- Movie Details axe and page-overflow checks passed at 390, 768, 1024 and 1440px. Mobile and
+  desktop screenshots were inspected; no existing visual baselines were changed.
+- Live provider credentials/content, hosted exact-head preview and owner visual acknowledgement
+  remain unverified. Local screenshots do not satisfy the hosted-review acceptance criterion.
+
+## Movie Details review fix round 1 (#38)
+
+The owner-approved snapshot at `7601b2fc104500054c37b335b60ff02d364759bf` covers three
+threads on PR #164. Details now return backend-built `links.imdb` without external IDs.
+The backend copies catalog media into private S3-compatible storage and returns authenticated
+same-origin image paths; CSP no longer permits provider image hosts. Downloads reject redirects,
+validate raster signatures, and enforce five-second and 5 MiB limits. Existing objects are reused;
+failed downloads retain the missing-media presentation, and storage failures propagate.
+Provider URLs remain in internal caches, so no migration or infrastructure change is needed.
+
+The detail transport deadline is 100 seconds: three provider calls can each consume the configured
+30-second maximum, followed by concurrent image downloads and response overhead. Other API calls
+keep their ten-second deadline. Delayed-provider regressions cover complete details after three
+four-second calls and partial details after late enrichment timeout.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint (three existing frontend warnings), knip, formatting,
+  type checking, all 376 unit tests, and the workspace production build.
+- The audit used a temporary writable copy of pnpm's shared SQLite store metadata, as in the
+  original run. Installed dependencies, lockfile and audit policy were unchanged.
+- All 85 database/API integration checks passed on an isolated, seeded PostgreSQL 17 database
+  with the existing thirteen migrations. The first attempt lacked runtime test configuration;
+  the rerun used the repository's synthetic environment defaults.
+- All 26 browser smoke checks passed, including Movie Details links, missing/failed media,
+  rate-limit/disabled feedback, accessibility and overflow at four widths. The first browser run
+  exposed an old inline external-ID field in the mock; the corrected fixture and final code passed
+  the full static gate and the smoke rerun. No visual baselines were changed.
+- Live provider content, live S3 media delivery, hosted exact-head preview and owner visual
+  acknowledgement remain unverified. Storage is mocked in the focused image checks.
+
+## Movie Details review fix round 2 (#38)
+
+The owner-approved snapshot at `0f9b396069496d545dedb3a0f98fdd018aeeaa20` covers two
+threads on PR #164. Search returns null poster and backdrop fields without image downloads
+or storage reads, including cached results. Details ingest only the displayed poster and
+return null backdrops and cast portraits while preserving cast names and characters. Provider
+URLs remain in internal caches; poster validation, download limits and storage failures keep
+the existing behavior.
+
+Focused regressions cover fresh/stale search projections, an eight-second search with a
+three-second image delay, and one poster operation for a 50-person cast. Live provider and S3
+traffic, hosted exact-head preview and owner visual acknowledgement remain unverified.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint (three existing frontend warnings), knip,
+  formatting, type checking, all 379 unit tests and the workspace production build.
+- All 26 PR browser smoke checks passed with an isolated-port temporary configuration after
+  the default port was occupied. No screenshot baselines changed.
+- The initial static gate caught a missing failure reason in the new stale-result fixture;
+  the fixture was corrected before final verification.
+- pnpm's shared SQLite store metadata was copied to a temporary writable directory for the
+  audit; dependencies, the lockfile and audit policy were unchanged.

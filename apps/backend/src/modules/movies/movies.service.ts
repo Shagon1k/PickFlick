@@ -6,6 +6,7 @@ import {
     movieIdSchema,
     movieSearchSchema,
     type TMovieDetails,
+    type TMovieDetailsResponse,
     type TMovieResult,
     type TMovieSearch,
     type TMovieSearchResults,
@@ -59,6 +60,16 @@ export class MoviesService {
         await this.repository.saveSearch(key, data, startedAt);
         const saved = await this.repository.cachedSearch(key);
         return saved ? fresh(saved) : { state: 'unavailable', reason: 'NOT_FOUND' };
+    }
+    async detailsResponse(movieId: string): Promise<TMovieDetailsResponse> {
+        const result = await this.details(movieId, { allowStale: true });
+        const lookup =
+            result.state === 'unavailable' ? null : await this.repository.lookup(movieId);
+        const imdb = lookup?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
+        return {
+            result,
+            links: { imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null },
+        };
     }
     async details(
         movieId: string,

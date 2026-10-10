@@ -34,13 +34,13 @@ rest. Next.js does not add its headers to responses it proxies, so the backend s
 
 The page CSP allows:
 
-| Directive                                                             | Meaning                                                                                                          |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `script-src 'self' 'nonce-…' 'strict-dynamic'`                        | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
-| `style-src 'self' 'unsafe-inline'`                                    | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
-| `img-src 'self' data: blob:`, `font-src 'self'`, `connect-src 'self'` | Images, fonts, and requests only from PickFlick.                                                                 |
-| `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`          | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
-| `frame-ancestors 'none'`                                              | No site may embed PickFlick in a frame.                                                                          |
+| Directive                                                                                      | Meaning                                                                                                          |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `script-src 'self' 'nonce-…' 'strict-dynamic'`                                                 | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
+| `style-src 'self' 'unsafe-inline'`                                                             | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
+| `img-src 'self' data: blob:` plus catalog CDN origins; `font-src 'self'`, `connect-src 'self'` | Images from PickFlick and the catalog allowlist; fonts and API requests stay same-origin.                        |
+| `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`                                   | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
+| `frame-ancestors 'none'`                                                                       | No site may embed PickFlick in a frame.                                                                          |
 
 A new third-party script, image host, font, or API origin needs a change to
 `contentSecurityPolicy()` in `apps/frontend/src/lib/security-headers.ts`, a matching test, and a
@@ -209,3 +209,21 @@ no-store responses, and noindex metadata. The UI holds a newly created link in c
 copying; it never persists it in browser storage. Recent-invitation API responses contain no token
 or digest. Better Auth's short-lived OAuth state retains the allowlisted return path during sign-in;
 provider log messages and error arguments are omitted to keep that path out of logs.
+
+## Catalog media and outbound links
+
+The backend downloads displayed detail posters from the five validated provider hosts into private
+S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
+only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
+contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search media, detail
+backdrops and cast portraits are returned as null without image I/O. The authenticated image endpoint
+serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
+and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
+Provider text is escaped by React; the response schema rejects provider image URLs and mismatched
+Movie identities before rendering.
+
+Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
+identifiers; details responses expose no external identifiers.
+Wikipedia links explicitly search an encoded title on the fixed English Wikipedia origin;
+they do not assert a verified article correspondence. External detail links use
+`noopener noreferrer`. Third-party scripts, frames and API connections remain disallowed.

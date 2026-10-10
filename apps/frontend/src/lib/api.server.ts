@@ -20,6 +20,7 @@ export class ApiError extends Error {
 }
 
 interface IApiRequestInit {
+    timeoutMs?: number;
     method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
     json?: unknown;
     body?: ArrayBuffer;
@@ -50,7 +51,7 @@ export async function apiRequest<TResponse = void>(
         headers: outgoing,
         body: init.json === undefined ? init.body : JSON.stringify(init.json),
         cache: 'no-store',
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(init.timeoutMs ?? 10_000),
     });
     if (!response.ok) {
         const envelope = (await response.json().catch(() => undefined)) as

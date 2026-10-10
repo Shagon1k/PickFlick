@@ -6,12 +6,18 @@ import styles from '@/components/shells/product-navigation.module.scss';
 // Next.js declares SVG imports as any; the static image loader returns StaticImageData.
 import tmdbLogo from './assets/tmdb.svg';
 
-export default function SearchCredits({ movies }: { movies: TMovieSummary[] }) {
+export default function SearchCredits({
+    movies,
+    label = 'Catalog credits',
+}: {
+    movies: TMovieSummary[];
+    label?: string;
+}) {
     const sources = new Set(
         movies.flatMap((movie) => movie.provenance.map(({ source }) => source)),
     );
     return (
-        <aside aria-label="Catalog credits" className={styles.searchCredits}>
+        <aside aria-label={label} className={styles.searchCredits}>
             {sources.has('poiskkino') ? (
                 <p>
                     Film data from <a href="https://poiskkino.dev/">PoiskKino</a>.

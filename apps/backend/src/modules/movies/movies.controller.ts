@@ -1,19 +1,75 @@
-import { Body, Controller, Header, HttpCode, Post } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Header,
+    HttpCode,
+    Param,
+    Post,
+    Res,
+    StreamableFile,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { movieSearchSchema, type TMovieSearch } from '@pickflick/contracts';
+import {
+    movieIdSchema,
+    movieSearchSchema,
+    movieStoredImageKeySchema,
+    type TMovieSearch,
+} from '@pickflick/contracts';
+import type { Response } from 'express';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { MovieImagesService } from './movie-images.service.js';
 import { MoviesService } from './movies.service.js';
 
 @Controller('movies')
 export class MoviesController {
-    constructor(private readonly movies: MoviesService) {}
+    constructor(
+        private readonly movies: MoviesService,
+        private readonly images: MovieImagesService,
+    ) {}
+
+    @Get('images/:key')
+    @Header('Cache-Control', 'private, max-age=86400')
+    async image(
+        @Param('key', new ZodValidationPipe(movieStoredImageKeySchema)) key: string,
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<StreamableFile> {
+        const image = await this.images.get(key);
+        response.setHeader('Content-Type', image.contentType);
+        return new StreamableFile(image.body);
+    }
+
+    @Get(':movieId')
+    @Header('Cache-Control', 'private, no-store')
+    @Throttle({ default: { ttl: 60_000, limit: 60 } })
+    async details(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
+        const response = await this.movies.detailsResponse(movieId);
+        const { result } = response;
+        if (result.state === 'unavailable') return response;
+        return {
+            ...response,
+            result: { ...result, data: await this.images.storeMedia(result.data) },
+        };
+    }
 
     @Post('search')
     @HttpCode(200)
     @Header('Cache-Control', 'private, no-store')
     @Throttle({ default: { ttl: 60_000, limit: 60 } })
-    search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
-        return this.movies.search(input, true);
+    async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
+        const result = await this.movies.search(input, true);
+        if (result.state === 'unavailable') return result;
+        return {
+            ...result,
+            data: {
+                ...result.data,
+                movies: result.data.movies.map((movie) => ({
+                    ...movie,
+                    posterUrl: null,
+                    backdropUrl: null,
+                })),
+            },
+        };
     }
 }

@@ -80,9 +80,31 @@ describe('TmdbClient', () => {
         });
         expect(request.mock.calls[0]?.[0]).toEqual(
             new URL(
-                'https://api.themoviedb.org/3/movie/100?language=en-US&append_to_response=credits%2Cvideos',
+                'https://api.themoviedb.org/3/movie/100?language=en-US&append_to_response=credits%2Cvideos%2Csimilar',
             ),
         );
+    });
+
+    it('should deduplicate related identifiers and exclude the current and adult movies', async () => {
+        request.mockResolvedValue(
+            Response.json({
+                ...tmdbDetails(),
+                similar: {
+                    page: 1,
+                    total_pages: 1,
+                    total_results: 4,
+                    results: [
+                        tmdbMovie(),
+                        tmdbMovie(101),
+                        tmdbMovie(101),
+                        { ...tmdbMovie(102), adult: true },
+                    ],
+                },
+            }),
+        );
+        expect((await client.details(movieLookup(100))).similarExternalIds).toEqual([
+            [{ source: 'tmdb', externalId: '101' }],
+        ]);
     });
 
     it('should preserve absent release data and media as null', async () => {

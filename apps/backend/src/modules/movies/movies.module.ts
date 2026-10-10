@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
+import { MovieImagesService } from './movie-images.service.js';
 import { MoviesController } from './movies.controller.js';
 import { MoviesRepository } from './movies.repository.js';
 import { MoviesService } from './movies.service.js';
@@ -31,6 +32,7 @@ import { TmdbClient } from './providers/tmdb.client.js';
                       ),
         },
         MoviesRepository,
+        MovieImagesService,
         MoviesService,
     ],
     exports: [MoviesService],

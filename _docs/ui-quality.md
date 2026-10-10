@@ -18,7 +18,7 @@ pnpm test:ui:visual
 
 `pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects sixteen PR checks with
 `test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
-continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search at 390, 768, 1024 and 1440px, and overflow
+continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search and read-only Movie Details at 390, 768, 1024 and 1440px, and overflow
 at 1024px. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
