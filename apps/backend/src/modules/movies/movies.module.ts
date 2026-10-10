@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
+import { MoviesController } from './movies.controller.js';
 import { MoviesRepository } from './movies.repository.js';
 import { MoviesService } from './movies.service.js';
 import { CompositeMovieProvider } from './providers/composite.provider.js';
@@ -11,6 +12,7 @@ import { ThetvdbClient } from './providers/thetvdb.client.js';
 import { TmdbClient } from './providers/tmdb.client.js';
 
 @Module({
+    controllers: [MoviesController],
     providers: [
         {
             provide: MOVIE_PROVIDER,

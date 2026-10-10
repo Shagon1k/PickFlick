@@ -70,16 +70,16 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                           | Owns                                                                                                                | State                                                                        |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                |
-| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                       |
-| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                       |
-| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                       |
-| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                       |
-| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                       |
-| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — internal catalog service; refresh worker and public routes pending |
-| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                     |
+| Module                                                                           | Owns                                                                                                                | State                                                                                                 |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                                         |
+| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                                                |
+| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                                                |
+| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                                                |
+| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                                |
+| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                                |
+| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search and internal catalog service; refresh worker and details route pending |
+| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                              |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -209,6 +209,12 @@ history and revokes every session.
   clocks use the individual source attempt start; timestamp ties retain the source tombstone.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
+  Authenticated `POST /movies/search` validates the shared search schema and opts into bounded
+  stale cache use. Responses are private/no-store; the existing global auth guard and a
+  60-request/minute endpoint limit apply. The header calls it through a server action and
+  `apiRequest`, keeping credentials and provider calls on the server. Debounced queries discard
+  obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
+  UUIDs; the authenticated destination is a handoff pending Movie Details delivery in #38.
   Live source completeness and the ADR-016 refresh worker remain unverified.
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit
   linking disabled and explicit linking deferred; opaque database sessions (seven days, refreshed

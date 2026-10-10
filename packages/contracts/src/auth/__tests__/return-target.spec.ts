@@ -3,6 +3,7 @@ import { DEFAULT_AUTH_RETURN_TARGET, resolveAuthReturnTarget } from '../return-t
 describe('resolveAuthReturnTarget', () => {
     it.each([
         '/app',
+        '/movies/10000000-0000-4000-8000-000000000031',
         '/invite/club/invite_token-123',
         '/invite/session/invite_token-123',
         '/clubs/new',
@@ -18,6 +19,8 @@ describe('resolveAuthReturnTarget', () => {
         '/\\evil.example/app',
         '/app?next=https://evil.example',
         '/admin',
+        '/movies/not-a-uuid',
+        '/movies/10000000-0000-4000-8000-000000000031?next=//evil.example',
         '/invite/club/token/extra',
         '/clubs/not-a-uuid/settings',
         '/clubs/not-a-uuid',

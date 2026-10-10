@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
 import { settingsProjection as clubSettingsProjection } from './club-projections.mjs';
+import { handleMovieSearch } from './movie-search.mjs';
 import { readJson, sendError, sendJson } from './mock-http.mjs';
 import { handlePendingInvitation } from './pending-invites.mjs';
 
@@ -369,6 +370,7 @@ function handleInvitation(request, response, pathname) {
 
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
+    if (handleMovieSearch(request, response, pathname, sessionToken(request))) return;
     const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
     if (
         handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>
