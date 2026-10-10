@@ -169,7 +169,11 @@ describe('MoviesService', () => {
     );
 
     it('should invalidate cached data when the provider removes a Movie', async () => {
-        provider.details.mockRejectedValue(new MovieProviderError('NOT_FOUND', undefined, 'tmdb'));
+        provider.details.mockRejectedValue(
+            new MovieProviderError('NOT_FOUND', undefined, 'tmdb', [
+                { source: 'tmdb', attemptedAt: now.toISOString() },
+            ]),
+        );
         await service.details(MOVIE_ID);
         expect(repository.markUnavailable).toHaveBeenCalledWith(MOVIE_ID, 'tmdb', now);
     });

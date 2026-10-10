@@ -74,6 +74,8 @@ export class ThetvdbClient {
         const fetchedAt = new Date().toISOString();
         const imdb = externalIds.find((id) => id.source === 'imdb')?.externalId;
         let tvdbId = externalIds.find((id) => id.source === 'thetvdb')?.externalId;
+        if (!tvdbId && !imdb)
+            throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
         if (!tvdbId && imdb) {
             const found = await this.http.get(
                 `/v4/search/remoteid/${imdb}`,
@@ -90,11 +92,9 @@ export class ThetvdbClient {
             tvdbId = candidates[0];
         }
         if (!tvdbId)
-            throw new MovieProviderError(
-                imdb ? 'NOT_FOUND' : 'MISSING_EXTERNAL_ID',
-                undefined,
-                'thetvdb',
-            );
+            throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
+                { source: 'thetvdb', attemptedAt: fetchedAt },
+            ]);
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,
             response(extended),

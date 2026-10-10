@@ -1,4 +1,6 @@
-import { readMovieResponse } from '../movie-http.js';
+import { z } from 'zod';
+
+import { MovieHttp, readMovieResponse } from '../movie-http.js';
 
 describe('readMovieResponse', () => {
     it('should translate a body transport failure to unavailability without raw diagnostics', async () => {
@@ -55,5 +57,26 @@ describe('readMovieResponse', () => {
         await expect(
             readMovieResponse(new Response(stream), new AbortController().signal),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
+    });
+});
+
+describe('MovieHttp', () => {
+    it('should timestamp removal at request start rather than response completion', async () => {
+        const attemptedAt = new Date('2026-10-09T12:00:00Z');
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(attemptedAt);
+        try {
+            const request = vi.fn<typeof fetch>().mockImplementation(() => {
+                vi.setSystemTime(new Date(attemptedAt.getTime() + 10000));
+                return Promise.resolve(new Response(null, { status: 404 }));
+            });
+            const http = new MovieHttp('thetvdb', 'https://api4.thetvdb.com', 5000, request);
+            await expect(http.get('/v4/movies/100', z.object({}), {})).rejects.toMatchObject({
+                reason: 'NOT_FOUND',
+                removals: [{ source: 'thetvdb', attemptedAt: attemptedAt.toISOString() }],
+            });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

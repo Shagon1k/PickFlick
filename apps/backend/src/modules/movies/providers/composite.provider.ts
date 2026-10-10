@@ -50,8 +50,11 @@ export class CompositeMovieProvider implements IMovieProvider {
             ids,
             cached,
         );
-        if (!primary && !enrichment)
-            throw primaryError ?? enrichmentError ?? new MovieProviderError('NOT_FOUND');
+        const removals = [...(primaryError?.removals ?? []), ...(enrichmentError?.removals ?? [])];
+        if (!primary && !enrichment) {
+            const error = primaryError ?? enrichmentError ?? new MovieProviderError('NOT_FOUND');
+            throw new MovieProviderError(error.reason, error.retryAt, error.source, removals);
+        }
         const base = primary?.data ?? emptyMetadata();
         const english = enrichment?.data;
         const externalIds = this.combineIds(
@@ -74,6 +77,7 @@ export class CompositeMovieProvider implements IMovieProvider {
             },
             similarExternalIds: primary?.similarExternalIds ?? null,
             snapshots: [...(primary ? [primary] : []), ...(enrichment ? [enrichment] : [])],
+            removals,
             provenance: [
                 {
                     source: 'poiskkino',

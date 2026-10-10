@@ -20,6 +20,7 @@ The implementation follows [ADR-017](decisions/README.md#adr-017--keep-movie-ide
 
 - `MoviesService` remains the facade; public DTOs and `details(movieId)` use canonical UUIDs.
 - `MOVIE_PROVIDER` selects TMDB or the default PoiskKino + TheTVDB configuration.
+  All selected sources share `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS`.
 - Search uses PoiskKino. Details enrich through confirmed IMDb/TheTVDB mappings and cached
   source snapshots. Title/year never merges Movies; absent English descriptions remain null.
 - External correspondences are separately unique. Transactions preserve UUIDs under concurrency,
@@ -29,7 +30,8 @@ The implementation follows [ADR-017](decisions/README.md#adr-017--keep-movie-ide
 - Every detail source retains its own locale/time. Search does not refresh details, and primary
   refresh does not renew enrichment. Failure and source removal are explicit in provenance.
 - Stale use requires opt-in, bounded age and transient failure. Source tombstones preserve UUIDs,
-  are monotonic, and require a strictly newer detail success for restoration.
+  are monotonic, and require a strictly newer detail success for restoration. Every source removal
+  survives an all-source failure and uses its own attempt-start clock.
 - The additive source migration preserves UUIDs, valid external links and removal observations;
   legacy provider JSON caches are refilled under the new contract. Conflicting IMDb links fail
   migration for reviewed reconciliation. No Session history is rewritten.
@@ -86,6 +88,11 @@ normalized DTOs, independent source cache, adapter tests and ADR-017. ADR-016 re
   return direct normalized snapshots; the composite builds the unified result once. One shared
   HTTP transport serves all three APIs. The root contains module, service and repository;
   adapter code and tests are grouped under `providers/`.
+- Review round 2: `pnpm verify` passed with 342 unit tests; all 85 database/API tests and
+  12 browser smoke checks passed on 2026-10-10. Lint retains the existing frontend ref-name warning.
+  Regression coverage includes both sources removed during a forced refresh, enrichment attempts
+  ordered differently from service requests, and delayed HTTP removal timestamps. Compose
+  validation passed with the shared catalog gate and timeout.
 - Live provider responses, user-facing screens, poster copying, and refresh jobs: not verified.
 
 ## Provider terms

@@ -30,11 +30,9 @@ x-runtime-environment: &runtime-environment
     RESEND_API_KEY: preview-disabled
     RESEND_FROM: PickFlick UAT <notifications@uat.pick-flick.app>
     CONTACT_DELIVERY_TO: contact@example.invalid
+    CATALOG_ENABLED: 'false'
     CATALOG_PROVIDER: poiskkino-thetvdb
     CATALOG_LOCALE: en-US
-    POISKKINO_ENABLED: 'false'
-    THETVDB_ENABLED: 'false'
-    TMDB_ENABLED: 'false'
     CATALOG_REFRESH_HOURS: ${CATALOG_REFRESH_HOURS:-24}
     CATALOG_STALE_HOURS: ${CATALOG_STALE_HOURS:-168}
 

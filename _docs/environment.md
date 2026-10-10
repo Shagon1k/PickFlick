@@ -31,15 +31,11 @@ variable, never its value.
 | `APPLE_PRIVATE_KEY`                                | EC P-256 PKCS#8 PEM (`\n` line breaks accepted); required only when enabled.                                                   | Yes    |
 | `CATALOG_PROVIDER`                                 | `poiskkino-thetvdb` (default) or `tmdb`; determines the injected catalog adapter.                                              | No     |
 | `CATALOG_LOCALE`                                   | `en-US` only initially; unsupported locales fail validation.                                                                   | No     |
-| `POISKKINO_ENABLED`                                | Default `false`; explicit enable gate for PoiskKino.                                                                           | No     |
+| `CATALOG_ENABLED`                                  | Default `false`; enables all sources of the selected adapter.                                                                  | No     |
+| `CATALOG_TIMEOUT_MS`                               | Shared request/body timeout, 100–30000 ms; default 5000.                                                                       | No     |
 | `POISKKINO_API_KEY`                                | Server-held X-API-KEY, required when PoiskKino is enabled.                                                                     | Yes    |
-| `POISKKINO_TIMEOUT_MS`                             | Request/body timeout, 100–30000 ms; default 5000.                                                                              | No     |
-| `THETVDB_ENABLED`                                  | Default `false`; explicit enable gate for English enrichment.                                                                  | No     |
 | `THETVDB_READ_TOKEN`                               | Server-held TheTVDB v4 bearer token, required when enabled; refresh/provision through the provider's login flow before expiry. | Yes    |
-| `THETVDB_TIMEOUT_MS`                               | Request/body timeout, 100–30000 ms; default 5000.                                                                              | No     |
-| `TMDB_ENABLED`                                     | Default `false`; the adapter returns `DISABLED` without outbound requests.                                                     | No     |
 | `TMDB_READ_TOKEN`                                  | Server-held TMDB API read access token, required when enabled. Never a browser variable.                                       | Yes    |
-| `TMDB_TIMEOUT_MS`                                  | Request and response-body timeout, 100–30000 ms; default 5000.                                                                 | No     |
 | `CATALOG_REFRESH_HOURS`                            | Cache freshness age, 1–720 hours; default 24. The worker cadence decision is pending ADR-016.                                  | No     |
 | `CATALOG_STALE_HOURS`                              | Maximum total cache age for explicit transient-failure fallback, 1–2160 hours and at least the refresh age; default 168.       | No     |
 
@@ -81,11 +77,14 @@ credentials/timeouts and provider-independent cache policy to the backend only. 
 are provisioned by this change. Adapter requests use fixed HTTPS endpoints, credentials in headers,
 reject redirects, and return safe reason codes without response bodies or raw fetch diagnostics.
 
-To switch providers, set `CATALOG_PROVIDER`, enable that adapter's credentials, and fill missing
+To switch providers, set `CATALOG_PROVIDER`, set `CATALOG_ENABLED=true`, supply that adapter's credentials, and fill missing
 verified `MovieExternalId` mappings while retaining `movieId`. Never invent correspondences from
 title/year. The new migration retains UUIDs and legacy mappings while invalidating old TMDB JSON
 caches. Conflicting legacy IMDb mappings require reconciliation before migration. See
 [ADR-017](decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources).
+The per-source enable and timeout variables are replaced by `CATALOG_ENABLED` and
+`CATALOG_TIMEOUT_MS`; only the selected adapter requires credentials.
+
 The previous `TMDB_REFRESH_HOURS`/`TMDB_STALE_HOURS` variables are replaced by the catalog variables;
 update deployed environment values when applying this migration.
 

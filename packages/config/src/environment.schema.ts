@@ -83,6 +83,8 @@ export const databaseEnvironmentSchema = z
     .object({ APP_ENV: z.enum(APP_ENVIRONMENTS), DATABASE_URL: databaseUrl })
     .transform((env) => ({ appEnvironment: env.APP_ENV, databaseUrl: env.DATABASE_URL }));
 
+const movieCredential = z.string().trim().max(8192).regex(/^\S*$/u).optional();
+
 const rawRuntimeEnvironmentSchema = z.object({
     APP_ENV: z.enum(APP_ENVIRONMENTS),
     SOURCE_REVISION: z
@@ -110,20 +112,11 @@ const rawRuntimeEnvironmentSchema = z.object({
     GOOGLE_CLIENT_SECRET: required,
     CATALOG_PROVIDER: z.enum(['tmdb', 'poiskkino-thetvdb']).default('poiskkino-thetvdb'),
     CATALOG_LOCALE: z.literal('en-US').default('en-US'),
-    POISKKINO_ENABLED: flag.default(false),
-    POISKKINO_API_KEY: z.string().trim().max(8192).regex(/^\S*$/u).optional(),
-    POISKKINO_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
-    THETVDB_ENABLED: flag.default(false),
-    THETVDB_READ_TOKEN: z.string().trim().max(8192).regex(/^\S*$/u).optional(),
-    THETVDB_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
-    TMDB_ENABLED: flag.default(false),
-    TMDB_READ_TOKEN: z
-        .string()
-        .trim()
-        .max(8192)
-        .regex(/^\S*$/u, 'must not contain whitespace')
-        .optional(),
-    TMDB_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(5000),
+    CATALOG_ENABLED: flag.default(false),
+    CATALOG_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
+    POISKKINO_API_KEY: movieCredential,
+    THETVDB_READ_TOKEN: movieCredential,
+    TMDB_READ_TOKEN: movieCredential,
     CATALOG_REFRESH_HOURS: z.coerce.number().int().min(1).max(720).default(24),
     CATALOG_STALE_HOURS: z.coerce.number().int().min(1).max(2160).default(168),
     APPLE_SIGN_IN_ENABLED: optionalFlag,
@@ -154,7 +147,8 @@ const RUNTIME_ENVIRONMENT_RULES: {
     {
         variable: 'TMDB_READ_TOKEN',
         message: 'is required when TMDB is enabled',
-        broken: (env) => env.TMDB_ENABLED && !env.TMDB_READ_TOKEN,
+        broken: (env) =>
+            env.CATALOG_ENABLED && env.CATALOG_PROVIDER === 'tmdb' && !env.TMDB_READ_TOKEN,
     },
     {
         variable: 'CATALOG_STALE_HOURS',
@@ -164,12 +158,18 @@ const RUNTIME_ENVIRONMENT_RULES: {
     {
         variable: 'POISKKINO_API_KEY',
         message: 'is required when PoiskKino is enabled',
-        broken: (env) => env.POISKKINO_ENABLED && !env.POISKKINO_API_KEY,
+        broken: (env) =>
+            env.CATALOG_ENABLED &&
+            env.CATALOG_PROVIDER === 'poiskkino-thetvdb' &&
+            !env.POISKKINO_API_KEY,
     },
     {
         variable: 'THETVDB_READ_TOKEN',
         message: 'is required when TheTVDB is enabled',
-        broken: (env) => env.THETVDB_ENABLED && !env.THETVDB_READ_TOKEN,
+        broken: (env) =>
+            env.CATALOG_ENABLED &&
+            env.CATALOG_PROVIDER === 'poiskkino-thetvdb' &&
+            !env.THETVDB_READ_TOKEN,
     },
     // Email: local and test never send, UAT may preview, production always delivers live.
     {
@@ -284,19 +284,19 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             staleHours: env.CATALOG_STALE_HOURS,
         },
         poiskkino: {
-            enabled: env.POISKKINO_ENABLED,
+            enabled: env.CATALOG_ENABLED && env.CATALOG_PROVIDER === 'poiskkino-thetvdb',
             apiKey: env.POISKKINO_API_KEY,
-            timeoutMs: env.POISKKINO_TIMEOUT_MS,
+            timeoutMs: env.CATALOG_TIMEOUT_MS,
         },
         thetvdb: {
-            enabled: env.THETVDB_ENABLED,
+            enabled: env.CATALOG_ENABLED && env.CATALOG_PROVIDER === 'poiskkino-thetvdb',
             readToken: env.THETVDB_READ_TOKEN,
-            timeoutMs: env.THETVDB_TIMEOUT_MS,
+            timeoutMs: env.CATALOG_TIMEOUT_MS,
         },
         tmdb: {
-            enabled: env.TMDB_ENABLED,
+            enabled: env.CATALOG_ENABLED && env.CATALOG_PROVIDER === 'tmdb',
             readToken: env.TMDB_READ_TOKEN,
-            timeoutMs: env.TMDB_TIMEOUT_MS,
+            timeoutMs: env.CATALOG_TIMEOUT_MS,
         },
         auth: {
             baseUrl: env.AUTH_BASE_URL,

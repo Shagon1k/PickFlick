@@ -6,7 +6,14 @@ import { PrismaService } from '../../../database/prisma.service.js';
 import { integrationEnvironment } from '../../../testing/integration.js';
 import { movieDetails } from '../../../testing/movie-fixtures.js';
 import { MoviesRepository } from '../movies.repository.js';
-import { singleSource, type TProviderRecord } from '../providers/movie-provider.js';
+import { MoviesService } from '../movies.service.js';
+import { CompositeMovieProvider } from '../providers/composite.provider.js';
+import {
+    MovieProviderError,
+    singleSource,
+    type TProviderRecord,
+    type TSourceSnapshot,
+} from '../providers/movie-provider.js';
 
 describe('MoviesRepository', () => {
     let prisma: PrismaService;
@@ -199,6 +206,7 @@ describe('MoviesRepository', () => {
             detailKey,
             {
                 ...primary,
+                removals: [{ source: 'thetvdb', attemptedAt: time.toISOString() }],
                 provenance: [
                     ...primary.provenance,
                     {
@@ -218,6 +226,136 @@ describe('MoviesRepository', () => {
             ),
         ).toBe(false);
     });
+    it('should persist both forced-refresh removals and never reuse either fresh source', async () => {
+        const primary = fixture(earlier, 'poiskkino');
+        const english = fixture(earlier, 'thetvdb', primary.externalIds[1]!.externalId);
+        const id = await ingest(primary);
+        const poiskkino = {
+            enabled: true,
+            configurationKey: 'primary',
+            search: vi.fn(),
+            details: vi
+                .fn<() => Promise<TSourceSnapshot>>()
+                .mockResolvedValue(primary.snapshots[0]!),
+        };
+        const thetvdb = {
+            enabled: true,
+            configurationKey: 'enrichment',
+            details: vi
+                .fn<() => Promise<TSourceSnapshot>>()
+                .mockResolvedValue(english.snapshots[0]!),
+        };
+        const environment = integrationEnvironment();
+        const provider = new CompositeMovieProvider(
+            poiskkino,
+            thetvdb,
+            environment.catalog,
+            repository,
+        );
+        const service = new MoviesService(provider, repository, environment);
+        await service.details(id, { forceRefresh: true });
+        poiskkino.details.mockRejectedValue(
+            new MovieProviderError('NOT_FOUND', undefined, 'poiskkino', [
+                { source: 'poiskkino', attemptedAt: new Date().toISOString() },
+            ]),
+        );
+        thetvdb.details.mockRejectedValue(
+            new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
+                { source: 'thetvdb', attemptedAt: new Date().toISOString() },
+            ]),
+        );
+        expect(await service.details(id, { forceRefresh: true, allowStale: true })).toMatchObject({
+            state: 'unavailable',
+        });
+        expect(await repository.cachedSources(id, 'en-US')).toEqual([]);
+        expect(await service.details(id)).toMatchObject({ state: 'unavailable' });
+        expect(poiskkino.details).toHaveBeenCalledTimes(3);
+        expect(thetvdb.details).toHaveBeenCalledTimes(3);
+    });
+    it.each([false, true])(
+        'should apply later enrichment removal from an earlier service request with primary removed %s',
+        async (removePrimary) => {
+            const primary = fixture(time, 'poiskkino');
+            const english = fixture(time, 'thetvdb', primary.externalIds[1]!.externalId);
+            const id = await ingest(primary);
+            let releasePrimary!: () => void;
+            let primaryStarted!: () => void;
+            const started = new Promise<void>((resolve) => {
+                primaryStarted = resolve;
+            });
+            const blocked = new Promise<TSourceSnapshot>((resolve, reject) => {
+                releasePrimary = () =>
+                    removePrimary
+                        ? reject(
+                              new MovieProviderError('NOT_FOUND', undefined, 'poiskkino', [
+                                  { source: 'poiskkino', attemptedAt: new Date().toISOString() },
+                              ]),
+                          )
+                        : resolve(primary.snapshots[0]!);
+            });
+            const poiskkino = {
+                enabled: true,
+                configurationKey: 'primary',
+                search: vi.fn(),
+                details: vi
+                    .fn<() => Promise<TSourceSnapshot>>()
+                    .mockImplementationOnce(() => {
+                        primaryStarted();
+                        return blocked;
+                    })
+                    .mockResolvedValue(primary.snapshots[0]!),
+            };
+            const thetvdb = {
+                enabled: true,
+                configurationKey: 'enrichment',
+                details: vi
+                    .fn<() => Promise<TSourceSnapshot>>()
+                    .mockResolvedValueOnce(english.snapshots[0]!)
+                    .mockImplementationOnce(() =>
+                        Promise.reject(
+                            new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
+                                { source: 'thetvdb', attemptedAt: new Date().toISOString() },
+                            ]),
+                        ),
+                    ),
+            };
+            const environment = integrationEnvironment();
+            const provider = new CompositeMovieProvider(
+                poiskkino,
+                thetvdb,
+                environment.catalog,
+                repository,
+            );
+            const service = new MoviesService(provider, repository, environment);
+            vi.useFakeTimers({ toFake: ['Date'] });
+            try {
+                vi.setSystemTime(earlier);
+                const requestA = service.details(id, { forceRefresh: true });
+                await started;
+                vi.setSystemTime(time);
+                expect(await service.details(id, { forceRefresh: true })).toMatchObject({
+                    state: 'fresh',
+                });
+                vi.setSystemTime(later);
+                releasePrimary();
+                await requestA;
+                expect(
+                    (await repository.cachedSources(id, 'en-US')).map(
+                        (snapshot) => snapshot.source,
+                    ),
+                ).not.toContain('thetvdb');
+                expect(
+                    (
+                        await prisma.movieExternalId.findUnique({
+                            where: { movieId_source: { movieId: id, source: 'thetvdb' } },
+                        })
+                    )?.unavailableAt,
+                ).toEqual(later);
+            } finally {
+                vi.useRealTimers();
+            }
+        },
+    );
     it.each([false, true])(
         'should preserve removal at equal timestamps with prior details %s',
         async (ingested) => {
