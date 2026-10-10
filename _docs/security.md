@@ -212,10 +212,11 @@ provider log messages and error arguments are omitted to keep that path out of l
 
 ## Catalog media and outbound links
 
-The backend downloads catalog images from the five validated provider hosts into private
+The backend downloads displayed detail posters from the five validated provider hosts into private
 S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
 only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
-contain opaque same-origin `/api/movies/images/:key` paths. The authenticated image endpoint
+contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search media, detail
+backdrops and cast portraits are returned as null without image I/O. The authenticated image endpoint
 serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
 and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
 Provider text is escaped by React; the response schema rejects provider image URLs and mismatched

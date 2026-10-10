@@ -64,9 +64,11 @@ export class MoviesController {
             ...result,
             data: {
                 ...result.data,
-                movies: await Promise.all(
-                    result.data.movies.map((movie) => this.images.storeMedia(movie)),
-                ),
+                movies: result.data.movies.map((movie) => ({
+                    ...movie,
+                    posterUrl: null,
+                    backdropUrl: null,
+                })),
             },
         };
     }

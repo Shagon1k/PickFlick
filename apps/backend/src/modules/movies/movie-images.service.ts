@@ -34,19 +34,12 @@ export class MovieImagesService {
         TMovie extends Pick<TMovieMetadata, 'posterUrl' | 'backdropUrl'> &
             Partial<Pick<TMovieMetadata, 'cast'>>,
     >(movie: TMovie): Promise<TMovie> {
-        const [posterUrl, backdropUrl, cast] = await Promise.all([
-            this.store(movie.posterUrl),
-            this.store(movie.backdropUrl),
-            movie.cast
-                ? Promise.all(
-                      movie.cast.map(async (person) => ({
-                          ...person,
-                          profileUrl: await this.store(person.profileUrl),
-                      })),
-                  )
-                : movie.cast,
-        ]);
-        return { ...movie, posterUrl, backdropUrl, cast };
+        return {
+            ...movie,
+            posterUrl: await this.store(movie.posterUrl),
+            backdropUrl: null,
+            cast: movie.cast?.map((person) => ({ ...person, profileUrl: null })) ?? movie.cast,
+        };
     }
 
     private async store(url: string | null): Promise<string | null> {

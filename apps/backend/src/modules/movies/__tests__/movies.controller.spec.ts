@@ -102,7 +102,7 @@ describe('MoviesController', () => {
         expect(getImage).toHaveBeenCalledWith(key);
     });
 
-    it('should replace internal image URLs in successful detail and search responses', async () => {
+    it('should replace internal image URLs in successful detail responses', async () => {
         const data = canonicalDetails();
         const stored = { ...data, posterUrl: `/api/movies/images/${'a'.repeat(64)}` };
         storeMedia.mockResolvedValue(stored);
@@ -117,15 +117,78 @@ describe('MoviesController', () => {
             result: { data: { posterUrl: stored.posterUrl } },
             links: { imdb: null },
         });
-        search.mockResolvedValue({
-            state: 'fresh',
-            data: { movies: [data], page: 1, totalPages: 1, totalResults: 1 },
-            fetchedAt: '2026-10-10T12:00:00.000Z',
-        });
-        expect(await (await request({ query: 'Film' })).json()).toMatchObject({
-            data: { movies: [{ posterUrl: stored.posterUrl }] },
-        });
         expect(storeMedia).toHaveBeenCalledWith(data);
+    });
+
+    it.each([{ state: 'fresh' }, { state: 'stale', reason: 'TIMEOUT' }] as const)(
+        'should omit unused search media from $state results without ingestion',
+        async (result) => {
+            const data = {
+                ...canonicalDetails(),
+                backdropUrl: 'https://image.tmdb.org/backdrop.jpg',
+            };
+            search.mockResolvedValue({
+                ...result,
+                data: { movies: [data], page: 1, totalPages: 1, totalResults: 1 },
+                fetchedAt: '2026-10-10T12:00:00.000Z',
+            });
+            const response = await request({ query: 'Film' });
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({
+                ...result,
+                data: {
+                    movies: [
+                        { id: data.id, title: data.title, posterUrl: null, backdropUrl: null },
+                    ],
+                },
+            });
+            expect(storeMedia).not.toHaveBeenCalled();
+            expect(getImage).not.toHaveBeenCalled();
+        },
+    );
+
+    it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {
+        vi.useFakeTimers();
+        try {
+            const data = canonicalDetails();
+            search.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        setTimeout(
+                            () =>
+                                resolve({
+                                    state: 'fresh',
+                                    data: {
+                                        movies: [data],
+                                        page: 1,
+                                        totalPages: 1,
+                                        totalResults: 1,
+                                    },
+                                    fetchedAt: '2026-10-10T12:00:00.000Z',
+                                }),
+                            8000,
+                        );
+                    }),
+            );
+            storeMedia.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        setTimeout(() => resolve(data), 3000);
+                    }),
+            );
+            const response = Promise.race([
+                app.get(MoviesController).search({ query: 'Film', page: 1, locale: 'en-US' }),
+                new Promise((resolve) => setTimeout(() => resolve('deadline exceeded'), 10000)),
+            ]);
+            await vi.advanceTimersByTimeAsync(10000);
+            expect(await response).toMatchObject({
+                state: 'fresh',
+                data: { movies: [{ id: data.id, posterUrl: null, backdropUrl: null }] },
+            });
+            expect(storeMedia).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('should reject anonymous search before calling the catalog', async () => {

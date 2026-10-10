@@ -33,16 +33,29 @@ describe('MovieImagesService', () => {
     });
     afterEach(() => vi.unstubAllGlobals());
 
-    it('should copy provider bytes to private storage and return only same-origin paths for all media', async () => {
+    it('should copy provider bytes to private storage and ingest only the displayed poster for a large cast', async () => {
         const result = await service.storeMedia({
             ...canonicalDetails(),
             posterUrl: url,
-            backdropUrl: url,
-            cast: [{ name: 'Actor', character: null, profileUrl: url }],
+            backdropUrl: 'https://image.tmdb.org/t/p/original/backdrop.jpg',
+            cast: Array.from({ length: 50 }, (_, index) => ({
+                name: `Actor ${index}`,
+                character: 'Lead',
+                profileUrl: 'https://image.tmdb.org/t/p/original/portrait.jpg',
+            })),
         });
         expect(result.posterUrl).toBe(`/api/movies/images/${key}`);
-        expect(result.backdropUrl).toBe(result.posterUrl);
-        expect(result.cast?.[0]?.profileUrl).toBe(result.posterUrl);
+        expect(result.backdropUrl).toBeNull();
+        expect(result.cast).toEqual(
+            Array.from({ length: 50 }, (_, index) => ({
+                name: `Actor ${index}`,
+                character: 'Lead',
+                profileUrl: null,
+            })),
+        );
+        expect(request).toHaveBeenCalledTimes(1);
+        expect(storage.get).toHaveBeenCalledTimes(1);
+        expect(storage.put).toHaveBeenCalledTimes(1);
         expect(storage.put).toHaveBeenCalledWith(`movie-images/${key}`, png, 'image/png');
         expect(request).toHaveBeenCalledWith(url, {
             redirect: 'error',

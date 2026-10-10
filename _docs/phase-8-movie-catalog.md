@@ -219,3 +219,27 @@ Verification on 2026-10-10:
   the full static gate and the smoke rerun. No visual baselines were changed.
 - Live provider content, live S3 media delivery, hosted exact-head preview and owner visual
   acknowledgement remain unverified. Storage is mocked in the focused image checks.
+
+## Movie Details review fix round 2 (#38)
+
+The owner-approved snapshot at `0f9b396069496d545dedb3a0f98fdd018aeeaa20` covers two
+threads on PR #164. Search returns null poster and backdrop fields without image downloads
+or storage reads, including cached results. Details ingest only the displayed poster and
+return null backdrops and cast portraits while preserving cast names and characters. Provider
+URLs remain in internal caches; poster validation, download limits and storage failures keep
+the existing behavior.
+
+Focused regressions cover fresh/stale search projections, an eight-second search with a
+three-second image delay, and one poster operation for a 50-person cast. Live provider and S3
+traffic, hosted exact-head preview and owner visual acknowledgement remain unverified.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint (three existing frontend warnings), knip,
+  formatting, type checking, all 379 unit tests and the workspace production build.
+- All 26 PR browser smoke checks passed with an isolated-port temporary configuration after
+  the default port was occupied. No screenshot baselines changed.
+- The initial static gate caught a missing failure reason in the new stale-result fixture;
+  the fixture was corrected before final verification.
+- pnpm's shared SQLite store metadata was copied to a temporary writable directory for the
+  audit; dependencies, the lockfile and audit policy were unchanged.

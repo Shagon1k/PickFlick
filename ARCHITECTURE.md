@@ -209,14 +209,15 @@ history and revokes every session.
   clocks use the individual source attempt start; timestamp ties retain the source tombstone.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
-  Catalog media are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.
-  Source cache data retain provider URLs; search/detail responses replace every image URL with an
-  authenticated `/api/movies/images/:key` path through the existing frontend rewrite. Image
+  Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.
+  Source cache data retain provider URLs; detail posters use an authenticated
+  `/api/movies/images/:key` path through the existing frontend rewrite. Search returns null poster
+  and backdrop fields without image I/O; details return null backdrops and cast portraits. Image
   downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
   downloads return missing media; storage failures propagate. Existing objects are reused.
   Details expose `links.imdb`, built on the backend, without external identifiers. The frontend
   detail transport allows 100 seconds for three provider requests (each configured up to 30 seconds),
-  concurrent five-second image downloads and response overhead; other API calls retain ten seconds.
+  a five-second poster download and response overhead; other API calls retain ten seconds.
   Authenticated `POST /movies/search` validates the shared search schema and opts into bounded
   stale cache use. Responses are private/no-store; the existing global auth guard and a
   60-request/minute endpoint limit apply. The header calls it through a server action and
