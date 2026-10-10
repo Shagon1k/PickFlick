@@ -11,8 +11,9 @@ Phase scope and acceptance live in [ROADMAP.md](../ROADMAP.md#phase-8--movie-cat
 - [#38](https://github.com/Shagon1k/PickFlick/issues/38) owns Movie Details, related titles,
   trusted links, and provider attribution in the visible experience.
 
-The catalog module has no public routes yet. It exposes `MoviesService` to later backend modules;
-the existing global authentication guard remains the boundary for future HTTP routes.
+The catalog module exposes authenticated `POST /movies/search` and exports `MoviesService` for
+other backend modules. The existing global authentication guard protects search. Movie Details
+and the refresh worker remain separate delivery boundaries.
 
 ## Provider and cache contract
 
@@ -107,3 +108,42 @@ noncommercial use and requires approved logo attribution in an About/Credits sur
 Before exposing provider content, #37/#38 must include the required attribution. Commercial
 licensing and production media rights remain an owner decision in
 [#89](https://github.com/Shagon1k/PickFlick/issues/89); this issue grants no usage rights.
+
+## Global search delivery (#37)
+
+Run `r_ddd458f4a9fe7ca27119` adds a guarded, schema-validated search endpoint and connects the
+existing product header through a server action. The service explicitly allows its existing
+bounded transient-failure cache fallback. The UI debounces for 300ms, discards obsolete responses,
+clears on dismissal, supports keyboard and touch, and renders provider text through React.
+
+Canonical links use `/movies/[movieId]`. The issue's older TMDB-route wording is superseded by
+Roadmap and ADR-017. The destination validates the UUID, checks the session, and preserves it
+through sign-in; its details content is a handoff for #38. No new dependencies, migrations,
+provider settings, background jobs, Personal Ratings or Watchlist operations are introduced.
+
+Search renders neutral PF poster placeholders and source credits. The bundled TMDB logo comes
+unchanged from its [approved logos page](https://www.themoviedb.org/about/logos-attribution),
+with the notice required by the [TMDB FAQ](https://developer.themoviedb.org/docs/faq).
+[TheTVDB attribution](https://thetvdb.com/api-information) links directly to its site when its
+metadata appears. Attribution does not settle the commercial licensing decision in #89.
+
+Verification on 2026-10-10:
+
+- `pnpm verify` passed: security audit, lint (one existing ClubMembers ref-name warning), knip,
+  formatting, type checking, all 355 unit tests, and the workspace build.
+- All 85 database/API integration tests passed on a new isolated PostgreSQL 17 database after
+  applying all thirteen existing migrations and the required synthetic seed. An initial unseeded
+  run failed five fixture-dependent checks; the seeded rerun passed.
+- All sixteen smoke checks plus search state and touch checks passed (18 browser checks).
+  Search coverage includes keyboard navigation, escaped provider titles, focus return, clearing,
+  whitespace edits, obsolete responses, empty/unavailable/rate-limited/disabled/stale states,
+  mutual exclusion, outside dismissal, anonymous routing, and touch selection.
+- Search axe checks and overflow checks passed at 390, 768, 1024 and 1440px. Local screenshots
+  were inspected at mobile and desktop widths; no existing visual baselines were changed.
+- Browser verification used the completed workspace build with a temporary copy of the standard
+  mock runner/config on alternate loopback ports. Concurrent builds invalidated an earlier
+  browser server; the isolated rerun passed. Temporary runner/config files were removed.
+
+Hosted exact-head preview, live provider credentials/content and owner visual acknowledgement
+remain unverified. No preview workflow or
+GitHub deployment was available at preparation; local screenshots do not satisfy hosted review.
