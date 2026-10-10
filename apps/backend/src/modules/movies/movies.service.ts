@@ -84,8 +84,13 @@ export class MoviesService {
                 }),
             );
         } catch (error) {
-            if (error instanceof MovieProviderError && error.reason === 'NOT_FOUND' && error.source)
-                await this.repository.markUnavailable(movieId, error.source, startedAt);
+            if (error instanceof MovieProviderError)
+                for (const removal of error.removals)
+                    await this.repository.markUnavailable(
+                        movieId,
+                        removal.source,
+                        new Date(removal.attemptedAt),
+                    );
             const fallback = options.allowStale
                 ? await this.repository.cachedDetails(movieId, key)
                 : null;

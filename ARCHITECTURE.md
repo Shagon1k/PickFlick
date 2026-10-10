@@ -190,6 +190,7 @@ history and revokes every session.
 - **Movie catalog:** `MoviesService` accepts canonical Movie UUIDs and exposes normalized PickFlick
   DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
   owns enrichment and source-cache reuse; the service consumes an aggregate cache status.
+  `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS` apply to every source in the selected adapter.
   The module keeps service and persistence in its root; `providers/` contains the shared
   contract, composite, three API clients and their common HTTP transport. Source clients return
   normalized snapshots directly; only the selected adapter builds the unified provider result.
@@ -204,7 +205,8 @@ history and revokes every session.
   stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source data.
   Stale fallback requires opt-in, validated data within `CATALOG_STALE_HOURS` and a transient
   error. Invalid payloads, authentication, disabled configuration and removal cannot reuse stale
-  source data. Removal observations are monotonic; timestamp ties retain the source tombstone.
+  source data. Every observed removal is persisted, including when all sources fail. Removal
+  clocks use the individual source attempt start; timestamp ties retain the source tombstone.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
   Live source completeness and the ADR-016 refresh worker remain unverified.

@@ -82,15 +82,36 @@ describe('parseRuntimeEnvironment', () => {
             enabled: false,
             timeoutMs: 5000,
         });
-        expect(failuresOf({ ...local, TMDB_ENABLED: 'true' })).toContain(
-            'TMDB_READ_TOKEN is required when TMDB is enabled',
-        );
+        expect(
+            failuresOf({ ...local, CATALOG_ENABLED: 'true', CATALOG_PROVIDER: 'tmdb' }),
+        ).toContain('TMDB_READ_TOKEN is required when TMDB is enabled');
         expect(
             failuresOf({ ...local, CATALOG_REFRESH_HOURS: '200', CATALOG_STALE_HOURS: '168' }),
         ).toContain('CATALOG_STALE_HOURS must be at least CATALOG_REFRESH_HOURS');
-        expect(failuresOf({ ...local, TMDB_TIMEOUT_MS: '0' }).join(' ')).toContain(
-            'TMDB_TIMEOUT_MS',
+        expect(failuresOf({ ...local, CATALOG_TIMEOUT_MS: '0' }).join(' ')).toContain(
+            'CATALOG_TIMEOUT_MS',
         );
+    });
+
+    it('should share the gate and timeout while requiring only selected credentials', () => {
+        const environment = parseRuntimeEnvironment({
+            ...local,
+            CATALOG_PROVIDER: 'tmdb',
+            CATALOG_ENABLED: 'true',
+            CATALOG_TIMEOUT_MS: '1200',
+            TMDB_READ_TOKEN: 'synthetic-only',
+        });
+        expect(environment.tmdb).toMatchObject({ enabled: true, timeoutMs: 1200 });
+        expect(environment.poiskkino).toMatchObject({ enabled: false, timeoutMs: 1200 });
+        expect(environment.thetvdb).toMatchObject({ enabled: false, timeoutMs: 1200 });
+        expect(
+            failuresOf({
+                ...local,
+                CATALOG_ENABLED: 'true',
+                POISKKINO_API_KEY: 'synthetic-only',
+                THETVDB_READ_TOKEN: 'synthetic-only',
+            }),
+        ).toEqual([]);
     });
 
     it.each([
@@ -185,10 +206,10 @@ describe('parseDatabaseEnvironment', () => {
         expect(
             parseRuntimeEnvironment({ ...local, CATALOG_PROVIDER: 'tmdb' }).catalog.provider,
         ).toBe('tmdb');
-        expect(failuresOf({ ...local, POISKKINO_ENABLED: 'true' })).toContain(
+        expect(failuresOf({ ...local, CATALOG_ENABLED: 'true' })).toContain(
             'POISKKINO_API_KEY is required when PoiskKino is enabled',
         );
-        expect(failuresOf({ ...local, THETVDB_ENABLED: 'true' })).toContain(
+        expect(failuresOf({ ...local, CATALOG_ENABLED: 'true' })).toContain(
             'THETVDB_READ_TOKEN is required when TheTVDB is enabled',
         );
         expect(failuresOf({ ...local, CATALOG_LOCALE: 'ru-RU' }).join(' ')).toContain(

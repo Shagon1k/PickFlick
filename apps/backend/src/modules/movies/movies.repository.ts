@@ -121,10 +121,13 @@ export class MoviesRepository {
         await this.prisma.$transaction(async (transaction) => {
             await this.lock(transaction);
             await this.resolveMovie(transaction, record.externalIds, movieId);
-            for (const provenance of record.provenance) {
-                if (provenance.reason === 'NOT_FOUND')
-                    await this.removeSource(transaction, movieId, provenance.source, fetchedAt);
-            }
+            for (const removal of record.removals)
+                await this.removeSource(
+                    transaction,
+                    movieId,
+                    removal.source,
+                    new Date(removal.attemptedAt),
+                );
             for (const snapshot of record.snapshots) {
                 // Each source has its own monotonic clock; a newer primary cannot renew enrichment.
                 const at = new Date(snapshot.fetchedAt);
