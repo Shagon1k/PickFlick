@@ -209,6 +209,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             await page.getByRole('button', { name: 'Open pending invites' }).tap();
             const dialog = page.getByRole('dialog', { name: 'Pending invites' });
             await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toBeVisible();
+            await settle(page);
             const widths = await page.evaluate(() => ({
                 body: document.body.scrollWidth,
                 document: document.documentElement.scrollWidth,
@@ -228,6 +229,8 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             ).toBeGreaterThanOrEqual(44);
             await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
             await page.getByRole('button', { name: 'Remove Morgan Member' }).tap();
+            await expect(page.getByRole('dialog', { name: 'Remove this member?' })).toBeVisible();
+            await settle(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             await page.keyboard.press('Escape');
         }
