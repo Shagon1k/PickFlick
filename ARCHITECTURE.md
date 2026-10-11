@@ -123,9 +123,9 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images               |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, thirteen migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, fourteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -162,6 +162,30 @@ Phase 20 can replace entitlement input without making browser state an authoriza
 `MEMBER_LIMIT` means excess roster size: history and existing participation stay available, and removal
 and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.
 The unresolved choice among excess administered Clubs is not implemented.
+
+Session persistence foundations are Active; Session HTTP routes and screens remain Proposed.
+Each new Session requires its own score bounds and five visibility/media flags. The internal
+`snapshotSessionSettings` helper locks the Club and reads those fields; creation must call it
+inside the same transaction as the Session insert. Club settings edits do not change saved Session
+fields. Migration 14 backfills skeleton Sessions from current Club settings because their original
+settings were not stored; it preserves phase, version, details, and history.
+
+`SessionParticipant` references a historical Membership, with invited, accepted, declined, left,
+and removed states plus nullable attendance. Composite foreign keys require the Session and
+Membership to share a Club. `SessionInvite` references that participant and a same-Club inviter
+Membership, stores only a unique SHA-256 digest, and checks expiry and response consistency. These
+storage constraints do not authorize a request: the member-only preview, active Membership checks,
+operator authorization, token generation, and invitation/leave/removal flows belong to #40/#41.
+
+The existing partial unique index still enforces one Nomination/Selection/Watching Session per
+Club; Rating is outside it. The roster trigger increments `rosterVersion` on insert, delete, or
+status change and locks the parent Session in the same transaction. Attendance-only and repeated
+status writes do not change the version; participant identity cannot move between Sessions or
+Memberships. `readSessionRoster` takes the same lock and returns phase, phase version, roster version,
+accepted participant identities, and their count. Callers must use a transaction and retain the lock
+through the phase decision. Workflow writes take the Club lock before the Session lock and before
+participant writes. #41 must update participant state on Club departure before checking completion;
+no automatic transition or membership-departure propagation is implemented by this foundation.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 

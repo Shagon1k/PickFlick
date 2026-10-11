@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IApiErrorEnvelope, IClubSettings, IClubSummary } from '@pickflick/contracts';
+import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     createUser,
@@ -307,7 +308,13 @@ describe('ClubsController', () => {
                 await api.request('/clubs', { userId: admin })
             ).json()) as IClubSummary[];
             await api.prisma.session.create({
-                data: { id: randomUUID(), clubId: second!.id, type: 'PAST', phase: 'COMPLETED' },
+                data: {
+                    ...(await snapshotSessionSettings(api.prisma, second!.id)),
+                    id: randomUUID(),
+                    clubId: second!.id,
+                    type: 'PAST',
+                    phase: 'COMPLETED',
+                },
             });
 
             const response = await api.request(`/clubs/${second!.id}/delete`, {
