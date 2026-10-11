@@ -90,6 +90,22 @@ describe('Session workflows', () => {
         const preselected = await create(moderator, { type: 'PRE_SELECTED', movieId });
         expect(await preselected.json()).toMatchObject({ phase: 'WATCHING', movieId });
     });
+    it('should reject non-v4 IDs and allow a v4 Session to be read and cancelled', async () => {
+        const id = '01931234-5678-7abc-8def-0123456789ab';
+        expect((await create(admin, { id })).status).toBe(400);
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(0);
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(0);
+        const created = await create();
+        expect(created.status).toBe(201);
+        const session = (await created.json()) as TSession;
+        const retrieved = await api.request(`/sessions/${session.id}`, { userId: admin });
+        expect(retrieved.status).toBe(200);
+        expect(await retrieved.json()).toMatchObject({ id: session.id, phase: 'NOMINATION' });
+        expect((await cancel(session)).status).toBe(201);
+        expect(
+            await (await api.request(`/sessions/${session.id}`, { userId: admin })).json(),
+        ).toMatchObject({ phase: 'CANCELLED' });
+    });
     it('should serialize duplicate creation and reject two different blocking Sessions', async () => {
         const id = randomUUID();
         const duplicates = await Promise.all([create(admin, { id }), create(admin, { id })]);

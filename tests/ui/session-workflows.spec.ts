@@ -24,7 +24,8 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-full');
-        await page.goto(route);
+        await page.goto(`/clubs/${clubId}`);
+        await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
         await page.getByLabel('Date').fill('2026-12-01');
@@ -33,7 +34,11 @@ test(
         await page.getByLabel('Nomination phase ends in').fill('01:30');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByText('Session created. Nomination is open.')).toBeVisible();
-        await page.getByRole('link', { name: 'Open Session' }).click();
+        await page.goBack();
+        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
+            0,
+        );
+        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
         await expect(page.getByRole('heading', { name: 'Noir night', exact: true })).toBeVisible();
         await page.getByRole('button', { name: 'Edit Session' }).click();
         await page.keyboard.press('Escape');
@@ -43,6 +48,10 @@ test(
         await page.getByRole('button', { name: 'Save changes' }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
+        await page.goBack();
+        await expect(page.getByText('Room B', { exact: true })).toBeVisible();
+        await expect(page.getByText('Room A', { exact: true })).toHaveCount(0);
+        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
         await page.getByRole('button', { name: 'Cancel Session', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
         await page.getByLabel('Type CANCEL to confirm').fill('CANCEL');

@@ -64,7 +64,7 @@ No visual behavior changes; design QA and full Session journeys belong to #40/#4
   invitation flow is added.
 - Migration 15 adds canonical Movie linkage, `detailsVersion`, and Session audit references/actions.
   It preserves legacy nullable skeleton fields. Apply it before the new application build.
-- A retained client UUID makes unchanged create retries return the existing Session for its original
+- A retained client v4 UUID makes unchanged create retries return the existing Session for its original
   creator; changed payloads and another creator conflict.
   Edits compare details and version; cancellation is serialized, audited once, preserves history,
   revokes pending links and releases the blocking slot.
@@ -101,3 +101,20 @@ Verification for run r_53b9de1c80cc70771c0b:
 - `pnpm test:ui:visual` passes all 76 comparisons in the pinned Linux image after those updates.
 - Browser workflows use the mock API; integration tests exercise the real API/database. A hosted
   full-stack Session journey and owner visual acknowledgement remain unverified.
+
+Review fix round 1 for run r_53b9de1c80cc70771c0b:
+
+- Creation requires UUID v4, matching detail/edit/cancel routes; other UUID versions are rejected
+  before persistence or audit.
+- Successful creation and edits invalidate Club Hub and Session detail paths, following cancellation.
+- All type aliases added by #40 follow the documented `T` prefix, including `z.infer` contracts;
+  interfaces use `I`. No naming change is needed.
+- `pnpm verify` passes: guarded security audit, lint (three existing warnings), knip, formatting,
+  type checks, 388 unit tests and both application builds. The focused schema suite passes four tests.
+- All 108 integration tests pass against a fresh migrated and seeded isolated test database,
+  including UUID rejection without persistence/audit and v4 create/read/cancel.
+- PR browser smoke checks: 22 pass initially; six fail while the verification build runs concurrently.
+  All six pass with `pnpm test:ui:smoke --last-failed` after builds finish, including creation/edit
+  followed by browser Back to the previously visited Hub. No test or implementation changes intervene.
+- Verification uses Node 24.15.0, pnpm 11.25.0 and installed dependencies with automatic reinstall
+  disabled because its store writes are outside the sandbox. Repository configuration is unchanged.

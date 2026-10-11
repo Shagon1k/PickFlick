@@ -25,6 +25,15 @@ describe('Session schemas', () => {
                 .success,
         ).toBe(true);
     });
+    it('should accept v4 creation IDs and reject other UUID versions', () => {
+        expect(createSessionSchema.safeParse(full).success).toBe(true);
+        expect(
+            createSessionSchema.safeParse({
+                ...full,
+                id: '01931234-5678-7abc-8def-0123456789ab',
+            }).success,
+        ).toBe(false);
+    });
     it('should reject missing fields, unsafe text, invalid dates and incompatible mode fields', () => {
         for (const input of [
             { ...full, location: '' },

@@ -350,6 +350,7 @@ scope. Blocking Sessions and Club/role restrictions replace the form with a reco
 The phase-labelled detail foundation shows date/location/notes, deadline and a selected-Movie link.
 Operators edit details in a focus-trapped dialog and cancel with typed `CANCEL`; terminal Sessions
 have no edit or cancellation controls. Club Hub links current, Rating and history rows to detail.
+Successful creation and edits invalidate the Hub and detail pages so browser Back shows current data.
 Full nomination, selection, watching/rating content and roster interactions remain later work.
 
 Chromium checks cover both creation modes, edit/cancel and Hub updates, validation focus, dialog

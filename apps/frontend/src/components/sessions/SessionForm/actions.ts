@@ -1,6 +1,7 @@
 'use server';
 
 import { createSessionSchema, updateSessionSchema } from '@pickflick/contracts';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { createSession, updateSession } from '@/api/sessions.server';
@@ -20,6 +21,8 @@ export async function saveSessionAction(clubId: string, id: string | null, input
         const session = id
             ? await updateSession(id, updateSessionSchema.parse(parsed.data))
             : await createSession(clubId, createSessionSchema.parse(parsed.data));
+        revalidatePath(`/clubs/${session.clubId}`);
+        revalidatePath(`/sessions/${session.id}`);
         return { ok: true as const, session };
     } catch (error) {
         return saveFailure(error);

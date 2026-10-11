@@ -12,7 +12,7 @@ export const sessionDetailsSchema = z.strictObject({
 
 export const createSessionSchema = sessionDetailsSchema
     .extend({
-        id: z.uuid(),
+        id: z.uuidv4(),
         type: z.enum(['FULL_CYCLE', 'PRE_SELECTED']),
         movieId: z.uuid().nullable(),
     })
