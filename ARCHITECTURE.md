@@ -79,7 +79,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                   |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                   |
 | movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search/details and stored catalog images; refresh worker pending |
-| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, and audit.                                            | Active — invitations and phase workflows pending                                         |
+| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-targeted invitations, roster, and audit.       | Active — phase workflows pending                                                         |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                 |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -124,7 +124,7 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images               |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, fifteen migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, sixteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
@@ -143,6 +143,17 @@ only to authenticated Users. The invitation page and API responses are private a
 Manager lists include the 20 most recent records and every live pending invitation, so older links
 remain reachable for revocation. The creation action preserves its returned token if a subsequent
 list refresh fails; the UI shows the link and a separate refresh warning.
+
+Session invitations use separate digest-only tokens and target an existing Membership through a
+SessionParticipant. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
+response tokens travel only in POST bodies. Pending responses by invitation ID use the same locked
+eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
+state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
+and roster changes lock Club → Session before writing; the participant trigger increments
+`rosterVersion`. Roster projections use a repeatable-read snapshot. Club departure updates open
+Session participants and revokes their pending links in its membership transaction, preserving
+completed history. Migration 16 adds five Session invitation/participant audit actions without
+changing existing data. No worker or automatic phase transition is added.
 
 The eleventh migration adds `MEMBERSHIP_REMOVED` to the audit enum. `POST
 /clubs/:clubId/members/:membershipId/remove` validates typed `REMOVE` confirmation, locks the Club,

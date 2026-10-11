@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger } from '@nest
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { departSessions } from '../sessions/session-departure.js';
 import { StorageService } from '../storage/storage.service.js';
 import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
 import { clubEntitlements } from './club-tiers.js';
@@ -40,6 +41,7 @@ export class ClubLifecycleService {
             if (membership.role === 'ADMIN') {
                 throw new ConflictException({ reason: 'ADMIN_MUST_TRANSFER' });
             }
+            await departSessions(transaction, membership.id, userId, 'LEFT');
             await transaction.membership.update({
                 where: { id: membership.id },
                 data: { status: 'LEFT', leftAt: new Date() },
@@ -79,6 +81,7 @@ export class ClubLifecycleService {
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             }
             if (target.status !== 'ACTIVE') return;
+            await departSessions(transaction, target.id, userId, 'REMOVED');
             await transaction.membership.update({
                 where: { id: target.id },
                 data: { status: 'REMOVED', leftAt: new Date() },

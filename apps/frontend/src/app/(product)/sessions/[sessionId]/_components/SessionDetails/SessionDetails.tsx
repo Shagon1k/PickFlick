@@ -1,6 +1,6 @@
 'use client';
 
-import type { TSession } from '@pickflick/contracts';
+import type { ISessionRoster, TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -13,8 +13,15 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
+import SessionRoster from '../SessionRoster/SessionRoster';
 
-export default function SessionDetails({ session }: { session: TSession }) {
+export default function SessionDetails({
+    session,
+    roster,
+}: {
+    session: TSession;
+    roster: ISessionRoster;
+}) {
     const router = useRouter();
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
     const [confirmation, setConfirmation] = useState('');
@@ -79,6 +86,7 @@ export default function SessionDetails({ session }: { session: TSession }) {
                     ) : null}
                 </div>
             </section>
+            <SessionRoster sessionId={session.id} initial={roster} />
             <p aria-live="polite" role="status">
                 {message}
             </p>

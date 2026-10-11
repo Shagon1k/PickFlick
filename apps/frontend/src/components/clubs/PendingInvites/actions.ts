@@ -1,22 +1,31 @@
 'use server';
 
-import {
-    invitationDecisionSchema,
-    type IPendingClubInvitation,
-    type TInvitationPreview,
-} from '@pickflick/contracts';
+import { invitationDecisionSchema, type TPendingInvitation } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { ApiError, apiRequest } from '@/lib/api.server';
+import {
+    pendingClubInvitations,
+    pendingSessionInvitations,
+    respondPendingClubInvitation,
+    respondPendingSessionInvitation,
+} from '@/api/session-roster.server';
+import { ApiError } from '@/lib/api.server';
 
 export async function loadPendingInvitesAction(): Promise<{
-    invitations?: IPendingClubInvitation[];
+    invitations?: TPendingInvitation[];
     message?: string;
 }> {
     try {
+        const [clubs, sessions] = await Promise.all([
+            pendingClubInvitations(),
+            pendingSessionInvitations(),
+        ]);
         return {
-            invitations: await apiRequest<IPendingClubInvitation[]>('/club-invitations/pending'),
+            invitations: [
+                ...clubs.map((invite) => ({ ...invite, kind: 'club' as const })),
+                ...sessions.map((invite) => ({ ...invite, kind: 'session' as const })),
+            ],
         };
     } catch (error) {
         return {
@@ -31,15 +40,16 @@ export async function loadPendingInvitesAction(): Promise<{
 export async function respondPendingInviteAction(
     id: string,
     decision: unknown,
+    kind: 'club' | 'session',
 ): Promise<{ message: string; resolved: boolean }> {
     const parsed = invitationDecisionSchema.safeParse({ decision });
     if (!parsed.success) return { message: 'Choose Accept or Decline.', resolved: false };
-    let result: TInvitationPreview;
+    let result;
     try {
-        result = await apiRequest(`/club-invitations/${encodeURIComponent(id)}/respond`, {
-            method: 'POST',
-            json: parsed.data,
-        });
+        result =
+            kind === 'session'
+                ? await respondPendingSessionInvitation(encodeURIComponent(id), parsed.data)
+                : await respondPendingClubInvitation(encodeURIComponent(id), parsed.data);
     } catch {
         return {
             message: 'The response could not be confirmed. Retry to check its current state.',
@@ -48,6 +58,11 @@ export async function respondPendingInviteAction(
     }
     if (result.state === 'accepted' || result.state === 'already-member') {
         revalidatePath('/app');
+        revalidatePath(`/clubs/${result.clubId}`);
+        if ('sessionId' in result && typeof result.sessionId === 'string') {
+            revalidatePath(`/sessions/${result.sessionId}`);
+            redirect(`/sessions/${result.sessionId}`);
+        }
         redirect(`/clubs/${result.clubId}`);
     }
     return {

@@ -163,7 +163,7 @@ export class SessionsService {
     }
 }
 
-async function canManage(
+export async function canManage(
     transaction: Prisma.TransactionClient,
     membership: Awaited<ReturnType<typeof findMembership>>,
 ) {

@@ -1,0 +1,58 @@
+.roster {
+    padding: var(--gap-lg);
+    margin-block: var(--gap-lg);
+    overflow-wrap: anywhere;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.header,
+.row,
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header h2 {
+    margin: 0;
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
+}
+
+.roster p {
+    color: var(--fg-secondary);
+}
+
+.list {
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    padding-block: var(--gap-md);
+    border-bottom: 1px solid var(--border);
+}
+
+.invite {
+    display: grid;
+    gap: var(--gap-sm);
+    max-width: 32rem;
+    margin-block: var(--gap-lg);
+}
+
+@media (width <= 575px) {
+    .roster {
+        padding: var(--gap-md);
+    }
+
+    .row {
+        align-items: flex-start;
+    }
+
+    .actions {
+        width: 100%;
+    }
+}

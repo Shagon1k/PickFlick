@@ -1,6 +1,6 @@
 'use client';
 
-import type { IPendingClubInvitation } from '@pickflick/contracts';
+import type { TPendingInvitation } from '@pickflick/contracts';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { useProductOverlay } from '@/components/shells/product-overlay';
@@ -15,7 +15,7 @@ export default function PendingInvites() {
     const open = activeOverlay === 'invites';
     const triggerRef = useRef<HTMLButtonElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
-    const [invitations, setInvitations] = useState<IPendingClubInvitation[]>([]);
+    const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
     const [loaded, setLoaded] = useState(false);
     const [pending, startTransition] = useTransition();
@@ -46,13 +46,17 @@ export default function PendingInvites() {
             startTransition(load);
         }
     }
-    function respond(invitationId: string, decision: 'accept' | 'decline') {
+    function respond(
+        invitationId: string,
+        decision: 'accept' | 'decline',
+        kind: 'club' | 'session',
+    ) {
         headerRef.current
             ?.querySelector<HTMLButtonElement>('button')
             ?.focus({ preventScroll: true });
         startTransition(async () => {
             try {
-                const result = await respondPendingInviteAction(invitationId, decision);
+                const result = await respondPendingInviteAction(invitationId, decision, kind);
                 setMessage(result.message);
                 if (result.resolved)
                     setInvitations((current) =>
@@ -94,7 +98,11 @@ export default function PendingInvites() {
                         <span>
                             <small>Pending</small>
                             <strong>Invites</strong>
-                            <small>Club invitations</small>
+                            <small>
+                                {invitations.some((invitation) => invitation.kind === 'session')
+                                    ? 'Club & Session invites'
+                                    : 'Club invitations'}
+                            </small>
                         </span>
                         <span className={styles.stub}>
                             <strong>{loaded ? invitations.length : '—'}</strong>
@@ -110,8 +118,7 @@ export default function PendingInvites() {
                     </Button>
                 </div>
                 <p aria-live="polite" role="status">
-                    {message ||
-                        (invitations.length === 0 ? 'No pending Club invitations.' : countLabel)}
+                    {message || (invitations.length === 0 ? 'No pending invitations.' : countLabel)}
                 </p>
                 {!loaded ? (
                     <Button
@@ -125,11 +132,17 @@ export default function PendingInvites() {
                 <ul className={styles.list}>
                     {invitations.map((invitation) => (
                         <li className={styles.row} key={invitation.id}>
-                            <small>Club invitation</small>
+                            <small>
+                                {invitation.kind === 'club'
+                                    ? 'Club invitation'
+                                    : 'Session invitation'}
+                            </small>
                             <h3>{invitation.clubName}</h3>
                             <p>
-                                Invited by {invitation.inviterName} · {invitation.memberCount}{' '}
-                                members
+                                Invited by {invitation.inviterName} ·{' '}
+                                {invitation.kind === 'club'
+                                    ? `${invitation.memberCount} members`
+                                    : (invitation.topic ?? 'Untitled Session')}
                             </p>
                             <p>
                                 Expires{' '}
@@ -140,14 +153,18 @@ export default function PendingInvites() {
                             <div className={styles.actions}>
                                 <Button
                                     disabled={pending}
-                                    onClick={() => respond(invitation.id, 'decline')}
+                                    onClick={() =>
+                                        respond(invitation.id, 'decline', invitation.kind)
+                                    }
                                     variant="secondary"
                                 >
                                     Decline
                                 </Button>
                                 <Button
                                     disabled={pending}
-                                    onClick={() => respond(invitation.id, 'accept')}
+                                    onClick={() =>
+                                        respond(invitation.id, 'accept', invitation.kind)
+                                    }
                                 >
                                     Accept
                                 </Button>
