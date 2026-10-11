@@ -7,6 +7,10 @@ export type {
     ClubLifecycle,
     ClubRole,
     MembershipStatus,
+    SessionParticipantStatus,
+    SessionPhase,
+    SessionType,
     UserStatus,
 } from './generated/prisma/enums.js';
 export { assertSafeSeedOrResetTarget } from './safety.js';
+export { readSessionRoster, snapshotSessionSettings } from './session.js';

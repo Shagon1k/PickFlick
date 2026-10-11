@@ -4,6 +4,7 @@ import { createDatabaseClient } from '../client.js';
 import { SYNTHETIC_FIXTURES } from '../fixtures.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { assertSafeSeedOrResetTarget } from '../safety.js';
+import { snapshotSessionSettings } from '../session.js';
 
 // Runs against the migrated and seeded local or test database. Every probe rolls back.
 const environment = loadDatabaseEnvironment();
@@ -78,6 +79,7 @@ describe('database constraints', () => {
                 data: {
                     id: '40000000-0000-4000-8000-000000000001',
                     clubId: SYNTHETIC_FIXTURES.club.id,
+                    ...(await snapshotSessionSettings(transaction, SYNTHETIC_FIXTURES.club.id)),
                     type: 'FULL_CYCLE',
                     phase: 'NOMINATION',
                 },
@@ -86,6 +88,7 @@ describe('database constraints', () => {
                 data: {
                     id: '40000000-0000-4000-8000-000000000002',
                     clubId: SYNTHETIC_FIXTURES.club.id,
+                    ...(await snapshotSessionSettings(transaction, SYNTHETIC_FIXTURES.club.id)),
                     type: 'PRE_SELECTED',
                     phase: 'WATCHING',
                 },
@@ -94,18 +97,20 @@ describe('database constraints', () => {
     });
 
     it('should allow several completed Past Sessions in one Club', async () => {
-        await expectAccepted((transaction) =>
+        await expectAccepted(async (transaction) =>
             transaction.session.createMany({
                 data: [
                     {
                         id: '40000000-0000-4000-8000-000000000003',
                         clubId: SYNTHETIC_FIXTURES.club.id,
+                        ...(await snapshotSessionSettings(transaction, SYNTHETIC_FIXTURES.club.id)),
                         type: 'PAST',
                         phase: 'COMPLETED',
                     },
                     {
                         id: '40000000-0000-4000-8000-000000000004',
                         clubId: SYNTHETIC_FIXTURES.club.id,
+                        ...(await snapshotSessionSettings(transaction, SYNTHETIC_FIXTURES.club.id)),
                         type: 'PAST',
                         phase: 'COMPLETED',
                     },

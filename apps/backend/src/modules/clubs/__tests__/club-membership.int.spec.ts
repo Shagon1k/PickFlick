@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IClubSettings } from '@pickflick/contracts';
+import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     createUser,
@@ -48,7 +49,13 @@ describe('Club membership boundaries', () => {
             },
         });
         await api.prisma.session.create({
-            data: { id: randomUUID(), clubId, phase: 'COMPLETED', type: 'PAST' },
+            data: {
+                ...(await snapshotSessionSettings(api.prisma, clubId)),
+                id: randomUUID(),
+                clubId,
+                phase: 'COMPLETED',
+                type: 'PAST',
+            },
         });
     });
     afterEach(async () => {

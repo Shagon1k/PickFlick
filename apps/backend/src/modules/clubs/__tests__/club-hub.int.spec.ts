@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IClubHub } from '@pickflick/contracts';
+import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     createUser,
@@ -39,6 +40,7 @@ describe('Club Hub projection', () => {
             data: {
                 id: randomUUID(),
                 clubId: first,
+                ...(await snapshotSessionSettings(api.prisma, first)),
                 type: 'FULL_CYCLE',
                 phase: 'NOMINATION',
                 topic: 'First Club private Session',
@@ -48,6 +50,7 @@ describe('Club Hub projection', () => {
             data: {
                 id: randomUUID(),
                 clubId: second,
+                ...(await snapshotSessionSettings(api.prisma, second)),
                 type: 'PAST',
                 phase: 'COMPLETED',
                 topic: 'Second Club private Session',
@@ -86,12 +89,20 @@ describe('Club Hub projection', () => {
 
     it('should retain open Rating Sessions beyond recent activity and prefer a blocking Session', async () => {
         const ratingId = randomUUID();
+        const settings = await snapshotSessionSettings(api.prisma, second);
         await api.prisma.session.createMany({
             data: [
-                { id: randomUUID(), clubId: first, type: 'FULL_CYCLE', phase: 'RATING' },
+                {
+                    ...(await snapshotSessionSettings(api.prisma, first)),
+                    id: randomUUID(),
+                    clubId: first,
+                    type: 'FULL_CYCLE',
+                    phase: 'RATING',
+                },
                 {
                     id: randomUUID(),
                     clubId: second,
+                    ...settings,
                     type: 'FULL_CYCLE',
                     phase: 'RATING',
                     updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -99,6 +110,7 @@ describe('Club Hub projection', () => {
                 {
                     id: ratingId,
                     clubId: second,
+                    ...settings,
                     type: 'FULL_CYCLE',
                     phase: 'RATING',
                     updatedAt: new Date('2026-01-02T00:00:00Z'),
@@ -106,6 +118,7 @@ describe('Club Hub projection', () => {
                 ...Array.from({ length: 5 }, () => ({
                     id: randomUUID(),
                     clubId: second,
+                    ...settings,
                     type: 'PAST' as const,
                     phase: 'COMPLETED' as const,
                     updatedAt: new Date('2026-02-01T00:00:00Z'),

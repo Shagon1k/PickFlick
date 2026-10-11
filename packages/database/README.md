@@ -15,3 +15,14 @@ The catalog uses `Movie.id` UUID as identity, `MovieExternalId` for unique sourc
 `MovieSourceCache` for independent source clocks, and configuration/locale keyed detail/search
 projections. The source migration preserves UUIDs and existing mappings, invalidates legacy JSON
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
+
+Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside
+its creation transaction; it locks the Club before reading. `readSessionRoster` locks a Session
+and returns accepted participants, their denominator, and phase/roster versions. Keep the
+transaction open through the phase decision. A database trigger versions roster insertions,
+deletions, and status changes; attendance-only edits keep the version. Session participants and
+invites use composite foreign keys to stay within one Club. Request authorization and invitation
+responses arrive with the Session workflows; these helpers are internal persistence operations.
+
+`src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
+coexistence, settings snapshots, roster serialization/rollback, and member-only invite storage.

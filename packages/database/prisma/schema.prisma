@@ -67,6 +67,14 @@ enum SessionPhase {
   CANCELLED
 }
 
+enum SessionParticipantStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  LEFT
+  REMOVED
+}
+
 model User {
   id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                    String            @unique
@@ -163,18 +171,21 @@ model Club {
 }
 
 model Membership {
-  id          String           @id @db.Uuid
-  clubId      String           @db.Uuid
-  userId      String           @db.Uuid
-  role        ClubRole         @default(MEMBER)
-  status      MembershipStatus @default(ACTIVE)
-  joinedAt    DateTime         @default(now()) @db.Timestamptz(3)
-  leftAt      DateTime?        @db.Timestamptz(3)
-  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
-  club        Club             @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  user        User             @relation(fields: [userId], references: [id], onDelete: Restrict)
-  auditEvents ClubAuditEvent[]
+  id                    String               @id @db.Uuid
+  clubId                String               @db.Uuid
+  userId                String               @db.Uuid
+  role                  ClubRole             @default(MEMBER)
+  status                MembershipStatus     @default(ACTIVE)
+  joinedAt              DateTime             @default(now()) @db.Timestamptz(3)
+  leftAt                DateTime?            @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @db.Timestamptz(3)
+  club                  Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  auditEvents           ClubAuditEvent[]
+  sessionParticipants   SessionParticipant[]
+  createdSessionInvites SessionInvite[]      @relation("SessionInviteCreator")
 
+  @@unique([id, clubId])
   // PostgreSQL migration owns the partial unique index for one ACTIVE row per User/Club.
   @@index([clubId, userId])
   @@index([userId, status])
@@ -205,21 +216,68 @@ model ClubAuditEvent {
 }
 
 model Session {
-  id           String       @id @db.Uuid
-  clubId       String       @db.Uuid
-  type         SessionType
-  phase        SessionPhase
-  scheduledAt  DateTime?    @db.Timestamptz(3)
-  location     String?
-  topic        String?
-  notes        String?
-  deadlineAt   DateTime?    @db.Timestamptz(3)
-  phaseVersion Int          @default(1)
-  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
-  club         Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  id                          String               @id @db.Uuid
+  clubId                      String               @db.Uuid
+  type                        SessionType
+  phase                       SessionPhase
+  scheduledAt                 DateTime?            @db.Timestamptz(3)
+  location                    String?
+  topic                       String?
+  notes                       String?
+  deadlineAt                  DateTime?            @db.Timestamptz(3)
+  phaseVersion                Int                  @default(1)
+  rosterVersion               Int                  @default(1)
+  selectionScaleMin           Int
+  selectionScaleMax           Int
+  showNominationAuthors       Boolean
+  showNominationsBeforeSubmit Boolean
+  showVoteResults             Boolean
+  showRatingResults           Boolean
+  useMonochromeMedia          Boolean
+  createdAt                   DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime             @updatedAt @db.Timestamptz(3)
+  club                        Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  participants                SessionParticipant[]
 
+  // PostgreSQL migration owns the partial unique index for one blocking Session per Club.
+  @@unique([id, clubId])
   @@index([clubId, phase])
+}
+
+model SessionParticipant {
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId    String                   @db.Uuid
+  membershipId String                   @db.Uuid
+  clubId       String                   @db.Uuid
+  status       SessionParticipantStatus @default(INVITED)
+  attended     Boolean?
+  createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                 @updatedAt @db.Timestamptz(3)
+  session      Session                  @relation(fields: [sessionId, clubId], references: [id, clubId], onDelete: Restrict)
+  membership   Membership               @relation(fields: [membershipId, clubId], references: [id, clubId], onDelete: Restrict)
+  invitations  SessionInvite[]
+
+  @@unique([sessionId, membershipId])
+  @@unique([id, clubId])
+  @@index([membershipId])
+}
+
+model SessionInvite {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenDigest         String             @unique @db.Char(64)
+  participantId       String             @db.Uuid
+  clubId              String             @db.Uuid
+  inviterMembershipId String             @db.Uuid
+  expiresAt           DateTime           @db.Timestamptz(3)
+  revokedAt           DateTime?          @db.Timestamptz(3)
+  respondedAt         DateTime?          @db.Timestamptz(3)
+  accepted            Boolean?
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  participant         SessionParticipant @relation(fields: [participantId, clubId], references: [id, clubId], onDelete: Restrict)
+  inviter             Membership         @relation("SessionInviteCreator", fields: [inviterMembershipId, clubId], references: [id, clubId], onDelete: Restrict)
+
+  @@index([participantId, createdAt])
+  @@index([inviterMembershipId])
 }
 
 model ClubInvite {

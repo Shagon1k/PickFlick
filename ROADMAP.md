@@ -216,9 +216,12 @@ remains undecided.
 
 ### Automatic phase transitions
 
-`N` is the phase's current participant roster; leaving or removal updates it before completion is
-checked. Every transition is idempotent and serialized so two clients or a deadline job cannot
-advance a Session twice.
+`N` is the count of accepted SessionParticipants, excluding invited, declined, left, and removed
+rows. A roster write increments `rosterVersion` in its transaction; attendance-only edits do not.
+Phase decisions lock the Session before reading its phase, `phaseVersion`, `rosterVersion`, and
+accepted participants, and keep that lock until the decision commits. Leaving or removal updates
+the participant state before completion is checked. Every transition is idempotent and serialized
+so two clients or a deadline job cannot advance a Session twice.
 
 | Phase      | Trigger                                        | Result                                                                         |
 | ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -767,7 +770,7 @@ The default source combination is PoiskKino + TheTVDB. Provider switching retain
 requires filling missing external correspondences; live response completeness remains separate.
 Refresh jobs remain the ADR-016 checkpoint.
 
-### Phase 9 — Session Creation & Participant Roster · Not started
+### Phase 9 — Session Creation & Participant Roster · In progress
 
 **Goal:** Full-cycle and pre-selected Sessions with a member-only roster and the one-blocking-Session
 guarantee.

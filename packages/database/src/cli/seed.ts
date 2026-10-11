@@ -3,6 +3,7 @@ import { loadDatabaseEnvironment } from '@pickflick/config/environment';
 import { createDatabaseClient } from '../client.js';
 import { SYNTHETIC_FIXTURES } from '../fixtures.js';
 import { assertSafeSeedOrResetTarget } from '../safety.js';
+import { snapshotSessionSettings } from '../session.js';
 
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);
@@ -68,6 +69,7 @@ try {
         await transaction.session.upsert({
             where: { id: SYNTHETIC_FIXTURES.pastSession.id },
             create: {
+                ...(await snapshotSessionSettings(transaction, SYNTHETIC_FIXTURES.club.id)),
                 id: SYNTHETIC_FIXTURES.pastSession.id,
                 clubId: SYNTHETIC_FIXTURES.club.id,
                 type: 'PAST',
