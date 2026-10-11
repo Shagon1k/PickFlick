@@ -1,0 +1,41 @@
+.picker {
+    min-width: 0;
+}
+
+.picker p {
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.results {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.results button {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: var(--hit);
+    padding: var(--gap-sm);
+    color: var(--fg);
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.results button:hover,
+.results button[aria-selected='true'] {
+    background: var(--gold-soft);
+}
+
+.results strong {
+    overflow-wrap: anywhere;
+}
+
+.results span {
+    color: var(--fg-secondary);
+}

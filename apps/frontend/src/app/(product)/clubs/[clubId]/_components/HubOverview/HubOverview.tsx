@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { selectClubAction } from '@/app/(product)/app/actions';
 import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
+import ButtonLink from '@/components/ui/Button/ButtonLink';
 
 import styles from '../../page.module.scss';
 
@@ -57,10 +58,16 @@ function callSheetPhase(session?: IClubHubSession): string {
 
 export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
     const { club, activeSession } = hub;
+    const canCreate =
+        hub.permissions.manageSessions &&
+        !['NOMINATION', 'SELECTION', 'WATCHING'].includes(activeSession?.phase ?? '');
     const choices = clubChoices(clubs, club);
     const currentIndex = choices.findIndex(({ id }) => id === club.id);
-    const previous = choices[(currentIndex - 1 + choices.length) % choices.length];
-    const next = choices[(currentIndex + 1) % choices.length];
+    const previous =
+        choices.length > 1
+            ? choices[(currentIndex - 1 + choices.length) % choices.length]
+            : undefined;
+    const next = choices.length > 1 ? choices[(currentIndex + 1) % choices.length] : undefined;
     return (
         <main className={styles.hub}>
             <div className={styles.stage}>
@@ -70,18 +77,7 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                         <Link href="/clubs/new">Create a Club</Link>
                     </div>
                     <div className={styles.carousel}>
-                        {choices.length > 1 && previous ? (
-                            <form action={selectClubAction}>
-                                <input name="clubId" type="hidden" value={previous.id} />
-                                <button
-                                    aria-label="Previous Club"
-                                    className={styles.arrow}
-                                    type="submit"
-                                >
-                                    ←
-                                </button>
-                            </form>
-                        ) : null}
+                        <ClubArrow club={previous} label="Previous Club" direction="←" />
                         <div className={styles.clubChoices}>
                             {choices.map((choice) => (
                                 <ClubChoice
@@ -91,18 +87,7 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                                 />
                             ))}
                         </div>
-                        {choices.length > 1 && next ? (
-                            <form action={selectClubAction}>
-                                <input name="clubId" type="hidden" value={next.id} />
-                                <button
-                                    aria-label="Next Club"
-                                    className={styles.arrow}
-                                    type="submit"
-                                >
-                                    →
-                                </button>
-                            </form>
-                        ) : null}
+                        <ClubArrow club={next} label="Next Club" direction="→" />
                     </div>
                 </nav>
 
@@ -185,6 +170,11 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
             </nav>
 
             <div className={styles.overview}>
+                {canCreate ? (
+                    <ButtonLink href={`/clubs/${club.id}/sessions/new`} variant="primary">
+                        Create Session
+                    </ButtonLink>
+                ) : null}
                 <section aria-label="Club statistics" className={styles.stats}>
                     <div>
                         <strong>{hub.memberCount}</strong>
@@ -211,7 +201,11 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                         <h2>Active Session</h2>
                         {activeSession ? (
                             <>
-                                <p>{sessionName(activeSession)}</p>
+                                <p>
+                                    <Link href={`/sessions/${activeSession.id}`}>
+                                        {sessionName(activeSession)}
+                                    </Link>
+                                </p>
                                 <p className={styles.quiet}>
                                     Phase: {activeSession.phase.toLowerCase()}
                                 </p>
@@ -223,6 +217,16 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                         )}
                     </section>
                 </div>
+                <SessionRows
+                    title="Active Ratings"
+                    sessions={hub.ratingSessions}
+                    empty="No Sessions awaiting ratings."
+                />
+                <SessionRows
+                    title="Session history"
+                    sessions={hub.historySessions}
+                    empty="No completed or cancelled Sessions yet."
+                />
                 <section className={styles.card}>
                     <h2>Recent Activity</h2>
                     {hub.recentSessions.length > 0 ? (
@@ -230,7 +234,10 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                             {hub.recentSessions.map((session) => (
                                 <li key={session.id}>
                                     <span>
-                                        {sessionName(session)} · {session.phase.toLowerCase()}
+                                        <Link href={`/sessions/${session.id}`}>
+                                            {sessionName(session)}
+                                        </Link>{' '}
+                                        · {session.phase.toLowerCase()}
                                     </span>
                                     <time dateTime={session.updatedAt}>
                                         {sessionDate(session.updatedAt)}
@@ -244,5 +251,53 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                 </section>
             </div>
         </main>
+    );
+}
+
+function SessionRows({
+    title,
+    sessions,
+    empty,
+}: {
+    title: string;
+    sessions: IClubHubSession[];
+    empty: string;
+}) {
+    return (
+        <section className={styles.card}>
+            <h2>{title}</h2>
+            {sessions.length ? (
+                <ul className={styles.activity}>
+                    {sessions.map((session) => (
+                        <li key={session.id}>
+                            <Link href={`/sessions/${session.id}`}>{sessionName(session)}</Link>
+                            <span>{session.phase.toLowerCase()}</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className={styles.quiet}>{empty}</p>
+            )}
+        </section>
+    );
+}
+
+function ClubArrow({
+    club,
+    label,
+    direction,
+}: {
+    club?: IClubSummary;
+    label: string;
+    direction: string;
+}) {
+    if (!club) return null;
+    return (
+        <form action={selectClubAction}>
+            <input name="clubId" type="hidden" value={club.id} />
+            <button aria-label={label} className={styles.arrow} type="submit">
+                {direction}
+            </button>
+        </form>
     );
 }

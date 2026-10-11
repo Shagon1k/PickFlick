@@ -38,6 +38,9 @@ enum MembershipStatus {
 }
 
 enum ClubAuditAction {
+  SESSION_CREATED
+  SESSION_UPDATED
+  SESSION_CANCELLED
   MEMBERSHIP_ROLE_CHANGED
   ADMIN_TRANSFERRED
   CLUB_SETTINGS_UPDATED
@@ -204,6 +207,8 @@ model ClubAuditEvent {
   previousLifecycle   ClubLifecycle?
   nextLifecycle       ClubLifecycle?
   createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  sessionId           String?         @db.Uuid
+  session             Session?        @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   club                Club            @relation(fields: [clubId], references: [id], onDelete: Restrict)
   actor               User            @relation("ClubAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
   subject             User            @relation("ClubAuditSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
@@ -224,6 +229,10 @@ model Session {
   location                    String?
   topic                       String?
   notes                       String?
+  movieId                     String?              @db.Uuid
+  movie                       Movie?               @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  detailsVersion              Int                  @default(1)
+  auditEvents                 ClubAuditEvent[]
   deadlineAt                  DateTime?            @db.Timestamptz(3)
   phaseVersion                Int                  @default(1)
   rosterVersion               Int                  @default(1)
@@ -306,6 +315,7 @@ model Movie {
   externalIds MovieExternalId[]
   sources     MovieSourceCache[]
   details     MovieDetailsCache[]
+  sessions    Session[]
 }
 
 model MovieExternalId {

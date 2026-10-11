@@ -1,0 +1,74 @@
+.main {
+    position: relative;
+    display: grid;
+    place-items: start center;
+    min-height: 100svh;
+    padding: 96px var(--gutter) var(--gap-xl);
+}
+
+.back {
+    position: absolute;
+    top: var(--gap-md);
+    left: var(--gutter);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--hit);
+    color: var(--fg-secondary);
+}
+
+.scene {
+    display: grid;
+    justify-items: center;
+    width: min(100%, 432px);
+}
+
+.mascot {
+    position: relative;
+    z-index: 1;
+    width: 240px;
+    height: auto;
+    margin: 25px 0 -80px;
+    transform: translateY(-55px);
+}
+
+.card {
+    width: 100%;
+    padding: calc(var(--gap-lg) + var(--gap-xs)) calc(var(--gap-lg) + var(--gap-xs) / 2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.card h1 {
+    margin: 0 0 var(--gap-xs);
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
+    text-align: center;
+}
+
+.lead {
+    margin: 0 0 var(--gap-lg);
+    color: var(--fg-secondary);
+    text-align: center;
+}
+
+.ornament {
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--fg-secondary);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+@media (width <= 575px) {
+    .main {
+        padding: 72px var(--gutter) var(--gap-lg);
+    }
+
+    .mascot {
+        width: 140px;
+    }
+
+    .card {
+        padding: var(--gap-lg) var(--gutter);
+    }
+}
