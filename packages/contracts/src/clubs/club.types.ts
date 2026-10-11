@@ -54,6 +54,9 @@ export interface IClubMember {
 }
 
 export const CLUB_AUDIT_ACTIONS = [
+    'SESSION_CREATED',
+    'SESSION_UPDATED',
+    'SESSION_CANCELLED',
     'MEMBERSHIP_ROLE_CHANGED',
     'ADMIN_TRANSFERRED',
     'CLUB_SETTINGS_UPDATED',
@@ -113,6 +116,8 @@ export interface IClubHub {
     completedSessionCount: number;
     activeSession?: IClubHubSession;
     recentSessions: IClubHubSession[];
+    ratingSessions: IClubHubSession[];
+    historySessions: IClubHubSession[];
 }
 
 /** Why a Club request conflicted with current state; the web maps each to recovery copy. */

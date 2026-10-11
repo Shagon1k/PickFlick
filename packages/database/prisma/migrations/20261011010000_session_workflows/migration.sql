@@ -1,0 +1,13 @@
+ALTER TYPE "ClubAuditAction" ADD VALUE 'SESSION_CREATED';
+ALTER TYPE "ClubAuditAction" ADD VALUE 'SESSION_UPDATED';
+ALTER TYPE "ClubAuditAction" ADD VALUE 'SESSION_CANCELLED';
+
+ALTER TABLE "Session"
+  ADD COLUMN "movieId" UUID,
+  ADD COLUMN "detailsVersion" INTEGER NOT NULL DEFAULT 1,
+  ADD CONSTRAINT "Session_movieId_fkey" FOREIGN KEY ("movieId") REFERENCES "Movie"(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "Session_detailsVersion_check" CHECK ("detailsVersion" > 0);
+
+ALTER TABLE "ClubAuditEvent"
+  ADD COLUMN "sessionId" UUID,
+  ADD CONSTRAINT "ClubAuditEvent_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"(id) ON DELETE RESTRICT ON UPDATE CASCADE;

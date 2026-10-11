@@ -316,7 +316,7 @@ the same result rules and cannot advance Nomination with no films.
 | AuthSession            | User, opaque token, expiry                                                                  | Server-side session; revoked on suspension.                                     |
 | Club                   | Admin, name, description, avatar, plan limits, visibility settings, lifecycle               | May be temporarily adminless; shared history survives account deletion.         |
 | Membership             | Club, User, role, status, joined/left times                                                 | One active Membership per User and Club.                                        |
-| ClubAuditEvent         | Club, actor, action, time                                                                   | Records role, settings, avatar, and lifecycle changes without personal content. |
+| ClubAuditEvent         | Club, actor, action, time                                                                   | Audits Club and Session changes without personal content.                       |
 | ClubInvite             | token digest, Club, inviter, expiry, state                                                  | Inspectable only within the privacy-safe invitation contract.                   |
 | Session                | Club, type, phase, date, location, topic, notes, selected Movie, deadline, closure metadata | Type is Full Cycle, Pre-selected, or Past; the phase decides whether it blocks. |
 | SessionParticipant     | Session, Membership, invitation and attendance state                                        | Owns the phase denominator and the attendance snapshot.                         |

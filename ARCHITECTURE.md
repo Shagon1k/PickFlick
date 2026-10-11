@@ -70,16 +70,17 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                           | Owns                                                                                                                | State                                                                                    |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| auth                                                                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                            |
-| clubs                                                                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                                   |
-| contact                                                                          | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                                   |
-| email                                                                            | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                                   |
-| storage                                                                          | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                   |
-| health                                                                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                   |
-| movies                                                                           | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search/details and stored catalog images; refresh worker pending |
-| Sessions, Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                 |
+| Module                                                                 | Owns                                                                                                                | State                                                                                    |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| auth                                                                   | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                | Partial — Apple not activated                                                            |
+| clubs                                                                  | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit. | Active                                                                                   |
+| contact                                                                | `POST /contact`, rate-limited, sent directly through the email module.                                              | Active                                                                                   |
+| email                                                                  | Resend client; a logging stub when delivery is disabled.                                                            | Active                                                                                   |
+| storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                   | Active                                                                                   |
+| health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                           | Active                                                                                   |
+| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states. | Partial — authenticated search/details and stored catalog images; refresh worker pending |
+| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, and audit.                                            | Active — invitations and phase workflows pending                                         |
+| Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                             | Proposed                                                                                 |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -123,7 +124,7 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images               |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, fourteen migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, fifteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
@@ -163,7 +164,8 @@ Phase 20 can replace entitlement input without making browser state an authoriza
 and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.
 The unresolved choice among excess administered Clubs is not implemented.
 
-Session persistence foundations are Active; Session HTTP routes and screens remain Proposed.
+Session persistence, live creation, detail, editing, and cancellation are Active. Invitations and
+phase workflows remain Proposed.
 Each new Session requires its own score bounds and five visibility/media flags. The internal
 `snapshotSessionSettings` helper locks the Club and reads those fields; creation must call it
 inside the same transaction as the Session insert. Club settings edits do not change saved Session
@@ -186,6 +188,31 @@ accepted participant identities, and their count. Callers must use a transaction
 through the phase decision. Workflow writes take the Club lock before the Session lock and before
 participant writes. #41 must update participant state on Club departure before checking completion;
 no automatic transition or membership-departure propagation is implemented by this foundation.
+
+`POST /clubs/:clubId/sessions` validates live modes, date, location, optional topic/notes/deadline,
+and a canonical Movie UUID for pre-selected Sessions. Full-cycle starts in Nomination;
+pre-selected starts in Watching. The caller supplies a v4 UUID retained across retries. A saved
+`SESSION_CREATED` audit event identifies its creator; an authorized replay with unchanged details
+returns the existing Session without another insert. A changed payload or different creator
+conflicts. Creation locks the Club and checks current operator role, access,
+the blocking slot, and Movie existence before saving settings and audit together.
+
+`GET /sessions/:sessionId` requires current Club Membership and returns a private/no-store detail
+projection. `PATCH /sessions/:sessionId` and `POST /sessions/:sessionId/cancel` lock Club then
+Session and re-read Membership/access. Edits change only date, location, topic, notes, and the
+nomination deadline; type, Movie and settings snapshots stay fixed. `detailsVersion` rejects stale
+writes; an identical edit is a no-op. Cancellation requires typed `CANCEL`, increments both
+versions, revokes pending invitations, retains history and releases the blocking slot. Repeated
+cancellation creates no extra audit event. Completed and Cancelled Sessions cannot be edited.
+Archived, adminless and over-limit Clubs follow the existing manage-Sessions restriction.
+
+Migration 15 adds the nullable Movie relation, details version, and Session references/actions in
+Club audit events. Legacy skeleton Sessions keep nullable details and Movies; no history is invented.
+Later phase-transition implementations must increment `detailsVersion` alongside `phaseVersion`
+so an operator must review the current Session before cancelling it.
+Hub responses include every open Rating Session and the twenty latest Completed/Cancelled rows,
+independently of recent activity. Detail and Hub reads use repeatable-read snapshots. No worker,
+provider call during creation, new dependency, or new environment variable is introduced.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 

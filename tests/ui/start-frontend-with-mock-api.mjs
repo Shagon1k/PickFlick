@@ -6,6 +6,7 @@ import { handleMovieDetails } from './movie-details.mjs';
 import { handleMovieSearch } from './movie-search.mjs';
 import { readJson, sendError, sendJson } from './mock-http.mjs';
 import { handlePendingInvitation } from './pending-invites.mjs';
+import { handleSessionWorkflow, sessionHub } from './session-workflows.mjs';
 
 const clubsBySession = new Map();
 const removedMembersBySession = new Set();
@@ -25,6 +26,7 @@ const settingsProjection = (token) =>
     );
 
 function hubClubs(token) {
+    if (token?.includes('session-workflow')) return [settingsProjection(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
     }
@@ -40,6 +42,7 @@ function hubClubs(token) {
 }
 
 function hubProjection(token, clubId) {
+    if (token?.includes('session-workflow') && clubId === settingsClubId) return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
     if (!club) {
         return null;
@@ -53,6 +56,8 @@ function hubProjection(token, clubId) {
             sessionCount: 0,
             completedSessionCount: 0,
             recentSessions: [],
+            ratingSessions: [],
+            historySessions: [],
         };
     }
     const second = clubId === secondClubId;
@@ -75,6 +80,8 @@ function hubProjection(token, clubId) {
         completedSessionCount: second ? 3 : 0,
         activeSession: session,
         recentSessions: [session],
+        ratingSessions: second ? [session] : [],
+        historySessions: [],
     };
 }
 
@@ -373,6 +380,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (handleMovieDetails(request, response, pathname, sessionToken(request))) return;
     if (handleMovieSearch(request, response, pathname, sessionToken(request))) return;
+    if (handleSessionWorkflow(request, response, pathname, sessionToken(request))) return;
     const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
     if (
         handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>

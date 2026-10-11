@@ -4,6 +4,8 @@ describe('resolveAuthReturnTarget', () => {
     it.each([
         '/app',
         '/movies/10000000-0000-4000-8000-000000000031',
+        '/sessions/30000000-0000-4000-8000-000000000040',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions/new',
         '/invite/club/invite_token-123',
         '/invite/session/invite_token-123',
         '/clubs/new',
@@ -20,6 +22,9 @@ describe('resolveAuthReturnTarget', () => {
         '/app?next=https://evil.example',
         '/admin',
         '/movies/not-a-uuid',
+        '/sessions/not-a-uuid',
+        '/sessions/30000000-0000-4000-8000-000000000040?next=//evil.example',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions/new/extra',
         '/movies/10000000-0000-4000-8000-000000000031?next=//evil.example',
         '/invite/club/token/extra',
         '/clubs/not-a-uuid/settings',

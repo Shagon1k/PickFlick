@@ -51,6 +51,8 @@ export class ClubsService {
                     ratingSession,
                     recent,
                     admin,
+                    ratings,
+                    history,
                 ] = await Promise.all([
                     transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
                     transaction.session.count({
@@ -77,6 +79,15 @@ export class ClubsService {
                         where: { clubId, role: 'ADMIN', status: 'ACTIVE' },
                         select: { id: true },
                     }),
+                    transaction.session.findMany({
+                        where: { clubId, phase: 'RATING' },
+                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                    }),
+                    transaction.session.findMany({
+                        where: { clubId, phase: { in: ['COMPLETED', 'CANCELLED'] } },
+                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+                        take: 20,
+                    }),
                 ]);
                 const access = clubAccess(
                     membership.club.lifecycle,
@@ -98,6 +109,8 @@ export class ClubsService {
                     completedSessionCount,
                     ...(activeSession ? { activeSession: toHubSession(activeSession) } : {}),
                     recentSessions: recent.map(toHubSession),
+                    ratingSessions: ratings.map(toHubSession),
+                    historySessions: history.map(toHubSession),
                 };
             },
             { isolationLevel: 'RepeatableRead' },
