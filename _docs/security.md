@@ -67,6 +67,11 @@ A forged request from another site needs the session cookie, and several layers 
 - Club rules are re-read from the database on every request. A Club you are not an active member of
   answers `404`, so its existence does not leak.
 - App Admin grants no Club rights.
+- Session invites require their exact target's active Membership before any preview fields or
+  response IDs are returned. Invalid, expired, revoked and ineligible access all return the same
+  detail-free denial. Accepting updates a SessionParticipant and never creates Membership.
+  Session token material is omitted from pending rows and audit events; raw links appear only at
+  creation and in the recipient link flow.
 
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 

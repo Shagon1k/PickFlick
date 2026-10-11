@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { loginPath } from '@/api/session.server';
+import { getSessionRoster } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -15,8 +16,9 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     await connection();
     const { sessionId } = await params;
     let session;
+    let roster;
     try {
-        session = await getSession(sessionId);
+        [session, roster] = await Promise.all([getSession(sessionId), getSessionRoster(sessionId)]);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
             redirect(loginPath(`/sessions/${sessionId}`));
@@ -33,7 +35,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     }
     return (
         <ProductFrame>
-            <SessionDetails session={session} />
+            <SessionDetails session={session} roster={roster} />
         </ProductFrame>
     );
 }

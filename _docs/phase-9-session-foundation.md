@@ -31,8 +31,8 @@ Scope and phase acceptance live in [ROADMAP.md](../ROADMAP.md#phase-9--session-c
 - Roster writes lock the Session and increment its version transactionally. A locked roster read
   returns accepted participant identities and their count with phase and roster versions. Keep
   that lock through later serialized transitions. Follow Club → Session → participant lock order.
-- #41 must propagate Club departure to Session participant state before completion checks. This
-  foundation has no automatic phase transitions, invitation routes, or user-facing Session flow.
+- Club departure propagation and invitation/roster routes are delivered by #41 below. Automatic
+  phase transitions remain outside this foundation.
 
 ## Verification evidence
 
@@ -118,3 +118,44 @@ Review fix round 1 for run r_53b9de1c80cc70771c0b:
   followed by browser Back to the previously visited Hub. No test or implementation changes intervene.
 - Verification uses Node 24.15.0, pnpm 11.25.0 and installed dependencies with automatic reinstall
   disabled because its store writes are outside the sandbox. Repository configuration is unchanged.
+
+## Member-only Session invitations and roster (#41)
+
+Run `r_fd9b79bfd880ed773b97` uses managed branch
+`PF-41_9-3-implement-member-only-session`.
+
+- Reuse existing SessionInvite/SessionParticipant storage, the roster-version trigger, Club →
+  Session locks, audit events, the UI kit and invitation scene. Migration 16 adds only audit enum
+  values; apply it before running the new application image.
+- Target active Memberships with seven-day, single-use links. Replacing a link revokes the previous
+  pending link. Preview and response require the exact recipient, active Club and open Session;
+  unavailable access returns no protected fields. Acceptance never creates Membership.
+- Pending Session invitations share the product ticket. Session detail projects accepted count,
+  participant state, invite state and operator/member controls in one snapshot.
+- Session leave/removal and Club departure update open participants and revoke pending links in
+  the same transaction. Completed history stays intact. Archived Clubs allow leave; adminless and
+  excess-member restrictions preserve existing participation and roster recovery.
+- No notifications, worker, phase transitions, attendance editing or past Session workflows are added.
+- Exact-head hosted preview and owner visual acknowledgement remain pending; do not mark completion.
+
+Verification for run `r_fd9b79bfd880ed773b97`:
+
+- `pnpm verify` passes with Node 24.15.0 and pnpm 11.25.0: guarded security audit, lint,
+  knip, formatting, types, 388 unit tests across 43 files and both application builds. Lint
+  reports three pre-existing frontend warnings; no dependencies or runtime variables changed.
+- All 119 integration tests across 13 files pass against an isolated, seeded PostgreSQL 17.6
+  test database. The eleven new Session roster tests cover private denial, Membership preservation,
+  pending responses, expiry/replacement/revocation, typed confirmations, concurrent commands,
+  Club departure, terminal history and restricted Clubs.
+- All sixteen migrations apply to a fresh database. The upgrade probe applies the prior fifteen
+  migrations, seeds them, then applies only migration 16 successfully.
+- All 37 browser checks pass: the complete PR smoke selection plus all nine Session roster
+  checks. These cover sign-in continuation/private denial, acceptance and leave, targeted link
+  creation/revocation/removal, focus return, pending responses, retained previews on failures,
+  offline feedback, axe and overflow at 390, 768, 1024 and 1440. Invitation and roster captures
+  were inspected. No visual baselines changed.
+- Browser workflows use the mock API; real API/database boundaries are covered by integration
+  tests. A hosted full-stack journey remains unverified.
+- Verification uses temporary loopback ports after an interrupted mock API left its frontend
+  listener on the default UI port. Repository test configuration stays unchanged.
+- Exact-head hosted preview and owner visual acknowledgement are pending.

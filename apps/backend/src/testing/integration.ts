@@ -46,6 +46,8 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     const clubIds = [...new Set(memberships.map(({ clubId }) => clubId))];
     await prisma.clubInvite.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.clubAuditEvent.deleteMany({ where: { clubId: { in: clubIds } } });
+    await prisma.sessionInvite.deleteMany({ where: { clubId: { in: clubIds } } });
+    await prisma.sessionParticipant.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.session.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.membership.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.club.deleteMany({ where: { id: { in: clubIds } } });
