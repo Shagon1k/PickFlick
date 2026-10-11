@@ -677,3 +677,11 @@ The canonical visual inventory is [`asset-catalog.html`](asset-catalog.html); it
 - Movie posters use `object-fit: cover` with a deliberate focal position. Grayscale-at-rest → original-color-on-hover is a component behavior, not a destructive asset edit.
 - Reference captures are intentionally absent from this final package and must not be imported into production source bundles.
 - Fixture posters currently reused under multiple movie titles are flagged in `asset-manifest.json` and must be replaced with distinct provider fixtures before implementation.
+
+## Nomination suggestions
+
+The compact suggestions carousel beside Nomination search reuses the current user's own
+nominations from earlier Sessions in the current Club with a resolved winner, where that Movie
+was not selected. Suggestions come from Nomination history. Selecting a card uses the normal
+nomination flow and its one-nomination-per-participant rule. There is no separate saved-film
+entity or manual add/remove UI. Fixture cards illustrate the layout, not eligible history.

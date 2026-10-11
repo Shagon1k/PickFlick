@@ -36,9 +36,9 @@ export const landingFeatures = [
     },
     {
         icon: 'clock',
-        title: 'Your bench, your picks',
+        title: 'Bring back your past picks',
         description:
-            'Past nominations that did not win stay available as presets for a future Session.',
+            'Your past nominations in the current Club that did not win appear as suggestions for a future Session.',
     },
     {
         icon: 'clubs',

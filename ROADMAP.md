@@ -81,7 +81,8 @@ out when listed under Out.
 
 - Full-cycle, pre-selected, and past Session modes.
 - Member-only Session invitations and a participant roster.
-- Nomination through the catalog facade, one nomination per participant, and a reusable Club Bench.
+- Nomination through the catalog facade, one nomination per participant, and suggestions from the
+  user's own past nominations in the current Club that did not win.
 - Scored Selection on the Club's `0..N` scale (N from 1 to 10; see Selection rules).
 - Deterministic tie-breaking and result visibility set by plan and Club settings.
 - Optional nomination deadline and the automatic transitions in section 3.
@@ -313,7 +314,7 @@ the same result rules and cannot advance Nomination with no films.
 | Ballot           | A participant's immutable scores for every nomination.                                                  | `SelectionBallot`           |
 | Session Rating   | A participant's historical 1–10 response to one screening.                                              | `SessionRating`             |
 | Personal Rating  | A User's current, editable rating for a Movie.                                                          | `PersonalMovieRating`       |
-| Bench            | Films a Club saved for quick future nomination.                                                         | `ClubBenchItem`             |
+| Suggestions      | The user's past losing nominations in the current Club, offered for reuse.                              | `Nomination` history        |
 | Watchlist        | A User's saved films with a viewing priority.                                                           | `WatchlistItem`             |
 | Rating phase     | The non-blocking period after watching while attendees rate.                                            | `RATING`                    |
 | Completed        | A closed Session whose visible results and history are stable.                                          | `COMPLETED`                 |
@@ -333,7 +334,6 @@ the same result rules and cannot advance Nomination with no films.
 | SessionParticipant     | Session, Membership, invitation and attendance state                                        | Owns the phase denominator and the attendance snapshot.                         |
 | SessionInvite          | token digest, Session, invited Membership, expiry, state                                    | Valid only for an existing member.                                              |
 | Movie                  | UUID, external-source mappings, normalized metadata, media, source freshness                | Canonical UUID; source IDs are separately unique external mappings.             |
-| ClubBenchItem          | Club, Movie, creator, time                                                                  | Shortcut for a future nomination.                                               |
 | Nomination             | Session, participant, Movie, submitted time, provenance                                     | One per participant; imported past data is marked.                              |
 | SelectionBallot        | Session, participant, submitted time                                                        | Immutable after submission.                                                     |
 | SelectionScore         | Ballot, Nomination, score                                                                   | Validated against the Club's scale snapshot.                                    |
@@ -827,15 +827,17 @@ expired.
 (introduced here if Phase 8 did not); notification events may be stored before Phase 17 adds the
 inbox.
 
-**Tickets:** [#42](https://github.com/Shagon1k/PickFlick/issues/42) nominations, Club Bench,
-visibility · [#43](https://github.com/Shagon1k/PickFlick/issues/43) deadlines with durable
+**Tickets:** [#42](https://github.com/Shagon1k/PickFlick/issues/42) nominations, personal
+suggestions, visibility · [#43](https://github.com/Shagon1k/PickFlick/issues/43) deadlines with durable
 reconciliation · [#44](https://github.com/Shagon1k/PickFlick/issues/44) serialized transitions and
 live progress events
 
 **Scope:**
 
-- [ ] Implement Nomination and Club Bench with one nomination per participant, catalog selection, and
-      Bench shortcuts.
+- [ ] Implement Nomination with one nomination per participant, catalog selection, and suggestions
+      from the user's own past nominations in the current Club that did not win.
+      Derive suggestions from Nomination history; selecting one uses the normal nomination flow.
+      Do not add a separate saved-film entity or manual add/remove operations.
 - [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
 - [ ] Implement durable delayed deadline jobs with stable IDs, stale-job guards, periodic overdue
@@ -852,6 +854,8 @@ live progress events
 - [ ] Complete, sole-nomination, zero/one/many at deadline, changed deadline, cancelled, restart,
       and reconciliation cases pass.
 - [ ] Visibility settings hide nominations and nominators when disabled.
+- [ ] Suggestions contain only the current user's nominations from earlier Sessions in this Club
+      with a resolved winner, where the nominated Movie was not selected.
 - [ ] The Nomination UI, progress, and controls meet the responsive and accessibility contracts.
 
 **Out of scope:** Selection scoring and notification inbox and email delivery.
@@ -1410,6 +1414,7 @@ the MVP
 | Contact delivery                  | Developer     | The API emails each valid Contact message through Resend and answers `503` if delivery fails; the form keeps the text for a retry. Messages are not stored.                                                                                                                                   | Phase 6, 2026-09-26.                                                                                                      |
 | Worker, Redis, and operation IDs  | Developer     | Removed until needed: the worker and Redis return with the first background job (ADR-014); Club commands dropped caller operation IDs because serialized database checks already make the observed races safe.                                                                                | Phase 6, 2026-09-26.                                                                                                      |
 | Code conventions                  | Developer     | Follow TailorTales: `apps/frontend` and `apps/backend`, zod at boundaries (ADR-012), the UI kit on unstyled Mantine inside the frontend (ADR-013), deployment logic in workflow steps, and house style enforced by ESLint.                                                                    | Phase 6, 2026-09-26.                                                                                                      |
+| Nomination suggestions            | Product owner | Reuse the user's own past losing nominations in the current Club as suggestions derived from Nomination history. This replaces the previously planned shared saved-film entity and manual list management.                                                                                    | Owner clarification, 2026-10-12; [#42](https://github.com/Shagon1k/PickFlick/issues/42).                                  |
 
 ### Open questions
 

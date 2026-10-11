@@ -487,16 +487,16 @@
     .search-result .sr-title { font-size: var(--fs-body-sm); font-weight: 500; }
     .search-result .sr-year { font-size: var(--fs-caption); color: var(--muted); }
 
-    .bench-carousel { display: flex; gap: var(--gap-sm); overflow-x: auto; padding-bottom: 8px; margin-top: 4px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-    .bench-card {
+    .suggestion-carousel { display: flex; gap: var(--gap-sm); overflow-x: auto; padding-bottom: 8px; margin-top: 4px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .suggestion-card {
       flex-shrink: 0; width: 112px; background: transparent;
       border: 0; border-radius: 0;
       padding: 0; cursor: pointer; transition: transform 0.15s;
     }
-    .bench-card:hover { transform: translateY(-3px); }
-    .bench-card .bench-poster { width: 100%; aspect-ratio: 2/3; border-radius: 6px; background: var(--surface-lit); border: 1px solid var(--border); margin-bottom: 8px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-micro); font-family: var(--font-mono); }
-    .bench-card .bench-title { font-size: var(--fs-meta); font-weight: 600; margin: 0; }
-    .bench-card .bench-year { font-size: var(--fs-caption); color: var(--muted); margin: 2px 0 0; }
+    .suggestion-card:hover { transform: translateY(-3px); }
+    .suggestion-card .suggestion-poster { width: 100%; aspect-ratio: 2/3; border-radius: 6px; background: var(--surface-lit); border: 1px solid var(--border); margin-bottom: 8px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-micro); font-family: var(--font-mono); }
+    .suggestion-card .suggestion-title { font-size: var(--fs-meta); font-weight: 600; margin: 0; }
+    .suggestion-card .suggestion-year { font-size: var(--fs-caption); color: var(--muted); margin: 2px 0 0; }
 
     [data-od-id="nomination-actions"] { grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); align-items: start; }
     [data-od-id="find-nominate"] { border-color: var(--border-lit) !important; }
@@ -1632,22 +1632,22 @@
           <div class="sprocket-sm" aria-hidden="true" style="margin: 16px 0;">
             <span class="sprocket-dot"></span><span class="sprocket-dot"></span><span class="sprocket-dot"></span>
           </div>
-          <p style="color: var(--muted); font-size: var(--fs-caption); margin: 0 0 8px;">Quick picks from your bench</p>
-          <div class="bench-carousel">
-            <div class="bench-card" onclick="nominateFromBench('The Lighthouse')">
-              <div class="bench-poster">The Lighthouse</div>
-              <p class="bench-title">The Lighthouse</p>
-              <p class="bench-year">2019</p>
+          <p style="color: var(--muted); font-size: var(--fs-caption); margin: 0 0 8px;">Suggestions from your past nominations that did not win</p>
+          <div class="suggestion-carousel">
+            <div class="suggestion-card" onclick="nominateFromSuggestion('The Lighthouse')">
+              <div class="suggestion-poster">The Lighthouse</div>
+              <p class="suggestion-title">The Lighthouse</p>
+              <p class="suggestion-year">2019</p>
             </div>
-            <div class="bench-card" onclick="nominateFromBench('Parasite')">
-              <div class="bench-poster">Parasite</div>
-              <p class="bench-title">Parasite</p>
-              <p class="bench-year">2019</p>
+            <div class="suggestion-card" onclick="nominateFromSuggestion('Parasite')">
+              <div class="suggestion-poster">Parasite</div>
+              <p class="suggestion-title">Parasite</p>
+              <p class="suggestion-year">2019</p>
             </div>
-            <div class="bench-card" onclick="nominateFromBench('Whiplash')">
-              <div class="bench-poster">Whiplash</div>
-              <p class="bench-title">Whiplash</p>
-              <p class="bench-year">2014</p>
+            <div class="suggestion-card" onclick="nominateFromSuggestion('Whiplash')">
+              <div class="suggestion-poster">Whiplash</div>
+              <p class="suggestion-title">Whiplash</p>
+              <p class="suggestion-year">2014</p>
             </div>
           </div>
         </div>
@@ -2056,7 +2056,7 @@
       document.getElementById('searchDropdown').classList.remove('open');
     }
 
-    function nominateFromBench(title) {
+    function nominateFromSuggestion(title) {
       document.getElementById('selectedTitle').textContent = title;
       document.getElementById('selectedYear').textContent = '';
       document.getElementById('selectedMovie').style.display = 'block';
