@@ -1,9 +1,9 @@
 'use client';
 
-import type { ISessionRoster, TSession } from '@pickflick/contracts';
+import type { ISessionRoster, TNominations, TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import SessionForm from '@/components/sessions/SessionForm/SessionForm';
 import Button from '@/components/ui/Button/Button';
@@ -13,16 +13,25 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
+import Nomination from '../Nomination/Nomination';
 import SessionRoster from '../SessionRoster/SessionRoster';
 
 export default function SessionDetails({
     session,
     roster,
+    nominations,
 }: {
     session: TSession;
     roster: ISessionRoster;
+    nominations?: TNominations;
 }) {
     const router = useRouter();
+    const headingRef = useRef<HTMLHeadingElement>(null);
+    const phaseRef = useRef(session.phase);
+    useEffect(() => {
+        if (phaseRef.current !== session.phase) headingRef.current?.focus();
+        phaseRef.current = session.phase;
+    }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
     const [confirmation, setConfirmation] = useState('');
     const [message, setMessage] = useState('');
@@ -33,10 +42,13 @@ export default function SessionDetails({
             <header className={styles.header}>
                 <div>
                     <p className={styles.eyebrow}>Session · {SESSION_TYPES[session.type]}</p>
-                    <h1>{session.topic ?? 'Untitled Session'}</h1>
+                    <h1 ref={headingRef} tabIndex={-1}>
+                        {session.topic ?? 'Untitled Session'}
+                    </h1>
                 </div>
                 <p className={styles.phase}>{session.phase.toLowerCase()}</p>
             </header>
+            {nominations ? <Nomination sessionId={session.id} initial={nominations} /> : null}
             <section className={styles.card} aria-label="Session details">
                 <dl className={styles.facts}>
                     <div>

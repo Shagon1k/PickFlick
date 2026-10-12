@@ -818,7 +818,7 @@ Session invitations and roster
 
 **Out of scope:** Nominations, ballots, watching and rating, and past Sessions.
 
-### Phase 10 — Nomination & Deadline Automation · Not started
+### Phase 10 — Nomination & Deadline Automation · In progress
 
 **Goal:** Every participant nominates one film, and Nomination advances safely when complete or
 expired.

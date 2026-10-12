@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
+import { getNominations } from '@/api/nominations.server';
 import { loginPath } from '@/api/session.server';
 import { getSessionRoster } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
@@ -17,8 +18,10 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     const { sessionId } = await params;
     let session;
     let roster;
+    let nominations;
     try {
         [session, roster] = await Promise.all([getSession(sessionId), getSessionRoster(sessionId)]);
+        if (session.phase === 'NOMINATION') nominations = await getNominations(sessionId);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
             redirect(loginPath(`/sessions/${sessionId}`));
@@ -35,7 +38,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     }
     return (
         <ProductFrame>
-            <SessionDetails session={session} roster={roster} />
+            <SessionDetails session={session} roster={roster} nominations={nominations} />
         </ProductFrame>
     );
 }
