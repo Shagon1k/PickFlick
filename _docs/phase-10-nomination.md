@@ -28,7 +28,9 @@ Club with a resolved winner in Watching, Rating or Completed, excluding the winn
 carousel offers up to twelve distinct Movies, newest nomination first. Cards select a Movie for
 the same submission action as search; no saved-film entity is introduced.
 
-Titles and years use the Movies boundary’s cache-only summaries from validated catalog caches; absent metadata has an explicit placeholder
+Titles and years use the Movies boundary’s cache-only summaries from validated catalog caches.
+Details and source metadata take precedence over search metadata; search-only nominations keep
+their known title and year without a detail request. Absent metadata has an explicit placeholder
 and a canonical Movie link. Progress refresh is manual until #44. Operators confirm early closure:
 zero nominations cannot close, one selects that Movie for Watching, and two or more open Selection.
 Closure increments phase/details versions and writes an audit event in the same transaction.
@@ -89,3 +91,17 @@ The bounded owner-approved round starts from PR #169 head
   covered by the integration suite. No migration, dependency, permission or infrastructure change
   is included. The issue remains in Human Review; hosted exact-head evidence and CI are left to
   the managed review workflow.
+
+## Review fix round 2
+
+The bounded owner-approved round starts from PR #169 head
+`2aab1e07611ef82fcb4b9d18fc6cf853edd44f2a` and addresses only the submitted search-metadata thread.
+
+- Cache-only summaries validate matching search-cache rows and use their newest metadata when
+  details and source metadata are absent. Submission and projection make no provider request.
+- All 129 integration tests pass, including search → submit → Session projection with no details
+  or source cache. The projection retains the searched Movie's title and year.
+- All 27 focused Movies service tests pass, including invalid search metadata, newest search
+  metadata, original-title fallback and details precedence.
+- `pnpm test:ui:smoke` passes all 32 checks.
+- `pnpm verify` passes with all 390 unit tests and both builds; lint retains four existing warnings.

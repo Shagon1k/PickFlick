@@ -409,7 +409,9 @@ updates phase/details versions and records `SESSION_NOMINATION_CLOSED` atomicall
 confirmation. Responses are private and uncached. The server filters hidden films and author names
 using the Session snapshot, exposes aggregate accepted/nominated counts, and derives up to twelve
 personal suggestions from earlier same-Club losing nominations with a resolved winner. Movie titles
-and years come from the Movies boundary's cache-only summaries; unavailable metadata is explicit.
+and years come from the Movies boundary's cache-only summaries. Validated details and source caches
+take precedence; validated search caches supply metadata for Movies nominated without opening their
+details. Unavailable metadata is explicit.
 Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
 page, which fetches the authoritative Session detail once; the client keeps no projection copy.
 No saved-film entity, provider request on submission, background runtime or dependency is added. Automatic completion,

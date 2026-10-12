@@ -5,6 +5,7 @@ import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
     movieDetailsSchema,
     movieIdSchema,
+    movieSearchResultsSchema,
     movieSearchSchema,
     type TMovieDetails,
     type TMovieDetailsResponse,
@@ -45,6 +46,7 @@ export class MoviesService {
         tx: Prisma.TransactionClient,
         ids: string[],
     ): Promise<Map<string, TNominationMovie>> {
+        if (ids.length === 0) return new Map();
         const caches = await tx.movieDetailsCache.findMany({
             where: { movieId: { in: ids } },
             select: { movieId: true, data: true },
@@ -55,13 +57,26 @@ export class MoviesService {
             select: { movieId: true, data: true },
             orderBy: { fetchedAt: 'desc' },
         });
+        const searches = await tx.movieSearchCache.findMany({
+            where: {
+                OR: ids.map((id) => ({ data: { path: ['movies'], array_contains: [{ id }] } })),
+            },
+            select: { data: true },
+            orderBy: { fetchedAt: 'desc' },
+        });
+        const searchMovies = searches.flatMap((row) => {
+            const parsed = movieSearchResultsSchema.safeParse(row.data);
+            return parsed.success ? parsed.data.movies : [];
+        });
         return new Map(
             ids.map((movieId) => {
                 const cached = caches.find((row) => row.movieId === movieId);
                 const parsed = cached ? movieDetailsSchema.safeParse(cached.data) : null;
                 const source = sources.find((row) => row.movieId === movieId);
                 const snapshot = source ? sourceSnapshotSchema.safeParse(source.data) : null;
-                let metadata = snapshot?.success ? snapshot.data.data : null;
+                let metadata = snapshot?.success
+                    ? snapshot.data.data
+                    : (searchMovies.find((movie) => movie.id === movieId) ?? null);
                 if (parsed?.success && parsed.data.id === movieId) metadata = parsed.data;
                 return [
                     movieId,

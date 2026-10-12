@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { movieSummarySchema } from '@pickflick/contracts';
 
 import { RUNTIME_ENVIRONMENT } from '../../../config/runtime.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
@@ -34,6 +35,7 @@ describe('MoviesService', () => {
     const cache = {
         movieDetailsCache: { findMany: vi.fn() },
         movieSourceCache: { findMany: vi.fn() },
+        movieSearchCache: { findMany: vi.fn() },
     };
     let database: PrismaService;
     let service: MoviesService;
@@ -50,6 +52,7 @@ describe('MoviesService', () => {
         repository.cachedDetails.mockResolvedValue(null);
         repository.lookup.mockResolvedValue(movieLookup());
         repository.cachedSearch.mockResolvedValue(null);
+        cache.movieSearchCache.findMany.mockResolvedValue([]);
         repository.saveDetails.mockImplementation((_id, _key, data, fetchedAt) => {
             repository.cachedDetails.mockResolvedValue(
                 cached({
@@ -98,6 +101,16 @@ describe('MoviesService', () => {
             },
             { movieId: 'invalid-source', data: { data: { title: 'Invalid source title' } } },
         ]);
+        cache.movieSearchCache.findMany.mockResolvedValue([
+            {
+                data: {
+                    movies: [movieSummarySchema.strip().parse(canonicalDetails())],
+                    page: 1,
+                    totalPages: 1,
+                    totalResults: 1,
+                },
+            },
+        ]);
         const summaries = await service.cachedSummaries(database, [
             MOVIE_ID,
             'invalid-details',
@@ -109,6 +122,23 @@ describe('MoviesService', () => {
             { id: 'invalid-details', title: 'Original source title', year: 2026 },
             { id: 'invalid-source', title: null, year: null },
             { id: 'missing', title: null, year: null },
+        ]);
+        expect(provider.details).not.toHaveBeenCalled();
+        expect(provider.search).not.toHaveBeenCalled();
+    });
+
+    it('should use the newest validated search summary without a detail request', async () => {
+        cache.movieDetailsCache.findMany.mockResolvedValue([]);
+        cache.movieSourceCache.findMany.mockResolvedValue([]);
+        const movie = movieSummarySchema.strip().parse(canonicalDetails());
+        const data = { movies: [movie], page: 1, totalPages: 1, totalResults: 1 };
+        cache.movieSearchCache.findMany.mockResolvedValue([
+            { data: { ...data, movies: [{ id: MOVIE_ID, title: 'Invalid' }] } },
+            { data: { ...data, movies: [{ ...movie, title: null }] } },
+            { data: { ...data, movies: [{ ...movie, title: 'Older title' }] } },
+        ]);
+        expect([...(await service.cachedSummaries(database, [MOVIE_ID])).values()]).toEqual([
+            { id: MOVIE_ID, title: 'Synthetic Movie', year: 2026 },
         ]);
         expect(provider.details).not.toHaveBeenCalled();
         expect(provider.search).not.toHaveBeenCalled();

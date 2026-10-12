@@ -1,14 +1,19 @@
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 
 import { sessionSchema } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     createUser,
+    integrationEnvironment,
     type ITestApi,
     removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { movieDetails } from '../../../testing/movie-fixtures.js';
+import { MoviesRepository } from '../../movies/movies.repository.js';
+import { MoviesService } from '../../movies/movies.service.js';
+import type { IMovieProvider } from '../../movies/providers/movie-provider.js';
 
 describe('Nominations', () => {
     let api: ITestApi;
@@ -21,6 +26,7 @@ describe('Nominations', () => {
     let adminParticipant: string;
     let memberParticipant: string;
     let movies: string[];
+    const searchKeys: string[] = [];
     beforeAll(async () => {
         api = await startTestApi();
         admin = await createUser(api.prisma);
@@ -63,6 +69,7 @@ describe('Nominations', () => {
     });
     afterAll(async () => {
         await removeUsers(api.prisma, users);
+        await api.prisma.movieSearchCache.deleteMany({ where: { key: { in: searchKeys } } });
         await api.prisma.movie.deleteMany({ where: { id: { in: movies } } });
         await api.close();
     });
@@ -80,6 +87,41 @@ describe('Nominations', () => {
             method: 'POST',
             json: { phaseVersion: version, confirmation: 'CLOSE' },
         });
+    it('should retain search metadata after submission in the Session projection without opening details', async () => {
+        const record = movieDetails(randomInt(10000000, 2000000000));
+        const provider: IMovieProvider = {
+            configurationKey: randomUUID(),
+            search: vi.fn().mockResolvedValue({
+                movies: [record],
+                page: 1,
+                totalPages: 1,
+                totalResults: 1,
+            }),
+            details: vi.fn(),
+        };
+        const environment = integrationEnvironment();
+        const catalog = new MoviesService(
+            provider,
+            new MoviesRepository(api.prisma, environment),
+            environment,
+        );
+        const result = await catalog.search({ query: 'Synthetic Movie', page: 1, locale: 'en-US' });
+        if (result.state === 'unavailable') throw new Error('Search unavailable');
+        const movieId = result.data.movies[0]!.id;
+        movies.push(movieId);
+        const cached = await api.prisma.movieSearchCache.findFirstOrThrow({
+            where: { data: { path: ['movies'], array_contains: [{ id: movieId }] } },
+        });
+        searchKeys.push(cached.key);
+        expect(await api.prisma.movieDetailsCache.count({ where: { movieId } })).toBe(0);
+        expect(await api.prisma.movieSourceCache.count({ where: { movieId } })).toBe(0);
+        expect((await submit(member, movieId)).status).toBe(201);
+        const data = nominationData(await (await read()).json());
+        const summary = { id: movieId, title: 'Synthetic Movie', year: 2026 };
+        expect(data.ownMovie).toEqual(summary);
+        expect(data.nominations).toEqual([expect.objectContaining({ movie: summary })]);
+        expect(provider.details).not.toHaveBeenCalled();
+    });
     it('should serialize submissions and enforce database uniqueness without service locks', async () => {
         const responses = await Promise.all([submit(), submit(member, movies[1])]);
         expect(responses.map((r) => r.status).toSorted((a, b) => a - b)).toEqual([201, 409]);
