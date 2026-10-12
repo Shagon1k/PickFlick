@@ -2,7 +2,7 @@
 
 import type { TNominationMovie, TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 
 import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
 import Button from '@/components/ui/Button/Button';
@@ -25,6 +25,7 @@ export default function Nomination({
     data: TNominations;
     phaseVersion: number;
 }) {
+    const headingRef = useRef<HTMLHeadingElement>(null);
     const [selected, setSelected] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
@@ -58,6 +59,7 @@ export default function Nomination({
             }
             setMessage(result.message);
             if (action === 'close') setDialog(false);
+            if (action === 'submit') headingRef.current?.focus();
         });
     }
     return (
@@ -77,7 +79,9 @@ export default function Nomination({
             </div>
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
-                    <h2 id="nominate-heading">Find &amp; Nominate a Movie</h2>
+                    <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
+                        Find &amp; Nominate a Movie
+                    </h2>
                     {data.canSubmit ? (
                         <>
                             {suggestion ? (

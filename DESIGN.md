@@ -389,3 +389,6 @@ in a focus-trapped dialog. A phase change moves focus to the Session heading whe
 trigger disappears. Zero films cannot close; one moves to Watching and multiple nominations
 open Selection. Progress has a manual refresh control until live events arrive in #44.
 Exact-head hosted preview and owner visual acknowledgement remain required for #42.
+
+Successful Nomination submission focuses the stable “Find & Nominate a Movie” heading after the
+submit control is replaced by the locked confirmation.

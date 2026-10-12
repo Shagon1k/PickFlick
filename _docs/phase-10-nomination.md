@@ -35,7 +35,8 @@ Closure increments phase/details versions and writes an audit event in the same 
 Session detail owns phase, the details `version`, the explicit `phaseVersion` and nested nomination
 data; closure accepts `phaseVersion`. Current nomination rows derive from the accepted participant
 query. Refresh and successful mutations revalidate the page without a second nomination fetch or a
-client projection copy.
+client projection copy. Successful submission focuses the stable nomination heading.
+
 The separate Nomination table keeps immutable submission history when roster status changes and
 already enforces uniqueness and same-Session linkage. This review fix retains that storage and its
 constraints without a migration.
@@ -70,3 +71,21 @@ constraints without a migration.
 Browser checks use the mock API; the real API/database are covered by integration tests. Exact-head
 hosted preview, a hosted multi-user journey and owner visual acknowledgement remain unverified.
 Do not mark #42 or Phase 10 complete.
+
+## Review fix round 1
+
+The bounded owner-approved round starts from PR #169 head
+`b779199d9973a400eadb4d8b058ed82efb88d549` and addresses only the two submitted threads.
+
+- `pnpm verify` passes with all 389 unit tests and both builds; lint retains four existing warnings.
+- All 128 integration tests pass against a migrated, seeded isolated PostgreSQL 17.6 database.
+  Closure checks deliberately separate details and phase versions and reject a details-version token.
+- `pnpm test:ui:smoke` passes all 32 checks.
+- All seven focused Nomination browser checks pass, including keyboard submission focus, manual
+  refresh, early-close focus, failure/offline selection retention, axe and overflow at all four
+  canonical widths. Catalog summary tests cover validated details, source fallback and missing
+  metadata without provider calls.
+- Authorization, visibility filtering, Club → Session locking, audit and database constraints remain
+  covered by the integration suite. No migration, dependency, permission or infrastructure change
+  is included. The issue remains in Human Review; hosted exact-head evidence and CI are left to
+  the managed review workflow.
