@@ -19,6 +19,7 @@ import {
     access,
     assertManager,
     assertOpen,
+    canManage,
     digest,
     inviteInclude,
     preview,
@@ -26,7 +27,6 @@ import {
     rosterAudit,
 } from './session-roster-access.js';
 import { readRoster } from './session-roster-projection.js';
-import { canManage } from './sessions.service.js';
 
 @Injectable()
 export class SessionRosterService {

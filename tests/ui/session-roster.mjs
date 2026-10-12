@@ -20,6 +20,8 @@ const session = {
     deadlineAt: null,
     movieId: null,
     version: 1,
+    phaseVersion: 1,
+    nominations: null,
 };
 function stateFor(token) {
     if (!states.has(token))

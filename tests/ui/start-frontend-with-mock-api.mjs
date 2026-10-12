@@ -5,6 +5,7 @@ import { settingsProjection as clubSettingsProjection } from './club-projections
 import { handleMovieDetails } from './movie-details.mjs';
 import { handleMovieSearch } from './movie-search.mjs';
 import { readJson, sendError, sendJson } from './mock-http.mjs';
+import { handleNominations } from './nominations.mjs';
 import { handlePendingInvitation } from './pending-invites.mjs';
 import { handleSessionRoster } from './session-roster.mjs';
 import { handleSessionWorkflow, sessionHub } from './session-workflows.mjs';
@@ -381,6 +382,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (handleMovieDetails(request, response, pathname, sessionToken(request))) return;
     if (handleMovieSearch(request, response, pathname, sessionToken(request))) return;
+    if (handleNominations(request, response, pathname, sessionToken(request))) return;
     if (handleSessionRoster(request, response, pathname, sessionToken(request))) return;
     if (handleSessionWorkflow(request, response, pathname, sessionToken(request))) return;
     const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);

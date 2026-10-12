@@ -4,7 +4,28 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
+import { clubAccess, findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
+import { clubPermissions } from '../clubs/club-permissions.js';
+import { clubEntitlements } from '../clubs/club-tiers.js';
+
+export async function canManage(
+    transaction: Prisma.TransactionClient,
+    membership: Awaited<ReturnType<typeof findMembership>>,
+) {
+    const [admin, count] = await Promise.all([
+        transaction.membership.findFirst({
+            where: { clubId: membership.club.id, status: 'ACTIVE', role: 'ADMIN' },
+        }),
+        transaction.membership.count({ where: { clubId: membership.club.id, status: 'ACTIVE' } }),
+    ]);
+    const access = clubAccess(
+        membership.club.lifecycle,
+        Boolean(admin),
+        count,
+        clubEntitlements(membership.club.id).memberLimit,
+    );
+    return clubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
+}
 
 export const openPhases = ['NOMINATION', 'SELECTION', 'WATCHING', 'RATING'] as const;
 export const digest = (token: string) => createHash('sha256').update(token).digest('hex');

@@ -1,0 +1,116 @@
+.nomination {
+    margin-block: var(--gap-lg);
+    overflow-wrap: anywhere;
+}
+
+.progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    padding-block: var(--gap-sm);
+    color: var(--ivory);
+}
+
+.progress progress {
+    accent-color: var(--gold);
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+    gap: var(--gap-lg);
+}
+
+.card {
+    min-width: 0;
+    padding: var(--gap-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.card h2 {
+    margin-top: 0;
+    font-size: var(--fs-body);
+}
+
+.card h3,
+.card p {
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.card a {
+    color: var(--fg);
+}
+
+.suggestions,
+.movies {
+    padding: 0;
+    list-style: none;
+}
+
+.suggestions {
+    display: flex;
+    gap: var(--gap-sm);
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.suggestions li {
+    flex: 0 0 140px;
+}
+
+.suggestions button {
+    display: grid;
+    gap: var(--gap-sm);
+    width: 100%;
+    min-height: var(--hit);
+    padding: var(--gap-sm);
+    font: inherit;
+    color: var(--fg);
+    cursor: pointer;
+    background: var(--surface-lit);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.poster {
+    display: grid;
+    flex: 0 0 48px;
+    place-items: center;
+    aspect-ratio: 2 / 3;
+    padding: var(--gap-sm);
+    color: var(--fg-secondary);
+    background: var(--surface-lit);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.movies li {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    margin-bottom: var(--gap-sm);
+}
+
+.movies a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--hit);
+}
+
+.selected {
+    margin-bottom: var(--gap-sm);
+}
+
+@media (width <= 767px) {
+    .columns {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        padding: var(--gap-md);
+    }
+}

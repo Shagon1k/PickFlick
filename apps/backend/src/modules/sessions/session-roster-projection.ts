@@ -3,8 +3,7 @@ import type { ISessionRoster } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { findMembership } from '../clubs/club-access.js';
-import { invitationState, openPhases } from './session-roster-access.js';
-import { canManage } from './sessions.service.js';
+import { canManage, invitationState, openPhases } from './session-roster-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,

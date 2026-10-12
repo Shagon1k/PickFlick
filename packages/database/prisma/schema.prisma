@@ -38,6 +38,7 @@ enum MembershipStatus {
 }
 
 enum ClubAuditAction {
+  SESSION_NOMINATION_CLOSED
   SESSION_INVITE_CREATED
   SESSION_INVITE_REVOKED
   SESSION_INVITE_RESPONDED
@@ -252,6 +253,7 @@ model Session {
   updatedAt                   DateTime             @updatedAt @db.Timestamptz(3)
   club                        Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
   participants                SessionParticipant[]
+  nominations                 Nomination[]
 
   // PostgreSQL migration owns the partial unique index for one blocking Session per Club.
   @@unique([id, clubId])
@@ -270,8 +272,10 @@ model SessionParticipant {
   session      Session                  @relation(fields: [sessionId, clubId], references: [id, clubId], onDelete: Restrict)
   membership   Membership               @relation(fields: [membershipId, clubId], references: [id, clubId], onDelete: Restrict)
   invitations  SessionInvite[]
+  nomination   Nomination?
 
   @@unique([sessionId, membershipId])
+  @@unique([id, sessionId])
   @@unique([id, clubId])
   @@index([membershipId])
 }
@@ -321,6 +325,7 @@ model Movie {
   sources     MovieSourceCache[]
   details     MovieDetailsCache[]
   sessions    Session[]
+  nominations Nomination[]
 }
 
 model MovieExternalId {
@@ -359,4 +364,18 @@ model MovieSearchCache {
   key       String   @id @db.Char(64)
   data      Json
   fetchedAt DateTime @db.Timestamptz(3)
+}
+
+model Nomination {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId     String             @db.Uuid
+  participantId String             @db.Uuid
+  movieId       String             @db.Uuid
+  submittedAt   DateTime           @default(now()) @db.Timestamptz(3)
+  session       Session            @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  participant   SessionParticipant @relation(fields: [participantId, sessionId], references: [id, sessionId], onDelete: Restrict)
+  movie         Movie              @relation(fields: [movieId], references: [id], onDelete: Restrict)
+
+  @@unique([participantId, sessionId])
+  @@index([sessionId, submittedAt])
 }

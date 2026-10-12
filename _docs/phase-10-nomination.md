@@ -1,0 +1,107 @@
+# Phase 10 — Nomination
+
+[ROADMAP.md](../ROADMAP.md#phase-10--nomination--deadline-automation--in-progress) owns scope and
+acceptance. [Project 3](https://github.com/users/Shagon1k/projects/3) owns live status.
+
+- [#42](https://github.com/Shagon1k/PickFlick/issues/42) delivers immutable submissions, personal
+  history suggestions, privacy projections, progress and operator early closure.
+- #43 owns durable deadlines and reconciliation; #44 owns automatic completion, outbox and live events.
+- Run `r_c2ba7c3504e05da040d1` uses the managed branch
+  `PF-42_10-1-implement-nomination-submissions-personal`.
+
+## Delivery contract
+
+Migration 17 adds Nomination storage with a unique participant/Session key, same-Session participant
+foreign key, Movie foreign key and early-closure audit action. Existing data stays intact. Apply the
+migration before running the new application image. No historical nominations are invented.
+
+Submissions require an active Club Membership, accepted participation and an active Club in
+Nomination. Club → Session locking serializes submissions, roster changes and closure. Duplicate
+submissions conflict; existing nominations stay immutable. Departure preserves history and removes
+that participant's nomination from current progress and early-close decisions.
+
+The server uses Session visibility snapshots. When pre-submission visibility is off, callers who
+have not submitted receive no nomination rows, including operators. Author visibility independently
+removes author fields; no participant/nomination identifiers or timestamps accompany film rows.
+Only aggregate progress is exposed. Suggestions use the caller's own earlier nominations in this
+Club with a resolved winner in Watching, Rating or Completed, excluding the winning Movie. The
+carousel offers up to twelve distinct Movies, newest nomination first. Cards select a Movie for
+the same submission action as search; no saved-film entity is introduced.
+
+Titles and years use the Movies boundary’s cache-only summaries from validated catalog caches.
+Details and source metadata take precedence over search metadata; search-only nominations keep
+their known title and year without a detail request. Absent metadata has an explicit placeholder
+and a canonical Movie link. Progress refresh is manual until #44. Operators confirm early closure:
+zero nominations cannot close, one selects that Movie for Watching, and two or more open Selection.
+Closure increments phase/details versions and writes an audit event in the same transaction.
+Session detail owns phase, the details `version`, the explicit `phaseVersion` and nested nomination
+data; closure accepts `phaseVersion`. Current nomination rows derive from the accepted participant
+query. Refresh and successful mutations revalidate the page without a second nomination fetch or a
+client projection copy. Successful submission focuses the stable nomination heading.
+
+The separate Nomination table keeps immutable submission history when roster status changes and
+already enforces uniqueness and same-Session linkage. This review fix retains that storage and its
+constraints without a migration.
+
+## Verification
+
+- Node 24.15.0 and pnpm 11.25.0; dependencies installed from the frozen lockfile.
+- All seventeen migrations apply to fresh isolated PostgreSQL 17.6. An upgrade probe from
+  migration 16 preserves a Nomination Session's topic, phase, scale and versions and creates no
+  nominations. The SQL diff still reports pre-existing ClubInvite/catalog foreign-key action drift;
+  this migration leaves those definitions unchanged.
+- `pnpm test:integration`: all 128 tests across fourteen files pass against the seeded isolated
+  test database. Nine new checks cover concurrency, direct uniqueness/foreign-key enforcement,
+  membership/phase/Club boundaries, hidden films/authors, suggestion isolation, departure and
+  serialized audited early closure.
+- `pnpm verify` passes: guarded security audit, lint, knip, formatting, types, all 388 unit tests
+  across 43 files, and both builds. Lint has three existing warnings and one warning for the
+  stateless nomination rows, which can repeat the same Movie and intentionally omit identity keys.
+- The broad browser selection passes 58 behavior checks, including every PR smoke check,
+  Nomination, Session creation and roster workflows, accessibility and overflow. The selection
+  also picked two unchanged Session-shell visual checks, which differed outside the pinned image;
+  both comparisons pass in the digest-pinned Playwright image used by CI. No visual baselines
+  changed.
+- The final focused Nomination suite passes all seven checks, including heading focus after early
+  closure, Escape focus return, search/suggestion submission, locked success, failure/offline
+  selection retention, axe and overflow at 390, 768, 1024 and 1440px. Desktop and mobile captures
+  were inspected; the primary nomination controls precede secondary Session details.
+- Staged gitleaks scan reports no leaks. Browser runs use temporary loopback ports because an
+  interrupted test listener remained on the default ports; repository test configuration is unchanged.
+- No dependencies, runtime variables, production deployment or secret files changed.
+
+Browser checks use the mock API; the real API/database are covered by integration tests. Exact-head
+hosted preview, a hosted multi-user journey and owner visual acknowledgement remain unverified.
+Do not mark #42 or Phase 10 complete.
+
+## Review fix round 1
+
+The bounded owner-approved round starts from PR #169 head
+`b779199d9973a400eadb4d8b058ed82efb88d549` and addresses only the two submitted threads.
+
+- `pnpm verify` passes with all 389 unit tests and both builds; lint retains four existing warnings.
+- All 128 integration tests pass against a migrated, seeded isolated PostgreSQL 17.6 database.
+  Closure checks deliberately separate details and phase versions and reject a details-version token.
+- `pnpm test:ui:smoke` passes all 32 checks.
+- All seven focused Nomination browser checks pass, including keyboard submission focus, manual
+  refresh, early-close focus, failure/offline selection retention, axe and overflow at all four
+  canonical widths. Catalog summary tests cover validated details, source fallback and missing
+  metadata without provider calls.
+- Authorization, visibility filtering, Club → Session locking, audit and database constraints remain
+  covered by the integration suite. No migration, dependency, permission or infrastructure change
+  is included. The issue remains in Human Review; hosted exact-head evidence and CI are left to
+  the managed review workflow.
+
+## Review fix round 2
+
+The bounded owner-approved round starts from PR #169 head
+`2aab1e07611ef82fcb4b9d18fc6cf853edd44f2a` and addresses only the submitted search-metadata thread.
+
+- Cache-only summaries validate matching search-cache rows and use their newest metadata when
+  details and source metadata are absent. Submission and projection make no provider request.
+- All 129 integration tests pass, including search → submit → Session projection with no details
+  or source cache. The projection retains the searched Movie's title and year.
+- All 27 focused Movies service tests pass, including invalid search metadata, newest search
+  metadata, original-title fallback and details precedence.
+- `pnpm test:ui:smoke` passes all 32 checks.
+- `pnpm verify` passes with all 390 unit tests and both builds; lint retains four existing warnings.
