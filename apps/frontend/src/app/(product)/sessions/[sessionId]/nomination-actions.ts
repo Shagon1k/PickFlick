@@ -4,27 +4,23 @@ import { closeNominationSchema, submitNominationSchema } from '@pickflick/contra
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { closeNominations, getNominations, submitNomination } from '@/api/nominations.server';
-import { getSession } from '@/api/sessions.server';
+import { closeNominations, submitNomination } from '@/api/nominations.server';
 import { ApiError } from '@/lib/api.server';
 
-export async function readNominationsAction(id: string) {
+export async function refreshNominationsAction(id: string) {
     if (!z.uuidv4().safeParse(id).success)
         return { ok: false as const, message: 'This Session address is invalid.' };
-    try {
-        return { ok: true as const, data: await getNominations(id) };
-    } catch {
-        return { ok: false as const, message: 'We could not refresh nominations. Try again.' };
-    }
+    revalidatePath(`/sessions/${id}`);
+    return { ok: true as const, message: 'Nominations refreshed.' };
 }
 export async function nominateAction(id: string, input: unknown) {
     const parsed = submitNominationSchema.safeParse(input);
     if (!z.uuidv4().safeParse(id).success || !parsed.success)
         return { ok: false as const, message: 'Choose a Movie first.' };
     try {
-        const data = await submitNomination(id, parsed.data);
+        await submitNomination(id, parsed.data);
         revalidatePath(`/sessions/${id}`);
-        return { ok: true as const, data, message: 'Your nomination is confirmed.' };
+        return { ok: true as const, message: 'Your nomination is confirmed.' };
     } catch (error) {
         return nominationError(error);
     }
@@ -34,11 +30,9 @@ export async function closeNominationsAction(id: string, input: unknown) {
     if (!z.uuidv4().safeParse(id).success || !parsed.success)
         return { ok: false as const, message: 'Type CLOSE to confirm.' };
     try {
-        const session = await getSession(id);
-        const data = await closeNominations(id, parsed.data);
+        await closeNominations(id, parsed.data);
         revalidatePath(`/sessions/${id}`);
-        revalidatePath(`/clubs/${session.clubId}`);
-        return { ok: true as const, data, message: 'Nominations closed.' };
+        return { ok: true as const, message: 'Nominations closed.' };
     } catch (error) {
         return nominationError(error);
     }

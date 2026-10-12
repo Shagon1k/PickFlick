@@ -28,10 +28,17 @@ Club with a resolved winner in Watching, Rating or Completed, excluding the winn
 carousel offers up to twelve distinct Movies, newest nomination first. Cards select a Movie for
 the same submission action as search; no saved-film entity is introduced.
 
-Titles and years use existing validated catalog caches; absent metadata has an explicit placeholder
+Titles and years use the Movies boundary’s cache-only summaries from validated catalog caches; absent metadata has an explicit placeholder
 and a canonical Movie link. Progress refresh is manual until #44. Operators confirm early closure:
 zero nominations cannot close, one selects that Movie for Watching, and two or more open Selection.
 Closure increments phase/details versions and writes an audit event in the same transaction.
+Session detail owns phase, the details `version`, the explicit `phaseVersion` and nested nomination
+data; closure accepts `phaseVersion`. Current nomination rows derive from the accepted participant
+query. Refresh and successful mutations revalidate the page without a second nomination fetch or a
+client projection copy.
+The separate Nomination table keeps immutable submission history when roster status changes and
+already enforces uniqueness and same-Session linkage. This review fix retains that storage and its
+constraints without a migration.
 
 ## Verification
 

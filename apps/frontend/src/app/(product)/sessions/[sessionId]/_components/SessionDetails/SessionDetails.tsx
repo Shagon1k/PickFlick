@@ -1,6 +1,6 @@
 'use client';
 
-import type { ISessionRoster, TNominations, TSession } from '@pickflick/contracts';
+import type { ISessionRoster, TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -19,11 +19,9 @@ import SessionRoster from '../SessionRoster/SessionRoster';
 export default function SessionDetails({
     session,
     roster,
-    nominations,
 }: {
     session: TSession;
     roster: ISessionRoster;
-    nominations?: TNominations;
 }) {
     const router = useRouter();
     const headingRef = useRef<HTMLHeadingElement>(null);
@@ -48,7 +46,13 @@ export default function SessionDetails({
                 </div>
                 <p className={styles.phase}>{session.phase.toLowerCase()}</p>
             </header>
-            {nominations ? <Nomination sessionId={session.id} initial={nominations} /> : null}
+            {session.nominations ? (
+                <Nomination
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    data={session.nominations}
+                />
+            ) : null}
             <section className={styles.card} aria-label="Session details">
                 <dl className={styles.facts}>
                     <div>

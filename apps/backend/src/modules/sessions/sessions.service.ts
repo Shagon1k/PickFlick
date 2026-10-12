@@ -13,13 +13,16 @@ import type {
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { clubAccess, findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
-import { clubPermissions } from '../clubs/club-permissions.js';
-import { clubEntitlements } from '../clubs/club-tiers.js';
+import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
+import { NominationsService } from './nominations.service.js';
+import { canManage } from './session-roster-access.js';
 
 @Injectable()
 export class SessionsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly nominations: NominationsService,
+    ) {}
 
     async get(userId: string, id: string): Promise<TSession> {
         return this.prisma.$transaction(
@@ -28,7 +31,19 @@ export class SessionsService {
                 if (!session) throw new NotFoundException();
                 const membership = await findMembership(transaction, userId, session.clubId);
                 const allowed = await canManage(transaction, membership);
-                return project(session, membership.club.name, allowed);
+                return {
+                    ...project(session, membership.club.name, allowed),
+                    nominations:
+                        session.phase === 'NOMINATION'
+                            ? await this.nominations.project(
+                                  transaction,
+                                  userId,
+                                  session,
+                                  membership,
+                                  allowed,
+                              )
+                            : null,
+                };
             },
             { isolationLevel: 'RepeatableRead' },
         );
@@ -163,25 +178,6 @@ export class SessionsService {
     }
 }
 
-export async function canManage(
-    transaction: Prisma.TransactionClient,
-    membership: Awaited<ReturnType<typeof findMembership>>,
-) {
-    const [admin, count] = await Promise.all([
-        transaction.membership.findFirst({
-            where: { clubId: membership.club.id, status: 'ACTIVE', role: 'ADMIN' },
-        }),
-        transaction.membership.count({ where: { clubId: membership.club.id, status: 'ACTIVE' } }),
-    ]);
-    const access = clubAccess(
-        membership.club.lifecycle,
-        Boolean(admin),
-        count,
-        clubEntitlements(membership.club.id).memberLimit,
-    );
-    return clubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
-}
-
 async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
     const initial = await transaction.session.findUnique({
         where: { id },
@@ -207,7 +203,7 @@ function project(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
     allowed: boolean,
-): TSession {
+): Omit<TSession, 'nominations'> {
     const open = !['COMPLETED', 'CANCELLED'].includes(session.phase);
     return {
         id: session.id,
@@ -222,6 +218,7 @@ function project(
         deadlineAt: session.deadlineAt?.toISOString() ?? null,
         movieId: session.movieId,
         version: session.detailsVersion,
+        phaseVersion: session.phaseVersion,
         canEdit: allowed && open,
         canCancel: allowed && open,
     };

@@ -2,7 +2,6 @@
 
 import type { TNominationMovie, TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
@@ -13,22 +12,19 @@ import TextInput from '@/components/ui/TextInput/TextInput';
 import {
     closeNominationsAction,
     nominateAction,
-    readNominationsAction,
+    refreshNominationsAction,
 } from '../../nomination-actions';
 import styles from './Nomination.module.scss';
 
 export default function Nomination({
     sessionId,
-    initial,
+    data,
+    phaseVersion,
 }: {
     sessionId: string;
-    initial: TNominations;
+    data: TNominations;
+    phaseVersion: number;
 }) {
-    const router = useRouter();
-    const [updated, setUpdated] = useState<{ initial: TNominations; data: TNominations } | null>(
-        null,
-    );
-    const data = updated?.initial === initial ? updated.data : initial;
     const [selected, setSelected] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
@@ -48,10 +44,10 @@ export default function Nomination({
             if (action === 'submit') request = nominateAction(sessionId, { movieId: selected });
             else if (action === 'close')
                 request = closeNominationsAction(sessionId, {
-                    version: data.version,
+                    phaseVersion,
                     confirmation,
                 });
-            else request = readNominationsAction(sessionId);
+            else request = refreshNominationsAction(sessionId);
             const result = await request.catch(() => ({
                 ok: false as const,
                 message: 'We could not reach PickFlick. Try again.',
@@ -60,15 +56,8 @@ export default function Nomination({
                 setMessage(result.message);
                 return;
             }
-            setUpdated({ initial, data: result.data });
-            const messages = {
-                submit: 'Your nomination is confirmed.',
-                close: 'Nominations closed.',
-                refresh: 'Nominations refreshed.',
-            };
-            setMessage(messages[action]);
+            setMessage(result.message);
             if (action === 'close') setDialog(false);
-            if (action !== 'submit') router.refresh();
         });
     }
     return (

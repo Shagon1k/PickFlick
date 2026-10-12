@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { nominationsSchema } from '@pickflick/contracts';
+import { sessionSchema } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
@@ -72,12 +72,13 @@ describe('Nominations', () => {
             method: 'POST',
             json: { movieId },
         });
-    const read = (userId = member) => api.request(`/sessions/${sessionId}/nominations`, { userId });
+    const read = (userId = member) => api.request(`/sessions/${sessionId}`, { userId });
+    const nominationData = (data: unknown) => sessionSchema.parse(data).nominations!;
     const close = (userId = admin, version = 1) =>
         api.request(`/sessions/${sessionId}/nominations/close`, {
             userId,
             method: 'POST',
-            json: { version, confirmation: 'CLOSE' },
+            json: { phaseVersion: version, confirmation: 'CLOSE' },
         });
     it('should serialize submissions and enforce database uniqueness without service locks', async () => {
         const responses = await Promise.all([submit(), submit(member, movies[1])]);
@@ -90,7 +91,7 @@ describe('Nominations', () => {
                 data: { sessionId, participantId: memberParticipant, movieId: movies[0]! },
             }),
         ).rejects.toMatchObject({ code: 'P2002' });
-        expect(nominationsSchema.parse(await (await read()).json())).toMatchObject({
+        expect(nominationData(await (await read()).json())).toMatchObject({
             acceptedCount: 2,
             nominatedCount: 1,
             canSubmit: false,
@@ -131,7 +132,7 @@ describe('Nominations', () => {
         await submit();
         const response = await read(admin);
         expect(response.headers.get('cache-control')).toBe('private, no-store');
-        const hidden = nominationsSchema.parse(await response.json());
+        const hidden = nominationData(await response.json());
         expect(hidden).toMatchObject({
             nominations: [],
             hidden: true,
@@ -140,7 +141,7 @@ describe('Nominations', () => {
         });
         expect(JSON.stringify(hidden)).not.toContain(movies[0]);
         await submit(admin, movies[1]);
-        const visible = nominationsSchema.parse(await (await read(admin)).json());
+        const visible = nominationData(await (await read(admin)).json());
         expect(visible.nominations).toHaveLength(2);
         expect(visible.nominations.every((row) => row.author === null)).toBe(true);
         expect(JSON.stringify(visible)).not.toContain('Private Nominator');
@@ -149,7 +150,7 @@ describe('Nominations', () => {
             where: { id: sessionId },
             data: { showNominationAuthors: true },
         });
-        expect(nominationsSchema.parse(await (await read()).json()).nominations).toEqual(
+        expect(nominationData(await (await read()).json()).nominations).toEqual(
             expect.arrayContaining([expect.objectContaining({ author: 'Private Nominator' })]),
         );
     });
@@ -216,7 +217,7 @@ describe('Nominations', () => {
         await history(otherMembership.id, movies[2]!, movies[1]!);
         await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', true);
         await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', false, false);
-        const data = nominationsSchema.parse(await (await read()).json());
+        const data = nominationData(await (await read()).json());
         expect(data.suggestions.map((movie) => movie.id)).toEqual([movies[0]]);
         expect((await submit(member, data.suggestions[0]?.id)).status).toBe(201);
         expect((await submit()).status).toBe(409);
@@ -227,7 +228,7 @@ describe('Nominations', () => {
             where: { id: memberParticipant },
             data: { status: 'LEFT' },
         });
-        expect(nominationsSchema.parse(await (await read()).json())).toMatchObject({
+        expect(nominationData(await (await read()).json())).toMatchObject({
             acceptedCount: 1,
             nominatedCount: 0,
             canSubmit: false,
@@ -239,7 +240,7 @@ describe('Nominations', () => {
     it('should enforce Club restrictions and terminal phase submission locks', async () => {
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await submit()).status).toBe(409);
-        expect(nominationsSchema.parse(await (await read()).json()).canSubmit).toBe(false);
+        expect(nominationData(await (await read()).json()).canSubmit).toBe(false);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ACTIVE' } });
         await api.prisma.session.update({ where: { id: sessionId }, data: { phase: 'CANCELLED' } });
         expect((await submit()).status).toBe(409);
@@ -249,13 +250,20 @@ describe('Nominations', () => {
         expect((await close()).status).toBe(409);
         await submit();
         expect((await close(admin, 2)).status).toBe(409);
-        const results = await Promise.all([close(), close()]);
+        await api.prisma.session.update({ where: { id: sessionId }, data: { detailsVersion: 7 } });
+        const detail = sessionSchema.parse(await (await read(admin)).json());
+        expect(detail).toMatchObject({ version: 7, phaseVersion: 1 });
+        expect((await close(admin, detail.version)).status).toBe(409);
+        const results = await Promise.all([
+            close(admin, detail.phaseVersion),
+            close(admin, detail.phaseVersion),
+        ]);
         expect(results.map((r) => r.status).toSorted((a, b) => a - b)).toEqual([201, 409]);
         expect(await api.prisma.session.findUnique({ where: { id: sessionId } })).toMatchObject({
             phase: 'WATCHING',
             movieId: movies[0],
             phaseVersion: 2,
-            detailsVersion: 2,
+            detailsVersion: 8,
         });
         expect(
             await api.prisma.clubAuditEvent.count({

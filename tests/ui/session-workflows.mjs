@@ -55,6 +55,8 @@ export function handleSessionWorkflow(request, response, pathname, token) {
                 clubName: settings.club.name,
                 phase: input.type === 'FULL_CYCLE' ? 'NOMINATION' : 'WATCHING',
                 version: 1,
+                phaseVersion: 1,
+                nominations: null,
                 canEdit: true,
                 canCancel: true,
                 topic: input.topic ?? null,

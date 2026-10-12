@@ -1,130 +1,105 @@
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
-import {
-    movieDetailsSchema,
     type TCloseNomination,
     type TNominations,
     type TSubmitNomination,
 } from '@pickflick/contracts';
+import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, recordAudit } from '../clubs/club-access.js';
-import { sourceSnapshotSchema } from '../movies/providers/movie-provider.js';
-import { access } from './session-roster-access.js';
-import { canManage } from './sessions.service.js';
+import { MoviesService } from '../movies/movies.service.js';
+import { access, canManage } from './session-roster-access.js';
 
 @Injectable()
 export class NominationsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly movies: MoviesService,
+    ) {}
 
-    async get(userId: string, id: string): Promise<TNominations> {
-        return this.prisma.$transaction(
-            async (tx) => {
-                const session = await tx.session.findUnique({ where: { id } });
-                if (!session) throw new NotFoundException();
-                const member = await findMembership(tx, userId, session.clubId);
-                const participants = await tx.sessionParticipant.findMany({
-                    where: { sessionId: id, status: 'ACCEPTED' },
-                    include: { nomination: true, membership: { include: { user: true } } },
-                });
-                const own = participants.find((p) => p.membershipId === member.id);
-                const rows = await tx.nomination.findMany({
-                    where: { sessionId: id, participant: { status: 'ACCEPTED' } },
-                    orderBy: [{ submittedAt: 'asc' }, { id: 'asc' }],
-                    include: {
-                        participant: { include: { membership: { include: { user: true } } } },
-                    },
-                });
-                const hidden =
-                    session.phase === 'NOMINATION' &&
-                    !session.showNominationsBeforeSubmit &&
-                    !own?.nomination;
-                const canSubmit =
-                    session.phase === 'NOMINATION' &&
-                    member.club.lifecycle === 'ACTIVE' &&
-                    Boolean(own) &&
-                    !own?.nomination;
-                const history = canSubmit
-                    ? await tx.nomination.findMany({
-                          where: {
-                              participant: { membership: { userId } },
-                              session: {
-                                  clubId: session.clubId,
-                                  createdAt: { lt: session.createdAt },
-                                  phase: { in: ['WATCHING', 'RATING', 'COMPLETED'] },
-                                  movieId: { not: null },
-                              },
-                          },
-                          include: { session: { select: { movieId: true } } },
-                          orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
-                      })
-                    : [];
-                const suggestionIds = [
-                    ...new Set(
-                        history
-                            .filter((row) => row.movieId !== row.session.movieId)
-                            .map((row) => row.movieId),
-                    ),
-                ].slice(0, 12);
-                const visible = hidden ? [] : rows;
-                const ids = [
-                    ...new Set([
-                        ...visible.map((row) => row.movieId),
-                        ...suggestionIds,
-                        ...(own?.nomination ? [own.nomination.movieId] : []),
-                    ]),
-                ];
-                const caches = await tx.movieDetailsCache.findMany({
-                    where: { movieId: { in: ids } },
-                    orderBy: { fetchedAt: 'desc' },
-                });
-                const sources = await tx.movieSourceCache.findMany({
-                    where: { movieId: { in: ids }, locale: 'en-US' },
-                    orderBy: { fetchedAt: 'desc' },
-                });
-                const movie = (movieId: string) => {
-                    const cached = caches.find((row) => row.movieId === movieId);
-                    const parsed = cached ? movieDetailsSchema.safeParse(cached.data) : null;
-                    const source = sources.find((row) => row.movieId === movieId);
-                    const snapshot = source ? sourceSnapshotSchema.safeParse(source.data) : null;
-                    let metadata = snapshot?.success ? snapshot.data.data : null;
-                    if (parsed?.success && parsed.data.id === movieId) metadata = parsed.data;
-                    return {
-                        id: movieId,
-                        title: metadata?.title ?? metadata?.originalTitle ?? null,
-                        year: metadata?.releaseYear ?? null,
-                    };
-                };
-                return {
-                    phase: session.phase,
-                    version: session.phaseVersion,
-                    acceptedCount: participants.length,
-                    nominatedCount: rows.length,
-                    canSubmit,
-                    canClose:
-                        session.phase === 'NOMINATION' &&
-                        rows.length > 0 &&
-                        (await canManage(tx, member)),
-                    hidden,
-                    ownMovie: own?.nomination ? movie(own.nomination.movieId) : null,
-                    nominations: visible.map((row) => ({
-                        movie: movie(row.movieId),
-                        author: session.showNominationAuthors
-                            ? row.participant.membership.user.displayName
-                            : null,
-                    })),
-                    suggestions: suggestionIds.map(movie),
-                };
+    async project(
+        tx: Prisma.TransactionClient,
+        userId: string,
+        session: Prisma.SessionGetPayload<object>,
+        member: Awaited<ReturnType<typeof findMembership>>,
+        canManageSession: boolean,
+    ): Promise<TNominations> {
+        const id = session.id;
+        const participants = await tx.sessionParticipant.findMany({
+            where: { sessionId: id, status: 'ACCEPTED' },
+            select: {
+                membershipId: true,
+                nomination: { select: { id: true, movieId: true, submittedAt: true } },
+                membership: { select: { user: { select: { displayName: true } } } },
             },
-            { isolationLevel: 'RepeatableRead' },
-        );
+        });
+        const own = participants.find((p) => p.membershipId === member.id);
+        const rows = participants
+            .flatMap((p) =>
+                p.nomination
+                    ? [
+                          {
+                              ...p.nomination,
+                              author: p.membership.user.displayName,
+                          },
+                      ]
+                    : [],
+            )
+            .sort(
+                (a, b) =>
+                    a.submittedAt.getTime() - b.submittedAt.getTime() || a.id.localeCompare(b.id),
+            );
+        const hidden = !session.showNominationsBeforeSubmit && !own?.nomination;
+        const canSubmit = member.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
+        const history = canSubmit
+            ? await tx.nomination.findMany({
+                  where: {
+                      participant: { membership: { userId } },
+                      session: {
+                          clubId: session.clubId,
+                          createdAt: { lt: session.createdAt },
+                          phase: { in: ['WATCHING', 'RATING', 'COMPLETED'] },
+                          movieId: { not: null },
+                      },
+                  },
+                  select: { movieId: true, session: { select: { movieId: true } } },
+                  orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
+              })
+            : [];
+        const suggestionIds = [
+            ...new Set(
+                history
+                    .filter((row) => row.movieId !== row.session.movieId)
+                    .map((row) => row.movieId),
+            ),
+        ].slice(0, 12);
+        const visible = hidden ? [] : rows;
+        const ids = [
+            ...new Set([
+                ...visible.map((row) => row.movieId),
+                ...suggestionIds,
+                ...(own?.nomination ? [own.nomination.movieId] : []),
+            ]),
+        ];
+        const summaries = await this.movies.cachedSummaries(tx, ids);
+        const movie = (movieId: string) => summaries.get(movieId)!;
+        return {
+            acceptedCount: participants.length,
+            nominatedCount: rows.length,
+            canSubmit,
+            canClose: rows.length > 0 && canManageSession,
+            hidden,
+            ownMovie: own?.nomination ? movie(own.nomination.movieId) : null,
+            nominations: visible.map((row) => ({
+                movie: movie(row.movieId),
+                author: session.showNominationAuthors ? row.author : null,
+            })),
+            suggestions: suggestionIds.map(movie),
+        };
     }
 
-    async submit(userId: string, id: string, input: TSubmitNomination): Promise<TNominations> {
+    async submit(userId: string, id: string, input: TSubmitNomination): Promise<void> {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await access(tx, userId, id);
             if (session.phase !== 'NOMINATION')
@@ -144,19 +119,19 @@ export class NominationsService {
                 data: { sessionId: id, participantId: participant.id, movieId: input.movieId },
             });
         });
-        return this.get(userId, id);
     }
 
-    async close(userId: string, id: string, input: TCloseNomination): Promise<TNominations> {
+    async close(userId: string, id: string, input: TCloseNomination): Promise<void> {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await access(tx, userId, id);
             if (member.role === 'MEMBER') throw new ForbiddenException();
             if (!(await canManage(tx, member)))
                 throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
-            if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.version)
+            if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'NOMINATION_CHANGED' });
             const nominations = await tx.nomination.findMany({
                 where: { sessionId: id, participant: { status: 'ACCEPTED' } },
+                select: { movieId: true },
             });
             if (!nominations.length) throw new ConflictException({ reason: 'NO_NOMINATIONS' });
             await recordAudit(tx, {
@@ -178,6 +153,5 @@ export class NominationsService {
                 },
             });
         });
-        return this.get(userId, id);
     }
 }

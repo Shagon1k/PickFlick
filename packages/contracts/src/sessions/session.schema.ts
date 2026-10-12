@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { multilineText, optionalText, singleLineText } from '../common/text.js';
+import { nominationsSchema } from './nomination.schema.js';
 
 export const sessionDetailsSchema = z.strictObject({
     scheduledAt: z.iso.datetime(),
@@ -56,6 +57,8 @@ export const sessionSchema = z.strictObject({
     deadlineAt: z.iso.datetime().nullable(),
     movieId: z.uuid().nullable(),
     version: z.number().int().positive(),
+    phaseVersion: z.number().int().positive(),
+    nominations: nominationsSchema.nullable(),
     canEdit: z.boolean(),
     canCancel: z.boolean(),
 });

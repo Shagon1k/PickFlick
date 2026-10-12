@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
+    movieDetailsSchema,
     movieIdSchema,
     movieSearchSchema,
     type TMovieDetails,
@@ -10,7 +11,9 @@ import {
     type TMovieResult,
     type TMovieSearch,
     type TMovieSearchResults,
+    type TNominationMovie,
 } from '@pickflick/contracts';
+import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { MoviesRepository } from './movies.repository.js';
@@ -21,6 +24,7 @@ import {
     MovieProviderError,
     parseProviderRecord,
     parseProviderSearch,
+    sourceSnapshotSchema,
     type TProviderRecord,
     type TProviderSearch,
 } from './providers/movie-provider.js';
@@ -37,6 +41,39 @@ export class MoviesService {
         private readonly repository: MoviesRepository,
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
     ) {}
+    async cachedSummaries(
+        tx: Prisma.TransactionClient,
+        ids: string[],
+    ): Promise<Map<string, TNominationMovie>> {
+        const caches = await tx.movieDetailsCache.findMany({
+            where: { movieId: { in: ids } },
+            select: { movieId: true, data: true },
+            orderBy: { fetchedAt: 'desc' },
+        });
+        const sources = await tx.movieSourceCache.findMany({
+            where: { movieId: { in: ids }, locale: 'en-US' },
+            select: { movieId: true, data: true },
+            orderBy: { fetchedAt: 'desc' },
+        });
+        return new Map(
+            ids.map((movieId) => {
+                const cached = caches.find((row) => row.movieId === movieId);
+                const parsed = cached ? movieDetailsSchema.safeParse(cached.data) : null;
+                const source = sources.find((row) => row.movieId === movieId);
+                const snapshot = source ? sourceSnapshotSchema.safeParse(source.data) : null;
+                let metadata = snapshot?.success ? snapshot.data.data : null;
+                if (parsed?.success && parsed.data.id === movieId) metadata = parsed.data;
+                return [
+                    movieId,
+                    {
+                        id: movieId,
+                        title: metadata?.title ?? metadata?.originalTitle ?? null,
+                        year: metadata?.releaseYear ?? null,
+                    },
+                ];
+            }),
+        );
+    }
     async search(
         input: TMovieSearch,
         allowStale = false,

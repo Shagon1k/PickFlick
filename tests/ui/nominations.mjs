@@ -11,8 +11,6 @@ const movie = {
 function projection(token, state) {
     const hidden = token.includes('hidden') && !state.own;
     return {
-        phase: state.phase,
-        version: 1,
         acceptedCount: 3,
         nominatedCount: state.own ? 2 : 1,
         canSubmit: !state.own && state.phase === 'NOMINATION' && !token.includes('readonly'),
@@ -77,7 +75,9 @@ export function handleNominations(request, response, pathname, token) {
             scheduledAt: '2026-12-01T00:00:00.000Z',
             deadlineAt: null,
             movieId: null,
-            version: 1,
+            version: 5,
+            phaseVersion: 1,
+            nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
             canEdit: token.includes('operator'),
             canCancel: token.includes('operator'),
         });
@@ -88,9 +88,14 @@ export function handleNominations(request, response, pathname, token) {
                 sendError(response, 503, 'UNAVAILABLE', 'nomination-failure');
                 return;
             }
-            if (pathname.endsWith('/close')) state.phase = 'SELECTION';
-            else state.own = { ...movie, id: input.movieId };
-            sendJson(response, 201, projection(token, state));
+            if (pathname.endsWith('/close')) {
+                if (input.phaseVersion !== 1) {
+                    sendError(response, 409, 'NOMINATION_CHANGED', 'nomination-version');
+                    return;
+                }
+                state.phase = 'SELECTION';
+            } else state.own = { ...movie, id: input.movieId };
+            sendJson(response, 201, null);
         });
     return true;
 }

@@ -402,11 +402,15 @@ A compound unique key enforces one submission per participant; a composite forei
 cross-Session linkage. Submission and operator early closure reuse Club → Session locking. Closure
 updates phase/details versions and records `SESSION_NOMINATION_CLOSED` atomically.
 
-`GET/POST /sessions/:sessionId/nominations` reads/submits the caller's nomination;
-`POST /sessions/:sessionId/nominations/close` accepts an operator's phase version and `CLOSE`
+`GET /sessions/:sessionId` includes nested nomination data while Nomination is open. Session
+`version` represents `detailsVersion`; `phaseVersion` is a separate concurrency token.
+`POST /sessions/:sessionId/nominations` submits the caller's nomination;
+`POST /sessions/:sessionId/nominations/close` accepts `phaseVersion` and `CLOSE`
 confirmation. Responses are private and uncached. The server filters hidden films and author names
 using the Session snapshot, exposes aggregate accepted/nominated counts, and derives up to twelve
 personal suggestions from earlier same-Club losing nominations with a resolved winner. Movie titles
-and years use validated catalog caches; unavailable metadata is explicit. No saved-film entity,
-provider request on submission, background runtime or dependency is added. Automatic completion,
+and years come from the Movies boundary's cache-only summaries; unavailable metadata is explicit.
+Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
+page, which fetches the authoritative Session detail once; the client keeps no projection copy.
+No saved-film entity, provider request on submission, background runtime or dependency is added. Automatic completion,
 deadlines, transactional outbox and live progress events remain Proposed for #43/#44.

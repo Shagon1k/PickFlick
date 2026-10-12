@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Header, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import {
     closeNominationSchema,
     submitNominationSchema,
@@ -14,15 +14,6 @@ import { NominationsService } from './nominations.service.js';
 @Controller('sessions/:sessionId/nominations')
 export class NominationsController {
     constructor(private readonly nominations: NominationsService) {}
-
-    @Get()
-    @Header('Cache-Control', 'private, no-store')
-    get(
-        @CurrentUser() user: IAuthUser,
-        @Param('sessionId', new ParseUUIDPipe({ version: '4' })) id: string,
-    ) {
-        return this.nominations.get(user.id, id);
-    }
 
     @Post()
     @Header('Cache-Control', 'private, no-store')
