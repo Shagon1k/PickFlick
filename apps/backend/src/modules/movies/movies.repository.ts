@@ -19,8 +19,6 @@ import { PrismaService } from '../../database/prisma.service.js';
 import {
     canUseStale,
     MovieProviderError,
-    providerRecordSchema,
-    providerSearchSchema,
     sourceSnapshotSchema,
     type TProviderRecord,
     type TProviderSearch,
@@ -93,8 +91,7 @@ export class MoviesRepository {
             if (!(await this.available(this.prisma, movie))) return null;
         return { data: parsed.data, fetchedAt: row.fetchedAt };
     }
-    async saveSearch(key: string, input: TProviderSearch, fetchedAt: Date) {
-        const data = providerSearchSchema.parse(input);
+    async saveSearch(key: string, data: TProviderSearch, fetchedAt: Date) {
         await this.prisma.$transaction(async (transaction) => {
             await this.lock(transaction);
             const movies: TMovieSummary[] = [];
@@ -116,8 +113,7 @@ export class MoviesRepository {
                 WHERE "MovieSearchCache"."fetchedAt" <= EXCLUDED."fetchedAt"`;
         });
     }
-    async saveDetails(movieId: string, key: string, input: TProviderRecord, fetchedAt: Date) {
-        const record = providerRecordSchema.parse(input);
+    async saveDetails(movieId: string, key: string, record: TProviderRecord, fetchedAt: Date) {
         await this.prisma.$transaction(async (transaction) => {
             await this.lock(transaction);
             await this.resolveMovie(transaction, record.externalIds, movieId);

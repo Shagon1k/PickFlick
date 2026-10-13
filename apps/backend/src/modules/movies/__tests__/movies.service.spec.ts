@@ -400,16 +400,6 @@ describe('MoviesService', () => {
             reason: 'TIMEOUT',
         });
     });
-    it('should translate invalid normalized provider payloads to an explicit failure', async () => {
-        provider.details.mockResolvedValue({
-            ...movieDetails(),
-            data: { ...movieDetails().data, posterUrl: 'https://evil.invalid/a.jpg' },
-        });
-        expect(await service.details(MOVIE_ID)).toMatchObject({
-            state: 'unavailable',
-            reason: 'INVALID_RESPONSE',
-        });
-    });
     it('should not return a concurrent stale projection to a caller without opt-in', async () => {
         provider.details.mockResolvedValue(movieDetails());
         const data = canonicalDetails();

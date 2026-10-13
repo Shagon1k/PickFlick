@@ -4,6 +4,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { movieImageUrlSchema, type TMovieMetadata } from '@pickflick/contracts';
 
 import { StorageService } from '../storage/storage.service.js';
+import { readBoundedBody } from './providers/movie-http.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -57,23 +58,7 @@ export class MovieImagesService {
                 signal: AbortSignal.timeout(5000),
             });
             if (!response.ok || !response.body) throw new Error('Catalog image unavailable');
-            const reader = response.body.getReader();
-            const chunks: Uint8Array[] = [];
-            let size = 0;
-            try {
-                while (true) {
-                    const chunk = await reader.read();
-                    if (chunk.done) break;
-                    const value: unknown = chunk.value;
-                    if (!(value instanceof Uint8Array)) throw new Error('Invalid image body');
-                    size += value.length;
-                    if (size > MAX_BYTES) throw new Error('Catalog image exceeds size limit');
-                    chunks.push(value);
-                }
-            } finally {
-                await reader.cancel();
-            }
-            body = Buffer.concat(chunks);
+            body = await readBoundedBody(response, MAX_BYTES);
             contentType = imageType(body);
         } catch {
             this.logger.warn({ event: 'movies.image.unavailable', key });

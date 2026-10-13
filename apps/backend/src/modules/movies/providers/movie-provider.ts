@@ -29,7 +29,7 @@ const sourceRemovalSchema = z.strictObject({
     attemptedAt: z.iso.datetime(),
 });
 export type TSourceRemoval = z.infer<typeof sourceRemovalSchema>;
-export const providerRecordSchema = z.strictObject({
+const providerRecordSchema = z.strictObject({
     externalIds: z.array(movieExternalIdSchema).min(1).max(10),
     data: movieMetadataSchema,
     similarExternalIds: sourceSnapshotSchema.shape.similarExternalIds,
@@ -38,13 +38,12 @@ export const providerRecordSchema = z.strictObject({
     provenance: z.array(movieProvenanceSchema).min(1).max(3),
 });
 export type TProviderRecord = z.infer<typeof providerRecordSchema>;
-export const providerSearchSchema = z.strictObject({
-    movies: z.array(providerRecordSchema).max(100),
-    page: z.number().int().min(1).max(500),
-    totalPages: z.number().int().nonnegative(),
-    totalResults: z.number().int().nonnegative(),
-});
-export type TProviderSearch = z.infer<typeof providerSearchSchema>;
+export type TProviderSearch = {
+    movies: TProviderRecord[];
+    page: number;
+    totalPages: number;
+    totalResults: number;
+};
 export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
     return parseProviderRecord({
         externalIds: snapshot.externalIds,
@@ -82,11 +81,6 @@ export function emptyMetadata() {
 }
 export function parseProviderRecord(value: unknown): TProviderRecord {
     const parsed = providerRecordSchema.safeParse(value);
-    if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
-    return parsed.data;
-}
-export function parseProviderSearch(value: unknown): TProviderSearch {
-    const parsed = providerSearchSchema.safeParse(value);
     if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
     return parsed.data;
 }

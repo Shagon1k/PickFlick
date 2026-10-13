@@ -69,43 +69,39 @@ export class MovieHttp {
 
 const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
 
-export async function readMovieResponse(response: Response, signal: AbortSignal): Promise<unknown> {
-    if (!response.body) {
-        throw new MovieProviderError('INVALID_RESPONSE');
-    }
-    const reader = response.body.getReader();
+class BodyTooLargeError extends Error {}
+
+/** Reads a whole body but stops once it exceeds `maxBytes`, even without a content-length. */
+export async function readBoundedBody(response: Response, maxBytes: number): Promise<Buffer> {
+    if (!response.body) return Buffer.alloc(0);
+    // Node types fetch bodies loosely; undici always yields byte chunks.
+    const reader = (response.body as ReadableStream<Uint8Array>).getReader();
     const chunks: Uint8Array[] = [];
     let bytes = 0;
     try {
         for (;;) {
-            const chunk = await reader.read();
-            if (chunk.done) {
-                break;
-            }
-            const value: unknown = chunk.value;
-            if (!(value instanceof Uint8Array)) {
-                throw new MovieProviderError('INVALID_RESPONSE');
-            }
+            const { done, value } = await reader.read();
+            if (done) return Buffer.concat(chunks);
             bytes += value.byteLength;
-            if (bytes > MAX_RESPONSE_BYTES) {
-                await reader.cancel().catch(() => {
-                    throw new MovieProviderError('INVALID_RESPONSE');
-                });
-                throw new MovieProviderError('INVALID_RESPONSE');
-            }
+            if (bytes > maxBytes) throw new BodyTooLargeError();
             chunks.push(value);
         }
-    } catch (error) {
-        if (error instanceof MovieProviderError) {
-            throw error;
-        }
-        throw new MovieProviderError(signal.aborted ? 'TIMEOUT' : 'UNAVAILABLE');
     } finally {
-        reader.releaseLock();
+        // Cancelling a finished or failed stream can itself fail; the read outcome stands.
+        await reader.cancel().catch(() => undefined);
+    }
+}
+
+export async function readMovieResponse(response: Response, signal: AbortSignal): Promise<unknown> {
+    let body: Buffer;
+    try {
+        body = await readBoundedBody(response, MAX_RESPONSE_BYTES);
+    } catch (error) {
+        if (error instanceof BodyTooLargeError) throw new MovieProviderError('INVALID_RESPONSE');
+        throw new MovieProviderError(signal.aborted ? 'TIMEOUT' : 'UNAVAILABLE');
     }
     try {
-        const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-        return body;
+        return JSON.parse(body.toString('utf8')) as unknown;
     } catch {
         throw new MovieProviderError('INVALID_RESPONSE');
     }

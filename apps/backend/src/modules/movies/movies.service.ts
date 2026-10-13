@@ -23,8 +23,6 @@ import {
     type IMovieProvider,
     MOVIE_PROVIDER,
     MovieProviderError,
-    parseProviderRecord,
-    parseProviderSearch,
     sourceSnapshotSchema,
     type TProviderRecord,
     type TProviderSearch,
@@ -101,7 +99,7 @@ export class MoviesService {
         const startedAt = new Date();
         let data: TProviderSearch;
         try {
-            data = parseProviderSearch(await this.provider.search(parsed));
+            data = await this.provider.search(parsed);
         } catch (error) {
             return this.failure(
                 error,
@@ -137,15 +135,13 @@ export class MoviesService {
         const startedAt = new Date();
         let data: TProviderRecord;
         try {
-            data = parseProviderRecord(
-                await this.provider.details({
-                    ...lookup,
-                    movieId,
-                    locale,
-                    allowStale: options.allowStale ?? false,
-                    forceRefresh: options.forceRefresh ?? false,
-                }),
-            );
+            data = await this.provider.details({
+                ...lookup,
+                movieId,
+                locale,
+                allowStale: options.allowStale ?? false,
+                forceRefresh: options.forceRefresh ?? false,
+            });
         } catch (error) {
             if (error instanceof MovieProviderError)
                 for (const removal of error.removals)
