@@ -42,7 +42,6 @@ export async function publishProgress(
             kind,
             phase: session.phase,
             phaseVersion: session.phaseVersion,
-            rosterVersion: session.rosterVersion,
             detailsVersion: session.detailsVersion,
             acceptedCount: participants.length,
             nominatedCount: participants.filter((p) => p.nomination).length,

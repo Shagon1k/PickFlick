@@ -17,12 +17,10 @@ projections. The source migration preserves UUIDs and existing mappings, invalid
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
 
 Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside
-its creation transaction; it locks the Club before reading. `readSessionRoster` locks a Session
-and returns accepted participants, their denominator, and phase/roster versions. Keep the
-transaction open through the phase decision. A database trigger versions roster insertions,
-deletions, and status changes; attendance-only edits keep the version. Session participants and
-invites use composite foreign keys to stay within one Club. Request authorization and invitation
-responses arrive with the Session workflows; these helpers are internal persistence operations.
+its creation transaction; it locks the Club before reading. Roster and phase-decision services
+hold Club → Session locks through their transaction. Session participants and invites use
+composite foreign keys to stay within one Club; an identity-only trigger prevents moving a
+participant between Sessions or Memberships. Issue #172 removes unused roster versioning.
 
 `src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
-coexistence, settings snapshots, roster serialization/rollback, and member-only invite storage.
+coexistence, settings snapshots, participant identity/rollback, and member-only invite storage.

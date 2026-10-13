@@ -245,7 +245,6 @@ describe('Session progress', () => {
                 kind: 'PROGRESS',
                 phase: 'NOMINATION',
                 phaseVersion: 1,
-                rosterVersion: 3,
                 detailsVersion: 1,
                 acceptedCount: 2,
                 nominatedCount: 1,

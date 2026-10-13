@@ -5,7 +5,7 @@ import type {
     IPendingSessionInvitation,
     ISessionRoster,
 } from '@pickflick/contracts';
-import { readSessionRoster, snapshotSessionSettings } from '@pickflick/database';
+import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     createUser,
@@ -80,7 +80,11 @@ describe('Session roster', () => {
             await api.request(`/sessions/${sessionId}/roster`, { userId })
         ).json()) as ISessionRoster;
     const createInvite = async () => (await (await invite()).json()) as ICreatedInvitation;
-    const denominator = () => api.prisma.$transaction((tx) => readSessionRoster(tx, sessionId));
+    const denominator = async () => ({
+        denominator: await api.prisma.sessionParticipant.count({
+            where: { sessionId, status: 'ACCEPTED' },
+        }),
+    });
     const pending = async (userId = member) =>
         (await (
             await api.request('/session-invitations/pending', { userId })
@@ -108,14 +112,12 @@ describe('Session roster', () => {
             topic: 'Protected title',
         });
         const membershipCount = await api.prisma.membership.count();
-        const before = await denominator();
         const responses = await Promise.all([respond(invitation.token), respond(invitation.token)]);
         expect(await responses[0]?.json()).toMatchObject({ state: 'accepted', sessionId });
         expect(await responses[1]?.json()).toMatchObject({ state: 'accepted', sessionId });
         expect(await api.prisma.membership.count()).toBe(membershipCount);
         expect(await denominator()).toMatchObject({
             denominator: 1,
-            rosterVersion: before.rosterVersion + 1,
         });
         expect(await roster()).toMatchObject({ acceptedCount: 1 });
         expect(await pending()).toEqual([]);
@@ -258,12 +260,10 @@ describe('Session roster', () => {
     it('should leave or remove once and prevent old accepted links from restoring participation', async () => {
         const invitation = await createInvite();
         await respond(invitation.token);
-        const before = await denominator();
         expect((await leave()).status).toBe(204);
         expect((await leave()).status).toBe(204);
         expect(await denominator()).toMatchObject({
             denominator: 0,
-            rosterVersion: before.rosterVersion + 1,
         });
         expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
         const replacement = await createInvite();
@@ -334,7 +334,6 @@ describe('Session roster', () => {
                 attended: true,
             },
         });
-        const before = await denominator();
         await Promise.all([
             api.request(`/clubs/${clubId}/leave`, {
                 userId: member,
@@ -345,7 +344,6 @@ describe('Session roster', () => {
         ]);
         expect(await denominator()).toMatchObject({
             denominator: 0,
-            rosterVersion: before.rosterVersion + 1,
         });
         expect(
             await api.prisma.sessionParticipant.findFirst({ where: { sessionId: completed.id } }),

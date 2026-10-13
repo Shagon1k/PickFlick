@@ -229,9 +229,9 @@ remains undecided.
 ### Automatic phase transitions
 
 `N` is the count of accepted SessionParticipants, excluding invited, declined, left, and removed
-rows. A roster write increments `rosterVersion` in its transaction; attendance-only edits do not.
-Phase decisions lock the Session before reading its phase, `phaseVersion`, `rosterVersion`, and
-accepted participants, and keep that lock until the decision commits. Leaving or removal updates
+rows. Phase decisions lock Club → Session before reading the phase, `phaseVersion`, and
+accepted participants, and keep those locks until the decision commits. Roster writes use the
+same locks. Leaving or removal updates
 the participant state before completion is checked. Every transition is idempotent and serialized
 so two clients or a deadline job cannot advance a Session twice.
 

@@ -159,3 +159,9 @@ Verification for run `r_fd9b79bfd880ed773b97`:
 - Verification uses temporary loopback ports after an interrupted mock API left its frontend
   listener on the default UI port. Repository test configuration stays unchanged.
 - Exact-head hosted preview and owner visual acknowledgement are pending.
+
+## Simplification — #172
+
+Migration 20 removes `rosterVersion`, its versioning trigger and the test-only `readSessionRoster`.
+The existing workflow lock order and progress version remain. A narrower identity-only trigger
+preserves the former trigger's participant immutability check.
