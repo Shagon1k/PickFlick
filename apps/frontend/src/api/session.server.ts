@@ -3,6 +3,8 @@ import 'server-only';
 import { resolveAuthReturnTarget } from '@pickflick/contracts';
 import { headers } from 'next/headers';
 
+import { visitorHeaders } from '@/lib/api.server';
+
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:3001';
 
 /**
@@ -17,11 +19,10 @@ export async function getSessionState(): Promise<TSessionState> {
     if (!cookie) {
         return 'anonymous';
     }
-    const clientAddress = incoming.get('cf-connecting-ip');
     try {
         const response = await fetch(new URL('/api/auth/get-session', BACKEND_URL), {
             cache: 'no-store',
-            headers: { cookie, ...(clientAddress ? { 'cf-connecting-ip': clientAddress } : {}) },
+            headers: visitorHeaders(incoming),
             signal: AbortSignal.timeout(2_000),
         });
         if (!response.ok) {
