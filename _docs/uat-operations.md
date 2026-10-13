@@ -124,11 +124,11 @@ tokens, or raw provider responses into evidence.
 
 ## Deadline worker operations
 
-Apply migration 18 before starting the candidate API and `worker`. Check the worker's Compose
-heartbeat health and `deadline.worker.started` / `deadline.reconciliation` events after release.
-An overdue Nomination with missing scheduling intent is repaired on startup; completed empty
-intent stays handled. Archived Clubs resume pending work after reactivation. Restarting the worker
-retries unfinished transactions; do not delete jobs or decision records to force a retry.
+Apply all migrations (through 22) before starting the candidate API and `worker`. Check the worker's Compose
+heartbeat health and `deadline.worker.started` / `deadline.cycle` events after release.
+An overdue Nomination is decided on the next cycle; a completed empty decision stays handled
+until the deadline changes. Archived Clubs resume after reactivation. Restarting the worker
+retries unfinished transactions; do not delete decision records to force a retry.
 
 `deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
 and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain

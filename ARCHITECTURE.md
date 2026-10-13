@@ -240,8 +240,8 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                       |
 
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
-and transition at most once in one transaction. The deadline worker reloads and rechecks each
-Session and reconciles missing overdue intent. Proposed Paddle flows verify events, store provider
+and transition at most once in one transaction. The deadline worker reads due Sessions directly and
+rechecks each one under its locks. Proposed Paddle flows verify events, store provider
 IDs and apply changes idempotently; proposed account deletion anonymizes shared history and revokes
 every authentication session.
 
@@ -420,25 +420,24 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, durable `NominationDeadlineJob` scheduling intent,
-`NominationDeadlineDecision` audit records without a human actor, and recipient-specific
-`NominationDeadlineNotification` intent. Notification delivery remains Proposed for the later
-notification phase; these rows do not send messages.
+Migration 18 adds Session `deadlineVersion`, `NominationDeadlineDecision` audit records without a
+human actor, and recipient-specific `NominationDeadlineNotification` intent. Migration 22 removed
+the separate `NominationDeadlineJob` scheduling table: the Session row is the schedule. Notification
+delivery remains Proposed for the later notification phase; these rows do not send messages.
 
-Creation and deadline edits schedule intent in their Session transaction. Edits increment only
-`deadlineVersion` when the deadline changes; clearing, cancellation and manual closure finish pending
-intent. The worker selects candidates without locking jobs, then locks Club → Session → job and
-rechecks phase, lifecycle, phase version, deadline version and timestamp. Zero accepted nominations
-leave Nomination open and retain one operator-alert decision per deadline version. One selects that
-Movie for Watching; two or more nominations, including repeated Movies, open Selection. Transitions
-clear the deadline and increment phase/details/deadline versions. Decision audit, recipient intent
-and job completion commit atomically with the transition.
+Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
+Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
+`deadlineVersion`. The worker locks Club → Session and rechecks those conditions. Zero accepted
+nominations leave Nomination open and record one operator-alert decision per deadline version.
+One selects that Movie for Watching; two or more nominations, including repeated Movies, open
+Selection. Transitions clear the deadline and increment phase/details/deadline versions. The
+decision, recipient intent and transition commit atomically.
 
-`apps/backend/src/deadline-worker.ts` runs independently of the API. It reconciles missing overdue
-intent on startup and every five seconds, preserving handled empty deadlines, then executes pending
-due jobs through the same transaction. Archived Clubs pause until reactivation. Structured events
-record repairs, outcomes, stale work, safe failure reasons and lateness without user text or database
-error details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
+`apps/backend/src/deadline-worker.ts` runs independently of the API. Every five seconds it selects
+due Sessions and decides each in its own transaction; crashes and restarts leave nothing to repair.
+Archived Clubs pause until reactivation. Structured events record each cycle's due count,
+outcomes, stale work, safe failure reasons and lateness without user text or database error
+details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
 stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
 file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
 framework is introduced. Production activation remains unauthorized.
@@ -457,7 +456,7 @@ Submission and roster changes evaluate accepted participants under Club → Sess
 N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
 repeated Movies count separately. Session/Club departure and removal update participation first.
 Archived Clubs publish progress without advancing; reactivation checks the current roster.
-The shared transition clears deadline intent and increments phase/details versions exactly once.
+The shared transition clears the deadline and increments phase/details versions exactly once.
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
 independent, preserving ADR-018's empty-deadline operator intent.
 

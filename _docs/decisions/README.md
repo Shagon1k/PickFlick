@@ -38,7 +38,7 @@ separately.
 | [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
 | [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160; amended in #172 | 2026-10-09 |
-| [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13 | 2026-10-12 |
+| [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13; amended in #172 | 2026-10-12 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -1384,6 +1384,19 @@ deadline version. Test archived-Club pause/reactivation, safe logs and shutdown.
 migration to fresh and pre-change isolated databases and preserve existing Session data. Run
 `pnpm verify`, `pnpm test:integration`, `pnpm deploy:check`, worker image/startup checks and relevant
 Session/Nomination smoke checks after implementation.
+
+### Amendment — 2026-10-13: the Session row is the schedule
+
+- **Status:** Accepted by the developer in [#172](https://github.com/Shagon1k/PickFlick/issues/172)
+
+`NominationDeadlineJob` copied `deadlineAt`, `deadlineVersion` and `phaseVersion` from the
+Session, and reconciliation existed only to repair job rows the same transaction already wrote.
+Migration 22 drops the table and points `NominationDeadlineDecision` at `Session`. The worker
+selects Sessions in Nomination whose deadline has passed in an active Club and that have no
+decision for their current `deadlineVersion`, then decides each under Club → Session locks. One
+decision per deadline version still limits empty-deadline alerts to one per version; clearing,
+cancellation and manual closure need no invalidation because the Session itself no longer matches.
+Each cycle logs `deadline.cycle` with its due count instead of a reconciliation event.
 
 ### Alternatives
 

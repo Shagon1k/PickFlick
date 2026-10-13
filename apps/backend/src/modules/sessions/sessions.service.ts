@@ -12,7 +12,6 @@ import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
-import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-intent.js';
 import { NominationsService } from './nominations.service.js';
 import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
@@ -69,7 +68,7 @@ export class SessionsService {
                 ) {
                     throw new ConflictException({ reason: 'MOVIE_UNAVAILABLE' });
                 }
-                const created = await transaction.session.create({
+                await transaction.session.create({
                     data: {
                         ...input,
                         id,
@@ -80,7 +79,6 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
-                await scheduleDeadline(transaction, created);
                 await audit(transaction, {
                     clubId,
                     sessionId: id,
@@ -120,7 +118,7 @@ export class SessionsService {
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
             }
-            const updated = await transaction.session.update({
+            await transaction.session.update({
                 where: { id },
                 data: {
                     ...data,
@@ -128,10 +126,6 @@ export class SessionsService {
                     deadlineVersion: deadlineChanged ? { increment: 1 } : undefined,
                 },
             });
-            if (deadlineChanged) {
-                await invalidateDeadline(transaction, id);
-                await scheduleDeadline(transaction, updated);
-            }
             await audit(transaction, {
                 clubId: session.clubId,
                 sessionId: id,
@@ -162,7 +156,6 @@ export class SessionsService {
                     detailsVersion: { increment: 1 },
                 },
             });
-            await invalidateDeadline(transaction, id);
             await transaction.sessionInvite.updateMany({
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },

@@ -1,14 +1,11 @@
 import type { Prisma } from '@pickflick/database';
 
-import { invalidateDeadline } from './nomination-deadline-intent.js';
-
 /** The caller holds Club → Session locks through the decision and outbox write. */
 export async function advanceNomination(
     tx: Prisma.TransactionClient,
     session: Prisma.SessionGetPayload<object>,
     nominations: { movieId: string }[],
 ) {
-    await invalidateDeadline(tx, session.id);
     await tx.session.update({
         where: { id: session.id },
         data: {

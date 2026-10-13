@@ -406,15 +406,15 @@ hidden from normal history unless product copy exposes it.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) and the [ADR registry](_docs/decisions/README.md) own the detail.
 
-| Area       | Decision                                                                                                     | ADR               |
-| ---------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
-| Repository | pnpm monorepo with `frontend` and `backend`; a backend worker reconciles Nomination deadlines in PostgreSQL. | ADR-014, ADR-018  |
-| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles.              | ADR-013           |
-| Validation | Shared zod schemas for requests, forms, and the environment.                                                 | ADR-012           |
-| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                   | ADR-002, 010, 011 |
-| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                 | ADR-003           |
-| Jobs       | Nomination-specific PostgreSQL scheduling intent and separate backend worker; no queue library.              | ADR-018           |
-| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                   | ADR-007, 008      |
+| Area       | Decision                                                                                                    | ADR               |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | ----------------- |
+| Repository | pnpm monorepo with `frontend` and `backend`; a backend worker applies Nomination deadlines from PostgreSQL. | ADR-014, ADR-018  |
+| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles.             | ADR-013           |
+| Validation | Shared zod schemas for requests, forms, and the environment.                                                | ADR-012           |
+| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                  | ADR-002, 010, 011 |
+| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                | ADR-003           |
+| Jobs       | Separate backend worker reads due Sessions from PostgreSQL; no job table or queue library.                  | ADR-018           |
+| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                  | ADR-007, 008      |
 
 | Provider              | Purpose                                                                                    | Status                                                                                   |
 | --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -839,8 +839,9 @@ live progress events
       Do not add a separate saved-film entity or manual add/remove operations.
 - [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
-- [ ] Implement durable delayed deadline jobs with stable IDs, stale-job guards, periodic overdue
-      reconciliation, and safe deadline changes and cancellation.
+- [ ] Implement durable deadline automation driven by the Session row, with stale-decision guards
+      and safe deadline changes and cancellation (simplified from job rows and reconciliation in
+      #172).
 - [ ] Implement the automatic `N/N` transition: two or more nominations open Selection; one selects
       that Movie and advances to Watching.
 - [ ] Implement deadline outcomes: none stays open and alerts operators; one advances to Watching;

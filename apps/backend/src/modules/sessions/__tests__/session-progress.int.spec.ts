@@ -263,22 +263,17 @@ describe('Session progress', () => {
     it('should serialize deadline execution against the final submission without a second transition', async () => {
         const deadlineAt = new Date(Date.now() + 60000);
         await api.prisma.session.update({ where: { id: sessionId }, data: { deadlineAt } });
-        await api.prisma.nominationDeadlineJob.create({
-            data: { sessionId, deadlineVersion: 1, phaseVersion: 1, deadlineAt },
-        });
         await submit();
         const worker = new NominationDeadlines(api.prisma, () => undefined);
         await Promise.all([
             submit(users[1]),
-            worker.execute(sessionId, 1, new Date(deadlineAt.getTime() + 1)),
+            worker.execute(sessionId, new Date(deadlineAt.getTime() + 1)),
         ]);
         expect(await state()).toMatchObject({ phaseVersion: 2, deadlineAt: null });
         expect(
             (await events()).filter((e) => ['AUTOMATIC', 'DEADLINE'].includes(e.kind)),
         ).toHaveLength(1);
-        expect(await worker.execute(sessionId, 1, new Date(deadlineAt.getTime() + 2))).toBe(
-            'HANDLED',
-        );
+        expect(await worker.execute(sessionId, new Date(deadlineAt.getTime() + 2))).toBe('STALE');
     });
     it('should send current version snapshots to two clients and heal a stale reconnect without exposing nomination data', async () => {
         const streams = await Promise.all(

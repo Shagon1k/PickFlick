@@ -205,15 +205,15 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 
 The worker reads only `APP_ENV` and `DATABASE_URL` through the existing database environment schema.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
-`pnpm test:worker` checks built-process overdue repair, restart idempotence and graceful shutdown
+`pnpm test:worker` checks built-process overdue decisions, restart idempotence and graceful shutdown
 against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
 
-The worker polls every five seconds and processes database-only transactions sequentially. It repairs
-missing overdue jobs before executing due intent. `deadline.reconciliation` records the repair count;
-`deadline.repaired`, `deadline.outcome` and `deadline.stale` identify Sessions and deadline versions.
+The worker polls every five seconds and processes database-only transactions sequentially.
+`deadline.cycle` records each cycle's due count; `deadline.outcome` and `deadline.stale` identify
+Sessions and deadline versions.
 Outcome events include `latenessMs`. `deadline.failure` and `deadline.cycle.failed` omit raw exceptions;
-inspect PostgreSQL health and schema compatibility when they recur. Pending jobs remain retryable.
-Archived Clubs pause. Completed empty decisions are preserved until a new deadline version is scheduled.
+inspect PostgreSQL health and schema compatibility when they recur. Due Sessions remain retryable.
+Archived Clubs pause. Completed empty decisions are preserved until the deadline changes.
 
 Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
 seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
