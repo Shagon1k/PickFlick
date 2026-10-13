@@ -134,20 +134,20 @@ export class NominationDeadlines {
             if (nominations.length > 1) outcome = 'SELECTION';
             const recipients =
                 outcome === 'EMPTY'
-                    ? await tx.membership.findMany({
-                          where: {
-                              clubId: session.clubId,
-                              status: 'ACTIVE',
-                              role: { in: ['ADMIN', 'MODERATOR'] },
-                          },
-                          select: { id: true },
-                      })
-                    : (
-                          await tx.sessionParticipant.findMany({
-                              where: { sessionId, status: 'ACCEPTED' },
-                              select: { membershipId: true },
+                    ? (
+                          await tx.membership.findMany({
+                              where: {
+                                  clubId: session.clubId,
+                                  status: 'ACTIVE',
+                                  role: { in: ['ADMIN', 'MODERATOR'] },
+                              },
+                              select: { id: true },
                           })
-                      ).map(({ membershipId }) => ({ id: membershipId }));
+                      ).map(({ id }) => ({ membershipId: id }))
+                    : await tx.sessionParticipant.findMany({
+                          where: { sessionId, status: 'ACCEPTED' },
+                          select: { membershipId: true },
+                      });
             await tx.nominationDeadlineDecision.create({
                 data: {
                     sessionId,
@@ -155,7 +155,7 @@ export class NominationDeadlines {
                     outcome,
                     nominationCount: nominations.length,
                     createdAt: now,
-                    notifications: { create: recipients.map(({ id }) => ({ membershipId: id })) },
+                    notifications: { create: recipients },
                 },
             });
             if (outcome !== 'EMPTY') {
