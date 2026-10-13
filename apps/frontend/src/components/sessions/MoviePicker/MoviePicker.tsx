@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { searchMoviesAction } from '@/components/shells/ProductSearch/actions';
 import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
+import {
+    type TMovieSearchResult,
+    useMovieSearch,
+} from '@/components/shells/ProductSearch/use-movie-search';
 import Button from '@/components/ui/Button/Button';
 import TextInput from '@/components/ui/TextInput/TextInput';
 
 import styles from './MoviePicker.module.scss';
 
-type TResult = Awaited<ReturnType<typeof searchMoviesAction>>;
 interface IMoviePickerProps {
     value: string | null;
     onChange: (id: string | null) => void;
@@ -18,31 +20,13 @@ interface IMoviePickerProps {
 }
 export default function MoviePicker({ value, onChange, error, disabled }: IMoviePickerProps) {
     const [query, setQuery] = useState('');
-    const [response, setResponse] = useState<{ query: string; result: TResult } | null>(null);
+
     const [selectedTitle, setSelectedTitle] = useState('');
     const [index, setIndex] = useState(-1);
     const inputRef = useRef<HTMLInputElement>(null);
     const term = query.trim();
-    const result = response?.query === term ? response.result : null;
+    const { result, clear } = useMovieSearch(query, !value);
     const movies = result && 'data' in result ? result.data.movies : [];
-    useEffect(() => {
-        if (!term || value) return;
-        let cancelled = false;
-        const timer = setTimeout(() => {
-            void searchMoviesAction(term).then(
-                (result) => {
-                    if (!cancelled) setResponse({ query: term, result });
-                },
-                () => {
-                    if (!cancelled) setResponse({ query: term, result: { state: 'error' } });
-                },
-            );
-        }, 300);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, [term, value]);
     useEffect(() => {
         if (index >= 0)
             document.getElementById(`session-movie-${index}`)?.scrollIntoView({ block: 'nearest' });
@@ -51,7 +35,7 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
         setSelectedTitle(movie.title ?? movie.originalTitle ?? 'Untitled film');
         onChange(movie.id);
         setQuery('');
-        setResponse(null);
+        clear();
         inputRef.current?.focus();
     }
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -139,7 +123,7 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
     );
 }
 
-function searchMessage(term: string, result: TResult | null): string {
+function searchMessage(term: string, result: TMovieSearchResult | null): string {
     if (!term) return '';
     if (!result) return 'Searching films…';
     if (result.state === 'signed-out') return 'Sign in again to search films.';

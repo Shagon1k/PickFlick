@@ -8,12 +8,10 @@ import styles from '@/components/shells/product-navigation.module.scss';
 import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
 import Icon from '@/components/ui/Icon/Icon';
 
-import { searchMoviesAction } from './actions';
 import SearchCredits from './SearchCredits';
+import { type TMovieSearchResult, useMovieSearch } from './use-movie-search';
 
-type TSearchResponse = Awaited<ReturnType<typeof searchMoviesAction>>;
-
-function searchMessage(term: string, result: TSearchResponse | null): string {
+function searchMessage(term: string, result: TMovieSearchResult | null): string {
     if (!term) return '';
     if (!result) return 'Searching films…';
     if (result.state === 'signed-out') return 'Your session has ended. Sign in to search films.';
@@ -38,20 +36,18 @@ export default function ProductSearch() {
     const rootRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [query, setQuery] = useState('');
-    const [response, setResponse] = useState<{ query: string; result: TSearchResponse } | null>(
-        null,
-    );
+
     const [activeIndex, setActiveIndex] = useState(-1);
     const [wasOpen, setWasOpen] = useState(open);
     const term = query.trim();
-    const result = response?.query === term ? response.result : null;
+    const { result, clear } = useMovieSearch(query, open);
     const movies = result && 'data' in result ? result.data.movies : [];
 
     if (wasOpen !== open) {
         setWasOpen(open);
         if (!open) {
             setQuery('');
-            setResponse(null);
+            clear();
             setActiveIndex(-1);
         }
     }
@@ -61,25 +57,6 @@ export default function ProductSearch() {
     useEffect(() => {
         if (open) inputRef.current?.focus({ preventScroll: true });
     }, [open]);
-
-    useEffect(() => {
-        if (!open || !term) return;
-        let cancelled = false;
-        const timer = setTimeout(() => {
-            void searchMoviesAction(term).then(
-                (result) => {
-                    if (!cancelled) setResponse({ query: term, result });
-                },
-                () => {
-                    if (!cancelled) setResponse({ query: term, result: { state: 'error' } });
-                },
-            );
-        }, 300);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, [open, term]);
 
     useEffect(() => {
         if (activeIndex >= 0)
@@ -133,7 +110,7 @@ export default function ProductSearch() {
                     maxLength={200}
                     onChange={(event) => {
                         setQuery(event.target.value);
-                        if (event.target.value.trim() !== term) setResponse(null);
+                        if (event.target.value.trim() !== term) clear();
                         setActiveIndex(-1);
                     }}
                     onKeyDown={handleKeyboard}
