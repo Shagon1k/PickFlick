@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { createSession, updateSession } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
+import { apiFailureMessage } from '@/lib/api-failure.server';
 
 export async function saveSessionAction(clubId: string, id: string | null, input: unknown) {
     if (!z.uuid().safeParse(clubId).success || (id !== null && !z.uuid().safeParse(id).success)) {
@@ -30,18 +30,13 @@ export async function saveSessionAction(clubId: string, id: string | null, input
 }
 
 function saveFailure(error: unknown) {
-    if (error instanceof ApiError) {
-        if (error.status === 401)
-            return {
-                ok: false as const,
-                message: 'Your sign-in expired. Sign in again; your entries are still here.',
-            };
-        if ([403, 404].includes(error.status))
-            return {
-                ok: false as const,
-                message: 'You no longer have permission to manage this Session.',
-            };
-        const messages: Record<string, string> = {
+    const message = apiFailureMessage(error, {
+        statuses: {
+            401: 'Your sign-in expired. Sign in again; your entries are still here.',
+            403: 'You no longer have permission to manage this Session.',
+            404: 'You no longer have permission to manage this Session.',
+        },
+        reasons: {
             BLOCKING_SESSION:
                 'This Club already has a Session in Nomination, Selection, or Watching. Open the Club Hub to view it.',
             SESSION_CHANGED:
@@ -50,10 +45,9 @@ function saveFailure(error: unknown) {
             CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
             MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
             DEADLINE_PAST: 'The nomination deadline has passed. Choose a new deadline.',
-        };
-        const message = error.reason ? messages[error.reason] : undefined;
-        if (message) return { ok: false as const, message };
-    }
+        },
+    });
+    if (message) return { ok: false as const, message };
     console.error('Session save failed.');
     return {
         ok: false as const,

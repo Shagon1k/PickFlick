@@ -13,14 +13,16 @@ type TInvitationResult =
       };
 
 import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
-import { ApiError } from '@/lib/api.server';
+import { apiFailureMessage } from '@/lib/api-failure.server';
 
 function failure(error: unknown): string {
-    if (error instanceof ApiError && error.reason === 'MEMBER_LIMIT_REACHED')
-        return 'This Club has reached its member limit.';
-    if (error instanceof ApiError && [401, 403, 404].includes(error.status))
-        return 'Invitation management is no longer available to you.';
-    return 'Invitations could not be updated. Check your connection and try again.';
+    const permission = 'Invitation management is no longer available to you.';
+    return (
+        apiFailureMessage(error, {
+            reasons: { MEMBER_LIMIT_REACHED: 'This Club has reached its member limit.' },
+            statuses: { 401: permission, 403: permission, 404: permission },
+        }) ?? 'Invitations could not be updated. Check your connection and try again.'
+    );
 }
 
 export async function manageInvitationsAction(

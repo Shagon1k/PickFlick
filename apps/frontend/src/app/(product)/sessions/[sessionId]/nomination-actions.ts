@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { closeNominations, submitNomination } from '@/api/nominations.server';
-import { ApiError } from '@/lib/api.server';
+import { apiFailureMessage } from '@/lib/api-failure.server';
 
 export async function refreshNominationsAction(id: string) {
     if (!z.uuidv4().safeParse(id).success)
@@ -38,24 +38,19 @@ export async function closeNominationsAction(id: string, input: unknown) {
     }
 }
 function nominationError(error: unknown) {
-    if (error instanceof ApiError) {
-        if (error.reason === 'ALREADY_NOMINATED')
-            return {
-                ok: false as const,
-                message: 'You already nominated a Movie. Refresh to see your nomination.',
-            };
-        if (error.status === 409)
-            return {
-                ok: false as const,
-                message:
-                    'This Session changed or nominations are unavailable. Refresh before trying again.',
-            };
-        if ([401, 403, 404].includes(error.status))
-            return {
-                ok: false as const,
-                message: 'You no longer have permission for this action.',
-            };
-    }
+    const permission = 'You no longer have permission for this action.';
+    const message = apiFailureMessage(error, {
+        reasons: {
+            ALREADY_NOMINATED: 'You already nominated a Movie. Refresh to see your nomination.',
+        },
+        statuses: {
+            401: permission,
+            403: permission,
+            404: permission,
+            409: 'This Session changed or nominations are unavailable. Refresh before trying again.',
+        },
+    });
+    if (message) return { ok: false as const, message };
     console.error('Nomination request failed.');
     return {
         ok: false as const,

@@ -15,7 +15,7 @@ import {
     revokeSessionInvitation,
 } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
+import { apiFailureMessage } from '@/lib/api-failure.server';
 
 const commandSchema = z.discriminatedUnion('action', [
     createSessionInvitationSchema.extend({ action: z.literal('invite') }),
@@ -51,12 +51,19 @@ export async function changeRosterAction(id: string, input: unknown) {
                     : 'Roster updated.',
         };
     } catch (error) {
+        const unavailable =
+            'This action is no longer available. Reload to check your access and the Session.';
         return {
             ok: false,
             message:
-                error instanceof ApiError && [401, 403, 404, 409].includes(error.status)
-                    ? 'This action is no longer available. Reload to check your access and the Session.'
-                    : 'We could not save your change. Check your connection and retry.',
+                apiFailureMessage(error, {
+                    statuses: {
+                        401: unavailable,
+                        403: unavailable,
+                        404: unavailable,
+                        409: unavailable,
+                    },
+                }) ?? 'We could not save your change. Check your connection and retry.',
         };
     }
 }
