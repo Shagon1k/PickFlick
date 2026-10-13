@@ -69,7 +69,7 @@ describe('NominationDeadlines', () => {
             json: { ...details, type: 'FULL_CYCLE', movieId: null },
         });
         if (created.status !== 201) throw new Error('Fixture Session creation failed');
-        sessionId = (await created.json()).id;
+        sessionId = sessionSchema.parse(await created.json()).id;
         for (const membership of await api.prisma.membership.findMany({ where: { clubId } })) {
             await api.prisma.sessionParticipant.create({
                 data: { sessionId, clubId, membershipId: membership.id, status: 'ACCEPTED' },

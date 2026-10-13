@@ -64,6 +64,53 @@ describe('Movie source migration', () => {
                     .map((row) => row.id)
                     .toSorted((left, right) => left.localeCompare(right)),
             ).toEqual([id, removedId].toSorted((left, right) => left.localeCompare(right)));
+            const cacheKey = '1'.repeat(64);
+            const olderSource = '2026-10-08T12:00:00.000Z';
+            await client.query(
+                'INSERT INTO "MovieDetailsCache" ("movieId",key,data,"fetchedAt") VALUES ($1,$2,$3,$4)',
+                [
+                    id,
+                    cacheKey,
+                    JSON.stringify({
+                        title: 'Preserved title',
+                        releaseYear: 2026,
+                        provenance: [{ fetchedAt: olderSource }],
+                    }),
+                    at,
+                ],
+            );
+            const simplification = await readFile(
+                new URL(
+                    '../../prisma/migrations/20261013040000_simplify_catalog_cache/migration.sql',
+                    import.meta.url,
+                ),
+                'utf8',
+            );
+            await client.query(simplification.replace('BEGIN;', '').replace('COMMIT;', ''));
+            expect(
+                (
+                    await client.query<{ title: string; releaseYear: number }>(
+                        'SELECT title,"releaseYear" FROM "Movie" WHERE id=$1',
+                        [id],
+                    )
+                ).rows,
+            ).toEqual([{ title: 'Preserved title', releaseYear: 2026 }]);
+            expect(
+                (
+                    await client.query<{ fetchedAt: Date }>(
+                        'SELECT "fetchedAt" FROM "MovieDetailsCache" WHERE "movieId"=$1',
+                        [id],
+                    )
+                ).rows[0]?.fetchedAt.toISOString(),
+            ).toBe(olderSource);
+            expect(
+                (
+                    await client.query<{ externalId: string }>(
+                        'SELECT "externalId" FROM "MovieExternalId" WHERE "movieId"=$1',
+                        [removedId],
+                    )
+                ).rows,
+            ).toEqual([{ externalId: '101' }]);
             const independent = randomUUID();
             await client.query('INSERT INTO "Movie" ("id") VALUES ($1)', [independent]);
             expect(
