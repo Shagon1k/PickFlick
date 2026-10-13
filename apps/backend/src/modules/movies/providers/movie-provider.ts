@@ -10,7 +10,7 @@ import {
 } from '@pickflick/contracts';
 import { z } from 'zod';
 
-export const sourceSnapshotSchema = z.strictObject({
+const sourceSnapshotSchema = z.strictObject({
     source: movieSourceSchema,
     locale: z.literal('en-US'),
     fetchedAt: z.iso.datetime(),
@@ -24,17 +24,10 @@ export function parseSourceSnapshot(value: unknown): TSourceSnapshot {
     if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
     return parsed.data;
 }
-const sourceRemovalSchema = z.strictObject({
-    source: movieSourceSchema,
-    attemptedAt: z.iso.datetime(),
-});
-export type TSourceRemoval = z.infer<typeof sourceRemovalSchema>;
 const providerRecordSchema = z.strictObject({
     externalIds: z.array(movieExternalIdSchema).min(1).max(10),
     data: movieMetadataSchema,
     similarExternalIds: sourceSnapshotSchema.shape.similarExternalIds,
-    snapshots: z.array(sourceSnapshotSchema).min(1).max(3),
-    removals: z.array(sourceRemovalSchema).max(3).default([]),
     provenance: z.array(movieProvenanceSchema).min(1).max(3),
 });
 export type TProviderRecord = z.infer<typeof providerRecordSchema>;
@@ -49,7 +42,6 @@ export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
         externalIds: snapshot.externalIds,
         data: snapshot.data,
         similarExternalIds: snapshot.similarExternalIds,
-        snapshots: [snapshot],
         provenance: [
             {
                 source: snapshot.source,
@@ -87,14 +79,10 @@ export function parseProviderRecord(value: unknown): TProviderRecord {
 
 export const MOVIE_PROVIDER = Symbol('MOVIE_PROVIDER');
 export interface IMovieLookup {
-    movieId: string;
     externalIds: TMovieExternalId[];
     locale: 'en-US';
-    allowStale: boolean;
-    forceRefresh: boolean;
 }
 export interface IMovieProvider {
-    configurationKey: string;
     search(input: TMovieSearch): Promise<TProviderSearch>;
     details(input: IMovieLookup): Promise<TProviderRecord>;
 }
@@ -103,7 +91,6 @@ export class MovieProviderError extends Error {
         public reason: TMovieProviderReason,
         public retryAt?: Date,
         public source?: TMovieSource,
-        public removals: TSourceRemoval[] = [],
     ) {
         super(`Movie provider: ${reason}`);
     }

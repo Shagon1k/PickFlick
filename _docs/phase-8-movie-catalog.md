@@ -27,11 +27,10 @@ The implementation follows [ADR-017](decisions/README.md#adr-017--keep-movie-ide
   reject contradictory mappings and serialize overlapping batches to avoid lock inversion.
 - Images support trusted HTTPS CDN URLs; ratings retain source/scale; trailers remain links.
   Poster/S3 copying and live response completeness are separate follow-ups.
-- Every detail source retains its own locale/time. Search does not refresh details, and primary
-  refresh does not renew enrichment. Failure and source removal are explicit in provenance.
-- Stale use requires opt-in, bounded age and transient failure. Source tombstones preserve UUIDs,
-  are monotonic, and require a strictly newer detail success for restoration. Every source removal
-  survives an all-source failure and uses its own attempt-start clock.
+- The merged details projection is the only details cache (migration 21 removed per-source
+  snapshots and removal tombstones). Search does not refresh details. Source failures are explicit
+  in provenance.
+- Stale use requires opt-in, bounded age and transient failure.
 - The additive source migration preserves UUIDs, valid external links and removal observations;
   legacy provider JSON caches are refilled under the new contract. Conflicting IMDb links fail
   migration for reviewed reconciliation. No Session history is rewritten.

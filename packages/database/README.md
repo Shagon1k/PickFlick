@@ -12,8 +12,7 @@ Prisma schema, reviewed migrations, the generated client, fixtures, and guarded 
 - `src/__tests__/constraints.int.spec.ts` — database constraint checks (`pnpm test:integration`).
 
 The catalog uses `Movie.id` UUID as identity, `MovieExternalId` for unique source correspondences,
-`MovieSourceCache` for independent source clocks, and configuration/locale keyed detail/search
-projections. The source migration preserves UUIDs and existing mappings, invalidates legacy JSON
+summary title/year on `Movie`, and provider/locale keyed detail and search projections. The source migration preserves UUIDs and existing mappings, invalidates legacy JSON
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
 
 Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside

@@ -18,7 +18,6 @@ export class MovieHttp {
     ): Promise<TData> {
         if (this.retryAt && this.retryAt.getTime() > Date.now())
             throw new MovieProviderError('RATE_LIMITED', this.retryAt, this.source);
-        const attemptedAt = new Date().toISOString();
         const signal = AbortSignal.timeout(this.timeoutMs);
         try {
             const response = await this.request(new URL(path, this.origin), {
@@ -33,12 +32,7 @@ export class MovieHttp {
             return parsed.data;
         } catch (error) {
             if (error instanceof MovieProviderError)
-                throw new MovieProviderError(
-                    error.reason,
-                    error.retryAt,
-                    this.source,
-                    error.reason === 'NOT_FOUND' ? [{ source: this.source, attemptedAt }] : [],
-                );
+                throw new MovieProviderError(error.reason, error.retryAt, this.source);
             throw new MovieProviderError(
                 signal.aborted ? 'TIMEOUT' : 'UNAVAILABLE',
                 undefined,

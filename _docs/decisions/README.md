@@ -37,7 +37,7 @@ separately.
 | [ADR-015](#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)  | Send a nonce-based CSP and security headers from each runtime  | Accepted                                                                              | 2026-09-26 |
 | [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
-| [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160 | 2026-10-09 |
+| [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160; amended in #172 | 2026-10-09 |
 | [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13 | 2026-10-12 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
@@ -1295,6 +1295,22 @@ provider's removal does not establish another provider's absence.
 Live response completeness remains a separate check; synthetic adapter tests verify the
 structure and omission rules. Provider attribution/usage rights remain owner work before
 public exposure. Queue/worker selection remains separately Proposed in ADR-016.
+
+### Amendment — 2026-10-13: one projection cache
+
+- **Status:** Accepted by the developer in [#172](https://github.com/Shagon1k/PickFlick/issues/172)
+
+The per-source snapshot cache, source removal tombstones, monotonic source clocks and
+configuration-key hashing protected against rare provider races at a large code and test cost.
+Migration 21 drops `MovieSourceCache` and `MovieExternalId.unavailableAt`. The merged details
+projection is the only details cache; the composite fetches both sources whenever it is refreshed.
+One freshness rule applies to details and search: data younger than `CATALOG_REFRESH_HOURS` is
+served, including `partial` details, and older data is refetched. A transient provider error
+returns the cache as `stale` to an opted-in caller while it is younger than
+`CATALOG_STALE_HOURS`. A provider `NOT_FOUND` is reported when the cache next refreshes; it no
+longer invalidates a fresh cache early. Cache keys hash the configured provider name and locale,
+so switching provider starts a separate cache. `Movie.title` and `Movie.releaseYear` hold the
+summary used by nominations. The decision table, identity rules and provenance above still apply.
 
 ### API references
 

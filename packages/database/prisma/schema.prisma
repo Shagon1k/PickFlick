@@ -325,33 +325,22 @@ model ClubInvite {
 model Movie {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  title       String?
+  releaseYear Int?
   externalIds MovieExternalId[]
-  sources     MovieSourceCache[]
   details     MovieDetailsCache[]
   sessions    Session[]
   nominations Nomination[]
 }
 
 model MovieExternalId {
-  movieId       String    @db.Uuid
-  source        String    @db.VarChar(20)
-  externalId    String    @db.VarChar(32)
-  unavailableAt DateTime? @db.Timestamptz(3)
-  movie         Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId    String @db.Uuid
+  source     String @db.VarChar(20)
+  externalId String @db.VarChar(32)
+  movie      Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@id([source, externalId])
   @@unique([movieId, source])
-}
-
-model MovieSourceCache {
-  movieId   String   @db.Uuid
-  source    String   @db.VarChar(20)
-  locale    String   @db.VarChar(20)
-  data      Json
-  fetchedAt DateTime @db.Timestamptz(3)
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-
-  @@id([movieId, source, locale])
 }
 
 model MovieDetailsCache {

@@ -126,7 +126,7 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 
 The schema (`packages/database/prisma/schema.prisma`, sixteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -248,7 +248,7 @@ every authentication session.
 
 - **Movie catalog:** `MoviesService` accepts canonical Movie UUIDs and exposes normalized PickFlick
   DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
-  owns enrichment and source-cache reuse; the service consumes an aggregate cache status.
+  fetches and merges both sources; the service owns the single freshness rule.
   `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS` apply to every source in the selected adapter.
   The module keeps service and persistence in its root; `providers/` contains the shared
   contract, composite, three API clients and their common HTTP transport. Source clients return
@@ -257,15 +257,15 @@ every authentication session.
   deduplicate concurrent ingestion; title/year never establishes identity. Movie UUIDs survive
   source changes. Public links and future Session/Library relationships use those UUIDs.
   [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources)
-  defines matching, section precedence and missing English metadata behavior. Source snapshots
-  retain independent locale/clock values; search cannot renew details. Projection/search keys
-  include the provider configuration/merge version and locale. — Active internal service
-- **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Source failures
-  stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source data.
-  Stale fallback requires opt-in, validated data within `CATALOG_STALE_HOURS` and a transient
-  error. Invalid payloads, authentication, disabled configuration and removal cannot reuse stale
-  source data. Every observed removal is persisted, including when all sources fail. Removal
-  clocks use the individual source attempt start; timestamp ties retain the source tombstone.
+  defines matching, section precedence and missing English metadata behavior. The merged details
+  projection is the only details cache; search cannot renew details. Projection/search keys hash
+  the configured provider and locale. `Movie.title`/`releaseYear` hold nomination summaries.
+  — Active internal service
+- **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Cached data
+  younger than `CATALOG_REFRESH_HOURS` is served as is, including `partial` details. Source
+  failures stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source
+  data. Stale fallback requires opt-in, a cache younger than `CATALOG_STALE_HOURS` and a transient
+  error; invalid payloads, authentication, disabled configuration and NOT_FOUND never reuse it.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
   Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.

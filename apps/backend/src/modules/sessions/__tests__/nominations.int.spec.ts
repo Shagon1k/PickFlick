@@ -84,7 +84,6 @@ describe('Nominations', () => {
     it('should retain search metadata after submission in the Session projection without opening details', async () => {
         const record = movieDetails(randomInt(10000000, 2000000000));
         const provider: IMovieProvider = {
-            configurationKey: randomUUID(),
             search: vi.fn().mockResolvedValue({
                 movies: [record],
                 page: 1,
@@ -94,11 +93,7 @@ describe('Nominations', () => {
             details: vi.fn(),
         };
         const environment = integrationEnvironment();
-        const catalog = new MoviesService(
-            provider,
-            new MoviesRepository(api.prisma, environment),
-            environment,
-        );
+        const catalog = new MoviesService(provider, new MoviesRepository(api.prisma), environment);
         const result = await catalog.search({ query: 'Synthetic Movie', page: 1, locale: 'en-US' });
         if (result.state === 'unavailable') throw new Error('Search unavailable');
         const movieId = result.data.movies[0]!.id;
@@ -108,7 +103,6 @@ describe('Nominations', () => {
         });
         searchKeys.push(cached.key);
         expect(await api.prisma.movieDetailsCache.count({ where: { movieId } })).toBe(0);
-        expect(await api.prisma.movieSourceCache.count({ where: { movieId } })).toBe(0);
         expect((await submit(member, movieId)).status).toBe(201);
         const data = nominationData(await (await read()).json());
         const summary = { id: movieId, title: 'Synthetic Movie', year: 2026 };

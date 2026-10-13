@@ -17,18 +17,13 @@ import { TmdbClient } from './providers/tmdb.client.js';
     providers: [
         {
             provide: MOVIE_PROVIDER,
-            inject: [RUNTIME_ENVIRONMENT, MoviesRepository],
-            useFactory: (
-                { tmdb, catalog, poiskkino, thetvdb }: TRuntimeEnvironment,
-                repository: MoviesRepository,
-            ) =>
+            inject: [RUNTIME_ENVIRONMENT],
+            useFactory: ({ tmdb, catalog, poiskkino, thetvdb }: TRuntimeEnvironment) =>
                 catalog.provider === 'tmdb'
                     ? new TmdbClient(tmdb)
                     : new CompositeMovieProvider(
                           new PoiskkinoClient(poiskkino),
                           new ThetvdbClient(thetvdb),
-                          catalog,
-                          repository,
                       ),
         },
         MoviesRepository,

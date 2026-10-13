@@ -50,12 +50,6 @@ const extended = z.object({
         .nullish(),
 });
 export class ThetvdbClient {
-    get enabled() {
-        return this.settings.enabled;
-    }
-    get configurationKey() {
-        return `thetvdb:v1:enabled=${this.settings.enabled}`;
-    }
     private http: MovieHttp;
     constructor(
         private settings: { enabled: boolean; readToken?: string; timeoutMs: number },
@@ -91,10 +85,7 @@ export class ThetvdbClient {
                 throw new MovieProviderError('IDENTITY_CONFLICT', undefined, 'thetvdb');
             tvdbId = candidates[0];
         }
-        if (!tvdbId)
-            throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
-                { source: 'thetvdb', attemptedAt: fetchedAt },
-            ]);
+        if (!tvdbId) throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb');
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,
             response(extended),

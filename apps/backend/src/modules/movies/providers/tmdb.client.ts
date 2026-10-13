@@ -49,9 +49,6 @@ function image(path: string | null) {
     return path ? `https://image.tmdb.org/t/p/original${path}` : null;
 }
 export class TmdbClient implements IMovieProvider {
-    get configurationKey() {
-        return `tmdb:v1:enabled=${this.settings.enabled}`;
-    }
     private http: MovieHttp;
     constructor(
         private settings: { enabled: boolean; readToken?: string; timeoutMs: number },

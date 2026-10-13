@@ -65,12 +65,6 @@ const searchWire = z.object({
     total: z.number().int().nonnegative(),
 });
 export class PoiskkinoClient {
-    get enabled() {
-        return this.settings.enabled;
-    }
-    get configurationKey() {
-        return `poiskkino:v1:enabled=${this.settings.enabled}`;
-    }
     private http: MovieHttp;
     constructor(
         private settings: { enabled: boolean; apiKey?: string; timeoutMs: number },

@@ -53,9 +53,6 @@ export function movieLookup(tmdbId = 100): IMovieLookup {
     return {
         externalIds: [{ source: 'tmdb', externalId: String(tmdbId) }],
         locale: 'en-US',
-        movieId: MOVIE_ID,
-        forceRefresh: false,
-        allowStale: false,
     };
 }
 export function movieDetails(tmdbId = 100, fetchedAt = '2026-10-09T12:00:00.000Z') {
