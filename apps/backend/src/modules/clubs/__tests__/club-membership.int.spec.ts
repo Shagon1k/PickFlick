@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IClubSettings } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
+    createSession,
     createUser,
     type ITestApi,
     removeUsers,
@@ -48,15 +49,7 @@ describe('Club membership boundaries', () => {
                 },
             },
         });
-        await api.prisma.session.create({
-            data: {
-                ...(await snapshotSessionSettings(api.prisma, clubId)),
-                id: randomUUID(),
-                clubId,
-                phase: 'COMPLETED',
-                type: 'PAST',
-            },
-        });
+        await createSession(api.prisma, clubId, { phase: 'COMPLETED', type: 'PAST' });
     });
     afterEach(async () => {
         await removeUsers(api.prisma, users);
@@ -187,9 +180,7 @@ describe('Club membership boundaries', () => {
         for (let i = 0; i < 6; i++) {
             const userId = await createUser(api.prisma);
             users.push(userId);
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role: 'MEMBER' },
-            });
+            await addMember(api.prisma, clubId, userId);
         }
         const settings = (await (
             await api.request(`/clubs/${clubId}/settings`, { userId: admin })

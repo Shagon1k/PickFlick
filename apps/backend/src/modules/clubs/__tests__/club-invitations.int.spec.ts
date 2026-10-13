@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { ICreatedInvitation, TInvitationPreview } from '@pickflick/contracts';
 
 import {
+    addMember,
     createUser,
     type ITestApi,
     removeUsers,
@@ -25,9 +26,7 @@ describe('Club invitations', () => {
         [admin, recipient, outsider] = users as [string, string, string];
         clubId = randomUUID();
         await api.prisma.club.create({ data: { id: clubId, name: 'Private invitation Club' } });
-        await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: admin, role: 'ADMIN' },
-        });
+        await addMember(api.prisma, clubId, admin, 'ADMIN');
     });
     afterEach(async () => {
         await removeUsers(api.prisma, users);
@@ -274,9 +273,7 @@ describe('Club invitations', () => {
 
     it('should refuse read-only and deleted Clubs and require manager authorization', async () => {
         const invitation = await create();
-        await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: recipient },
-        });
+        await addMember(api.prisma, clubId, recipient);
         expect(
             (
                 await api.request(`/clubs/${clubId}/invitations`, {

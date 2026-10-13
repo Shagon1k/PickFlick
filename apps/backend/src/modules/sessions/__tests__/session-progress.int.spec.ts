@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import { snapshotSessionSettings } from '@pickflick/database';
 import { z } from 'zod';
 
 import {
+    createSession,
     createUser,
     type ITestApi,
     removeUsers,
@@ -51,14 +51,10 @@ describe('Session progress', () => {
             );
         }
         sessionId = randomUUID();
-        await api.prisma.session.create({
-            data: {
-                id: sessionId,
-                clubId,
-                type: 'FULL_CYCLE',
-                phase: 'NOMINATION',
-                ...(await snapshotSessionSettings(api.prisma, clubId)),
-            },
+        await createSession(api.prisma, clubId, {
+            id: sessionId,
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
         });
         await api.prisma.sessionParticipant.createMany({
             data: memberships

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { ICreatedInvitation, IPendingClubInvitation } from '@pickflick/contracts';
 
 import {
+    addMember,
     createUser,
     type ITestApi,
     removeUsers,
@@ -139,9 +140,7 @@ describe('Pending Club invitations', () => {
         for (let i = 0; i < 7; i++) {
             const userId = await createUser(api.prisma);
             users.push(userId);
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role: 'MEMBER' },
-            });
+            await addMember(api.prisma, clubId, userId);
         }
         expect(await (await list(target)).json()).toEqual([]);
         expect(await (await respond(target, live.id)).json()).toEqual({ state: 'over-limit' });

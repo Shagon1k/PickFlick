@@ -4,6 +4,7 @@ import type { IClubHub, TSession } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
     createUser,
     type ITestApi,
     removeUsers,
@@ -46,9 +47,7 @@ describe('Session workflows', () => {
             [moderator, 'MODERATOR'],
             [member, 'MEMBER'],
         ] as const) {
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
+            await addMember(api.prisma, clubId, userId, role);
         }
     });
     afterAll(async () => {
@@ -259,9 +258,7 @@ describe('Session workflows', () => {
         for (let index = 0; index < 6; index++) {
             const userId = await createUser(api.prisma);
             users.push(userId);
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role: 'MEMBER' },
-            });
+            await addMember(api.prisma, clubId, userId);
         }
         expect((await create()).status).toBe(409);
     });

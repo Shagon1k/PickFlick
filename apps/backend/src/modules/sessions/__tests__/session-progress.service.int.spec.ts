@@ -7,7 +7,12 @@ import { testUtils } from 'better-auth/plugins';
 import { RuntimeModule } from '../../../config/runtime.module.js';
 import { DatabaseModule } from '../../../database/database.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { createUser, integrationEnvironment, removeUsers } from '../../../testing/integration.js';
+import {
+    addMember,
+    createUser,
+    integrationEnvironment,
+    removeUsers,
+} from '../../../testing/integration.js';
 import { AUTH_PLUGINS, AuthService } from '../../auth/auth.service.js';
 import { SessionProgressService } from '../session-progress.service.js';
 
@@ -47,9 +52,7 @@ describe('SessionProgressService', () => {
             userIds.push(userId);
             const clubId = randomUUID();
             await prisma.club.create({ data: { id: clubId, name: 'Private stream' } });
-            await prisma.membership.create({
-                data: { id: randomUUID(), userId, clubId, role: 'ADMIN' },
-            });
+            await addMember(prisma, clubId, userId, 'ADMIN');
             const sessionId = randomUUID();
             await prisma.session.create({
                 data: {

@@ -4,7 +4,12 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { loadRuntimeEnvironment, type TRuntimeEnvironment } from '@pickflick/config/environment';
-import { assertSafeSeedOrResetTarget, type PrismaClient } from '@pickflick/database';
+import {
+    assertSafeSeedOrResetTarget,
+    type Prisma,
+    type PrismaClient,
+    snapshotSessionSettings,
+} from '@pickflick/database';
 
 import { AppModule } from '../app.module.js';
 import { configureApplication } from '../config/configure-application.js';
@@ -35,6 +40,36 @@ export async function createUser(
         },
     });
     return id;
+}
+
+/** Adds an active Membership and returns its ID. */
+export async function addMember(
+    prisma: PrismaClient,
+    clubId: string,
+    userId: string,
+    role: 'ADMIN' | 'MODERATOR' | 'MEMBER' = 'MEMBER',
+): Promise<string> {
+    const membership = await prisma.membership.create({
+        data: { id: randomUUID(), clubId, userId, role },
+    });
+    return membership.id;
+}
+
+/** Creates a Session with the Club's current settings snapshot; `data` overrides any column. */
+export async function createSession(
+    prisma: PrismaClient,
+    clubId: string,
+    data: Partial<Prisma.SessionUncheckedCreateInput> &
+        Pick<Prisma.SessionUncheckedCreateInput, 'type' | 'phase'>,
+) {
+    return prisma.session.create({
+        data: {
+            id: randomUUID(),
+            clubId,
+            ...(await snapshotSessionSettings(prisma, clubId)),
+            ...data,
+        },
+    });
 }
 
 /** Removes the users and every Club, Membership, Session, and audit row tied to them. */

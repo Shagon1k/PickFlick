@@ -8,6 +8,8 @@ import type {
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
+    createSession,
     createUser,
     type ITestApi,
     removeUsers,
@@ -39,21 +41,14 @@ describe('Session roster', () => {
             [moderator, 'MODERATOR'],
             [member, 'MEMBER'],
         ] as const) {
-            const membership = await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
-            if (userId === member) memberId = membership.id;
+            const membership = await addMember(api.prisma, clubId, userId, role);
+            if (userId === member) memberId = membership;
         }
-        const session = await api.prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId,
-                type: 'FULL_CYCLE',
-                phase: 'NOMINATION',
-                topic: 'Protected title',
-                location: 'Secret room',
-                ...(await snapshotSessionSettings(api.prisma, clubId)),
-            },
+        const session = await createSession(api.prisma, clubId, {
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
+            topic: 'Protected title',
+            location: 'Secret room',
         });
         sessionId = session.id;
     });
@@ -156,7 +151,7 @@ describe('Session roster', () => {
             method: 'POST',
             json: { confirmation: 'LEAVE' },
         });
-        await api.prisma.membership.create({ data: { id: randomUUID(), clubId, userId: member } });
+        await addMember(api.prisma, clubId, member);
         expect(await (await preview(invitation.token)).json()).toEqual(unavailable);
         expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
         expect(await accepted()).toBe(0);
@@ -222,10 +217,8 @@ describe('Session roster', () => {
         const other = await api.prisma.club.create({
             data: { id: randomUUID(), name: 'Other Club' },
         });
-        const foreign = await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId: other.id, userId: member },
-        });
-        expect((await invite(admin, foreign.id)).status).toBe(409);
+        const foreign = await addMember(api.prisma, other.id, member);
+        expect((await invite(admin, foreign)).status).toBe(409);
         const invitation = await createInvite();
         await respond(invitation.token);
         const participant = (await roster()).participants[0]!;

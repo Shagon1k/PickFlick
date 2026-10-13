@@ -4,6 +4,8 @@ import type { IClubHub } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
+    createSession,
     createUser,
     type ITestApi,
     removeUsers,
@@ -29,32 +31,20 @@ describe('Club Hub projection', () => {
             [second, 'Second Club', member],
         ] as const) {
             await api.prisma.club.create({ data: { id, name } });
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId: id, userId: owner, role: 'ADMIN' },
-            });
+            await addMember(api.prisma, id, owner, 'ADMIN');
         }
         await api.prisma.membership.create({
             data: { id: secondMembership, clubId: second, userId: admin, role: 'MEMBER' },
         });
-        await api.prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId: first,
-                ...(await snapshotSessionSettings(api.prisma, first)),
-                type: 'FULL_CYCLE',
-                phase: 'NOMINATION',
-                topic: 'First Club private Session',
-            },
+        await createSession(api.prisma, first, {
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
+            topic: 'First Club private Session',
         });
-        await api.prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId: second,
-                ...(await snapshotSessionSettings(api.prisma, second)),
-                type: 'PAST',
-                phase: 'COMPLETED',
-                topic: 'Second Club private Session',
-            },
+        await createSession(api.prisma, second, {
+            type: 'PAST',
+            phase: 'COMPLETED',
+            topic: 'Second Club private Session',
         });
     });
 

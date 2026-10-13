@@ -4,6 +4,7 @@ import { sessionSchema } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import {
+    addMember,
     createUser,
     type ITestApi,
     removeUsers,
@@ -61,9 +62,7 @@ describe('NominationDeadlines', () => {
             [admin, 'ADMIN'],
             [member, 'MEMBER'],
         ] as const) {
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
+            await addMember(api.prisma, clubId, userId, role);
         }
         const created = await api.request(`/clubs/${clubId}/sessions`, {
             userId: admin,
@@ -122,9 +121,7 @@ describe('NominationDeadlines', () => {
     it('should stay open with zero nominations and alert only operators once across restarts and unrelated edits', async () => {
         const moderator = await createUser(api.prisma);
         users.push(moderator);
-        const operator = await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: moderator, role: 'MODERATOR' },
-        });
+        const operator = await addMember(api.prisma, clubId, moderator, 'MODERATOR');
         await worker.runOnce(due);
         expect(await session()).toMatchObject({
             phase: 'NOMINATION',
@@ -139,7 +136,7 @@ describe('NominationDeadlines', () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'EMPTY', nominationCount: 0 });
         expect(result[0]!.notifications).toHaveLength(2);
-        expect(result[0]!.notifications.map((row) => row.membershipId)).toContain(operator.id);
+        expect(result[0]!.notifications.map((row) => row.membershipId)).toContain(operator);
         expect((await submit()).status).toBe(201);
         await worker.runOnce(due);
         expect((await session()).phase).toBe('NOMINATION');

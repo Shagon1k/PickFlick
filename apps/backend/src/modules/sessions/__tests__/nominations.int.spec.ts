@@ -4,6 +4,8 @@ import { sessionSchema } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
+    createSession,
     createUser,
     integrationEnvironment,
     type ITestApi,
@@ -41,29 +43,21 @@ describe('Nominations', () => {
         clubId = randomUUID();
         sessionId = randomUUID();
         await api.prisma.club.create({ data: { id: clubId, name: 'Nomination Club' } });
-        const a = await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: admin, role: 'ADMIN' },
-        });
-        const m = await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: member },
-        });
-        await api.prisma.session.create({
-            data: {
-                id: sessionId,
-                clubId,
-                type: 'FULL_CYCLE',
-                phase: 'NOMINATION',
-                ...(await snapshotSessionSettings(api.prisma, clubId)),
-            },
+        const a = await addMember(api.prisma, clubId, admin, 'ADMIN');
+        const m = await addMember(api.prisma, clubId, member);
+        await createSession(api.prisma, clubId, {
+            id: sessionId,
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
         });
         adminParticipant = (
             await api.prisma.sessionParticipant.create({
-                data: { sessionId, clubId, membershipId: a.id, status: 'ACCEPTED' },
+                data: { sessionId, clubId, membershipId: a, status: 'ACCEPTED' },
             })
         ).id;
         memberParticipant = (
             await api.prisma.sessionParticipant.create({
-                data: { sessionId, clubId, membershipId: m.id, status: 'ACCEPTED' },
+                data: { sessionId, clubId, membershipId: m, status: 'ACCEPTED' },
             })
         ).id;
     });
@@ -182,11 +176,9 @@ describe('Nominations', () => {
             ownMovie: null,
         });
         expect(JSON.stringify(hidden)).not.toContain(movies[0]);
-        const extra = await api.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: outsider },
-        });
+        const extra = await addMember(api.prisma, clubId, outsider);
         await api.prisma.sessionParticipant.create({
-            data: { clubId, sessionId, membershipId: extra.id, status: 'ACCEPTED' },
+            data: { clubId, sessionId, membershipId: extra, status: 'ACCEPTED' },
         });
         await submit(admin, movies[1]);
         const visible = nominationData(await (await read(admin)).json());
@@ -330,14 +322,9 @@ describe('Nominations', () => {
         });
     });
     it('should prevent linking a participant from another Session through a direct database write', async () => {
-        const session = await api.prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId,
-                type: 'PAST',
-                phase: 'COMPLETED',
-                ...(await snapshotSessionSettings(api.prisma, clubId)),
-            },
+        const session = await createSession(api.prisma, clubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
         });
         await expect(
             api.prisma.nomination.create({
