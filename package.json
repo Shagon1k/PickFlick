@@ -50,6 +50,7 @@
         "@commitlint/cli": "21.0.1",
         "@commitlint/config-conventional": "21.0.1",
         "@commitlint/types": "21.2.3",
+        "@pickflick/contracts": "workspace:*",
         "@pickflick/eslint-config": "workspace:*",
         "@playwright/test": "1.63.0",
         "@types/node": "catalog:",

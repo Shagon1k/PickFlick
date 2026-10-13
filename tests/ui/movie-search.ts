@@ -1,20 +1,36 @@
-import { readJson, sendError, sendJson } from './mock-http.mjs';
+import type {
+    TMovieProviderReason,
+    TMovieResult,
+    TMovieSearchResults,
+    TMovieSummary,
+} from '@pickflick/contracts';
 
-export function handleMovieSearch(request, response, pathname, token) {
+import {
+    readJson,
+    sendError,
+    sendJson,
+    type TMockRequest,
+    type TMockResponse,
+} from './mock-http.ts';
+
+export function handleMovieSearch(
+    request: TMockRequest,
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+): boolean {
     if (pathname !== '/movies/search' || request.method !== 'POST') return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-movies-auth');
         return true;
     }
-    readJson(request, ({ query }) => {
-        const reason = { outage: 'UNAVAILABLE', limited: 'RATE_LIMITED', disabled: 'DISABLED' }[
-            query
-        ];
+    readJson<{ query: string }>(request, ({ query }) => {
+        const reason = UNAVAILABLE_QUERIES[query];
         if (reason) {
-            sendJson(response, 200, { state: 'unavailable', reason });
+            send(response, { state: 'unavailable', reason }, 0);
             return;
         }
-        const movie = (id, title) => ({
+        const movie = (id: string, title: string): TMovieSummary => ({
             id,
             title,
             originalTitle: null,
@@ -35,7 +51,7 @@ export function handleMovieSearch(request, response, pathname, token) {
                 },
             ],
         });
-        const data = {
+        const data: TMovieSearchResults = {
             movies:
                 query === 'empty'
                     ? []
@@ -50,13 +66,28 @@ export function handleMovieSearch(request, response, pathname, token) {
             totalPages: 1,
             totalResults: query === 'empty' ? 0 : 2,
         };
-        const result = {
-            state: query === 'stale' ? 'stale' : 'fresh',
-            data,
-            fetchedAt: '2026-10-10T12:00:00.000Z',
-        };
-        if (query === 'stale') result.reason = 'TIMEOUT';
-        setTimeout(() => sendJson(response, 200, result), query === 'slow' ? 1200 : 100);
+        const fetchedAt = '2026-10-10T12:00:00.000Z';
+        send(
+            response,
+            query === 'stale'
+                ? { state: 'stale', reason: 'TIMEOUT', data, fetchedAt }
+                : { state: 'fresh', data, fetchedAt },
+            query === 'slow' ? 1200 : 100,
+        );
     });
     return true;
+}
+
+const UNAVAILABLE_QUERIES: Partial<Record<string, TMovieProviderReason>> = {
+    outage: 'UNAVAILABLE',
+    limited: 'RATE_LIMITED',
+    disabled: 'DISABLED',
+};
+
+function send(
+    response: TMockResponse,
+    result: TMovieResult<TMovieSearchResults>,
+    delayMs: number,
+): void {
+    setTimeout(() => sendJson(response, 200, result), delayMs);
 }

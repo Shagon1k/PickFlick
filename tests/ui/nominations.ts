@@ -1,18 +1,44 @@
-import { readJson, sendError, sendJson } from './mock-http.mjs';
+import type {
+    ISessionRoster,
+    TCloseNomination,
+    TNominationMovie,
+    TNominations,
+    TSession,
+    TSessionProgress,
+    TSubmitNomination,
+} from '@pickflick/contracts';
 
-const states = new Map();
+import {
+    readJson,
+    sendError,
+    sendJson,
+    type TMockRequest,
+    type TMockResponse,
+} from './mock-http.ts';
+
+interface INominationState {
+    own: TNominationMovie | null;
+    phase: TSession['phase'];
+    version: number;
+    departed?: boolean;
+    sendDetail?: () => void;
+    recoverAt?: number;
+    failedPath?: string;
+}
+const states = new Map<string | undefined, INominationState>();
 const sessionId = '30000000-0000-4000-8000-000000000042';
 const clubId = '10000000-0000-4000-8000-000000000031';
-const movie = {
+const movie: TNominationMovie = {
     id: '20000000-0000-4000-8000-000000000001',
     title: 'Past losing nomination',
     year: 2020,
 };
-function stateFor(token) {
-    if (!states.has(token)) states.set(token, { own: null, phase: 'NOMINATION', version: 1 });
-    return states.get(token);
+function stateFor(token: string | undefined): INominationState {
+    const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };
+    states.set(token, state);
+    return state;
 }
-function projection(token, state) {
+function projection(token: string, state: INominationState): TNominations {
     const hidden = token.includes('hidden') && !state.own;
     return {
         acceptedCount: state.departed ? 2 : 3,
@@ -35,7 +61,12 @@ function projection(token, state) {
         suggestions: state.own || token.includes('empty') ? [] : [movie],
     };
 }
-function handleRoster(response, pathname, token, state) {
+function handleRoster(
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+    state: INominationState,
+): boolean {
     if (!token?.includes('nomination') || pathname !== `/sessions/${sessionId}/roster`)
         return false;
     const version = state.version;
@@ -46,8 +77,7 @@ function handleRoster(response, pathname, token, state) {
         state.version++;
         state.sendDetail?.();
     }
-    sendJson(response, 200, {
-        version: 1,
+    const roster: ISessionRoster = {
         progressVersion: version,
         acceptedCount: departed ? 2 : 3,
         canInvite: false,
@@ -64,14 +94,20 @@ function handleRoster(response, pathname, token, state) {
             }),
         ),
         eligibleMembers: [],
-    });
+    };
+    sendJson(response, 200, roster);
     return true;
 }
 
-export function handleNominations(request, response, pathname, token) {
+export function handleNominations(
+    request: TMockRequest,
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+): boolean {
     const state = stateFor(token);
-    if (state.recoverAt > Date.now() && pathname === state.failedPath) {
-        sendError(response, 503, 'UNAVAILABLE', 'refresh-failure');
+    if ((state.recoverAt ?? 0) > Date.now() && pathname === state.failedPath) {
+        sendError(response, 503, 'SERVICE_UNAVAILABLE', 'refresh-failure');
         return true;
     }
     if (handleRoster(response, pathname, token, state)) return true;
@@ -86,8 +122,8 @@ export function handleNominations(request, response, pathname, token) {
         return true;
     }
     if (pathname === `/sessions/${sessionId}`) {
-        const sendDetail = () =>
-            sendJson(response, 200, {
+        const sendDetail = () => {
+            const detail: TSession = {
                 id: sessionId,
                 clubId,
                 clubName: 'Midnight Society',
@@ -105,24 +141,32 @@ export function handleNominations(request, response, pathname, token) {
                 nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
                 canEdit: token.includes('operator'),
                 canCancel: token.includes('operator'),
-            });
+            };
+            sendJson(response, 200, detail);
+        };
         // Ensure the roster's departure commits between these two read snapshots.
         if (token.includes('split-roster') && !state.departed) state.sendDetail = sendDetail;
         else sendDetail();
     } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
     else
-        readJson(request, (input) => {
+        readJson<Partial<TCloseNomination & TSubmitNomination>>(request, (input) => {
             if (token.includes('failure')) {
-                sendError(response, 503, 'UNAVAILABLE', 'nomination-failure');
+                sendError(response, 503, 'SERVICE_UNAVAILABLE', 'nomination-failure');
                 return;
             }
             if (pathname.endsWith('/close')) {
                 if (input.phaseVersion !== 1) {
-                    sendError(response, 409, 'NOMINATION_CHANGED', 'nomination-version');
+                    sendError(
+                        response,
+                        409,
+                        'CONFLICT',
+                        'nomination-version',
+                        'NOMINATION_CHANGED',
+                    );
                     return;
                 }
                 state.phase = 'SELECTION';
-            } else state.own = { ...movie, id: input.movieId };
+            } else state.own = { ...movie, id: input.movieId ?? movie.id };
             state.version++;
             if (token.includes('refresh-')) {
                 // Longer than one progress poll, so the viewer's next refresh hits the failure.
@@ -136,10 +180,15 @@ export function handleNominations(request, response, pathname, token) {
     return true;
 }
 
-function handleProgress(response, pathname, token) {
+function handleProgress(
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+): boolean {
     if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${sessionId}/progress`))
         return false;
     const state = stateFor(token);
-    sendJson(response, 200, { version: state.version });
+    const progress: TSessionProgress = { version: state.version };
+    sendJson(response, 200, progress);
     return true;
 }

@@ -1,7 +1,7 @@
 # UI quality checks
 
 The UI scripts build the web app, start it on loopback against a mock API
-(`tests/ui/start-frontend-with-mock-api.mjs`), and run Playwright in Chromium over
+(`tests/ui/start-frontend-with-mock-api.ts`), and run Playwright in Chromium over
 the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
 live Session creation/edit/cancellation, member-only Session invitation responses and roster

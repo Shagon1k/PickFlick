@@ -1,32 +1,37 @@
+import type { IClubAccess, IClubMember, IClubSettings, TClubRole } from '@pickflick/contracts';
+
 const settingsClubId = '10000000-0000-4000-8000-000000000031';
 
-const activeLifecycle = (lifecycle) => lifecycle === 'ACTIVE';
-
-export function settingsProjection(token, avatarVersion, removed) {
-    let role =
-        ['member', 'moderator'].find((name) => token?.split('-').includes(name))?.toUpperCase() ??
-        'ADMIN';
+export function settingsProjection(
+    token: string | undefined,
+    avatarVersion?: string,
+    removed?: boolean,
+): IClubSettings {
+    let role: TClubRole =
+        ROLES.find((name) => token?.split('-').includes(name.toLowerCase())) ?? 'ADMIN';
     const lifecycle = token?.includes('archived') ? 'ARCHIVED' : 'ACTIVE';
     if (token?.includes('adminless')) role = 'MODERATOR';
     const admin = role === 'ADMIN';
     const adminless = token?.includes('adminless') ?? false;
     const overLimit = token?.includes('over-limit') ?? false;
-    const newWorkAllowed = activeLifecycle(lifecycle) && !adminless && !overLimit;
     const active = lifecycle === 'ACTIVE';
+    const newWorkAllowed = active && !adminless && !overLimit;
     return {
-        currentMembershipId: {
-            ADMIN: '20000000-0000-4000-8000-000000000031',
-            MEMBER: '20000000-0000-4000-8000-000000000032',
-            MODERATOR: '20000000-0000-4000-8000-000000000033',
-        }[role],
+        currentMembershipId: (
+            {
+                ADMIN: '20000000-0000-4000-8000-000000000031',
+                MEMBER: '20000000-0000-4000-8000-000000000032',
+                MODERATOR: '20000000-0000-4000-8000-000000000033',
+            } satisfies Record<TClubRole, string>
+        )[role],
         access: {
             adminless,
             newWorkAllowed,
             reasons: [
-                ...(active ? [] : ['ARCHIVED']),
-                ...(adminless ? ['ADMINLESS'] : []),
-                ...(overLimit ? ['MEMBER_LIMIT'] : []),
-            ],
+                ...(active ? [] : (['ARCHIVED'] as const)),
+                ...(adminless ? (['ADMINLESS'] as const) : []),
+                ...(overLimit ? (['MEMBER_LIMIT'] as const) : []),
+            ] satisfies IClubAccess['reasons'],
         },
         club: {
             id: settingsClubId,
@@ -86,8 +91,15 @@ export function settingsProjection(token, avatarVersion, removed) {
     };
 }
 
-function memberRoster(role, adminless, overLimit, removed) {
-    return [
+const ROLES = ['MEMBER', 'MODERATOR'] as const;
+
+function memberRoster(
+    role: TClubRole,
+    adminless: boolean,
+    overLimit: boolean,
+    removed: boolean | undefined,
+): Omit<IClubMember, 'canRemove'>[] {
+    const members: Omit<IClubMember, 'canRemove'>[] = [
         {
             id: '20000000-0000-4000-8000-000000000031',
             displayName: 'Avery Admin',
@@ -105,7 +117,7 @@ function memberRoster(role, adminless, overLimit, removed) {
                   {
                       id: '20000000-0000-4000-8000-000000000033',
                       displayName: 'Taylor Moderator',
-                      role: 'MODERATOR',
+                      role: 'MODERATOR' as const,
                       joinedAt: '2026-02-02T00:00:00.000Z',
                   },
               ]
@@ -114,11 +126,12 @@ function memberRoster(role, adminless, overLimit, removed) {
             ? Array.from({ length: 7 }, (_, index) => ({
                   id: `20000000-0000-4000-8000-00000000004${index}`,
                   displayName: `Club member ${index + 1}`,
-                  role: 'MEMBER',
+                  role: 'MEMBER' as const,
                   joinedAt: '2026-02-02T00:00:00.000Z',
               }))
             : []),
-    ].filter(
+    ];
+    return members.filter(
         (member) =>
             (!adminless || member.role !== 'ADMIN') && (!removed || member.role !== 'MEMBER'),
     );

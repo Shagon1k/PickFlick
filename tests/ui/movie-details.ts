@@ -1,48 +1,60 @@
-import { sendError, sendJson } from './mock-http.mjs';
+import type { TMovieDetailsResponse, TMovieProviderReason } from '@pickflick/contracts';
 
-export function handleMovieDetails(request, response, pathname, token) {
+import { sendError, sendJson, type TMockRequest, type TMockResponse } from './mock-http.ts';
+
+export function handleMovieDetails(
+    request: TMockRequest,
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+): boolean {
     if (!pathname.startsWith('/movies/') || request.method !== 'GET') return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-movie-auth');
         return true;
     }
-    const id = pathname.split('/').at(-1);
-    const reason = {
-        'valid-movie-outage': 'UNAVAILABLE',
-        'valid-movie-limited': 'RATE_LIMITED',
-        'valid-movie-disabled': 'DISABLED',
-        'valid-movie-not-found': 'NOT_FOUND',
-    }[token];
+    const id = pathname.split('/').at(-1) ?? '';
+    const reason = (
+        {
+            'valid-movie-outage': 'UNAVAILABLE',
+            'valid-movie-limited': 'RATE_LIMITED',
+            'valid-movie-disabled': 'DISABLED',
+            'valid-movie-not-found': 'NOT_FOUND',
+        } as Record<string, TMovieProviderReason>
+    )[token];
     if (id.endsWith('038') && token === 'valid-movie-related-unavailable') {
-        sendJson(response, 200, {
+        sendDetails(response, {
             result: { state: 'unavailable', reason: 'UNAVAILABLE' },
             links: { imdb: null },
         });
         return true;
     }
     if (reason) {
-        sendJson(response, 200, {
-            result: { state: 'unavailable', reason },
-            links: { imdb: null },
-        });
+        sendDetails(response, { result: { state: 'unavailable', reason }, links: { imdb: null } });
         return true;
     }
     const missing = token === 'valid-movie-missing';
     const related = id.endsWith('038');
-    const result = {
-        state: { 'valid-movie-stale': 'stale', 'valid-movie-partial': 'partial' }[token] ?? 'fresh',
-        fetchedAt: '2026-10-10T12:00:00.000Z',
-        data: movieData(id, missing, related),
-    };
-    if (result.state === 'stale') result.reason = 'TIMEOUT';
-    sendJson(response, 200, {
+    const data = movieData(id, missing, related);
+    const fetchedAt = '2026-10-10T12:00:00.000Z';
+    let result: TMovieDetailsResponse['result'] = { state: 'fresh', fetchedAt, data };
+    if (token === 'valid-movie-stale')
+        result = { state: 'stale', reason: 'TIMEOUT', fetchedAt, data };
+    if (token === 'valid-movie-partial') result = { state: 'partial', fetchedAt, data };
+    sendDetails(response, {
         result,
         links: { imdb: missing ? null : 'https://www.imdb.com/title/tt1234567/' },
     });
     return true;
 }
 
-function movieData(id, missing, related) {
+type TPublicDetails = Extract<TMovieDetailsResponse['result'], { data: unknown }>['data'];
+
+function sendDetails(response: TMockResponse, body: TMovieDetailsResponse): void {
+    sendJson(response, 200, body);
+}
+
+function movieData(id: string, missing: boolean, related: boolean): TPublicDetails {
     return {
         id,
         title: related ? 'Related Film' : '<script>alert(1)</script> & Film',

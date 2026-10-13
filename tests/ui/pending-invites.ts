@@ -1,9 +1,23 @@
-import { readJson, sendError, sendJson } from './mock-http.mjs';
+import type { IPendingClubInvitation } from '@pickflick/contracts';
 
-const responses = new Map();
+import {
+    readJson,
+    sendError,
+    sendJson,
+    type TMockRequest,
+    type TMockResponse,
+} from './mock-http.ts';
+
+const responses = new Map<string, string>();
 const clubId = '10000000-0000-4000-8000-000000000031';
 
-export function handlePendingInvitation(request, response, pathname, token, accept) {
+export function handlePendingInvitation(
+    request: TMockRequest,
+    response: TMockResponse,
+    pathname: string,
+    token: string | undefined,
+    accept: (token: string) => void,
+): boolean {
     const list = pathname === '/club-invitations/pending';
     const respond = /^\/club-invitations\/[^/]+\/respond$/u.test(pathname);
     if (!list && !respond) return false;
@@ -16,9 +30,7 @@ export function handlePendingInvitation(request, response, pathname, token, acce
             sendError(response, 503, 'SERVICE_UNAVAILABLE', 'pending-error');
             return true;
         }
-        sendJson(
-            response,
-            200,
+        const pending: IPendingClubInvitation[] =
             token.includes('pending') && !responses.has(token)
                 ? [
                       {
@@ -29,10 +41,10 @@ export function handlePendingInvitation(request, response, pathname, token, acce
                           expiresAt: '2026-10-10T12:00:00.000Z',
                       },
                   ]
-                : [],
-        );
+                : [];
+        sendJson(response, 200, pending);
     } else {
-        readJson(request, ({ decision }) => {
+        readJson<{ decision: 'accept' | 'decline' }>(request, ({ decision }) => {
             responses.set(token, decision);
             if (decision === 'accept') accept(token);
             sendJson(

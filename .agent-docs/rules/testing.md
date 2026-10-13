@@ -19,6 +19,8 @@
 - Browser tests are Playwright `*.spec.ts` files: `tests/ui/` runs against a local
   production build with a mock API (`pnpm test:ui`), `tests/uat/` smokes a deployed environment
   (`pnpm test:uat`). Shared viewports live in `tests/ui/viewports.ts`.
+- The UI mock API is TypeScript that Node runs directly. Annotate every response with its
+  `@pickflick/contracts` type so `pnpm typecheck` fails when the mock drifts from the real API.
 - Build test data with small factory functions instead of repeating inline objects.
 
 ## Naming and structure

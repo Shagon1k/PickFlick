@@ -48,6 +48,9 @@ importers:
       '@commitlint/types':
         specifier: 21.2.3
         version: 21.2.3
+      '@pickflick/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@pickflick/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config

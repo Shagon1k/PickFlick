@@ -9,7 +9,7 @@
                 // CLI scripts that the Dockerfile, CI, or package scripts run directly.
                 "scripts/*.mjs",
                 "tests/**/*.spec.ts",
-                "tests/ui/*.mjs",
+                "tests/ui/start-frontend-with-mock-api.ts",
             ],
             "playwright": false,
         },

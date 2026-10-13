@@ -1,18 +1,36 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
-import { settingsProjection as clubSettingsProjection } from './club-projections.mjs';
-import { handleMovieDetails } from './movie-details.mjs';
-import { handleMovieSearch } from './movie-search.mjs';
-import { readJson, sendError, sendJson } from './mock-http.mjs';
-import { handleNominations } from './nominations.mjs';
-import { handlePendingInvitation } from './pending-invites.mjs';
-import { handleSessionRoster } from './session-roster.mjs';
-import { handleSessionWorkflow, sessionHub } from './session-workflows.mjs';
+import type {
+    IClubHub,
+    IClubHubSession,
+    IClubSummary,
+    ICreatedInvitation,
+    IManagedInvitation,
+    TCreateClubRequest,
+    TInvitationPreview,
+    TRespondInvitation,
+} from '@pickflick/contracts';
 
-const clubsBySession = new Map();
-const removedMembersBySession = new Set();
-const avatarVersionsBySession = new Map();
+import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
+import {
+    readJson,
+    sendError,
+    sendJson,
+    type TMockRequest,
+    type TMockResponse,
+} from './mock-http.ts';
+import { handleMovieDetails } from './movie-details.ts';
+import { handleMovieSearch } from './movie-search.ts';
+import { handleNominations } from './nominations.ts';
+import { handlePendingInvitation } from './pending-invites.ts';
+import { handleSessionRoster } from './session-roster.ts';
+import { handleSessionWorkflow, sessionHub } from './session-workflows.ts';
+
+type TToken = string | undefined;
+const clubsBySession = new Map<TToken, IClubSummary[]>();
+const removedMembersBySession = new Set<TToken>();
+const avatarVersionsBySession = new Map<TToken, string>();
 const settingsClubId = '10000000-0000-4000-8000-000000000031';
 const secondClubId = '10000000-0000-4000-8000-000000000032';
 const avatarPng = Buffer.from(
@@ -20,20 +38,20 @@ const avatarPng = Buffer.from(
     'base64',
 );
 
-const settingsProjection = (token) =>
+const settingsProjection = (token: TToken) =>
     clubSettingsProjection(
         token,
         avatarVersionsBySession.get(token),
         removedMembersBySession.has(token),
     );
 
-function hubClubs(token) {
+function hubClubs(token: TToken): IClubSummary[] {
     if (token?.includes('session-workflow')) return [settingsProjection(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
     }
     const first = settingsProjection(token).club;
-    const second = {
+    const second: IClubSummary = {
         ...first,
         id: secondClubId,
         name: 'Second Screening Room',
@@ -43,7 +61,7 @@ function hubClubs(token) {
     return token.includes('revoked') ? [first] : [first, second];
 }
 
-function hubProjection(token, clubId) {
+function hubProjection(token: TToken, clubId: string): IClubHub | null {
     if (token?.includes('session-workflow') && clubId === settingsClubId) return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
     if (!club) {
@@ -63,7 +81,7 @@ function hubProjection(token, clubId) {
         };
     }
     const second = clubId === secondClubId;
-    const session = {
+    const session: IClubHubSession = {
         id: second
             ? '30000000-0000-4000-8000-000000000032'
             : '30000000-0000-4000-8000-000000000031',
@@ -87,15 +105,15 @@ function hubProjection(token, clubId) {
     };
 }
 
-function sessionToken(request) {
+function sessionToken(request: TMockRequest): TToken {
     return request.headers.cookie?.match(/(?:^|;\s*)pickflick\.session_token=([^;]+)/)?.[1];
 }
 
-function sendNoContent(response) {
+function sendNoContent(response: TMockResponse): void {
     response.writeHead(204).end();
 }
 
-function handleSession(request, response) {
+function handleSession(request: TMockRequest, response: TMockResponse): void {
     const token = sessionToken(request);
     if (token === 'session-api-unavailable') {
         sendJson(response, 503, null);
@@ -105,14 +123,14 @@ function handleSession(request, response) {
     sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
 }
 
-function createClub(request, response, token) {
-    readJson(request, (payload) => {
+function createClub(request: TMockRequest, response: TMockResponse, token: string): void {
+    readJson<TCreateClubRequest>(request, (payload) => {
         if ((clubsBySession.get(token) ?? []).length > 0) {
             sendError(response, 409, 'CONFLICT', 'request-club-limit', 'ADMIN_CLUB_LIMIT_REACHED');
             return;
         }
         const description = String(payload.description ?? '').trim();
-        const club = {
+        const club: IClubSummary = {
             id: '10000000-0000-4000-8000-000000000099',
             name: String(payload.name).trim(),
             ...(description ? { description } : {}),
@@ -128,7 +146,7 @@ function createClub(request, response, token) {
     });
 }
 
-function handleClubs(request, response) {
+function handleClubs(request: TMockRequest, response: TMockResponse): void {
     const token = sessionToken(request);
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-club-auth');
@@ -143,7 +161,7 @@ function handleClubs(request, response) {
     }
 }
 
-function sendAvatar(response) {
+function sendAvatar(response: TMockResponse): void {
     response.writeHead(200, {
         'cache-control': 'private, no-store',
         'content-length': avatarPng.length,
@@ -152,7 +170,7 @@ function sendAvatar(response) {
     response.end(avatarPng);
 }
 
-function changeRole(response, token) {
+function changeRole(response: TMockResponse, token: string): void {
     if (token.includes('settings-admin')) {
         sendNoContent(response);
     } else {
@@ -160,26 +178,25 @@ function changeRole(response, token) {
     }
 }
 
-function uploadAvatar(request, response, token) {
+function uploadAvatar(request: TMockRequest, response: TMockResponse, token: string): void {
     const previous = Number(avatarVersionsBySession.get(token)?.split('-')[1] ?? 0);
     avatarVersionsBySession.set(token, `avatar-${previous + 1}`);
     request.resume();
     sendNoContent(response);
 }
 
-function removeAvatar(request, response, token) {
+function removeAvatar(request: TMockRequest, response: TMockResponse, token: string): void {
     avatarVersionsBySession.delete(token);
     request.resume();
     sendNoContent(response);
 }
 
-/** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
-const managedInvites = new Map();
-const failedInvitationRefreshes = new Set();
-function manageInvitation(request, response, session) {
+const managedInvites = new Map<string, IManagedInvitation[]>();
+const failedInvitationRefreshes = new Set<string>();
+function manageInvitation(request: TMockRequest, response: TMockResponse, session: string): void {
     readJson(request, () => {
         const id = '60000000-0000-4000-8000-000000000034';
-        const created = {
+        const created: ICreatedInvitation = {
             id,
             token: invitationTokens.valid,
             expiresAt: '2026-10-10T12:00:00.000Z',
@@ -189,12 +206,19 @@ function manageInvitation(request, response, session) {
     });
 }
 
-const clubRoutes = [
+type TClubRoute = [
+    method: string,
+    path: RegExp,
+    handle: (request: TMockRequest, response: TMockResponse, token: string, clubId: string) => void,
+];
+
+/** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
+const clubRoutes: TClubRoute[] = [
     [
         'POST',
         /^\/members\/[^/]+\/remove$/u,
         (request, response, token) => {
-            readJson(request, ({ confirmation }) => {
+            readJson<{ confirmation: string }>(request, ({ confirmation }) => {
                 if (confirmation !== 'REMOVE') {
                     sendError(
                         response,
@@ -283,7 +307,12 @@ const clubRoutes = [
     ['DELETE', /^\/avatar$/u, removeAvatar],
 ];
 
-function handleClub(request, response, clubId, subpath) {
+function handleClub(
+    request: TMockRequest,
+    response: TMockResponse,
+    clubId: string,
+    subpath: string,
+): void {
     const token = sessionToken(request);
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-settings-auth');
@@ -304,16 +333,14 @@ function handleClub(request, response, clubId, subpath) {
     }
 }
 
-const contactFailures = {
-    'Rate limited message': [429, 'RATE_LIMITED', 'request-1'],
-    'Service unavailable message': [503, 'SERVICE_UNAVAILABLE', 'request-2'],
-};
-
-function handleContact(request, response) {
-    readJson(request, (payload) => {
-        const failure = contactFailures[payload.message];
-        if (failure) {
-            sendError(response, ...failure);
+function handleContact(request: TMockRequest, response: TMockResponse): void {
+    readJson<{ message: string }>(request, (payload) => {
+        if (payload.message === 'Rate limited message') {
+            sendError(response, 429, 'RATE_LIMITED', 'request-1');
+            return;
+        }
+        if (payload.message === 'Service unavailable message') {
+            sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-2');
             return;
         }
         const complete = () => response.writeHead(202).end();
@@ -321,7 +348,7 @@ function handleContact(request, response) {
     });
 }
 
-const invitationResponses = new Map();
+const invitationResponses = new Map<string, TInvitationPreview>();
 const invitationTokens = {
     valid: 'v'.repeat(43),
     expired: 'e'.repeat(43),
@@ -332,13 +359,13 @@ const invitationTokens = {
     invalid: 'i'.repeat(43),
 };
 
-function handleInvitation(request, response, pathname) {
+function handleInvitation(request: TMockRequest, response: TMockResponse, pathname: string): void {
     const session = sessionToken(request);
     if (!session?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-invitation-auth');
         return;
     }
-    readJson(request, ({ token, decision }) => {
+    readJson<Partial<TRespondInvitation>>(request, ({ token, decision }) => {
         if (token === 'z'.repeat(43)) {
             sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-unavailable');
             return;
@@ -359,11 +386,7 @@ function handleInvitation(request, response, pathname) {
                 };
             else if (state === 'member')
                 preview = { state: 'already-member', clubId: settingsClubId };
-            else
-                preview = {
-                    state:
-                        { full: 'over-limit', paused: 'unavailable' }[state] ?? state ?? 'invalid',
-                };
+            else preview = { state: unavailableInvitationState(state) };
         }
         if (pathname.endsWith('/respond') && preview.state === 'valid') {
             preview =
@@ -378,6 +401,15 @@ function handleInvitation(request, response, pathname) {
     });
 }
 
+function unavailableInvitationState(
+    state: string | undefined,
+): 'invalid' | 'expired' | 'revoked' | 'over-limit' | 'unavailable' {
+    if (state === 'full') return 'over-limit';
+    if (state === 'paused') return 'unavailable';
+    if (state === 'expired' || state === 'revoked') return state;
+    return 'invalid';
+}
+
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (handleMovieDetails(request, response, pathname, sessionToken(request))) return;
@@ -385,7 +417,7 @@ const api = createServer((request, response) => {
     if (handleNominations(request, response, pathname, sessionToken(request))) return;
     if (handleSessionRoster(request, response, pathname, sessionToken(request))) return;
     if (handleSessionWorkflow(request, response, pathname, sessionToken(request))) return;
-    const clubMatch = pathname.match(/^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u);
+    const clubMatch = /^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u.exec(pathname);
     if (
         handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>
             clubsBySession.set(token, [settingsProjection(token).club]),
@@ -400,7 +432,7 @@ const api = createServer((request, response) => {
     } else if (pathname === '/clubs') {
         handleClubs(request, response);
     } else if (clubMatch) {
-        handleClub(request, response, clubMatch[1], clubMatch[2] ?? '');
+        handleClub(request, response, clubMatch[1] ?? '', clubMatch[2] ?? '');
     } else if (request.method === 'POST' && pathname === '/contact') {
         handleContact(request, response);
     } else {
@@ -408,9 +440,9 @@ const api = createServer((request, response) => {
     }
 });
 
-await new Promise((resolve, reject) => {
+await new Promise<void>((resolve, reject) => {
     api.once('error', reject);
-    api.listen(42731, '127.0.0.1', resolve);
+    api.listen(42731, '127.0.0.1', () => resolve());
 });
 const apiAddress = api.address();
 if (!apiAddress || typeof apiAddress === 'string') {
