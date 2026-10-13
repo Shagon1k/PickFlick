@@ -121,7 +121,8 @@ toolchain:
 - **Lint, type-check, test** — ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
-  `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
+  `pnpm test:integration`, `pnpm test:e2e` against the built frontend and backend, and
+  `pnpm test:journeys` (browser journeys through the real web app and API). CI layers
   `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
 - **UI smoke** — six tagged checks with `pnpm test:ui:smoke` on PRs, covering security headers,
   CSP, public accessibility and interaction, product navigation, and 1024px overflow.

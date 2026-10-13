@@ -10,6 +10,7 @@
                 "scripts/*.mjs",
                 "tests/**/*.spec.ts",
                 "tests/ui/start-frontend-with-mock-api.ts",
+                "tests/journeys/start-journey-stack.ts",
             ],
             "playwright": false,
         },

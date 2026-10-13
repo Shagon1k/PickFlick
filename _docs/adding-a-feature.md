@@ -118,6 +118,7 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 | Endpoint      | `modules/<feature>/__tests__/<feature>.int.spec.ts` with `startTestApi()` and `createUser()` from `src/testing/integration.ts` | `pnpm test:integration` |
 | Server action | `app/.../__tests__/actions.spec.ts`, mocking `@/api/*.server`                                                                  | `pnpm test:unit`        |
 | Screen        | A Playwright spec in `tests/ui/`, with any new backend answers added to `start-frontend-with-mock-api.ts`                      | `pnpm test:ui`          |
+| Journey       | A step in `tests/journeys/` when the feature joins a core flow; it runs the real web app and API                               | `pnpm test:journeys`    |
 
 `startTestApi()` boots the real application against the local database; send
 `{ userId }` with a request to act as that User.

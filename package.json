@@ -29,6 +29,7 @@
         "test:ui:visual": "playwright test --config playwright.ui.config.ts --grep @visual",
         "test:ui:update": "pnpm test:ui:visual --update-snapshots",
         "test:e2e": "node scripts/e2e-smoke.mjs",
+        "test:journeys": "playwright test --config playwright.journeys.config.ts",
         "test:uat": "playwright test --config playwright.uat.config.ts",
         "db:migrate": "pnpm --filter @pickflick/database migrate",
         "db:seed": "pnpm --filter @pickflick/database seed",

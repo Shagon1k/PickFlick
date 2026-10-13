@@ -178,6 +178,21 @@ jobs:
       - name: Run built-runtime E2E smoke
         run: pnpm test:e2e
 
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser journeys against the real API
+        run: pnpm test:journeys
+
+      - name: Upload journey failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          name: journeys-${{ github.sha }}
+          path: test-results/
+          retention-days: 14
+
       - name: Stop isolated test dependencies
         if: ${{ always() }}
         run: docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml -f compose.ci.yaml down --volumes

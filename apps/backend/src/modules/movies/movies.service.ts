@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
@@ -15,6 +13,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
+import { catalogCacheKey } from './catalog-cache-key.js';
 import { MoviesRepository } from './movies.repository.js';
 import {
     canUseStale,
@@ -159,10 +158,7 @@ export class MoviesService {
         return age >= 0 && age < hours * HOUR_MS;
     }
 
-    /** Switching provider or locale starts a separate cache; old entries simply age out. */
     private cacheKey(...values: unknown[]): string {
-        return createHash('sha256')
-            .update(JSON.stringify([this.environment.catalog.provider, ...values]))
-            .digest('hex');
+        return catalogCacheKey(this.environment.catalog.provider, ...values);
     }
 }
