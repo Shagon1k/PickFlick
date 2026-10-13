@@ -79,6 +79,31 @@ unverified. Browser checks use the mock API; real multi-user API streams and tra
 covered by integration tests. Keep #44 and Phase 10 open until the remaining acceptance evidence
 is recorded. The managed worktree remains for review; this run created no manual worktree.
 
+### Automatic transition CI repair attempt 1 — 2026-10-13
+
+The bounded repair starts from PR #171 head `8b35e668fedab1484fd851df3a8cac3b54ac1501`.
+PR, managed branch, worktree HEAD and remote branch matched that SHA before editing.
+GitHub CLI logs for CI run `38384062891` show one flaky operator-roster smoke check;
+the Delivery gate failed because UI smoke failed. The downloaded trace shows Escape sent
+before the removal dialog appeared. The unchanged test passed ten local runs without retries,
+so the CI timing failure was not reproduced locally.
+
+The roster test now waits for the named dialog's close button to receive focus before Escape
+and confirms dismissal before checking opener focus. Existing successful-removal heading focus
+remains covered. The repair changes no product code, dependency, CI policy or visual baseline.
+
+Verification with Node 24.15.0, pnpm 11.25.0 and the launcher's in-worktree store:
+
+- Corrected operator-roster check: ten repeated runs pass with retries disabled.
+- `pnpm test:ui:smoke`: all 33 checks pass without retries.
+- Focused ESLint and Prettier checks pass.
+- `pnpm verify` passes: existing guarded audit exception, four existing lint warnings,
+  knip, formatting, workspace/root types, all 392 unit tests and both production builds.
+
+Only this test and the active phase evidence change; canonical product and architecture contracts
+are unaffected. New-head CI, hosted preview and owner acknowledgement remain unverified.
+Keep #44 in Human Review and retain the managed worktree for review.
+
 ### Deadline run preparation
 
 Run `r_f9f677f7afc97df8107e` for [#43](https://github.com/Shagon1k/PickFlick/issues/43) uses the
