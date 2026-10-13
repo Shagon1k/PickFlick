@@ -116,8 +116,8 @@ and exits with status 1.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Dependency security** — `pnpm security:audit` (full raw audit with the verified temporary braces
-  exception; see [Security](security.md)), independently of the static checks.
+- **Dependency security** — `pnpm security:audit` (standard production dependency audit; see
+  [Security](security.md)), independently of the static checks.
 - **Lint, type-check, test** — ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,

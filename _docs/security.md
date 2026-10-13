@@ -108,11 +108,10 @@ entry), so a client cannot spoof it with its own `X-Forwarded-For`.
 
 ## Dependencies and supply chain
 
-- CI runs `pnpm security:audit` in the independent **Dependency security** job, required by the
-  Delivery gate on every event. Local `pnpm verify` still includes the same audit. Raw full-workspace
-  `pnpm audit --audit-level high --json`
-  findings stay visible, and every high or critical advisory blocks except the single temporary
-  owner-approved mitigation below. Registry/process failures and incomplete evidence fail closed.
+- CI runs `pnpm security:audit` (`pnpm audit --prod --audit-level high`) in the independent
+  **Dependency security** job, required by the Delivery gate on every event. Local `pnpm verify`
+  includes the same audit. High and critical production dependency advisories block delivery;
+  registry/process failures also fail the check. Development tools are outside this gate.
 - Dependabot opens weekly grouped updates for npm packages and GitHub Actions, skipping releases
   younger than a week.
 - Prefer narrow lockfile updates within the parent's declared range for transitive fixes. When that
@@ -125,69 +124,26 @@ On 2026-10-06, the official GitHub advisories and npm registry confirmed patched
 `source-map-js` (`GHSA-68fv-2mgg-jv7q`, 1.2.2), `proxy-addr` (`GHSA-jqcg-44mw-7w3h`, 2.0.8),
 and `sharp` (`GHSA-wq5f-xc86-pv6w`, 0.35.5). The lockfile resolves those versions within existing
 parent ranges, including sharp's matching optional native packages; no new override or exception
-is used. This does not retire or broaden the separate braces mitigation below.
+is used.
 
 On 2026-10-09, the [GitHub advisory](https://github.com/advisories/GHSA-cjq9-62q9-8jv4)
 and npm registry confirmed `next@16.3.8` fixes Image Optimization SSRF. The frontend pins that
 patch release, including its matching environment and SWC packages in the lockfile. Its Node and
 peer requirements remain compatible with the installed stack. The app configures no
-`images.remotePatterns`, so the advisory's exposure condition is absent; the full-workspace audit
+`images.remotePatterns`, so the advisory's exposure condition is absent; the production audit
 still requires the fixed version.
 
-### Temporary braces mitigation
+### Development dependencies
 
-Owner Alex approved a local mitigation and narrowly scoped residual-risk exception for
-`GHSA-vfj7-8cjw-p6xm`, **only `braces@3.0.3`**, while upstream has no fixed release (GitHub advisory
-and npm registry rechecked on 2026-10-04). This is not a claim that the advisory disappeared.
-The exception expires at **2026-12-10 00:00:00 UTC**; it cannot silently renew. Any extension needs
-fresh owner approval and review of current upstream evidence.
+Issue #172 retires the local `braces@3.0.3` patch, verifier and temporary exception.
+Braces is reachable only through development tools, not the production dependency graph.
+The standard production audit replaces the custom full-workspace exception gate. Development
+patterns remain repository-owned; do not accept untrusted glob input without input bounds.
 
-`patches/braces@3.0.3.patch` is applied through `pnpm-workspace.yaml` `patchedDependencies`.
-The parser rejects more than 100 combined brace/parenthesis AST containers, including unclosed or
-mixed nesting, before recursive walkers run. Escapes, quoted content and bracket literals do not
-consume AST depth. Compile, expand and stringify also validate caller-supplied child-node ASTs
-iteratively before walking or mutating them, rejecting excessive depth and child cycles. Validation
-also caps visited and queued AST work at 200000 entries, so tiny shared graphs cannot cause exponential
-validation and broad caller ASTs cannot allocate an unbounded validation stack. Parent/prev
-backlinks are not traversed: this is not a general validator for arbitrary malformed AST objects.
-
-`scripts/security/braces-exception.json` records the reason, exact advisory/package/version, expiry,
-patch SHA-256 and hashes of every installed braces JavaScript source file. Before filtering any
-finding, `scripts/security-audit.mjs` independently verifies the patch bytes, enumerates the installed
-workspace dependency graph and virtual-store copies, checks package identity/source hashes, and
-exercises the rejection behavior. Missing/tampered/unapplied patches, an unexpected version, unknown
-high/critical advisories, missing high/critical findings, malformed JSON and unexpected process exits
-all fail. The raw version-based audit still reports this high advisory; only the verified guarded
-gate accepts the temporary exception. All other high/critical findings remain blocking, including
-future advisories on braces. No production-only scope, package renaming, version spoofing or global
-threshold relaxation is used.
-
-Regression tests retain original 3.0.3 outputs for normal patterns, ranges, escapes, quotes, brackets
-and malformed input, plus 100/101 depth boundaries, deeply nested/unclosed/mixed inputs, parsed and
-caller-supplied ASTs, and audit/patch tampering failures. The compatibility fixture was captured from
-original braces@3.0.3; it is not invented audit evidence.
-
-**Residual risk:** rejected depth raises `SyntaxError`; callers must catch/translate it if patterns
-are untrusted. Micromatch's parse/braces helpers and chokidar's glob expansion propagate the error;
-the patch does not silently return a match. Existing repository callers are development tools
-(Stylelint, ESLint presets and nodemon), with repository-owned patterns. Lint and full verification
-exercise those actual callers. This does not prove that arbitrary future untrusted glob callers are
-safe. Cartesian expansion volume, hostile AST parent backlinks and unrelated denial-of-service
-mechanisms are outside this depth mitigation. Never expose these APIs to untrusted runtime input
-without separate input/resource bounds and error handling.
-
-`@pickflick/config` now contains environment validation and TypeScript presets, with only zod as a
-runtime dependency. `@pickflick/eslint-config` is a root dev-only workspace dependency; all ESLint
-plugins live in its devDependencies and resolve from that package during development. Production
-backend deploy/prune does not include that package or its plugins. This separation reduces accidental
-runtime tool inclusion; it does not replace full-workspace audit or claim every production dependency
-is vulnerability-free.
-
-**Retirement:** monitor the official advisory and upstream releases. When a reviewed fixed release
-exists, upgrade all dependency paths, regenerate the lockfile, remove the local patch and this
-exception together, and prove full audit, regressions, lint, production packaging and `pnpm verify`.
-If the advisory disappears first, investigate rather than extending the exception automatically.
-At expiry the gate blocks even if audit no longer reports the advisory, forcing explicit retirement.
+`@pickflick/config` contains environment validation and TypeScript presets, with only zod as a
+runtime dependency. `@pickflick/eslint-config` is a root dev-only workspace dependency; its plugins
+remain outside production packaging. This does not claim that development dependencies are
+vulnerability-free. Use `pnpm audit --audit-level high` when reviewing the full workspace.
 
 ## Infrastructure
 

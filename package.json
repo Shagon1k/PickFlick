@@ -40,7 +40,7 @@
         "deploy:check": "sh scripts/check-compose.sh",
         "prepare": "husky",
         "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
-        "security:audit": "node scripts/security-audit.mjs",
+        "security:audit": "pnpm audit --prod --audit-level high",
         "start:app": "pnpm --parallel --stream --filter @pickflick/frontend --filter @pickflick/backend start",
         "start:worker": "pnpm --filter @pickflick/backend start:worker",
         "test:worker": "node scripts/deadline-worker-smoke.mjs"
