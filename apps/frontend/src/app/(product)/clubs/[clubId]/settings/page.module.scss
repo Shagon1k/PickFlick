@@ -494,23 +494,6 @@
     gap: var(--gap-xs);
 }
 
-.dialogForm {
-    display: grid;
-    gap: var(--gap-md);
-}
-
-.dialogForm > p {
-    margin: 0;
-    line-height: var(--lh-body);
-    color: var(--fg-secondary);
-}
-
-.dialogActions {
-    display: flex;
-    gap: var(--gap-sm);
-    justify-content: flex-end;
-}
-
 @media (width >= 1024px) {
     .tabs {
         display: flex;
@@ -576,14 +559,6 @@
     }
 
     .dangerActions button {
-        width: 100%;
-    }
-
-    .dialogActions {
-        flex-direction: column-reverse;
-    }
-
-    .dialogActions > button {
         width: 100%;
     }
 }

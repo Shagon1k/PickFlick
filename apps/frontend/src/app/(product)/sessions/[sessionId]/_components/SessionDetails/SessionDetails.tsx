@@ -8,8 +8,8 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import SessionForm from '@/components/sessions/SessionForm/SessionForm';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
+import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -31,7 +31,6 @@ export default function SessionDetails({
         phaseRef.current = session.phase;
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
-    const [confirmation, setConfirmation] = useState('');
     const [message, setMessage] = useState('');
     const [pending, startTransition] = useTransition();
     return (
@@ -92,7 +91,6 @@ export default function SessionDetails({
                         <Button
                             onClick={() => {
                                 setMessage('');
-                                setConfirmation('');
                                 setDialog('cancel');
                             }}
                             variant="secondary-danger"
@@ -115,68 +113,46 @@ export default function SessionDetails({
                     />
                 ) : null}
             </Modal>
-            <Modal
-                open={dialog === 'cancel'}
-                dismissible={!pending}
-                title="Cancel Session"
-                tone="danger"
+            <ConfirmDialog
+                confirmLabel="Confirm cancellation"
+                cancelLabel="Keep Session"
+                inputId="cancel-confirmation"
                 onClose={() => setDialog(null)}
-                actions={
-                    <>
-                        <Button
-                            disabled={pending}
-                            onClick={() => setDialog(null)}
-                            variant="secondary"
-                        >
-                            Keep Session
-                        </Button>
-                        <Button
-                            loading={pending}
-                            disabled={confirmation !== 'CANCEL'}
-                            variant="danger"
-                            onClick={() => {
-                                if (!navigator.onLine) {
-                                    setMessage(
-                                        'You appear to be offline. Reconnect before cancelling.',
-                                    );
-                                    return;
-                                }
-                                startTransition(async () => {
-                                    const result = await cancelSessionAction(session.id, {
-                                        version: session.version,
-                                        confirmation,
-                                    }).catch(() => ({
-                                        ok: false,
-                                        message: 'We could not reach PickFlick. Try again.',
-                                    }));
-                                    setMessage(result.message);
-                                    if (result.ok) {
-                                        setDialog(null);
-                                        router.refresh();
-                                    }
-                                });
-                            }}
-                        >
-                            Confirm cancellation
-                        </Button>
-                    </>
+                onConfirm={(confirmation) => {
+                    if (!navigator.onLine) {
+                        setMessage('You appear to be offline. Reconnect before cancelling.');
+                        return;
+                    }
+                    startTransition(async () => {
+                        const result = await cancelSessionAction(session.id, {
+                            version: session.version,
+                            confirmation,
+                        }).catch(() => ({
+                            ok: false,
+                            message: 'We could not reach PickFlick. Try again.',
+                        }));
+                        setMessage(result.message);
+                        if (result.ok) {
+                            setDialog(null);
+                            router.refresh();
+                        }
+                    });
+                }}
+                open={dialog === 'cancel'}
+                pending={pending}
+                status={
+                    <p aria-live="polite" role="status">
+                        {message}
+                    </p>
                 }
+                title="Cancel Session"
+                word="CANCEL"
             >
                 <p>
                     Cancel “{session.topic ?? 'Untitled Session'}”? Participation ends and this Club
                     can schedule another Session. Existing history stays.
                 </p>
-                <TextInput
-                    disabled={pending}
-                    id="cancel-confirmation"
-                    label="Type CANCEL to confirm"
-                    value={confirmation}
-                    onChange={(event) => setConfirmation(event.currentTarget.value)}
-                />
-                <p aria-live="polite" role="status">
-                    {message}
-                </p>
-            </Modal>
+            </ConfirmDialog>
         </main>
     );
 }

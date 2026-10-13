@@ -10,8 +10,7 @@ import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 
 import styles from '../../page.module.scss';
 
@@ -22,8 +21,10 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
     const headingRef = useRef<HTMLHeadingElement>(null);
     const returnToHeading = useRef(false);
     const { club, permissions, members, currentMembershipId } = projection;
-    async function remove(formData: FormData) {
+    async function remove(confirmation: string) {
         if (!selected) return;
+        const formData = new FormData();
+        formData.set('confirmation', confirmation);
         setPending(true);
         try {
             const result = await removeClubMemberAction(
@@ -119,9 +120,11 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     </li>
                 ))}
             </ul>
-            <Modal
-                dismissible={!pending}
+            <ConfirmDialog
+                confirmLabel="Confirm removal"
+                inputId="remove-confirmation"
                 onClose={() => setSelected(null)}
+                onConfirm={(confirmation) => void remove(confirmation)}
                 onExitTransitionEnd={() => {
                     if (returnToHeading.current) {
                         headingRef.current?.focus();
@@ -129,38 +132,20 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     }
                 }}
                 open={Boolean(selected)}
-                title="Remove this member?"
-                tone="danger"
-            >
-                <form action={remove} className={styles.confirmation}>
-                    <p>
-                        {selected?.displayName} will lose access to this private Club. Shared Club
-                        and Session history remains.
-                    </p>
-                    <TextInput
-                        id="remove-confirmation"
-                        autoComplete="off"
-                        label="Type REMOVE to confirm"
-                        name="confirmation"
-                        required
-                    />
+                pending={pending}
+                status={
                     <p aria-live="polite" role="status">
                         {message}
                     </p>
-                    <div className={styles.actions}>
-                        <Button
-                            disabled={pending}
-                            onClick={() => setSelected(null)}
-                            variant="secondary"
-                        >
-                            Cancel
-                        </Button>
-                        <Button loading={pending} type="submit" variant="danger">
-                            Confirm removal
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                }
+                title="Remove this member?"
+                word="REMOVE"
+            >
+                <p>
+                    {selected?.displayName} will lose access to this private Club. Shared Club and
+                    Session history remains.
+                </p>
+            </ConfirmDialog>
         </main>
     );
 }

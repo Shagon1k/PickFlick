@@ -6,8 +6,7 @@ import { useRef, useState, useTransition } from 'react';
 
 import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
 import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 
 import {
     closeNominationsAction,
@@ -30,9 +29,8 @@ export default function Nomination({
     const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
     const [dialog, setDialog] = useState(false);
-    const [confirmation, setConfirmation] = useState('');
     const [pending, startTransition] = useTransition();
-    function run(action: 'submit' | 'refresh' | 'close') {
+    function run(action: 'submit' | 'refresh' | 'close', confirmation = '') {
         if (!navigator.onLine) {
             setMessage(
                 'You appear to be offline. Reconnect before continuing; your selection is still here.',
@@ -154,10 +152,7 @@ export default function Nomination({
                         <Button
                             variant="secondary"
                             disabled={pending}
-                            onClick={() => {
-                                setConfirmation('');
-                                setDialog(true);
-                            }}
+                            onClick={() => setDialog(true)}
                         >
                             Close nominations early
                         </Button>
@@ -167,43 +162,24 @@ export default function Nomination({
             <p aria-atomic="true" aria-live="polite" role="status">
                 {message}
             </p>
-            <Modal
-                open={dialog}
-                title="Close nominations early"
-                dismissible={!pending}
+            <ConfirmDialog
+                cancelLabel="Keep nominations open"
+                confirmLabel="Confirm close"
+                inputId="close-nomination-confirmation"
                 onClose={() => setDialog(false)}
-                actions={
-                    <>
-                        <Button
-                            variant="secondary"
-                            disabled={pending}
-                            onClick={() => setDialog(false)}
-                        >
-                            Keep nominations open
-                        </Button>
-                        <Button
-                            loading={pending}
-                            disabled={confirmation !== 'CLOSE'}
-                            onClick={() => run('close')}
-                        >
-                            Confirm close
-                        </Button>
-                    </>
-                }
+                onConfirm={(confirmation) => run('close', confirmation)}
+                open={dialog}
+                pending={pending}
+                status={<p role="status">{message}</p>}
+                title="Close nominations early"
+                tone="neutral"
+                word="CLOSE"
             >
                 <p>
                     End Nomination now? One nomination selects that Movie for Watching. Two or more
                     open Selection. Remaining participants cannot nominate.
                 </p>
-                <TextInput
-                    id="close-nomination-confirmation"
-                    label="Type CLOSE to confirm"
-                    value={confirmation}
-                    disabled={pending}
-                    onChange={(event) => setConfirmation(event.currentTarget.value)}
-                />
-                <p role="status">{message}</p>
-            </Modal>
+            </ConfirmDialog>
         </section>
     );
 }

@@ -33,8 +33,7 @@ test(
         await expect(trigger).toBeFocused();
         await trigger.click();
         await dialog.getByRole('textbox', { name: 'Type REMOVE to confirm' }).fill('wrong');
-        await dialog.getByRole('button', { name: 'Confirm removal' }).click();
-        await expect(dialog.getByRole('status')).toContainText('confirmation did not match');
+        await expect(dialog.getByRole('button', { name: 'Confirm removal' })).toBeDisabled();
         await dialog.getByRole('textbox', { name: 'Type REMOVE to confirm' }).fill('REMOVE');
         await dialog.getByRole('button', { name: 'Confirm removal' }).click();
         await expect(dialog).toHaveCount(0);
