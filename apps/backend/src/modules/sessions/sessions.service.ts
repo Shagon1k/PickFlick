@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
     ConflictException,
     ForbiddenException,
@@ -52,30 +54,12 @@ export class SessionsService {
     }
 
     async create(userId: string, clubId: string, input: TCreateSession): Promise<TSession> {
+        const id = randomUUID();
         try {
             await this.prisma.$transaction(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
                 if (membership.role === 'MEMBER') throw new ForbiddenException();
-                const existing = await transaction.session.findUnique({ where: { id: input.id } });
-                if (existing) {
-                    const creation = await transaction.clubAuditEvent.findFirst({
-                        where: {
-                            sessionId: input.id,
-                            actorUserId: userId,
-                            action: 'SESSION_CREATED',
-                        },
-                    });
-                    if (
-                        existing.clubId !== clubId ||
-                        !creation ||
-                        existing.type !== input.type ||
-                        existing.movieId !== input.movieId ||
-                        !matchesDetails(existing, input)
-                    )
-                        throw new ConflictException({ reason: 'SESSION_ID_CONFLICT' });
-                    return;
-                }
                 if (!(await canManage(transaction, membership)))
                     throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
                 validateDeadline(input.deadlineAt);
@@ -93,6 +77,7 @@ export class SessionsService {
                 const created = await transaction.session.create({
                     data: {
                         ...input,
+                        id,
                         topic: input.topic ?? null,
                         notes: input.notes ?? null,
                         clubId,
@@ -101,14 +86,7 @@ export class SessionsService {
                     },
                 });
                 await scheduleDeadline(transaction, created);
-                await audit(
-                    transaction,
-                    membership.id,
-                    userId,
-                    clubId,
-                    input.id,
-                    'SESSION_CREATED',
-                );
+                await audit(transaction, membership.id, userId, clubId, id, 'SESSION_CREATED');
             });
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -116,7 +94,7 @@ export class SessionsService {
             }
             throw error;
         }
-        return this.get(userId, input.id);
+        return this.get(userId, id);
     }
 
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {

@@ -60,7 +60,7 @@ describe('Session workflows', () => {
         return api.request(`/clubs/${clubId}/sessions`, {
             userId,
             method: 'POST',
-            json: { ...details, id: randomUUID(), type: 'FULL_CYCLE', movieId: null, ...input },
+            json: { ...details, type: 'FULL_CYCLE', movieId: null, ...input },
         });
     }
     async function edit(session: TSession, userId = admin, input = {}) {
@@ -90,7 +90,7 @@ describe('Session workflows', () => {
         const preselected = await create(moderator, { type: 'PRE_SELECTED', movieId });
         expect(await preselected.json()).toMatchObject({ phase: 'WATCHING', movieId });
     });
-    it('should reject non-v4 IDs and allow a v4 Session to be read and cancelled', async () => {
+    it('should reject caller IDs and generate a v4 Session that can be read and cancelled', async () => {
         const id = '01931234-5678-7abc-8def-0123456789ab';
         expect((await create(admin, { id })).status).toBe(400);
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(0);
@@ -106,24 +106,16 @@ describe('Session workflows', () => {
             await (await api.request(`/sessions/${session.id}`, { userId: admin })).json(),
         ).toMatchObject({ phase: 'CANCELLED' });
     });
-    it('should serialize duplicate creation and reject two different blocking Sessions', async () => {
-        const id = randomUUID();
-        const duplicates = await Promise.all([create(admin, { id }), create(admin, { id })]);
-        expect(duplicates.map((response) => response.status)).toEqual([201, 201]);
-        expect(
-            await api.prisma.clubAuditEvent.count({
-                where: { sessionId: id, action: 'SESSION_CREATED' },
-            }),
-        ).toBe(1);
-        expect((await create()).status).toBe(409);
-        expect((await create(admin, { id, location: 'Changed request' })).status).toBe(409);
-        expect((await create(moderator, { id })).status).toBe(409);
-        const session = (await duplicates[0]?.json()) as TSession;
-        await cancel(session);
+    it('should serialize concurrent creation and reject a second blocking Session', async () => {
         const concurrent = await Promise.all([create(), create(moderator)]);
         expect(concurrent.map((response) => response.status).toSorted((a, b) => a - b)).toEqual([
             201, 409,
         ]);
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
+        expect(
+            await api.prisma.clubAuditEvent.count({ where: { clubId, action: 'SESSION_CREATED' } }),
+        ).toBe(1);
+        expect((await create()).status).toBe(409);
     });
     it('should enforce membership, roles and archived/read-only boundaries', async () => {
         expect((await create(member)).status).toBe(403);

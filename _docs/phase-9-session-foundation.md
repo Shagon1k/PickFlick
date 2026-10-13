@@ -64,8 +64,8 @@ No visual behavior changes; design QA and full Session journeys belong to #40/#4
   invitation flow is added.
 - Migration 15 adds canonical Movie linkage, `detailsVersion`, and Session audit references/actions.
   It preserves legacy nullable skeleton fields. Apply it before the new application build.
-- A retained client v4 UUID makes unchanged create retries return the existing Session for its original
-  creator; changed payloads and another creator conflict.
+- Issue #172 replaces retained caller IDs and creation replay with server-generated v4 UUIDs.
+  Club serialization and the one-blocking-Session rule reject concurrent duplicate creation.
   Edits compare details and version; cancellation is serialized, audited once, preserves history,
   revokes pending links and releases the blocking slot.
 - Creation requires date/location. Topic and notes are optional. Full-cycle starts in Nomination
