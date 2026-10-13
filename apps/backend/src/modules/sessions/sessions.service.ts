@@ -1,11 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
     TCancelSession,
     TCreateSession,
@@ -18,7 +13,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
 import { NominationsService } from './nominations.service.js';
 import { publishProgress } from './session-progress.js';
-import { canManage } from './session-roster-access.js';
+import { access, assertManager, canManage } from './session-roster-access.js';
 
 @Injectable()
 export class SessionsService {
@@ -58,9 +53,7 @@ export class SessionsService {
             await this.prisma.$transaction(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
-                if (membership.role === 'MEMBER') throw new ForbiddenException();
-                if (!(await canManage(transaction, membership)))
-                    throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+                await assertManager(transaction, membership);
                 validateDeadline(input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
                     where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] } },
@@ -84,7 +77,14 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
-                await audit(transaction, membership.id, userId, clubId, id, 'SESSION_CREATED');
+                await recordAudit(transaction, {
+                    subjectMembershipId: membership.id,
+                    actorUserId: userId,
+                    subjectUserId: userId,
+                    clubId: clubId,
+                    sessionId: id,
+                    action: 'SESSION_CREATED',
+                });
             });
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -124,7 +124,14 @@ export class SessionsService {
                     deadlineVersion: deadlineChanged ? { increment: 1 } : undefined,
                 },
             });
-            await audit(transaction, membership.id, userId, session.clubId, id, 'SESSION_UPDATED');
+            await recordAudit(transaction, {
+                subjectMembershipId: membership.id,
+                actorUserId: userId,
+                subjectUserId: userId,
+                clubId: session.clubId,
+                sessionId: id,
+                action: 'SESSION_UPDATED',
+            });
             await publishProgress(transaction, id, 'DETAILS');
         });
         return this.get(userId, id);
@@ -152,14 +159,14 @@ export class SessionsService {
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },
             });
-            await audit(
-                transaction,
-                membership.id,
-                userId,
-                session.clubId,
-                id,
-                'SESSION_CANCELLED',
-            );
+            await recordAudit(transaction, {
+                subjectMembershipId: membership.id,
+                actorUserId: userId,
+                subjectUserId: userId,
+                clubId: session.clubId,
+                sessionId: id,
+                action: 'SESSION_CANCELLED',
+            });
             await publishProgress(transaction, id, 'CANCELLED');
         });
         return this.get(userId, id);
@@ -167,18 +174,8 @@ export class SessionsService {
 }
 
 async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
-    const initial = await transaction.session.findUnique({
-        where: { id },
-        select: { clubId: true },
-    });
-    if (!initial) throw new NotFoundException();
-    await lockClub(transaction, initial.clubId);
-    const membership = await findMembership(transaction, userId, initial.clubId);
-    if (membership.role === 'MEMBER') throw new ForbiddenException();
-    if (!(await canManage(transaction, membership)))
-        throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
-    await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${id}::uuid FOR UPDATE`;
-    const session = await transaction.session.findUniqueOrThrow({ where: { id } });
+    const { session, member: membership } = await access(transaction, userId, id);
+    await assertManager(transaction, membership);
     return { session, membership };
 }
 
@@ -211,24 +208,6 @@ function project(
         canEdit: allowed && open,
         canCancel: allowed && open,
     };
-}
-
-async function audit(
-    transaction: Prisma.TransactionClient,
-    membershipId: string,
-    userId: string,
-    clubId: string,
-    sessionId: string,
-    action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED',
-) {
-    await recordAudit(transaction, {
-        clubId,
-        sessionId,
-        actorUserId: userId,
-        subjectUserId: userId,
-        subjectMembershipId: membershipId,
-        action,
-    });
 }
 
 function matchesDetails(

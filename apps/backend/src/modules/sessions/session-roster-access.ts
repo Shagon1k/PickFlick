@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
-import type { Prisma } from '@pickflick/database';
+import { lockSession, type Prisma } from '@pickflick/database';
 
 import { clubAccess, findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
 import { clubPermissions } from '../clubs/club-permissions.js';
@@ -77,18 +77,19 @@ export async function access(tx: Prisma.TransactionClient, userId: string, id: s
     if (!initial) throw new NotFoundException();
     await lockClub(tx, initial.clubId);
     const member = await findMembership(tx, userId, initial.clubId);
-    await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${id}::uuid FOR UPDATE`;
+    await lockSession(tx, id);
     return { session: await tx.session.findUniqueOrThrow({ where: { id } }), member };
 }
 export function assertOpen(phase: string) {
     if (!openPhases.some((value) => value === phase))
         throw new ConflictException({ reason: 'SESSION_CLOSED' });
 }
-export function assertManager(member: Awaited<ReturnType<typeof findMembership>>, phase: string) {
+export async function assertManager(
+    tx: Prisma.TransactionClient,
+    member: Awaited<ReturnType<typeof findMembership>>,
+) {
     if (member.role === 'MEMBER') throw new ForbiddenException();
-    assertOpen(phase);
-    if (member.club.lifecycle !== 'ACTIVE')
-        throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+    if (!(await canManage(tx, member))) throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
 }
 export function invitationState(invite: {
     respondedAt: Date | null;
@@ -108,20 +109,8 @@ export async function revokePending(tx: Prisma.TransactionClient, participantId:
 }
 export async function rosterAudit(
     tx: Prisma.TransactionClient,
-    actorUserId: string,
-    subjectUserId: string,
-    subjectMembershipId: string,
-    clubId: string,
-    sessionId: string,
-    action: Prisma.ClubAuditEventUncheckedCreateInput['action'],
+    event: Parameters<typeof recordAudit>[1] & { sessionId: string },
 ) {
-    await recordAudit(tx, {
-        actorUserId,
-        subjectUserId,
-        subjectMembershipId,
-        clubId,
-        sessionId,
-        action,
-    });
-    await completeNomination(tx, sessionId);
+    await recordAudit(tx, event);
+    await completeNomination(tx, event.sessionId);
 }

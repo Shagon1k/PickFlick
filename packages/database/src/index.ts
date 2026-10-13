@@ -12,5 +12,6 @@ export type {
     SessionType,
     UserStatus,
 } from './generated/prisma/enums.js';
+export { lockClub, lockSession } from './locks.js';
 export { assertSafeSeedOrResetTarget } from './safety.js';
 export { snapshotSessionSettings } from './session.js';

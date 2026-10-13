@@ -373,7 +373,8 @@ describe('Session roster', () => {
         expect(await (await respond(invitation.token)).json()).toMatchObject({ state: 'accepted' });
         expect((await roster(moderator)).canInvite).toBe(false);
         const participant = (await roster(moderator)).participants[0]!;
-        expect((await remove(participant.id)).status).toBe(204);
+        expect((await remove(participant.id)).status).toBe(409);
+        expect((await leave()).status).toBe(204);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await invite(moderator)).status).toBe(409);
         expect((await roster(moderator)).canManage).toBe(false);
@@ -394,4 +395,34 @@ describe('Session roster', () => {
         expect((await leave()).status).toBe(409);
         expect((await roster()).canInvite).toBe(false);
     });
+    it.each(['ADMINLESS', 'MEMBER_LIMIT', 'ARCHIVED'] as const)(
+        'should apply one manager restriction for %s to invite, revoke and remove',
+        async (restriction) => {
+            const invitation = await createInvite();
+            const participant = (await roster()).participants[0]!;
+            if (restriction === 'ADMINLESS')
+                await api.prisma.membership.updateMany({
+                    where: { clubId, role: 'ADMIN' },
+                    data: { role: 'MEMBER' },
+                });
+            else if (restriction === 'ARCHIVED')
+                await api.prisma.club.update({
+                    where: { id: clubId },
+                    data: { lifecycle: 'ARCHIVED' },
+                });
+            else {
+                for (let index = 0; index < 8; index++) {
+                    const userId = await createUser(api.prisma);
+                    users.push(userId);
+                    await api.prisma.membership.create({
+                        data: { id: randomUUID(), clubId, userId, role: 'MEMBER' },
+                    });
+                }
+            }
+            expect((await invite(moderator, memberId)).status).toBe(409);
+            expect((await revoke(invitation.id)).status).toBe(409);
+            expect((await remove(participant.id)).status).toBe(409);
+            expect(await roster(moderator)).toMatchObject({ canInvite: false, canManage: false });
+        },
+    );
 });

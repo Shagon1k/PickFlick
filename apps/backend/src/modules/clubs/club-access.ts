@@ -60,13 +60,7 @@ export async function recordAudit(
     await transaction.clubAuditEvent.create({ data: { ...event, changed: true } });
 }
 
-/** Shares the invitation lock with membership and lifecycle writes before authorization is read. */
-export async function lockClub(
-    transaction: Prisma.TransactionClient,
-    clubId: string,
-): Promise<void> {
-    await transaction.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId}::uuid FOR UPDATE`;
-}
+export { lockClub } from '@pickflick/database';
 
 export function clubAccess(
     lifecycle: TClubLifecycle,

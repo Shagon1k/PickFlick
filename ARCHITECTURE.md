@@ -465,3 +465,9 @@ Only one poll runs at a time; unmount discards pending results and clears the ti
 Access loss refreshes the authorization boundary and stops polling. Failures show visible feedback;
 the next successful poll clears it. Film rows and author visibility stay in server projections.
 Issue #172 removes the SSE transport and fallback mode without changing the transactional outbox.
+
+Session operator mutations share `assertManager` and the existing Club `manageSessions` permission.
+Invite, revoke and participant removal all require an active Club with an Admin and a member
+count within the current limit. Roster projections use that same rule; leaving stays available
+for an accepted participant in an open Session. Database lock helpers are shared by persistence
+and backend workflows, preserving Club → Session ordering.

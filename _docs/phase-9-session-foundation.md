@@ -165,3 +165,7 @@ Verification for run `r_fd9b79bfd880ed773b97`:
 Migration 20 removes `rosterVersion`, its versioning trigger and the test-only `readSessionRoster`.
 The existing workflow lock order and progress version remain. A narrower identity-only trigger
 preserves the former trigger's participant immutability check.
+
+Session invitation creation/revocation/removal now share one manager rule with their controls,
+including adminless, archived and over-limit Clubs. Focused integration cases verify each restriction.
+Club and Session row locks are shared persistence helpers; participant history is retained.

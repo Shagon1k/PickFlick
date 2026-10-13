@@ -14,8 +14,8 @@ export async function readRoster(
     if (!session) throw new NotFoundException();
     const member = await findMembership(tx, userId, session.clubId);
     const open = openPhases.some((phase) => phase === session.phase);
-    const manager = member.role !== 'MEMBER' && member.club.lifecycle === 'ACTIVE' && open;
-    const canInvite = open && (await canManage(tx, member));
+    const manager = open && (await canManage(tx, member));
+    const canInvite = manager;
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },

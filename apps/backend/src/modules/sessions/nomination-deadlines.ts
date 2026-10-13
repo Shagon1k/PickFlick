@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@pickflick/database';
+import { lockSession, type PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../clubs/club-access.js';
 import { advanceNomination, publishProgress } from './session-progress.js';
@@ -64,7 +64,7 @@ export class NominationDeadlines {
         });
         return this.prisma.$transaction(async (tx) => {
             await lockClub(tx, initial.clubId);
-            await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${sessionId}::uuid FOR UPDATE`;
+            await lockSession(tx, sessionId);
             const session = await tx.session.findUniqueOrThrow({
                 where: { id: sessionId },
                 include: { club: true },

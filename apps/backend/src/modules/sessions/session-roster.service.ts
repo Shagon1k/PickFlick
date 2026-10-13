@@ -1,17 +1,13 @@
 import { randomBytes } from 'node:crypto';
 
-import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
     ICreatedInvitation,
     IPendingSessionInvitation,
     ISessionRoster,
     TSessionInvitationPreview,
 } from '@pickflick/contracts';
+import { lockSession } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { lockClub } from '../clubs/club-access.js';
@@ -19,7 +15,6 @@ import {
     access,
     assertManager,
     assertOpen,
-    canManage,
     digest,
     inviteInclude,
     preview,
@@ -45,10 +40,8 @@ export class SessionRosterService {
     ): Promise<ICreatedInvitation> {
         return this.prisma.$transaction(async (tx) => {
             const { session, member } = await access(tx, userId, sessionId);
-            if (member.role === 'MEMBER') throw new ForbiddenException();
+            await assertManager(tx, member);
             assertOpen(session.phase);
-            if (!(await canManage(tx, member)))
-                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
             const target = await tx.membership.findFirst({
                 where: {
                     id: membershipId,
@@ -79,15 +72,14 @@ export class SessionRosterService {
                     expiresAt: new Date(Date.now() + 7 * 86400_000),
                 },
             });
-            await rosterAudit(
-                tx,
-                userId,
-                target.userId,
-                membershipId,
-                session.clubId,
-                sessionId,
-                'SESSION_INVITE_CREATED',
-            );
+            await rosterAudit(tx, {
+                actorUserId: userId,
+                subjectUserId: target.userId,
+                subjectMembershipId: membershipId,
+                clubId: session.clubId,
+                sessionId: sessionId,
+                action: 'SESSION_INVITE_CREATED',
+            });
             return { id: invitation.id, token, expiresAt: invitation.expiresAt.toISOString() };
         });
     }
@@ -95,7 +87,8 @@ export class SessionRosterService {
     async revoke(userId: string, sessionId: string, inviteId: string) {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await access(tx, userId, sessionId);
-            assertManager(member, session.phase);
+            await assertManager(tx, member);
+            assertOpen(session.phase);
             const invite = await tx.sessionInvite.findFirst({
                 where: { id: inviteId, participant: { sessionId } },
                 include: inviteInclude,
@@ -106,15 +99,14 @@ export class SessionRosterService {
                 where: { id: inviteId },
                 data: { revokedAt: new Date() },
             });
-            await rosterAudit(
-                tx,
-                userId,
-                invite.participant.membership.userId,
-                invite.participant.membershipId,
-                session.clubId,
-                sessionId,
-                'SESSION_INVITE_REVOKED',
-            );
+            await rosterAudit(tx, {
+                actorUserId: userId,
+                subjectUserId: invite.participant.membership.userId,
+                subjectMembershipId: invite.participant.membershipId,
+                clubId: session.clubId,
+                sessionId: sessionId,
+                action: 'SESSION_INVITE_REVOKED',
+            });
         });
     }
 
@@ -127,7 +119,7 @@ export class SessionRosterService {
             const { session, member } = await access(tx, userId, sessionId);
             assertOpen(session.phase);
             const removing = input.confirmation === 'REMOVE';
-            if (removing) assertManager(member, session.phase);
+            if (removing) await assertManager(tx, member);
             const participant = await tx.sessionParticipant.findFirst({
                 where: removing
                     ? { id: input.participantId, sessionId }
@@ -146,15 +138,14 @@ export class SessionRosterService {
                 throw new ConflictException({ reason: 'NOT_PARTICIPATING' });
             await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
             await revokePending(tx, participant.id);
-            await rosterAudit(
-                tx,
-                userId,
-                participant.membership.userId,
-                participant.membershipId,
-                session.clubId,
-                sessionId,
-                removing ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
-            );
+            await rosterAudit(tx, {
+                actorUserId: userId,
+                subjectUserId: participant.membership.userId,
+                subjectMembershipId: participant.membershipId,
+                clubId: session.clubId,
+                sessionId: sessionId,
+                action: removing ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
+            });
         });
     }
 
@@ -218,7 +209,7 @@ export class SessionRosterService {
             });
             if (!found) return { state: 'unavailable' };
             await lockClub(tx, found.clubId);
-            await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${found.participant.sessionId}::uuid FOR UPDATE`;
+            await lockSession(tx, found.participant.sessionId);
             const invite = await tx.sessionInvite.findUniqueOrThrow({
                 where,
                 include: inviteInclude,
@@ -234,15 +225,14 @@ export class SessionRosterService {
                 where: { id: invite.participantId },
                 data: { status: accepted ? 'ACCEPTED' : 'DECLINED' },
             });
-            await rosterAudit(
-                tx,
-                userId,
-                userId,
-                invite.participant.membershipId,
-                invite.clubId,
-                invite.participant.sessionId,
-                'SESSION_INVITE_RESPONDED',
-            );
+            await rosterAudit(tx, {
+                actorUserId: userId,
+                subjectUserId: userId,
+                subjectMembershipId: invite.participant.membershipId,
+                clubId: invite.clubId,
+                sessionId: invite.participant.sessionId,
+                action: 'SESSION_INVITE_RESPONDED',
+            });
             return accepted
                 ? {
                       state: 'accepted',
