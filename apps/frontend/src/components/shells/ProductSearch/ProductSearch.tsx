@@ -8,28 +8,13 @@ import styles from '@/components/shells/product-navigation.module.scss';
 import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
 import Icon from '@/components/ui/Icon/Icon';
 
-import { searchMoviesAction } from './actions';
+import {
+    nextOptionIndex,
+    searchMessage,
+    useActiveOptionVisible,
+    useMovieSearch,
+} from './movie-search';
 import SearchCredits from './SearchCredits';
-
-type TSearchResponse = Awaited<ReturnType<typeof searchMoviesAction>>;
-
-function searchMessage(term: string, result: TSearchResponse | null): string {
-    if (!term) return '';
-    if (!result) return 'Searching films…';
-    if (result.state === 'signed-out') return 'Your session has ended. Sign in to search films.';
-    if (result.state === 'invalid') return 'Use a film title of 1–200 characters.';
-    if (result.state === 'error') return 'Film search is temporarily unavailable. Try again.';
-    if (result.state === 'unavailable') {
-        if (result.reason === 'DISABLED') return 'Film search is not configured yet.';
-        if (result.reason === 'RATE_LIMITED')
-            return 'Film search is busy. Please try again shortly.';
-        return 'The film provider is temporarily unavailable. Try again.';
-    }
-    if (result.state === 'stale')
-        return 'Showing cached results while the provider is unavailable.';
-    if (!result.data.movies.length) return 'No films found. Try another title.';
-    return `${result.data.movies.length} films found.`;
-}
 
 export default function ProductSearch() {
     const router = useRouter();
@@ -38,20 +23,16 @@ export default function ProductSearch() {
     const rootRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [query, setQuery] = useState('');
-    const [response, setResponse] = useState<{ query: string; result: TSearchResponse } | null>(
-        null,
-    );
     const [activeIndex, setActiveIndex] = useState(-1);
     const [wasOpen, setWasOpen] = useState(open);
     const term = query.trim();
-    const result = response?.query === term ? response.result : null;
+    const result = useMovieSearch(term, open);
     const movies = result && 'data' in result ? result.data.movies : [];
 
     if (wasOpen !== open) {
         setWasOpen(open);
         if (!open) {
             setQuery('');
-            setResponse(null);
             setActiveIndex(-1);
         }
     }
@@ -62,40 +43,12 @@ export default function ProductSearch() {
         if (open) inputRef.current?.focus({ preventScroll: true });
     }, [open]);
 
-    useEffect(() => {
-        if (!open || !term) return;
-        let cancelled = false;
-        const timer = setTimeout(() => {
-            void searchMoviesAction(term).then(
-                (result) => {
-                    if (!cancelled) setResponse({ query: term, result });
-                },
-                () => {
-                    if (!cancelled) setResponse({ query: term, result: { state: 'error' } });
-                },
-            );
-        }, 300);
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, [open, term]);
-
-    useEffect(() => {
-        if (activeIndex >= 0)
-            document
-                .getElementById(`movie-search-${activeIndex}`)
-                ?.scrollIntoView({ block: 'nearest' });
-    }, [activeIndex]);
+    useActiveOptionVisible('movie-search', activeIndex);
 
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
         if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && movies.length) {
             event.preventDefault();
-            setActiveIndex((index) => {
-                if (event.key === 'ArrowDown') return (index + 1) % movies.length;
-                if (index < 0) return movies.length - 1;
-                return (index - 1 + movies.length) % movies.length;
-            });
+            setActiveIndex((index) => nextOptionIndex(event.key, index, movies.length));
         }
         if (event.key === 'Enter' && movies[activeIndex]) {
             event.preventDefault();
@@ -133,7 +86,6 @@ export default function ProductSearch() {
                     maxLength={200}
                     onChange={(event) => {
                         setQuery(event.target.value);
-                        if (event.target.value.trim() !== term) setResponse(null);
                         setActiveIndex(-1);
                     }}
                     onKeyDown={handleKeyboard}
