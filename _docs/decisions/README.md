@@ -1197,6 +1197,23 @@ and notification delivery must assess their own delivery and transactional-outbo
 The engineering run has requested the developer's queue choice. This proposal does not claim
 an accepted decision or implemented refresh-job acceptance.
 
+### ADR-016 amendment — catalog cache simplification (#172, 2026-10-13)
+
+The refresh-queue proposal remains Proposed. Issue #172 simplifies the existing synchronous
+cache separately: no source-removal tombstones or conditional timestamp upserts. A removal evicts
+source and projection/search cache entries while retaining the Movie UUID and mappings. A later
+successful response may refill them; the last completed write wins. The former monotonic removal
+and late-response guarantees in the ADR-017 implementation extension are superseded by this rule.
+
+One cache-age function governs search, source reuse and detail projections. Detail projections
+expire at the oldest contributing source time, so primary refresh does not renew old enrichment.
+Transient stale fallback stays opt-in and bounded; unsafe provider payloads still fail at the
+provider boundary and persisted public DTOs are validated before use. Repository writes trust the
+normalized provider contract. Movie stores title/year for nomination summaries, with migration
+22 backfilling available cache metadata before removing the tombstone column. This adds no
+refresh worker, queue or dependency. A rare concurrent late response may replace newer metadata;
+cache expiry and a subsequent refresh correct it without affecting domain identity or history.
+
 ## ADR-017 — Keep Movie identity independent of catalog sources
 
 - **Status:** Accepted; implements the developer's [PR #160 request](https://github.com/Shagon1k/PickFlick/pull/160#discussion_r4231984082)

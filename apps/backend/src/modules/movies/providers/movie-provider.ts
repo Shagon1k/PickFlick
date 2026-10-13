@@ -26,7 +26,6 @@ export function parseSourceSnapshot(value: unknown): TSourceSnapshot {
 }
 const sourceRemovalSchema = z.strictObject({
     source: movieSourceSchema,
-    attemptedAt: z.iso.datetime(),
 });
 export type TSourceRemoval = z.infer<typeof sourceRemovalSchema>;
 export const providerRecordSchema = z.strictObject({
@@ -46,11 +45,12 @@ export const providerSearchSchema = z.strictObject({
 });
 export type TProviderSearch = z.infer<typeof providerSearchSchema>;
 export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
-    return parseProviderRecord({
+    return {
         externalIds: snapshot.externalIds,
         data: snapshot.data,
         similarExternalIds: snapshot.similarExternalIds,
         snapshots: [snapshot],
+        removals: [],
         provenance: [
             {
                 source: snapshot.source,
@@ -59,7 +59,7 @@ export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
                 sections: ['metadata', 'media', 'ratings', 'similar'],
             },
         ],
-    });
+    };
 }
 export function emptyMetadata() {
     return movieMetadataSchema.parse({

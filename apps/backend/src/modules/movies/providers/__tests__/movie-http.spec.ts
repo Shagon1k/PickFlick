@@ -73,7 +73,7 @@ describe('MovieHttp', () => {
             const http = new MovieHttp('thetvdb', 'https://api4.thetvdb.com', 5000, request);
             await expect(http.get('/v4/movies/100', z.object({}), {})).rejects.toMatchObject({
                 reason: 'NOT_FOUND',
-                removals: [{ source: 'thetvdb', attemptedAt: attemptedAt.toISOString() }],
+                removals: [{ source: 'thetvdb' }],
             });
         } finally {
             vi.useRealTimers();

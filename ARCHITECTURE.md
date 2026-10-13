@@ -245,7 +245,8 @@ every authentication session.
 
 - **Movie catalog:** `MoviesService` accepts canonical Movie UUIDs and exposes normalized PickFlick
   DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
-  owns enrichment and source-cache reuse; the service consumes an aggregate cache status.
+  owns enrichment and source-cache reuse; the service consumes an aggregate cache status. Movie
+  stores summary title/year so nominations need one query without cache/provider reads.
   `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS` apply to every source in the selected adapter.
   The module keeps service and persistence in its root; `providers/` contains the shared
   contract, composite, three API clients and their common HTTP transport. Source clients return
@@ -261,8 +262,11 @@ every authentication session.
   stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source data.
   Stale fallback requires opt-in, validated data within `CATALOG_STALE_HOURS` and a transient
   error. Invalid payloads, authentication, disabled configuration and removal cannot reuse stale
-  source data. Every observed removal is persisted, including when all sources fail. Removal
-  clocks use the individual source attempt start; timestamp ties retain the source tombstone.
+  source data. Observed removal evicts that source and related projection/search caches; identity mappings remain.
+  Last completed writes replace cache data with ordinary Prisma upserts. One cache-age helper
+  governs reuse; aggregate detail time is the oldest contributing source time. Issue #172 removes
+  tombstones and monotonic guards (ADR-016 amendment). A late concurrent response may replace
+  newer metadata until the next refresh; it cannot change the canonical UUID.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
   Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.

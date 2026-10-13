@@ -93,7 +93,7 @@ export class ThetvdbClient {
         }
         if (!tvdbId)
             throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
-                { source: 'thetvdb', attemptedAt: fetchedAt },
+                { source: 'thetvdb' },
             ]);
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,

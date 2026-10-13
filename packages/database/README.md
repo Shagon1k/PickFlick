@@ -12,7 +12,7 @@ Prisma schema, reviewed migrations, the generated client, fixtures, and guarded 
 - `src/__tests__/constraints.int.spec.ts` — database constraint checks (`pnpm test:integration`).
 
 The catalog uses `Movie.id` UUID as identity, `MovieExternalId` for unique source correspondences,
-`MovieSourceCache` for independent source clocks, and configuration/locale keyed detail/search
+`MovieSourceCache` for source snapshots, Movie title/year for nomination summaries, and configuration/locale keyed detail/search
 projections. The source migration preserves UUIDs and existing mappings, invalidates legacy JSON
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
 
@@ -24,3 +24,7 @@ participant between Sessions or Memberships. Issue #172 removes unused roster ve
 
 `src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
 coexistence, settings snapshots, participant identity/rollback, and member-only invite storage.
+
+Issue #172 removes source tombstones and conditional timestamp writes. Cache removal keeps
+Movie UUIDs/mappings; ordinary upserts use the last completed response. Detail projections expire
+with their oldest contributing source. Migration 22 backfills available title/year metadata.

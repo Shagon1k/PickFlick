@@ -1,5 +1,6 @@
 import type { TMovieExternalId, TMovieSearch } from '@pickflick/contracts';
 
+import { withinCacheAge } from '../movie-cache.js';
 import type { MoviesRepository } from '../movies.repository.js';
 import {
     canUseStale,
@@ -7,7 +8,6 @@ import {
     type IMovieLookup,
     type IMovieProvider,
     MovieProviderError,
-    parseProviderRecord,
     singleSource,
     type TProviderRecord,
     type TSourceSnapshot,
@@ -61,7 +61,7 @@ export class CompositeMovieProvider implements IMovieProvider {
             primary?.externalIds ?? input.externalIds,
             enrichment?.externalIds ?? [],
         );
-        return parseProviderRecord({
+        return {
             externalIds,
             data: {
                 ...base,
@@ -92,7 +92,7 @@ export class CompositeMovieProvider implements IMovieProvider {
                     sections: ['metadata'],
                 },
             ],
-        });
+        };
     }
     private async loadPoiskkino(input: IMovieLookup & { cachedSources: TSourceSnapshot[] }) {
         const cached = input.cachedSources.find(
@@ -105,7 +105,7 @@ export class CompositeMovieProvider implements IMovieProvider {
             this.poiskkino.enabled &&
             !input.forceRefresh &&
             cached &&
-            this.within(cached.fetchedAt, this.policy.refreshHours)
+            withinCacheAge(cached.fetchedAt, this.policy.refreshHours)
         )
             return { record: cached, error: null };
         try {
@@ -128,7 +128,7 @@ export class CompositeMovieProvider implements IMovieProvider {
             this.thetvdb.enabled &&
             !input.forceRefresh &&
             cached &&
-            this.within(cached.fetchedAt, this.policy.refreshHours)
+            withinCacheAge(cached.fetchedAt, this.policy.refreshHours)
         )
             return { record: cached, error: null };
         try {
@@ -139,7 +139,7 @@ export class CompositeMovieProvider implements IMovieProvider {
                 input.allowStale &&
                 canUseStale(error.reason) &&
                 cached &&
-                this.within(cached.fetchedAt, this.policy.staleHours)
+                withinCacheAge(cached.fetchedAt, this.policy.staleHours)
                     ? cached
                     : null;
             return { record, error };
@@ -167,9 +167,5 @@ export class CompositeMovieProvider implements IMovieProvider {
                 ),
             )
         );
-    }
-    private within(date: string, hours: number) {
-        const age = Date.now() - Date.parse(date);
-        return age >= 0 && age < hours * 3600000;
     }
 }

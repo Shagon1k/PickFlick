@@ -29,9 +29,10 @@ The implementation follows [ADR-017](decisions/README.md#adr-017--keep-movie-ide
   Poster/S3 copying and live response completeness are separate follow-ups.
 - Every detail source retains its own locale/time. Search does not refresh details, and primary
   refresh does not renew enrichment. Failure and source removal are explicit in provenance.
-- Stale use requires opt-in, bounded age and transient failure. Source tombstones preserve UUIDs,
-  are monotonic, and require a strictly newer detail success for restoration. Every source removal
-  survives an all-source failure and uses its own attempt-start clock.
+- Stale use requires opt-in, bounded age and transient failure. Issue #172 removes timestamp
+  tombstones and monotonic writes; removal evicts caches while preserving UUIDs/mappings.
+  The last completed response wins. Details expire with their oldest contributing source.
+  Movie title/year now provide nomination summaries without cache/provider reads.
 - The additive source migration preserves UUIDs, valid external links and removal observations;
   legacy provider JSON caches are refilled under the new contract. Conflicting IMDb links fail
   migration for reviewed reconciliation. No Session history is rewritten.
@@ -243,3 +244,11 @@ Verification on 2026-10-10:
   the fixture was corrected before final verification.
 - pnpm's shared SQLite store metadata was copied to a temporary writable directory for the
   audit; dependencies, the lockfile and audit policy were unchanged.
+
+## Cache simplification — #172
+
+Migration 22 backfills Movie summary metadata from available caches and removes source tombstones.
+The ADR-016 amendment supersedes earlier removal-race and monotonic-cache mechanisms; the
+refresh queue remains Proposed. Focused verification: 102 catalog unit checks and 26 catalog/
+nomination integration checks pass, including identity, safe cached media, stale fallback, source
+eviction and canonical summary writes. Historical checks above describe the former implementation.

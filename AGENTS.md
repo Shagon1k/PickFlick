@@ -61,7 +61,7 @@ These guidelines do not override repository-specific approval requirements, arch
   ([ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql));
   no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
-  audit events, and the Session skeleton across twenty-one migrations.
+  audit events, and the Session skeleton across twenty-two migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.

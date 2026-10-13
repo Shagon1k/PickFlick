@@ -3,9 +3,7 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
-    movieDetailsSchema,
     movieIdSchema,
-    movieSearchResultsSchema,
     movieSearchSchema,
     type TMovieDetails,
     type TMovieDetailsResponse,
@@ -17,6 +15,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
+import { withinCacheAge } from './movie-cache.js';
 import { MoviesRepository } from './movies.repository.js';
 import {
     canUseStale,
@@ -25,7 +24,6 @@ import {
     MovieProviderError,
     parseProviderRecord,
     parseProviderSearch,
-    sourceSnapshotSchema,
     type TProviderRecord,
     type TProviderSearch,
 } from './providers/movie-provider.js';
@@ -46,48 +44,17 @@ export class MoviesService {
         tx: Prisma.TransactionClient,
         ids: string[],
     ): Promise<Map<string, TNominationMovie>> {
-        if (ids.length === 0) return new Map();
-        const caches = await tx.movieDetailsCache.findMany({
-            where: { movieId: { in: ids } },
-            select: { movieId: true, data: true },
-            orderBy: { fetchedAt: 'desc' },
+        const movies = await tx.movie.findMany({
+            where: { id: { in: ids } },
+            select: { id: true, title: true, releaseYear: true },
         });
-        const sources = await tx.movieSourceCache.findMany({
-            where: { movieId: { in: ids }, locale: 'en-US' },
-            select: { movieId: true, data: true },
-            orderBy: { fetchedAt: 'desc' },
-        });
-        const searches = await tx.movieSearchCache.findMany({
-            where: {
-                OR: ids.map((id) => ({ data: { path: ['movies'], array_contains: [{ id }] } })),
-            },
-            select: { data: true },
-            orderBy: { fetchedAt: 'desc' },
-        });
-        const searchMovies = searches.flatMap((row) => {
-            const parsed = movieSearchResultsSchema.safeParse(row.data);
-            return parsed.success ? parsed.data.movies : [];
-        });
-        return new Map(
-            ids.map((movieId) => {
-                const cached = caches.find((row) => row.movieId === movieId);
-                const parsed = cached ? movieDetailsSchema.safeParse(cached.data) : null;
-                const source = sources.find((row) => row.movieId === movieId);
-                const snapshot = source ? sourceSnapshotSchema.safeParse(source.data) : null;
-                let metadata = snapshot?.success
-                    ? snapshot.data.data
-                    : (searchMovies.find((movie) => movie.id === movieId) ?? null);
-                if (parsed?.success && parsed.data.id === movieId) metadata = parsed.data;
-                return [
-                    movieId,
-                    {
-                        id: movieId,
-                        title: metadata?.title ?? metadata?.originalTitle ?? null,
-                        year: metadata?.releaseYear ?? null,
-                    },
-                ];
-            }),
+        const summaries = new Map(
+            movies.map((movie) => [
+                movie.id,
+                { id: movie.id, title: movie.title, year: movie.releaseYear },
+            ]),
         );
+        return new Map(ids.map((id) => [id, summaries.get(id) ?? { id, title: null, year: null }]));
     }
     async search(
         input: TMovieSearch,
@@ -96,7 +63,7 @@ export class MoviesService {
         const parsed = movieSearchSchema.parse(input);
         const key = this.cacheKey([parsed.locale, false, parsed.query, parsed.page]);
         const cached = await this.repository.cachedSearch(key);
-        if (cached && this.within(cached.fetchedAt, this.environment.catalog.refreshHours))
+        if (cached && withinCacheAge(cached.fetchedAt, this.environment.catalog.refreshHours))
             return fresh(cached);
         const startedAt = new Date();
         let data: TProviderSearch;
@@ -149,11 +116,7 @@ export class MoviesService {
         } catch (error) {
             if (error instanceof MovieProviderError)
                 for (const removal of error.removals)
-                    await this.repository.markUnavailable(
-                        movieId,
-                        removal.source,
-                        new Date(removal.attemptedAt),
-                    );
+                    await this.repository.markUnavailable(movieId, removal.source);
             const fallback = options.allowStale
                 ? await this.repository.cachedDetails(movieId, key)
                 : null;
@@ -201,7 +164,7 @@ export class MoviesService {
             allowStale &&
             canUseStale(error.reason) &&
             cached &&
-            this.within(cached.fetchedAt, this.environment.catalog.staleHours)
+            withinCacheAge(cached.fetchedAt, this.environment.catalog.staleHours)
         )
             return {
                 state: 'stale',
@@ -216,9 +179,5 @@ export class MoviesService {
         return createHash('sha256')
             .update(JSON.stringify([this.provider.configurationKey, ...values]))
             .digest('hex');
-    }
-    private within(date: Date, hours: number) {
-        const age = Date.now() - date.getTime();
-        return age >= 0 && age < hours * 3600000;
     }
 }
