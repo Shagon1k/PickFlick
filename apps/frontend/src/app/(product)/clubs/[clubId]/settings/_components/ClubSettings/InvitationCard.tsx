@@ -1,6 +1,6 @@
 'use client';
 
-import type { IClubSettings, IManagedInvitation } from '@pickflick/contracts';
+import type { IClubSettings, ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 import { useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
@@ -30,23 +30,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
             }
             if (result.invitations) setInvitations(result.invitations);
             if ('created' in result && result.created) {
-                const created = result.created;
-                if (!result.invitations) {
-                    setInvitations((current) => [
-                        { id: created.id, expiresAt: created.expiresAt, state: 'pending' },
-                        ...current,
-                    ]);
-                }
-                setLink(`${globalThis.location.origin}/invite/club/${result.created.token}`);
-                setCreatedId(result.created.id);
-                setMessage(
-                    [
-                        'Invitation created. Share this link with one person; it expires in seven days.',
-                        result.refreshError,
-                    ]
-                        .filter(Boolean)
-                        .join(' '),
-                );
+                showCreated(result.created, Boolean(result.invitations), result.refreshError);
             } else {
                 if (inviteId === createdId) setLink('');
                 setMessage(inviteId ? 'Invitation revoked.' : 'Recent invitations loaded.');
@@ -56,6 +40,26 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         } finally {
             setPending(false);
         }
+    }
+
+    /** Shows the new link once; without a refreshed list, the new link joins the current one. */
+    function showCreated(created: ICreatedInvitation, listed: boolean, refreshError?: string) {
+        if (!listed) {
+            setInvitations((current) => [
+                { id: created.id, expiresAt: created.expiresAt, state: 'pending' },
+                ...current,
+            ]);
+        }
+        setLink(`${globalThis.location.origin}/invite/club/${created.token}`);
+        setCreatedId(created.id);
+        setMessage(
+            [
+                'Invitation created. Share this link with one person; it expires in seven days.',
+                refreshError,
+            ]
+                .filter(Boolean)
+                .join(' '),
+        );
     }
 
     async function copy() {

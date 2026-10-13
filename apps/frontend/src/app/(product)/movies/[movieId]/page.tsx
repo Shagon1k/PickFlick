@@ -31,31 +31,11 @@ function unavailableMessage(reason?: string) {
 export default async function MoviePage({ params }: { params: Promise<{ movieId: string }> }) {
     const { movieId } = await params;
     if (!movieIdSchema.safeParse(movieId).success) notFound();
-    const session = await getSessionState();
-    if (session === 'anonymous') redirect(loginPath(`/movies/${movieId}`));
-    let response;
-    try {
-        response = session === 'unavailable' ? null : await getMovieDetails(movieId);
-    } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/movies/${movieId}`));
-        throw error;
-    }
+    const response = await loadDetails(movieId);
     const result = response?.result;
     if (result?.state === 'unavailable' && result.reason === 'NOT_FOUND') notFound();
     if (!result || result.state === 'unavailable') {
-        return (
-            <ProductFrame>
-                <main className={styles.movieMain}>
-                    <h1>Movie Details unavailable</h1>
-                    <Alert tone="warning">{unavailableMessage(result?.reason)}</Alert>
-                    <div className={styles.links}>
-                        <ButtonLink href={`/movies/${movieId}`}>Try again</ButtonLink>
-                        <ButtonLink href="/app">Back to Hub</ButtonLink>
-                    </div>
-                </main>
-            </ProductFrame>
-        );
+        return <MovieUnavailable movieId={movieId} reason={result?.reason} />;
     }
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
@@ -81,23 +61,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                     </Alert>
                 ) : null}
                 <MovieHero movie={movie} title={title} />
-                <nav className={styles.links} aria-label="Movie links">
-                    {imdb ? (
-                        <a href={imdb} target="_blank" rel="noopener noreferrer">
-                            IMDb ↗<span className="visually-hidden"> (opens in a new tab)</span>
-                        </a>
-                    ) : null}
-                    {movie.title ? (
-                        <a
-                            href={`https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: movie.title })}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Search Wikipedia ↗
-                            <span className="visually-hidden"> (opens in a new tab)</span>
-                        </a>
-                    ) : null}
-                </nav>
+                <MovieLinks imdb={imdb} title={movie.title} />
                 <section className={styles.catalogCredits} aria-labelledby="catalog-credits-title">
                     <h2 id="catalog-credits-title">Catalog credits</h2>
                     <SearchCredits movies={[movie]} label="Movie catalog credits" />
@@ -115,5 +79,55 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 </section>
             </main>
         </ProductFrame>
+    );
+}
+
+/** Details for a signed-in visitor; null while the session check itself is unavailable. */
+async function loadDetails(movieId: string) {
+    const session = await getSessionState();
+    if (session === 'anonymous') redirect(loginPath(`/movies/${movieId}`));
+    if (session === 'unavailable') return null;
+    try {
+        return await getMovieDetails(movieId);
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 401)
+            redirect(loginPath(`/movies/${movieId}`));
+        throw error;
+    }
+}
+
+function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: string }) {
+    return (
+        <ProductFrame>
+            <main className={styles.movieMain}>
+                <h1>Movie Details unavailable</h1>
+                <Alert tone="warning">{unavailableMessage(reason)}</Alert>
+                <div className={styles.links}>
+                    <ButtonLink href={`/movies/${movieId}`}>Try again</ButtonLink>
+                    <ButtonLink href="/app">Back to Hub</ButtonLink>
+                </div>
+            </main>
+        </ProductFrame>
+    );
+}
+
+function MovieLinks({ imdb, title }: { imdb: string | null | undefined; title: string | null }) {
+    return (
+        <nav className={styles.links} aria-label="Movie links">
+            {imdb ? (
+                <a href={imdb} target="_blank" rel="noopener noreferrer">
+                    IMDb ↗<span className="visually-hidden"> (opens in a new tab)</span>
+                </a>
+            ) : null}
+            {title ? (
+                <a
+                    href={`https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: title })}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Search Wikipedia ↗<span className="visually-hidden"> (opens in a new tab)</span>
+                </a>
+            ) : null}
+        </nav>
     );
 }

@@ -13,6 +13,28 @@ export interface ISessionValues {
     movieId: string | null;
 }
 
+/** Form values for a new Session, or the editable details of an existing one. */
+export function initialSessionValues(session?: TSession): ISessionValues {
+    return {
+        date: session?.scheduledAt?.slice(0, 10) ?? '',
+        location: session?.location ?? '',
+        topic: session?.topic ?? '',
+        notes: session?.notes ?? '',
+        type: session?.type === 'PRE_SELECTED' ? 'PRE_SELECTED' : 'FULL_CYCLE',
+        duration: '',
+        removeDeadline: false,
+        movieId: session?.movieId ?? null,
+    };
+}
+
+/** The deadline to save: removed, recalculated from an `hh:mm` duration, or the current one. */
+export function nextDeadline(values: ISessionValues, session?: TSession): string | null {
+    if (values.removeDeadline) return null;
+    if (values.type !== 'FULL_CYCLE' || !values.duration) return session?.deadlineAt ?? null;
+    const [hours = '0', minutes = '0'] = values.duration.split(':');
+    return new Date(Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000).toISOString();
+}
+
 export function sessionInput(
     values: ISessionValues,
     deadlineAt: string | null,
