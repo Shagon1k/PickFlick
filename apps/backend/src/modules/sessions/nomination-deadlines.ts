@@ -1,7 +1,6 @@
 import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../clubs/club-access.js';
-import { scheduleDeadline } from './nomination-deadline-intent.js';
 import { advanceNomination, publishProgress } from './session-progress.js';
 
 interface IDeadlineEvent {
@@ -10,7 +9,6 @@ interface IDeadlineEvent {
     deadlineVersion?: number;
     outcome?: string;
     latenessMs?: number;
-    repaired?: number;
     reason?: string;
 }
 
@@ -21,79 +19,42 @@ export class NominationDeadlines {
     ) {}
 
     async runOnce(now = new Date(), signal?: AbortSignal): Promise<void> {
-        // Compare columns in SQL so handled empty deadlines cannot starve missing intent.
-        const missing = await this.prisma.$queryRaw<{ id: string; clubId: string }[]>`
-            SELECT s.id, s."clubId" FROM "Session" s
-            JOIN "Club" c ON c.id = s."clubId"
-            WHERE s.phase = 'NOMINATION' AND s."deadlineAt" <= ${now}
-              AND c.lifecycle = 'ACTIVE' AND c."deletedAt" IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM "NominationDeadlineJob" j
-                WHERE j."sessionId" = s.id AND j."deadlineVersion" = s."deadlineVersion"
-              )
-            ORDER BY s.id`;
-        let repaired = 0;
-        for (const candidate of missing) {
-            if (signal?.aborted) return;
-            try {
-                const created = await this.prisma.$transaction(async (tx) => {
-                    await lockClub(tx, candidate.clubId);
-                    await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${candidate.id}::uuid FOR UPDATE`;
-                    const session = await tx.session.findUniqueOrThrow({
-                        where: { id: candidate.id },
-                        include: { club: true },
-                    });
-                    if (
-                        session.club.lifecycle !== 'ACTIVE' ||
-                        session.club.deletedAt ||
-                        !session.deadlineAt ||
-                        session.deadlineAt > now
-                    )
-                        return false;
-                    return scheduleDeadline(tx, session);
-                });
-                if (created) {
-                    repaired++;
-                    this.log({ event: 'deadline.repaired', sessionId: candidate.id });
-                }
-            } catch {
-                this.log({
-                    event: 'deadline.failure',
-                    sessionId: candidate.id,
-                    reason: 'RECONCILIATION_FAILED',
-                });
-            }
-        }
-        this.log({ event: 'deadline.reconciliation', repaired });
-        const jobs = await this.prisma.nominationDeadlineJob.findMany({
+        const sessions = await this.prisma.session.findMany({
             where: {
-                finishedAt: null,
+                phase: 'NOMINATION',
                 deadlineAt: { lte: now },
-                session: { club: { lifecycle: 'ACTIVE', deletedAt: null } },
+                club: { lifecycle: 'ACTIVE', deletedAt: null },
             },
-            orderBy: [{ deadlineAt: 'asc' }, { sessionId: 'asc' }],
+            orderBy: [{ deadlineAt: 'asc' }, { id: 'asc' }],
+            include: { deadlineDecisions: { select: { deadlineVersion: true } } },
         });
-        for (const job of jobs) {
+        for (const session of sessions) {
             if (signal?.aborted) return;
+            if (
+                session.deadlineDecisions.some(
+                    (decision) => decision.deadlineVersion === session.deadlineVersion,
+                )
+            )
+                continue;
             try {
-                const outcome = await this.execute(job.sessionId, job.deadlineVersion, now);
+                const outcome = await this.execute(session.id, session.deadlineVersion, now);
                 this.log({
-                    event: outcome === 'STALE' ? 'deadline.stale' : 'deadline.outcome',
-                    sessionId: job.sessionId,
-                    deadlineVersion: job.deadlineVersion,
+                    event: 'deadline.outcome',
+                    sessionId: session.id,
+                    deadlineVersion: session.deadlineVersion,
                     outcome,
-                    latenessMs: Math.max(0, now.getTime() - job.deadlineAt.getTime()),
+                    latenessMs: Math.max(0, now.getTime() - session.deadlineAt!.getTime()),
                 });
             } catch {
-                // Database/provider messages can contain user data or connection credentials.
+                // Database messages can contain user data or connection credentials.
                 this.log({
                     event: 'deadline.failure',
-                    sessionId: job.sessionId,
-                    deadlineVersion: job.deadlineVersion,
+                    sessionId: session.id,
                     reason: 'TRANSACTION_FAILED',
                 });
             }
         }
+        this.log({ event: 'deadline.scan' });
     }
 
     async execute(sessionId: string, deadlineVersion: number, now = new Date()) {
@@ -102,30 +63,25 @@ export class NominationDeadlines {
             select: { clubId: true },
         });
         return this.prisma.$transaction(async (tx) => {
-            // Every writer takes Club → Session; never take a job lock before these locks.
             await lockClub(tx, initial.clubId);
             await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${sessionId}::uuid FOR UPDATE`;
-            await tx.$queryRaw`SELECT "sessionId" FROM "NominationDeadlineJob"
-                WHERE "sessionId" = ${sessionId}::uuid AND "deadlineVersion" = ${deadlineVersion} FOR UPDATE`;
             const session = await tx.session.findUniqueOrThrow({
                 where: { id: sessionId },
                 include: { club: true },
             });
-            const key = { sessionId_deadlineVersion: { sessionId, deadlineVersion } };
-            const job = await tx.nominationDeadlineJob.findUnique({ where: key });
-            if (!job || job.finishedAt) return 'HANDLED';
+            const decision = await tx.nominationDeadlineDecision.findUnique({
+                where: { sessionId_deadlineVersion: { sessionId, deadlineVersion } },
+            });
+            if (decision) return 'HANDLED';
             if (
                 session.phase !== 'NOMINATION' ||
                 session.deadlineVersion !== deadlineVersion ||
-                session.phaseVersion !== job.phaseVersion ||
-                session.deadlineAt?.getTime() !== job.deadlineAt.getTime() ||
+                !session.deadlineAt ||
                 session.club.deletedAt
-            ) {
-                await tx.nominationDeadlineJob.update({ where: key, data: { finishedAt: now } });
+            )
                 return 'STALE';
-            }
             if (session.club.lifecycle !== 'ACTIVE') return 'PAUSED';
-            if (job.deadlineAt > now) return 'EARLY';
+            if (session.deadlineAt > now) return 'EARLY';
             const nominations = await tx.nomination.findMany({
                 where: { sessionId, participant: { status: 'ACCEPTED' } },
                 select: { movieId: true },
@@ -135,8 +91,8 @@ export class NominationDeadlines {
             if (nominations.length > 1) outcome = 'SELECTION';
             const recipients =
                 outcome === 'EMPTY'
-                    ? (
-                          await tx.membership.findMany({
+                    ? await tx.membership
+                          .findMany({
                               where: {
                                   clubId: session.clubId,
                                   status: 'ACTIVE',
@@ -144,7 +100,7 @@ export class NominationDeadlines {
                               },
                               select: { id: true },
                           })
-                      ).map(({ id }) => ({ membershipId: id }))
+                          .then((members) => members.map(({ id }) => ({ membershipId: id })))
                     : await tx.sessionParticipant.findMany({
                           where: { sessionId, status: 'ACCEPTED' },
                           select: { membershipId: true },
@@ -163,7 +119,6 @@ export class NominationDeadlines {
                 await advanceNomination(tx, session, nominations);
                 await publishProgress(tx, sessionId, 'DEADLINE');
             }
-            await tx.nominationDeadlineJob.update({ where: key, data: { finishedAt: now } });
             return outcome;
         });
     }

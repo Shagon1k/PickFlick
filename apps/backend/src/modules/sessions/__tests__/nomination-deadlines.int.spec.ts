@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import { sessionSchema } from '@pickflick/contracts';
-import type { Prisma } from '@pickflick/database';
 
 import {
     createUser,
@@ -30,7 +29,6 @@ describe('NominationDeadlines', () => {
     };
     let worker: NominationDeadlines;
     const log = vi.fn();
-    const key = () => ({ sessionId_deadlineVersion: { sessionId, deadlineVersion: 1 } });
     const session = () => api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
     const decisions = () =>
         api.prisma.nominationDeadlineDecision.findMany({
@@ -106,19 +104,13 @@ describe('NominationDeadlines', () => {
             method: 'POST',
             json: { phaseVersion: 1, confirmation: 'CLOSE' },
         });
-    it('should schedule stable intent with Session creation and wait until the deadline', async () => {
-        expect(
-            await api.prisma.nominationDeadlineJob.findUniqueOrThrow({ where: key() }),
-        ).toMatchObject({ phaseVersion: 1, deadlineAt: deadline, finishedAt: null });
+    it('should read the persisted Session deadline and execute when it is due', async () => {
         expect(await worker.execute(sessionId, 1, deadline)).toBe('EMPTY');
         expect(await decisions()).toHaveLength(1);
     });
-    it('should ignore early execution and keep its intent pending', async () => {
+    it('should ignore early execution', async () => {
         expect(await worker.execute(sessionId, 1, new Date(deadline.getTime() - 1))).toBe('EARLY');
         expect(await decisions()).toHaveLength(0);
-        expect(
-            await api.prisma.nominationDeadlineJob.findUniqueOrThrow({ where: key() }),
-        ).toMatchObject({ finishedAt: null });
     });
     it('should stay open with zero nominations and alert only operators once across restarts and unrelated edits', async () => {
         const moderator = await createUser(api.prisma);
@@ -201,11 +193,11 @@ describe('NominationDeadlines', () => {
             expect.objectContaining({ outcome: 'EMPTY', nominationCount: 0 }),
         ]);
     });
-    it('should replace intent on deadline edits and ignore an old execution', async () => {
+    it('should read deadline edits and ignore an old execution', async () => {
         await submit();
         const changed = new Date(deadline.getTime() + 60000);
         expect((await edit({ deadlineAt: changed.toISOString() })).status).toBe(200);
-        expect(await worker.execute(sessionId, 1, due)).toBe('HANDLED');
+        expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
         await worker.runOnce(due);
         expect(await session()).toMatchObject({ phase: 'NOMINATION', deadlineVersion: 2 });
         await worker.runOnce(new Date(changed.getTime() + 1));
@@ -223,7 +215,7 @@ describe('NominationDeadlines', () => {
     it('should invalidate cleared deadlines without a transition', async () => {
         await submit();
         expect((await edit({ deadlineAt: null })).status).toBe(200);
-        expect(await worker.execute(sessionId, 1, due)).toBe('HANDLED');
+        expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
         expect(await session()).toMatchObject({
             phase: 'NOMINATION',
             deadlineAt: null,
@@ -234,7 +226,7 @@ describe('NominationDeadlines', () => {
     it('should invalidate cancellation and manual closure intent in the same transaction', async () => {
         await submit();
         expect((await close()).status).toBe(201);
-        expect(await worker.execute(sessionId, 1, due)).toBe('HANDLED');
+        expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
         expect(await decisions()).toHaveLength(0);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
         const cancelled = await api.request(`/sessions/${sessionId}/cancel`, {
@@ -243,7 +235,7 @@ describe('NominationDeadlines', () => {
             json: { version: 2, confirmation: 'CANCEL' },
         });
         expect(cancelled.status).toBe(201);
-        expect(await worker.execute(sessionId, 1, due)).toBe('HANDLED');
+        expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
     });
     it('should cancel pending Nomination intent before the worker can decide', async () => {
         await submit();
@@ -253,7 +245,7 @@ describe('NominationDeadlines', () => {
             json: { version: 1, confirmation: 'CANCEL' },
         });
         expect(response.status).toBe(201);
-        expect(await worker.execute(sessionId, 1, due)).toBe('HANDLED');
+        expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
         await worker.runOnce(due);
         expect(await session()).toMatchObject({
             phase: 'CANCELLED',
@@ -261,38 +253,6 @@ describe('NominationDeadlines', () => {
             deadlineVersion: 2,
         });
         expect(await decisions()).toHaveLength(0);
-    });
-    it('should roll back deadline edits and invalidation when replacement intent cannot be stored', async () => {
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION pf43_fail_schedule() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW."sessionId" = '${sessionId}'::uuid THEN RAISE EXCEPTION 'schedule failed'; END IF; RETURN NEW; END $$`,
-        );
-        await api.prisma.$executeRawUnsafe(
-            'CREATE TRIGGER pf43_fail_schedule BEFORE INSERT ON "NominationDeadlineJob" FOR EACH ROW EXECUTE FUNCTION pf43_fail_schedule()',
-        );
-        try {
-            const response = await edit({
-                deadlineAt: new Date(deadline.getTime() + 60000).toISOString(),
-            });
-            expect(response.status).toBe(500);
-            expect(await session()).toMatchObject({
-                deadlineAt: deadline,
-                deadlineVersion: 1,
-                detailsVersion: 1,
-            });
-            expect(
-                await api.prisma.nominationDeadlineJob.findUniqueOrThrow({ where: key() }),
-            ).toMatchObject({ finishedAt: null });
-            expect(
-                await api.prisma.clubAuditEvent.count({
-                    where: { sessionId, action: 'SESSION_UPDATED' },
-                }),
-            ).toBe(0);
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER pf43_fail_schedule ON "NominationDeadlineJob"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION pf43_fail_schedule()');
-        }
     });
     it('should serialize concurrent worker and operator closure without advancing twice', async () => {
         await submit();
@@ -314,68 +274,54 @@ describe('NominationDeadlines', () => {
         expect(await worker.execute(sessionId, 1, due)).toBe('PAUSED');
         await worker.runOnce(due);
         expect(await decisions()).toHaveLength(0);
-        expect(
-            await api.prisma.nominationDeadlineJob.findUniqueOrThrow({ where: key() }),
-        ).toMatchObject({ finishedAt: null });
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ACTIVE' } });
         await worker.runOnce(due);
         expect((await session()).phase).toBe('WATCHING');
     });
-    it('should observably repair missing overdue intent and preserve completed intent', async () => {
-        await api.prisma.nominationDeadlineJob.delete({ where: key() });
-        await worker.runOnce(new Date(deadline.getTime() - 1));
-        expect(await api.prisma.nominationDeadlineJob.count({ where: { sessionId } })).toBe(0);
-        await worker.runOnce(due);
-        expect(log).toHaveBeenCalledWith({ event: 'deadline.repaired', sessionId });
-        expect(log).toHaveBeenCalledWith({ event: 'deadline.reconciliation', repaired: 1 });
+    it('should execute an overdue Session without scheduling intent after restart', async () => {
+        await new NominationDeadlines(api.prisma, log).runOnce(due);
         await new NominationDeadlines(api.prisma, log).runOnce(due);
         expect(await decisions()).toHaveLength(1);
-        expect(log).toHaveBeenLastCalledWith({ event: 'deadline.reconciliation', repaired: 0 });
+        expect(log).toHaveBeenCalledWith({ event: 'deadline.scan' });
     });
-    it.each(['deadlineVersion', 'phaseVersion', 'deadlineAt', 'phase'] as const)(
-        'should discard stale %s guards without deciding',
+    it.each(['deadlineVersion', 'phase'] as const)(
+        'should discard stale %s without deciding',
         async (field) => {
-            const data: Prisma.SessionUpdateInput = {};
-            if (field === 'deadlineAt') data.deadlineAt = new Date(deadline.getTime() + 1000);
-            else if (field === 'phase') data.phase = 'CANCELLED';
-            else data[field] = 2;
-            await api.prisma.session.update({ where: { id: sessionId }, data });
+            await api.prisma.session.update({
+                where: { id: sessionId },
+                data: field === 'phase' ? { phase: 'CANCELLED' } : { deadlineVersion: 2 },
+            });
             expect(await worker.execute(sessionId, 1, due)).toBe('STALE');
             expect(await decisions()).toHaveLength(0);
         },
     );
-    it('should roll back phase, audit, notifications and completion if the final job write fails and retry after restart', async () => {
+    it('should roll back phase, audit and notifications on outbox failure and retry after restart', async () => {
         await submit();
-        // A transaction-local trigger injects a real database failure at the final write.
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION pf43_fail_completion() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW."sessionId" = '${sessionId}'::uuid THEN RAISE EXCEPTION 'private text'; END IF; RETURN NEW; END $$`,
+        await api.prisma.sessionProgressEvent.create({
+            data: {
+                sessionId,
+                version: 3,
+                kind: 'PROGRESS',
+                phase: 'NOMINATION',
+                phaseVersion: 1,
+                detailsVersion: 1,
+                acceptedCount: 2,
+                nominatedCount: 1,
+                recipientIds: [],
+            },
+        });
+        await worker.runOnce(due);
+        expect(await session()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
+        expect(await decisions()).toHaveLength(0);
+        expect(
+            await api.prisma.nominationDeadlineNotification.count({ where: { sessionId } }),
+        ).toBe(0);
+        expect(log).toHaveBeenCalledWith(
+            expect.objectContaining({ event: 'deadline.failure', reason: 'TRANSACTION_FAILED' }),
         );
-        await api.prisma.$executeRawUnsafe(
-            'CREATE TRIGGER pf43_fail_completion BEFORE UPDATE ON "NominationDeadlineJob" FOR EACH ROW EXECUTE FUNCTION pf43_fail_completion()',
-        );
-        try {
-            await worker.runOnce(due);
-            expect(await session()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
-            expect(await decisions()).toHaveLength(0);
-            expect(
-                await api.prisma.nominationDeadlineNotification.count({ where: { sessionId } }),
-            ).toBe(0);
-            expect(
-                await api.prisma.nominationDeadlineJob.findUniqueOrThrow({ where: key() }),
-            ).toMatchObject({ finishedAt: null });
-            expect(log).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    event: 'deadline.failure',
-                    reason: 'TRANSACTION_FAILED',
-                }),
-            );
-            expect(JSON.stringify(log.mock.calls)).not.toContain('private text');
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER pf43_fail_completion ON "NominationDeadlineJob"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION pf43_fail_completion()');
-        }
+        await api.prisma.sessionProgressEvent.delete({
+            where: { sessionId_version: { sessionId, version: 3 } },
+        });
         await new NominationDeadlines(api.prisma, log).runOnce(due);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
         expect(await decisions()).toHaveLength(1);

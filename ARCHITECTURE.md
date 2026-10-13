@@ -41,7 +41,7 @@ flowchart LR
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.           | Active                                                                                                   | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.        | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                        | Partial — Club avatars and catalog images                                                                | —                 |
-| Background | Nomination-specific PostgreSQL jobs and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
+| Background | Session-driven Nomination deadlines and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
 | Real-time  | Five-second authenticated polling for Session progress.                               | Active                                                                                                   | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.        | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
@@ -416,25 +416,21 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, durable `NominationDeadlineJob` scheduling intent,
-`NominationDeadlineDecision` audit records without a human actor, and recipient-specific
-`NominationDeadlineNotification` intent. Notification delivery remains Proposed for the later
-notification phase; these rows do not send messages.
+The worker polls Nomination Sessions with due `deadlineAt` values. `deadlineVersion` changes only
+with the deadline. Under Club → Session locks it re-reads phase, lifecycle, deadline and version,
+then checks `NominationDeadlineDecision` for that version. Zero accepted nominations leave
+Nomination open with one operator-alert decision; one selects Watching, and two or more open
+Selection. Transitions clear the deadline and increment phase/details/deadline versions.
 
-Creation and deadline edits schedule intent in their Session transaction. Edits increment only
-`deadlineVersion` when the deadline changes; clearing, cancellation and manual closure finish pending
-intent. The worker selects candidates without locking jobs, then locks Club → Session → job and
-rechecks phase, lifecycle, phase version, deadline version and timestamp. Zero accepted nominations
-leave Nomination open and retain one operator-alert decision per deadline version. One selects that
-Movie for Watching; two or more nominations, including repeated Movies, open Selection. Transitions
-clear the deadline and increment phase/details/deadline versions. Decision audit, recipient intent
-and job completion commit atomically with the transition.
+Migration 21 replaces the job-table foreign key with a Session foreign key and removes the
+redundant scheduling table. Existing decision audit and recipient-specific notification intent
+remain and commit atomically with the transition. Notification delivery remains Proposed.
+Creation, edits, cancellation and closure write only Session state; no scheduling or reconciliation
+path is needed. Archived Clubs pause until reactivation. Structured scan/outcome/failure events
+omit user text and database error details. Failed transactions retry on the next poll or restart.
 
-`apps/backend/src/deadline-worker.ts` runs independently of the API. It reconciles missing overdue
-intent on startup and every five seconds, preserving handled empty deadlines, then executes pending
-due jobs through the same transaction. Archived Clubs pause until reactivation. Structured events
-record repairs, outcomes, stale work, safe failure reasons and lateness without user text or database
-error details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
+`apps/backend/src/deadline-worker.ts` runs independently of the API, polling every five seconds.
+SIGTERM/SIGINT
 stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
 file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
 framework is introduced. Production activation remains unauthorized.
@@ -453,7 +449,7 @@ Submission and roster changes evaluate accepted participants under Club → Sess
 N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
 repeated Movies count separately. Session/Club departure and removal update participation first.
 Archived Clubs publish progress without advancing; reactivation checks the current roster.
-The shared transition clears deadline intent and increments phase/details versions exactly once.
+The shared transition clears the deadline and increments phase/details versions exactly once.
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
 independent, preserving ADR-018's empty-deadline operator intent.
 

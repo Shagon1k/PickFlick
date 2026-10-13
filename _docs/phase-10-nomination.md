@@ -310,3 +310,12 @@ detail or roster load failure; an unchanged signal retries when no projection is
 Hosted exact-head preview, owner visual acknowledgement and CI remain with the managed workflow.
 The issue remains in Human Review. No migration, dependency, runtime variable, permission or
 infrastructure change is included.
+
+## Deadline simplification — #172
+
+The ADR-018 amendment supersedes the scheduling/reconciliation implementation described above.
+Migration 21 preserves deadline decisions and notification recipients, relates them directly to
+Session, and removes the redundant job table. The worker scans due Session rows and rechecks
+state under Club → Session locks. The existing decision key prevents repeat empty alerts.
+Creation, edits, cancellation and closure no longer write scheduling intent. Historical evidence
+above describes the prior implementation; focused deadline/progress tests verify the new path.

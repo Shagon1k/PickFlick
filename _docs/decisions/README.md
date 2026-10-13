@@ -1400,3 +1400,23 @@ from committed Session state; clients re-fetch their authorized projection after
 gaps or reconnects. Polling covers unavailable streams. Recipient snapshots retain notification
 intent; inbox/email delivery remains later work. No broker, queue library, dispatcher or process
 is added. This extends the implementation without changing the accepted deadline-job decision.
+
+### ADR-018 amendment — Session-driven deadlines (#172, 2026-10-13)
+
+This amendment supersedes the job-table scheduling and reconciliation mechanism above. The
+autonomous issue-scoped run authorizes its implementation; the worker process, lock order and
+transactional decision/recipient guarantees remain.
+
+The worker polls due Nomination Sessions using `Session.deadlineAt`. It locks Club → Session,
+re-reads phase, lifecycle, deadline and `deadlineVersion`, and checks the existing decision key
+`(sessionId, deadlineVersion)` before acting. The immutable decision itself proves a deadline was
+handled. Empty decisions remain once per version; unrelated details edits do not repeat alerts.
+Clearing/changing a deadline, cancellation or phase closure changes the Session state directly,
+so stale candidates cannot execute. Archived Clubs resume on reactivation.
+
+Migration 21 points existing decisions at Session and removes `NominationDeadlineJob`; decision
+and notification history are preserved. Scheduling writes, job completion and missing-intent
+reconciliation are removed. Database failure rolls back the transition, decision and recipient
+intent; the next poll or restarted worker retries. No queue, retry framework or new runtime is
+needed. Progress uses authenticated five-second polling, superseding the SSE transport in the
+#44 extension; the Session progress outbox remains for audit and later notification delivery.

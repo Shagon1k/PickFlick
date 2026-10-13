@@ -49,7 +49,7 @@ corepack enable
 
 `pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline worker without a port. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
-the worker; it reconciles overdue Nomination deadlines every five seconds.
+the worker; it scans due Nomination Sessions every five seconds.
 
 ## Local services
 

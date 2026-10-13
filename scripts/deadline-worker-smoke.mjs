@@ -29,23 +29,23 @@ async function stop() {
 }
 
 async function run() {
-    let reconciled = false;
+    let scanned = false;
     child = spawn(process.execPath, ['apps/backend/dist/deadline-worker.js'], {
         env: process.env,
         stdio: ['ignore', 'pipe', 'inherit'],
     });
     child.stdout.on('data', (chunk) => {
-        if (chunk.toString().includes('deadline.reconciliation')) reconciled = true;
+        if (chunk.toString().includes('deadline.scan')) scanned = true;
     });
     for (let attempt = 0; attempt < 100; attempt++) {
-        if (child.exitCode !== null) throw new Error('Worker exited before reconciliation.');
+        if (child.exitCode !== null) throw new Error('Worker exited before scan.');
         const decision = await prisma.nominationDeadlineDecision.findUnique({
             where: { sessionId_deadlineVersion: { sessionId, deadlineVersion: 1 } },
         });
-        if (reconciled && decision?.outcome === 'EMPTY') return;
+        if (scanned && decision?.outcome === 'EMPTY') return;
         await setTimeout(100);
     }
-    throw new Error('Worker did not repair and execute the overdue deadline.');
+    throw new Error('Worker did not execute the overdue deadline.');
 }
 
 try {
@@ -67,12 +67,11 @@ try {
     const count = await prisma.nominationDeadlineDecision.count({ where: { sessionId } });
     if (count !== 1) throw new Error('Restart repeated the empty deadline decision.');
     console.log(
-        'Deadline worker smoke passed: overdue repair, durable empty decision, restart, SIGTERM shutdown.',
+        'Deadline worker smoke passed: Session deadline scan, durable empty decision, restart, SIGTERM shutdown.',
     );
 } finally {
     await stop();
     await prisma.nominationDeadlineDecision.deleteMany({ where: { sessionId } });
-    await prisma.nominationDeadlineJob.deleteMany({ where: { sessionId } });
     await prisma.session.deleteMany({ where: { id: sessionId } });
     await prisma.club.deleteMany({ where: { id: clubId } });
     await prisma.$disconnect();

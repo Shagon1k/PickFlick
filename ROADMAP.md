@@ -135,7 +135,7 @@ out when listed under Out.
 
 | Area             | Status   | Decision                                                                                                                                                                                                                                                               |
 | ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Foundation       | Partial  | pnpm TypeScript monorepo with frontend, backend, shared contracts, PostgreSQL, and containerized delivery; Nomination deadlines use a PostgreSQL job table and worker (ADR-018).                                                                                       |
+| Foundation       | Partial  | pnpm TypeScript monorepo with frontend, backend, shared contracts, PostgreSQL, and containerized delivery; Nomination deadlines use Session rows and a worker (ADR-018 amendment).                                                                                     |
 | Users and auth   | Partial  | Registered OAuth users only; Google active, Apple behind an owner-controlled gate. App Admin/User globally, Admin/Moderator/Member per Club, enforced on the server.                                                                                                   |
 | Design system    | Partial  | Projector Noir rules and prototypes live in `_docs/design/prototypes`; the production UI kit and shells exist.                                                                                                                                                         |
 | Localization     | Deferred | English MVP with externalized copy, locale-safe formatting, and layouts that tolerate longer text; Russian when scheduled.                                                                                                                                             |
@@ -414,7 +414,7 @@ hidden from normal history unless product copy exposes it.
 | Validation | Shared zod schemas for requests, forms, and the environment.                                                 | ADR-012           |
 | Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                   | ADR-002, 010, 011 |
 | Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                 | ADR-003           |
-| Jobs       | Nomination-specific PostgreSQL scheduling intent and separate backend worker; no queue library.              | ADR-018           |
+| Jobs       | Session-driven Nomination deadlines and a separate backend worker; no queue library.                         | ADR-018           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                   | ADR-007, 008      |
 
 | Provider              | Purpose                                                                                    | Status                                                                                   |
@@ -829,7 +829,7 @@ inbox.
 
 **Tickets:** [#42](https://github.com/Shagon1k/PickFlick/issues/42) nominations, personal
 suggestions, visibility · [#43](https://github.com/Shagon1k/PickFlick/issues/43) deadlines with durable
-reconciliation · [#44](https://github.com/Shagon1k/PickFlick/issues/44) serialized transitions and
+Session scanning · [#44](https://github.com/Shagon1k/PickFlick/issues/44) serialized transitions and
 polling progress
 
 **Scope:**
@@ -840,8 +840,8 @@ polling progress
       Do not add a separate saved-film entity or manual add/remove operations.
 - [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
-- [ ] Implement durable delayed deadline jobs with stable IDs, stale-job guards, periodic overdue
-      reconciliation, and safe deadline changes and cancellation.
+- [ ] Implement Session-driven deadlines with version guards, periodic due-Session scanning,
+      and safe deadline changes and cancellation.
 - [ ] Implement the automatic `N/N` transition: two or more nominations open Selection; one selects
       that Movie and advances to Watching.
 - [ ] Implement deadline outcomes: none stays open and alerts operators; one advances to Watching;
@@ -852,7 +852,7 @@ polling progress
 
 - [ ] Duplicate or concurrent nominations cannot break uniqueness or advance the Session twice.
 - [ ] Complete, sole-nomination, zero/one/many at deadline, changed deadline, cancelled, restart,
-      and reconciliation cases pass.
+      and due-Session recovery cases pass.
 - [ ] Visibility settings hide nominations and nominators when disabled.
 - [ ] Suggestions contain only the current user's nominations from earlier Sessions in this Club
       with a resolved winner, where the nominated Movie was not selected.

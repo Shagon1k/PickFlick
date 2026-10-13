@@ -50,12 +50,9 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     await prisma.nomination.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
     await prisma.sessionParticipant.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.nominationDeadlineNotification.deleteMany({
-        where: { decision: { job: { session: { clubId: { in: clubIds } } } } },
+        where: { decision: { session: { clubId: { in: clubIds } } } },
     });
     await prisma.nominationDeadlineDecision.deleteMany({
-        where: { job: { session: { clubId: { in: clubIds } } } },
-    });
-    await prisma.nominationDeadlineJob.deleteMany({
         where: { session: { clubId: { in: clubIds } } },
     });
     await prisma.session.deleteMany({ where: { clubId: { in: clubIds } } });
