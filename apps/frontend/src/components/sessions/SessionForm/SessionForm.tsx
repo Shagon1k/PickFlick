@@ -3,7 +3,7 @@
 import { useForm } from '@mantine/form';
 import type { TSession } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
 import Button from '@/components/ui/Button/Button';
@@ -33,10 +33,6 @@ export default function SessionForm({
     const [pending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
-    const requestRef = useRef<{ values: string; input: ReturnType<typeof sessionInput> } | null>(
-        null,
-    );
-    const idRef = useRef<string | null>(session?.id ?? null);
     const form = useForm<ISessionValues>({
         initialValues: {
             date: session?.scheduledAt?.slice(0, 10) ?? '',
@@ -59,23 +55,15 @@ export default function SessionForm({
                     );
                     return;
                 }
-                idRef.current ??= crypto.randomUUID();
-                const serialized = JSON.stringify(values);
-                if (requestRef.current?.values !== serialized) {
-                    const [hours = '0', minutes = '0'] = values.duration.split(':');
-                    let deadlineAt = session?.deadlineAt ?? null;
-                    if (values.removeDeadline) deadlineAt = null;
-                    else if (values.type === 'FULL_CYCLE' && values.duration) {
-                        deadlineAt = new Date(
-                            Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000,
-                        ).toISOString();
-                    }
-                    requestRef.current = {
-                        values: serialized,
-                        input: sessionInput(values, idRef.current, deadlineAt, session),
-                    };
+                const [hours = '0', minutes = '0'] = values.duration.split(':');
+                let deadlineAt = session?.deadlineAt ?? null;
+                if (values.removeDeadline) deadlineAt = null;
+                else if (values.type === 'FULL_CYCLE' && values.duration) {
+                    deadlineAt = new Date(
+                        Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000,
+                    ).toISOString();
                 }
-                const input = requestRef.current.input;
+                const input = sessionInput(values, deadlineAt, session);
                 const element = event?.currentTarget;
                 setMessage('Saving Session…');
                 startTransition(async () => {

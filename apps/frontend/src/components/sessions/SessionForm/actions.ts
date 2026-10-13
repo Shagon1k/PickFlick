@@ -42,8 +42,6 @@ function saveFailure(error: unknown) {
                 message: 'You no longer have permission to manage this Session.',
             };
         const messages: Record<string, string> = {
-            SESSION_ID_CONFLICT:
-                'A Session was already created from this form. Open the Club Hub before trying again.',
             BLOCKING_SESSION:
                 'This Club already has a Session in Nomination, Selection, or Watching. Open the Club Hub to view it.',
             SESSION_CHANGED:

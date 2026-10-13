@@ -199,10 +199,9 @@ no automatic transition or membership-departure propagation is implemented by th
 
 `POST /clubs/:clubId/sessions` validates live modes, date, location, optional topic/notes/deadline,
 and a canonical Movie UUID for pre-selected Sessions. Full-cycle starts in Nomination;
-pre-selected starts in Watching. The caller supplies a v4 UUID retained across retries. A saved
-`SESSION_CREATED` audit event identifies its creator; an authorized replay with unchanged details
-returns the existing Session without another insert. A changed payload or different creator
-conflicts. Creation locks the Club and checks current operator role, access,
+pre-selected starts in Watching. The server assigns the Session ID. A repeated request after a
+lost response meets the one-blocking-Session rule and returns `BLOCKING_SESSION`, which the web
+form explains with a link back to the Club Hub. Creation locks the Club and checks current operator role, access,
 the blocking slot, and Movie existence before saving settings and audit together.
 
 `GET /sessions/:sessionId` requires current Club Membership and returns a private/no-store detail

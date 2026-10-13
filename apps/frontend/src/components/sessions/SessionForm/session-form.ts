@@ -15,7 +15,6 @@ export interface ISessionValues {
 
 export function sessionInput(
     values: ISessionValues,
-    id: string,
     deadlineAt: string | null,
     session?: TSession,
 ) {
@@ -32,11 +31,11 @@ export function sessionInput(
     };
     return session
         ? { ...details, version: session.version }
-        : { ...details, id, type: values.type, movieId: values.movieId };
+        : { ...details, type: values.type, movieId: values.movieId };
 }
 
 export function validateSession(values: ISessionValues, session?: TSession) {
-    const input = sessionInput(values, '00000000-0000-4000-8000-000000000000', null, session);
+    const input = sessionInput(values, null, session);
     const parsed = session
         ? updateSessionSchema.safeParse(input)
         : createSessionSchema.safeParse(input);

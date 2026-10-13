@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { settingsProjection } from './club-projections.mjs';
 import { readJson, sendError, sendJson } from './mock-http.mjs';
 
@@ -51,6 +52,7 @@ export function handleSessionWorkflow(request, response, pathname, token) {
         if (creation) {
             const result = {
                 ...input,
+                id: randomUUID(),
                 clubId: creation[1],
                 clubName: settings.club.name,
                 phase: input.type === 'FULL_CYCLE' ? 'NOMINATION' : 'WATCHING',

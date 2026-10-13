@@ -47,7 +47,6 @@ describe('NominationDeadlines', () => {
         member = await createUser(api.prisma);
         users = [admin, member];
         clubId = randomUUID();
-        sessionId = randomUUID();
         deadline = new Date(Date.now() + 60000);
         due = new Date(deadline.getTime() + 1);
         details = {
@@ -67,9 +66,10 @@ describe('NominationDeadlines', () => {
         const created = await api.request(`/clubs/${clubId}/sessions`, {
             userId: admin,
             method: 'POST',
-            json: { ...details, id: sessionId, type: 'FULL_CYCLE', movieId: null },
+            json: { ...details, type: 'FULL_CYCLE', movieId: null },
         });
         if (created.status !== 201) throw new Error('Fixture Session creation failed');
+        sessionId = ((await created.json()) as { id: string }).id;
         for (const membership of await api.prisma.membership.findMany({ where: { clubId } })) {
             await api.prisma.sessionParticipant.create({
                 data: { sessionId, clubId, membershipId: membership.id, status: 'ACCEPTED' },
