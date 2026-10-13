@@ -49,6 +49,7 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                     {movie.trailers?.length ? (
                         <ul>
                             {movie.trailers.map((trailer, index) => (
+                                // eslint-disable-next-line @eslint-react/no-array-index-key -- provider trailers can repeat a URL and never reorder
                                 <li key={`${trailer.url}-${index}`}>
                                     <a href={trailer.url} target="_blank" rel="noopener noreferrer">
                                         {trailer.name ?? 'Watch trailer'} ↗

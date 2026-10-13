@@ -208,6 +208,7 @@ function NominationList({ data }: { data: TNominations }) {
     return (
         <ul className={styles.movies}>
             {data.nominations.map((row, index) => (
+                // eslint-disable-next-line @eslint-react/no-array-index-key -- several participants may nominate the same Movie; rows are only appended
                 <li key={`${row.movie.id}-${index}`}>
                     <span className={styles.poster} aria-hidden="true">
                         PF

@@ -22,6 +22,7 @@ export default function MovieCredits({ movie }: IMovieCreditsProps) {
                     {movie.cast?.length ? (
                         <ul>
                             {movie.cast.map((person, index) => (
+                                // eslint-disable-next-line @eslint-react/no-array-index-key -- provider credits can repeat a person and never reorder
                                 <li key={`${person.name}-${index}`}>
                                     {person.name}
                                     {person.character ? ` — ${person.character}` : ''}

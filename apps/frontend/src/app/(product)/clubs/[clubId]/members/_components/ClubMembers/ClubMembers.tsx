@@ -20,7 +20,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
     const [message, setMessage] = useState('');
     const [pending, setPending] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const returnToHeading = useRef(false);
+    const returnToHeadingRef = useRef(false);
     const { club, permissions, members, currentMembershipId } = projection;
     async function remove(confirmation: string) {
         if (!selected) return;
@@ -36,7 +36,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
             );
             setMessage(result.message);
             if (result.status === 'success') {
-                returnToHeading.current = true;
+                returnToHeadingRef.current = true;
                 setSelected(null);
             }
         } catch {
@@ -125,9 +125,9 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 onClose={() => setSelected(null)}
                 onConfirm={(confirmation) => void remove(confirmation)}
                 onExitTransitionEnd={() => {
-                    if (returnToHeading.current) {
+                    if (returnToHeadingRef.current) {
                         headingRef.current?.focus();
-                        returnToHeading.current = false;
+                        returnToHeadingRef.current = false;
                     }
                 }}
                 open={Boolean(selected)}
