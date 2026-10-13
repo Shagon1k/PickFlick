@@ -18,7 +18,6 @@ assets
 
 # Screenshot baselines and the dependency patch are exact artifacts.
 **/__screenshots__/**
-patches
 
 # `next dev` rewrites its block in this file; formatting it would only create churn.
 apps/frontend/AGENTS.md
