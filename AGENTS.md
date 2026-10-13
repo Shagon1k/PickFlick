@@ -57,11 +57,12 @@ These guidelines do not override repository-specific approval requirements, arch
 - A pnpm workspace with `apps/frontend` (Next.js) and `apps/backend` (NestJS), plus
   `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
   (environment schema, TypeScript and ESLint presets). The backend package includes a Nomination
-  deadline worker and PostgreSQL job table
+  deadline worker that reads due deadlines from the Session rows
   ([ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql));
   no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
-  audit events, and the Session skeleton across nineteen migrations.
+  audit events, the movie catalog cache, and Sessions with participants, invitations, and
+  Nominations across twenty-two migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.
