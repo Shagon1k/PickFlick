@@ -35,7 +35,6 @@ function stateFor(token) {
 function rosterProjection(token, state) {
     const manager = !token.includes('member');
     return {
-        version: 1,
         progressVersion: 1,
         acceptedCount: state.status === 'ACCEPTED' ? 1 : 0,
         canInvite: manager && token.includes('session-roster'),

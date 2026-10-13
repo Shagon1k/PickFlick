@@ -30,7 +30,6 @@ export interface IPendingSessionInvitation {
     expiresAt: string;
 }
 export interface ISessionRoster {
-    version: number;
     progressVersion: number;
     acceptedCount: number;
     canInvite: boolean;

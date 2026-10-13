@@ -150,8 +150,7 @@ SessionParticipant. `POST /sessions/:sessionId/invitations` returns the raw toke
 response tokens travel only in POST bodies. Pending responses by invitation ID use the same locked
 eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
 state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
-and roster changes lock Club → Session before writing; the participant trigger increments
-`rosterVersion`. Roster projections use a repeatable-read snapshot. Club departure updates open
+and roster changes lock Club → Session before writing. Roster projections use a repeatable-read snapshot. Club departure updates open
 Session participants and revokes their pending links in its membership transaction, preserving
 completed history. Migration 16 adds five Session invitation/participant audit actions without
 changing existing data. No worker or automatic phase transition is added.
@@ -192,12 +191,9 @@ storage constraints do not authorize a request: the member-only preview, active 
 operator authorization, token generation, and invitation/leave/removal flows belong to #40/#41.
 
 The existing partial unique index still enforces one Nomination/Selection/Watching Session per
-Club; Rating is outside it. The roster trigger increments `rosterVersion` on insert, delete, or
-status change and locks the parent Session in the same transaction. Attendance-only and repeated
-status writes do not change the version; participant identity cannot move between Sessions or
-Memberships. `readSessionRoster` takes the same lock and returns phase, phase version, roster version,
-accepted participant identities, and their count. Callers must use a transaction and retain the lock
-through the phase decision. Workflow writes take the Club lock before the Session lock and before
+Club; Rating is outside it. A trigger keeps participant identity from moving between Sessions,
+Memberships, or Clubs (migration 20). Phase decisions lock the Session and count accepted
+participants inside that transaction, keeping the lock through the decision. Workflow writes take the Club lock before the Session lock and before
 participant writes. #41 must update participant state on Club departure before checking completion;
 no automatic transition or membership-departure propagation is implemented by this foundation.
 
@@ -451,7 +447,7 @@ framework is introduced. Production activation remains unauthorized.
 Migration 19 adds Session `progressVersion` and `SessionProgressEvent`, a Session-specific
 transactional outbox keyed by `(sessionId, version)`. Nomination, roster, details, cancellation,
 manual closure and deadline transitions persist their new version with an event. Events retain
-phase, phase/details/roster versions, accepted/nominated counts and accepted Membership recipients
+phase, phase/details versions, accepted/nominated counts and accepted Membership recipients
 for later notification work. `AUTOMATIC` records the machine decision without a human actor.
 Notification delivery and retention policy remain later phases; no dispatcher or message broker is
 introduced. Existing rows start at version 1 without invented events or retrospective transitions.

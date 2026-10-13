@@ -17,10 +17,8 @@ projections. The source migration preserves UUIDs and existing mappings, invalid
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
 
 Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside
-its creation transaction; it locks the Club before reading. `readSessionRoster` locks a Session
-and returns accepted participants, their denominator, and phase/roster versions. Keep the
-transaction open through the phase decision. A database trigger versions roster insertions,
-deletions, and status changes; attendance-only edits keep the version. Session participants and
+its creation transaction; it locks the Club before reading. A database trigger keeps a Session
+participant bound to its Session, Membership, and Club. Session participants and
 invites use composite foreign keys to stay within one Club. Request authorization and invitation
 responses arrive with the Session workflows; these helpers are internal persistence operations.
 

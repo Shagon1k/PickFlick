@@ -28,9 +28,9 @@ Scope and phase acceptance live in [ROADMAP.md](../ROADMAP.md#phase-9--session-c
   Club boundaries; they do not replace active-membership authorization.
 - Invites store digest-only tokens, a recipient participant, same-Club inviter, expiry, revocation,
   and response state. Token generation and user-facing invite behavior remain #41 work.
-- Roster writes lock the Session and increment its version transactionally. A locked roster read
-  returns accepted participant identities and their count with phase and roster versions. Keep
-  that lock through later serialized transitions. Follow Club → Session → participant lock order.
+- Roster writes and phase decisions lock the Session; decisions count accepted participants under
+  that lock. Follow Club → Session → participant lock order. Migration 20 removed the roster
+  version counter and `readSessionRoster`; a trigger still keeps participant identity immutable.
 - Club departure propagation and invitation/roster routes are delivered by #41 below. Automatic
   phase transitions remain outside this foundation.
 
