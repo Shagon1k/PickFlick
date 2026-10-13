@@ -6,7 +6,7 @@ import { useActionState, useState } from 'react';
 import Button from '@/components/ui/Button/Button';
 import InfoTip from '@/components/ui/InfoTip/InfoTip';
 import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import TypedConfirmation from '@/components/ui/TypedConfirmation/TypedConfirmation';
 
 import { initialClubActionState } from '../../action-state';
 import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
@@ -125,27 +125,18 @@ function ConfirmAction({
             <Button onClick={() => setOpen(true)} size="small" variant={variant}>
                 {label}
             </Button>
-            <Modal onClose={() => setOpen(false)} open={open} title={title} tone="danger">
-                <form action={formAction} className={styles.dialogForm}>
-                    <p>{description}</p>
-                    <TextInput
-                        autoComplete="off"
-                        id={`${action}-confirmation`}
-                        label={`Type ${confirmation} to confirm`}
-                        name="confirmation"
-                        required
-                    />
-                    <ActionStatus state={state} />
-                    <div className={styles.dialogActions}>
-                        <Button onClick={() => setOpen(false)} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button loading={pending} type="submit" variant="danger">
-                            Confirm {label.toLowerCase()}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+            <TypedConfirmation
+                open={open}
+                onClose={() => setOpen(false)}
+                title={title}
+                confirmation={confirmation}
+                confirmLabel={`Confirm ${label.toLowerCase()}`}
+                pending={pending}
+                onConfirm={formAction}
+                status={<ActionStatus state={state} />}
+            >
+                <p>{description}</p>
+            </TypedConfirmation>
         </>
     );
 }

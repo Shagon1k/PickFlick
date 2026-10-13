@@ -37,14 +37,7 @@ export default function CreateClubForm() {
     const submit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
-            if (!navigator.onLine) {
-                setFeedback({
-                    message:
-                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
-                    tone: 'warning',
-                });
-                return;
-            }
+
             setFeedback({ message: 'Creating your Club…', tone: 'neutral' });
             startTransition(async () => {
                 const result: TFormResult<keyof IClubFormValues> = await createClubAction(

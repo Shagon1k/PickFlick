@@ -32,14 +32,7 @@ export default function ContactForm() {
     const submit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
-            if (!navigator.onLine) {
-                setFeedback({
-                    message:
-                        'You appear to be offline. Reconnect, then send again; your message is still here.',
-                    tone: 'warning',
-                });
-                return;
-            }
+
             setFeedback({ message: 'Sending your message…', tone: 'neutral' });
             startTransition(async () => {
                 const result: TFormResult<keyof IContactFormValues> = await sendContact(

@@ -29,10 +29,6 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     const [pending, startTransition] = useTransition();
     const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
     function respond(decision: 'accept' | 'decline') {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before responding.');
-            return;
-        }
         startTransition(async () => {
             try {
                 const result = await respondSessionInvitationAction({ token, decision });

@@ -10,8 +10,7 @@ import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
 import { clubNavigation } from '@/components/shells/shell-navigation';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import TypedConfirmation from '@/components/ui/TypedConfirmation/TypedConfirmation';
 
 import styles from '../../page.module.scss';
 
@@ -122,48 +121,31 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     </li>
                 ))}
             </ul>
-            <Modal
-                dismissible={!pending}
+            <TypedConfirmation
+                open={Boolean(selected)}
+                title="Remove this member?"
+                confirmation="REMOVE"
+                confirmLabel="Confirm removal"
+                pending={pending}
                 onClose={() => setSelected(null)}
+                onConfirm={remove}
                 onExitTransitionEnd={() => {
                     if (returnToHeading.current) {
                         headingRef.current?.focus();
                         returnToHeading.current = false;
                     }
                 }}
-                open={Boolean(selected)}
-                title="Remove this member?"
-                tone="danger"
-            >
-                <form action={remove} className={styles.confirmation}>
-                    <p>
-                        {selected?.displayName} will lose access to this private Club. Shared Club
-                        and Session history remains.
-                    </p>
-                    <TextInput
-                        id="remove-confirmation"
-                        autoComplete="off"
-                        label="Type REMOVE to confirm"
-                        name="confirmation"
-                        required
-                    />
+                status={
                     <p aria-live="polite" role="status">
                         {message}
                     </p>
-                    <div className={styles.actions}>
-                        <Button
-                            disabled={pending}
-                            onClick={() => setSelected(null)}
-                            variant="secondary"
-                        >
-                            Cancel
-                        </Button>
-                        <Button loading={pending} type="submit" variant="danger">
-                            Confirm removal
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                }
+            >
+                <p>
+                    {selected?.displayName} will lose access to this private Club. Shared Club and
+                    Session history remains.
+                </p>
+            </TypedConfirmation>
         </main>
     );
 }

@@ -49,12 +49,6 @@ export default function SessionForm({
     const submit = (event: React.SubmitEvent<HTMLFormElement>) =>
         form.onSubmit(
             (values, event) => {
-                if (!navigator.onLine) {
-                    setMessage(
-                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
-                    );
-                    return;
-                }
                 const [hours = '0', minutes = '0'] = values.duration.split(':');
                 let deadlineAt = session?.deadlineAt ?? null;
                 if (values.removeDeadline) deadlineAt = null;

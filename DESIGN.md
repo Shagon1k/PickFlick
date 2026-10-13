@@ -397,3 +397,9 @@ Exact-head hosted preview and owner visual acknowledgement remain required for #
 
 Successful Nomination submission focuses the stable “Find & Nominate a Movie” heading after the
 submit control is replaced by the locked confirmation.
+
+### Issue #172: shared interaction primitives
+
+Typed confirmations share the UI kit dialog, exact confirmation gating, pending controls, and
+focus return. Global and Session Movie search share the debounce and stale-response handling.
+Forms attempt requests and retain their input on connection failures.

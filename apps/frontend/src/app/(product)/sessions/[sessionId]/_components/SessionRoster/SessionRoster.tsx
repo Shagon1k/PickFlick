@@ -4,9 +4,10 @@ import type { ISessionRoster } from '@pickflick/contracts';
 import { useRef, useState, useTransition } from 'react';
 
 import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
 import Select from '@/components/ui/Select/Select';
 import TextInput from '@/components/ui/TextInput/TextInput';
+import TypedConfirmation from '@/components/ui/TypedConfirmation/TypedConfirmation';
+import { formText } from '@/lib/form-data';
 
 import { changeRosterAction } from '../../roster-actions';
 import styles from './SessionRoster.module.scss';
@@ -29,13 +30,8 @@ export default function SessionRoster({
         participantId?: string;
         name: string;
     } | null>(null);
-    const [confirmation, setConfirmation] = useState('');
     const [pending, startTransition] = useTransition();
     function run(input: unknown) {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before changing the roster.');
-            return;
-        }
         startTransition(async () => {
             try {
                 const result = await changeRosterAction(sessionId, input);
@@ -55,7 +51,6 @@ export default function SessionRoster({
     }
     function confirm(action: 'leave' | 'remove', name: string, participantId?: string) {
         setMessage('');
-        setConfirmation('');
         setDialog({ action, name, participantId });
     }
     return (
@@ -165,63 +160,38 @@ export default function SessionRoster({
             <p aria-live="polite" role="status">
                 {message}
             </p>
-            <Modal
+            <TypedConfirmation
+                open={dialog !== null}
+                pending={pending}
+                title={dialog?.action === 'leave' ? 'Leave Session' : 'Remove participant'}
+                confirmation={dialog?.action.toUpperCase() ?? 'REMOVE'}
+                confirmLabel={`Confirm ${dialog?.action === 'leave' ? 'leaving' : 'removal'}`}
+                cancelLabel="Keep participation"
+                onClose={() => setDialog(null)}
                 onExitTransitionEnd={() => {
                     if (restoreFocusRef.current) {
                         headingRef.current?.focus();
                         restoreFocusRef.current = false;
                     }
                 }}
-                open={dialog !== null}
-                dismissible={!pending}
-                title={dialog?.action === 'leave' ? 'Leave Session' : 'Remove participant'}
-                tone="danger"
-                onClose={() => setDialog(null)}
-                actions={
-                    <>
-                        <Button
-                            disabled={pending}
-                            variant="secondary"
-                            onClick={() => setDialog(null)}
-                        >
-                            Keep participation
-                        </Button>
-                        <Button
-                            loading={pending}
-                            variant="danger"
-                            disabled={confirmation !== dialog?.action.toUpperCase()}
-                            onClick={() =>
-                                run(
-                                    dialog?.action === 'leave'
-                                        ? { action: 'leave', confirmation }
-                                        : {
-                                              action: 'remove',
-                                              participantId: dialog?.participantId,
-                                              confirmation,
-                                          },
-                                )
-                            }
-                        >
-                            Confirm {dialog?.action === 'leave' ? 'leaving' : 'removal'}
-                        </Button>
-                    </>
+                onConfirm={(formData) =>
+                    run({
+                        action: dialog?.action,
+                        participantId: dialog?.participantId,
+                        confirmation: formText(formData, 'confirmation'),
+                    })
+                }
+                status={
+                    <p aria-live="polite" role="status">
+                        {message}
+                    </p>
                 }
             >
                 <p>
                     End {dialog?.name}? This participant will no longer count toward Session
                     progress. Their existing history stays.
                 </p>
-                <TextInput
-                    id="session-roster-confirmation"
-                    label={`Type ${dialog?.action.toUpperCase() ?? 'REMOVE'} to confirm`}
-                    value={confirmation}
-                    disabled={pending}
-                    onChange={(event) => setConfirmation(event.currentTarget.value)}
-                />
-                <p aria-live="polite" role="status">
-                    {message}
-                </p>
-            </Modal>
+            </TypedConfirmation>
         </section>
     );
 }
