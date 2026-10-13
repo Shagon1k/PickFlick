@@ -56,10 +56,12 @@ These guidelines do not override repository-specific approval requirements, arch
 
 - A pnpm workspace with `apps/frontend` (Next.js) and `apps/backend` (NestJS), plus
   `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
-  (environment schema, TypeScript and ESLint presets). There is no worker or Redis until the first
-  background job ([ADR-014](_docs/decisions/README.md#adr-014--run-two-entrypoints-until-the-first-background-job)).
+  (environment schema, TypeScript and ESLint presets). The backend package includes a Nomination
+  deadline worker and PostgreSQL job table
+  ([ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql));
+  no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
-  audit events, and the Session skeleton across eleven migrations.
+  audit events, and the Session skeleton across eighteen migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.

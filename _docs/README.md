@@ -9,7 +9,7 @@ Start here before non-trivial product, design, architecture, implementation, or 
 | [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log.      |
 | [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.                 |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                       |
-| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-017).                       |
+| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-018).                       |
 | [Develop locally](local-development.md)           | How-to: run the app, work with the database, run the checks, fix common problems.    |
 | [Add a feature end to end](adding-a-feature.md)   | How-to: schema, backend module, frontend call, form, and tests, using Contact.       |
 | [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                    |

@@ -135,7 +135,7 @@ out when listed under Out.
 
 | Area             | Status   | Decision                                                                                                                                                                                                                                                               |
 | ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Foundation       | Partial  | pnpm TypeScript monorepo with frontend, backend, shared contracts, PostgreSQL, and containerized delivery; a worker and queue arrive with the first background job (ADR-014).                                                                                          |
+| Foundation       | Partial  | pnpm TypeScript monorepo with frontend, backend, shared contracts, PostgreSQL, and containerized delivery; Nomination deadlines use a PostgreSQL job table and worker (ADR-018).                                                                                       |
 | Users and auth   | Partial  | Registered OAuth users only; Google active, Apple behind an owner-controlled gate. App Admin/User globally, Admin/Moderator/Member per Club, enforced on the server.                                                                                                   |
 | Design system    | Partial  | Projector Noir rules and prototypes live in `_docs/design/prototypes`; the production UI kit and shells exist.                                                                                                                                                         |
 | Localization     | Deferred | English MVP with externalized copy, locale-safe formatting, and layouts that tolerate longer text; Russian when scheduled.                                                                                                                                             |
@@ -407,15 +407,15 @@ hidden from normal history unless product copy exposes it.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) and the [ADR registry](_docs/decisions/README.md) own the detail.
 
-| Area       | Decision                                                                                        | ADR               |
-| ---------- | ----------------------------------------------------------------------------------------------- | ----------------- |
-| Repository | pnpm monorepo with `frontend` and `backend`; a worker returns with the first background job.    | ADR-014           |
-| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles. | ADR-013           |
-| Validation | Shared zod schemas for requests, forms, and the environment.                                    | ADR-012           |
-| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                      | ADR-002, 010, 011 |
-| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                    | ADR-003           |
-| Jobs       | None yet; the first job's phase records the queue decision (outbox + BullMQ is the default).    | ADR-014           |
-| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.      | ADR-007, 008      |
+| Area       | Decision                                                                                                     | ADR               |
+| ---------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
+| Repository | pnpm monorepo with `frontend` and `backend`; a backend worker reconciles Nomination deadlines in PostgreSQL. | ADR-014, ADR-018  |
+| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles.              | ADR-013           |
+| Validation | Shared zod schemas for requests, forms, and the environment.                                                 | ADR-012           |
+| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                   | ADR-002, 010, 011 |
+| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                 | ADR-003           |
+| Jobs       | Nomination-specific PostgreSQL scheduling intent and separate backend worker; no queue library.              | ADR-018           |
+| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                   | ADR-007, 008      |
 
 | Provider              | Purpose                                                                                    | Status                                                                                   |
 | --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |

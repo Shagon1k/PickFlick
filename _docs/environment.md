@@ -136,7 +136,7 @@ A terminal `Delivery gate` job always requires successful secret scan, dependenc
 integration, and image jobs. It requires the smoke job and skipped full UI jobs on PRs. On `main`
 pushes and manual runs, it requires both full UI jobs and a skipped smoke job. UAT deployment waits for a
 successful `main` push CI run, including visual regression. The production image build remains on
-PRs because it verifies all three release targets; path gating would remove that check from some
+PRs because it verifies all four release targets; path gating would remove that check from some
 code changes without equivalent release-image evidence.
 
 [Dependabot](../.github/dependabot.yml) opens weekly grouped updates for npm packages and GitHub
@@ -145,8 +145,8 @@ forces the fixed version; remove the entry once Prisma catches up.
 
 ## Images and Compose
 
-`Dockerfile` builds three targets from the locked workspace: `frontend` (Next.js standalone, port
-3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), and `release` (runs
+`Dockerfile` builds four targets from the locked workspace: `frontend` (Next.js standalone, port
+3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), `worker` (backend package, independent deadline entrypoint, no public port), and `release` (runs
 migrations, then the required seed step). `pnpm build:images` builds them from a clean checkout and tags them
 with the short revision.
 
@@ -154,7 +154,7 @@ with the short revision.
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                                   |
 | `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                      |
-| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `frontend`. Dokploy manages the data services.                                                      |
+| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend`. Dokploy manages the data services.                                            |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
 Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
@@ -174,7 +174,7 @@ repeated initialization, S3 put/get/delete, and object persistence across server
 Their test containers, volumes, and networks were removed afterward.
 
 `pnpm deploy:check` renders all three with synthetic values. In `compose.deploy.yaml`, `release`
-must finish before `backend` starts, and `frontend` waits for backend health. Containers are
+must finish before `backend` and `worker` start, and `frontend` waits for backend health. Containers are
 read-only, drop all capabilities, and publish no host ports. Dokploy supplies `DATABASE_URL` and the
 storage values; every service joins Dokploy's shared `dokploy-network` under an alias such as
 `pickflick-uat-backend`. UAT and production use separate projects, credentials, buckets, and Resend
@@ -200,3 +200,23 @@ Previews use a dedicated **PickFlick Preview** Google client with redirect URI
 `${AUTH_BASE_URL}/api/auth/callback/google` and Apple disabled. Supply `AUTH_BASE_URL`,
 `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` through the preview's secret store; do
 not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
+
+## Nomination deadline worker
+
+The worker reads only `APP_ENV` and `DATABASE_URL` through the existing database environment schema.
+Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
+`pnpm test:worker` checks built-process overdue repair, restart idempotence and graceful shutdown
+against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
+
+The worker polls every five seconds and processes database-only transactions sequentially. It repairs
+missing overdue jobs before executing due intent. `deadline.reconciliation` records the repair count;
+`deadline.repaired`, `deadline.outcome` and `deadline.stale` identify Sessions and deadline versions.
+Outcome events include `latenessMs`. `deadline.failure` and `deadline.cycle.failed` omit raw exceptions;
+inspect PostgreSQL health and schema compatibility when they recur. Pending jobs remain retryable.
+Archived Clubs pause. Completed empty decisions are preserved until a new deadline version is scheduled.
+
+Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
+seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
+disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and finish the current
+transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
+transport and inbox delivery are not implemented.

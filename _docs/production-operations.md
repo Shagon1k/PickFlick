@@ -47,7 +47,7 @@ These never go into `.env`, `.env.example`, or the application environment.
    database, storage, and Resend credentials. The [environment reference](environment.md#runtime-variables)
    lists every variable. Use `RESEND_FROM="PickFlick <notifications@pick-flick.app>"`, a sending-only
    key restricted to `pick-flick.app`, and `CONTACT_DELIVERY_TO=hello@pick-flick.app`.
-8. Open the Compose preview and confirm that only `release`, `backend`, and `frontend` exist, none
+8. Open the Compose preview and confirm that only `release`, `backend`, `worker`, and `frontend` exist, none
    publishes a host port, and every alias starts with `pickflick-production-`. Do not save it.
 
 Check before activation:
@@ -86,7 +86,7 @@ revision. Never create a release tag from a workstation.
 
 ## Review migration compatibility
 
-The `release` service runs migrations, then the required seed step; `backend` waits for it, and
+The `release` service runs migrations, then the required seed step; `backend` and `worker` wait for it, and
 `frontend` waits for backend health. Before each release:
 
 1. Review every migration against the currently deployed revision.
@@ -108,7 +108,7 @@ with the older tag.
 3. Confirm schema compatibility; if unsure, fix forward instead.
 4. Pin the production resource to that tag with auto deploy off.
 5. Start one manual deployment and wait for it.
-6. Verify the release job, backend readiness, frontend health, and critical smoke paths.
+6. Verify the release job, backend readiness, worker heartbeat health, frontend health, and critical smoke paths.
 7. Restore traffic only after those checks pass.
 8. Record the failed tag, restored tag, migration boundary, deployment record, and follow-up.
 
@@ -131,3 +131,16 @@ The workflow retries safely only until Dokploy is pinned to the candidate:
 Evidence may include revisions, tags, workflow and deployment record IDs, statuses, and redacted
 check results. Never record environment values, connection URLs, tokens, private keys, or raw
 provider responses.
+
+## Deadline worker operations
+
+Apply migration 18 before starting the candidate API and `worker`. Check the worker's Compose
+heartbeat health and `deadline.worker.started` / `deadline.reconciliation` events after release.
+An overdue Nomination with missing scheduling intent is repaired on startup; completed empty
+intent stays handled. Archived Clubs resume pending work after reactivation. Restarting the worker
+retries unfinished transactions; do not delete jobs or decision records to force a retry.
+
+`deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
+and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
+operator-alert or participant-notification intent; transport remains later work. Production activation
+still requires its existing authorization and promotion guards.

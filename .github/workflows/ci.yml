@@ -172,6 +172,9 @@ jobs:
       - name: Run database integration tests
         run: pnpm test:integration
 
+      - name: Run built deadline worker recovery smoke
+        run: pnpm test:worker
+
       - name: Run built-runtime E2E smoke
         run: pnpm test:e2e
 

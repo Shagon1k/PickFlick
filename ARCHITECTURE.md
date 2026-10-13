@@ -33,24 +33,24 @@ flowchart LR
   API -. Proposed .-> Paddle["Paddle"]
 ```
 
-| Concern    | Direction                                                                               | State                                                                                                    | ADR               |
-| ---------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------- |
-| Shape      | pnpm monorepo, two entrypoints (frontend, backend) plus a one-shot release job.         | Active                                                                                                   | ADR-014           |
-| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.   | Partial — public site, login, Club onboarding, Hub overview, and settings; other product routes Proposed | ADR-013           |
-| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.              | Partial — auth, Clubs, Contact, health; other product modules Proposed                                   | ADR-002, 010, 011 |
-| Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.             | Active                                                                                                   | ADR-012           |
-| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.          | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
-| Objects    | S3-compatible storage for avatars, catalog images and exports.                          | Partial — Club avatars and catalog images                                                                | —                 |
-| Background | None until the first job; its phase chooses the queue (outbox + BullMQ is the default). | Proposed                                                                                                 | ADR-014           |
-| Real-time  | SSE from the API for Session progress.                                                  | Proposed                                                                                                 | —                 |
-| Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.          | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
+| Concern    | Direction                                                                             | State                                                                                                    | ADR               |
+| ---------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------- |
+| Shape      | pnpm monorepo, frontend, backend, deadline worker plus a one-shot release job.        | Active                                                                                                   | ADR-014           |
+| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine. | Partial — public site, login, Club onboarding, Hub overview, and settings; other product routes Proposed | ADR-013           |
+| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.            | Partial — auth, Clubs, Contact, health; other product modules Proposed                                   | ADR-002, 010, 011 |
+| Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.           | Active                                                                                                   | ADR-012           |
+| Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.        | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
+| Objects    | S3-compatible storage for avatars, catalog images and exports.                        | Partial — Club avatars and catalog images                                                                | —                 |
+| Background | Nomination-specific PostgreSQL jobs and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
+| Real-time  | SSE from the API for Session progress.                                                | Proposed                                                                                                 | —                 |
+| Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.        | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
 ## 2. Repository
 
 ```text
 apps/
   frontend/   Next.js routes, UI kit, server-side API client
-  backend/    NestJS REST API, Better Auth, feature modules
+  backend/    NestJS REST API, Better Auth, feature modules, deadline worker entrypoint
 packages/
   contracts/  zod request schemas and response interfaces shared by both apps
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
@@ -223,8 +223,8 @@ Club audit events. Legacy skeleton Sessions keep nullable details and Movies; no
 Later phase-transition implementations must increment `detailsVersion` alongside `phaseVersion`
 so an operator must review the current Session before cancelling it.
 Hub responses include every open Rating Session and the twenty latest Completed/Cancelled rows,
-independently of recent activity. Detail and Hub reads use repeatable-read snapshots. No worker,
-provider call during creation, new dependency, or new environment variable is introduced.
+independently of recent activity. Detail and Hub reads use repeatable-read snapshots. Session creation makes no provider calls. The deadline worker below reuses the
+backend package and adds no dependency or environment variable.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
@@ -333,15 +333,17 @@ history and revokes every session.
 
 | Environment | Topology                                                                                                                    | Data                           |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Local       | Frontend and backend run natively; PostgreSQL and MinIO in Docker.                                                          | Synthetic seed; email disabled |
+| Local       | Frontend, backend and deadline worker run natively; PostgreSQL and MinIO in Docker.                                         | Synthetic seed; email disabled |
 | CI          | Audit, lint, knip, types, unit, integration, images; PRs run UI smoke, main/manual run full contract and visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `frontend`) + managed data.                                                          | Synthetic; test-inbox email    |
+| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`) + managed data.                                                | Synthetic; test-inbox email    |
 | Production  | Same shape, pinned to a SemVer tag.                                                                                         | Real users; live providers     |
 
 ```mermaid
 flowchart LR
   subgraph Dokploy["Dokploy project (one per environment), dokploy-network"]
     Release["release<br/>(migrate, seed)"] -->|completes| Backend["backend :3001"]
+    Release -->|completes| Worker["deadline worker"]
+    Worker --> PG
     Backend -->|healthy| Frontend["frontend :3000"]
     PG[("Managed PostgreSQL")]
   end
@@ -373,7 +375,7 @@ flowchart LR
   `promote-production.yml` requires a successful `UAT E2E` check for the release revision, tags it,
   pins Dokploy to the tag, and deploys — only when `PRODUCTION_DEPLOY_ENABLED=true`. See the
   [UAT](_docs/uat-operations.md) and [production](_docs/production-operations.md) guides.
-- **Migrations:** reviewed Prisma migrations applied by the release job before the backend starts.
+- **Migrations:** reviewed Prisma migrations applied by the release job before the backend and worker start.
 - **Rollback:** redeploy a previous tag when the schema is compatible; otherwise fix forward.
 - **Backups and restore drills:** Proposed, required before launch.
 
@@ -391,6 +393,7 @@ flowchart LR
 | 012 | Shared zod schemas at every boundary.                            |
 | 013 | UI kit in the frontend on unstyled Mantine.                      |
 | 014 | Two entrypoints until the first background job.                  |
+| 018 | PostgreSQL intent and worker for Nomination deadlines.           |
 
 Superseded: ADR-001, 004, 005, 006. Update this document whenever a deployable, module, data owner,
 interface, integration, environment, or guarantee changes.
@@ -414,5 +417,31 @@ take precedence; validated search caches supply metadata for Movies nominated wi
 details. Unavailable metadata is explicit.
 Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
 page, which fetches the authoritative Session detail once; the client keeps no projection copy.
-No saved-film entity, provider request on submission, background runtime or dependency is added. Automatic completion,
-deadlines, transactional outbox and live progress events remain Proposed for #43/#44.
+No saved-film entity or provider request on submission is added. Completion on submission and live
+progress events remain Proposed under #44.
+
+### Nomination deadlines
+
+Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
+Migration 18 adds Session `deadlineVersion`, durable `NominationDeadlineJob` scheduling intent,
+`NominationDeadlineDecision` audit records without a human actor, and recipient-specific
+`NominationDeadlineNotification` intent. Notification delivery remains Proposed for the later
+notification phase; these rows do not send messages.
+
+Creation and deadline edits schedule intent in their Session transaction. Edits increment only
+`deadlineVersion` when the deadline changes; clearing, cancellation and manual closure finish pending
+intent. The worker selects candidates without locking jobs, then locks Club → Session → job and
+rechecks phase, lifecycle, phase version, deadline version and timestamp. Zero accepted nominations
+leave Nomination open and retain one operator-alert decision per deadline version. One selects that
+Movie for Watching; two or more nominations, including repeated Movies, open Selection. Transitions
+clear the deadline and increment phase/details/deadline versions. Decision audit, recipient intent
+and job completion commit atomically with the transition.
+
+`apps/backend/src/deadline-worker.ts` runs independently of the API. It reconciles missing overdue
+intent on startup and every five seconds, preserving handled empty deadlines, then executes pending
+due jobs through the same transaction. Archived Clubs pause until reactivation. Structured events
+record repairs, outcomes, stale work, safe failure reasons and lateness without user text or database
+error details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
+stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
+file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
+framework is introduced. Production activation remains unauthorized.

@@ -11,6 +11,97 @@ acceptance. [Project 3](https://github.com/users/Shagon1k/projects/3) owns live 
 
 ## Delivery contract
 
+### Deadline run preparation
+
+Run `r_f9f677f7afc97df8107e` for [#43](https://github.com/Shagon1k/PickFlick/issues/43) uses the
+managed branch `PF-43_10-2-automate-nomination-deadlines-with`, starting at `3d198a0`.
+Its native blockers #39 and #13 are closed; nomination storage and manual closure are present.
+
+The acceptance boundary is zero/one/many nominations at deadline, idempotence across duplicate,
+stale, restarted, edited and cancelled jobs, and observable repair of missed overdue deadlines.
+Automatic completion on submission, live progress transport and notification delivery remain
+separate work under #44 and the later notification phase.
+
+[ADR-018](decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql) approves a
+Nomination-specific PostgreSQL job table and separate backend worker, with the implementation
+impact and verification plan. It reuses Club → Session serialization and avoids new dependencies.
+The developer approved ADR-018 on 2026-10-13 in the Kurami recovery conversation, satisfying the
+architecture checkpoint required by ADR-014 and repository guidance. Continue issue #43 within
+that accepted scope. ADR-016 remains a separate, unaccepted Movie refresh proposal.
+
+Preparation changes documentation only. Deadline tests, migrations, worker builds and runtime
+checks have not run; the issue's acceptance criteria remain unverified.
+
+### Managed successor implementation — 2026-10-13
+
+The owner ended the predecessor Remote task and authorized this fresh managed continuation on the
+same issue, worktree and branch. The existing preparation edits were reconciled with open #43 and
+Project 3 In progress; no PR, CI checks or review findings existed at intake.
+
+Migration 18 implements ADR-018. Session creation and deadline edits persist jobs transactionally;
+clearing, cancellation and manual closure invalidate pending intent. Deadline decisions use accepted
+participants' nominations, count repeated Movies separately and serialize Club → Session → job.
+`NominationDeadlineDecision` is the automatic audit without a fabricated human actor;
+`NominationDeadlineNotification` retains recipient intent atomically. Delivery and completion on
+submission remain separate work. The independent backend worker reconciles on startup and every
+five seconds, pauses archived Clubs, logs safe outcomes/lateness/failures and shuts down gracefully.
+Local scripts, CI, worker image target, preview/UAT topology and operational health checks include it.
+
+Verification evidence:
+
+- Node 24.15.0 and pnpm 11.25.0; pnpm's store remains inside this worktree.
+- All eighteen migrations apply to fresh isolated PostgreSQL 17.6. An upgrade from migration 17
+  preserves an existing Nomination Session's topic, deadline, phase/details versions and scale;
+  `deadlineVersion` defaults to 1 and no scheduling intent is invented by the migration.
+- `pnpm test:integration`: all 150 tests across fifteen files pass after loading the deterministic
+  seed. Twenty-one deadline checks cover exact clock boundaries, zero/one/many, repeated Movies,
+  departed participants, edits, clearing, cancellation, manual/worker races, duplicate workers,
+  archived/reactivated Clubs, missing intent, restart recovery and safe logs. Real database failures
+  at replacement scheduling and final completion prove transactional rollback and retry.
+- Two worker-loop unit checks pass for shutdown during current work and safe retry after failure.
+- `pnpm test:worker` passes against the built entrypoint: startup overdue repair, durable empty
+  decision, process restart and SIGTERM shutdown.
+- `pnpm test:ui:smoke`: all 32 checks pass, including existing Nomination, Session creation,
+  editing/cancellation and roster workflows. Browser checks use the mock API; deadline transitions
+  are covered by the real API/database integration suite.
+- `pnpm deploy:check` passes for local, preview and deploy definitions.
+
+- `pnpm verify` passes: guarded security audit, lint (four existing frontend warnings), knip,
+  formatting, workspace/root types, all 392 unit tests across 44 files and both builds.
+- Local gitleaks is unavailable; the repository hook reports its skipped scan. GitHub's secret-scan
+  check remains required. No hook is bypassed.
+
+- `pnpm build:images` passes from clean implementation commit `a9dd59f`, building all four targets.
+  Buildx metadata uses a temporary `/tmp` directory because the managed filesystem keeps the home
+  Docker configuration read-only. Repository build definitions and credentials are unchanged.
+- The packaged worker runs read-only, without capabilities, against the isolated upgrade database.
+  It repairs the preserved overdue Session, records one empty decision, becomes healthy, exits 0 on
+  SIGTERM, and becomes healthy after restart without repeating the decision. Its test container is removed.
+- GitHub CI for `a9dd59f` passes Secret scan, Dependency security, Lint/type-check/test, Integration
+  and runtime smoke, UI smoke, Production images and Delivery gate. PR-only CI correctly skips the
+  full UI contract/visual selections. No review findings were present at this verification point.
+
+Draft [PR #170](https://github.com/Shagon1k/PickFlick/pull/170) contains the issue-scoped result.
+Hosted environment behavior and owner acceptance remain unverified here. No production deployment, secrets, dependencies,
+new environment variables, permission changes or unrelated product work are included.
+
+### Recovery preparation
+
+On 2026-10-12, Project 3 reads succeeded with the existing managed-writer credentials via
+`gh api graphql`, querying `user(login: "Shagon1k").projectV2(number: 3)`. Issue #43 is open
+and its Project status remains In progress. The installed `gh project` owner lookup is not
+required; do not change credentials or token scopes to work around it.
+
+`pnpm install --frozen-lockfile` passed with Node 24.15.0 and pnpm 11.25.0, including shared
+configuration build and Prisma Client generation. The managed launcher now sets
+`pnpm_config_store_dir` to `node_modules/.pnpm-store` inside the worktree, keeping pnpm's
+SQLite/WAL writes within the workspace. Preserve that setting when continuing.
+
+The saved preparation edits remain in this worktree. The developer has now approved ADR-018.
+Recovery checks do not by themselves resume the run or prove deadline acceptance.
+
+### Nomination submissions
+
 Migration 17 adds Nomination storage with a unique participant/Session key, same-Session participant
 foreign key, Movie foreign key and early-closure audit action. Existing data stays intact. Apply the
 migration before running the new application image. No historical nominations are invented.
