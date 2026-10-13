@@ -205,15 +205,17 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 
 The worker reads only `APP_ENV` and `DATABASE_URL` through the existing database environment schema.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
-`pnpm test:worker` checks built-process overdue repair, restart idempotence and graceful shutdown
+`pnpm test:worker` checks built-process overdue scanning, restart idempotence and graceful shutdown
 against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
 
-The worker polls every five seconds and processes database-only transactions sequentially. It repairs
-missing overdue jobs before executing due intent. `deadline.reconciliation` records the repair count;
-`deadline.repaired`, `deadline.outcome` and `deadline.stale` identify Sessions and deadline versions.
-Outcome events include `latenessMs`. `deadline.failure` and `deadline.cycle.failed` omit raw exceptions;
-inspect PostgreSQL health and schema compatibility when they recur. Pending jobs remain retryable.
-Archived Clubs pause. Completed empty decisions are preserved until a new deadline version is scheduled.
+The worker polls due Nomination Sessions every five seconds and processes database-only
+transactions sequentially. Session.deadlineAt and deadlineVersion own the schedule; a completed
+decision prevents replay of that version. No job table or reconciliation pass is used.
+`deadline.scan` records completed scans; `deadline.outcome` identifies the Session, deadline version,
+outcome and `latenessMs`. `deadline.failure` and `deadline.cycle.failed` omit raw exceptions;
+inspect PostgreSQL health and schema compatibility when they recur. A failed due Session remains
+eligible for the next scan. Archived Clubs pause; reactivation resumes due work. Empty decisions
+remain until a new deadline version is set.
 
 Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
 seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
@@ -221,16 +223,13 @@ disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and fin
 transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
 transport and inbox delivery are not implemented.
 
-## Session progress streams
+## Session progress polling
 
-The API exposes same-origin private SSE at `/sessions/:sessionId/progress/events`. It sends only
-committed progress versions on connection and every five seconds, rechecking authentication and
-Club access each time. `Cache-Control: private, no-store, no-transform` prevents caching and
-compression buffering; `X-Accel-Buffering: no` disables proxy buffering. Preserve these headers
-through the frontend and hosting proxy. A fixed “Session progress stream failed.” log indicates
-an internal read failure without exposing credentials or participant data.
+The Session page polls `/sessions/:sessionId/progress` every five seconds and on focus/online
+recovery. The private snapshot contains committed versions only; each request rechecks authentication
+and Club membership and uses `Cache-Control: private, no-store`. A changed version refreshes the
+filtered Session detail. Failed polls show recovery feedback and retry on the next cycle; access
+loss refreshes the page and stops polling. There is no separate streaming or fallback transport.
 
-If streaming is unavailable, the Session page shows feedback and checks the private progress
-snapshot every fifteen seconds. Reconnection, focus and online recovery fetch the current version.
-Migration 19 must precede updated API and worker images. There is no new service, runtime variable
-or notification transport; the PostgreSQL outbox retains later notification intent.
+Migration 22 must precede updated API and worker images. No new service, runtime variable, or
+notification transport is required; the PostgreSQL progress outbox retains notification intent.

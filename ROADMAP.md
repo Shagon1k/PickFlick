@@ -860,6 +860,13 @@ polling progress
 
 **Out of scope:** Selection scoring and notification inbox and email delivery.
 
+**Simplification evidence — 2026-10-13:** Session-driven deadlines and polling retain transactional
+decisions and progress. Verification passed 162 database/API tests and 95 real-backend browser
+checks, plus all 76 unchanged screenshots in the CI-pinned Playwright image. All twenty-two
+migrations applied to a clean database; the catalog upgrade probe preserved identity and metadata.
+Built-worker checks passed deadline scanning, restart idempotence and SIGTERM shutdown.
+`pnpm verify` passed, including 305 unit tests and every package build.
+
 ### Phase 11 — Selection & Winner Resolution · Not started
 
 **Goal:** Immutable scored ballots and one deterministic winner, whether closure is automatic or
@@ -910,7 +917,7 @@ in UAT
       severity-classified register.
 - [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
-- [ ] Exercise concurrent tabs and users, process and job restarts, SSE reconnect and fallback, stale
+- [ ] Exercise concurrent tabs and users, process and job restarts, progress polling and recovery, stale
       data, provider failures, and permission changes mid-flow.
 - [ ] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.

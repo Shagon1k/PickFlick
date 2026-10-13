@@ -387,10 +387,10 @@ have explicit feedback. Neutral PF poster placeholders match the existing catalo
 Operators keep the existing edit, cancel, invite and roster controls and can confirm early closure
 in a focus-trapped dialog. A phase change moves focus to the Session heading when the original
 trigger disappears. Zero films cannot close; one moves to Watching and multiple nominations
-open Selection. Automatic N/N completion follows the same outcomes. Other clients receive live
-version signals and re-read the authoritative page; reconnects recover the current phase and
-progress. Stream failures show “Live updates unavailable. Progress refreshes periodically.” and
-use periodic refresh, with online/focus recovery. Recovery continues through a transient
+open Selection. Automatic N/N completion follows the same outcomes. Other clients poll committed
+progress versions every five seconds and re-read the authoritative page when a version changes.
+Failed polls show “Progress updates unavailable. Reconnect or refresh to try again.” and retry on
+the next cycle, with online/focus recovery. Recovery continues through a transient
 “Session unavailable” page and refreshes when either the rendered detail or roster is stale.
 Manual refresh remains available.
 Exact-head hosted preview and owner visual acknowledgement remain required for #42 and #44.

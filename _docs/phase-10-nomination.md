@@ -319,3 +319,27 @@ Session, and removes the redundant job table. The worker scans due Session rows 
 state under Club → Session locks. The existing decision key prevents repeat empty alerts.
 Creation, edits, cancellation and closure no longer write scheduling intent. Historical evidence
 above describes the prior implementation; focused deadline/progress tests verify the new path.
+
+### Simplification verification — issue #172
+
+Session deadlines are read directly from Session; durable decisions, recipients and progress
+outbox records remain transactional. The manager rule is shared across Session invitations,
+revocation and removal, including archived, adminless and over-limit Clubs. Roster versioning is
+removed while participant identity immutability stays enforced. Browser behavior now runs against
+seeded Nest/PostgreSQL and Better Auth test sessions; only screenshot state fixtures use a mock API.
+Historical evidence above describes the implementation before these amendments.
+
+Verified on 2026-10-13 with Node 24.15.0 and pnpm 11.25.0:
+
+- All 22 migrations applied to a clean PostgreSQL database. The legacy catalog upgrade probe
+  preserved canonical IDs, mappings, title/year and the oldest cache provenance timestamp.
+- The full integration selection passed 17 files and 162 tests, including transaction rollback,
+  concurrent transitions, manager restrictions and participant identity enforcement.
+- The real-backend UI contract passed 95 checks. All 76 existing screenshot baselines matched in
+  the digest-pinned CI Playwright image, without baseline updates.
+- The built worker passed Session scanning, one empty decision across restart and SIGTERM shutdown.
+  Local, deployment and preview Compose files rendered successfully.
+- `pnpm verify` passed: production dependency audit, lint with complexity 12 and four parameters,
+  unused-code scan, formatting, type checks, 305 unit tests and all package builds. The production
+  audit reports one moderate advisory and no high/critical advisories; lint retains four existing
+  warnings and no errors. Redacted gitleaks scanning found no leaks in the branch changes.

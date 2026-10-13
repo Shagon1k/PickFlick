@@ -475,3 +475,7 @@ Invite, revoke and participant removal all require an active Club with an Admin 
 count within the current limit. Roster projections use that same rule; leaving stays available
 for an accepted participant in an open Session. Database lock helpers are shared by persistence
 and backend workflows, preserving Club → Session ordering.
+
+Issue #172 UI verification uses the real Nest application and guarded PostgreSQL test fixtures.
+Better Auth test sessions and external-provider doubles belong to the test entry point; fixture
+routes are absent from AppModule. Only visual regression uses static API display fixtures.
