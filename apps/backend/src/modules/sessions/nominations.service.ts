@@ -9,7 +9,7 @@ import type { Prisma } from '@pickflick/database';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, recordAudit } from '../clubs/club-access.js';
 import { MoviesService } from '../movies/movies.service.js';
-import { invalidateDeadline } from './nomination-deadline-intent.js';
+import { advanceNomination, completeNomination, publishProgress } from './session-progress.js';
 import { access, canManage } from './session-roster-access.js';
 
 @Injectable()
@@ -119,6 +119,7 @@ export class NominationsService {
             await tx.nomination.create({
                 data: { sessionId: id, participantId: participant.id, movieId: input.movieId },
             });
+            await completeNomination(tx, id);
         });
     }
 
@@ -143,18 +144,8 @@ export class NominationsService {
                 subjectMembershipId: member.id,
                 action: 'SESSION_NOMINATION_CLOSED',
             });
-            await invalidateDeadline(tx, id);
-            await tx.session.update({
-                where: { id },
-                data: {
-                    phase: nominations.length === 1 ? 'WATCHING' : 'SELECTION',
-                    movieId: nominations.length === 1 ? nominations[0]?.movieId : null,
-                    deadlineAt: null,
-                    deadlineVersion: session.deadlineAt ? { increment: 1 } : undefined,
-                    phaseVersion: { increment: 1 },
-                    detailsVersion: { increment: 1 },
-                },
-            });
+            await advanceNomination(tx, session, nominations);
+            await publishProgress(tx, id, 'MANUAL');
         });
     }
 }

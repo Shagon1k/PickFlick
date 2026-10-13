@@ -1,6 +1,7 @@
 import type { Prisma } from '@pickflick/database';
 
 import { recordAudit } from '../clubs/club-access.js';
+import { completeNomination } from './session-progress.js';
 
 /** The caller holds the Club lock; completed attendance/history stays intact. */
 export async function departSessions(
@@ -33,5 +34,6 @@ export async function departSessions(
             subjectMembershipId: membershipId,
             action: status === 'LEFT' ? 'SESSION_PARTICIPANT_LEFT' : 'SESSION_PARTICIPANT_REMOVED',
         });
+        await completeNomination(tx, participant.sessionId);
     }
 }

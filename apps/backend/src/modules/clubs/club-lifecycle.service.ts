@@ -3,6 +3,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger } from '@nest
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { departSessions } from '../sessions/session-departure.js';
+import { completeNomination } from '../sessions/session-progress.js';
 import { StorageService } from '../storage/storage.service.js';
 import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
 import { clubEntitlements } from './club-tiers.js';
@@ -156,6 +157,15 @@ export class ClubLifecycleService {
                 );
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });
+            const sessions = await transaction.session.findMany({
+                where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING', 'RATING'] } },
+                orderBy: { id: 'asc' },
+                select: { id: true },
+            });
+            for (const session of sessions) {
+                await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${session.id}::uuid FOR UPDATE`;
+                await completeNomination(transaction, session.id);
+            }
             await recordAudit(transaction, {
                 clubId,
                 actorUserId: userId,

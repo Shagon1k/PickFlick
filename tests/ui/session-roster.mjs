@@ -21,6 +21,7 @@ const session = {
     movieId: null,
     version: 1,
     phaseVersion: 1,
+    progressVersion: 1,
     nominations: null,
 };
 function stateFor(token) {

@@ -16,6 +16,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
 import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-intent.js';
 import { NominationsService } from './nominations.service.js';
+import { publishProgress } from './session-progress.js';
 import { canManage } from './session-roster-access.js';
 
 @Injectable()
@@ -152,6 +153,7 @@ export class SessionsService {
                 await scheduleDeadline(transaction, updated);
             }
             await audit(transaction, membership.id, userId, session.clubId, id, 'SESSION_UPDATED');
+            await publishProgress(transaction, id, 'DETAILS');
         });
         return this.get(userId, id);
     }
@@ -187,6 +189,7 @@ export class SessionsService {
                 id,
                 'SESSION_CANCELLED',
             );
+            await publishProgress(transaction, id, 'CANCELLED');
         });
         return this.get(userId, id);
     }
@@ -233,6 +236,7 @@ function project(
         movieId: session.movieId,
         version: session.detailsVersion,
         phaseVersion: session.phaseVersion,
+        progressVersion: session.progressVersion,
         canEdit: allowed && open,
         canCancel: allowed && open,
     };

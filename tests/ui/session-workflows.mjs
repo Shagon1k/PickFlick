@@ -56,6 +56,7 @@ export function handleSessionWorkflow(request, response, pathname, token) {
                 phase: input.type === 'FULL_CYCLE' ? 'NOMINATION' : 'WATCHING',
                 version: 1,
                 phaseVersion: 1,
+                progressVersion: 1,
                 nominations: null,
                 canEdit: true,
                 canCancel: true,

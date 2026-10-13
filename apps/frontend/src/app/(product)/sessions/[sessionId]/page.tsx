@@ -9,6 +9,7 @@ import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 
 import SessionDetails from './_components/SessionDetails/SessionDetails';
+import SessionProgress from './_components/SessionProgress/SessionProgress';
 import styles from './page.module.scss';
 
 export const metadata = { title: 'Session — PickFlick' };
@@ -35,6 +36,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     }
     return (
         <ProductFrame>
+            <SessionProgress sessionId={session.id} version={session.progressVersion} />
             <SessionDetails session={session} roster={roster} />
         </ProductFrame>
     );

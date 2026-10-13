@@ -58,8 +58,12 @@ export const sessionSchema = z.strictObject({
     movieId: z.uuid().nullable(),
     version: z.number().int().positive(),
     phaseVersion: z.number().int().positive(),
+    progressVersion: z.number().int().positive(),
     nominations: nominationsSchema.nullable(),
     canEdit: z.boolean(),
     canCancel: z.boolean(),
 });
 export type TSession = z.infer<typeof sessionSchema>;
+
+export const sessionProgressSchema = z.strictObject({ version: z.number().int().positive() });
+export type TSessionProgress = z.infer<typeof sessionProgressSchema>;

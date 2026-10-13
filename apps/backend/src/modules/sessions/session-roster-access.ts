@@ -7,6 +7,7 @@ import type { Prisma } from '@pickflick/database';
 import { clubAccess, findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
 import { clubPermissions } from '../clubs/club-permissions.js';
 import { clubEntitlements } from '../clubs/club-tiers.js';
+import { completeNomination } from './session-progress.js';
 
 export async function canManage(
     transaction: Prisma.TransactionClient,
@@ -122,4 +123,5 @@ export async function rosterAudit(
         sessionId,
         action,
     });
+    await completeNomination(tx, sessionId);
 }

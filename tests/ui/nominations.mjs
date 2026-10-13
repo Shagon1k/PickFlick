@@ -51,6 +51,7 @@ export function handleNominations(request, response, pathname, token) {
         });
         return true;
     }
+    if (handleProgress(response, pathname, token)) return true;
     if (
         !/^\/sessions\/[^/]+\/nominations(?:\/close)?$/u.test(pathname) &&
         !(token?.includes('nomination') && pathname === `/sessions/${sessionId}`)
@@ -60,7 +61,7 @@ export function handleNominations(request, response, pathname, token) {
         sendError(response, 401, 'UNAUTHORIZED', 'nomination-auth');
         return true;
     }
-    if (!states.has(token)) states.set(token, { own: null, phase: 'NOMINATION' });
+    if (!states.has(token)) states.set(token, { own: null, phase: 'NOMINATION', version: 1 });
     const state = states.get(token);
     if (pathname === `/sessions/${sessionId}`) {
         sendJson(response, 200, {
@@ -77,6 +78,7 @@ export function handleNominations(request, response, pathname, token) {
             movieId: null,
             version: 5,
             phaseVersion: 1,
+            progressVersion: state.version,
             nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
             canEdit: token.includes('operator'),
             canCancel: token.includes('operator'),
@@ -95,7 +97,34 @@ export function handleNominations(request, response, pathname, token) {
                 }
                 state.phase = 'SELECTION';
             } else state.own = { ...movie, id: input.movieId };
+            state.version++;
             sendJson(response, 201, null);
         });
+    return true;
+}
+
+function handleProgress(response, pathname, token) {
+    if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${sessionId}/progress`))
+        return false;
+    const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };
+    states.set(token, state);
+    if (pathname.endsWith('/events')) {
+        response.writeHead(200, {
+            'content-type': 'text/event-stream',
+            'cache-control': 'no-store, no-transform',
+        });
+        // Exercise duplicate and older signals after the current snapshot.
+        const send = () => {
+            response.write(
+                `event: progress\ndata: ${JSON.stringify({ version: state.version })}\n\n`,
+            );
+            response.write(
+                `event: progress\ndata: ${JSON.stringify({ version: Math.max(1, state.version - 1) })}\n\n`,
+            );
+        };
+        send();
+        const interval = setInterval(send, 300);
+        response.on('close', () => clearInterval(interval));
+    } else sendJson(response, 200, { version: state.version });
     return true;
 }

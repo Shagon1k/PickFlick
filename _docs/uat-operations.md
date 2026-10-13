@@ -134,3 +134,15 @@ retries unfinished transactions; do not delete jobs or decision records to force
 and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
 operator-alert or participant-notification intent; transport remains later work. Production activation
 still requires its existing authorization and promotion guards.
+
+## Verify Session progress on a preview
+
+Use the preview built from the PR's exact head SHA. Open one Session in two authenticated clients,
+submit a nomination in one, and confirm the other refreshes progress without a manual action.
+Complete the accepted roster and verify the resulting Selection or sole-Movie Watching phase in
+both clients. Disconnect a client before the final change, then reconnect and confirm its phase
+matches a fresh page load. Verify periodic recovery with the stream blocked and access loss after
+Club departure. The stream carries versions only; the page enforces nomination visibility.
+
+Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
+owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.

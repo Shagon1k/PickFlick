@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+    sessionProgressSchema,
     sessionSchema,
     type TCancelSession,
     type TCreateSession,
@@ -26,4 +27,8 @@ export async function cancelSession(id: string, input: TCancelSession) {
     return sessionSchema.parse(
         await apiRequest(`/sessions/${id}/cancel`, { method: 'POST', json: input }),
     );
+}
+
+export async function getSessionProgress(id: string) {
+    return sessionProgressSchema.parse(await apiRequest(`/sessions/${id}/progress`));
 }
