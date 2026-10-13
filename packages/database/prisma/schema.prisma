@@ -245,6 +245,8 @@ model Session {
   deadlineAt                  DateTime?               @db.Timestamptz(3)
   phaseVersion                Int                     @default(1)
   rosterVersion               Int                     @default(1)
+  progressVersion             Int                     @default(1)
+  progressEvents              SessionProgressEvent[]
   selectionScaleMin           Int
   selectionScaleMax           Int
   showNominationAuthors       Boolean
@@ -425,4 +427,21 @@ model NominationDeadlineNotification {
 
   @@id([sessionId, deadlineVersion, membershipId])
   @@index([membershipId])
+}
+
+model SessionProgressEvent {
+  sessionId      String       @db.Uuid
+  version        Int
+  kind           String       @db.VarChar(20)
+  phase          SessionPhase
+  phaseVersion   Int
+  rosterVersion  Int
+  detailsVersion Int
+  acceptedCount  Int
+  nominatedCount Int
+  recipientIds   String[]     @db.Uuid
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  session        Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, version])
 }

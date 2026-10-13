@@ -42,7 +42,7 @@ flowchart LR
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.        | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                        | Partial — Club avatars and catalog images                                                                | —                 |
 | Background | Nomination-specific PostgreSQL jobs and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
-| Real-time  | SSE from the API for Session progress.                                                | Proposed                                                                                                 | —                 |
+| Real-time  | SSE version signals from the API for Session progress.                                | Active                                                                                                   | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.        | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
 ## 2. Repository
@@ -79,7 +79,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                               | Active                                                                                   |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                       | Active                                                                                   |
 | movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states.                                             | Partial — authenticated search/details and stored catalog images; refresh worker pending |
-| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-targeted invitations, roster, nominations, personal suggestions, early closure, and audit. | Active — automatic transitions and later phases pending                                  |
+| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-targeted invitations, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination automatic transitions; later phases pending                          |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                         | Proposed                                                                                 |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -237,16 +237,16 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                        |
 | Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                         |
 | Club avatar       | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                         |
-| Live progress     | Frontend → API                               | SSE, re-fetch after gaps                                                       | Proposed                                                       |
+| Live progress     | Frontend → API                               | Authenticated SSE versions, re-fetch after gaps                                | Active                                                         |
 | Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active — disabled until configured; live provider not verified |
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                       |
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                       |
 
-Planned flows (Proposed): a Session submission serializes on the Session row, persists, evaluates
-completion, and transitions at most once in one transaction; deadlines are enforced by a scheduled
-job that reloads and re-checks the Session, with reconciliation for missed deadlines; Paddle events
-are verified, stored by provider ID, and applied idempotently; account deletion anonymizes shared
-history and revokes every session.
+Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
+and transition at most once in one transaction. The deadline worker reloads and rechecks each
+Session and reconciles missing overdue intent. Proposed Paddle flows verify events, store provider
+IDs and apply changes idempotently; proposed account deletion anonymizes shared history and revokes
+every authentication session.
 
 ## 5. Cross-cutting contracts
 
@@ -418,7 +418,7 @@ details. Unavailable metadata is explicit.
 Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
 page, which fetches the authoritative Session detail once; the client keeps no projection copy.
 No saved-film entity or provider request on submission is added. Completion on submission and live
-progress events remain Proposed under #44.
+progress version signals are Active under #44.
 
 ### Nomination deadlines
 
@@ -445,3 +445,38 @@ error details. Pending work retries on the next poll after failure or process re
 stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
 file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
 framework is introduced. Production activation remains unauthorized.
+
+### Automatic Nomination completion and live progress
+
+Migration 19 adds Session `progressVersion` and `SessionProgressEvent`, a Session-specific
+transactional outbox keyed by `(sessionId, version)`. Nomination, roster, details, cancellation,
+manual closure and deadline transitions persist their new version with an event. Events retain
+phase, phase/details/roster versions, accepted/nominated counts and accepted Membership recipients
+for later notification work. `AUTOMATIC` records the machine decision without a human actor.
+Notification delivery and retention policy remain later phases; no dispatcher or message broker is
+introduced. Existing rows start at version 1 without invented events or retrospective transitions.
+
+Submission and roster changes evaluate accepted participants under Club → Session locks. Positive
+N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
+repeated Movies count separately. Session/Club departure and removal update participation first.
+Archived Clubs publish progress without advancing; reactivation checks the current roster.
+The shared transition clears deadline intent and increments phase/details versions exactly once.
+Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
+independent, preserving ADR-018's empty-deadline operator intent.
+
+Session detail and roster expose their snapshot's `progressVersion` separately from editing,
+phase and roster concurrency tokens.
+`GET /sessions/:sessionId/progress` returns only `{ version }` for fallback checks.
+`GET /sessions/:sessionId/progress/events` sends private, uncached same-origin SSE with current
+version and event ID on connection and every five seconds. Current snapshots heal gaps and old
+`Last-Event-ID` values; they do not replay private projections. Each heartbeat resolves the current
+API-owned authentication session and active Club Membership. Access loss terminates the stream;
+other failures log a fixed safe message and permit reconnect. Disconnect unsubscribes the timer; API shutdown finishes active streams.
+
+The frontend compares signals to the older of the rendered Session detail and roster progress versions and
+refreshes authoritative server components after newer versions. Recovery stays mounted when either
+page read fails transiently; without a rendered version, an unchanged signal also retries the page.
+An unavailable stream shows feedback and polls the snapshot every
+fifteen seconds; focus and online recovery also check it. Manual refresh remains available. The
+client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
+are required. Apply migration 19 before releasing the API and worker images.

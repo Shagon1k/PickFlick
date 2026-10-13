@@ -75,7 +75,10 @@ test(
         await page.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
         await expect(page.getByText('invited · invitation revoked')).toBeVisible();
         await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
+        const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
+        await expect(removalDialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
         await page.keyboard.press('Escape');
+        await expect(removalDialog).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Remove Jordan Member' })).toBeFocused();
         await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
         await page.getByLabel('Type REMOVE to confirm').fill('REMOVE');

@@ -11,6 +11,99 @@ acceptance. [Project 3](https://github.com/users/Shagon1k/projects/3) owns live 
 
 ## Delivery contract
 
+### Automatic transition run — #44
+
+Run `r_fb766f7d2d2de3c3cc83` uses the managed worktree
+`~/_projects/.worktrees/pickflick/PF-44_10-3-serialize-automatic-nomination-transitions/PickFlick`
+and branch `PF-44_10-3-serialize-automatic-nomination-transitions`, starting at `3210f0c`.
+Preparation confirmed a clean checkout, Shagon1k/PickFlick origin, native blockers #42 and #43
+closed, and Project 3 In progress. The autonomous issue-scoped run authorizes focused commits,
+normal same-branch pushes and one Draft PR; merge and production deployment remain unauthorized.
+
+Reuse Club → Session locks, deadline invalidation and the authoritative filtered Session detail.
+Check completion after nomination and roster changes, including Club departure and reactivation.
+Zero accepted nominations stay open; one selects the sole Movie; multiple nominations open Selection,
+including repeated Movies. Keep automatic decisions and progress/notification intent in the same
+transaction through a Session-specific PostgreSQL outbox. Add no dependency or process.
+
+Version-only SSE signals revalidate Session detail. Send the current version on connection and each
+five-second heartbeat, with authentication and membership rechecked each time. Clients compare the
+signal to the rendered version; stale signals do nothing, gaps and reconnects cause a fresh read.
+A fifteen-second snapshot fallback and focus/online refresh cover stream failure. Film rows and
+nominator identities remain only in the existing filtered detail response.
+
+Verification plan: concurrent final submissions; zero/sole/multiple and repeated Movies; departure,
+removal and archived/reactivated roster changes; deadline/manual races; outbox failure rollback;
+real session revocation/expiry/suspension; multi-client stream and reconnect; browser live progress,
+offline recovery and polling; fresh and migration-18 upgrade probes; `pnpm verify`, integration and
+UI smoke checks. An exact-SHA hosted preview and owner visual acknowledgement are required before
+issue completion. Selection scoring and notification inbox/email delivery remain out of scope.
+
+### Automatic transition verification — 2026-10-13
+
+Migration 19 and the Session-specific progress outbox implement #44 within its authorized scope.
+The shared Nomination transition is used by submission, roster, manual and deadline paths. Stream
+headers disable compression/proxy buffering, and the client permits one online refresh transition
+at a time. These address observed browser buffering and overlapping-refresh failures during offline
+recovery. API shutdown finishes active streams; disconnect releases polling subscriptions.
+
+- Node 24.15.0 / pnpm 11.25.0; frozen installation with the launcher’s in-worktree store.
+- All nineteen migrations apply to fresh isolated PostgreSQL 17.6. Applying migration 19 after
+  migrations 1–18 preserves every field of an existing Nomination Session, defaults progress to 1
+  and creates no historical events.
+- All 167 integration checks across seventeen files pass. Seventeen focused progress/auth checks
+  cover concurrent final submissions and departure, repeated Movies, sole/zero outcomes, removal,
+  returning nominees, archived/reactivated completion, deadline races, actual outbox rollback,
+  two clients, old event cursors, access loss, authentication revocation/expiry/suspension and
+  API shutdown with an open stream. Existing deadline/roster/visibility checks pass.
+- The final browser selection passes all forty checks: every one of the thirty-three PR smoke
+  checks plus all nine Nomination checks. Duplicate and older signals do not regress the page;
+  reconnect after an offline phase change and stream-blocked polling recover current state.
+  Keyboard focus, axe and page overflow pass at 390, 768, 1024 and 1440px. Mobile and desktop
+  captures were inspected; visual baselines are unchanged.
+- `pnpm test:worker` passes for overdue repair, durable empty outcome, process restart and SIGTERM.
+  `pnpm deploy:check` renders all Compose definitions. Backend and root type checks and the final
+  backend build pass.
+- `pnpm verify` passes with the repository’s existing guarded audit exception, four existing lint
+  warnings, knip, formatting, workspace/root types, all 392 unit tests and both production builds.
+  The final static gate also passes after client/shutdown refinements.
+
+The first broad smoke attempt was disrupted by a simultaneous production build replacing its
+server files. The clean sequential browser rerun above passes; no repository workaround is kept.
+Local gitleaks is unavailable; the unmodified hook reports a skipped local scan, while CI secret
+scan remains required. No dependencies, runtime variables, topology, credentials, billing,
+permission changes, merge or production deployment are included.
+
+Hosted exact-head preview, hosted multi-user verification and owner visual acknowledgement remain
+unverified. Browser checks use the mock API; real multi-user API streams and transactions are
+covered by integration tests. Keep #44 and Phase 10 open until the remaining acceptance evidence
+is recorded. The managed worktree remains for review; this run created no manual worktree.
+
+### Automatic transition CI repair attempt 1 — 2026-10-13
+
+The bounded repair starts from PR #171 head `8b35e668fedab1484fd851df3a8cac3b54ac1501`.
+PR, managed branch, worktree HEAD and remote branch matched that SHA before editing.
+GitHub CLI logs for CI run `38384062891` show one flaky operator-roster smoke check;
+the Delivery gate failed because UI smoke failed. The downloaded trace shows Escape sent
+before the removal dialog appeared. The unchanged test passed ten local runs without retries,
+so the CI timing failure was not reproduced locally.
+
+The roster test now waits for the named dialog's close button to receive focus before Escape
+and confirms dismissal before checking opener focus. Existing successful-removal heading focus
+remains covered. The repair changes no product code, dependency, CI policy or visual baseline.
+
+Verification with Node 24.15.0, pnpm 11.25.0 and the launcher's in-worktree store:
+
+- Corrected operator-roster check: ten repeated runs pass with retries disabled.
+- `pnpm test:ui:smoke`: all 33 checks pass without retries.
+- Focused ESLint and Prettier checks pass.
+- `pnpm verify` passes: existing guarded audit exception, four existing lint warnings,
+  knip, formatting, workspace/root types, all 392 unit tests and both production builds.
+
+Only this test and the active phase evidence change; canonical product and architecture contracts
+are unaffected. New-head CI, hosted preview and owner acknowledgement remain unverified.
+Keep #44 in Human Review and retain the managed worktree for review.
+
 ### Deadline run preparation
 
 Run `r_f9f677f7afc97df8107e` for [#43](https://github.com/Shagon1k/PickFlick/issues/43) uses the
@@ -122,7 +215,7 @@ the same submission action as search; no saved-film entity is introduced.
 Titles and years use the Movies boundary’s cache-only summaries from validated catalog caches.
 Details and source metadata take precedence over search metadata; search-only nominations keep
 their known title and year without a detail request. Absent metadata has an explicit placeholder
-and a canonical Movie link. Progress refresh is manual until #44. Operators confirm early closure:
+and a canonical Movie link. Progress refresh was manual before #44; the automatic-transition run adds version signals. Operators confirm early closure:
 zero nominations cannot close, one selects that Movie for Watching, and two or more open Selection.
 Closure increments phase/details versions and writes an audit event in the same transaction.
 Session detail owns phase, the details `version`, the explicit `phaseVersion` and nested nomination
@@ -196,3 +289,25 @@ The bounded owner-approved round starts from PR #169 head
   metadata, original-title fallback and details precedence.
 - `pnpm test:ui:smoke` passes all 32 checks.
 - `pnpm verify` passes with all 390 unit tests and both builds; lint retains four existing warnings.
+
+## Automatic progress review fix round 1 — #44
+
+The bounded owner-approved round starts from PR #171 head
+`db8d70f069fca10fb524636bcc77b15378f700ad` and addresses only the two submitted recovery threads.
+
+Session detail and roster now expose their own snapshot's progress version. The page compares live
+signals to the older rendered version so a departure between the two reads refreshes the stale
+roster without requiring another mutation. The recovery component stays mounted after a transient
+detail or roster load failure; an unchanged signal retries when no projection is rendered.
+
+- All 168 integration tests pass against migrated, seeded isolated PostgreSQL 17.6, including a
+  departure between read snapshots and a repeatable-read roster retaining its original version.
+- `pnpm verify` passes: guarded security audit, lint with four existing warnings, knip, formatting,
+  types, all 392 unit tests and both builds.
+- `pnpm test:ui:smoke` passes all 36 checks. The focused Nomination suite passes all 12 checks,
+  including transient detail/roster refresh failures, recovery at an unchanged detail version,
+  polling fallback, reconnects, keyboard flow, axe and overflow at all four canonical widths.
+
+Hosted exact-head preview, owner visual acknowledgement and CI remain with the managed workflow.
+The issue remains in Human Review. No migration, dependency, runtime variable, permission or
+infrastructure change is included.

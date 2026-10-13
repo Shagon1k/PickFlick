@@ -5,11 +5,11 @@ import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const path = '/sessions/30000000-0000-4000-8000-000000000042';
-async function authenticate(context: BrowserContext, scenario = '') {
+async function authenticate(context: BrowserContext, scenario = '', token?: string) {
     await context.addCookies([
         {
             name: 'pickflick.session_token',
-            value: `valid-nomination-${scenario}-${crypto.randomUUID()}`,
+            value: token ?? `valid-nomination-${scenario}-${crypto.randomUUID()}`,
             domain: '127.0.0.1',
             path: '/',
             httpOnly: true,
@@ -105,3 +105,113 @@ for (const viewport of canonicalViewports) {
         await page.screenshot({ path: test.info().outputPath('nomination.png'), fullPage: true });
     });
 }
+
+test(
+    'Two clients ignore stale versions, refresh live progress and recover after an offline phase change',
+    { tag: '@smoke' },
+    async ({ browser }) => {
+        const actor = await browser.newContext();
+        const viewer = await browser.newContext();
+        const token = `valid-nomination-operator-live-${crypto.randomUUID()}`;
+        await authenticate(actor, '', token);
+        await authenticate(viewer, '', token);
+        const actorPage = await actor.newPage();
+        const viewerPage = await viewer.newPage();
+        try {
+            await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
+            await expect(viewerPage.getByText('1 of 3 participants have nominated.')).toBeVisible();
+            await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
+            await actorPage.getByRole('button', { name: 'Nominate This' }).click();
+            await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible();
+            await viewer.setOffline(true);
+            await actorPage.getByRole('button', { name: 'Close nominations early' }).click();
+            await actorPage.getByLabel('Type CLOSE to confirm').fill('CLOSE');
+            await actorPage.getByRole('button', { name: 'Confirm close' }).click();
+            await expect(actorPage.getByText('selection', { exact: true })).toBeVisible();
+            await viewer.setOffline(false);
+            await expect(viewerPage.getByText('selection', { exact: true })).toBeVisible();
+        } finally {
+            await actor.close();
+            await viewer.close();
+        }
+    },
+);
+
+test('Progress polling recovers when the live stream is unavailable', async ({ browser }) => {
+    const actor = await browser.newContext();
+    const viewer = await browser.newContext();
+    const token = `valid-nomination-live-${crypto.randomUUID()}`;
+    await authenticate(actor, '', token);
+    await authenticate(viewer, '', token);
+    const actorPage = await actor.newPage();
+    const viewerPage = await viewer.newPage();
+    await viewerPage.route('**/progress/events', (route) => route.abort());
+    try {
+        await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
+        await expect(
+            viewerPage.getByText('Live updates unavailable. Progress refreshes periodically.'),
+        ).toBeVisible();
+        await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
+        await actorPage.getByRole('button', { name: 'Nominate This' }).click();
+        await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible({
+            timeout: 20000,
+        });
+    } finally {
+        await actor.close();
+        await viewer.close();
+    }
+});
+
+for (const projection of ['detail', 'roster']) {
+    test(
+        `Live progress recovers after a failed authoritative ${projection} refresh`,
+        { tag: '@smoke' },
+        async ({ browser }) => {
+            const actor = await browser.newContext();
+            const viewer = await browser.newContext();
+            const token = `valid-nomination-refresh-${projection}-${crypto.randomUUID()}`;
+            await authenticate(actor, '', token);
+            await authenticate(viewer, '', token);
+            const actorPage = await actor.newPage();
+            const viewerPage = await viewer.newPage();
+            try {
+                await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
+                await expect(
+                    viewerPage.getByText('1 of 3 participants have nominated.'),
+                ).toBeVisible();
+                await actorPage
+                    .getByRole('button', { name: 'Past losing nomination (2020)' })
+                    .click();
+                await actorPage.getByRole('button', { name: 'Nominate This' }).click();
+                await expect(
+                    viewerPage.getByRole('heading', { name: 'Session unavailable' }),
+                ).toBeVisible();
+                await expect(
+                    viewerPage.getByText('2 of 3 participants have nominated.'),
+                ).toBeVisible();
+                await expect(
+                    viewerPage.getByRole('heading', { name: 'Session unavailable' }),
+                ).toHaveCount(0);
+            } finally {
+                await actor.close();
+                await viewer.close();
+            }
+        },
+    );
+}
+
+test(
+    'A departure between roster and detail reads recovers at the unchanged detail version',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await authenticate(context, 'split-roster');
+        await page.route('**/progress/events', async (route) => {
+            await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
+            await route.continue();
+        });
+        await page.goto(path);
+        await expect(page.getByText('1 of 2 participants have nominated.')).toBeVisible();
+        await expect(page.getByText('2 accepted', { exact: true })).toBeVisible();
+        await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);
+    },
+);

@@ -1391,3 +1391,12 @@ in `NominationDeadlineNotification` in the same transaction. The worker reuses t
 environment schema, polls every five seconds and publishes a private heartbeat for Compose health.
 The active phase document records verification evidence. Completion on submission, live progress
 and notification transport remain separate work. Production activation is not authorized.
+
+### ADR-018 implementation extension — automatic completion and progress (#44)
+
+Issue #44 reuses the accepted PostgreSQL transaction and Club → Session locking boundary for
+automatic completion and a Session-specific progress outbox. The API streams version-only signals
+from committed Session state; clients re-fetch their authorized projection after newer versions,
+gaps or reconnects. Polling covers unavailable streams. Recipient snapshots retain notification
+intent; inbox/email delivery remains later work. No broker, queue library, dispatcher or process
+is added. This extends the implementation without changing the accepted deadline-job decision.

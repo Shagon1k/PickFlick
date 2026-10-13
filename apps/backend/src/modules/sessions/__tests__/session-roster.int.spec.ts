@@ -13,6 +13,7 @@ import {
     removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { readRoster } from '../session-roster-projection.js';
 
 const unavailable = { state: 'unavailable' };
 describe('Session roster', () => {
@@ -277,6 +278,31 @@ describe('Session roster', () => {
                 where: { sessionId, action: 'SESSION_PARTICIPANT_REMOVED' },
             }),
         ).toBe(1);
+    });
+    it('should return the progress version from the roster snapshot across a departure', async () => {
+        const invitation = await createInvite();
+        await respond(invitation.token);
+        await api.prisma.$transaction(
+            async (tx) => {
+                const before = await readRoster(tx, admin, sessionId);
+                expect(before.acceptedCount).toBe(1);
+                expect((await leave()).status).toBe(204);
+                const detail = await api.prisma.session.findUniqueOrThrow({
+                    where: { id: sessionId },
+                });
+                const sameSnapshot = await readRoster(tx, admin, sessionId);
+                expect(sameSnapshot).toMatchObject({
+                    acceptedCount: 1,
+                    progressVersion: before.progressVersion,
+                });
+                expect(detail.progressVersion).toBeGreaterThan(before.progressVersion);
+                expect(await roster()).toMatchObject({
+                    acceptedCount: 0,
+                    progressVersion: detail.progressVersion,
+                });
+            },
+            { isolationLevel: 'RepeatableRead' },
+        );
     });
     it('should serialize acceptance with removal and revocation', async () => {
         const invitation = await createInvite();

@@ -171,7 +171,13 @@ describe('NominationDeadlines', () => {
     });
     it('should count repeated Movies as multiple nominations and open Selection', async () => {
         await submit();
-        await submit(admin);
+        // Seed a complete pre-existing roster to exercise the deadline path itself.
+        const participant = await api.prisma.sessionParticipant.findFirstOrThrow({
+            where: { sessionId, membership: { userId: admin } },
+        });
+        await api.prisma.nomination.create({
+            data: { sessionId, participantId: participant.id, movieId },
+        });
         await worker.runOnce(due);
         expect(await session()).toMatchObject({
             phase: 'SELECTION',

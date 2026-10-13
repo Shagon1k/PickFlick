@@ -182,6 +182,12 @@ describe('Nominations', () => {
             ownMovie: null,
         });
         expect(JSON.stringify(hidden)).not.toContain(movies[0]);
+        const extra = await api.prisma.membership.create({
+            data: { id: randomUUID(), clubId, userId: outsider },
+        });
+        await api.prisma.sessionParticipant.create({
+            data: { clubId, sessionId, membershipId: extra.id, status: 'ACCEPTED' },
+        });
         await submit(admin, movies[1]);
         const visible = nominationData(await (await read(admin)).json());
         expect(visible.nominations).toHaveLength(2);
@@ -314,10 +320,10 @@ describe('Nominations', () => {
         ).toBe(1);
         expect((await submit(admin)).status).toBe(409);
     });
-    it('should open Selection with multiple nominations and keep the winner unresolved', async () => {
+    it('should automatically open Selection with multiple nominations and keep the winner unresolved', async () => {
         await submit();
         await submit(admin, movies[1]);
-        expect((await close()).status).toBe(201);
+        expect((await close()).status).toBe(409);
         expect(await api.prisma.session.findUnique({ where: { id: sessionId } })).toMatchObject({
             phase: 'SELECTION',
             movieId: null,

@@ -31,6 +31,7 @@ export interface IPendingSessionInvitation {
 }
 export interface ISessionRoster {
     version: number;
+    progressVersion: number;
     acceptedCount: number;
     canInvite: boolean;
     canManage: boolean;

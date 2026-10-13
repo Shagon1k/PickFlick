@@ -9,6 +9,7 @@ import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 
 import SessionDetails from './_components/SessionDetails/SessionDetails';
+import SessionProgress from './_components/SessionProgress/SessionProgress';
 import styles from './page.module.scss';
 
 export const metadata = { title: 'Session — PickFlick' };
@@ -25,6 +26,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
         if (error instanceof ApiError && [400, 404].includes(error.status)) notFound();
         return (
             <ProductFrame>
+                <SessionProgress sessionId={sessionId} version={null} />
                 <main className={styles.main}>
                     <h1>Session unavailable</h1>
                     <p role="alert">We could not load this Session. Try again shortly.</p>
@@ -35,6 +37,10 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     }
     return (
         <ProductFrame>
+            <SessionProgress
+                sessionId={session.id}
+                version={Math.min(session.progressVersion, roster.progressVersion)}
+            />
             <SessionDetails session={session} roster={roster} />
         </ProductFrame>
     );

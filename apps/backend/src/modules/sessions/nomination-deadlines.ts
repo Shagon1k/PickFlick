@@ -2,6 +2,7 @@ import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../clubs/club-access.js';
 import { scheduleDeadline } from './nomination-deadline-intent.js';
+import { advanceNomination, publishProgress } from './session-progress.js';
 
 interface IDeadlineEvent {
     event: string;
@@ -159,17 +160,8 @@ export class NominationDeadlines {
                 },
             });
             if (outcome !== 'EMPTY') {
-                await tx.session.update({
-                    where: { id: sessionId },
-                    data: {
-                        phase: outcome,
-                        movieId: outcome === 'WATCHING' ? nominations[0]!.movieId : null,
-                        deadlineAt: null,
-                        deadlineVersion: { increment: 1 },
-                        phaseVersion: { increment: 1 },
-                        detailsVersion: { increment: 1 },
-                    },
-                });
+                await advanceNomination(tx, session, nominations);
+                await publishProgress(tx, sessionId, 'DEADLINE');
             }
             await tx.nominationDeadlineJob.update({ where: key, data: { finishedAt: now } });
             return outcome;

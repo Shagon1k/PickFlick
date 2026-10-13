@@ -387,8 +387,13 @@ have explicit feedback. Neutral PF poster placeholders match the existing catalo
 Operators keep the existing edit, cancel, invite and roster controls and can confirm early closure
 in a focus-trapped dialog. A phase change moves focus to the Session heading when the original
 trigger disappears. Zero films cannot close; one moves to Watching and multiple nominations
-open Selection. Progress has a manual refresh control until live events arrive in #44.
-Exact-head hosted preview and owner visual acknowledgement remain required for #42.
+open Selection. Automatic N/N completion follows the same outcomes. Other clients receive live
+version signals and re-read the authoritative page; reconnects recover the current phase and
+progress. Stream failures show “Live updates unavailable. Progress refreshes periodically.” and
+use periodic refresh, with online/focus recovery. Recovery continues through a transient
+“Session unavailable” page and refreshes when either the rendered detail or roster is stale.
+Manual refresh remains available.
+Exact-head hosted preview and owner visual acknowledgement remain required for #42 and #44.
 
 Successful Nomination submission focuses the stable “Find & Nominate a Movie” heading after the
 submit control is replaced by the locked confirmation.
