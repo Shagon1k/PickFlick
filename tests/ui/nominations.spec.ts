@@ -137,7 +137,7 @@ test(
     },
 );
 
-test('Progress polling recovers when the live stream is unavailable', async ({ browser }) => {
+test('Progress polling updates another open tab', async ({ browser }) => {
     const actor = await browser.newContext();
     const viewer = await browser.newContext();
     const token = `valid-nomination-live-${crypto.randomUUID()}`;
@@ -145,12 +145,8 @@ test('Progress polling recovers when the live stream is unavailable', async ({ b
     await authenticate(viewer, '', token);
     const actorPage = await actor.newPage();
     const viewerPage = await viewer.newPage();
-    await viewerPage.route('**/progress/events', (route) => route.abort());
     try {
         await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
-        await expect(
-            viewerPage.getByText('Live updates unavailable. Progress refreshes periodically.'),
-        ).toBeVisible();
         await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
         await actorPage.getByRole('button', { name: 'Nominate This' }).click();
         await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible({

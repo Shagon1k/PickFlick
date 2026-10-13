@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 
-import { watchSessionProgress } from '@/api/session-progress';
-
 import { sessionProgressAction } from '../../progress-actions';
 
 export default function SessionProgress({
@@ -19,36 +17,28 @@ export default function SessionProgress({
     const [refreshing, startTransition] = useTransition();
     const onVersion = useEffectEvent((current: number) => {
         // A failed page load has no rendered version and must retry even an unchanged signal.
-        if ((version === null || current > version) && !refreshing && navigator.onLine) {
+        if ((version === null || current > version) && !refreshing) {
             startTransition(() => router.refresh());
         }
     });
     useEffect(() => {
-        let connected = false;
         let stopped = false;
         let polling = false;
         function denied() {
             stopped = true;
-            close();
             router.refresh();
         }
-        const close = watchSessionProgress(sessionId, {
-            progress: onVersion,
-            connected: (value) => {
-                connected = value;
-                setUnavailable(!value);
-            },
-            denied,
-        });
         async function poll() {
-            if (stopped || polling || !navigator.onLine) return;
+            if (stopped || polling) return;
             polling = true;
             try {
                 const result = await sessionProgressAction(sessionId);
                 if (stopped) return;
                 if (result.state === 'denied') denied();
-                else if (result.state === 'ready') onVersion(result.version);
-                else setUnavailable(true);
+                else if (result.state === 'ready') {
+                    setUnavailable(false);
+                    onVersion(result.version);
+                } else setUnavailable(true);
             } catch {
                 if (!stopped) setUnavailable(true);
             } finally {
@@ -58,20 +48,18 @@ export default function SessionProgress({
         const refresh = () => {
             void poll();
         };
-        const interval = window.setInterval(() => {
-            if (!connected) refresh();
-        }, 15000);
+        refresh();
+        const interval = window.setInterval(refresh, 5000);
         window.addEventListener('online', refresh);
         window.addEventListener('focus', refresh);
         return () => {
             stopped = true;
-            close();
             window.clearInterval(interval);
             window.removeEventListener('online', refresh);
             window.removeEventListener('focus', refresh);
         };
     }, [sessionId, router]);
     return unavailable ? (
-        <p role="status">Live updates unavailable. Progress refreshes periodically.</p>
+        <p role="status">Progress updates unavailable. Reconnect or refresh to try again.</p>
     ) : null;
 }

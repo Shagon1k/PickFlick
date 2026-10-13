@@ -285,62 +285,22 @@ describe('Session progress', () => {
             'HANDLED',
         );
     });
-    it('should send current version snapshots to two clients and heal a stale reconnect without exposing nomination data', async () => {
-        const streams = await Promise.all(
-            users.slice(0, 2).map((userId) =>
-                api.request(`/sessions/${sessionId}/progress/events`, {
-                    userId,
-                    signal: AbortSignal.timeout(20000),
+    it('should return current versions to two polling clients without nomination data', async () => {
+        const poll = async () =>
+            Promise.all(
+                users.slice(0, 2).map(async (userId) => {
+                    const response = await api.request(`/sessions/${sessionId}/progress`, {
+                        userId,
+                    });
+                    expect(response.headers.get('cache-control')).toBe('private, no-store');
+                    return response.json();
                 }),
-            ),
-        );
-        const readers = streams.map(
-            (stream): ReadableStreamDefaultReader<Uint8Array> => stream.body!.getReader(),
-        );
-        try {
-            for (const reader of readers) {
-                const first = new TextDecoder().decode((await reader.read()).value);
-                expect(first).toContain('data: {"version":1}');
-            }
-            await submit();
-            for (const reader of readers) {
-                const update = new TextDecoder().decode((await reader.read()).value);
-                expect(update).toContain('data: {"version":2}');
-                expect(update).not.toContain(movieId);
-                expect(update).not.toContain('recipient');
-            }
-            const reconnected = await api.request(`/sessions/${sessionId}/progress/events`, {
-                userId: users[0],
-                headers: { 'last-event-id': '1' },
-                signal: AbortSignal.timeout(10000),
-            });
-            const reader: ReadableStreamDefaultReader<Uint8Array> = reconnected.body!.getReader();
-            expect(new TextDecoder().decode((await reader.read()).value)).toContain(
-                'data: {"version":2}',
             );
-            await reader.cancel();
-        } finally {
-            await Promise.all(readers.map((reader) => reader.cancel()));
-        }
+        expect(await poll()).toEqual([{ version: 1 }, { version: 1 }]);
+        await submit();
+        expect(await poll()).toEqual([{ version: 2 }, { version: 2 }]);
     });
-    it('should finish active streams when the API shuts down', async () => {
-        const streamingApi = await startTestApi();
-        const response = await streamingApi.request(`/sessions/${sessionId}/progress/events`, {
-            userId: users[0],
-            signal: AbortSignal.timeout(15000),
-        });
-        const reader: ReadableStreamDefaultReader<Uint8Array> = response.body!.getReader();
-        try {
-            await reader.read();
-            const shutdown = streamingApi.close();
-            expect((await reader.read()).done).toBe(true);
-            await shutdown;
-        } finally {
-            await reader.cancel();
-            await streamingApi.close();
-        }
-    });
-    it('should deny private progress and terminate an open stream after membership access is lost', async () => {
+    it('should deny private progress on every poll after membership access is lost', async () => {
         expect((await api.request(`/sessions/${sessionId}/progress`)).status).toBe(401);
         const outsider = await createUser(api.prisma);
         users.push(outsider);
@@ -348,26 +308,14 @@ describe('Session progress', () => {
             (await api.request(`/sessions/${sessionId}/progress`, { userId: outsider })).status,
         ).toBe(404);
         expect(
-            (await api.request(`/sessions/${sessionId}/progress/events`, { userId: outsider }))
-                .status,
-        ).toBe(404);
-        const response = await api.request(`/sessions/${sessionId}/progress/events`, {
-            userId: users[1],
-            signal: AbortSignal.timeout(15000),
+            (await api.request(`/sessions/${sessionId}/progress`, { userId: users[1] })).status,
+        ).toBe(200);
+        await api.prisma.membership.update({
+            where: { id: memberships[1] },
+            data: { status: 'LEFT', leftAt: new Date() },
         });
-        const reader: ReadableStreamDefaultReader<Uint8Array> = response.body!.getReader();
-        try {
-            await reader.read();
-            await api.prisma.membership.update({
-                where: { id: memberships[1] },
-                data: { status: 'LEFT', leftAt: new Date() },
-            });
-            expect(new TextDecoder().decode((await reader.read()).value)).toContain(
-                'event: access-lost',
-            );
-            expect((await reader.read()).done).toBe(true);
-        } finally {
-            await reader.cancel();
-        }
+        expect(
+            (await api.request(`/sessions/${sessionId}/progress`, { userId: users[1] })).status,
+        ).toBe(404);
     });
 });

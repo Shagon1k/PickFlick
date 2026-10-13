@@ -42,7 +42,7 @@ flowchart LR
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.        | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                        | Partial — Club avatars and catalog images                                                                | —                 |
 | Background | Nomination-specific PostgreSQL jobs and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
-| Real-time  | SSE version signals from the API for Session progress.                                | Active                                                                                                   | —                 |
+| Real-time  | Five-second authenticated polling for Session progress.                               | Active                                                                                                   | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.        | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
 ## 2. Repository
@@ -237,7 +237,7 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                        |
 | Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                         |
 | Club avatar       | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                         |
-| Live progress     | Frontend → API                               | Authenticated SSE versions, re-fetch after gaps                                | Active                                                         |
+| Live progress     | Frontend → API                               | Authenticated version polling and projection refresh                           | Active                                                         |
 | Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active — disabled until configured; live provider not verified |
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                       |
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                       |
@@ -466,17 +466,13 @@ independent, preserving ADR-018's empty-deadline operator intent.
 
 Session detail and roster expose their snapshot's `progressVersion` separately from editing,
 phase and roster concurrency tokens.
-`GET /sessions/:sessionId/progress` returns only `{ version }` for fallback checks.
-`GET /sessions/:sessionId/progress/events` sends private, uncached same-origin SSE with current
-version and event ID on connection and every five seconds. Current snapshots heal gaps and old
-`Last-Event-ID` values; they do not replay private projections. Each heartbeat resolves the current
-API-owned authentication session and active Club Membership. Access loss terminates the stream;
-other failures log a fixed safe message and permit reconnect. Disconnect unsubscribes the timer; API shutdown finishes active streams.
+`GET /sessions/:sessionId/progress` returns only `{ version }` with private/no-store caching.
+Each request resolves the API-owned authentication session and active Club Membership.
 
-The frontend compares signals to the older of the rendered Session detail and roster progress versions and
-refreshes authoritative server components after newer versions. Recovery stays mounted when either
-page read fails transiently; without a rendered version, an unchanged signal also retries the page.
-An unavailable stream shows feedback and polls the snapshot every
-fifteen seconds; focus and online recovery also check it. Manual refresh remains available. The
-client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
-are required. Apply migration 19 before releasing the API and worker images.
+The frontend polls every five seconds and on focus or online recovery. It compares the result
+to the older rendered detail/roster version and refreshes authoritative server components on
+newer versions. Without a rendered version, an unchanged result also retries a failed page read.
+Only one poll runs at a time; unmount discards pending results and clears the timer/listeners.
+Access loss refreshes the authorization boundary and stops polling. Failures show visible feedback;
+the next successful poll clears it. Film rows and author visibility stay in server projections.
+Issue #172 removes the SSE transport and fallback mode without changing the transactional outbox.

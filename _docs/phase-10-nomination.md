@@ -26,11 +26,10 @@ Zero accepted nominations stay open; one selects the sole Movie; multiple nomina
 including repeated Movies. Keep automatic decisions and progress/notification intent in the same
 transaction through a Session-specific PostgreSQL outbox. Add no dependency or process.
 
-Version-only SSE signals revalidate Session detail. Send the current version on connection and each
-five-second heartbeat, with authentication and membership rechecked each time. Clients compare the
-signal to the rendered version; stale signals do nothing, gaps and reconnects cause a fresh read.
-A fifteen-second snapshot fallback and focus/online refresh cover stream failure. Film rows and
-nominator identities remain only in the existing filtered detail response.
+Issue #172 replaces the version-only SSE transport and fallback mode with five-second polling
+of the private progress endpoint. Focus/online recovery and failed-page refresh use the same path.
+Authentication and Membership are checked on every poll; film rows and identities remain in the
+filtered Session detail response. Historical #44 verification below describes the previous transport.
 
 Verification plan: concurrent final submissions; zero/sole/multiple and repeated Movies; departure,
 removal and archived/reactivated roster changes; deadline/manual races; outbox failure rollback;
