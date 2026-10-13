@@ -2,7 +2,7 @@ import { type BrowserContext, expect } from '@playwright/test';
 
 export interface IBackendFixture {
     clubId: string;
-    sessionId: string;
+    sessionId: string | null;
     admin: string;
     member: string;
     outsider: string;
