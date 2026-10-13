@@ -1,4 +1,9 @@
-import type { IClubHub, IClubHubSession, IClubSummary } from '@pickflick/contracts';
+import {
+    type IClubHub,
+    type IClubHubSession,
+    type IClubSummary,
+    isBlockingSessionPhase,
+} from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { selectClubAction } from '@/app/(product)/app/actions';
@@ -59,8 +64,7 @@ function callSheetPhase(session?: IClubHubSession): string {
 export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
     const { club, activeSession } = hub;
     const canCreate =
-        hub.permissions.manageSessions &&
-        !['NOMINATION', 'SELECTION', 'WATCHING'].includes(activeSession?.phase ?? '');
+        hub.permissions.manageSessions && !isBlockingSessionPhase(activeSession?.phase);
     const choices = clubChoices(clubs, club);
     const currentIndex = choices.findIndex(({ id }) => id === club.id);
     const previous =

@@ -1,9 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
-import type { ISessionRoster } from '@pickflick/contracts';
+import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { inviteState } from '../../common/invite-token.js';
 import { findMembership } from '../clubs/club-access.js';
-import { canManage, invitationState, openPhases } from './session-roster-access.js';
+import { canManage } from './session-roster-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -13,7 +14,7 @@ export async function readRoster(
     const session = await tx.session.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException();
     const member = await findMembership(tx, userId, session.clubId);
-    const open = openPhases.some((phase) => phase === session.phase);
+    const open = isOpenSessionPhase(session.phase);
     const manager = member.role !== 'MEMBER' && member.club.lifecycle === 'ACTIVE' && open;
     const canInvite = open && (await canManage(tx, member));
     const participants = await tx.sessionParticipant.findMany({
@@ -48,7 +49,7 @@ export async function readRoster(
                         ? {
                               id: p.invitations[0].id,
                               expiresAt: p.invitations[0].expiresAt.toISOString(),
-                              state: invitationState(p.invitations[0]),
+                              state: inviteState(p.invitations[0]),
                           }
                         : null,
             })),

@@ -4,11 +4,12 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import type {
-    TCancelSession,
-    TCreateSession,
-    TSession,
-    TUpdateSession,
+import {
+    BLOCKING_SESSION_PHASES,
+    type TCancelSession,
+    type TCreateSession,
+    type TSession,
+    type TUpdateSession,
 } from '@pickflick/contracts';
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
@@ -81,7 +82,7 @@ export class SessionsService {
                     throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
                 validateDeadline(input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
-                    where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] } },
+                    where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
                     select: { id: true },
                 });
                 if (blocking) throw new ConflictException({ reason: 'BLOCKING_SESSION' });
@@ -102,14 +103,13 @@ export class SessionsService {
                     },
                 });
                 await scheduleDeadline(transaction, created);
-                await audit(
-                    transaction,
-                    membership.id,
+                await audit(transaction, {
+                    clubId: clubId,
+                    sessionId: input.id,
+                    membershipId: membership.id,
                     userId,
-                    clubId,
-                    input.id,
-                    'SESSION_CREATED',
-                );
+                    action: 'SESSION_CREATED',
+                });
             });
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -153,7 +153,13 @@ export class SessionsService {
                 await invalidateDeadline(transaction, id);
                 await scheduleDeadline(transaction, updated);
             }
-            await audit(transaction, membership.id, userId, session.clubId, id, 'SESSION_UPDATED');
+            await audit(transaction, {
+                clubId: session.clubId,
+                sessionId: id,
+                membershipId: membership.id,
+                userId,
+                action: 'SESSION_UPDATED',
+            });
             await publishProgress(transaction, id, 'DETAILS');
         });
         return this.get(userId, id);
@@ -182,14 +188,13 @@ export class SessionsService {
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },
             });
-            await audit(
-                transaction,
-                membership.id,
+            await audit(transaction, {
+                clubId: session.clubId,
+                sessionId: id,
+                membershipId: membership.id,
                 userId,
-                session.clubId,
-                id,
-                'SESSION_CANCELLED',
-            );
+                action: 'SESSION_CANCELLED',
+            });
             await publishProgress(transaction, id, 'CANCELLED');
         });
         return this.get(userId, id);
@@ -235,21 +240,24 @@ function project(
     };
 }
 
+/** Session lifecycle events record the acting member as their own subject. */
 async function audit(
     transaction: Prisma.TransactionClient,
-    membershipId: string,
-    userId: string,
-    clubId: string,
-    sessionId: string,
-    action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED',
+    event: {
+        clubId: string;
+        sessionId: string;
+        membershipId: string;
+        userId: string;
+        action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED';
+    },
 ) {
     await recordAudit(transaction, {
-        clubId,
-        sessionId,
-        actorUserId: userId,
-        subjectUserId: userId,
-        subjectMembershipId: membershipId,
-        action,
+        clubId: event.clubId,
+        sessionId: event.sessionId,
+        actorUserId: event.userId,
+        subjectUserId: event.userId,
+        subjectMembershipId: event.membershipId,
+        action: event.action,
     });
 }
 

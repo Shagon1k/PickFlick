@@ -1,3 +1,4 @@
+import { isBlockingSessionPhase } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -39,9 +40,7 @@ export default async function CreateSessionPage({
             </main>
         );
     }
-    const blocked =
-        hub.activeSession &&
-        ['NOMINATION', 'SELECTION', 'WATCHING'].includes(hub.activeSession.phase);
+    const blocked = isBlockingSessionPhase(hub.activeSession?.phase);
     let restriction: 'blocking' | 'permission' | undefined;
     if (!hub.permissions.manageSessions) restriction = 'permission';
     else if (blocked) restriction = 'blocking';

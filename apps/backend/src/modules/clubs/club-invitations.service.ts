@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import {
     ConflictException,
@@ -17,6 +17,7 @@ import type {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { digestInviteToken, inviteState, newInviteToken } from '../../common/invite-token.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
     assertActive,
@@ -27,8 +28,6 @@ import {
 } from './club-access.js';
 import { inspectInvitation } from './club-invitation-access.js';
 import { clubEntitlements } from './club-tiers.js';
-
-const digest = (token: string) => createHash('sha256').update(token).digest('hex');
 
 async function manager(transaction: Prisma.TransactionClient, userId: string, clubId: string) {
     const membership = await findMembership(transaction, userId, clubId);
@@ -65,11 +64,10 @@ export class ClubInvitationsService {
                 throw new ConflictException({ reason: 'INVITATION_TARGET_UNAVAILABLE' });
             }
             if (access.adminless) throw new ConflictException({ reason: 'CLUB_ADMIN_UNAVAILABLE' });
-            const token = randomBytes(32).toString('base64url');
-            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            const { token, tokenDigest, expiresAt } = newInviteToken();
             const invitation = await transaction.clubInvite.create({
                 data: {
-                    tokenDigest: digest(token),
+                    tokenDigest,
                     clubId,
                     inviterId: userId,
                     targetUserId: input.targetUserId,
@@ -105,13 +103,11 @@ export class ClubInvitationsService {
             },
             orderBy: { createdAt: 'desc' },
         });
-        return invitations.map((invite) => {
-            let state: IManagedInvitation['state'] = 'pending';
-            if (invite.revokedAt) state = 'revoked';
-            else if (invite.respondedAt) state = invite.accepted ? 'accepted' : 'declined';
-            else if (invite.expiresAt <= new Date()) state = 'expired';
-            return { id: invite.id, expiresAt: invite.expiresAt.toISOString(), state };
-        });
+        return invitations.map((invite) => ({
+            id: invite.id,
+            expiresAt: invite.expiresAt.toISOString(),
+            state: inviteState(invite),
+        }));
     }
 
     async revoke(userId: string, clubId: string, inviteId: string): Promise<void> {
@@ -141,7 +137,7 @@ export class ClubInvitationsService {
     async preview(userId: string, token: string): Promise<TInvitationPreview> {
         return this.prisma.$transaction(
             async (transaction) =>
-                (await inspectInvitation(transaction, userId, digest(token))).preview,
+                (await inspectInvitation(transaction, userId, digestInviteToken(token))).preview,
             { isolationLevel: 'RepeatableRead' },
         );
     }
@@ -196,7 +192,7 @@ export class ClubInvitationsService {
     }
 
     async respond(userId: string, input: TRespondInvitation): Promise<TInvitationPreview> {
-        return this.respondDigest(userId, digest(input.token), input.decision);
+        return this.respondDigest(userId, digestInviteToken(input.token), input.decision);
     }
 
     private async respondDigest(

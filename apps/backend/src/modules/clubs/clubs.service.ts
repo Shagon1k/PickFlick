@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
-import type {
-    IClubHub,
-    IClubHubSession,
-    IClubSettings,
-    IClubSummary,
-    TChangeMemberRoleRequest,
-    TCreateClubRequest,
-    TUpdateClubSettingsRequest,
+import {
+    BLOCKING_SESSION_PHASES,
+    type IClubHub,
+    type IClubHubSession,
+    type IClubSettings,
+    type IClubSummary,
+    type TChangeMemberRoleRequest,
+    type TCreateClubRequest,
+    type TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -49,7 +50,6 @@ export class ClubsService {
                     sessionCount,
                     completedSessionCount,
                     blockingSession,
-                    ratingSession,
                     recent,
                     ratings,
                     history,
@@ -62,13 +62,9 @@ export class ClubsService {
                     transaction.session.findFirst({
                         where: {
                             clubId,
-                            phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] },
+                            phase: { in: [...BLOCKING_SESSION_PHASES] },
                         },
                         orderBy: { createdAt: 'desc' },
-                    }),
-                    transaction.session.findFirst({
-                        where: { clubId, phase: 'RATING' },
-                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
                     }),
                     transaction.session.findMany({
                         where: { clubId, phase: { not: 'CANCELLED' } },
@@ -85,7 +81,7 @@ export class ClubsService {
                         take: 20,
                     }),
                 ]);
-                const activeSession = blockingSession ?? ratingSession;
+                const activeSession = blockingSession ?? ratings[0];
                 return {
                     club: toClubSummary(membership.club, membership.role),
                     memberCount,

@@ -52,7 +52,10 @@ export function assertActive(membership: TMembership): void {
     }
 }
 
-type TAuditEvent = Omit<Prisma.ClubAuditEventUncheckedCreateInput, 'id' | 'changed' | 'createdAt'>;
+export type TAuditEvent = Omit<
+    Prisma.ClubAuditEventUncheckedCreateInput,
+    'id' | 'changed' | 'createdAt'
+>;
 
 /** Appends one audit row for a change that actually happened. */
 export async function recordAudit(

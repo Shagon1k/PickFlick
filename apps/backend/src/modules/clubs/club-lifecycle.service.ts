@@ -1,4 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
@@ -159,7 +160,7 @@ export class ClubLifecycleService {
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });
             const sessions = await transaction.session.findMany({
-                where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING', 'RATING'] } },
+                where: { clubId, phase: { in: [...OPEN_SESSION_PHASES] } },
                 orderBy: { id: 'asc' },
                 select: { id: true },
             });

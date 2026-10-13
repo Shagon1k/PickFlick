@@ -1,10 +1,13 @@
-import { createHash } from 'node:crypto';
-
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import type { TSessionInvitationPreview } from '@pickflick/contracts';
+import { isOpenSessionPhase, type TSessionInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, loadClubAccess, recordAudit } from '../clubs/club-access.js';
+import {
+    type findMembership,
+    loadClubAccess,
+    recordAudit,
+    type TAuditEvent,
+} from '../clubs/club-access.js';
 import { clubPermissions } from '../clubs/club-permissions.js';
 import { completeNomination } from './session-progress.js';
 
@@ -16,8 +19,6 @@ export async function canManage(
     return clubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
 
-export const openPhases = ['NOMINATION', 'SELECTION', 'WATCHING', 'RATING'] as const;
-export const digest = (token: string) => createHash('sha256').update(token).digest('hex');
 export const inviteInclude = {
     participant: {
         include: { session: true, membership: { include: { user: true, club: true } } },
@@ -37,7 +38,7 @@ export function preview(invite: TInvite | null, userId: string): TSessionInvitat
         membership.club.deletedAt ||
         membership.club.lifecycle !== 'ACTIVE' ||
         inviter.status !== 'ACTIVE' ||
-        !openPhases.some((phase) => phase === session.phase) ||
+        !isOpenSessionPhase(session.phase) ||
         invite.revokedAt
     )
         return { state: 'unavailable' };
@@ -61,8 +62,7 @@ export function preview(invite: TInvite | null, userId: string): TSessionInvitat
 }
 
 export function assertOpen(phase: string) {
-    if (!openPhases.some((value) => value === phase))
-        throw new ConflictException({ reason: 'SESSION_CLOSED' });
+    if (!isOpenSessionPhase(phase)) throw new ConflictException({ reason: 'SESSION_CLOSED' });
 }
 export function assertManager(member: Awaited<ReturnType<typeof findMembership>>, phase: string) {
     if (member.role === 'MEMBER') throw new ForbiddenException();
@@ -70,38 +70,17 @@ export function assertManager(member: Awaited<ReturnType<typeof findMembership>>
     if (member.club.lifecycle !== 'ACTIVE')
         throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
 }
-export function invitationState(invite: {
-    respondedAt: Date | null;
-    accepted: boolean | null;
-    revokedAt: Date | null;
-    expiresAt: Date;
-}) {
-    if (invite.revokedAt) return 'revoked';
-    if (invite.respondedAt) return invite.accepted ? 'accepted' : 'declined';
-    return invite.expiresAt <= new Date() ? 'expired' : 'pending';
-}
 export async function revokePending(tx: Prisma.TransactionClient, participantId: string) {
     await tx.sessionInvite.updateMany({
         where: { participantId, respondedAt: null, revokedAt: null },
         data: { revokedAt: new Date() },
     });
 }
+/** Records a roster event, then re-checks whether Nomination is complete. */
 export async function rosterAudit(
     tx: Prisma.TransactionClient,
-    actorUserId: string,
-    subjectUserId: string,
-    subjectMembershipId: string,
-    clubId: string,
-    sessionId: string,
-    action: Prisma.ClubAuditEventUncheckedCreateInput['action'],
+    event: TAuditEvent & { sessionId: string },
 ) {
-    await recordAudit(tx, {
-        actorUserId,
-        subjectUserId,
-        subjectMembershipId,
-        clubId,
-        sessionId,
-        action,
-    });
-    await completeNomination(tx, sessionId);
+    await recordAudit(tx, event);
+    await completeNomination(tx, event.sessionId);
 }
