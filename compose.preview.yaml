@@ -138,6 +138,30 @@ services:
             timeout: 3s
             retries: 20
 
+    worker:
+        <<: *application-service
+        build:
+            <<: *build
+            target: worker
+        environment:
+            APP_ENV: uat
+            DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "if(Date.now()-Number(require('node:fs').readFileSync('/tmp/pickflick-deadline-worker','utf8'))>30000)process.exit(1)",
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 6
+            start_period: 15s
+        depends_on:
+            release:
+                condition: service_completed_successfully
+
     frontend:
         <<: *application-service
         build:

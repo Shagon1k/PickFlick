@@ -13,6 +13,9 @@
             ],
             "playwright": false,
         },
+        "apps/backend": {
+            "entry": ["src/main.ts", "src/deadline-worker.ts"],
+        },
         "packages/config": {
             // The shared Next.js tsconfig names the `next` plugin; the frontend that extends it installs next.
             "ignoreUnresolved": ["next"],

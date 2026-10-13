@@ -14,6 +14,7 @@ import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
+import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-intent.js';
 import { NominationsService } from './nominations.service.js';
 import { canManage } from './session-roster-access.js';
 
@@ -88,7 +89,7 @@ export class SessionsService {
                 ) {
                     throw new ConflictException({ reason: 'MOVIE_UNAVAILABLE' });
                 }
-                await transaction.session.create({
+                const created = await transaction.session.create({
                     data: {
                         ...input,
                         topic: input.topic ?? null,
@@ -98,6 +99,7 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
+                await scheduleDeadline(transaction, created);
                 await audit(
                     transaction,
                     membership.id,
@@ -131,15 +133,24 @@ export class SessionsService {
             if (matchesDetails(session, input)) return;
             if (session.detailsVersion !== input.version)
                 throw new ConflictException({ reason: 'SESSION_CHANGED' });
-            if (input.deadlineAt !== (session.deadlineAt?.toISOString() ?? null)) {
+            const deadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
+            if (deadlineChanged) {
                 if (session.phase !== 'NOMINATION' && input.deadlineAt !== null)
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
             }
-            await transaction.session.update({
+            const updated = await transaction.session.update({
                 where: { id },
-                data: { ...data, detailsVersion: { increment: 1 } },
+                data: {
+                    ...data,
+                    detailsVersion: { increment: 1 },
+                    deadlineVersion: deadlineChanged ? { increment: 1 } : undefined,
+                },
             });
+            if (deadlineChanged) {
+                await invalidateDeadline(transaction, id);
+                await scheduleDeadline(transaction, updated);
+            }
             await audit(transaction, membership.id, userId, session.clubId, id, 'SESSION_UPDATED');
         });
         return this.get(userId, id);
@@ -157,10 +168,13 @@ export class SessionsService {
                 where: { id },
                 data: {
                     phase: 'CANCELLED',
+                    deadlineAt: null,
+                    deadlineVersion: session.deadlineAt ? { increment: 1 } : undefined,
                     phaseVersion: { increment: 1 },
                     detailsVersion: { increment: 1 },
                 },
             });
+            await invalidateDeadline(transaction, id);
             await transaction.sessionInvite.updateMany({
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },

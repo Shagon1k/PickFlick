@@ -79,7 +79,7 @@ STORAGE_SECRET_KEY
 STORAGE_BUCKET
 ```
 
-8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, and `frontend` exist
+8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, `worker`, and `frontend` exist
    and none publishes a host port. Do not save the preview; it contains secrets.
 
 Rules for these values:
@@ -117,7 +117,20 @@ If the workflow is disabled in GitHub Actions, enable it, then push to `main` or
 
 ## Recover a failed release
 
-A failed `release` job keeps the new `backend` and `frontend` from starting, but Dokploy may already
+A failed `release` job keeps the new `backend`, `worker`, and `frontend` from starting, but Dokploy may already
 have replaced containers, so the previous runtime is not guaranteed to survive. Fix the cause (often
 the environment), then run an approved deployment. Never paste environment values, connection URLs,
 tokens, or raw provider responses into evidence.
+
+## Deadline worker operations
+
+Apply migration 18 before starting the candidate API and `worker`. Check the worker's Compose
+heartbeat health and `deadline.worker.started` / `deadline.reconciliation` events after release.
+An overdue Nomination with missing scheduling intent is repaired on startup; completed empty
+intent stays handled. Archived Clubs resume pending work after reactivation. Restarting the worker
+retries unfinished transactions; do not delete jobs or decision records to force a retry.
+
+`deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
+and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
+operator-alert or participant-notification intent; transport remains later work. Production activation
+still requires its existing authorization and promotion guards.

@@ -68,6 +68,10 @@ USER node
 EXPOSE 3001
 CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
 
+FROM backend AS worker
+LABEL org.opencontainers.image.title="PickFlick deadline worker"
+CMD ["node", "dist/deadline-worker.js"]
+
 FROM ${RUNTIME_IMAGE} AS release
 LABEL org.opencontainers.image.source="https://github.com/Shagon1k/PickFlick" \
       org.opencontainers.image.title="PickFlick release"

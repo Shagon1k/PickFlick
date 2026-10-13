@@ -180,19 +180,20 @@ model Club {
 }
 
 model Membership {
-  id                    String               @id @db.Uuid
-  clubId                String               @db.Uuid
-  userId                String               @db.Uuid
-  role                  ClubRole             @default(MEMBER)
-  status                MembershipStatus     @default(ACTIVE)
-  joinedAt              DateTime             @default(now()) @db.Timestamptz(3)
-  leftAt                DateTime?            @db.Timestamptz(3)
-  updatedAt             DateTime             @updatedAt @db.Timestamptz(3)
-  club                  Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  deadlineNotifications NominationDeadlineNotification[]
+  id                    String                           @id @db.Uuid
+  clubId                String                           @db.Uuid
+  userId                String                           @db.Uuid
+  role                  ClubRole                         @default(MEMBER)
+  status                MembershipStatus                 @default(ACTIVE)
+  joinedAt              DateTime                         @default(now()) @db.Timestamptz(3)
+  leftAt                DateTime?                        @db.Timestamptz(3)
+  updatedAt             DateTime                         @updatedAt @db.Timestamptz(3)
+  club                  Club                             @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user                  User                             @relation(fields: [userId], references: [id], onDelete: Restrict)
   auditEvents           ClubAuditEvent[]
   sessionParticipants   SessionParticipant[]
-  createdSessionInvites SessionInvite[]      @relation("SessionInviteCreator")
+  createdSessionInvites SessionInvite[]                  @relation("SessionInviteCreator")
 
   @@unique([id, clubId])
   // PostgreSQL migration owns the partial unique index for one ACTIVE row per User/Club.
@@ -227,21 +228,23 @@ model ClubAuditEvent {
 }
 
 model Session {
-  id                          String               @id @db.Uuid
-  clubId                      String               @db.Uuid
+  id                          String                  @id @db.Uuid
+  clubId                      String                  @db.Uuid
   type                        SessionType
   phase                       SessionPhase
-  scheduledAt                 DateTime?            @db.Timestamptz(3)
+  scheduledAt                 DateTime?               @db.Timestamptz(3)
   location                    String?
   topic                       String?
   notes                       String?
-  movieId                     String?              @db.Uuid
-  movie                       Movie?               @relation(fields: [movieId], references: [id], onDelete: Restrict)
-  detailsVersion              Int                  @default(1)
+  movieId                     String?                 @db.Uuid
+  movie                       Movie?                  @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  detailsVersion              Int                     @default(1)
   auditEvents                 ClubAuditEvent[]
-  deadlineAt                  DateTime?            @db.Timestamptz(3)
-  phaseVersion                Int                  @default(1)
-  rosterVersion               Int                  @default(1)
+  deadlineVersion             Int                     @default(1)
+  deadlineJobs                NominationDeadlineJob[]
+  deadlineAt                  DateTime?               @db.Timestamptz(3)
+  phaseVersion                Int                     @default(1)
+  rosterVersion               Int                     @default(1)
   selectionScaleMin           Int
   selectionScaleMax           Int
   showNominationAuthors       Boolean
@@ -249,9 +252,9 @@ model Session {
   showVoteResults             Boolean
   showRatingResults           Boolean
   useMonochromeMedia          Boolean
-  createdAt                   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt                   DateTime             @updatedAt @db.Timestamptz(3)
-  club                        Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  createdAt                   DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                @updatedAt @db.Timestamptz(3)
+  club                        Club                    @relation(fields: [clubId], references: [id], onDelete: Restrict)
   participants                SessionParticipant[]
   nominations                 Nomination[]
 
@@ -378,4 +381,48 @@ model Nomination {
 
   @@unique([participantId, sessionId])
   @@index([sessionId, submittedAt])
+}
+
+enum NominationDeadlineOutcome {
+  EMPTY
+  WATCHING
+  SELECTION
+}
+
+model NominationDeadlineJob {
+  sessionId       String                      @db.Uuid
+  deadlineVersion Int
+  phaseVersion    Int
+  deadlineAt      DateTime                    @db.Timestamptz(3)
+  finishedAt      DateTime?                   @db.Timestamptz(3)
+  session         Session                     @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  decision        NominationDeadlineDecision?
+
+  @@id([sessionId, deadlineVersion])
+  @@index([finishedAt, deadlineAt])
+}
+
+// Automatic decisions have no human actor; this is their immutable audit record.
+model NominationDeadlineDecision {
+  sessionId       String                           @db.Uuid
+  deadlineVersion Int
+  outcome         NominationDeadlineOutcome
+  nominationCount Int
+  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
+  job             NominationDeadlineJob            @relation(fields: [sessionId, deadlineVersion], references: [sessionId, deadlineVersion], onDelete: Restrict)
+  notifications   NominationDeadlineNotification[]
+
+  @@id([sessionId, deadlineVersion])
+}
+
+// Recipient intent only. Delivery is owned by the later notification phase.
+model NominationDeadlineNotification {
+  sessionId       String                     @db.Uuid
+  deadlineVersion Int
+  membershipId    String                     @db.Uuid
+  decision        NominationDeadlineDecision @relation(fields: [sessionId, deadlineVersion], references: [sessionId, deadlineVersion], onDelete: Restrict)
+  membership      Membership                 @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+
+  @@id([sessionId, deadlineVersion, membershipId])
+  @@index([membershipId])
 }

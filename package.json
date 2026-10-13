@@ -10,7 +10,7 @@
     },
     "scripts": {
         "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/frontend --filter @pickflick/backend dev",
-        "start": "pnpm --parallel --stream --filter @pickflick/frontend --filter @pickflick/backend start",
+        "start": "pnpm run --parallel \"/^start:(app|worker)$/\"",
         "build": "pnpm -r --if-present build",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "build:images": "node scripts/build-images.mjs",
@@ -40,7 +40,10 @@
         "deploy:check": "sh scripts/check-compose.sh",
         "prepare": "husky",
         "postinstall": "pnpm --filter @pickflick/config build && pnpm --filter @pickflick/database generate",
-        "security:audit": "node scripts/security-audit.mjs"
+        "security:audit": "node scripts/security-audit.mjs",
+        "start:app": "pnpm --parallel --stream --filter @pickflick/frontend --filter @pickflick/backend start",
+        "start:worker": "pnpm --filter @pickflick/backend start:worker",
+        "test:worker": "node scripts/deadline-worker-smoke.mjs"
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",

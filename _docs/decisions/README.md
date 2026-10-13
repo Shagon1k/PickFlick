@@ -38,6 +38,7 @@ separately.
 | [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
 | [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160 | 2026-10-09 |
+| [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13 | 2026-10-12 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -1300,3 +1301,93 @@ public exposure. Queue/worker selection remains separately Proposed in ADR-016.
 - [PoiskKino OpenAPI](https://api.poiskkino.dev/documentation-json)
 - [TheTVDB v4 OpenAPI](https://thetvdb.github.io/v4-api/)
 - [TMDB movie details](https://developer.themoviedb.org/reference/movie-details)
+
+## ADR-018 — Persist Nomination deadline jobs in PostgreSQL
+
+- **Status:** Accepted; implemented for #43
+- **Decider:** Developer (Alex), explicit approval in the Kurami recovery conversation on 2026-10-13
+- **Date:** 2026-10-12
+- **Owning issue:** [#43](https://github.com/Shagon1k/PickFlick/issues/43)
+- **Decision context:** first background job under ADR-014; independent of Proposed ADR-016
+
+### Context
+
+Nomination deadlines must survive restarts, duplicate execution, deadline edits, cancellation and
+missing scheduling intent. The current runtime has PostgreSQL and Prisma, with no worker or Redis.
+ADR-014 requires a queue decision with the first background job. BullMQ with a transactional outbox
+remains its default candidate, rather than an accepted implementation choice.
+
+Deadline execution only changes database state. Existing commands already serialize on Club →
+Session locks. Using that boundary lets a deadline decision and job completion commit together.
+
+### Decision
+
+Add a Nomination-specific PostgreSQL deadline-job table and a separate worker entrypoint built
+from the backend package. Reuse Prisma and existing locking conventions. Add no queue library,
+Redis service or generic job framework.
+
+- Add a Session `deadlineVersion`, incremented only when its deadline changes. A job's stable
+  identity is `(sessionId, deadlineVersion)`; it stores the expected phase version and deadline.
+  Create or replace scheduling intent in the same transaction as Session creation or deadline
+  editing. Keep completed intent so an empty deadline is handled only once for that version.
+- Select due candidates without holding a job lock, then lock Club → Session → job. Re-read
+  phase, lifecycle, deadline and versions under those locks. Concurrent workers must observe the
+  committed completion marker before deciding again. This keeps the existing lock order and
+  avoids a job → Club deadlock. Each transaction handles one Session without provider calls.
+- For accepted participants' nominations, zero leaves Nomination open, one chooses that Movie
+  and opens Watching, and two or more open Selection. Count nominations, including repeated
+  Movies, rather than distinct Movies. A transition increments phase and details versions and
+  clears the deadline, matching operator closure.
+- Commit job completion, the automatic decision's audit record and durable notification intent
+  together. An empty deadline records operator-alert intent once; successful transitions record
+  participant-notification intent. Notification transport and inbox delivery remain later work;
+  logs alone do not satisfy durable alert intent.
+- Clearing a deadline, cancelling a Session or closing Nomination invalidates its pending intent
+  in the same transaction. Workers still guard stale jobs. Unrelated details edits do not reset
+  an empty-deadline alert. Archived Clubs stay read-only; their due work remains pending until
+  reactivation, without marking the deadline handled.
+- On startup and periodically, reconcile overdue Nomination Sessions against matching durable
+  intent. Repair missing intent without resetting completed intent, then use the same execution
+  path. Emit structured reconciliation, outcome, stale-job and failure events with safe reason
+  codes and lateness; omit user text, credentials and invitation material.
+- Stop accepting new work on shutdown, finish or roll back the current database transaction,
+  and close Prisma. Process death rolls back incomplete work; the next worker retries pending
+  intent. No leases or external-delivery retries are needed for this database-only transaction.
+
+### Impact and verification
+
+Implementation adds an additive Prisma migration, Session write integration, deadline services and
+tests, and worker startup/shutdown wiring. Local, CI and UAT/preview topology, image commands,
+release ordering and operations documentation must include the worker. Production activation
+remains unauthorized. Existing nomination visibility, submission UI and manual closure stay intact.
+
+Verify clock-controlled zero/one/many outcomes and stale, duplicate, changed, cleared and cancelled
+jobs. Database tests must prove concurrent worker/operator serialization, atomic rollback of the
+decision and intent, restart recovery, missing-intent reconciliation and one alert per empty
+deadline version. Test archived-Club pause/reactivation, safe logs and shutdown. Apply the additive
+migration to fresh and pre-change isolated databases and preserve existing Session data. Run
+`pnpm verify`, `pnpm test:integration`, `pnpm deploy:check`, worker image/startup checks and relevant
+Session/Nomination smoke checks after implementation.
+
+### Alternatives
+
+- **BullMQ, Redis and transactional outbox:** ADR-014's default candidate; established queue
+  tooling, but adds dependencies, a data service and a database-to-queue delivery boundary for a
+  transaction that only needs PostgreSQL. Choose this instead if those operational benefits justify
+  the additional topology; dependencies and infrastructure need explicit approval.
+- **API timer only:** cannot execute while the API is stopped and couples job health to request
+  serving. Rejected for this proposal.
+- **Reuse the Movie refresh proposal:** ADR-016 is unaccepted and its provider calls need leases
+  and retry rules that this database-only job does not. Do not introduce a shared queue framework.
+
+The developer approved this architecture on 2026-10-13. This decision does not claim implemented
+deadline behavior or completed issue acceptance.
+
+### Implementation record — 2026-10-13
+
+Migration 18 and the backend deadline worker implement this decision. Automatic audit uses
+`NominationDeadlineDecision` because `ClubAuditEvent` requires a human actor; recipients are stored
+in `NominationDeadlineNotification` in the same transaction. The worker reuses the database-only
+environment schema, polls every five seconds and publishes a private heartbeat for Compose health.
+The active phase document records verification evidence. Completion on submission, live progress
+and notification transport remain separate work. Production activation is not authorized.

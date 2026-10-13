@@ -38,7 +38,7 @@ corepack enable
     pnpm db:seed
     ```
 
-5. Start the frontend and backend.
+5. Start the frontend, backend and deadline worker.
 
     ```bash
     pnpm dev
@@ -47,8 +47,9 @@ corepack enable
 6. Open `http://127.0.0.1:3000`. Use `127.0.0.1`, not `localhost`: `AUTH_BASE_URL` and the local
    Google callback expect it.
 
-`pnpm dev` builds the shared packages, then runs the frontend on port 3000 and the backend on port 3001. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
-or a shared package changes.
+`pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline worker without a port. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
+or a shared package changes. The worker watches that compiled output. Apply migrations before starting
+the worker; it reconciles overdue Nomination deadlines every five seconds.
 
 ## Local services
 
@@ -81,6 +82,7 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Full Playwright behavior checks             | `pnpm test:ui:contract` |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
 | Both Playwright selections                  | `pnpm test:ui`          |
+| Smoke the built deadline worker             | `pnpm test:worker`      |
 | Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
 `pnpm test:integration` needs the local services running. The UI selections build the frontend and
