@@ -8,7 +8,9 @@ import Link from 'next/link';
 
 import { selectClubAction } from '@/app/(product)/app/actions';
 import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
+import { clubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { monogram } from '@/lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -42,7 +44,7 @@ function ClubChoice({ club, current }: { club: IClubSummary; current: boolean })
                 type="submit"
             >
                 <span aria-hidden="true" className={styles.clubMonogram}>
-                    {club.name.slice(0, 2).toUpperCase()}
+                    {monogram(club.name)}
                 </span>
                 <span className={styles.clubName}>{club.name}</span>
                 <span className={styles.clubRole}>{club.membershipRole.toLowerCase()}</span>
@@ -166,11 +168,15 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
             <ClubStatus access={hub.access} />
 
             <nav aria-label="Club sections" className={styles.tabs}>
-                <Link aria-current="page" href={`/clubs/${club.id}`}>
-                    Overview
-                </Link>
-                <Link href={`/clubs/${club.id}/members`}>Members</Link>
-                <Link href={`/clubs/${club.id}/settings`}>Manage Club</Link>
+                {clubNavigation(club.id, 'overview').map((item) => (
+                    <Link
+                        aria-current={item.current ? 'page' : undefined}
+                        href={item.href}
+                        key={item.label}
+                    >
+                        {item.label}
+                    </Link>
+                ))}
             </nav>
 
             <div className={styles.overview}>

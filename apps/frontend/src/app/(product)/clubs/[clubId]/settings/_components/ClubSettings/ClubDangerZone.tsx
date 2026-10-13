@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import InfoTip from '@/components/ui/InfoTip/InfoTip';
 import Modal from '@/components/ui/Modal/Modal';
+import { formatUtcDate, monogram } from '@/lib/format';
 
 import { initialClubActionState } from '../../action-state';
 import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
@@ -74,17 +75,10 @@ function ManageModerators({ projection }: { projection: IClubSettings }) {
                     {projection.members.map((member) => (
                         <li className={styles.member} key={member.id}>
                             <div className={styles.memberIdentity}>
-                                <span aria-hidden="true">
-                                    {member.displayName.slice(0, 2).toUpperCase()}
-                                </span>
+                                <span aria-hidden="true">{monogram(member.displayName)}</span>
                                 <div>
                                     <strong>{member.displayName}</strong>
-                                    <small>
-                                        Joined{' '}
-                                        {new Date(member.joinedAt).toLocaleDateString('en', {
-                                            timeZone: 'UTC',
-                                        })}
-                                    </small>
+                                    <small>Joined {formatUtcDate(member.joinedAt)}</small>
                                 </div>
                             </div>
                             <MemberRoleForm

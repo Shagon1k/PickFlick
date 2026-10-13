@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '@/components/ui/Modal/Modal';
+import { formatUtcDateTime } from '@/lib/format';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -65,12 +66,7 @@ export default function SessionDetails({
                     {session.deadlineAt ? (
                         <div>
                             <dt>Nomination deadline</dt>
-                            <dd>
-                                {new Date(session.deadlineAt).toLocaleString('en', {
-                                    timeZone: 'UTC',
-                                })}{' '}
-                                UTC
-                            </dd>
+                            <dd>{formatUtcDateTime(session.deadlineAt)}</dd>
                         </div>
                     ) : null}
                 </dl>

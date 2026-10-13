@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import { useProductOverlay } from '@/components/shells/product-overlay';
 import Button from '@/components/ui/Button/Button';
 import Popover from '@/components/ui/Popover/Popover';
+import { formatUtcDate } from '@/lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';
@@ -144,12 +145,7 @@ export default function PendingInvites() {
                                     ? `${invitation.memberCount} members`
                                     : (invitation.topic ?? 'Untitled Session')}
                             </p>
-                            <p>
-                                Expires{' '}
-                                {new Date(invitation.expiresAt).toLocaleDateString('en', {
-                                    timeZone: 'UTC',
-                                })}
-                            </p>
+                            <p>Expires {formatUtcDate(invitation.expiresAt)}</p>
                             <div className={styles.actions}>
                                 <Button
                                     disabled={pending}

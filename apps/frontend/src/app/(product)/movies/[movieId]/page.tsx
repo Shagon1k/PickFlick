@@ -10,6 +10,7 @@ import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
 import Alert from '@/components/ui/Alert/Alert';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
+import { formatUtcDate } from '@/lib/format';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
@@ -71,10 +72,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 {result.state === 'stale' ? (
                     <Alert tone="warning">
                         Showing cached details while the provider is unavailable. Last updated{' '}
-                        {new Date(result.fetchedAt).toLocaleDateString('en-US', {
-                            timeZone: 'UTC',
-                        })}
-                        .
+                        {formatUtcDate(result.fetchedAt)}.
                     </Alert>
                 ) : null}
                 {result.state === 'partial' ? (

@@ -11,6 +11,7 @@ import { clubNavigation } from '@/components/shells/shell-navigation';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
+import { formatUtcDate, monogram } from '@/lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -90,7 +91,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     <li className={styles.member} key={member.id}>
                         <div className={styles.identity}>
                             <span aria-hidden="true" className={styles.monogram}>
-                                {member.displayName.slice(0, 2).toUpperCase()}
+                                {monogram(member.displayName)}
                             </span>
                             <div>
                                 <strong>
@@ -99,9 +100,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                                 </strong>
                                 <small>
                                     {member.role.toLowerCase()} · Joined{' '}
-                                    {new Date(member.joinedAt).toLocaleDateString('en', {
-                                        timeZone: 'UTC',
-                                    })}
+                                    {formatUtcDate(member.joinedAt)}
                                 </small>
                             </div>
                         </div>

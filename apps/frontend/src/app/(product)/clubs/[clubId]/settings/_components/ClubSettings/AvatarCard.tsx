@@ -4,6 +4,7 @@ import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contract
 import { useActionState, useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
+import { monogram } from '@/lib/format';
 
 import { initialClubActionState } from '../../action-state';
 import { removeClubAvatarAction, uploadClubAvatarAction } from '../../actions';
@@ -42,9 +43,7 @@ export default function AvatarCard({ projection }: { projection: IClubSettings }
                             src={`/api/clubs/${projection.club.id}/avatar${avatarVersion}`}
                         />
                     ) : (
-                        <span aria-hidden="true">
-                            {projection.club.name.slice(0, 2).toUpperCase()}
-                        </span>
+                        <span aria-hidden="true">{monogram(projection.club.name)}</span>
                     )}
                 </div>
                 {projection.permissions.manageSettings ? (

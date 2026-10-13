@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore, useTransition } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
+import { formatUtcDateTime } from '@/lib/format';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -63,9 +64,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         <p>{view.topic ?? 'Untitled Session'}</p>
                         <p>
                             {view.scheduledAt
-                                ? new Date(view.scheduledAt).toLocaleString('en', {
-                                      timeZone: 'UTC',
-                                  }) + ' UTC'
+                                ? formatUtcDateTime(view.scheduledAt)
                                 : 'Not scheduled'}
                         </p>
                         <p>{view.location}</p>
