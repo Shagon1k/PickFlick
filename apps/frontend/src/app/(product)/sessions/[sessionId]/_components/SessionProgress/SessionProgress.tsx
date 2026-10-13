@@ -12,14 +12,14 @@ export default function SessionProgress({
     version,
 }: {
     sessionId: string;
-    version: number;
+    version: number | null;
 }) {
     const router = useRouter();
     const [unavailable, setUnavailable] = useState(false);
     const [refreshing, startTransition] = useTransition();
     const onVersion = useEffectEvent((current: number) => {
-        // Compare with the rendered projection, including signals skipped during a reconnect.
-        if (current > version && !refreshing && navigator.onLine) {
+        // A failed page load has no rendered version and must retry even an unchanged signal.
+        if ((version === null || current > version) && !refreshing && navigator.onLine) {
             startTransition(() => router.refresh());
         }
     });

@@ -26,6 +26,7 @@ export async function readRoster(
     });
     return {
         version: session.rosterVersion,
+        progressVersion: session.progressVersion,
         acceptedCount: participants.filter((p) => p.status === 'ACCEPTED').length,
         canInvite,
         canManage: manager,

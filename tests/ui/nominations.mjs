@@ -8,10 +8,14 @@ const movie = {
     title: 'Past losing nomination',
     year: 2020,
 };
+function stateFor(token) {
+    if (!states.has(token)) states.set(token, { own: null, phase: 'NOMINATION', version: 1 });
+    return states.get(token);
+}
 function projection(token, state) {
     const hidden = token.includes('hidden') && !state.own;
     return {
-        acceptedCount: 3,
+        acceptedCount: state.departed ? 2 : 3,
         nominatedCount: state.own ? 2 : 1,
         canSubmit: !state.own && state.phase === 'NOMINATION' && !token.includes('readonly'),
         canClose: token.includes('operator') && state.phase === 'NOMINATION',
@@ -31,26 +35,46 @@ function projection(token, state) {
         suggestions: state.own || token.includes('empty') ? [] : [movie],
     };
 }
-export function handleNominations(request, response, pathname, token) {
-    if (token?.includes('nomination') && pathname === `/sessions/${sessionId}/roster`) {
-        sendJson(response, 200, {
-            version: 1,
-            acceptedCount: 3,
-            canInvite: false,
-            canManage: false,
-            canLeave: false,
-            participants: ['Avery', 'Jordan', 'You'].map((name, index) => ({
+function handleRoster(response, pathname, token, state) {
+    if (!token?.includes('nomination') || pathname !== `/sessions/${sessionId}/roster`)
+        return false;
+    const version = state.version;
+    const departed = state.departed;
+    // Commit a departure after the roster snapshot, before the detail response.
+    if (token.includes('split-roster') && !departed) {
+        state.departed = true;
+        state.version++;
+        state.sendDetail?.();
+    }
+    sendJson(response, 200, {
+        version: 1,
+        progressVersion: version,
+        acceptedCount: departed ? 2 : 3,
+        canInvite: false,
+        canManage: false,
+        canLeave: false,
+        participants: (departed ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
+            (name, index) => ({
                 id: `30000000-0000-4000-8000-00000000000${index}`,
                 membershipId: `40000000-0000-4000-8000-00000000000${index}`,
                 displayName: name,
                 status: 'ACCEPTED',
                 canRemove: false,
                 invitation: null,
-            })),
-            eligibleMembers: [],
-        });
+            }),
+        ),
+        eligibleMembers: [],
+    });
+    return true;
+}
+
+export function handleNominations(request, response, pathname, token) {
+    const state = stateFor(token);
+    if (state.recoverAt > Date.now() && pathname === state.failedPath) {
+        sendError(response, 503, 'UNAVAILABLE', 'refresh-failure');
         return true;
     }
+    if (handleRoster(response, pathname, token, state)) return true;
     if (handleProgress(response, pathname, token)) return true;
     if (
         !/^\/sessions\/[^/]+\/nominations(?:\/close)?$/u.test(pathname) &&
@@ -61,28 +85,30 @@ export function handleNominations(request, response, pathname, token) {
         sendError(response, 401, 'UNAUTHORIZED', 'nomination-auth');
         return true;
     }
-    if (!states.has(token)) states.set(token, { own: null, phase: 'NOMINATION', version: 1 });
-    const state = states.get(token);
     if (pathname === `/sessions/${sessionId}`) {
-        sendJson(response, 200, {
-            id: sessionId,
-            clubId,
-            clubName: 'Midnight Society',
-            topic: 'Nomination night',
-            notes: 'Everyone nominates one film.',
-            type: 'FULL_CYCLE',
-            phase: state.phase,
-            location: 'Room A',
-            scheduledAt: '2026-12-01T00:00:00.000Z',
-            deadlineAt: null,
-            movieId: null,
-            version: 5,
-            phaseVersion: 1,
-            progressVersion: state.version,
-            nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
-            canEdit: token.includes('operator'),
-            canCancel: token.includes('operator'),
-        });
+        const sendDetail = () =>
+            sendJson(response, 200, {
+                id: sessionId,
+                clubId,
+                clubName: 'Midnight Society',
+                topic: 'Nomination night',
+                notes: 'Everyone nominates one film.',
+                type: 'FULL_CYCLE',
+                phase: state.phase,
+                location: 'Room A',
+                scheduledAt: '2026-12-01T00:00:00.000Z',
+                deadlineAt: null,
+                movieId: null,
+                version: 5,
+                phaseVersion: 1,
+                progressVersion: state.version,
+                nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
+                canEdit: token.includes('operator'),
+                canCancel: token.includes('operator'),
+            });
+        // Ensure the roster's departure commits between these two read snapshots.
+        if (token.includes('split-roster') && !state.departed) state.sendDetail = sendDetail;
+        else sendDetail();
     } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
     else
         readJson(request, (input) => {
@@ -98,6 +124,12 @@ export function handleNominations(request, response, pathname, token) {
                 state.phase = 'SELECTION';
             } else state.own = { ...movie, id: input.movieId };
             state.version++;
+            if (token.includes('refresh-')) {
+                state.recoverAt = Date.now() + 2000;
+                state.failedPath = token.includes('refresh-roster')
+                    ? `/sessions/${sessionId}/roster`
+                    : `/sessions/${sessionId}`;
+            }
             sendJson(response, 201, null);
         });
     return true;
@@ -106,8 +138,7 @@ export function handleNominations(request, response, pathname, token) {
 function handleProgress(response, pathname, token) {
     if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${sessionId}/progress`))
         return false;
-    const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };
-    states.set(token, state);
+    const state = stateFor(token);
     if (pathname.endsWith('/events')) {
         response.writeHead(200, {
             'content-type': 'text/event-stream',

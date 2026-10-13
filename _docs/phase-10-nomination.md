@@ -289,3 +289,25 @@ The bounded owner-approved round starts from PR #169 head
   metadata, original-title fallback and details precedence.
 - `pnpm test:ui:smoke` passes all 32 checks.
 - `pnpm verify` passes with all 390 unit tests and both builds; lint retains four existing warnings.
+
+## Automatic progress review fix round 1 — #44
+
+The bounded owner-approved round starts from PR #171 head
+`db8d70f069fca10fb524636bcc77b15378f700ad` and addresses only the two submitted recovery threads.
+
+Session detail and roster now expose their own snapshot's progress version. The page compares live
+signals to the older rendered version so a departure between the two reads refreshes the stale
+roster without requiring another mutation. The recovery component stays mounted after a transient
+detail or roster load failure; an unchanged signal retries when no projection is rendered.
+
+- All 168 integration tests pass against migrated, seeded isolated PostgreSQL 17.6, including a
+  departure between read snapshots and a repeatable-read roster retaining its original version.
+- `pnpm verify` passes: guarded security audit, lint with four existing warnings, knip, formatting,
+  types, all 392 unit tests and both builds.
+- `pnpm test:ui:smoke` passes all 36 checks. The focused Nomination suite passes all 12 checks,
+  including transient detail/roster refresh failures, recovery at an unchanged detail version,
+  polling fallback, reconnects, keyboard flow, axe and overflow at all four canonical widths.
+
+Hosted exact-head preview, owner visual acknowledgement and CI remain with the managed workflow.
+The issue remains in Human Review. No migration, dependency, runtime variable, permission or
+infrastructure change is included.

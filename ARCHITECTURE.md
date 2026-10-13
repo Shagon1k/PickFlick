@@ -464,7 +464,8 @@ The shared transition clears deadline intent and increments phase/details versio
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
 independent, preserving ADR-018's empty-deadline operator intent.
 
-Session detail exposes `progressVersion` separately from editing and phase concurrency tokens.
+Session detail and roster expose their snapshot's `progressVersion` separately from editing,
+phase and roster concurrency tokens.
 `GET /sessions/:sessionId/progress` returns only `{ version }` for fallback checks.
 `GET /sessions/:sessionId/progress/events` sends private, uncached same-origin SSE with current
 version and event ID on connection and every five seconds. Current snapshots heal gaps and old
@@ -472,8 +473,10 @@ version and event ID on connection and every five seconds. Current snapshots hea
 API-owned authentication session and active Club Membership. Access loss terminates the stream;
 other failures log a fixed safe message and permit reconnect. Disconnect unsubscribes the timer; API shutdown finishes active streams.
 
-The frontend compares signals to the rendered Session version and refreshes authoritative server
-components after newer versions. An unavailable stream shows feedback and polls the snapshot every
+The frontend compares signals to the older of the rendered Session detail and roster progress versions and
+refreshes authoritative server components after newer versions. Recovery stays mounted when either
+page read fails transiently; without a rendered version, an unchanged signal also retries the page.
+An unavailable stream shows feedback and polls the snapshot every
 fifteen seconds; focus and online recovery also check it. Manual refresh remains available. The
 client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
 are required. Apply migration 19 before releasing the API and worker images.
