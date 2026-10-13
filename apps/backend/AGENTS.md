@@ -15,8 +15,10 @@ protects every route unless it has `@Public()`.
 - `src/config/` holds runtime environment wiring; `src/common/` holds cross-feature filters,
   pipes, and helpers; `src/database/` owns the single Prisma client.
 - A feature is `src/modules/<feature>/` with `<feature>.module.ts`, `<feature>.controller.ts`, and
-  `<feature>.service.ts`. Add role folders (`dto/`, `guards/`, `decorators/`, `providers/`,
-  `repositories/`) only when the module grows past roughly eight files.
+  `<feature>.service.ts`. When its root passes roughly eight files, move each sub-feature into a
+  folder with its own `__tests__/` (`sessions/roster/`, `clubs/invitations/`) and keep the rules the
+  sub-features share in the root or an `access/` folder. Integration folders keep role names
+  (`decorators/`, `providers/`); never add `utils/` or `helpers/`.
 - Copy `src/modules/contact` as the template for a new module.
 
 ## Requests

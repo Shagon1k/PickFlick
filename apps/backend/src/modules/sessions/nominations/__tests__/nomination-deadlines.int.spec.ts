@@ -8,7 +8,7 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
+} from '../../../../testing/integration.js';
 import { NominationDeadlines } from '../nomination-deadlines.js';
 
 describe('NominationDeadlines', () => {

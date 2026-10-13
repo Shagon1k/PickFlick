@@ -18,9 +18,9 @@ import {
     type TRespondInvitation,
 } from '@pickflick/contracts';
 
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import type { IAuthUser } from '../auth/auth.types.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
+import type { IAuthUser } from '../../auth/auth.types.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { ClubInvitationsService } from './club-invitations.service.js';
 
 const uuid = new ParseUUIDPipe({ version: '4' });

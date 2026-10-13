@@ -6,10 +6,10 @@ import type {
     TSessionInvitationPreview,
 } from '@pickflick/contracts';
 
-import { digestInviteToken, newInviteToken } from '../../common/invite-token.js';
-import { PrismaService } from '../../database/prisma.service.js';
-import { lockClub } from '../clubs/club-access.js';
-import { lockSession, lockSessionForMember } from './session-lock.js';
+import { digestInviteToken, newInviteToken } from '../../../common/invite-token.js';
+import { PrismaService } from '../../../database/prisma.service.js';
+import { lockClub } from '../../clubs/access/club-access.js';
+import { lockSession, lockSessionForMember } from '../session-lock.js';
 import {
     assertManager,
     assertOpen,
@@ -17,7 +17,7 @@ import {
     preview,
     revokePending,
     rosterAudit,
-} from './session-roster-access.js';
+} from '../session-roster-access.js';
 import { readRoster } from './session-roster-projection.js';
 
 @Injectable()

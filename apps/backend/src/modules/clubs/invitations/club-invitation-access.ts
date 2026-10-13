@@ -1,8 +1,8 @@
 import type { TInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { loadClubAccess } from './club-access.js';
-import { clubEntitlements } from './club-tiers.js';
+import { loadClubAccess } from '../access/club-access.js';
+import { clubEntitlements } from '../access/club-tiers.js';
 
 /** States decided by the link alone, before Membership or capacity is read. */
 function closedState(

@@ -13,7 +13,7 @@ import { createDatabaseClient } from '@pickflick/database';
 import pino from 'pino';
 
 import { runDeadlineWorker } from './deadline-worker-loop.js';
-import { NominationDeadlines } from './modules/sessions/nomination-deadlines.js';
+import { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
 
 const logger = pino({ base: { service: 'deadline-worker' } });
 const shutdown = new AbortController();

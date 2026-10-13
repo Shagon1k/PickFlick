@@ -6,12 +6,12 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { PrismaService } from '../../database/prisma.service.js';
-import { findMembership, recordAudit } from '../clubs/club-access.js';
-import { MoviesService } from '../movies/movies.service.js';
-import { lockSessionForMember } from './session-lock.js';
-import { advanceNomination, completeNomination, publishProgress } from './session-progress.js';
-import { assertManager } from './session-roster-access.js';
+import { PrismaService } from '../../../database/prisma.service.js';
+import { findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { MoviesService } from '../../movies/movies.service.js';
+import { lockSessionForMember } from '../session-lock.js';
+import { advanceNomination, completeNomination, publishProgress } from '../session-progress.js';
+import { assertManager } from '../session-roster-access.js';
 
 @Injectable()
 export class NominationsService {

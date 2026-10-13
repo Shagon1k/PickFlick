@@ -14,7 +14,7 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
+} from '../../../../testing/integration.js';
 import { readRoster } from '../session-roster-projection.js';
 
 const unavailable = { state: 'unavailable' };

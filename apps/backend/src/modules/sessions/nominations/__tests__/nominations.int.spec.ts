@@ -11,11 +11,11 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
-import { movieDetails } from '../../../testing/movie-fixtures.js';
-import { MoviesRepository } from '../../movies/movies.repository.js';
-import { MoviesService } from '../../movies/movies.service.js';
-import type { IMovieProvider } from '../../movies/providers/movie-provider.js';
+} from '../../../../testing/integration.js';
+import { movieDetails } from '../../../../testing/movie-fixtures.js';
+import { MoviesRepository } from '../../../movies/movies.repository.js';
+import { MoviesService } from '../../../movies/movies.service.js';
+import type { IMovieProvider } from '../../../movies/providers/movie-provider.js';
 
 describe('Nominations', () => {
     let api: ITestApi;

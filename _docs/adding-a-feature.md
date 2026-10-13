@@ -81,7 +81,7 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 2. **Service.** Put the rule here and throw Nest exceptions. When the client must tell causes apart,
    pass a reason from contracts: `throw new ConflictException({ reason: 'CLUB_ARCHIVED' })`.
    `ApiExceptionFilter` builds the error envelope; never format errors by hand.
-3. **Club data.** Start with `findMembership` from `modules/clubs/club-access.ts`; it answers `404`
+3. **Club data.** Start with `findMembership` from `modules/clubs/access/club-access.ts`; it answers `404`
    to anyone who is not an active member. Add `assertAdmin` or `assertActive` as the rule needs.
 4. **External services.** Inject them behind a token (as `EMAIL_CLIENT` is) so tests can swap them,
    and build them from the validated runtime environment, never from `process.env`.

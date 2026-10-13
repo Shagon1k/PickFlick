@@ -5,7 +5,7 @@ import { CLUB_AVATAR_MAX_BYTES, type TClubAvatarMediaType } from '@pickflick/con
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { type IStoredObject, StorageService } from '../storage/storage.service.js';
-import { assertActive, assertAdmin, findMembership, recordAudit } from './club-access.js';
+import { assertActive, assertAdmin, findMembership, recordAudit } from './access/club-access.js';
 
 const signatures: Record<
     TClubAvatarMediaType,

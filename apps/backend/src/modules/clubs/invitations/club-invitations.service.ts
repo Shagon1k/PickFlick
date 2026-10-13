@@ -17,17 +17,17 @@ import type {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { digestInviteToken, inviteState, newInviteToken } from '../../common/invite-token.js';
-import { PrismaService } from '../../database/prisma.service.js';
+import { digestInviteToken, inviteState, newInviteToken } from '../../../common/invite-token.js';
+import { PrismaService } from '../../../database/prisma.service.js';
 import {
     assertActive,
     findMembership,
     loadClubAccess,
     lockClub,
     recordAudit,
-} from './club-access.js';
+} from '../access/club-access.js';
+import { clubEntitlements } from '../access/club-tiers.js';
 import { inspectInvitation } from './club-invitation-access.js';
-import { clubEntitlements } from './club-tiers.js';
 
 async function manager(transaction: Prisma.TransactionClient, userId: string, clubId: string) {
     const membership = await findMembership(transaction, userId, clubId);

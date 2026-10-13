@@ -12,8 +12,8 @@ import {
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
-import { NominationsService } from './nominations.service.js';
+import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
+import { NominationsService } from './nominations/nominations.service.js';
 import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
 import { assertManager, canManage } from './session-roster-access.js';

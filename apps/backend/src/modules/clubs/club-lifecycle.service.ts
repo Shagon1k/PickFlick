@@ -3,13 +3,19 @@ import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { departSessions } from '../sessions/session-departure.js';
+import { departSessions } from '../sessions/roster/session-departure.js';
 import { lockSession } from '../sessions/session-lock.js';
 import { completeNomination } from '../sessions/session-progress.js';
 import { StorageService } from '../storage/storage.service.js';
-import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
-import { canRemoveMember } from './club-permissions.js';
-import { clubEntitlements } from './club-tiers.js';
+import {
+    assertActive,
+    assertAdmin,
+    findMembership,
+    lockClub,
+    recordAudit,
+} from './access/club-access.js';
+import { canRemoveMember } from './access/club-permissions.js';
+import { clubEntitlements } from './access/club-tiers.js';
 import { assertBelowAdminLimit } from './clubs.service.js';
 
 function assertConfirmed(confirmation: string, expected: string): void {

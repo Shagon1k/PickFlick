@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 
-import type { NominationDeadlines } from './modules/sessions/nomination-deadlines.js';
+import type { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
 
 export async function runDeadlineWorker(
     deadlines: Pick<NominationDeadlines, 'runOnce'>,

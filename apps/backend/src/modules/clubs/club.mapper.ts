@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { IClubSummary, TClubRole } from '@pickflick/contracts';
 
-import { clubEntitlements } from './club-tiers.js';
+import { clubEntitlements } from './access/club-tiers.js';
 
 interface IClubRow {
     id: string;

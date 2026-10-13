@@ -2,9 +2,9 @@ import { NotFoundException } from '@nestjs/common';
 import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { inviteState } from '../../common/invite-token.js';
-import { findMembership } from '../clubs/club-access.js';
-import { canManage } from './session-roster-access.js';
+import { inviteState } from '../../../common/invite-token.js';
+import { findMembership } from '../../clubs/access/club-access.js';
+import { canManage } from '../session-roster-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,

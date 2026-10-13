@@ -1,10 +1,10 @@
 import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { recordAudit } from '../clubs/club-access.js';
-import { lockSession } from './session-lock.js';
-import { completeNomination } from './session-progress.js';
-import { revokePending } from './session-roster-access.js';
+import { recordAudit } from '../../clubs/access/club-access.js';
+import { lockSession } from '../session-lock.js';
+import { completeNomination } from '../session-progress.js';
+import { revokePending } from '../session-roster-access.js';
 
 /** The caller holds the Club lock; completed attendance/history stays intact. */
 export async function departSessions(

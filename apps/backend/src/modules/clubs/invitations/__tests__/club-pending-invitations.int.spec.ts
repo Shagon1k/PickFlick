@@ -8,7 +8,7 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
+} from '../../../../testing/integration.js';
 
 describe('Pending Club invitations', () => {
     let api: ITestApi;

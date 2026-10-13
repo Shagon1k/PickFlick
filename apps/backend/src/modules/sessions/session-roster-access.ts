@@ -7,8 +7,8 @@ import {
     loadClubAccess,
     recordAudit,
     type TAuditEvent,
-} from '../clubs/club-access.js';
-import { clubPermissions } from '../clubs/club-permissions.js';
+} from '../clubs/access/club-access.js';
+import { clubPermissions } from '../clubs/access/club-permissions.js';
 import { completeNomination } from './session-progress.js';
 
 export async function canManage(

@@ -15,7 +15,6 @@ import type { Prisma } from '@pickflick/database';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { toClubSummary } from './club.mapper.js';
 import {
     assertActive,
     assertAdmin,
@@ -24,9 +23,10 @@ import {
     loadClubAccess,
     lockClub,
     recordAudit,
-} from './club-access.js';
-import { canRemoveMember, clubPermissions } from './club-permissions.js';
-import { clubEntitlements, tierEntitlements } from './club-tiers.js';
+} from './access/club-access.js';
+import { canRemoveMember, clubPermissions } from './access/club-permissions.js';
+import { clubEntitlements, tierEntitlements } from './access/club-tiers.js';
+import { toClubSummary } from './club.mapper.js';
 
 @Injectable()
 export class ClubsService {

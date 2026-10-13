@@ -9,7 +9,7 @@ import {
     removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
-import { NominationDeadlines } from '../nomination-deadlines.js';
+import { NominationDeadlines } from '../nominations/nomination-deadlines.js';
 
 describe('Session progress', () => {
     let api: ITestApi;

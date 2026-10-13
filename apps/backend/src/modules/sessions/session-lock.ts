@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@pickflick/database';
 
-import { findMembership, lockClub } from '../clubs/club-access.js';
+import { findMembership, lockClub } from '../clubs/access/club-access.js';
 
 /** Locks one Session row. Callers that also lock its Club take the Club lock first. */
 export async function lockSession(tx: Prisma.TransactionClient, id: string): Promise<void> {
