@@ -4,6 +4,22 @@ import type { Prisma } from '@pickflick/database';
 import { loadClubAccess } from './club-access.js';
 import { clubEntitlements } from './club-tiers.js';
 
+/** States decided by the link alone, before Membership or capacity is read. */
+function closedState(
+    invitation: {
+        targetUserId: string | null;
+        revokedAt: Date | null;
+        expiresAt: Date;
+        club: { deletedAt: Date | null };
+    },
+    userId: string,
+): 'invalid' | 'revoked' | 'expired' | null {
+    if (invitation.targetUserId && invitation.targetUserId !== userId) return 'invalid';
+    if (invitation.club.deletedAt) return 'invalid';
+    if (invitation.revokedAt) return 'revoked';
+    return invitation.expiresAt <= new Date() ? 'expired' : null;
+}
+
 export async function inspectInvitation(
     transaction: Prisma.TransactionClient,
     userId: string,
@@ -14,12 +30,9 @@ export async function inspectInvitation(
         include: { club: true, inviter: { select: { displayName: true } } },
     });
     const result = (preview: TInvitationPreview) => ({ invitation, preview });
-    if (!invitation || (invitation.targetUserId && invitation.targetUserId !== userId)) {
-        return result({ state: 'invalid' });
-    }
-    if (invitation.club.deletedAt) return result({ state: 'invalid' });
-    if (invitation.revokedAt) return result({ state: 'revoked' });
-    if (invitation.expiresAt <= new Date()) return result({ state: 'expired' });
+    if (!invitation) return result({ state: 'invalid' });
+    const closed = closedState(invitation, userId);
+    if (closed) return result({ state: closed });
     const membership = await transaction.membership.findFirst({
         where: { clubId: invitation.clubId, userId, status: 'ACTIVE' },
         select: { id: true },

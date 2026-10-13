@@ -67,25 +67,7 @@ export class ThetvdbClient {
             throw new MovieProviderError('DISABLED', undefined, 'thetvdb');
         const fetchedAt = new Date().toISOString();
         const imdb = externalIds.find((id) => id.source === 'imdb')?.externalId;
-        let tvdbId = externalIds.find((id) => id.source === 'thetvdb')?.externalId;
-        if (!tvdbId && !imdb)
-            throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
-        if (!tvdbId && imdb) {
-            const found = await this.http.get(
-                `/v4/search/remoteid/${imdb}`,
-                response(z.array(z.object({ movie: z.object({ id }).nullish() })).max(100)),
-                this.headers(),
-            );
-            const candidates = [
-                ...new Set(
-                    found.data.flatMap((result) => (result.movie ? [String(result.movie.id)] : [])),
-                ),
-            ];
-            if (candidates.length > 1)
-                throw new MovieProviderError('IDENTITY_CONFLICT', undefined, 'thetvdb');
-            tvdbId = candidates[0];
-        }
-        if (!tvdbId) throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb');
+        const tvdbId = await this.resolveTvdbId(externalIds, imdb);
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,
             response(extended),
@@ -148,6 +130,27 @@ export class ThetvdbClient {
             },
         });
     }
+    /** A known TheTVDB ID, or the single movie TheTVDB maps to the IMDb ID. */
+    private async resolveTvdbId(externalIds: TMovieExternalId[], imdb: string | undefined) {
+        const known = externalIds.find((id) => id.source === 'thetvdb')?.externalId;
+        if (known) return known;
+        if (!imdb) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
+        const found = await this.http.get(
+            `/v4/search/remoteid/${imdb}`,
+            response(z.array(z.object({ movie: z.object({ id }).nullish() })).max(100)),
+            this.headers(),
+        );
+        const candidates = [
+            ...new Set(
+                found.data.flatMap((result) => (result.movie ? [String(result.movie.id)] : [])),
+            ),
+        ];
+        if (candidates.length > 1)
+            throw new MovieProviderError('IDENTITY_CONFLICT', undefined, 'thetvdb');
+        if (!candidates[0]) throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb');
+        return candidates[0];
+    }
+
     private headers() {
         return {
             Authorization: `Bearer ${this.settings.readToken ?? ''}`,

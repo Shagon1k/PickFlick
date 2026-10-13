@@ -36,13 +36,11 @@ export class SessionsService {
                     ...project(session, membership.club.name, allowed),
                     nominations:
                         session.phase === 'NOMINATION'
-                            ? await this.nominations.project(
-                                  transaction,
+                            ? await this.nominations.project(transaction, session, {
                                   userId,
-                                  session,
-                                  membership,
-                                  allowed,
-                              )
+                                  member: membership,
+                                  canManage: allowed,
+                              })
                             : null,
                 };
             },

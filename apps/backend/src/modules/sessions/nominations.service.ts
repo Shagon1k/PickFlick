@@ -22,11 +22,14 @@ export class NominationsService {
 
     async project(
         tx: Prisma.TransactionClient,
-        userId: string,
         session: Prisma.SessionGetPayload<object>,
-        member: Awaited<ReturnType<typeof findMembership>>,
-        canManageSession: boolean,
+        viewer: {
+            userId: string;
+            member: Awaited<ReturnType<typeof findMembership>>;
+            canManage: boolean;
+        },
     ): Promise<TNominations> {
+        const { member } = viewer;
         const id = session.id;
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: id, status: 'ACCEPTED' },
@@ -54,28 +57,9 @@ export class NominationsService {
             );
         const hidden = !session.showNominationsBeforeSubmit && !own?.nomination;
         const canSubmit = member.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
-        const history = canSubmit
-            ? await tx.nomination.findMany({
-                  where: {
-                      participant: { membership: { userId } },
-                      session: {
-                          clubId: session.clubId,
-                          createdAt: { lt: session.createdAt },
-                          phase: { in: ['WATCHING', 'RATING', 'COMPLETED'] },
-                          movieId: { not: null },
-                      },
-                  },
-                  select: { movieId: true, session: { select: { movieId: true } } },
-                  orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
-              })
+        const suggestionIds = canSubmit
+            ? await pastLosingNominations(tx, viewer.userId, session)
             : [];
-        const suggestionIds = [
-            ...new Set(
-                history
-                    .filter((row) => row.movieId !== row.session.movieId)
-                    .map((row) => row.movieId),
-            ),
-        ].slice(0, 12);
         const visible = hidden ? [] : rows;
         const ids = [
             ...new Set([
@@ -90,7 +74,7 @@ export class NominationsService {
             acceptedCount: participants.length,
             nominatedCount: rows.length,
             canSubmit,
-            canClose: rows.length > 0 && canManageSession,
+            canClose: rows.length > 0 && viewer.canManage,
             hidden,
             ownMovie: own?.nomination ? movie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
@@ -147,4 +131,30 @@ export class NominationsService {
             await publishProgress(tx, id, 'MANUAL');
         });
     }
+}
+
+/** Up to 12 Movies the viewer nominated in earlier decided Sessions of this Club that did not win. */
+async function pastLosingNominations(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    session: Prisma.SessionGetPayload<object>,
+): Promise<string[]> {
+    const history = await tx.nomination.findMany({
+        where: {
+            participant: { membership: { userId } },
+            session: {
+                clubId: session.clubId,
+                createdAt: { lt: session.createdAt },
+                phase: { in: ['WATCHING', 'RATING', 'COMPLETED'] },
+                movieId: { not: null },
+            },
+        },
+        select: { movieId: true, session: { select: { movieId: true } } },
+        orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
+    });
+    return [
+        ...new Set(
+            history.filter((row) => row.movieId !== row.session.movieId).map((row) => row.movieId),
+        ),
+    ].slice(0, 12);
 }
