@@ -125,7 +125,8 @@ export function handleNominations(request, response, pathname, token) {
             } else state.own = { ...movie, id: input.movieId };
             state.version++;
             if (token.includes('refresh-')) {
-                state.recoverAt = Date.now() + 2000;
+                // Longer than one progress poll, so the viewer's next refresh hits the failure.
+                state.recoverAt = Date.now() + 5500;
                 state.failedPath = token.includes('refresh-roster')
                     ? `/sessions/${sessionId}/roster`
                     : `/sessions/${sessionId}`;
@@ -139,23 +140,6 @@ function handleProgress(response, pathname, token) {
     if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${sessionId}/progress`))
         return false;
     const state = stateFor(token);
-    if (pathname.endsWith('/events')) {
-        response.writeHead(200, {
-            'content-type': 'text/event-stream',
-            'cache-control': 'no-store, no-transform',
-        });
-        // Exercise duplicate and older signals after the current snapshot.
-        const send = () => {
-            response.write(
-                `event: progress\ndata: ${JSON.stringify({ version: state.version })}\n\n`,
-            );
-            response.write(
-                `event: progress\ndata: ${JSON.stringify({ version: Math.max(1, state.version - 1) })}\n\n`,
-            );
-        };
-        send();
-        const interval = setInterval(send, 300);
-        response.on('close', () => clearInterval(interval));
-    } else sendJson(response, 200, { version: state.version });
+    sendJson(response, 200, { version: state.version });
     return true;
 }

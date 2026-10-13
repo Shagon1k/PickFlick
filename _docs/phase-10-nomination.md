@@ -26,7 +26,7 @@ Zero accepted nominations stay open; one selects the sole Movie; multiple nomina
 including repeated Movies. Keep automatic decisions and progress/notification intent in the same
 transaction through a Session-specific PostgreSQL outbox. Add no dependency or process.
 
-Version-only SSE signals revalidate Session detail. Send the current version on connection and each
+Version-only signals revalidate Session detail (SSE in #44; replaced by five-second polling in #172). Send the current version on connection and each
 five-second heartbeat, with authentication and membership rechecked each time. Clients compare the
 signal to the rendered version; stale signals do nothing, gaps and reconnects cause a fresh read.
 A fifteen-second snapshot fallback and focus/online refresh cover stream failure. Film rows and

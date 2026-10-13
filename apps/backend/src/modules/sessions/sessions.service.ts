@@ -6,6 +6,7 @@ import {
     type TCancelSession,
     type TCreateSession,
     type TSession,
+    type TSessionProgress,
     type TUpdateSession,
 } from '@pickflick/contracts';
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
@@ -47,6 +48,16 @@ export class SessionsService {
             },
             { isolationLevel: 'RepeatableRead' },
         );
+    }
+
+    async progress(userId: string, id: string): Promise<TSessionProgress> {
+        const session = await this.prisma.session.findUnique({
+            where: { id },
+            select: { clubId: true, progressVersion: true },
+        });
+        if (!session) throw new NotFoundException();
+        await findMembership(this.prisma, userId, session.clubId);
+        return { version: session.progressVersion };
     }
 
     async create(userId: string, clubId: string, input: TCreateSession): Promise<TSession> {

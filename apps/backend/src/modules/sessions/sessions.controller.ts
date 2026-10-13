@@ -34,6 +34,13 @@ export class SessionsController {
         return this.sessions.create(user.id, clubId, input);
     }
 
+    /** Clients poll this version and reload the Session projections when it grows. */
+    @Get('sessions/:sessionId/progress')
+    @Header('Cache-Control', 'private, no-store')
+    progress(@CurrentUser() user: IAuthUser, @Param('sessionId', uuid) id: string) {
+        return this.sessions.progress(user.id, id);
+    }
+
     @Patch('sessions/:sessionId')
     @Header('Cache-Control', 'private, no-store')
     update(

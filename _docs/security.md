@@ -73,10 +73,10 @@ A forged request from another site needs the session cookie, and several layers 
   Session token material is omitted from pending rows and audit events; raw links appear only at
   creation and in the recipient link flow.
 
-- Session progress SSE resolves the API-owned authentication session and Club Membership before
-  every version signal. Revocation, expiry, suspension or membership departure stops the stream.
-  Events expose only a version, with private/no-store caching and proxy buffering disabled; Movie
-  and author visibility remain enforced by the authoritative Session detail projection.
+- Session progress is a polled, authenticated request that checks Club Membership each time and
+  returns only a version with private/no-store caching. Revocation, expiry, suspension or departure
+  denies the next poll; Movie and author visibility remain enforced by the authoritative Session
+  detail projection.
 
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 

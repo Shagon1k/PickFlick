@@ -221,16 +221,10 @@ disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and fin
 transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
 transport and inbox delivery are not implemented.
 
-## Session progress streams
+## Session progress
 
-The API exposes same-origin private SSE at `/sessions/:sessionId/progress/events`. It sends only
-committed progress versions on connection and every five seconds, rechecking authentication and
-Club access each time. `Cache-Control: private, no-store, no-transform` prevents caching and
-compression buffering; `X-Accel-Buffering: no` disables proxy buffering. Preserve these headers
-through the frontend and hosting proxy. A fixed “Session progress stream failed.” log indicates
-an internal read failure without exposing credentials or participant data.
-
-If streaming is unavailable, the Session page shows feedback and checks the private progress
-snapshot every fifteen seconds. Reconnection, focus and online recovery fetch the current version.
+`GET /sessions/:sessionId/progress` returns the committed progress version to current Club members
+with `Cache-Control: private, no-store`. The Session page polls it every five seconds while visible
+and on focus and online events; a failed poll shows feedback and the next poll retries.
 Migration 19 must precede updated API and worker images. There is no new service, runtime variable
 or notification transport; the PostgreSQL outbox retains later notification intent.

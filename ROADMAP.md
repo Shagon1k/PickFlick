@@ -829,7 +829,7 @@ inbox.
 **Tickets:** [#42](https://github.com/Shagon1k/PickFlick/issues/42) nominations, personal
 suggestions, visibility · [#43](https://github.com/Shagon1k/PickFlick/issues/43) deadlines with durable
 reconciliation · [#44](https://github.com/Shagon1k/PickFlick/issues/44) serialized transitions and
-live progress events
+live progress (version polling since #172)
 
 **Scope:**
 

@@ -137,7 +137,7 @@ test(
     },
 );
 
-test('Progress polling recovers when the live stream is unavailable', async ({ browser }) => {
+test('Progress polling shows another participant nomination', async ({ browser }) => {
     const actor = await browser.newContext();
     const viewer = await browser.newContext();
     const token = `valid-nomination-live-${crypto.randomUUID()}`;
@@ -145,12 +145,8 @@ test('Progress polling recovers when the live stream is unavailable', async ({ b
     await authenticate(viewer, '', token);
     const actorPage = await actor.newPage();
     const viewerPage = await viewer.newPage();
-    await viewerPage.route('**/progress/events', (route) => route.abort());
     try {
         await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
-        await expect(
-            viewerPage.getByText('Live updates unavailable. Progress refreshes periodically.'),
-        ).toBeVisible();
         await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
         await actorPage.getByRole('button', { name: 'Nominate This' }).click();
         await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible({
@@ -186,9 +182,10 @@ for (const projection of ['detail', 'roster']) {
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toBeVisible();
+                // Recovery waits for the failure window and one or two progress polls.
                 await expect(
                     viewerPage.getByText('2 of 3 participants have nominated.'),
-                ).toBeVisible();
+                ).toBeVisible({ timeout: 20000 });
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toHaveCount(0);
@@ -205,11 +202,8 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'split-roster');
-        await page.route('**/progress/events', async (route) => {
-            await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
-            await route.continue();
-        });
         await page.goto(path);
+        await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('1 of 2 participants have nominated.')).toBeVisible();
         await expect(page.getByText('2 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);
