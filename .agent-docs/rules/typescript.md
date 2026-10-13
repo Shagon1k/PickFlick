@@ -15,7 +15,8 @@ code instead.
 - JSX accessibility (`jsx-a11y-x` strict) and the Next.js rules (`core-web-vitals`), including
   `next/link` for internal navigation;
 - the Vitest and Playwright plugin rules for tests (see [testing.md](testing.md));
-- a 300-line file limit (500 for specs);
+- a 300-line file limit (500 for specs), cognitive complexity of 12 (15 for specs), and at most
+  four function parameters outside specs;
 - the frontend import boundaries below.
 
 `pnpm typecheck` covers every package plus the root `tsconfig.json`, which holds the Playwright

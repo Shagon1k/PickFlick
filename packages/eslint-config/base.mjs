@@ -79,6 +79,10 @@ export default [
             'no-duplicate-imports': 'error',
             // A file past 300 lines holds more than one idea; split it.
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+            // Tighter than SonarJS's default 15: past 12, extract a named step.
+            'sonarjs/cognitive-complexity': ['error', 12],
+            // Past four arguments, pass one object so call sites name what they send.
+            'max-params': ['error', 4],
         },
     },
     {
@@ -86,6 +90,8 @@ export default [
         files: ['**/__tests__/**', 'tests/**'],
         rules: {
             'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+            'sonarjs/cognitive-complexity': ['error', 15],
+            'max-params': 'off',
         },
     },
     {
