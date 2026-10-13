@@ -71,8 +71,18 @@ Verification evidence:
 - Local gitleaks is unavailable; the repository hook reports its skipped scan. GitHub's secret-scan
   check remains required. No hook is bypassed.
 
-Worker image checks are recorded below when complete. Hosted CI and hosted environment behavior
-remain unverified here. No production deployment, secrets, dependencies,
+- `pnpm build:images` passes from clean implementation commit `a9dd59f`, building all four targets.
+  Buildx metadata uses a temporary `/tmp` directory because the managed filesystem keeps the home
+  Docker configuration read-only. Repository build definitions and credentials are unchanged.
+- The packaged worker runs read-only, without capabilities, against the isolated upgrade database.
+  It repairs the preserved overdue Session, records one empty decision, becomes healthy, exits 0 on
+  SIGTERM, and becomes healthy after restart without repeating the decision. Its test container is removed.
+- GitHub CI for `a9dd59f` passes Secret scan, Dependency security, Lint/type-check/test, Integration
+  and runtime smoke, UI smoke, Production images and Delivery gate. PR-only CI correctly skips the
+  full UI contract/visual selections. No review findings were present at this verification point.
+
+Draft [PR #170](https://github.com/Shagon1k/PickFlick/pull/170) contains the issue-scoped result.
+Hosted environment behavior and owner acceptance remain unverified here. No production deployment, secrets, dependencies,
 new environment variables, permission changes or unrelated product work are included.
 
 ### Recovery preparation
