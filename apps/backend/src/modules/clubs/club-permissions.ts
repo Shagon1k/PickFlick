@@ -29,3 +29,14 @@ export function clubPermissions(
         viewAudit: admin,
     };
 }
+
+/** Admins remove Members and Moderators, Moderators remove Members; nobody removes the Admin. */
+export function canRemoveMember(
+    actor: { id: string; role: TClubRole },
+    target: { id: string; role: TClubRole },
+    lifecycle: TClubLifecycle,
+): boolean {
+    if (lifecycle !== 'ACTIVE' || actor.role === 'MEMBER') return false;
+    if (target.role === 'ADMIN' || target.id === actor.id) return false;
+    return actor.role === 'ADMIN' || target.role === 'MEMBER';
+}

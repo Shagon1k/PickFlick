@@ -104,10 +104,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                                 </small>
                             </div>
                         </div>
-                        {permissions.manageMembers &&
-                        member.id !== currentMembershipId &&
-                        member.role !== 'ADMIN' &&
-                        (club.membershipRole === 'ADMIN' || member.role === 'MEMBER') ? (
+                        {member.canRemove ? (
                             <Button
                                 aria-label={`Remove ${member.displayName}`}
                                 onClick={() => {

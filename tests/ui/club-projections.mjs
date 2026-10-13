@@ -65,7 +65,15 @@ export function settingsProjection(token, avatarVersion, removed) {
             showRatingResults: true,
             useMonochromeMedia: true,
         },
-        members: memberRoster(role, adminless, overLimit, removed),
+        members: memberRoster(role, adminless, overLimit, removed).map((member) => ({
+            ...member,
+            canRemove:
+                active &&
+                role !== 'MEMBER' &&
+                member.role !== 'ADMIN' &&
+                member.role !== role &&
+                (admin || member.role === 'MEMBER'),
+        })),
         auditEvents: admin
             ? [
                   {

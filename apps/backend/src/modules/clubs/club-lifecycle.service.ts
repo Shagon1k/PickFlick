@@ -8,6 +8,7 @@ import { lockSession } from '../sessions/session-lock.js';
 import { completeNomination } from '../sessions/session-progress.js';
 import { StorageService } from '../storage/storage.service.js';
 import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
+import { canRemoveMember } from './club-permissions.js';
 import { clubEntitlements } from './club-tiers.js';
 import { assertBelowAdminLimit } from './clubs.service.js';
 
@@ -75,12 +76,7 @@ export class ClubLifecycleService {
             const target = await transaction.membership.findFirst({
                 where: { id: membershipId, clubId },
             });
-            if (
-                !target ||
-                target.role === 'ADMIN' ||
-                target.id === actor.id ||
-                (actor.role === 'MODERATOR' && target.role !== 'MEMBER')
-            ) {
+            if (!target || !canRemoveMember(actor, target, actor.club.lifecycle)) {
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             }
             if (target.status !== 'ACTIVE') return;

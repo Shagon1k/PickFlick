@@ -25,7 +25,7 @@ import {
     lockClub,
     recordAudit,
 } from './club-access.js';
-import { clubPermissions } from './club-permissions.js';
+import { canRemoveMember, clubPermissions } from './club-permissions.js';
 import { clubEntitlements, tierEntitlements } from './club-tiers.js';
 
 @Injectable()
@@ -169,6 +169,7 @@ export class ClubsService {
                         displayName: member.user.displayName,
                         role: member.role,
                         joinedAt: member.joinedAt.toISOString(),
+                        canRemove: canRemoveMember(membership, member, club.lifecycle),
                     })),
                     auditEvents: auditEvents.map((event) => ({
                         ...event,

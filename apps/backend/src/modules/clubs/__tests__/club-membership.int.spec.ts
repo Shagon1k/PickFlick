@@ -82,6 +82,22 @@ describe('Club membership boundaries', () => {
             ).status,
         ).toBe(403);
     });
+    it('should project removable members with the same rule the removal endpoint enforces', async () => {
+        const removable = async (userId: string) => {
+            const settings = (await (
+                await api.request(`/clubs/${clubId}/settings`, { userId })
+            ).json()) as IClubSettings;
+            return settings.members
+                .filter((entry) => entry.canRemove)
+                .map((entry) => entry.id)
+                .toSorted((a, b) => a.localeCompare(b));
+        };
+        expect(await removable(admin)).toEqual(
+            [memberId, moderatorId].toSorted((a, b) => a.localeCompare(b)),
+        );
+        expect(await removable(moderator)).toEqual([memberId]);
+        expect(await removable(member)).toEqual([]);
+    });
     it('should serialize repeated removal, audit once, and preserve history while revoking access', async () => {
         const responses = await Promise.all([remove(moderator), remove(admin)]);
         expect(responses.map(({ status }) => status)).toEqual([204, 204]);
