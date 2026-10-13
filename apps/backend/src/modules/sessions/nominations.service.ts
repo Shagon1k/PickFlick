@@ -11,7 +11,7 @@ import { findMembership, recordAudit } from '../clubs/club-access.js';
 import { MoviesService } from '../movies/movies.service.js';
 import { lockSessionForMember } from './session-lock.js';
 import { advanceNomination, completeNomination, publishProgress } from './session-progress.js';
-import { canManage } from './session-roster-access.js';
+import { assertManager } from './session-roster-access.js';
 
 @Injectable()
 export class NominationsService {
@@ -127,9 +127,7 @@ export class NominationsService {
     async close(userId: string, id: string, input: TCloseNomination): Promise<void> {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await lockSessionForMember(tx, userId, id);
-            if (member.role === 'MEMBER') throw new ForbiddenException();
-            if (!(await canManage(tx, member)))
-                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+            await assertManager(tx, member);
             if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'NOMINATION_CHANGED' });
             const nominations = await tx.nomination.findMany({

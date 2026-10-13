@@ -146,7 +146,9 @@ remain reachable for revocation. The creation action preserves its returned toke
 list refresh fails; the UI shows the link and a separate refresh warning.
 
 Session invitations use separate digest-only tokens and target an existing Membership through a
-SessionParticipant. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
+SessionParticipant. One rule governs every Session roster control (invite, revoke, remove): an
+Admin or Moderator in an active Club that has an Admin and is within its member limit;
+participants can always leave. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
 response tokens travel only in POST bodies. Pending responses by invitation ID use the same locked
 eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
 state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses

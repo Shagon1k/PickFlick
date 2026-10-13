@@ -64,11 +64,17 @@ export function preview(invite: TInvite | null, userId: string): TSessionInvitat
 export function assertOpen(phase: string) {
     if (!isOpenSessionPhase(phase)) throw new ConflictException({ reason: 'SESSION_CLOSED' });
 }
-export function assertManager(member: Awaited<ReturnType<typeof findMembership>>, phase: string) {
+/**
+ * The one Session management rule: Admins and Moderators, in an active Club that has an Admin
+ * and is within its member limit. Members get 403; a restricted Club gets `CLUB_READ_ONLY`.
+ */
+export async function assertManager(
+    transaction: Prisma.TransactionClient,
+    member: Awaited<ReturnType<typeof findMembership>>,
+) {
     if (member.role === 'MEMBER') throw new ForbiddenException();
-    assertOpen(phase);
-    if (member.club.lifecycle !== 'ACTIVE')
-        throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+    if (!(await canManage(transaction, member)))
+        throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
 }
 export async function revokePending(tx: Prisma.TransactionClient, participantId: string) {
     await tx.sessionInvite.updateMany({

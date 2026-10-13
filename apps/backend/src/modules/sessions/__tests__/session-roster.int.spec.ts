@@ -347,7 +347,7 @@ describe('Session roster', () => {
         expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
         expect((await roster()).participants[0]?.status).toBe('REMOVED');
     });
-    it('should reject new invites in restricted Clubs but retain existing participation and recovery', async () => {
+    it('should freeze roster management in restricted Clubs while keeping existing participation', async () => {
         const invitation = await createInvite();
         await api.prisma.membership.updateMany({
             where: { clubId, userId: admin },
@@ -357,7 +357,8 @@ describe('Session roster', () => {
         expect(await (await respond(invitation.token)).json()).toMatchObject({ state: 'accepted' });
         expect((await roster(moderator)).canInvite).toBe(false);
         const participant = (await roster(moderator)).participants[0]!;
-        expect((await remove(participant.id)).status).toBe(204);
+        expect((await remove(participant.id)).status).toBe(409);
+        expect((await roster(moderator)).canManage).toBe(false);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await invite(moderator)).status).toBe(409);
         expect((await roster(moderator)).canManage).toBe(false);

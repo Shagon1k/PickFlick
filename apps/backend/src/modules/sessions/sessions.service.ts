@@ -1,11 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
     BLOCKING_SESSION_PHASES,
     type TCancelSession,
@@ -21,7 +16,7 @@ import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-inte
 import { NominationsService } from './nominations.service.js';
 import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
-import { canManage } from './session-roster-access.js';
+import { assertManager, canManage } from './session-roster-access.js';
 
 @Injectable()
 export class SessionsService {
@@ -61,9 +56,7 @@ export class SessionsService {
             await this.prisma.$transaction(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
-                if (membership.role === 'MEMBER') throw new ForbiddenException();
-                if (!(await canManage(transaction, membership)))
-                    throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+                await assertManager(transaction, membership);
                 validateDeadline(input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
                     where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
@@ -189,9 +182,7 @@ export class SessionsService {
 
 async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
     const { session, member } = await lockSessionForMember(transaction, userId, id);
-    if (member.role === 'MEMBER') throw new ForbiddenException();
-    if (!(await canManage(transaction, member)))
-        throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+    await assertManager(transaction, member);
     return { session, membership: member };
 }
 

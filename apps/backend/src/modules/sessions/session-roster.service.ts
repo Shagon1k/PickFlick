@@ -1,9 +1,4 @@
-import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
     ICreatedInvitation,
     IPendingSessionInvitation,
@@ -18,7 +13,6 @@ import { lockSession, lockSessionForMember } from './session-lock.js';
 import {
     assertManager,
     assertOpen,
-    canManage,
     inviteInclude,
     preview,
     revokePending,
@@ -43,10 +37,8 @@ export class SessionRosterService {
     ): Promise<ICreatedInvitation> {
         return this.prisma.$transaction(async (tx) => {
             const { session, member } = await lockSessionForMember(tx, userId, sessionId);
-            if (member.role === 'MEMBER') throw new ForbiddenException();
             assertOpen(session.phase);
-            if (!(await canManage(tx, member)))
-                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+            await assertManager(tx, member);
             const target = await tx.membership.findFirst({
                 where: {
                     id: membershipId,
@@ -92,7 +84,8 @@ export class SessionRosterService {
     async revoke(userId: string, sessionId: string, inviteId: string) {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await lockSessionForMember(tx, userId, sessionId);
-            assertManager(member, session.phase);
+            assertOpen(session.phase);
+            await assertManager(tx, member);
             const invite = await tx.sessionInvite.findFirst({
                 where: { id: inviteId, participant: { sessionId } },
                 include: inviteInclude,
@@ -123,7 +116,7 @@ export class SessionRosterService {
             const { session, member } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             const removing = input.confirmation === 'REMOVE';
-            if (removing) assertManager(member, session.phase);
+            if (removing) await assertManager(tx, member);
             const participant = await tx.sessionParticipant.findFirst({
                 where: removing
                     ? { id: input.participantId, sessionId }
