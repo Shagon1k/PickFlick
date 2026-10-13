@@ -145,6 +145,8 @@ test('Moderator management remains accessible and keeps keyboard focus inside it
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Manage Moderators' });
     await expect(dialog).toBeVisible();
+    // Mantine fades dialogs in; axe would measure contrast through the partial opacity.
+    await expect(dialog).toHaveCSS('opacity', '1');
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     for (let index = 0; index < 8; index++) {
         await page.keyboard.press('Tab');
@@ -190,7 +192,7 @@ test('pending invitations show recoverable loading failures and an explicit empt
     await authenticate(context, 'valid-empty-invites');
     await page.goto('/app');
     await page.getByRole('button', { name: 'Open pending invites' }).click();
-    await expect(dialog.getByRole('status')).toContainText('No pending Club invitations');
+    await expect(dialog.getByRole('status')).toHaveText('No pending invitations.');
 });
 
 test('member management and invite popovers meet touch, focus, accessibility, and responsive contracts', async ({
@@ -208,6 +210,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             await page.getByRole('button', { name: 'Open pending invites' }).tap();
             const dialog = page.getByRole('dialog', { name: 'Pending invites' });
             await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toBeVisible();
+            await expect(dialog).toHaveCSS('opacity', '1');
             await settle(page);
             const widths = await page.evaluate(() => ({
                 body: document.body.scrollWidth,
@@ -228,7 +231,8 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             ).toBeGreaterThanOrEqual(44);
             await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
             await page.getByRole('button', { name: 'Remove Morgan Member' }).tap();
-            await expect(page.getByRole('dialog', { name: 'Remove this member?' })).toBeVisible();
+            const removal = page.getByRole('dialog', { name: 'Remove this member?' });
+            await expect(removal).toHaveCSS('opacity', '1');
             await settle(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             await page.keyboard.press('Escape');
