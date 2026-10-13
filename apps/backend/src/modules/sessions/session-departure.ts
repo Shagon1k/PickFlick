@@ -1,6 +1,7 @@
 import type { Prisma } from '@pickflick/database';
 
 import { recordAudit } from '../clubs/club-access.js';
+import { lockSession } from './session-lock.js';
 import { completeNomination } from './session-progress.js';
 
 /** The caller holds the Club lock; completed attendance/history stays intact. */
@@ -20,7 +21,7 @@ export async function departSessions(
         orderBy: { sessionId: 'asc' },
     });
     for (const participant of participants) {
-        await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${participant.sessionId}::uuid FOR UPDATE`;
+        await lockSession(tx, participant.sessionId);
         await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
         await tx.sessionInvite.updateMany({
             where: { participantId: participant.id, respondedAt: null, revokedAt: null },

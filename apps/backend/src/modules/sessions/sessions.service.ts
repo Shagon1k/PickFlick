@@ -16,6 +16,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
 import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-intent.js';
 import { NominationsService } from './nominations.service.js';
+import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
 import { canManage } from './session-roster-access.js';
 
@@ -196,19 +197,11 @@ export class SessionsService {
 }
 
 async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
-    const initial = await transaction.session.findUnique({
-        where: { id },
-        select: { clubId: true },
-    });
-    if (!initial) throw new NotFoundException();
-    await lockClub(transaction, initial.clubId);
-    const membership = await findMembership(transaction, userId, initial.clubId);
-    if (membership.role === 'MEMBER') throw new ForbiddenException();
-    if (!(await canManage(transaction, membership)))
+    const { session, member } = await lockSessionForMember(transaction, userId, id);
+    if (member.role === 'MEMBER') throw new ForbiddenException();
+    if (!(await canManage(transaction, member)))
         throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
-    await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${id}::uuid FOR UPDATE`;
-    const session = await transaction.session.findUniqueOrThrow({ where: { id } });
-    return { session, membership };
+    return { session, membership: member };
 }
 
 function validateDeadline(value: string | null) {

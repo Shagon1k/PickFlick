@@ -3,6 +3,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger } from '@nest
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { departSessions } from '../sessions/session-departure.js';
+import { lockSession } from '../sessions/session-lock.js';
 import { completeNomination } from '../sessions/session-progress.js';
 import { StorageService } from '../storage/storage.service.js';
 import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
@@ -163,7 +164,7 @@ export class ClubLifecycleService {
                 select: { id: true },
             });
             for (const session of sessions) {
-                await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${session.id}::uuid FOR UPDATE`;
+                await lockSession(transaction, session.id);
                 await completeNomination(transaction, session.id);
             }
             await recordAudit(transaction, {

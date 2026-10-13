@@ -15,8 +15,8 @@ import type {
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { lockClub } from '../clubs/club-access.js';
+import { lockSession, lockSessionForMember } from './session-lock.js';
 import {
-    access,
     assertManager,
     assertOpen,
     canManage,
@@ -44,7 +44,7 @@ export class SessionRosterService {
         membershipId: string,
     ): Promise<ICreatedInvitation> {
         return this.prisma.$transaction(async (tx) => {
-            const { session, member } = await access(tx, userId, sessionId);
+            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
             if (member.role === 'MEMBER') throw new ForbiddenException();
             assertOpen(session.phase);
             if (!(await canManage(tx, member)))
@@ -94,7 +94,7 @@ export class SessionRosterService {
 
     async revoke(userId: string, sessionId: string, inviteId: string) {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await access(tx, userId, sessionId);
+            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
             assertManager(member, session.phase);
             const invite = await tx.sessionInvite.findFirst({
                 where: { id: inviteId, participant: { sessionId } },
@@ -124,7 +124,7 @@ export class SessionRosterService {
         input: { confirmation: 'LEAVE' } | { confirmation: 'REMOVE'; participantId: string },
     ) {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await access(tx, userId, sessionId);
+            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             const removing = input.confirmation === 'REMOVE';
             if (removing) assertManager(member, session.phase);
@@ -218,7 +218,7 @@ export class SessionRosterService {
             });
             if (!found) return { state: 'unavailable' };
             await lockClub(tx, found.clubId);
-            await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${found.participant.sessionId}::uuid FOR UPDATE`;
+            await lockSession(tx, found.participant.sessionId);
             const invite = await tx.sessionInvite.findUniqueOrThrow({
                 where,
                 include: inviteInclude,

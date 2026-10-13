@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { clubAccess, findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
+import { clubAccess, type findMembership, recordAudit } from '../clubs/club-access.js';
 import { clubPermissions } from '../clubs/club-permissions.js';
 import { clubEntitlements } from '../clubs/club-tiers.js';
 import { completeNomination } from './session-progress.js';
@@ -72,14 +72,6 @@ export function preview(invite: TInvite | null, userId: string): TSessionInvitat
     };
 }
 
-export async function access(tx: Prisma.TransactionClient, userId: string, id: string) {
-    const initial = await tx.session.findUnique({ where: { id }, select: { clubId: true } });
-    if (!initial) throw new NotFoundException();
-    await lockClub(tx, initial.clubId);
-    const member = await findMembership(tx, userId, initial.clubId);
-    await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${id}::uuid FOR UPDATE`;
-    return { session: await tx.session.findUniqueOrThrow({ where: { id } }), member };
-}
 export function assertOpen(phase: string) {
     if (!openPhases.some((value) => value === phase))
         throw new ConflictException({ reason: 'SESSION_CLOSED' });

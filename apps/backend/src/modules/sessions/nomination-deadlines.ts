@@ -2,6 +2,7 @@ import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../clubs/club-access.js';
 import { scheduleDeadline } from './nomination-deadline-intent.js';
+import { lockSession } from './session-lock.js';
 import { advanceNomination, publishProgress } from './session-progress.js';
 
 interface IDeadlineEvent {
@@ -38,7 +39,7 @@ export class NominationDeadlines {
             try {
                 const created = await this.prisma.$transaction(async (tx) => {
                     await lockClub(tx, candidate.clubId);
-                    await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${candidate.id}::uuid FOR UPDATE`;
+                    await lockSession(tx, candidate.id);
                     const session = await tx.session.findUniqueOrThrow({
                         where: { id: candidate.id },
                         include: { club: true },
@@ -104,7 +105,7 @@ export class NominationDeadlines {
         return this.prisma.$transaction(async (tx) => {
             // Every writer takes Club → Session; never take a job lock before these locks.
             await lockClub(tx, initial.clubId);
-            await tx.$queryRaw`SELECT id FROM "Session" WHERE id = ${sessionId}::uuid FOR UPDATE`;
+            await lockSession(tx, sessionId);
             await tx.$queryRaw`SELECT "sessionId" FROM "NominationDeadlineJob"
                 WHERE "sessionId" = ${sessionId}::uuid AND "deadlineVersion" = ${deadlineVersion} FOR UPDATE`;
             const session = await tx.session.findUniqueOrThrow({
