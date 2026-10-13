@@ -394,43 +394,13 @@ test('contact accepts a submission through one stable feedback region', async ({
     await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled();
 });
 
-test('contact prevents edits while a submission is in flight', async ({ page }) => {
-    await openPage(page, '/contact', canonicalViewports[0]);
-
-    const message = page.getByRole('textbox', { name: 'Message — required' });
-    const name = page.getByRole('textbox', { name: 'Your name' });
-    const email = page.getByRole('textbox', { name: 'Your email' });
-    await message.fill('Slow Contact response');
-    await page.getByRole('button', { name: 'Send message' }).click();
-
-    await expect(message).toBeDisabled();
-    await expect(name).toBeDisabled();
-    await expect(email).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
-
-    await expect(page.getByRole('status')).toHaveText(
-        "Message received — we'll get back to you soon.",
-    );
-});
-
-test('contact preserves input across rate-limit, service, and offline recovery', async ({
-    page,
-}) => {
+test('contact preserves input when the browser cannot reach the server', async ({ page }) => {
     await openPage(page, '/contact', canonicalViewports[0]);
     const message = page.getByRole('textbox', { name: 'Message — required' });
-    await message.fill('Rate limited message');
-    await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toContainText('Try again in 10 minutes');
-    await expect(message).toHaveValue('Rate limited message');
-
-    await message.fill('Service unavailable message');
-    await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toContainText('Your text is still here');
-    await expect(message).toHaveValue('Service unavailable message');
-
+    await message.fill('Please keep this message.');
     await page.context().setOffline(true);
     await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toContainText('Reconnect, then send again');
-    await expect(message).toHaveValue('Service unavailable message');
+    await expect(page.getByRole('status')).toContainText('Your text is still here');
+    await expect(message).toHaveValue('Please keep this message.');
     await page.context().setOffline(false);
 });

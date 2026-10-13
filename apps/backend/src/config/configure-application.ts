@@ -19,7 +19,7 @@ const API_SECURITY_HEADERS = {
     'X-Content-Type-Options': 'nosniff',
 };
 
-export function configureApplication(app: NestExpressApplication): void {
+export function configureApplication(app: NestExpressApplication, shutdownHooks = true): void {
     app.set('trust proxy', TRUSTED_PROXY_HOPS);
     app.disable('x-powered-by');
     app.use((_request: Request, response: Response, next: NextFunction) => {
@@ -35,5 +35,5 @@ export function configureApplication(app: NestExpressApplication): void {
     });
     app.getHttpAdapter().getInstance().all('/api/auth/*splat', app.get(AuthService).handler);
     app.useGlobalFilters(new ApiExceptionFilter());
-    app.enableShutdownHooks();
+    if (shutdownHooks) app.enableShutdownHooks();
 }

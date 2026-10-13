@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { seedFixture } from './backend-fixture';
 import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -54,14 +55,7 @@ for (const shell of shellRoutes) {
 }
 
 test('header overlays are mutually exclusive and return focus', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-shell-overlays',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await seedFixture(context);
     await openShell(page, 'product', canonicalViewports[2]);
 
     const searchTrigger = page.getByRole('button', { name: 'Search films' });
@@ -76,8 +70,8 @@ test('header overlays are mutually exclusive and return focus', async ({ context
     await page.keyboard.press('Tab');
     await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
     await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
-    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found.');
-    await expect(searchOverlay.getByRole('option')).toHaveCount(2);
+    await expect(searchOverlay.getByRole('status')).toHaveText('1 films found.');
+    await expect(searchOverlay.getByRole('option')).toHaveCount(1);
     await page.getByRole('button', { name: 'Close search' }).click();
     await expect(searchTrigger).toBeFocused();
     await expect(

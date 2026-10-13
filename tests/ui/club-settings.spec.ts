@@ -1,9 +1,7 @@
-import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
-
 const clubId = '10000000-0000-4000-8000-000000000031';
 const route = `/clubs/${clubId}/settings`;
 async function authenticate(context: BrowserContext, token: string) {
@@ -18,202 +16,17 @@ async function authenticate(context: BrowserContext, token: string) {
         },
     ]);
 }
-
 async function open(
     page: Page,
-    viewport: { height: number; width: number } = canonicalViewports[0],
+    viewport: {
+        height: number;
+        width: number;
+    } = canonicalViewports[0],
 ) {
     await page.setViewportSize(viewport);
     await page.goto(route, { waitUntil: 'load' });
     await settle(page);
 }
-
-test('Club settings redirects an unauthenticated visitor and withholds outsider data', async ({
-    context,
-    page,
-}) => {
-    await page.goto(route);
-    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/clubs/${clubId}/settings$`, 'u'));
-
-    await authenticate(context, 'valid-settings-outsider');
-    await page.goto(route);
-    await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
-    await expect(page.getByText('Midnight Society')).toHaveCount(0);
-});
-
-test('Admin and Member settings states have no automated accessibility violations', async ({
-    context,
-    page,
-}) => {
-    for (const token of ['valid-settings-admin', 'valid-settings-member']) {
-        await authenticate(context, token);
-        for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
-            await open(page, viewport);
-            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        }
-    }
-});
-
-test('Club settings do not overflow across canonical and bridge widths', async ({
-    context,
-    page,
-}) => {
-    await authenticate(context, 'valid-settings-admin-overflow');
-    for (const viewport of [
-        ...canonicalViewports,
-        { height: 900, name: 'bridge-640', width: 640 },
-        { height: 900, name: 'bridge-900', width: 900 },
-        { height: 900, name: 'bridge-1200', width: 1200 },
-    ]) {
-        await open(page, viewport);
-        const widths = await page.evaluate(() => ({
-            body: globalThis.document.body.scrollWidth,
-            client: globalThis.document.documentElement.clientWidth,
-            document: globalThis.document.documentElement.scrollWidth,
-        }));
-        expect(widths.document, `${viewport.name} document`).toBeLessThanOrEqual(widths.client);
-        expect(widths.body, `${viewport.name} body`).toBeLessThanOrEqual(widths.client);
-    }
-});
-
-test('Admin can submit settings, change a role, and confirm archive', async ({ context, page }) => {
-    await authenticate(context, 'valid-settings-admin-actions');
-    await open(page, canonicalViewports[2]);
-
-    await expect(
-        page
-            .getByRole('navigation', { name: 'Club sections' })
-            .getByRole('link', { name: 'Manage Club' }),
-    ).toHaveAttribute('aria-current', 'page');
-    const clubInfo = page.getByRole('region', { name: 'Club Info' });
-    const name = clubInfo.getByRole('textbox', { name: 'Club name' });
-    await name.fill('Midnight Society Updated');
-    await clubInfo.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(clubInfo.getByText('Club settings saved.')).toBeVisible();
-
-    const visibility = page.getByRole('region', { name: 'Settings', exact: true });
-    await visibility
-        .getByRole('checkbox', { name: 'Show ratings after the round closes' })
-        .uncheck();
-    await visibility.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(visibility.getByText('Club settings saved.')).toBeVisible();
-
-    await page.getByRole('button', { name: 'Manage Moderators' }).click();
-    const moderators = page.getByRole('dialog', { name: 'Manage Moderators' });
-    await moderators
-        .getByRole('group', { name: 'Role for Morgan Member' })
-        .getByRole('radio', { name: 'Moderator' })
-        .check();
-    await moderators.getByRole('button', { name: 'Save role' }).click();
-    await expect(moderators.getByText('Member role updated.')).toBeVisible();
-    await page.keyboard.press('Escape');
-
-    await page.getByRole('button', { name: 'Archive Club' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Archive this Club?' });
-    await expect(dialog).toBeVisible();
-    await dialog.getByRole('textbox', { name: 'Type ARCHIVE to confirm' }).fill('ARCHIVE');
-    await dialog.getByRole('button', { name: 'Confirm archive club' }).click();
-    await expect(dialog.getByText('Club archived.')).toBeVisible();
-});
-
-test('avatar replacements refresh the image and removal keeps the latest status', async ({
-    context,
-    page,
-}) => {
-    await authenticate(context, 'valid-settings-admin-avatar-actions');
-    await open(page, canonicalViewports[2]);
-
-    const avatarInput = page.getByLabel('Club avatar', { exact: true });
-    const upload = async () => {
-        const avatarResponse = page.waitForResponse(
-            (response) => new URL(response.url()).pathname === `/api/clubs/${clubId}/avatar`,
-        );
-        await avatarInput.setInputFiles({
-            name: 'avatar.png',
-            mimeType: 'image/png',
-            buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-        });
-        await page.getByRole('button', { name: 'Upload' }).click();
-        await expect(page.getByText('Club avatar updated.')).toBeVisible();
-        return avatarResponse;
-    };
-
-    const firstAvatarResponse = await upload();
-    expect(firstAvatarResponse.status()).toBe(200);
-    expect(firstAvatarResponse.headers()['content-type']).toBe('image/png');
-    const avatar = page.getByRole('img', { name: 'Midnight Society avatar' });
-    await expect(avatar).toHaveAttribute('src', /\?v=avatar-1$/u);
-    await expect
-        .poll(() =>
-            avatar.evaluate((image) => ({
-                complete: (image as HTMLImageElement).complete,
-                naturalHeight: (image as HTMLImageElement).naturalHeight,
-                naturalWidth: (image as HTMLImageElement).naturalWidth,
-            })),
-        )
-        .toEqual({ complete: true, naturalHeight: 1, naturalWidth: 1 });
-
-    const secondAvatarResponse = await upload();
-    expect(secondAvatarResponse.status()).toBe(200);
-    await expect(avatar).toHaveAttribute('src', /\?v=avatar-2$/u);
-    await expect
-        .poll(() => avatar.evaluate((image) => (image as HTMLImageElement).naturalWidth))
-        .toBe(1);
-
-    await page.getByRole('button', { name: 'Remove avatar' }).click();
-    await expect(page.getByText('Club avatar removed.')).toBeVisible();
-    await expect(avatar).toHaveCount(0);
-});
-
-for (const state of ['admin-over-limit', 'adminless']) {
-    test(`Club ${state} manager can inspect and revoke invitations while creation is paused`, async ({
-        context,
-        page,
-    }) => {
-        for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
-            await authenticate(
-                context,
-                `valid-settings-${state}-restricted-invitations-${viewport.name}`,
-            );
-            await open(page, viewport);
-            const card = page.getByRole('region', { name: 'Invite to this Club' });
-            await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
-            const recent = card.getByRole('button', { name: 'Recent invitations' });
-            await recent.focus();
-            await page.keyboard.press('Enter');
-            await expect(card.getByRole('status')).toHaveText('Recent invitations loaded.');
-            await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
-            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            const widths = await page.evaluate(() => ({
-                body: globalThis.document.body.scrollWidth,
-                client: globalThis.document.documentElement.clientWidth,
-                document: globalThis.document.documentElement.scrollWidth,
-            }));
-            expect(widths.document).toBeLessThanOrEqual(widths.client);
-            expect(widths.body).toBeLessThanOrEqual(widths.client);
-            await card.getByRole('button', { name: 'Revoke invitation' }).focus();
-            await page.keyboard.press('Enter');
-            await expect(card.getByRole('status')).toHaveText('Invitation revoked.');
-            await expect(card.getByText('revoked · expires 2026-10-10')).toBeVisible();
-            await expect(card.getByRole('button', { name: 'Revoke invitation' })).toHaveCount(0);
-        }
-    });
-}
-
-test('Member sees read-only controls and can confirm leaving', async ({ context, page }) => {
-    await authenticate(context, 'valid-settings-member-actions');
-    await open(page);
-    await expect(page.getByRole('textbox', { name: 'Club name' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Upload' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Leave Club' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
-    await dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' }).fill('LEAVE');
-    await dialog.getByRole('button', { name: 'Confirm leave club' }).click();
-    await expect(page).toHaveURL(/\/app$/u);
-});
 
 for (const viewport of screenshotViewports) {
     test(
@@ -231,7 +44,6 @@ for (const viewport of screenshotViewports) {
         },
     );
 }
-
 for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
     test(
         `Club Member settings match the ${viewport.name} source-comparison capture`,

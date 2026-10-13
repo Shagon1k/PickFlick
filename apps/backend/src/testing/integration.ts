@@ -61,7 +61,7 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
 }
 
-class MemoryStorage {
+export class MemoryStorage {
     readonly objects = new Map<string, IStoredObject>();
 
     async put(key: string, body: Buffer, contentType: string): Promise<void> {

@@ -1,23 +1,9 @@
-import { type BrowserContext, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
+import { seedFixture } from './backend-fixture';
 import { settle } from './settle';
 
-const clubId = '10000000-0000-4000-8000-000000000031';
 const publicRoutes = ['/', '/pricing', '/contact', '/legal/privacy', '/login', '/ui-preview'];
-const signedInRoutes = ['/app', '/clubs/new', `/clubs/${clubId}/settings`];
-
-async function authenticate(context: BrowserContext) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-settings-admin-actions',
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
-}
 
 test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -53,7 +39,8 @@ test(
     'pages sign every inline script and raise no CSP violations',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context);
+        const fixture = await seedFixture(context);
+        const signedInRoutes = ['/app', '/clubs/new', `/clubs/${fixture.clubId}/settings`];
         for (const route of [...publicRoutes, ...signedInRoutes]) {
             await page.goto(route, { waitUntil: 'load' });
             await settle(page);

@@ -3,9 +3,9 @@ export function sendJson(response, status, body) {
     response.end(JSON.stringify(body));
 }
 
-export function sendError(response, status, code, requestId, reason) {
+export function sendError(response, status, code, requestId) {
     sendJson(response, status, {
-        error: { code, message: code, requestId, ...(reason ? { reason } : {}) },
+        error: { code, message: code, requestId },
     });
 }
 

@@ -2,7 +2,7 @@ const settingsClubId = '10000000-0000-4000-8000-000000000031';
 
 const activeLifecycle = (lifecycle) => lifecycle === 'ACTIVE';
 
-export function settingsProjection(token, avatarVersion, removed) {
+export function settingsProjection(token) {
     let role =
         ['member', 'moderator'].find((name) => token?.split('-').includes(name))?.toUpperCase() ??
         'ADMIN';
@@ -32,8 +32,7 @@ export function settingsProjection(token, avatarVersion, removed) {
             id: settingsClubId,
             name: 'Midnight Society',
             description: 'Noir, classics, and arguments.',
-            hasAvatar: Boolean(avatarVersion),
-            ...(avatarVersion ? { avatarVersion } : {}),
+            hasAvatar: false,
             lifecycle,
             membershipRole: role,
             selectionScaleMin: 0,
@@ -65,7 +64,7 @@ export function settingsProjection(token, avatarVersion, removed) {
             showRatingResults: true,
             useMonochromeMedia: true,
         },
-        members: memberRoster(role, adminless, overLimit, removed),
+        members: memberRoster(role, adminless, overLimit),
         auditEvents: admin
             ? [
                   {
@@ -78,7 +77,7 @@ export function settingsProjection(token, avatarVersion, removed) {
     };
 }
 
-function memberRoster(role, adminless, overLimit, removed) {
+function memberRoster(role, adminless, overLimit) {
     return [
         {
             id: '20000000-0000-4000-8000-000000000031',
@@ -110,8 +109,5 @@ function memberRoster(role, adminless, overLimit, removed) {
                   joinedAt: '2026-02-02T00:00:00.000Z',
               }))
             : []),
-    ].filter(
-        (member) =>
-            (!adminless || member.role !== 'ADMIN') && (!removed || member.role !== 'MEMBER'),
-    );
+    ].filter((member) => !adminless || member.role !== 'ADMIN');
 }

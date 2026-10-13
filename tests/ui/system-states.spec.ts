@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { seedFixture } from './backend-fixture';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -81,21 +82,11 @@ test('application failures hide diagnostics and recover through retry', async ({
     ).toBeVisible();
 });
 
-test('signed-in application failures recover inside the product shell', async ({ page }) => {
-    await page.route('**/api/auth/get-session', async (route) => {
-        await route.fulfill({
-            contentType: 'application/json',
-            json: {
-                session: {
-                    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-                    id: 'preview-session',
-                    userId: 'preview-user',
-                },
-                user: { email: 'preview@example.com', id: 'preview-user', name: 'Preview User' },
-            },
-            status: 200,
-        });
-    });
+test('signed-in application failures recover inside the product shell', async ({
+    context,
+    page,
+}) => {
+    await seedFixture(context);
     await openApplicationError(page, canonicalViewports[3]);
 
     const recovery = page.getByRole('region', { name: 'Projector Malfunction' });

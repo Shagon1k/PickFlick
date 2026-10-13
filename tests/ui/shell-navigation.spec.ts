@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { seedFixture } from './backend-fixture';
 import { expectMobileAdminEntry, openShell } from './shell-fixtures';
 import { canonicalViewports } from './viewports';
 
@@ -298,17 +299,11 @@ test('authenticated shells expose Sign out as an action on desktop and mobile', 
     await expect(mobileAction).toHaveAttribute('data-shell-action', 'sign-out');
 });
 
-test('Sign out revokes the browser session before returning to Login', async ({ page }) => {
-    let signOutMethod = '';
-    await page.route('**/api/auth/sign-out', async (route) => {
-        signOutMethod = route.request().method();
-        await route.fulfill({
-            contentType: 'application/json',
-            json: { success: true },
-            status: 200,
-        });
-    });
-
+test('Sign out revokes the browser session before returning to Login', async ({
+    context,
+    page,
+}) => {
+    await seedFixture(context);
     await openShell(page, 'product', canonicalViewports[2]);
     await page.getByRole('button', { name: 'Account menu' }).click();
     await page
@@ -317,16 +312,17 @@ test('Sign out revokes the browser session before returning to Login', async ({ 
         .click();
 
     await expect(page).toHaveURL(/\/login$/);
-    expect(signOutMethod).toBe('POST');
+    const session = await context.request.get('/api/auth/get-session');
+    expect(await session.json()).toBeNull();
 });
 
-test('a failed Sign out keeps the session UI and shows a visible error', async ({ page }) => {
+test('a failed Sign out keeps the session UI and shows a visible error', async ({
+    context,
+    page,
+}) => {
+    await seedFixture(context);
     await page.route('**/api/auth/sign-out', async (route) => {
-        await route.fulfill({
-            contentType: 'application/json',
-            json: { message: 'failed' },
-            status: 500,
-        });
+        await route.abort('failed');
     });
 
     await openShell(page, 'product', canonicalViewports[2]);

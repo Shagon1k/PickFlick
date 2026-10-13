@@ -1,11 +1,16 @@
 # UI quality checks
 
-The UI scripts build the web app, start it on loopback against a mock API
-(`tests/ui/start-frontend-with-mock-api.mjs`), and run Playwright in Chromium over
-the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
-states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
-live Session creation/edit/cancellation, member-only Session invitation responses and roster
-management, Nomination submissions and personal suggestions, and the seven `/shell-preview/*` shells.
+Behavioral UI tests build the web app and real Nest backend, then run against PostgreSQL.
+The test entry point (`apps/backend/src/testing/ui-api.ts`) creates isolated Club and Session
+fixtures and Better Auth test sessions. Movie, email, and storage providers are synthetic;
+application mutations, permissions, persistence, and progress polling run through production code.
+The test auth instance exempts session reads from rate limiting because all browser test users share
+one loopback peer; production authentication limits are unchanged.
+Fixture routes are registered only by this loopback test entry point, never by AppModule.
+
+Screenshot tests use `playwright.visual.config.ts` and the read-only display fixtures in
+`tests/ui/start-frontend-with-mock-api.mjs`. That server holds no mutable Club or Session state.
+Invitation outcome fixtures exist only to capture those display states.
 
 ## Run it
 
@@ -17,14 +22,18 @@ pnpm test:ui:contract
 pnpm test:ui:visual
 ```
 
-`pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects PR checks with
-`test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
-continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search and read-only Movie Details at 390, 768, 1024 and 1440px, and overflow
-at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session invitation
-privacy and sign-in continuation, accepted-roster leave, operator invitation/removal focus, and personal-suggestion nomination with privacy and submission locking. Screenshot comparisons use the `@visual` tag;
-`test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
-accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
-reduced motion, and other behavior assertions.
+Set `APP_ENV=test`, `PICKFLICK_ENV_FILE=.env.example`, and `DATABASE_URL` to a disposable
+`pickflick_test` PostgreSQL database before behavioral checks. The harness applies migrations and
+rejects seed targets outside the repository's local/test safeguards. CI provides PostgreSQL as a
+job service. Visual checks need no database.
+
+`pnpm test:ui` runs contract and visual selections sequentially. `test:ui:smoke` selects tagged
+behavior checks: persisted Club settings and member removal, Session creation/edit/cancellation,
+keyboard Movie selection, targeted Session invitation responses, nomination locking and privacy,
+and polling between open tabs, plus the public-page and gallery smoke checks. Contract checks also
+cover accessibility, focus return, responsive overflow, reduced motion, and network failure input
+retention. Domain edge cases stay in database/API integration tests rather than a second browser-side
+implementation.
 
 The suite checks:
 

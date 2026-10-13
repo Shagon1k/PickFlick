@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { seedFixture } from './backend-fixture';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
@@ -29,16 +30,10 @@ test('Login is accessible with Google while dormant Apple Sign In stays hidden',
 });
 
 test('Login redirects an authenticated User to the app', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    const fixture = await seedFixture(context);
 
     await page.goto('/login');
-    await expect(page).toHaveURL(/\/app$/);
+    await expect(page).toHaveURL(new RegExp(`/clubs/${fixture.clubId}$`));
 });
 
 test('Login remains available for a forged session cookie', async ({ context, page }) => {
@@ -92,13 +87,12 @@ test('Google sign-in sends only an allowlisted return target and stores no token
     page,
 }) => {
     let requestBody: Record<string, unknown> | undefined;
-    await page.route('**/api/auth/sign-in/social', async (route) => {
-        requestBody = route.request().postDataJSON() as Record<string, unknown>;
-        await route.fulfill({
-            contentType: 'application/json',
-            body: JSON.stringify({ redirect: true, url: '/login?oauth_started=1' }),
-            status: 200,
-        });
+    page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/api/auth/sign-in/social')
+            requestBody = request.postDataJSON() as Record<string, unknown>;
+    });
+    await page.route('https://accounts.google.com/**', async (route) => {
+        await route.fulfill({ contentType: 'text/plain', body: 'Synthetic external sign-in page' });
     });
 
     await openLogin(
@@ -107,7 +101,7 @@ test('Google sign-in sends only an allowlisted return target and stores no token
         '/login?returnTo=https%3A%2F%2Fevil.example%2Fsteal',
     );
     await page.getByRole('button', { name: 'Continue with Google' }).click();
-    await expect(page).toHaveURL(/oauth_started=1/);
+    await expect(page).toHaveURL(/^https:\/\/accounts\.google\.com\//);
     expect(requestBody).toMatchObject({ callbackURL: '/app', provider: 'google' });
     expect(JSON.stringify(requestBody)).not.toMatch(/token|secret/i);
 
@@ -122,13 +116,12 @@ test('Login preserves a supported invitation and never reflects raw provider err
     page,
 }) => {
     let requestBody: Record<string, unknown> | undefined;
-    await page.route('**/api/auth/sign-in/social', async (route) => {
-        requestBody = route.request().postDataJSON() as Record<string, unknown>;
-        await route.fulfill({
-            contentType: 'application/json',
-            body: JSON.stringify({ redirect: true, url: '/login?oauth_started=1' }),
-            status: 200,
-        });
+    page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/api/auth/sign-in/social')
+            requestBody = request.postDataJSON() as Record<string, unknown>;
+    });
+    await page.route('https://accounts.google.com/**', async (route) => {
+        await route.fulfill({ contentType: 'text/plain', body: 'Synthetic external sign-in page' });
     });
 
     await openLogin(
@@ -141,6 +134,7 @@ test('Login preserves a supported invitation and never reflects raw provider err
     );
     await expect(page.getByText('provider-secret-detail')).toHaveCount(0);
     await page.getByRole('button', { name: 'Continue with Google' }).click();
+    await expect(page).toHaveURL(/^https:\/\/accounts\.google\.com\//);
     expect(requestBody).toMatchObject({
         callbackURL: '/invite/club/invite_token-123',
         provider: 'google',

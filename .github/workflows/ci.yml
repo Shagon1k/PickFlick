@@ -190,6 +190,20 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
     timeout-minutes: 45
 
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: pickflick_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pickflick_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: test
+      PICKFLICK_ENV_FILE: .env.example
+      DATABASE_URL: postgresql://postgres@postgres:5432/pickflick_test
+
     steps:
       - name: Check out the exact revision
         uses: actions/checkout@v6
@@ -227,6 +241,20 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:bc6ab0d6d44ff4826e4cb8c1e6d801e185bfc42bb0753f8e2a30efc70db054c7
     timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: pickflick_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pickflick_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: test
+      PICKFLICK_ENV_FILE: .env.example
+      DATABASE_URL: postgresql://postgres@postgres:5432/pickflick_test
 
     steps:
       - name: Check out the exact revision

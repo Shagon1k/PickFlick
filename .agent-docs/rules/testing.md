@@ -17,7 +17,8 @@
 - Database integration tests are named `<name>.int.spec.ts` and run with `pnpm test:integration`
   against the local services.
 - Browser tests are Playwright `*.spec.ts` files: `tests/ui/` runs against a local
-  production build with a mock API (`pnpm test:ui`), `tests/uat/` smokes a deployed environment
+  production build and seeded real backend (`pnpm test:ui:contract`). Screenshot tests alone use
+  display fixtures (`pnpm test:ui:visual`); `tests/uat/` smokes a deployed environment
   (`pnpm test:uat`). Shared viewports live in `tests/ui/viewports.ts`.
 - Build test data with small factory functions instead of repeating inline objects.
 
