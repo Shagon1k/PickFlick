@@ -32,14 +32,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     if (!movieIdSchema.safeParse(movieId).success) notFound();
     const session = await getSessionState();
     if (session === 'anonymous') redirect(loginPath(`/movies/${movieId}`));
-    let response;
-    try {
-        response = session === 'unavailable' ? null : await getMovieDetails(movieId);
-    } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/movies/${movieId}`));
-        throw error;
-    }
+    const response = session === 'unavailable' ? null : await loadDetails(movieId);
     const result = response?.result;
     if (result?.state === 'unavailable' && result.reason === 'NOT_FOUND') notFound();
     if (!result || result.state === 'unavailable') {
@@ -118,4 +111,14 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
             </main>
         </ProductFrame>
     );
+}
+
+async function loadDetails(movieId: string) {
+    try {
+        return await getMovieDetails(movieId);
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 401)
+            redirect(loginPath(`/movies/${movieId}`));
+        throw error;
+    }
 }

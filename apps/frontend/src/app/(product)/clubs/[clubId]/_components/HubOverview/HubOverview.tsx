@@ -58,9 +58,7 @@ function callSheetPhase(session?: IClubHubSession): string {
 
 export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
     const { club, activeSession } = hub;
-    const canCreate =
-        hub.permissions.manageSessions &&
-        !['NOMINATION', 'SELECTION', 'WATCHING'].includes(activeSession?.phase ?? '');
+    const canCreate = canCreateSession(hub);
     const choices = clubChoices(clubs, club);
     const currentIndex = choices.findIndex(({ id }) => id === club.id);
     const previous =
@@ -120,32 +118,7 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                                 </span>
                             </p>
                             {activeSession ? (
-                                <dl className={styles.callFacts}>
-                                    <div>
-                                        <dt>Session</dt>
-                                        <dd>{sessionName(activeSession)}</dd>
-                                    </div>
-                                    <div>
-                                        <dt>Date</dt>
-                                        <dd>
-                                            {activeSession.scheduledAt
-                                                ? sessionDate(activeSession.scheduledAt)
-                                                : 'To be announced'}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>Call time</dt>
-                                        <dd>
-                                            {activeSession.scheduledAt
-                                                ? sessionTime(activeSession.scheduledAt)
-                                                : 'To be announced'}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>Location</dt>
-                                        <dd>{activeSession.location ?? 'To be announced'}</dd>
-                                    </div>
-                                </dl>
+                                <CallFacts session={activeSession} />
                             ) : (
                                 <p className={styles.emptyCall}>
                                     No active Session is on the Call Sheet yet.
@@ -299,5 +272,39 @@ function ClubArrow({
                 {direction}
             </button>
         </form>
+    );
+}
+
+function canCreateSession(hub: IClubHub) {
+    return (
+        hub.permissions.manageSessions &&
+        !['NOMINATION', 'SELECTION', 'WATCHING'].includes(hub.activeSession?.phase ?? '')
+    );
+}
+
+function CallFacts({ session }: { session: IClubHubSession }) {
+    return (
+        <dl className={styles.callFacts}>
+            <div>
+                <dt>Session</dt>
+                <dd>{sessionName(session)}</dd>
+            </div>
+            <div>
+                <dt>Date</dt>
+                <dd>
+                    {session.scheduledAt ? sessionDate(session.scheduledAt) : 'To be announced'}
+                </dd>
+            </div>
+            <div>
+                <dt>Call time</dt>
+                <dd>
+                    {session.scheduledAt ? sessionTime(session.scheduledAt) : 'To be announced'}
+                </dd>
+            </div>
+            <div>
+                <dt>Location</dt>
+                <dd>{session.location ?? 'To be announced'}</dd>
+            </div>
+        </dl>
     );
 }

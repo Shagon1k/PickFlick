@@ -24,10 +24,11 @@ export async function inspectInvitation(
         select: { id: true },
     });
     if (membership) return result({ state: 'already-member', clubId: invitation.clubId });
+    const responseState =
+        invitation.responderId === userId && !invitation.accepted ? 'declined' : 'invalid';
     if (invitation.respondedAt) {
         return result({
-            state:
-                invitation.responderId === userId && !invitation.accepted ? 'declined' : 'invalid',
+            state: responseState,
         });
     }
     if (invitation.club.lifecycle !== 'ACTIVE') return result({ state: 'unavailable' });

@@ -29,7 +29,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 return;
             }
             if (result.invitations) setInvitations(result.invitations);
-            if ('created' in result && result.created) {
+            if (result.created) {
                 const created = result.created;
                 if (!result.invitations) {
                     setInvitations((current) => [

@@ -74,6 +74,8 @@ export default [
         },
         rules: {
             curly: ['error', 'all'],
+            'sonarjs/cognitive-complexity': ['error', 12],
+            'max-params': ['error', 4],
             // Props are plain types in this codebase (see .agent-docs/rules/typescript.md).
             'sonarjs/prefer-read-only-props': 'off',
             'no-duplicate-imports': 'error',

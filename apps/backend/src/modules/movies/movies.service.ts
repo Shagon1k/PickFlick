@@ -95,10 +95,12 @@ export class MoviesService {
         options: { allowStale?: boolean; forceRefresh?: boolean; locale?: 'en-US' } = {},
     ): Promise<TMovieResult<TMovieDetails>> {
         movieIdSchema.parse(movieId);
+        const allowStale = options.allowStale ?? false;
+        const forceRefresh = options.forceRefresh ?? false;
         const locale = options.locale ?? this.environment.catalog.locale;
         const key = this.cacheKey([locale]);
         const cached = await this.repository.cachedDetails(movieId, key);
-        if (!options.forceRefresh && cached?.fresh) return fresh(cached);
+        if (!forceRefresh && cached?.fresh) return fresh(cached);
         const lookup = await this.repository.lookup(movieId);
         if (!lookup) return { state: 'unavailable', reason: 'NOT_FOUND' };
         const startedAt = new Date();
@@ -109,25 +111,31 @@ export class MoviesService {
                     ...lookup,
                     movieId,
                     locale,
-                    allowStale: options.allowStale ?? false,
-                    forceRefresh: options.forceRefresh ?? false,
+                    allowStale,
+                    forceRefresh,
                 }),
             );
         } catch (error) {
-            if (error instanceof MovieProviderError)
-                for (const removal of error.removals)
-                    await this.repository.markUnavailable(movieId, removal.source);
-            const fallback = options.allowStale
-                ? await this.repository.cachedDetails(movieId, key)
-                : null;
-            const safeFallback = fallback?.staleAllowed ? fallback : null;
-            return this.failure(error, safeFallback, options.allowStale ?? false);
+            return this.detailsFailure(error, { movieId, key, allowStale });
         }
         await this.repository.saveDetails(movieId, key, data, startedAt);
         const saved = await this.repository.cachedDetails(movieId, key);
         return saved
-            ? this.result(saved, options.allowStale ?? false)
+            ? this.result(saved, allowStale)
             : { state: 'unavailable', reason: 'NOT_FOUND' };
+    }
+    private async detailsFailure(
+        error: unknown,
+        cache: { movieId: string; key: string; allowStale: boolean },
+    ) {
+        if (error instanceof MovieProviderError) {
+            for (const removal of error.removals)
+                await this.repository.markUnavailable(cache.movieId, removal.source);
+        }
+        const fallback = cache.allowStale
+            ? await this.repository.cachedDetails(cache.movieId, cache.key)
+            : null;
+        return this.failure(error, fallback?.staleAllowed ? fallback : null, cache.allowStale);
     }
     private result(
         cached: NonNullable<Awaited<ReturnType<MoviesRepository['cachedDetails']>>>,

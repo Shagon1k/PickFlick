@@ -34,29 +34,13 @@ export default function SessionForm({
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
-        initialValues: {
-            date: session?.scheduledAt?.slice(0, 10) ?? '',
-            location: session?.location ?? '',
-            topic: session?.topic ?? '',
-            notes: session?.notes ?? '',
-            type: session?.type === 'PRE_SELECTED' ? 'PRE_SELECTED' : 'FULL_CYCLE',
-            duration: '',
-            removeDeadline: false,
-            movieId: session?.movieId ?? null,
-        },
+        initialValues: sessionValues(session),
         validate: (values) => validateSession(values, session),
     });
     const submit = (event: React.SubmitEvent<HTMLFormElement>) =>
         form.onSubmit(
             (values, event) => {
-                const [hours = '0', minutes = '0'] = values.duration.split(':');
-                let deadlineAt = session?.deadlineAt ?? null;
-                if (values.removeDeadline) deadlineAt = null;
-                else if (values.type === 'FULL_CYCLE' && values.duration) {
-                    deadlineAt = new Date(
-                        Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000,
-                    ).toISOString();
-                }
+                const deadlineAt = nominationDeadline(values, session);
                 const input = sessionInput(values, deadlineAt, session);
                 const element = event?.currentTarget;
                 setMessage('Saving Session…');
@@ -221,4 +205,24 @@ function SessionResult({ session }: { session: TSession }) {
             <ButtonLink href={`/clubs/${session.clubId}`}>Back to Club Hub</ButtonLink>
         </div>
     );
+}
+
+function nominationDeadline(values: ISessionValues, session?: TSession) {
+    if (values.removeDeadline) return null;
+    if (values.type !== 'FULL_CYCLE' || !values.duration) return session?.deadlineAt ?? null;
+    const [hours = '0', minutes = '0'] = values.duration.split(':');
+    return new Date(Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000).toISOString();
+}
+
+function sessionValues(session?: TSession): ISessionValues {
+    return {
+        date: session?.scheduledAt?.slice(0, 10) ?? '',
+        location: session?.location ?? '',
+        topic: session?.topic ?? '',
+        notes: session?.notes ?? '',
+        type: session?.type === 'PRE_SELECTED' ? 'PRE_SELECTED' : 'FULL_CYCLE',
+        duration: '',
+        removeDeadline: false,
+        movieId: session?.movieId ?? null,
+    };
 }

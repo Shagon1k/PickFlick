@@ -22,9 +22,15 @@ export class NominationsService {
     async project(
         tx: Prisma.TransactionClient,
         userId: string,
-        session: Prisma.SessionGetPayload<object>,
-        member: Awaited<ReturnType<typeof findMembership>>,
-        canManageSession: boolean,
+        {
+            session,
+            member,
+            canManageSession,
+        }: {
+            session: Prisma.SessionGetPayload<object>;
+            member: Awaited<ReturnType<typeof findMembership>>;
+            canManageSession: boolean;
+        },
     ): Promise<TNominations> {
         const id = session.id;
         const participants = await tx.sessionParticipant.findMany({

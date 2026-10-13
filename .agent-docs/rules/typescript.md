@@ -86,3 +86,6 @@ specs, script tests, and config files.
   component folder you are in.
 - Don't use `React.FC`; type props and the return value explicitly.
 - Use `React.<Event>Event<HTML...Element>` for event handler types.
+
+ESLint enforces cognitive complexity at most 12 and at most four parameters. Use named inputs
+when positional parameters would hide the workflow; keep related control flow readable.

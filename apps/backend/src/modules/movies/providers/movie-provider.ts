@@ -28,7 +28,7 @@ const sourceRemovalSchema = z.strictObject({
     source: movieSourceSchema,
 });
 export type TSourceRemoval = z.infer<typeof sourceRemovalSchema>;
-export const providerRecordSchema = z.strictObject({
+const providerRecordSchema = z.strictObject({
     externalIds: z.array(movieExternalIdSchema).min(1).max(10),
     data: movieMetadataSchema,
     similarExternalIds: sourceSnapshotSchema.shape.similarExternalIds,
@@ -37,7 +37,7 @@ export const providerRecordSchema = z.strictObject({
     provenance: z.array(movieProvenanceSchema).min(1).max(3),
 });
 export type TProviderRecord = z.infer<typeof providerRecordSchema>;
-export const providerSearchSchema = z.strictObject({
+const providerSearchSchema = z.strictObject({
     movies: z.array(providerRecordSchema).max(100),
     page: z.number().int().min(1).max(500),
     totalPages: z.number().int().nonnegative(),
