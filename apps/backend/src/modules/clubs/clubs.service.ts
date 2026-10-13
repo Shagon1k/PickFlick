@@ -20,6 +20,7 @@ import {
     assertAdmin,
     clubAccess,
     findMembership,
+    loadClubAccess,
     lockClub,
     recordAudit,
 } from './club-access.js';
@@ -44,17 +45,16 @@ export class ClubsService {
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const [
-                    memberCount,
+                    { access, memberCount },
                     sessionCount,
                     completedSessionCount,
                     blockingSession,
                     ratingSession,
                     recent,
-                    admin,
                     ratings,
                     history,
                 ] = await Promise.all([
-                    transaction.membership.count({ where: { clubId, status: 'ACTIVE' } }),
+                    loadClubAccess(transaction, membership.club),
                     transaction.session.count({
                         where: { clubId, phase: { not: 'CANCELLED' } },
                     }),
@@ -75,10 +75,6 @@ export class ClubsService {
                         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
                         take: 5,
                     }),
-                    transaction.membership.findFirst({
-                        where: { clubId, role: 'ADMIN', status: 'ACTIVE' },
-                        select: { id: true },
-                    }),
                     transaction.session.findMany({
                         where: { clubId, phase: 'RATING' },
                         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
@@ -89,12 +85,6 @@ export class ClubsService {
                         take: 20,
                     }),
                 ]);
-                const access = clubAccess(
-                    membership.club.lifecycle,
-                    Boolean(admin),
-                    memberCount,
-                    clubEntitlements(clubId).memberLimit,
-                );
                 const activeSession = blockingSession ?? ratingSession;
                 return {
                     club: toClubSummary(membership.club, membership.role),

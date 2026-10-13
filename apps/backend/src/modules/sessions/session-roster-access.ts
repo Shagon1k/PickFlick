@@ -4,27 +4,15 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { clubAccess, type findMembership, recordAudit } from '../clubs/club-access.js';
+import { type findMembership, loadClubAccess, recordAudit } from '../clubs/club-access.js';
 import { clubPermissions } from '../clubs/club-permissions.js';
-import { clubEntitlements } from '../clubs/club-tiers.js';
 import { completeNomination } from './session-progress.js';
 
 export async function canManage(
     transaction: Prisma.TransactionClient,
     membership: Awaited<ReturnType<typeof findMembership>>,
 ) {
-    const [admin, count] = await Promise.all([
-        transaction.membership.findFirst({
-            where: { clubId: membership.club.id, status: 'ACTIVE', role: 'ADMIN' },
-        }),
-        transaction.membership.count({ where: { clubId: membership.club.id, status: 'ACTIVE' } }),
-    ]);
-    const access = clubAccess(
-        membership.club.lifecycle,
-        Boolean(admin),
-        count,
-        clubEntitlements(membership.club.id).memberLimit,
-    );
+    const { access } = await loadClubAccess(transaction, membership.club);
     return clubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
 

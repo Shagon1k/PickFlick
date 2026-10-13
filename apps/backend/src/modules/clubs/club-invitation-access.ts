@@ -1,6 +1,7 @@
 import type { TInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { loadClubAccess } from './club-access.js';
 import { clubEntitlements } from './club-tiers.js';
 
 export async function inspectInvitation(
@@ -31,14 +32,8 @@ export async function inspectInvitation(
         });
     }
     if (invitation.club.lifecycle !== 'ACTIVE') return result({ state: 'unavailable' });
-    const memberCount = await transaction.membership.count({
-        where: { clubId: invitation.clubId, status: 'ACTIVE' },
-    });
-    const admin = await transaction.membership.findFirst({
-        where: { clubId: invitation.clubId, role: 'ADMIN', status: 'ACTIVE' },
-        select: { id: true },
-    });
-    if (!admin) return result({ state: 'unavailable' });
+    const { access, memberCount } = await loadClubAccess(transaction, invitation.club);
+    if (access.adminless) return result({ state: 'unavailable' });
     if (memberCount >= clubEntitlements(invitation.clubId).memberLimit)
         return result({ state: 'over-limit' });
     return result({

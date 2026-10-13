@@ -18,7 +18,13 @@ import type {
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { assertActive, findMembership, lockClub, recordAudit } from './club-access.js';
+import {
+    assertActive,
+    findMembership,
+    loadClubAccess,
+    lockClub,
+    recordAudit,
+} from './club-access.js';
 import { inspectInvitation } from './club-invitation-access.js';
 import { clubEntitlements } from './club-tiers.js';
 
@@ -45,10 +51,8 @@ export class ClubInvitationsService {
             await lockClub(transaction, clubId);
             const membership = await manager(transaction, userId, clubId);
             assertActive(membership);
-            const count = await transaction.membership.count({
-                where: { clubId, status: 'ACTIVE' },
-            });
-            if (count >= clubEntitlements(clubId).memberLimit) {
+            const { access, memberCount } = await loadClubAccess(transaction, membership.club);
+            if (memberCount >= clubEntitlements(clubId).memberLimit) {
                 throw new ConflictException({ reason: 'MEMBER_LIMIT_REACHED' });
             }
             if (
@@ -60,11 +64,7 @@ export class ClubInvitationsService {
             ) {
                 throw new ConflictException({ reason: 'INVITATION_TARGET_UNAVAILABLE' });
             }
-            const admin = await transaction.membership.findFirst({
-                where: { clubId, role: 'ADMIN', status: 'ACTIVE' },
-                select: { id: true },
-            });
-            if (!admin) throw new ConflictException({ reason: 'CLUB_ADMIN_UNAVAILABLE' });
+            if (access.adminless) throw new ConflictException({ reason: 'CLUB_ADMIN_UNAVAILABLE' });
             const token = randomBytes(32).toString('base64url');
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             const invitation = await transaction.clubInvite.create({

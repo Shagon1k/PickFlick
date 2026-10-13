@@ -2,6 +2,8 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { clubEntitlements } from './club-tiers.js';
+
 const clubColumns = {
     id: true,
     name: true,
@@ -79,4 +81,23 @@ export function clubAccess(
     if (!hasAdmin) reasons.push('ADMINLESS');
     if (memberCount > memberLimit) reasons.push('MEMBER_LIMIT');
     return { adminless: !hasAdmin, newWorkAllowed: reasons.length === 0, reasons };
+}
+
+/** Counts active members and checks for an active Admin, then derives the Club's access state. */
+export async function loadClubAccess(
+    database: Prisma.TransactionClient,
+    club: { id: string; lifecycle: TClubLifecycle },
+): Promise<{ access: IClubAccess; memberCount: number }> {
+    const [admin, memberCount] = await Promise.all([
+        database.membership.findFirst({
+            where: { clubId: club.id, role: 'ADMIN', status: 'ACTIVE' },
+            select: { id: true },
+        }),
+        database.membership.count({ where: { clubId: club.id, status: 'ACTIVE' } }),
+    ]);
+    const { memberLimit } = clubEntitlements(club.id);
+    return {
+        access: clubAccess(club.lifecycle, Boolean(admin), memberCount, memberLimit),
+        memberCount,
+    };
 }
