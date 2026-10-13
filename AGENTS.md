@@ -78,28 +78,29 @@ Run from the repository root with the Node and pnpm versions pinned in `.node-ve
 
 Scripts are named `area:action`; the area says what they touch.
 
-| Area     | Command                                                 | Does                                                                  |
-| -------- | ------------------------------------------------------- | --------------------------------------------------------------------- |
-| Setup    | `pnpm install --frozen-lockfile`                        | Install the locked dependencies.                                      |
-| Services | `pnpm services:up` / `services:check` / `services:down` | Start, check, or stop local PostgreSQL and MinIO (volumes are kept).  |
-| Run      | `pnpm dev` / `pnpm start`                               | Run the frontend and backend in development, or the built ones.       |
-| Quality  | `pnpm lint` / `lint:fix`                                | ESLint and Stylelint (the house style), or their autofixes.           |
-|          | `pnpm format` / `format:check`                          | Format with Prettier, or check formatting.                            |
-|          | `pnpm typecheck`                                        | Type-check every package, the tests, and the configs.                 |
-|          | `pnpm knip`                                             | Find unused files, exports, and dependencies.                         |
-|          | `pnpm verify`                                           | All of the above, unit tests, and the build: the static CI gate.      |
-| Test     | `pnpm test:unit`                                        | Vitest unit tests.                                                    |
-|          | `pnpm test:integration`                                 | Database and API tests against the local services.                    |
-|          | `pnpm test:ui:smoke`                                    | Tagged PR behavior checks.                                            |
-|          | `pnpm test:ui:contract` / `test:ui:visual`              | Full behavior checks, or release screenshot comparisons.              |
-|          | `pnpm test:ui` / `test:ui:update`                       | Both UI selections, or update visual baselines after review.          |
-|          | `pnpm test:e2e`                                         | Smoke the built frontend and backend against isolated services.       |
-|          | `pnpm test:uat`                                         | Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`).                 |
-| Build    | `pnpm build` / `build:packages` / `build:images`        | Build everything, only the shared packages, or the production images. |
-| Deploy   | `pnpm deploy:check`                                     | Render the local, deploy, and preview Compose files.                  |
-|          | `pnpm deploy:uat`                                       | Converge UAT Compose from a clean checkout.                           |
-| Database | `pnpm db:migrate` / `db:seed`                           | Apply the migrations, or load local or test seed data.                |
-|          | `pnpm db:reset`                                         | Reset a positively identified local or test database.                 |
+| Area     | Command                                                 | Does                                                                   |
+| -------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Setup    | `pnpm install --frozen-lockfile`                        | Install the locked dependencies.                                       |
+| Services | `pnpm services:up` / `services:check` / `services:down` | Start, check, or stop local PostgreSQL and MinIO (volumes are kept).   |
+| Run      | `pnpm dev` / `pnpm start`                               | Run the frontend and backend in development, or the built ones.        |
+| Quality  | `pnpm lint` / `lint:fix`                                | ESLint and Stylelint (the house style), or their autofixes.            |
+|          | `pnpm format` / `format:check`                          | Format with Prettier, or check formatting.                             |
+|          | `pnpm typecheck`                                        | Type-check every package, the tests, and the configs.                  |
+|          | `pnpm knip`                                             | Find unused files, exports, and dependencies.                          |
+|          | `pnpm verify`                                           | All of the above, unit tests, and the build: the static CI gate.       |
+| Test     | `pnpm test:unit`                                        | Vitest unit tests.                                                     |
+|          | `pnpm test:integration`                                 | Database and API tests against the local services.                     |
+|          | `pnpm test:ui:smoke`                                    | Tagged PR behavior checks.                                             |
+|          | `pnpm test:ui:contract` / `test:ui:visual`              | Full behavior checks, or release screenshot comparisons.               |
+|          | `pnpm test:ui` / `test:ui:update`                       | Both UI selections, or update visual baselines after review.           |
+|          | `pnpm test:e2e`                                         | Smoke the built frontend and backend against isolated services.        |
+|          | `pnpm test:journeys`                                    | Core flows through the built web app and real API on `pickflick_test`. |
+|          | `pnpm test:uat`                                         | Smoke a deployed environment (`PLAYWRIGHT_BASE_URL`).                  |
+| Build    | `pnpm build` / `build:packages` / `build:images`        | Build everything, only the shared packages, or the production images.  |
+| Deploy   | `pnpm deploy:check`                                     | Render the local, deploy, and preview Compose files.                   |
+|          | `pnpm deploy:uat`                                       | Converge UAT Compose from a clean checkout.                            |
+| Database | `pnpm db:migrate` / `db:seed`                           | Apply the migrations, or load local or test seed data.                 |
+|          | `pnpm db:reset`                                         | Reset a positively identified local or test database.                  |
 
 UAT deployment and production promotion run only in GitHub Actions (`deploy-uat.yml`,
 `promote-production.yml`). [\_docs/environment.md](_docs/environment.md) lists variables and reset
