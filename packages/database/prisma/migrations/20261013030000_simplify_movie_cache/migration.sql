@@ -24,6 +24,18 @@ FROM (
 ) latest
 WHERE latest."movieId" = m.id AND m."title" IS NULL;
 
+-- A film nominated straight from search results has no details snapshot; its newest search hit
+-- still names it.
+UPDATE "Movie" m
+SET "title" = COALESCE(hit.movie->>'title', hit.movie->>'originalTitle'),
+    "releaseYear" = (hit.movie->>'releaseYear')::integer
+FROM (
+    SELECT DISTINCT ON (movie->>'id') movie->>'id' AS "movieId", movie
+    FROM "MovieSearchCache", jsonb_array_elements(data->'movies') AS movie
+    ORDER BY movie->>'id', "fetchedAt" DESC
+) hit
+WHERE hit."movieId" = m.id::text AND m."title" IS NULL;
+
 -- Per-source snapshots and removal tombstones are gone; the merged projection is the cache.
 -- Cache keys no longer hash adapter configuration, so existing projections are refilled.
 DROP TABLE "MovieSourceCache";
