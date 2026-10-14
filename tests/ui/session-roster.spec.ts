@@ -65,9 +65,22 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'admin');
         await page.goto(`/sessions/${SESSION_ID}`);
-        await page.getByRole('combobox', { name: 'Invite a Club member' }).click();
-        await page.keyboard.press('ArrowDown');
+        const memberSelect = page.getByRole('combobox', { name: 'Invite a Club member' });
+        const listbox = page.getByRole('listbox');
+        // A click before hydration opens nothing; retry until the dropdown is really open.
+        await expect(async () => {
+            await memberSelect.click();
+            await expect(listbox).toBeVisible({ timeout: 250 });
+        }).toPass({ timeout: 5_000 });
+        // Mantine seeds its keyboard position shortly after opening; arrow until the member is highlighted.
+        await expect(async () => {
+            await page.keyboard.press('ArrowDown');
+            await expect(listbox.locator('[data-combobox-selected]')).toHaveText('Jordan Member', {
+                timeout: 250,
+            });
+        }).toPass({ timeout: 5_000 });
         await page.keyboard.press('Enter');
+        await expect(memberSelect).toHaveValue('Jordan Member');
         await page.getByRole('button', { name: 'Create Session invitation' }).click();
         await expect(page.getByLabel('Session invitation link')).toHaveValue(
             new RegExp(`/invite/session/${'s'.repeat(43)}$`),
