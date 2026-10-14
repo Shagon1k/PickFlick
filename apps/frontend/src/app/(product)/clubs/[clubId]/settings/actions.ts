@@ -18,12 +18,12 @@ import {
     type TClubLifecycleAction,
     updateClubSettings,
 } from '@/api/clubs.server';
-import { clubValues } from '@/components/clubs/club-form.validation';
+import { readClubValues } from '@/components/clubs/club-form.validation';
 import { ApiError } from '@/lib/api.server';
-import { formText } from '@/lib/form-data';
+import { readFormText } from '@/lib/form-data';
 
 import type { IClubActionState } from './action-state';
-import { clubFailureMessage } from './club-errors';
+import { getClubFailureMessage } from './club-errors';
 
 function next(
     previous: IClubActionState,
@@ -44,8 +44,8 @@ async function run(
         return next(previous, 'success', successMessage);
     } catch (error) {
         return error instanceof ApiError
-            ? next(previous, 'error', clubFailureMessage(error.status, error.reason))
-            : next(previous, 'error', clubFailureMessage(503));
+            ? next(previous, 'error', getClubFailureMessage(error.status, error.reason))
+            : next(previous, 'error', getClubFailureMessage(503));
     }
 }
 
@@ -56,7 +56,7 @@ export async function updateClubSettingsAction(
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
-    const values = clubValues(formData);
+    const values = readClubValues(formData);
     const parsed = updateClubSettingsSchema.safeParse({
         ...values,
         selectionScaleMin: Number(values.selectionScaleMin),
@@ -99,13 +99,13 @@ export async function changeClubMemberRoleAction(
     return result;
 }
 
-export async function clubLifecycleAction(
+export async function changeClubLifecycleAction(
     clubId: string,
     action: TClubLifecycleAction,
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
-    const confirmation = formText(formData, 'confirmation');
+    const confirmation = readFormText(formData, 'confirmation');
     const result = await run(
         previous,
         () => changeClubLifecycle(clubId, action, confirmation),
@@ -159,7 +159,7 @@ export async function removeClubMemberAction(
 ): Promise<IClubActionState> {
     const result = await run(
         previous,
-        () => removeClubMember(clubId, membershipId, formText(formData, 'confirmation')),
+        () => removeClubMember(clubId, membershipId, readFormText(formData, 'confirmation')),
         'Member removed. Shared history is preserved.',
     );
     revalidatePath(`/clubs/${clubId}`, 'layout');

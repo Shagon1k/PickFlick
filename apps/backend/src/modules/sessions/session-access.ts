@@ -3,14 +3,14 @@ import { isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { type findMembership, loadClubAccess } from '../clubs/access/club-access.js';
-import { clubPermissions } from '../clubs/access/club-permissions.js';
+import { getClubPermissions } from '../clubs/access/club-permissions.js';
 
 export async function canManage(
     transaction: Prisma.TransactionClient,
     membership: Awaited<ReturnType<typeof findMembership>>,
 ) {
     const { access } = await loadClubAccess(transaction, membership.club);
-    return clubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
+    return getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
 
 export function assertOpen(phase: string) {

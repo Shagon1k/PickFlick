@@ -12,8 +12,8 @@ import styles from '../../page.module.scss';
 
 type TView = TSessionInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const subscribe = () => () => {};
-const clientReady = () => true;
-const serverReady = () => false;
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 const messages = {
     valid: 'Join your Club for this screening.',
     accepted: 'Your participation is confirmed.',
@@ -28,7 +28,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     const [view, setView] = useState(initial);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
-    const isReady = useSyncExternalStore(subscribe, clientReady, serverReady);
+    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
     function respond(decision: 'accept' | 'decline') {
         if (!navigator.onLine) {
             setMessage('You appear to be offline. Reconnect before responding.');

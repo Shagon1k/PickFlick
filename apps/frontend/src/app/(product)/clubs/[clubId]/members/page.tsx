@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getClubSettings } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import { clubNavigation } from '@/components/shells/shell-navigation';
+import { buildClubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 
@@ -22,7 +22,7 @@ export default async function ClubMembersPage({ params }: { params: Promise<{ cl
         projection = await getClubSettings(clubId);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/clubs/${clubId}/members`));
+            redirect(buildLoginPath(`/clubs/${clubId}/members`));
         return (
             <ProductFrame>
                 <main className={styles.layout}>
@@ -38,7 +38,7 @@ export default async function ClubMembersPage({ params }: { params: Promise<{ cl
         );
     }
     return (
-        <ProductFrame clubItems={clubNavigation(clubId, 'members')}>
+        <ProductFrame clubItems={buildClubNavigation(clubId, 'members')}>
             <ClubMembers projection={projection} />
         </ProductFrame>
     );

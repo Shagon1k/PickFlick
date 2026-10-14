@@ -29,7 +29,7 @@ interface ICached<TData> {
  * Summary columns kept on the Movie row so nominations never read the JSON caches. Unknown
  * values stay undefined, so a sparse search result never erases a known title or year.
  */
-function summaryColumns(data: Pick<TMovieMetadata, 'title' | 'originalTitle' | 'releaseYear'>) {
+function toSummaryColumns(data: Pick<TMovieMetadata, 'title' | 'originalTitle' | 'releaseYear'>) {
     return {
         title: data.title ?? data.originalTitle ?? undefined,
         releaseYear: data.releaseYear ?? undefined,
@@ -151,7 +151,7 @@ export class MoviesRepository {
         if (expectedId) movieIds.add(expectedId);
         if (movieIds.size > 1) throw new MovieProviderError('IDENTITY_CONFLICT');
         const movieId = [...movieIds][0] ?? randomUUID();
-        const columns = summary ? summaryColumns(summary) : {};
+        const columns = summary ? toSummaryColumns(summary) : {};
         if (movieIds.size) {
             if (summary) await transaction.movie.update({ where: { id: movieId }, data: columns });
         } else {

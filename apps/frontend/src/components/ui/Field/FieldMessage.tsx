@@ -9,7 +9,7 @@ export interface IFieldMessageProps {
     alignEnd?: boolean;
 }
 
-function messageTone({ error, success }: IFieldMessageProps): 'danger' | 'success' | 'neutral' {
+function getMessageTone({ error, success }: IFieldMessageProps): 'danger' | 'success' | 'neutral' {
     if (error) {
         return 'danger';
     }
@@ -24,7 +24,7 @@ export default function FieldMessage(props: IFieldMessageProps) {
             aria-hidden={message ? undefined : true}
             className={styles.field__message}
             data-align={props.alignEnd ? 'end' : undefined}
-            data-tone={messageTone(props)}
+            data-tone={getMessageTone(props)}
         >
             {message}
         </span>

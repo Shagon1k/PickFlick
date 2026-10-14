@@ -84,7 +84,7 @@ export default function Nomination({
                         <>
                             {suggestion ? (
                                 <div className={styles.selected}>
-                                    <p>Selected: {movieLabel(suggestion)}</p>
+                                    <p>Selected: {formatMovieLabel(suggestion)}</p>
                                     <Button
                                         disabled={isPending}
                                         variant="ghost"
@@ -129,7 +129,7 @@ export default function Nomination({
                                                 <span className={styles.poster} aria-hidden="true">
                                                     PF
                                                 </span>
-                                                <strong>{movieLabel(movie)}</strong>
+                                                <strong>{formatMovieLabel(movie)}</strong>
                                             </button>
                                         </li>
                                     ))}
@@ -183,7 +183,7 @@ export default function Nomination({
         </section>
     );
 }
-function movieLabel(movie: TNominationMovie) {
+function formatMovieLabel(movie: TNominationMovie) {
     const year = movie.year ? ` (${movie.year})` : '';
     return `${movie.title ?? 'Movie title unavailable'}${year}`;
 }
@@ -197,8 +197,8 @@ function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
         );
     return (
         <p role="status">
-            Your nomination: <Link href={`/movies/${movie.id}`}>{movieLabel(movie)}</Link>. Your
-            submission is locked.
+            Your nomination: <Link href={`/movies/${movie.id}`}>{formatMovieLabel(movie)}</Link>.
+            Your submission is locked.
         </p>
     );
 }
@@ -214,7 +214,7 @@ function NominationList({ data }: { data: TNominations }) {
                         PF
                     </span>
                     <div>
-                        <Link href={`/movies/${row.movie.id}`}>{movieLabel(row.movie)}</Link>
+                        <Link href={`/movies/${row.movie.id}`}>{formatMovieLabel(row.movie)}</Link>
                         {row.author !== null ? <p>by {row.author}</p> : null}
                     </div>
                 </li>

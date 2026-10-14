@@ -11,18 +11,18 @@ import type { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     type IMovieLookup,
     type IMovieProvider,
     MovieProviderError,
-    singleSource,
+    toProviderRecord,
     type TProviderRecord,
     type TProviderSearch,
 } from './movie-provider.js';
 
-function summary(movie: TTmdbMovie) {
+function toSummary(movie: TTmdbMovie) {
     return {
-        ...emptyMetadata(),
+        ...createEmptyMetadata(),
         title: movie.title,
         originalTitle: movie.original_title,
         overview: movie.overview || null,
@@ -30,8 +30,8 @@ function summary(movie: TTmdbMovie) {
         releaseYear: movie.release_date ? Number(movie.release_date.slice(0, 4)) : null,
         adult: movie.adult,
         originalLanguage: movie.original_language || null,
-        posterUrl: image(movie.poster_path),
-        backdropUrl: image(movie.backdrop_path),
+        posterUrl: toImageUrl(movie.poster_path),
+        backdropUrl: toImageUrl(movie.backdrop_path),
         ratings:
             movie.vote_count > 0
                 ? [
@@ -45,7 +45,7 @@ function summary(movie: TTmdbMovie) {
                 : [],
     };
 }
-function image(path: string | null) {
+function toImageUrl(path: string | null) {
     return path ? `https://image.tmdb.org/t/p/original${path}` : null;
 }
 export class TmdbClient implements IMovieProvider {
@@ -77,12 +77,12 @@ export class TmdbClient implements IMovieProvider {
                     .filter((movie) => !movie.adult)
                     .map((movie) => [
                         movie.id,
-                        singleSource({
+                        toProviderRecord({
                             source: 'tmdb',
                             locale,
                             fetchedAt,
                             externalIds: [{ source: 'tmdb', externalId: String(movie.id) }],
-                            data: summary(movie),
+                            data: toSummary(movie),
                             similarExternalIds: null,
                         }),
                     ]),
@@ -102,7 +102,7 @@ export class TmdbClient implements IMovieProvider {
         if (movie.id !== tmdbId) throw new MovieProviderError('INVALID_RESPONSE');
         const externalIds: TMovieExternalId[] = [{ source: 'tmdb', externalId }];
         if (movie.imdb_id) externalIds.push({ source: 'imdb', externalId: movie.imdb_id });
-        return singleSource({
+        return toProviderRecord({
             source: 'tmdb',
             locale: input.locale,
             fetchedAt,
@@ -117,7 +117,7 @@ export class TmdbClient implements IMovieProvider {
                   ].map((id) => [{ source: 'tmdb' as const, externalId: String(id) }])
                 : null,
             data: {
-                ...summary(movie),
+                ...toSummary(movie),
                 runtime: movie.runtime || null,
                 genres: movie.genres.map((genre) => genre.name),
                 directors: movie.credits.crew
@@ -129,7 +129,7 @@ export class TmdbClient implements IMovieProvider {
                     .map((person) => ({
                         name: person.name,
                         character: person.character || null,
-                        profileUrl: image(person.profile_path),
+                        profileUrl: toImageUrl(person.profile_path),
                     })),
                 trailers: movie.videos.results
                     .filter(

@@ -1,9 +1,9 @@
 import nextConfig from '../../../next.config';
-import { contentSecurityPolicy, SECURITY_HEADERS } from '../security-headers';
+import { buildContentSecurityPolicy, SECURITY_HEADERS } from '../security-headers';
 
 describe('contentSecurityPolicy', () => {
     it('should allow scripts only with the nonce and forbid framing', () => {
-        const policy = contentSecurityPolicy('abc123', false);
+        const policy = buildContentSecurityPolicy('abc123', false);
 
         expect(policy).toContain("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
         expect(policy).toContain("frame-ancestors 'none'");
@@ -12,7 +12,7 @@ describe('contentSecurityPolicy', () => {
     });
 
     it('should restrict images and connections to our own origin', () => {
-        const policy = contentSecurityPolicy('abc123', false);
+        const policy = buildContentSecurityPolicy('abc123', false);
         expect(policy).toContain("img-src 'self' data: blob:;");
         expect(policy).not.toContain('https://');
         expect(policy).toContain("connect-src 'self'");
@@ -21,7 +21,7 @@ describe('contentSecurityPolicy', () => {
     });
 
     it('should allow eval only in development', () => {
-        expect(contentSecurityPolicy('abc123', true)).toContain("'unsafe-eval'");
+        expect(buildContentSecurityPolicy('abc123', true)).toContain("'unsafe-eval'");
     });
 });
 

@@ -21,12 +21,15 @@ export interface IScaleControlProps {
 }
 
 /** The candidate when it belongs to the scale; anything outside it counts as no selection. */
-function inScale(values: readonly number[], candidate: number | undefined): number | undefined {
+function findScaleValue(
+    values: readonly number[],
+    candidate: number | undefined,
+): number | undefined {
     return candidate !== undefined && values.includes(candidate) ? candidate : undefined;
 }
 
 /** Radio-group keys: arrows step within the scale, Home and End jump to its ends. */
-function keyboardScaleValue(
+function getKeyboardScaleValue(
     key: string,
     current: number,
     min: number,
@@ -59,11 +62,11 @@ export default function ScaleControl({
 }: IScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
     const firstValue = values[0] ?? min;
-    const initialValue = inScale(values, defaultValue);
+    const initialValue = findScaleValue(values, defaultValue);
     const [internalValue, setInternalValue] = useState<number | undefined>(initialValue);
     const [previewValue, setPreviewValue] = useState<number | undefined>();
-    const selectedValue = inScale(values, value ?? internalValue);
-    const activeValue = inScale(values, previewValue) ?? selectedValue;
+    const selectedValue = findScaleValue(values, value ?? internalValue);
+    const activeValue = findScaleValue(values, previewValue) ?? selectedValue;
     const isLocked = disabled || readOnly || submitted;
     const isConstraintRequired = required && !isLocked;
     const [isConstraintInvalid, setIsConstraintInvalid] = useState(false);
@@ -109,7 +112,7 @@ export default function ScaleControl({
     }
 
     function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentValue: number): void {
-        const nextValue = keyboardScaleValue(event.key, currentValue, min, max);
+        const nextValue = getKeyboardScaleValue(event.key, currentValue, min, max);
         if (nextValue !== undefined) {
             event.preventDefault();
             select(nextValue);

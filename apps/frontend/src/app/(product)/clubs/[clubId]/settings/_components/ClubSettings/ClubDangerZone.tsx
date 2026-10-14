@@ -7,10 +7,10 @@ import Button from '@/components/ui/Button/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import InfoTip from '@/components/ui/InfoTip/InfoTip';
 import Modal from '@/components/ui/Modal/Modal';
-import { formatUtcDate, monogram } from '@/lib/format';
+import { formatUtcDate, getMonogram } from '@/lib/format';
 
 import { initialClubActionState } from '../../action-state';
-import { changeClubMemberRoleAction, clubLifecycleAction } from '../../actions';
+import { changeClubLifecycleAction, changeClubMemberRoleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
@@ -75,7 +75,7 @@ function ManageModerators({ projection }: { projection: IClubSettings }) {
                     {projection.members.map((member) => (
                         <li className={styles.member} key={member.id}>
                             <div className={styles.memberIdentity}>
-                                <span aria-hidden="true">{monogram(member.displayName)}</span>
+                                <span aria-hidden="true">{getMonogram(member.displayName)}</span>
                                 <div>
                                     <strong>{member.displayName}</strong>
                                     <small>Joined {formatUtcDate(member.joinedAt)}</small>
@@ -111,7 +111,7 @@ function ConfirmAction({
     title: string;
     variant?: 'secondary-danger' | 'danger';
 }) {
-    const serverAction = clubLifecycleAction.bind(null, clubId, action);
+    const serverAction = changeClubLifecycleAction.bind(null, clubId, action);
     const [state, formAction, isPending] = useActionState(serverAction, initialClubActionState);
     const [isOpen, setIsOpen] = useState(false);
     return (
@@ -141,7 +141,7 @@ function ConfirmAction({
 }
 
 function ReactivateAction({ clubId }: { clubId: string }) {
-    const action = clubLifecycleAction.bind(null, clubId, 'reactivate');
+    const action = changeClubLifecycleAction.bind(null, clubId, 'reactivate');
     const [state, formAction, isPending] = useActionState(action, initialClubActionState);
     return (
         <form action={formAction} className={styles.inlineForm}>

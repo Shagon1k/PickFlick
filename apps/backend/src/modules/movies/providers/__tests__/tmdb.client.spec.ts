@@ -1,4 +1,8 @@
-import { movieLookup, tmdbDetails, tmdbMovie } from '../../../../testing/movie-fixtures.js';
+import {
+    buildMovieLookup,
+    buildTmdbDetails,
+    buildTmdbMovie,
+} from '../../../../testing/movie-fixtures.js';
 import { MovieProviderError } from '../movie-provider.js';
 import { TmdbClient } from '../tmdb.client.js';
 
@@ -20,7 +24,11 @@ describe('TmdbClient', () => {
                 page: 1,
                 total_pages: 1,
                 total_results: 3,
-                results: [tmdbMovie(), tmdbMovie(), { ...tmdbMovie(101), adult: true }],
+                results: [
+                    buildTmdbMovie(),
+                    buildTmdbMovie(),
+                    { ...buildTmdbMovie(101), adult: true },
+                ],
             }),
         );
 
@@ -47,7 +55,7 @@ describe('TmdbClient', () => {
     });
 
     it('should map credits and allow only safe YouTube trailers', async () => {
-        const response = tmdbDetails();
+        const response = buildTmdbDetails();
         response.credits.crew.push({ id: 3, name: 'Producer', job: 'Producer' });
         response.videos.results.push({
             key: '//evil.invalid',
@@ -65,7 +73,7 @@ describe('TmdbClient', () => {
         });
         request.mockResolvedValue(Response.json(response));
 
-        expect(await client.details(movieLookup(100))).toMatchObject({
+        expect(await client.details(buildMovieLookup(100))).toMatchObject({
             externalIds: [
                 { source: 'tmdb', externalId: '100' },
                 { source: 'imdb', externalId: 'tt1234567' },
@@ -88,21 +96,21 @@ describe('TmdbClient', () => {
     it('should deduplicate related identifiers and exclude the current and adult movies', async () => {
         request.mockResolvedValue(
             Response.json({
-                ...tmdbDetails(),
+                ...buildTmdbDetails(),
                 similar: {
                     page: 1,
                     total_pages: 1,
                     total_results: 4,
                     results: [
-                        tmdbMovie(),
-                        tmdbMovie(101),
-                        tmdbMovie(101),
-                        { ...tmdbMovie(102), adult: true },
+                        buildTmdbMovie(),
+                        buildTmdbMovie(101),
+                        buildTmdbMovie(101),
+                        { ...buildTmdbMovie(102), adult: true },
                     ],
                 },
             }),
         );
-        expect((await client.details(movieLookup(100))).similarExternalIds).toEqual([
+        expect((await client.details(buildMovieLookup(100))).similarExternalIds).toEqual([
             [{ source: 'tmdb', externalId: '101' }],
         ]);
     });
@@ -110,7 +118,7 @@ describe('TmdbClient', () => {
     it('should preserve absent release data and media as null', async () => {
         request.mockResolvedValue(
             Response.json({
-                ...tmdbDetails(),
+                ...buildTmdbDetails(),
                 release_date: '',
                 runtime: null,
                 imdb_id: null,
@@ -118,7 +126,7 @@ describe('TmdbClient', () => {
             }),
         );
 
-        expect(await client.details(movieLookup(100))).toMatchObject({
+        expect(await client.details(buildMovieLookup(100))).toMatchObject({
             data: { releaseDate: null, runtime: null, posterUrl: null },
         });
     });
@@ -131,29 +139,29 @@ describe('TmdbClient', () => {
         [500, 'UNAVAILABLE'],
     ])('should translate HTTP %i without exposing provider content', async (status, reason) => {
         request.mockResolvedValue(new Response('untrusted provider text', { status }));
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({ reason });
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({ reason });
     });
 
     it('should reject payloads with the wrong identity or unsafe media paths', async () => {
-        request.mockResolvedValueOnce(Response.json(tmdbDetails(101)));
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        request.mockResolvedValueOnce(Response.json(buildTmdbDetails(101)));
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'INVALID_RESPONSE',
         });
         request.mockResolvedValueOnce(
-            Response.json({ ...tmdbDetails(), poster_path: '//evil.invalid/image.jpg' }),
+            Response.json({ ...buildTmdbDetails(), poster_path: '//evil.invalid/image.jpg' }),
         );
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'INVALID_RESPONSE',
         });
     });
 
     it('should reject malformed JSON and incomplete detail payloads', async () => {
         request.mockResolvedValueOnce(new Response('{broken'));
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'INVALID_RESPONSE',
         });
-        request.mockResolvedValueOnce(Response.json(tmdbMovie()));
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        request.mockResolvedValueOnce(Response.json(buildTmdbMovie()));
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'INVALID_RESPONSE',
         });
     });
@@ -165,7 +173,7 @@ describe('TmdbClient', () => {
             new Response(null, { status: 429, headers: { 'Retry-After': '120' } }),
         );
 
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'RATE_LIMITED',
             retryAt: new Date('2026-10-09T12:02:00Z'),
         });
@@ -176,8 +184,10 @@ describe('TmdbClient', () => {
         });
         expect(request).toHaveBeenCalledTimes(1);
         await vi.advanceTimersByTimeAsync(120_001);
-        request.mockResolvedValue(Response.json(tmdbDetails()));
-        expect((await client.details(movieLookup(100))).externalIds[0]?.externalId).toBe('100');
+        request.mockResolvedValue(Response.json(buildTmdbDetails()));
+        expect((await client.details(buildMovieLookup(100))).externalIds[0]?.externalId).toBe(
+            '100',
+        );
     });
 
     it('should retain the longest cooldown from overlapping rate-limited requests', async () => {
@@ -187,8 +197,8 @@ describe('TmdbClient', () => {
         request.mockImplementation(
             () => new Promise<Response>((resolve) => responses.push(resolve)),
         );
-        const longRequest = client.details(movieLookup(100)).catch((error: unknown) => error);
-        const shortRequest = client.details(movieLookup(101)).catch((error: unknown) => error);
+        const longRequest = client.details(buildMovieLookup(100)).catch((error: unknown) => error);
+        const shortRequest = client.details(buildMovieLookup(101)).catch((error: unknown) => error);
         expect(responses).toHaveLength(2);
         responses[0]?.(new Response(null, { status: 429, headers: { 'Retry-After': '120' } }));
         expect(await longRequest).toMatchObject({
@@ -202,19 +212,21 @@ describe('TmdbClient', () => {
         });
 
         await vi.advanceTimersByTimeAsync(1001);
-        await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'RATE_LIMITED',
         });
         expect(request).toHaveBeenCalledTimes(2);
         await vi.advanceTimersByTimeAsync(119_000);
-        request.mockResolvedValue(Response.json(tmdbDetails()));
-        expect((await client.details(movieLookup(100))).externalIds[0]?.externalId).toBe('100');
+        request.mockResolvedValue(Response.json(buildTmdbDetails()));
+        expect((await client.details(buildMovieLookup(100))).externalIds[0]?.externalId).toBe(
+            '100',
+        );
     });
 
     it('should accept a genre name at the canonical limit', async () => {
-        const response = { ...tmdbDetails(), genres: [{ id: 1, name: 'x'.repeat(200) }] };
+        const response = { ...buildTmdbDetails(), genres: [{ id: 1, name: 'x'.repeat(200) }] };
         request.mockResolvedValue(Response.json(response));
-        expect((await client.details(movieLookup(100))).data.genres).toEqual(
+        expect((await client.details(buildMovieLookup(100))).data.genres).toEqual(
             response.genres.map((genre) => genre.name),
         );
     });
@@ -222,11 +234,11 @@ describe('TmdbClient', () => {
     it('should translate a genre name exceeding the canonical limit to an invalid response', async () => {
         request.mockResolvedValue(
             Response.json({
-                ...tmdbDetails(),
+                ...buildTmdbDetails(),
                 genres: [{ id: 1, name: 'x'.repeat(201) }],
             }),
         );
-        await expect(client.details(movieLookup(100))).rejects.toEqual(
+        await expect(client.details(buildMovieLookup(100))).rejects.toEqual(
             new MovieProviderError('INVALID_RESPONSE', undefined, 'tmdb'),
         );
     });
@@ -239,7 +251,7 @@ describe('TmdbClient', () => {
             request.mockResolvedValue(
                 new Response(null, { status: 429, headers: { 'Retry-After': header } }),
             );
-            await expect(client.details(movieLookup(100))).rejects.toMatchObject({
+            await expect(client.details(buildMovieLookup(100))).rejects.toMatchObject({
                 reason: 'RATE_LIMITED',
                 retryAt: new Date(`2026-10-09T12:0${header === 'invalid' ? '1' : '2'}:00Z`),
             });
@@ -248,7 +260,7 @@ describe('TmdbClient', () => {
 
     it('should expose network failure without the raw error', async () => {
         request.mockRejectedValue(new Error('private provider diagnostics'));
-        await expect(client.details(movieLookup(100))).rejects.toEqual(
+        await expect(client.details(buildMovieLookup(100))).rejects.toEqual(
             new MovieProviderError('UNAVAILABLE', undefined, 'tmdb'),
         );
     });
@@ -263,14 +275,14 @@ describe('TmdbClient', () => {
                     });
                 }),
         );
-        await expect(shortTimeout.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(shortTimeout.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'TIMEOUT',
         });
     });
 
     it('should remain unavailable without an enabled provider', async () => {
         const disabled = new TmdbClient({ enabled: false, timeoutMs: 1000 }, request);
-        await expect(disabled.details(movieLookup(100))).rejects.toMatchObject({
+        await expect(disabled.details(buildMovieLookup(100))).rejects.toMatchObject({
             reason: 'DISABLED',
         });
         expect(request).not.toHaveBeenCalled();

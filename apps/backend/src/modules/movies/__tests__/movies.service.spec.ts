@@ -3,10 +3,10 @@ import { Test } from '@nestjs/testing';
 import { RUNTIME_ENVIRONMENT } from '../../../config/runtime.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import {
-    canonicalDetails,
+    buildCanonicalDetails,
+    buildMovieDetails,
+    buildMovieLookup,
     MOVIE_ID,
-    movieDetails,
-    movieLookup,
 } from '../../../testing/movie-fixtures.js';
 import { MoviesRepository } from '../movies.repository.js';
 import { MoviesService } from '../movies.service.js';
@@ -46,10 +46,10 @@ describe('MoviesService', () => {
         vi.setSystemTime(now);
         repository.cachedDetails.mockResolvedValue(null);
         repository.cachedSearch.mockResolvedValue(null);
-        repository.lookup.mockResolvedValue(movieLookup());
+        repository.lookup.mockResolvedValue(buildMovieLookup());
         repository.saveDetails.mockImplementation((_id, _key, record) =>
             Promise.resolve({
-                ...canonicalDetails(),
+                ...buildCanonicalDetails(),
                 ...record.data,
                 provenance: record.provenance,
             }),
@@ -88,7 +88,10 @@ describe('MoviesService', () => {
     });
 
     it('should return backend-built IMDb links without exposing identifiers', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt: now });
+        repository.cachedDetails.mockResolvedValue({
+            data: buildCanonicalDetails(),
+            fetchedAt: now,
+        });
         repository.lookup.mockResolvedValue({
             externalIds: [{ source: 'imdb', externalId: 'tt0000100' }],
         });
@@ -105,7 +108,10 @@ describe('MoviesService', () => {
     });
 
     it('should return fresh details without calling the provider', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt: now });
+        repository.cachedDetails.mockResolvedValue({
+            data: buildCanonicalDetails(),
+            fetchedAt: now,
+        });
         expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'fresh',
             data: { id: MOVIE_ID },
@@ -114,7 +120,7 @@ describe('MoviesService', () => {
     });
 
     it('should persist fetched details and return them as fresh', async () => {
-        provider.details.mockResolvedValue(movieDetails());
+        provider.details.mockResolvedValue(buildMovieDetails());
         expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'fresh',
             fetchedAt: now.toISOString(),
@@ -122,20 +128,23 @@ describe('MoviesService', () => {
         expect(repository.saveDetails).toHaveBeenCalledWith(
             MOVIE_ID,
             expect.any(String),
-            movieDetails(),
+            buildMovieDetails(),
             now,
         );
     });
 
     it('should refresh a fresh Movie when explicitly forced', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt: now });
-        provider.details.mockResolvedValue(movieDetails());
+        repository.cachedDetails.mockResolvedValue({
+            data: buildCanonicalDetails(),
+            fetchedAt: now,
+        });
+        provider.details.mockResolvedValue(buildMovieDetails());
         await service.details(MOVIE_ID, { forceRefresh: true });
-        expect(provider.details).toHaveBeenCalledWith(movieLookup());
+        expect(provider.details).toHaveBeenCalledWith(buildMovieLookup());
     });
 
     it('should report and cache partial details until the next refresh', async () => {
-        const record = movieDetails();
+        const record = buildMovieDetails();
         record.provenance.push({
             source: 'thetvdb',
             fetchedAt: null,
@@ -152,7 +161,10 @@ describe('MoviesService', () => {
     });
 
     it('should require opt-in before serving stale details', async () => {
-        repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt: old });
+        repository.cachedDetails.mockResolvedValue({
+            data: buildCanonicalDetails(),
+            fetchedAt: old,
+        });
         provider.details.mockRejectedValue(new MovieProviderError('TIMEOUT'));
         expect(await service.details(MOVIE_ID)).toMatchObject({
             state: 'unavailable',
@@ -167,7 +179,10 @@ describe('MoviesService', () => {
 
     it('should preserve the provider retry time in a stale response', async () => {
         const retryAt = new Date(now.getTime() + 60_000);
-        repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt: old });
+        repository.cachedDetails.mockResolvedValue({
+            data: buildCanonicalDetails(),
+            fetchedAt: old,
+        });
         provider.details.mockRejectedValue(new MovieProviderError('RATE_LIMITED', retryAt));
         expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
             state: 'stale',
@@ -180,7 +195,7 @@ describe('MoviesService', () => {
         'should never use stale data after %s',
         async (reason) => {
             repository.cachedDetails.mockResolvedValue({
-                data: canonicalDetails(),
+                data: buildCanonicalDetails(),
                 fetchedAt: old,
             });
             provider.details.mockRejectedValue(new MovieProviderError(reason));
@@ -194,7 +209,10 @@ describe('MoviesService', () => {
     it.each([new Date('2026-10-01T12:00:00Z'), new Date('2026-10-10T12:00:00Z')])(
         'should reject an expired or future cache %#',
         async (fetchedAt) => {
-            repository.cachedDetails.mockResolvedValue({ data: canonicalDetails(), fetchedAt });
+            repository.cachedDetails.mockResolvedValue({
+                data: buildCanonicalDetails(),
+                fetchedAt,
+            });
             provider.details.mockRejectedValue(new MovieProviderError('UNAVAILABLE'));
             expect(await service.details(MOVIE_ID, { allowStale: true })).toMatchObject({
                 state: 'unavailable',
@@ -203,7 +221,7 @@ describe('MoviesService', () => {
     );
 
     it('should propagate persistence failure instead of calling it provider unavailability', async () => {
-        provider.details.mockResolvedValue(movieDetails());
+        provider.details.mockResolvedValue(buildMovieDetails());
         repository.saveDetails.mockRejectedValue(new Error('database write failed'));
         await expect(service.details(MOVIE_ID)).rejects.toThrow('database write failed');
     });

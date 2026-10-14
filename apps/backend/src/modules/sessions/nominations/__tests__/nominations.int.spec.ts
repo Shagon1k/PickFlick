@@ -7,12 +7,12 @@ import {
     addMember,
     createSession,
     createUser,
-    integrationEnvironment,
     type ITestApi,
+    loadIntegrationEnvironment,
     removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
-import { movieDetails } from '../../../../testing/movie-fixtures.js';
+import { buildMovieDetails } from '../../../../testing/movie-fixtures.js';
 import { MoviesRepository } from '../../../movies/movies.repository.js';
 import { MoviesService } from '../../../movies/movies.service.js';
 import type { IMovieProvider } from '../../../movies/providers/movie-provider.js';
@@ -82,7 +82,7 @@ describe('Nominations', () => {
             json: { phaseVersion: version, confirmation: 'CLOSE' },
         });
     it('should retain search metadata after submission in the Session projection without opening details', async () => {
-        const record = movieDetails(randomInt(10000000, 2000000000));
+        const record = buildMovieDetails(randomInt(10000000, 2000000000));
         const provider: IMovieProvider = {
             search: vi.fn().mockResolvedValue({
                 movies: [record],
@@ -92,7 +92,7 @@ describe('Nominations', () => {
             }),
             details: vi.fn(),
         };
-        const environment = integrationEnvironment();
+        const environment = loadIntegrationEnvironment();
         const catalog = new MoviesService(provider, new MoviesRepository(api.prisma), environment);
         const result = await catalog.search({ query: 'Synthetic Movie', page: 1, locale: 'en-US' });
         if (result.state === 'unavailable') throw new Error('Search unavailable');

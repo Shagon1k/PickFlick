@@ -36,7 +36,7 @@ const errors: Partial<Record<number, { code: TApiErrorCode; message: string }>> 
     },
 };
 
-function statusOf(exception: unknown): number {
+function getErrorStatus(exception: unknown): number {
     if (exception instanceof HttpException) {
         return exception.getStatus();
     }
@@ -46,7 +46,7 @@ function statusOf(exception: unknown): number {
 }
 
 /** Passes through only a stable upper-case reason code, never free-form exception text. */
-function reasonOf(exception: unknown): string | undefined {
+function getErrorReason(exception: unknown): string | undefined {
     const body = exception instanceof HttpException ? exception.getResponse() : undefined;
     const reason = typeof body === 'object' && 'reason' in body ? body.reason : undefined;
     return typeof reason === 'string' && /^[A-Z][A-Z_]{0,63}$/u.test(reason) ? reason : undefined;
@@ -60,7 +60,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     catch(exception: unknown, host: ArgumentsHost): void {
         const request = host.switchToHttp().getRequest<Request & { id?: unknown }>();
         const response = host.switchToHttp().getResponse<Response>();
-        const status = statusOf(exception);
+        const status = getErrorStatus(exception);
         const known = errors[status];
         const error =
             known ??
@@ -75,7 +75,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
             this.logger.error(exception instanceof Error ? exception.stack : String(exception));
         }
 
-        const reason = reasonOf(exception);
+        const reason = getErrorReason(exception);
         const body: IApiErrorEnvelope = {
             error: {
                 ...error,

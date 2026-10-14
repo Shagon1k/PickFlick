@@ -1,6 +1,6 @@
 import { createSessionSchema, type TSession, updateSessionSchema } from '@pickflick/contracts';
 
-import { fieldErrors } from '@/lib/form-errors';
+import { toFieldErrors } from '@/lib/form-errors';
 
 export interface ISessionValues {
     date: string;
@@ -14,7 +14,7 @@ export interface ISessionValues {
 }
 
 /** Form values for a new Session, or the editable details of an existing one. */
-export function initialSessionValues(session?: TSession): ISessionValues {
+export function getInitialSessionValues(session?: TSession): ISessionValues {
     return {
         date: session?.scheduledAt?.slice(0, 10) ?? '',
         location: session?.location ?? '',
@@ -35,7 +35,7 @@ export function nextDeadline(values: ISessionValues, session?: TSession): string
     return new Date(Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000).toISOString();
 }
 
-export function sessionInput(
+export function buildSessionInput(
     values: ISessionValues,
     deadlineAt: string | null,
     session?: TSession,
@@ -57,13 +57,13 @@ export function sessionInput(
 }
 
 export function validateSession(values: ISessionValues, session?: TSession) {
-    const input = sessionInput(values, null, session);
+    const input = buildSessionInput(values, null, session);
     const parsed = session
         ? updateSessionSchema.safeParse(input)
         : createSessionSchema.safeParse(input);
     const errors = parsed.success
         ? {}
-        : fieldErrors(parsed.error, {
+        : toFieldErrors(parsed.error, {
               scheduledAt: 'Choose a valid date.',
               location: 'Use 1–200 characters on one line.',
               topic: 'Use up to 200 characters on one line.',

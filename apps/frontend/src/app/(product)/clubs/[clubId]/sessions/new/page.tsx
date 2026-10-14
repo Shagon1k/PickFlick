@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getClubHub } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import SessionForm from '@/components/sessions/SessionForm/SessionForm';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -27,7 +27,7 @@ export default async function CreateSessionPage({
         hub = await getClubHub(clubId);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/clubs/${clubId}/sessions/new`));
+            redirect(buildLoginPath(`/clubs/${clubId}/sessions/new`));
         return (
             <main className={styles.main}>
                 <section className={styles.card}>

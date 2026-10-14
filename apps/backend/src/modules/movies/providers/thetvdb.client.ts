@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     MovieProviderError,
     parseSourceSnapshot,
     type TSourceSnapshot,
@@ -91,7 +91,7 @@ export class ThetvdbClient {
             externalIds: mappedIds,
             similarExternalIds: null,
             data: {
-                ...emptyMetadata(),
+                ...createEmptyMetadata(),
                 title:
                     movie.translations?.nameTranslations?.find((text) => text.language === 'eng')
                         ?.name || null,

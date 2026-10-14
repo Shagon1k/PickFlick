@@ -8,12 +8,12 @@ import ProductHeaderActions from '@/components/shells/ProductHeaderActions/Produ
 import ProductOverlayProvider from '@/components/shells/ProductOverlayProvider/ProductOverlayProvider';
 import ProductSearch from '@/components/shells/ProductSearch/ProductSearch';
 import {
-    accountNavigation,
+    buildAccountNavigation,
+    buildMobileNavigation,
+    buildProductNavigation,
     canonicalRoutes,
     type IShellNavigationItem,
     type IShellRouteMap,
-    mobileNavigation,
-    productNavigation,
     type TShellArea,
 } from '@/components/shells/shell-navigation';
 import styles from '@/components/shells/shells.module.scss';
@@ -42,7 +42,7 @@ export default function ProductChrome({
     sessionBackHref,
     settingsItems,
 }: IProductChromeProps) {
-    const desktopItems = (currentArea === 'session' ? [] : productNavigation(routes)).map(
+    const desktopItems = (currentArea === 'session' ? [] : buildProductNavigation(routes)).map(
         (item) => ({
             ...item,
             current:
@@ -76,7 +76,9 @@ export default function ProductChrome({
                                     ← Back to Hub
                                 </Link>
                             ) : null}
-                            <ProductHeaderActions accountItems={accountNavigation(routes, admin)} />
+                            <ProductHeaderActions
+                                accountItems={buildAccountNavigation(routes, admin)}
+                            />
                         </div>
                     </div>
                     <ProductSearch />
@@ -85,7 +87,7 @@ export default function ProductChrome({
                 <SiteFooter routes={routes} />
                 <PendingInvites />
                 <MobileProductNavigation
-                    entries={mobileNavigation({
+                    entries={buildMobileNavigation({
                         admin,
                         clubItems,
                         currentArea,

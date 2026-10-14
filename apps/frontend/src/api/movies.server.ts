@@ -9,17 +9,17 @@ import {
     type TMovieSearchResults,
 } from '@pickflick/contracts';
 
-import { ApiError, apiRequest } from '@/lib/api.server';
+import { ApiError, requestApi } from '@/lib/api.server';
 
 export const searchMovies = (input: TMovieSearch): Promise<TMovieResult<TMovieSearchResults>> =>
-    apiRequest('/movies/search', { method: 'POST', json: input });
+    requestApi('/movies/search', { method: 'POST', json: input });
 
-function unavailable(reason: TMovieProviderReason): TMovieDetailsResponse {
+function toUnavailableResponse(reason: TMovieProviderReason): TMovieDetailsResponse {
     return { result: { state: 'unavailable', reason }, links: { imdb: null } };
 }
 
 /** Maps transport and server failures to an unavailable result; client errors such as 401 rethrow. */
-function failureReason(error: unknown): TMovieProviderReason | null {
+function getFailureReason(error: unknown): TMovieProviderReason | null {
     if (error instanceof SyntaxError) return 'INVALID_RESPONSE';
     if (error instanceof ApiError) {
         if (error.status === 429) return 'RATE_LIMITED';
@@ -34,16 +34,18 @@ export async function getMovieDetails(movieId: string): Promise<TMovieDetailsRes
     let response: unknown;
     try {
         // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
-        response = await apiRequest<unknown>(`/movies/${movieId}`, { timeoutMs: 100_000 });
+        response = await requestApi<unknown>(`/movies/${movieId}`, { timeoutMs: 100_000 });
     } catch (error) {
-        const reason = failureReason(error);
+        const reason = getFailureReason(error);
         if (!reason) throw error;
-        return unavailable(reason);
+        return toUnavailableResponse(reason);
     }
     const parsed = movieDetailsResponseSchema.safeParse(response);
     const isWrongMovie =
         parsed.success &&
         parsed.data.result.state !== 'unavailable' &&
         parsed.data.result.data.id !== movieId;
-    return parsed.success && !isWrongMovie ? parsed.data : unavailable('INVALID_RESPONSE');
+    return parsed.success && !isWrongMovie
+        ? parsed.data
+        : toUnavailableResponse('INVALID_RESPONSE');
 }

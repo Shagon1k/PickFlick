@@ -15,10 +15,10 @@ import { focusFirstInvalid } from '@/lib/form-errors';
 
 import { saveSessionAction } from './actions';
 import {
-    initialSessionValues,
+    buildSessionInput,
+    getInitialSessionValues,
     type ISessionValues,
     nextDeadline,
-    sessionInput,
     validateSession,
 } from './session-form';
 import styles from './SessionForm.module.scss';
@@ -40,7 +40,7 @@ export default function SessionForm({
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
-        initialValues: initialSessionValues(session),
+        initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
     });
     function save(values: ISessionValues, element?: HTMLFormElement) {
@@ -50,7 +50,7 @@ export default function SessionForm({
             );
             return;
         }
-        const input = sessionInput(values, nextDeadline(values, session), session);
+        const input = buildSessionInput(values, nextDeadline(values, session), session);
         setMessage('Saving Session…');
         startTransition(async () => {
             const result = await saveSessionAction(clubId, session?.id ?? null, input).catch(

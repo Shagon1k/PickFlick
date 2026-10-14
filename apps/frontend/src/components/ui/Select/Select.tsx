@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { useRef, useState } from 'react';
 
 import fieldStyles from '@/components/ui/Field/Field.module.scss';
-import { fieldState, type IFieldProps } from '@/components/ui/Field/field.types';
+import { getFieldState, type IFieldProps } from '@/components/ui/Field/field.types';
 import FieldAnnouncements from '@/components/ui/Field/FieldAnnouncements';
 import FieldLabel from '@/components/ui/Field/FieldLabel';
 import FieldMessage from '@/components/ui/Field/FieldMessage';
@@ -56,7 +56,7 @@ export default function Select({
                 wrapper: styles.select__wrapper,
             }}
             comboboxProps={{ transitionProps: { duration: 150 } }}
-            data-state={isInvalid ? 'error' : fieldState(error, success)}
+            data-state={isInvalid ? 'error' : getFieldState(error, success)}
             description={<FieldMessage error={error} hint={hint} success={success} />}
             disabled={disabled}
             error={isInvalid}

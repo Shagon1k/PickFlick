@@ -1,12 +1,12 @@
 import { movieDetailsSchema } from '@pickflick/contracts';
 
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     type IMovieLookup,
-    singleSource,
+    toProviderRecord,
 } from '../modules/movies/providers/movie-provider.js';
 
-export function tmdbMovie(tmdbId = 100) {
+export function buildTmdbMovie(tmdbId = 100) {
     return {
         id: tmdbId,
         title: '<Synthetic Movie>',
@@ -22,9 +22,9 @@ export function tmdbMovie(tmdbId = 100) {
     };
 }
 
-export function tmdbDetails(tmdbId = 100) {
+export function buildTmdbDetails(tmdbId = 100) {
     return {
-        ...tmdbMovie(tmdbId),
+        ...buildTmdbMovie(tmdbId),
         runtime: 120,
         genres: [{ id: 18, name: 'Drama' }],
         imdb_id: 'tt1234567',
@@ -49,14 +49,14 @@ export function tmdbDetails(tmdbId = 100) {
 }
 
 export const MOVIE_ID = '00000000-0000-4000-8000-000000000100';
-export function movieLookup(tmdbId = 100): IMovieLookup {
+export function buildMovieLookup(tmdbId = 100): IMovieLookup {
     return {
         externalIds: [{ source: 'tmdb', externalId: String(tmdbId) }],
         locale: 'en-US',
     };
 }
-export function movieDetails(tmdbId = 100, fetchedAt = '2026-10-09T12:00:00.000Z') {
-    return singleSource({
+export function buildMovieDetails(tmdbId = 100, fetchedAt = '2026-10-09T12:00:00.000Z') {
+    return toProviderRecord({
         source: 'tmdb',
         locale: 'en-US',
         fetchedAt,
@@ -66,7 +66,7 @@ export function movieDetails(tmdbId = 100, fetchedAt = '2026-10-09T12:00:00.000Z
         ],
         similarExternalIds: null,
         data: {
-            ...emptyMetadata(),
+            ...createEmptyMetadata(),
             title: 'Synthetic Movie',
             originalTitle: 'Synthetic Movie',
             overview: 'Synthetic provider metadata.',
@@ -84,12 +84,12 @@ export function movieDetails(tmdbId = 100, fetchedAt = '2026-10-09T12:00:00.000Z
         },
     });
 }
-export function canonicalDetails(
+export function buildCanonicalDetails(
     tmdbId = 100,
     fetchedAt = '2026-10-09T12:00:00.000Z',
     id = MOVIE_ID,
 ) {
-    const record = movieDetails(tmdbId, fetchedAt);
+    const record = buildMovieDetails(tmdbId, fetchedAt);
     return movieDetailsSchema.parse({
         id,
         ...record.data,

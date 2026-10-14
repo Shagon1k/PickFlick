@@ -20,14 +20,14 @@ export interface IButtonProps
     success?: string;
 }
 
-function buttonState(success?: string, isLoading?: boolean): 'success' | 'loading' | undefined {
+function getButtonState(success?: string, isLoading?: boolean): 'success' | 'loading' | undefined {
     if (success) {
         return 'success';
     }
     return isLoading ? 'loading' : undefined;
 }
 
-export function buttonClassName(variant: TButtonVariant, size: TButtonSize): string {
+export function getButtonClassName(variant: TButtonVariant, size: TButtonSize): string {
     return clsx(styles.button, styles[`m-${variant}`], size !== 'default' && styles[`m-${size}`]);
 }
 
@@ -46,8 +46,11 @@ export default function Button({
             <MantineButton
                 {...props}
                 aria-busy={loading || undefined}
-                classNames={{ root: buttonClassName(variant, size), label: styles.button__label }}
-                data-state={buttonState(success, loading)}
+                classNames={{
+                    root: getButtonClassName(variant, size),
+                    label: styles.button__label,
+                }}
+                data-state={getButtonState(success, loading)}
                 disabled={disabled || loading}
                 leftSection={
                     loading ? <span aria-hidden="true" className={styles.spinner} /> : undefined

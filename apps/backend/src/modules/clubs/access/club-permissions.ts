@@ -9,7 +9,7 @@ import type {
  * What the member may do in the UI. Every mutation still checks its own rule on the server; this
  * only decides which controls to show.
  */
-export function clubPermissions(
+export function getClubPermissions(
     role: TClubRole,
     lifecycle: TClubLifecycle,
     access?: IClubAccess,

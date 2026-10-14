@@ -1,8 +1,8 @@
 import { ApiError } from '@/lib/api.server';
 
 import {
+    changeClubLifecycleAction,
     changeClubMemberRoleAction,
-    clubLifecycleAction,
     removeClubAvatarAction,
     updateClubSettingsAction,
     uploadClubAvatarAction,
@@ -119,7 +119,7 @@ describe('Club settings actions', () => {
                 previous,
                 formData({ role: 'MEMBER' }),
             ),
-            clubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
+            changeClubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
             uploadClubAvatarAction(CLUB_ID, previous, avatarForm()),
             removeClubAvatarAction(CLUB_ID, previous),
         ]);
@@ -139,7 +139,7 @@ describe('Club settings actions', () => {
         );
 
         await expect(
-            clubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
+            changeClubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
         ).resolves.toMatchObject({
             message: expect.stringContaining('most active Clubs your plan allows'),
             status: 'error',
@@ -147,7 +147,7 @@ describe('Club settings actions', () => {
     });
 
     it('should leave the settings page after deleting the Club', async () => {
-        await clubLifecycleAction(
+        await changeClubLifecycleAction(
             CLUB_ID,
             'delete',
             previous,

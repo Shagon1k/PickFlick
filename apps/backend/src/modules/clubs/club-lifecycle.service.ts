@@ -15,7 +15,7 @@ import {
     recordAudit,
 } from './access/club-access.js';
 import { canRemoveMember } from './access/club-permissions.js';
-import { clubEntitlements } from './access/club-tiers.js';
+import { getClubEntitlements } from './access/club-tiers.js';
 import { assertBelowAdminLimit } from './clubs.service.js';
 
 function assertConfirmed(confirmation: string, expected: string): void {
@@ -157,7 +157,7 @@ export class ClubLifecycleService {
                 await assertBelowAdminLimit(
                     transaction,
                     userId,
-                    clubEntitlements(clubId).adminClubLimit,
+                    getClubEntitlements(clubId).adminClubLimit,
                 );
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });

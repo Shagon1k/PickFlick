@@ -27,7 +27,7 @@ export class EnvironmentValidationError extends Error {
     }
 }
 
-export function safeEnvironmentValidationFailures(error: unknown): string[] | undefined {
+export function getSafeEnvironmentValidationFailures(error: unknown): string[] | undefined {
     return error instanceof EnvironmentValidationError ? error.failures : undefined;
 }
 

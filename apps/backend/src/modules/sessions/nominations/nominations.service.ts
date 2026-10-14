@@ -59,7 +59,7 @@ export class NominationsService {
         const isHidden = !session.showNominationsBeforeSubmit && !own?.nomination;
         const canSubmit = member.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
         const suggestionIds = canSubmit
-            ? await pastLosingNominations(tx, viewer.userId, session)
+            ? await findPastLosingNominations(tx, viewer.userId, session)
             : [];
         const visible = isHidden ? [] : rows;
         const ids = [
@@ -70,19 +70,19 @@ export class NominationsService {
             ]),
         ];
         const summaries = await this.movies.cachedSummaries(tx, ids);
-        const movie = (movieId: string) => summaries.get(movieId)!;
+        const getMovie = (movieId: string) => summaries.get(movieId)!;
         return {
             acceptedCount: participants.length,
             nominatedCount: rows.length,
             canSubmit,
             canClose: rows.length > 0 && viewer.canManage,
             hidden: isHidden,
-            ownMovie: own?.nomination ? movie(own.nomination.movieId) : null,
+            ownMovie: own?.nomination ? getMovie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
-                movie: movie(row.movieId),
+                movie: getMovie(row.movieId),
                 author: session.showNominationAuthors ? row.author : null,
             })),
-            suggestions: suggestionIds.map(movie),
+            suggestions: suggestionIds.map(getMovie),
         };
     }
 
@@ -135,7 +135,7 @@ export class NominationsService {
 }
 
 /** Up to 12 Movies the viewer nominated in earlier decided Sessions of this Club that did not win. */
-async function pastLosingNominations(
+async function findPastLosingNominations(
     tx: Prisma.TransactionClient,
     userId: string,
     session: Prisma.SessionGetPayload<object>,

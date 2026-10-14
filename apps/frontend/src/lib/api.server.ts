@@ -28,7 +28,7 @@ interface IApiRequestInit {
 }
 
 /** The visitor's cookie and client address, so the API rate-limits each visitor separately. */
-export function visitorHeaders(incoming: Headers): Headers {
+export function buildVisitorHeaders(incoming: Headers): Headers {
     const outgoing = new Headers();
     for (const name of FORWARDED_HEADERS) {
         const value = incoming.get(name);
@@ -40,12 +40,12 @@ export function visitorHeaders(incoming: Headers): Headers {
 }
 
 /** Calls the API from the server as the current visitor. Throws `ApiError` for any non-2xx. */
-export async function apiRequest<TResponse = void>(
+export async function requestApi<TResponse = void>(
     path: string,
     init: IApiRequestInit = {},
     incomingHeaders?: Headers,
 ): Promise<TResponse> {
-    const outgoing = visitorHeaders(incomingHeaders ?? (await headers()));
+    const outgoing = buildVisitorHeaders(incomingHeaders ?? (await headers()));
     const contentType = init.json === undefined ? init.contentType : 'application/json';
     if (contentType) {
         outgoing.set('content-type', contentType);

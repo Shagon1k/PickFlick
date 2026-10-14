@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
-import { canonicalDetails } from '../../../testing/movie-fixtures.js';
+import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
 import { StorageService } from '../../storage/storage.service.js';
 import { MovieImagesService } from '../movie-images.service.js';
 
@@ -35,7 +35,7 @@ describe('MovieImagesService', () => {
 
     it('should copy provider bytes to private storage and ingest only the displayed poster for a large cast', async () => {
         const result = await service.storeMedia({
-            ...canonicalDetails(),
+            ...buildCanonicalDetails(),
             posterUrl: SOURCE_URL,
             backdropUrl: 'https://image.tmdb.org/t/p/original/backdrop.jpg',
             cast: Array.from({ length: 50 }, (_, index) => ({
@@ -65,7 +65,8 @@ describe('MovieImagesService', () => {
     it('should reuse stored media without downloading again and serve the stored object', async () => {
         storage.get.mockResolvedValue({ body: png, contentType: 'image/png' });
         expect(
-            (await service.storeMedia({ ...canonicalDetails(), posterUrl: SOURCE_URL })).posterUrl,
+            (await service.storeMedia({ ...buildCanonicalDetails(), posterUrl: SOURCE_URL }))
+                .posterUrl,
         ).toBe(`/api/movies/images/${key}`);
         expect(request).not.toHaveBeenCalled();
         expect(await service.get(key)).toEqual({ body: png, contentType: 'image/png' });
@@ -75,7 +76,7 @@ describe('MovieImagesService', () => {
         'should reject an unsafe image source %s before fetching',
         async (posterUrl) => {
             expect(
-                (await service.storeMedia({ ...canonicalDetails(), posterUrl })).posterUrl,
+                (await service.storeMedia({ ...buildCanonicalDetails(), posterUrl })).posterUrl,
             ).toBeNull();
             expect(request).not.toHaveBeenCalled();
             expect(storage.put).not.toHaveBeenCalled();
@@ -90,7 +91,7 @@ describe('MovieImagesService', () => {
         async (response) => {
             request.mockResolvedValue(response);
             expect(
-                (await service.storeMedia({ ...canonicalDetails(), posterUrl: SOURCE_URL }))
+                (await service.storeMedia({ ...buildCanonicalDetails(), posterUrl: SOURCE_URL }))
                     .posterUrl,
             ).toBeNull();
             expect(storage.put).not.toHaveBeenCalled();
@@ -99,12 +100,13 @@ describe('MovieImagesService', () => {
     it('should preserve details when image transport fails and propagate storage failures', async () => {
         request.mockRejectedValue(new TypeError('download failed'));
         expect(
-            (await service.storeMedia({ ...canonicalDetails(), posterUrl: SOURCE_URL })).posterUrl,
+            (await service.storeMedia({ ...buildCanonicalDetails(), posterUrl: SOURCE_URL }))
+                .posterUrl,
         ).toBeNull();
         request.mockResolvedValue(new Response(png));
         storage.put.mockRejectedValue(new Error('storage failed'));
         await expect(
-            service.storeMedia({ ...canonicalDetails(), posterUrl: SOURCE_URL }),
+            service.storeMedia({ ...buildCanonicalDetails(), posterUrl: SOURCE_URL }),
         ).rejects.toThrow('storage failed');
         await expect(service.get(key)).rejects.toBeInstanceOf(NotFoundException);
     });

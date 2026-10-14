@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 
-import { sessionProgressAction } from '../../progress-actions';
+import { getSessionProgressAction } from '../../progress-actions';
 
 const POLL_MS = 5000;
 
@@ -35,7 +35,7 @@ export default function SessionProgress({
             if (isStopped || isPolling || document.visibilityState !== 'visible') return;
             isPolling = true;
             try {
-                const result = await sessionProgressAction(sessionId);
+                const result = await getSessionProgressAction(sessionId);
                 if (isStopped) return;
                 setIsUnavailable(result.state === 'unavailable');
                 if (result.state === 'denied') {

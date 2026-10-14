@@ -3,8 +3,8 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import {
+    getSafeEnvironmentValidationFailures,
     loadRuntimeEnvironment,
-    safeEnvironmentValidationFailures,
 } from '@pickflick/config/environment';
 import { Logger } from 'nestjs-pino';
 
@@ -40,7 +40,7 @@ try {
     await bootstrap();
 } catch (error) {
     // Environment failures name only the variable and rule, never its value.
-    const failures = safeEnvironmentValidationFailures(error);
+    const failures = getSafeEnvironmentValidationFailures(error);
     writeFatal(
         failures ? 'configuration.invalid' : 'service.start.failed',
         failures ? { failures } : {},

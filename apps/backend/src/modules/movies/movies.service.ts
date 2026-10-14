@@ -13,7 +13,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
-import { catalogCacheKey } from './catalog-cache-key.js';
+import { buildCatalogCacheKey } from './catalog-cache-key.js';
 import { MoviesRepository } from './movies.repository.js';
 import {
     canUseStale,
@@ -30,7 +30,7 @@ interface ICached<TData> {
 const HOUR_MS = 3_600_000;
 
 /** Details with a source that failed during the last fetch are reported as partial. */
-function cachedResult<TData extends TMovieDetails | TMovieSearchResults>(
+function toCachedResult<TData extends TMovieDetails | TMovieSearchResults>(
     cached: ICached<TData>,
 ): TMovieResult<TData> {
     const isPartial =
@@ -81,7 +81,7 @@ export class MoviesService {
         const parsed = movieSearchSchema.parse(input);
         const key = this.cacheKey(parsed.locale, parsed.query, parsed.page);
         const cached = await this.repository.cachedSearch(key);
-        if (cached && this.isFresh(cached)) return cachedResult(cached);
+        if (cached && this.isFresh(cached)) return toCachedResult(cached);
         const fetchedAt = new Date();
         try {
             const data = await this.repository.saveSearch(
@@ -89,7 +89,7 @@ export class MoviesService {
                 await this.provider.search(parsed),
                 fetchedAt,
             );
-            return cachedResult({ data, fetchedAt });
+            return toCachedResult({ data, fetchedAt });
         } catch (error) {
             return this.failure(error, shouldAllowStale ? cached : null);
         }
@@ -114,14 +114,14 @@ export class MoviesService {
         const locale = this.environment.catalog.locale;
         const key = this.cacheKey(locale);
         const cached = await this.repository.cachedDetails(movieId, key);
-        if (!options.forceRefresh && cached && this.isFresh(cached)) return cachedResult(cached);
+        if (!options.forceRefresh && cached && this.isFresh(cached)) return toCachedResult(cached);
         const lookup = await this.repository.lookup(movieId);
         if (!lookup) return { state: 'unavailable', reason: 'NOT_FOUND' };
         const fetchedAt = new Date();
         try {
             const record = await this.provider.details({ ...lookup, locale });
             const data = await this.repository.saveDetails(movieId, key, record, fetchedAt);
-            return cachedResult({ data, fetchedAt });
+            return toCachedResult({ data, fetchedAt });
         } catch (error) {
             return this.failure(error, options.allowStale ? cached : null);
         }
@@ -161,6 +161,6 @@ export class MoviesService {
     }
 
     private cacheKey(...values: unknown[]): string {
-        return catalogCacheKey(this.environment.catalog.provider, ...values);
+        return buildCatalogCacheKey(this.environment.catalog.provider, ...values);
     }
 }

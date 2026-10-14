@@ -27,7 +27,7 @@ export default function Table({
     emptyMessage = 'No records yet.',
     rows,
 }: ITableProps) {
-    const cellClass = (column: ITableColumn) =>
+    const getCellClass = (column: ITableColumn) =>
         column.numeric ? styles.table__numeric : undefined;
     return (
         <div
@@ -41,7 +41,7 @@ export default function Table({
                 <thead>
                     <tr>
                         {columns.map((column) => (
-                            <th className={cellClass(column)} key={column.key} scope="col">
+                            <th className={getCellClass(column)} key={column.key} scope="col">
                                 {column.header}
                             </th>
                         ))}
@@ -52,7 +52,7 @@ export default function Table({
                         rows.map((row) => (
                             <tr key={row.id}>
                                 {columns.map((column) => (
-                                    <td className={cellClass(column)} key={column.key}>
+                                    <td className={getCellClass(column)} key={column.key}>
                                         {row.cells[column.key]}
                                     </td>
                                 ))}

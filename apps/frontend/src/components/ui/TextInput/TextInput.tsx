@@ -6,7 +6,7 @@ import {
 } from '@mantine/core';
 
 import styles from '@/components/ui/Field/Field.module.scss';
-import { fieldState, type IFieldProps } from '@/components/ui/Field/field.types';
+import { getFieldState, type IFieldProps } from '@/components/ui/Field/field.types';
 import FieldAnnouncements from '@/components/ui/Field/FieldAnnouncements';
 import FieldLabel from '@/components/ui/Field/FieldLabel';
 import FieldMessage from '@/components/ui/Field/FieldMessage';
@@ -32,7 +32,7 @@ export default function TextInput({
                 input: styles.control,
                 description: styles.field__description,
             }}
-            data-state={fieldState(error, success)}
+            data-state={getFieldState(error, success)}
             description={<FieldMessage error={error} hint={hint} success={success} />}
             error={Boolean(error)}
             inputContainer={(input) => (

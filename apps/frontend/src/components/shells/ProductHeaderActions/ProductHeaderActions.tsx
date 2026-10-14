@@ -15,7 +15,7 @@ import Icon from '@/components/ui/Icon/Icon';
 import { authClient } from '@/lib/auth-client';
 
 /** Up to two initials from the viewer's display name; empty when no usable name exists. */
-function initialsFor(name: string | null | undefined): string {
+function getInitials(name: string | null | undefined): string {
     const words = (name ?? '').trim().split(/\s+/u).filter(Boolean);
     const initials =
         words.length > 1
@@ -36,7 +36,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const isAccountMenuOpen = activeOverlay === 'account';
     const isNotificationsPanelOpen = activeOverlay === 'notifications';
     const { data: session } = authClient.useSession();
-    const initials = initialsFor(session?.user.name);
+    const initials = getInitials(session?.user.name);
 
     useOverlayDismissal(isAccountMenuOpen, accountRef, closeOverlay, true);
     useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);

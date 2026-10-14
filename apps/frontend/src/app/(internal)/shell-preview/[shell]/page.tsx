@@ -67,7 +67,7 @@ function isPreviewShellName(value: string): value is TPreviewShellName {
     return [...shellNames, ...adminShellNames].some((name) => name === value);
 }
 
-function shellVariant(shell: TPreviewShellName): { admin: boolean; shell: TShellName } {
+function getShellVariant(shell: TPreviewShellName): { admin: boolean; shell: TShellName } {
     switch (shell) {
         case 'session-admin':
             return { admin: true, shell: 'session' };
@@ -89,7 +89,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
     if (!isPreviewShellName(previewShell)) {
         notFound();
     }
-    const { admin, shell } = shellVariant(previewShell);
+    const { admin, shell } = getShellVariant(previewShell);
 
     switch (shell) {
         case 'public':

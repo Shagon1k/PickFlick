@@ -5,9 +5,9 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 
 import { getClubHub, listClubs } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import { clubNavigation } from '@/components/shells/shell-navigation';
+import { buildClubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import LoadingState from '@/components/ui/LoadingState/LoadingState';
 import { ApiError } from '@/lib/api.server';
@@ -66,7 +66,7 @@ async function HubContent({ params }: { params: Promise<{ clubId: string }> }) {
         [hub, clubs] = await Promise.all([getClubHub(clubId), listClubs()]);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-            redirect(loginPath(`/clubs/${clubId}`));
+            redirect(buildLoginPath(`/clubs/${clubId}`));
         }
         return (
             <SafeFailure
@@ -75,7 +75,7 @@ async function HubContent({ params }: { params: Promise<{ clubId: string }> }) {
         );
     }
     return (
-        <ProductFrame clubItems={clubNavigation(clubId, 'overview')}>
+        <ProductFrame clubItems={buildClubNavigation(clubId, 'overview')}>
             <HubOverview clubs={clubs} hub={hub} />
         </ProductFrame>
     );

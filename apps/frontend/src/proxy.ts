@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getClubHub } from '@/api/clubs.server';
 import { ApiError } from '@/lib/api.server';
-import { contentSecurityPolicy } from '@/lib/security-headers';
+import { buildContentSecurityPolicy } from '@/lib/security-headers';
 
 const PREVIEW_PREFIXES = ['/ui-preview', '/shell-preview'];
 const CLUB_PATH =
@@ -17,7 +17,7 @@ const CLUB_PATH =
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-    const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
+    const policy = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', policy);

@@ -7,11 +7,11 @@ import { useRef, useState } from 'react';
 import { initialClubActionState } from '@/app/(product)/clubs/[clubId]/settings/action-state';
 import { removeClubMemberAction } from '@/app/(product)/clubs/[clubId]/settings/actions';
 import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { clubNavigation } from '@/components/shells/shell-navigation';
+import { buildClubNavigation } from '@/components/shells/shell-navigation';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import { formatUtcDate, monogram } from '@/lib/format';
+import { formatUtcDate, getMonogram } from '@/lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -63,7 +63,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 </p>
             </header>
             <nav aria-label="Club sections" className={styles.tabs}>
-                {clubNavigation(club.id, 'members').map((item) => (
+                {buildClubNavigation(club.id, 'members').map((item) => (
                     <Link
                         aria-current={item.current ? 'page' : undefined}
                         href={item.href}
@@ -91,7 +91,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     <li className={styles.member} key={member.id}>
                         <div className={styles.identity}>
                             <span aria-hidden="true" className={styles.monogram}>
-                                {monogram(member.displayName)}
+                                {getMonogram(member.displayName)}
                             </span>
                             <div>
                                 <strong>

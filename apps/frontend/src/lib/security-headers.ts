@@ -15,7 +15,7 @@ export const SECURITY_HEADERS = [
  * (and what those scripts load); styles allow inline attributes because React and Mantine set
  * `style`, which a nonce cannot cover. Development adds `unsafe-eval` for React's error overlay.
  */
-export function contentSecurityPolicy(nonce: string, isDevelopment: boolean): string {
+export function buildContentSecurityPolicy(nonce: string, isDevelopment: boolean): string {
     return [
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ''}`,

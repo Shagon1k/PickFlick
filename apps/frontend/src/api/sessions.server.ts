@@ -8,27 +8,27 @@ import {
     type TUpdateSession,
 } from '@pickflick/contracts';
 
-import { apiRequest } from '@/lib/api.server';
+import { requestApi } from '@/lib/api.server';
 
 export async function getSession(id: string) {
-    return sessionSchema.parse(await apiRequest(`/sessions/${id}`));
+    return sessionSchema.parse(await requestApi(`/sessions/${id}`));
 }
 export async function createSession(clubId: string, input: TCreateSession) {
     return sessionSchema.parse(
-        await apiRequest(`/clubs/${clubId}/sessions`, { method: 'POST', json: input }),
+        await requestApi(`/clubs/${clubId}/sessions`, { method: 'POST', json: input }),
     );
 }
 export async function updateSession(id: string, input: TUpdateSession) {
     return sessionSchema.parse(
-        await apiRequest(`/sessions/${id}`, { method: 'PATCH', json: input }),
+        await requestApi(`/sessions/${id}`, { method: 'PATCH', json: input }),
     );
 }
 export async function cancelSession(id: string, input: TCancelSession) {
     return sessionSchema.parse(
-        await apiRequest(`/sessions/${id}/cancel`, { method: 'POST', json: input }),
+        await requestApi(`/sessions/${id}/cancel`, { method: 'POST', json: input }),
     );
 }
 
 export async function getSessionProgress(id: string) {
-    return sessionProgressSchema.parse(await apiRequest(`/sessions/${id}/progress`));
+    return sessionProgressSchema.parse(await requestApi(`/sessions/${id}/progress`));
 }

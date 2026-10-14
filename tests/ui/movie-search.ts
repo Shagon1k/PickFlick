@@ -30,7 +30,7 @@ export function handleMovieSearch(
             send(response, { state: 'unavailable', reason }, 0);
             return;
         }
-        const movie = (id: string, title: string): TMovieSummary => ({
+        const buildMovie = (id: string, title: string): TMovieSummary => ({
             id,
             title,
             originalTitle: null,
@@ -56,11 +56,11 @@ export function handleMovieSearch(
                 query === 'empty'
                     ? []
                     : [
-                          movie(
+                          buildMovie(
                               '10000000-0000-4000-8000-000000000037',
                               query === 'slow' ? 'Old film' : '<script>alert(1)</script> & Film',
                           ),
-                          movie('10000000-0000-4000-8000-000000000038', 'Second Film'),
+                          buildMovie('10000000-0000-4000-8000-000000000038', 'Second Film'),
                       ],
             page: 1,
             totalPages: 1,

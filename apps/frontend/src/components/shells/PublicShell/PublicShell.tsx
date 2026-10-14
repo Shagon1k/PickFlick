@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 
 import Brand from '@/components/shells/Brand/Brand';
 import {
+    buildPublicNavigation,
     canonicalRoutes,
     type IShellRouteMap,
-    publicNavigation,
 } from '@/components/shells/shell-navigation';
 import styles from '@/components/shells/shells.module.scss';
 import SiteFooter from '@/components/shells/SiteFooter/SiteFooter';
@@ -28,7 +28,7 @@ export default function PublicShell({
                 <div className={styles.headerInner}>
                     <Brand href={routes.home} />
                     <nav aria-label="Public navigation" className={styles.publicNav}>
-                        {publicNavigation(routes, currentPage).map((item) => (
+                        {buildPublicNavigation(routes, currentPage).map((item) => (
                             <Link
                                 aria-current={item.current ? 'page' : undefined}
                                 href={item.href}

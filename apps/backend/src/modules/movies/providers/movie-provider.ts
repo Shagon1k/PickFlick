@@ -37,7 +37,7 @@ export type TProviderSearch = {
     totalPages: number;
     totalResults: number;
 };
-export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
+export function toProviderRecord(snapshot: TSourceSnapshot): TProviderRecord {
     return parseProviderRecord({
         externalIds: snapshot.externalIds,
         data: snapshot.data,
@@ -52,7 +52,7 @@ export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
         ],
     });
 }
-export function emptyMetadata() {
+export function createEmptyMetadata() {
     return movieMetadataSchema.parse({
         title: null,
         originalTitle: null,

@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
-import { canonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
+import { buildCanonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
 import { MovieImagesService } from '../movie-images.service.js';
@@ -103,7 +103,7 @@ describe('MoviesController', () => {
     });
 
     it('should replace internal image URLs in successful detail responses', async () => {
-        const data = canonicalDetails();
+        const data = buildCanonicalDetails();
         const stored = { ...data, posterUrl: `/api/movies/images/${'a'.repeat(64)}` };
         storeMedia.mockResolvedValue(stored);
         detailsResponse.mockResolvedValue({
@@ -124,7 +124,7 @@ describe('MoviesController', () => {
         'should omit unused search media from $state results without ingestion',
         async (result) => {
             const data = {
-                ...canonicalDetails(),
+                ...buildCanonicalDetails(),
                 backdropUrl: 'https://image.tmdb.org/backdrop.jpg',
             };
             search.mockResolvedValue({
@@ -150,7 +150,7 @@ describe('MoviesController', () => {
     it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {
         vi.useFakeTimers();
         try {
-            const data = canonicalDetails();
+            const data = buildCanonicalDetails();
             search.mockImplementation(
                 () =>
                     new Promise((resolve) => {

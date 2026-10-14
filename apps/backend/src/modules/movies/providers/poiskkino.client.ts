@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     MovieProviderError,
     parseSourceSnapshot,
     type TSourceSnapshot,
@@ -162,7 +162,7 @@ export class PoiskkinoClient {
                       ])
                     : null,
             data: {
-                ...emptyMetadata(),
+                ...createEmptyMetadata(),
                 title: movie.enName || null,
                 // alternativeName and description have no guaranteed English locale.
                 releaseDate: movie.premiere?.world?.slice(0, 10) ?? null,

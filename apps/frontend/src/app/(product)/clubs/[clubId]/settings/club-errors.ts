@@ -19,7 +19,7 @@ function isConflictReason(reason: string | undefined): reason is TClubConflictRe
 }
 
 /** Recovery copy for a failed Club request, by HTTP status and conflict reason. */
-export function clubFailureMessage(status: number, reason?: string): string {
+export function getClubFailureMessage(status: number, reason?: string): string {
     if (status === 400) {
         return 'The Club rejected these values. Review the form and try again.';
     }

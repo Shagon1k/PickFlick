@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { getMovieDetails } from '@/api/movies.server';
-import { getSessionState, loginPath } from '@/api/session.server';
+import { buildLoginPath, getSessionState } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
 import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
 import Alert from '@/components/ui/Alert/Alert';
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
-function unavailableMessage(reason?: string) {
+function getUnavailableMessage(reason?: string) {
     if (!reason) return 'Your session is temporarily unavailable.';
     if (reason === 'DISABLED') return 'Film details are not configured yet.';
     if (reason === 'RATE_LIMITED') return 'Film details are busy. Please try again shortly.';
@@ -85,13 +85,13 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
 /** Details for a signed-in visitor; null while the session check itself is unavailable. */
 async function loadDetails(movieId: string) {
     const session = await getSessionState();
-    if (session === 'anonymous') redirect(loginPath(`/movies/${movieId}`));
+    if (session === 'anonymous') redirect(buildLoginPath(`/movies/${movieId}`));
     if (session === 'unavailable') return null;
     try {
         return await getMovieDetails(movieId);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/movies/${movieId}`));
+            redirect(buildLoginPath(`/movies/${movieId}`));
         throw error;
     }
 }
@@ -101,7 +101,7 @@ function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: strin
         <ProductFrame>
             <main className={styles.movieMain}>
                 <h1>Movie Details unavailable</h1>
-                <Alert tone="warning">{unavailableMessage(reason)}</Alert>
+                <Alert tone="warning">{getUnavailableMessage(reason)}</Alert>
                 <div className={styles.links}>
                     <ButtonLink href={`/movies/${movieId}`}>Try again</ButtonLink>
                     <ButtonLink href="/app">Back to Hub</ButtonLink>

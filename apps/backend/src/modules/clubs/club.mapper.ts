@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { IClubSummary, TClubRole } from '@pickflick/contracts';
 
-import { clubEntitlements } from './access/club-tiers.js';
+import { getClubEntitlements } from './access/club-tiers.js';
 
 interface IClubRow {
     id: string;
@@ -33,6 +33,6 @@ export function toClubSummary(club: IClubRow, role: TClubRole): IClubSummary {
         membershipRole: role,
         selectionScaleMin: club.selectionScaleMin === 1 ? 1 : 0,
         selectionScaleMax: club.selectionScaleMax,
-        tier: clubEntitlements(club.id).tier,
+        tier: getClubEntitlements(club.id).tier,
     };
 }

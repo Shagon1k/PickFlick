@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getSessionState, loginPath } from '@/api/session.server';
+import { buildLoginPath, getSessionState } from '@/api/session.server';
 import BackLink from '@/components/navigation/BackLink/BackLink';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -20,7 +20,7 @@ export default async function CreateClubPage() {
     await connection();
     const session = await getSessionState();
     if (session === 'anonymous') {
-        redirect(loginPath('/clubs/new'));
+        redirect(buildLoginPath('/clubs/new'));
     }
 
     return (

@@ -91,12 +91,12 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 ## 4. Call it from the frontend
 
 1. Add a function to `apps/frontend/src/api/<area>.server.ts`. The file starts with
-   `import 'server-only'` and uses `apiRequest`, which forwards the cookie and client address and
+   `import 'server-only'` and uses `requestApi`, which forwards the cookie and client address and
    throws `ApiError` for any non-2xx answer:
 
     ```ts
     export const sendContactMessage = (submission: TContactSubmission): Promise<void> =>
-        apiRequest('/contact', { method: 'POST', json: submission });
+        requestApi('/contact', { method: 'POST', json: submission });
     ```
 
 2. Add a server action in the route's `actions.ts` (`'use server'`). Validate with the same schema,

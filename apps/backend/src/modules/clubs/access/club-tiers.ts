@@ -11,11 +11,11 @@ const TIERS: Record<TClubTier, IClubEntitlements> = {
     },
 };
 
-export function tierEntitlements(tier: TClubTier): IClubEntitlements {
+export function getTierEntitlements(tier: TClubTier): IClubEntitlements {
     return TIERS[tier];
 }
 
 /** Every Club is Free until billing (Phase 20); the seeded demo Club is Pro so both paths show. */
-export function clubEntitlements(clubId: string): IClubEntitlements {
-    return tierEntitlements(clubId === SYNTHETIC_FIXTURES.club.id ? 'PRO' : 'FREE');
+export function getClubEntitlements(clubId: string): IClubEntitlements {
+    return getTierEntitlements(clubId === SYNTHETIC_FIXTURES.club.id ? 'PRO' : 'FREE');
 }

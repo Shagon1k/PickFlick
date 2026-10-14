@@ -10,7 +10,7 @@ import Icon from '@/components/ui/Icon/Icon';
 import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
 import LoginActions from './_components/LoginActions/LoginActions';
-import { firstSearchValue } from './login.utils';
+import { getFirstSearchValue } from './login.utils';
 import { resolveLoginErrorMessage, SESSION_UNAVAILABLE_MESSAGE } from './login-errors';
 import styles from './page.module.scss';
 
@@ -26,7 +26,7 @@ export default async function LoginPage({
 }) {
     await connection();
     const parameters = await searchParams;
-    const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
+    const returnTo = resolveAuthReturnTarget(getFirstSearchValue(parameters.returnTo));
     const session = await getSessionState();
     if (session === 'authenticated') {
         redirect(returnTo);
@@ -34,7 +34,7 @@ export default async function LoginPage({
     const isAppleEnabled = isAppleSignInEnabled();
     // Sign-in stays available during a session-API outage; the notice explains a stale signed-in state.
     const errorMessage =
-        resolveLoginErrorMessage(firstSearchValue(parameters.error)) ??
+        resolveLoginErrorMessage(getFirstSearchValue(parameters.error)) ??
         (session === 'unavailable' ? SESSION_UNAVAILABLE_MESSAGE : undefined);
 
     return (

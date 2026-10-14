@@ -10,7 +10,7 @@ import {
 import { testUtils } from 'better-auth/plugins';
 
 import { createAuth } from '../modules/auth/auth.config.js';
-import { catalogCacheKey } from '../modules/movies/catalog-cache-key.js';
+import { buildCatalogCacheKey } from '../modules/movies/catalog-cache-key.js';
 
 interface IBrowserCookie {
     name: string;
@@ -58,7 +58,7 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
         seedMovieSearch: (query, movies) =>
             seedMovieSearch(
                 prisma,
-                catalogCacheKey(environment.catalog.provider, 'en-US', query, 1),
+                buildCatalogCacheKey(environment.catalog.provider, 'en-US', query, 1),
                 movies,
             ),
         close: () => prisma.$disconnect(),

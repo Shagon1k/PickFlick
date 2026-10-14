@@ -22,7 +22,7 @@ export async function nominateAction(id: string, input: unknown) {
         revalidatePath(`/sessions/${id}`);
         return { ok: true as const, message: 'Your nomination is confirmed.' };
     } catch (error) {
-        return nominationError(error);
+        return getNominationErrorMessage(error);
     }
 }
 export async function closeNominationsAction(id: string, input: unknown) {
@@ -34,10 +34,10 @@ export async function closeNominationsAction(id: string, input: unknown) {
         revalidatePath(`/sessions/${id}`);
         return { ok: true as const, message: 'Nominations closed.' };
     } catch (error) {
-        return nominationError(error);
+        return getNominationErrorMessage(error);
     }
 }
-function nominationError(error: unknown) {
+function getNominationErrorMessage(error: unknown) {
     if (error instanceof ApiError) {
         if (error.reason === 'ALREADY_NOMINATED')
             return {

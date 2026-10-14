@@ -1,12 +1,12 @@
 import type { TMovieExternalId, TMovieSearch } from '@pickflick/contracts';
 
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     type IMovieLookup,
     type IMovieProvider,
     MovieProviderError,
     parseProviderRecord,
-    singleSource,
+    toProviderRecord,
     type TProviderRecord,
     type TSourceSnapshot,
 } from './movie-provider.js';
@@ -27,7 +27,7 @@ export class CompositeMovieProvider implements IMovieProvider {
 
     async search(input: TMovieSearch) {
         const result = await this.poiskkino.search(input);
-        return { ...result, movies: result.movies.map(singleSource) };
+        return { ...result, movies: result.movies.map(toProviderRecord) };
     }
 
     async details(input: IMovieLookup): Promise<TProviderRecord> {
@@ -82,7 +82,7 @@ async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoa
 
 /** English text comes from TheTVDB; media, ratings and year stay with PoiskKino. */
 function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
-    const base = primary?.data ?? emptyMetadata();
+    const base = primary?.data ?? createEmptyMetadata();
     const english = enrichment?.data;
     return {
         ...base,

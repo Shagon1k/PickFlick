@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
+    getSafeEnvironmentValidationFailures,
     loadDatabaseEnvironment,
-    safeEnvironmentValidationFailures,
 } from '@pickflick/config/environment';
 import { createDatabaseClient } from '@pickflick/database';
 import pino from 'pino';
@@ -58,7 +58,7 @@ try {
 } catch (error) {
     logger.fatal({
         event: 'deadline.worker.failed',
-        failures: safeEnvironmentValidationFailures(error),
+        failures: getSafeEnvironmentValidationFailures(error),
     });
     process.exitCode = 1;
 }

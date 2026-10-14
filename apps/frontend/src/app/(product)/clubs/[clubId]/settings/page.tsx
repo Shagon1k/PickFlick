@@ -4,9 +4,9 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getClubSettings } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import { clubNavigation } from '@/components/shells/shell-navigation';
+import { buildClubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';
 
@@ -59,13 +59,13 @@ export default async function ClubSettingsPage({
         settings = await getClubSettings(clubId);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-            redirect(loginPath(`/clubs/${clubId}/settings`));
+            redirect(buildLoginPath(`/clubs/${clubId}/settings`));
         }
         // A Club the visitor cannot see answers 404, so nothing about it is disclosed.
         return <SafeFailure forbidden={error instanceof ApiError && error.status === 404} />;
     }
     return (
-        <ProductFrame clubItems={clubNavigation(clubId, 'manage')}>
+        <ProductFrame clubItems={buildClubNavigation(clubId, 'manage')}>
             <ClubSettings projection={settings} />
         </ProductFrame>
     );

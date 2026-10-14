@@ -7,7 +7,7 @@ import {
 import Link from 'next/link';
 
 import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { clubNavigation } from '@/components/shells/shell-navigation';
+import { buildClubNavigation } from '@/components/shells/shell-navigation';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 
 import styles from '../../page.module.scss';
@@ -18,21 +18,21 @@ interface IHubOverviewProps {
     hub: IClubHub;
 }
 
-function sessionName(session: IClubHubSession): string {
+function formatSessionName(session: IClubHubSession): string {
     return session.topic ?? 'Untitled Session';
 }
 
-function sessionDate(value: string): string {
+function formatSessionDate(value: string): string {
     return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(
         new Date(value),
     );
 }
 
-function sessionTime(value: string): string {
+function formatSessionTime(value: string): string {
     return `${new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(new Date(value))} UTC`;
 }
 
-function callSheetPhase(session?: IClubHubSession): string {
+function formatCallSheetPhase(session?: IClubHubSession): string {
     return session ? `Current phase / ${session.phase.toLowerCase()}` : 'Awaiting a Session';
 }
 
@@ -51,7 +51,7 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
             <ClubStatus access={hub.access} />
 
             <nav aria-label="Club sections" className={styles.tabs}>
-                {clubNavigation(club.id, 'overview').map((item) => (
+                {buildClubNavigation(club.id, 'overview').map((item) => (
                     <Link
                         aria-current={item.current ? 'page' : undefined}
                         href={item.href}
@@ -96,7 +96,7 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                             <>
                                 <p>
                                     <Link href={`/sessions/${activeSession.id}`}>
-                                        {sessionName(activeSession)}
+                                        {formatSessionName(activeSession)}
                                     </Link>
                                 </p>
                                 <p className={styles.quiet}>
@@ -128,12 +128,12 @@ export default function HubOverview({ clubs, hub }: IHubOverviewProps) {
                                 <li key={session.id}>
                                     <span>
                                         <Link href={`/sessions/${session.id}`}>
-                                            {sessionName(session)}
+                                            {formatSessionName(session)}
                                         </Link>{' '}
                                         · {session.phase.toLowerCase()}
                                     </span>
                                     <time dateTime={session.updatedAt}>
-                                        {sessionDate(session.updatedAt)}
+                                        {formatSessionDate(session.updatedAt)}
                                     </time>
                                 </li>
                             ))}
@@ -163,7 +163,9 @@ function SessionRows({
                 <ul className={styles.activity}>
                     {sessions.map((session) => (
                         <li key={session.id}>
-                            <Link href={`/sessions/${session.id}`}>{sessionName(session)}</Link>
+                            <Link href={`/sessions/${session.id}`}>
+                                {formatSessionName(session)}
+                            </Link>
                             <span>{session.phase.toLowerCase()}</span>
                         </li>
                     ))}
@@ -186,7 +188,7 @@ function CallSheet({
         <section aria-labelledby="hub-title" className={styles.callSheet}>
             <div className={styles.callSheetHeader}>
                 <span>Screening Call Sheet</span>
-                <span>{callSheetPhase(activeSession)}</span>
+                <span>{formatCallSheetPhase(activeSession)}</span>
             </div>
             <div className={styles.callSheetBody}>
                 <div>
@@ -213,13 +215,13 @@ function CallSheet({
                         <dl className={styles.callFacts}>
                             <div>
                                 <dt>Session</dt>
-                                <dd>{sessionName(activeSession)}</dd>
+                                <dd>{formatSessionName(activeSession)}</dd>
                             </div>
                             <div>
                                 <dt>Date</dt>
                                 <dd>
                                     {activeSession.scheduledAt
-                                        ? sessionDate(activeSession.scheduledAt)
+                                        ? formatSessionDate(activeSession.scheduledAt)
                                         : 'To be announced'}
                                 </dd>
                             </div>
@@ -227,7 +229,7 @@ function CallSheet({
                                 <dt>Call time</dt>
                                 <dd>
                                     {activeSession.scheduledAt
-                                        ? sessionTime(activeSession.scheduledAt)
+                                        ? formatSessionTime(activeSession.scheduledAt)
                                         : 'To be announced'}
                                 </dd>
                             </div>

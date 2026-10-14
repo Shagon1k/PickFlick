@@ -104,7 +104,7 @@ sequenceDiagram
 
   Browser->>N: Submit a form (server action)
   N->>N: Validate with the shared zod schema
-  N->>A: apiRequest() with cookie and client address
+  N->>A: requestApi() with cookie and client address
   A->>A: ThrottlerGuard, then AuthGuard resolves the session
   A->>A: ZodValidationPipe validates the body again
   A->>DB: Service reads and writes through PrismaService
@@ -290,7 +290,7 @@ every authentication session.
   Authenticated `POST /movies/search` validates the shared search schema and opts into bounded
   stale cache use. Responses are private/no-store; the existing global auth guard and a
   60-request/minute endpoint limit apply. The header calls it through a server action and
-  `apiRequest`, keeping credentials and provider calls on the server. Debounced queries discard
+  `requestApi`, keeping credentials and provider calls on the server. Debounced queries discard
   obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
   UUIDs. Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
   detail state with backend-built outbound links; it has the same private/no-store and rate-limit

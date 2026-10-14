@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { clubEntitlements } from './club-tiers.js';
+import { getClubEntitlements } from './club-tiers.js';
 
 const clubColumns = {
     id: true,
@@ -73,7 +73,7 @@ export async function lockClub(
     await transaction.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId}::uuid FOR UPDATE`;
 }
 
-export function clubAccess(
+export function getClubAccess(
     lifecycle: TClubLifecycle,
     hasAdmin: boolean,
     memberCount: number,
@@ -98,9 +98,9 @@ export async function loadClubAccess(
         }),
         database.membership.count({ where: { clubId: club.id, status: 'ACTIVE' } }),
     ]);
-    const { memberLimit } = clubEntitlements(club.id);
+    const { memberLimit } = getClubEntitlements(club.id);
     return {
-        access: clubAccess(club.lifecycle, Boolean(admin), memberCount, memberLimit),
+        access: getClubAccess(club.lifecycle, Boolean(admin), memberCount, memberLimit),
         memberCount,
     };
 }

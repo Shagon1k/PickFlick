@@ -3,10 +3,10 @@ import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { movieDetailsSchema, type TMovieSource } from '@pickflick/contracts';
 
 import { PrismaService } from '../../../database/prisma.service.js';
-import { integrationEnvironment } from '../../../testing/integration.js';
-import { movieDetails } from '../../../testing/movie-fixtures.js';
+import { loadIntegrationEnvironment } from '../../../testing/integration.js';
+import { buildMovieDetails } from '../../../testing/movie-fixtures.js';
 import { MoviesRepository } from '../movies.repository.js';
-import { singleSource, type TProviderRecord } from '../providers/movie-provider.js';
+import { toProviderRecord, type TProviderRecord } from '../providers/movie-provider.js';
 
 describe('MoviesRepository', () => {
     let prisma: PrismaService;
@@ -23,8 +23,8 @@ describe('MoviesRepository', () => {
     const later = new Date(time.getTime() + 1000);
     function fixture(at = time, source: TMovieSource = 'tmdb', imdb?: string) {
         const value = randomInt(10000000, 2000000000);
-        const record = movieDetails(value, at.toISOString());
-        return singleSource({
+        const record = buildMovieDetails(value, at.toISOString());
+        return toProviderRecord({
             source,
             locale: 'en-US',
             fetchedAt: at.toISOString(),
@@ -49,7 +49,7 @@ describe('MoviesRepository', () => {
         return id;
     }
     beforeAll(() => {
-        prisma = new PrismaService(integrationEnvironment());
+        prisma = new PrismaService(loadIntegrationEnvironment());
         repository = new MoviesRepository(prisma);
     });
     afterAll(async () => {

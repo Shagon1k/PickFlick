@@ -2,10 +2,10 @@ import type { TInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { loadClubAccess } from '../access/club-access.js';
-import { clubEntitlements } from '../access/club-tiers.js';
+import { getClubEntitlements } from '../access/club-tiers.js';
 
 /** States decided by the link alone, before Membership or capacity is read. */
-function closedState(
+function getClosedState(
     invitation: {
         targetUserId: string | null;
         revokedAt: Date | null;
@@ -29,27 +29,27 @@ export async function inspectInvitation(
         where: { tokenDigest },
         include: { club: true, inviter: { select: { displayName: true } } },
     });
-    const result = (preview: TInvitationPreview) => ({ invitation, preview });
-    if (!invitation) return result({ state: 'invalid' });
-    const closed = closedState(invitation, userId);
-    if (closed) return result({ state: closed });
+    const buildInspection = (preview: TInvitationPreview) => ({ invitation, preview });
+    if (!invitation) return buildInspection({ state: 'invalid' });
+    const closed = getClosedState(invitation, userId);
+    if (closed) return buildInspection({ state: closed });
     const membership = await transaction.membership.findFirst({
         where: { clubId: invitation.clubId, userId, status: 'ACTIVE' },
         select: { id: true },
     });
-    if (membership) return result({ state: 'already-member', clubId: invitation.clubId });
+    if (membership) return buildInspection({ state: 'already-member', clubId: invitation.clubId });
     if (invitation.respondedAt) {
-        return result({
+        return buildInspection({
             state:
                 invitation.responderId === userId && !invitation.accepted ? 'declined' : 'invalid',
         });
     }
-    if (invitation.club.lifecycle !== 'ACTIVE') return result({ state: 'unavailable' });
+    if (invitation.club.lifecycle !== 'ACTIVE') return buildInspection({ state: 'unavailable' });
     const { access, memberCount } = await loadClubAccess(transaction, invitation.club);
-    if (access.adminless) return result({ state: 'unavailable' });
-    if (memberCount >= clubEntitlements(invitation.clubId).memberLimit)
-        return result({ state: 'over-limit' });
-    return result({
+    if (access.adminless) return buildInspection({ state: 'unavailable' });
+    if (memberCount >= getClubEntitlements(invitation.clubId).memberLimit)
+        return buildInspection({ state: 'over-limit' });
+    return buildInspection({
         state: 'valid',
         clubName: invitation.club.name,
         memberCount,

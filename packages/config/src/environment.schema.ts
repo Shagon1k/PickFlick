@@ -13,7 +13,7 @@ const required = z.string().trim().min(1, 'is required');
 const flag = z.enum(['true', 'false']).transform((value) => value === 'true');
 const optionalFlag = z.preprocess((value) => (value === '' ? undefined : value), flag.optional());
 
-function urlWith(check: (url: URL) => boolean, message: string) {
+function createUrlSchema(check: (url: URL) => boolean, message: string) {
     return required.refine((value) => {
         try {
             return check(new URL(value));
@@ -23,18 +23,18 @@ function urlWith(check: (url: URL) => boolean, message: string) {
     }, message);
 }
 
-const databaseUrl = urlWith(
+const databaseUrl = createUrlSchema(
     (url) =>
         ['postgres:', 'postgresql:'].includes(url.protocol) &&
         Boolean(url.hostname) &&
         url.pathname.length > 1,
     'must be a postgres URL with a host and database name',
 );
-const httpUrl = urlWith(
+const httpUrl = createUrlSchema(
     (url) => ['http:', 'https:'].includes(url.protocol) && Boolean(url.hostname),
     'must be an http(s) URL',
 );
-const origin = urlWith(
+const origin = createUrlSchema(
     (url) =>
         ['http:', 'https:'].includes(url.protocol) &&
         url.pathname === '/' &&

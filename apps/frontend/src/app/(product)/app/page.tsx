@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { listClubs } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
 import BrandImage from '@/components/ui/BrandImage/BrandImage';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
@@ -74,7 +74,7 @@ export default async function AppPage() {
         clubs = await listClubs();
     } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-            redirect(loginPath('/app'));
+            redirect(buildLoginPath('/app'));
         }
         return <ClubsUnavailable />;
     }

@@ -18,14 +18,14 @@ import { PrismaService } from '../../database/prisma.service.js';
 import {
     assertActive,
     assertAdmin,
-    clubAccess,
     findMembership,
+    getClubAccess,
     loadClubAccess,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
-import { canRemoveMember, clubPermissions } from './access/club-permissions.js';
-import { clubEntitlements, tierEntitlements } from './access/club-tiers.js';
+import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
+import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 
 @Injectable()
@@ -86,7 +86,7 @@ export class ClubsService {
                     club: toClubSummary(membership.club, membership.role),
                     memberCount,
                     access,
-                    permissions: clubPermissions(
+                    permissions: getClubPermissions(
                         membership.role,
                         membership.club.lifecycle,
                         access,
@@ -104,7 +104,7 @@ export class ClubsService {
     }
 
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
-        const { adminClubLimit } = tierEntitlements('FREE');
+        const { adminClubLimit } = getTierEntitlements('FREE');
         return this.prisma.$transaction(async (transaction) => {
             await lockKey(transaction, `club-admin:${userId}`);
             await assertBelowAdminLimit(transaction, userId, adminClubLimit);
@@ -145,18 +145,18 @@ export class ClubsService {
                         : [],
                 ]);
 
-                const access = clubAccess(
+                const access = getClubAccess(
                     club.lifecycle,
                     members.some((member) => member.role === 'ADMIN'),
                     members.length,
-                    clubEntitlements(clubId).memberLimit,
+                    getClubEntitlements(clubId).memberLimit,
                 );
                 return {
                     access,
                     currentMembershipId: membership.id,
                     club: toClubSummary(club, role),
-                    permissions: clubPermissions(role, club.lifecycle, access),
-                    entitlements: clubEntitlements(clubId),
+                    permissions: getClubPermissions(role, club.lifecycle, access),
+                    entitlements: getClubEntitlements(clubId),
                     visibility: {
                         showNominationAuthors: club.showNominationAuthors,
                         showNominationsBeforeSubmit: club.showNominationsBeforeSubmit,
@@ -193,7 +193,7 @@ export class ClubsService {
             assertActive(membership);
             if (
                 input.showVoteResults &&
-                clubEntitlements(clubId).voteResultVisibility !== 'ADMIN_CONFIGURABLE'
+                getClubEntitlements(clubId).voteResultVisibility !== 'ADMIN_CONFIGURABLE'
             ) {
                 throw new ConflictException({ reason: 'TIER_SETTING_UNAVAILABLE' });
             }

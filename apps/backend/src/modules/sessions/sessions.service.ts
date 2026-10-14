@@ -88,7 +88,7 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
-                await audit(transaction, {
+                await recordSessionAudit(transaction, {
                     clubId,
                     sessionId: id,
                     membershipId: membership.id,
@@ -108,7 +108,7 @@ export class SessionsService {
 
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {
         await this.prisma.$transaction(async (transaction) => {
-            const { session, membership } = await writableSession(transaction, userId, id);
+            const { session, membership } = await loadWritableSession(transaction, userId, id);
             if (['COMPLETED', 'CANCELLED'].includes(session.phase))
                 throw new ConflictException({ reason: 'SESSION_CLOSED' });
             const data = {
@@ -135,7 +135,7 @@ export class SessionsService {
                     deadlineVersion: hasDeadlineChanged ? { increment: 1 } : undefined,
                 },
             });
-            await audit(transaction, {
+            await recordSessionAudit(transaction, {
                 clubId: session.clubId,
                 sessionId: id,
                 membershipId: membership.id,
@@ -149,7 +149,7 @@ export class SessionsService {
 
     async cancel(userId: string, id: string, input: TCancelSession): Promise<TSession> {
         await this.prisma.$transaction(async (transaction) => {
-            const { session, membership } = await writableSession(transaction, userId, id);
+            const { session, membership } = await loadWritableSession(transaction, userId, id);
             if (session.phase === 'CANCELLED') return;
             if (session.phase === 'COMPLETED')
                 throw new ConflictException({ reason: 'SESSION_CLOSED' });
@@ -169,7 +169,7 @@ export class SessionsService {
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },
             });
-            await audit(transaction, {
+            await recordSessionAudit(transaction, {
                 clubId: session.clubId,
                 sessionId: id,
                 membershipId: membership.id,
@@ -182,7 +182,11 @@ export class SessionsService {
     }
 }
 
-async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
+async function loadWritableSession(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+    id: string,
+) {
     const { session, member } = await lockSessionForMember(transaction, userId, id);
     await assertManager(transaction, member);
     return { session, membership: member };
@@ -220,7 +224,7 @@ function project(
 }
 
 /** Session lifecycle events record the acting member as their own subject. */
-async function audit(
+async function recordSessionAudit(
     transaction: Prisma.TransactionClient,
     event: {
         clubId: string;

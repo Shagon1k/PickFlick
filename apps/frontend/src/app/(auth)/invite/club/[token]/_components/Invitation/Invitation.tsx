@@ -44,14 +44,14 @@ const messages = {
 } as const;
 
 const subscribe = () => () => {};
-const clientReady = () => true;
-const serverReady = () => false;
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
-    const isReady = useSyncExternalStore(subscribe, clientReady, serverReady);
+    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
     const [failure, setFailure] = useState('');
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));

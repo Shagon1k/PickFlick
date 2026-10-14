@@ -15,7 +15,7 @@ type TInvitationResult =
 import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
 import { ApiError } from '@/lib/api.server';
 
-function failure(error: unknown): string {
+function getFailureMessage(error: unknown): string {
     if (error instanceof ApiError && error.reason === 'MEMBER_LIMIT_REACHED')
         return 'This Club has reached its member limit.';
     if (error instanceof ApiError && [401, 403, 404].includes(error.status))
@@ -49,7 +49,7 @@ export async function manageInvitationsAction(
                       'Invitation list could not be refreshed. Use Recent invitations to try again.',
               };
     } catch (error) {
-        return { ok: false as const, message: failure(error) };
+        return { ok: false as const, message: getFailureMessage(error) };
     }
 }
 
@@ -59,6 +59,6 @@ export async function loadInvitationsAction(clubId: string): Promise<TInvitation
     try {
         return { ok: true as const, invitations: await listInvitations(clubId) };
     } catch (error) {
-        return { ok: false as const, message: failure(error) };
+        return { ok: false as const, message: getFailureMessage(error) };
     }
 }

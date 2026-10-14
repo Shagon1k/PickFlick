@@ -9,6 +9,6 @@ export function formatUtcDateTime(value: string): string {
 }
 
 /** The two-letter placeholder shown where a Club or member has no image. */
-export function monogram(name: string): string {
+export function getMonogram(name: string): string {
     return name.slice(0, 2).toUpperCase();
 }

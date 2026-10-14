@@ -19,7 +19,7 @@ import type { IAuthUser } from '../modules/auth/auth.types.js';
 import { type IStoredObject, StorageService } from '../modules/storage/storage.service.js';
 
 /** Loads the local or test environment and refuses to run against any other database. */
-export function integrationEnvironment(): TRuntimeEnvironment {
+export function loadIntegrationEnvironment(): TRuntimeEnvironment {
     const environment = loadRuntimeEnvironment();
     assertSafeSeedOrResetTarget(environment);
     return environment;
@@ -132,7 +132,7 @@ export interface ITestApi {
 export async function startTestApi(): Promise<ITestApi> {
     const storage = new MemoryStorage();
     const moduleRef = await Test.createTestingModule({
-        imports: [AppModule.register(integrationEnvironment())],
+        imports: [AppModule.register(loadIntegrationEnvironment())],
     })
         .overrideProvider(StorageService)
         .useValue(storage)

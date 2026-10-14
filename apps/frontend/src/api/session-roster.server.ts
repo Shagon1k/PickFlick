@@ -11,45 +11,45 @@ import {
     type TRespondInvitation,
 } from '@pickflick/contracts';
 
-import { apiRequest } from '@/lib/api.server';
+import { requestApi } from '@/lib/api.server';
 
 export const getSessionRoster = (id: string): Promise<ISessionRoster> =>
-    apiRequest(`/sessions/${id}/roster`);
+    requestApi(`/sessions/${id}/roster`);
 export const createSessionInvitation = (
     id: string,
     membershipId: string,
 ): Promise<ICreatedInvitation> =>
-    apiRequest(`/sessions/${id}/invitations`, { method: 'POST', json: { membershipId } });
+    requestApi(`/sessions/${id}/invitations`, { method: 'POST', json: { membershipId } });
 export const revokeSessionInvitation = (id: string, inviteId: string): Promise<void> =>
-    apiRequest(`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
+    requestApi(`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
 export const leaveSession = (id: string): Promise<void> =>
-    apiRequest(`/sessions/${id}/leave`, { method: 'POST', json: { confirmation: 'LEAVE' } });
+    requestApi(`/sessions/${id}/leave`, { method: 'POST', json: { confirmation: 'LEAVE' } });
 export const removeSessionParticipant = (id: string, participantId: string): Promise<void> =>
-    apiRequest(`/sessions/${id}/participants/${participantId}/remove`, {
+    requestApi(`/sessions/${id}/participants/${participantId}/remove`, {
         method: 'POST',
         json: { confirmation: 'REMOVE' },
     });
 export async function previewSessionInvitation(token: string) {
     return sessionInvitationPreviewSchema.parse(
-        await apiRequest('/session-invitations/preview', { method: 'POST', json: { token } }),
+        await requestApi('/session-invitations/preview', { method: 'POST', json: { token } }),
     );
 }
 export async function respondSessionInvitation(input: TRespondInvitation) {
     return sessionInvitationPreviewSchema.parse(
-        await apiRequest('/session-invitations/respond', { method: 'POST', json: input }),
+        await requestApi('/session-invitations/respond', { method: 'POST', json: input }),
     );
 }
-export const pendingClubInvitations = (): Promise<IPendingClubInvitation[]> =>
-    apiRequest('/club-invitations/pending');
-export const pendingSessionInvitations = (): Promise<IPendingSessionInvitation[]> =>
-    apiRequest('/session-invitations/pending');
+export const listPendingClubInvitations = (): Promise<IPendingClubInvitation[]> =>
+    requestApi('/club-invitations/pending');
+export const listPendingSessionInvitations = (): Promise<IPendingSessionInvitation[]> =>
+    requestApi('/session-invitations/pending');
 export const respondPendingClubInvitation = (
     id: string,
     input: TInvitationDecision,
 ): Promise<TInvitationPreview> =>
-    apiRequest(`/club-invitations/${id}/respond`, { method: 'POST', json: input });
+    requestApi(`/club-invitations/${id}/respond`, { method: 'POST', json: input });
 export async function respondPendingSessionInvitation(id: string, input: TInvitationDecision) {
     return sessionInvitationPreviewSchema.parse(
-        await apiRequest(`/session-invitations/${id}/respond`, { method: 'POST', json: input }),
+        await requestApi(`/session-invitations/${id}/respond`, { method: 'POST', json: input }),
     );
 }

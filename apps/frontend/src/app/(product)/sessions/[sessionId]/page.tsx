@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { loginPath } from '@/api/session.server';
+import { buildLoginPath } from '@/api/session.server';
 import { getSessionRoster } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
@@ -22,7 +22,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
         [session, roster] = await Promise.all([getSession(sessionId), getSessionRoster(sessionId)]);
     } catch (error) {
         if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/sessions/${sessionId}`));
+            redirect(buildLoginPath(`/sessions/${sessionId}`));
         if (error instanceof ApiError && [400, 404].includes(error.status)) notFound();
         return (
             <ProductFrame>

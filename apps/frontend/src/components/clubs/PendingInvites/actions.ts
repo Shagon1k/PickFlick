@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import {
-    pendingClubInvitations,
-    pendingSessionInvitations,
+    listPendingClubInvitations,
+    listPendingSessionInvitations,
     respondPendingClubInvitation,
     respondPendingSessionInvitation,
 } from '@/api/session-roster.server';
@@ -18,8 +18,8 @@ export async function loadPendingInvitesAction(): Promise<{
 }> {
     try {
         const [clubs, sessions] = await Promise.all([
-            pendingClubInvitations(),
-            pendingSessionInvitations(),
+            listPendingClubInvitations(),
+            listPendingSessionInvitations(),
         ]);
         return {
             invitations: [

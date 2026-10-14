@@ -43,7 +43,7 @@ The page CSP allows:
 | `frame-ancestors 'none'`                                                                       | No site may embed PickFlick in a frame.                                                                          |
 
 A new third-party script, image host, font, or API origin needs a change to
-`contentSecurityPolicy()` in `apps/frontend/src/lib/security-headers.ts`, a matching test, and a
+`buildContentSecurityPolicy()` in `apps/frontend/src/lib/security-headers.ts`, a matching test, and a
 review of what the new origin can do. The Playwright suite fails on any CSP violation, and
 `instrumentation-client.ts` switches off zod's `eval` probe so the policy stays clean.
 

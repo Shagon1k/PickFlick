@@ -26,10 +26,14 @@ import {
     lockClub,
     recordAudit,
 } from '../access/club-access.js';
-import { clubEntitlements } from '../access/club-tiers.js';
+import { getClubEntitlements } from '../access/club-tiers.js';
 import { inspectInvitation } from './club-invitation-access.js';
 
-async function manager(transaction: Prisma.TransactionClient, userId: string, clubId: string) {
+async function findManagerMembership(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+    clubId: string,
+) {
     const membership = await findMembership(transaction, userId, clubId);
     if (membership.role === 'MEMBER') {
         throw new ForbiddenException();
@@ -48,10 +52,10 @@ export class ClubInvitationsService {
     ): Promise<ICreatedInvitation> {
         return this.prisma.$transaction(async (transaction) => {
             await lockClub(transaction, clubId);
-            const membership = await manager(transaction, userId, clubId);
+            const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
             const { access, memberCount } = await loadClubAccess(transaction, membership.club);
-            if (memberCount >= clubEntitlements(clubId).memberLimit) {
+            if (memberCount >= getClubEntitlements(clubId).memberLimit) {
                 throw new ConflictException({ reason: 'MEMBER_LIMIT_REACHED' });
             }
             if (
@@ -86,7 +90,7 @@ export class ClubInvitationsService {
     }
 
     async list(userId: string, clubId: string): Promise<IManagedInvitation[]> {
-        await manager(this.prisma, userId, clubId);
+        await findManagerMembership(this.prisma, userId, clubId);
         const recent = await this.prisma.clubInvite.findMany({
             where: { clubId },
             orderBy: { createdAt: 'desc' },
@@ -113,7 +117,7 @@ export class ClubInvitationsService {
     async revoke(userId: string, clubId: string, inviteId: string): Promise<void> {
         await this.prisma.$transaction(async (transaction) => {
             await lockClub(transaction, clubId);
-            const membership = await manager(transaction, userId, clubId);
+            const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
             const invitation = await transaction.clubInvite.findFirst({
                 where: { id: inviteId, clubId },

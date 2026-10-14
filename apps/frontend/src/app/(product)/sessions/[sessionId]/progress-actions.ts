@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { getSessionProgress } from '@/api/sessions.server';
 import { ApiError } from '@/lib/api.server';
 
-export async function sessionProgressAction(id: string) {
+export async function getSessionProgressAction(id: string) {
     if (!z.uuidv4().safeParse(id).success) return { state: 'denied' as const };
     try {
         return { state: 'ready' as const, ...(await getSessionProgress(id)) };
