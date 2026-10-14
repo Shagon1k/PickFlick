@@ -262,6 +262,7 @@ model Session {
   // PostgreSQL migration owns the partial unique index for one blocking Session per Club.
   @@unique([id, clubId])
   @@index([clubId, phase])
+  @@index([phase, deadlineAt])
 }
 
 model SessionParticipant {

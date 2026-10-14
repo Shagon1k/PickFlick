@@ -62,7 +62,7 @@ These guidelines do not override repository-specific approval requirements, arch
   no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
   audit events, the movie catalog cache, and Sessions with participants, invitations, and
-  Nominations across twenty-two migrations.
+  Nominations across twenty-three migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.

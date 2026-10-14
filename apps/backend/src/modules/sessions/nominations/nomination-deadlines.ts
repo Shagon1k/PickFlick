@@ -37,16 +37,18 @@ export class NominationDeadlines {
                 id: true,
                 deadlineAt: true,
                 deadlineVersion: true,
-                deadlineDecisions: { select: { deadlineVersion: true } },
+                // Versions only grow, so the newest decision tells whether this deadline is handled.
+                deadlineDecisions: {
+                    select: { deadlineVersion: true },
+                    orderBy: { deadlineVersion: 'desc' },
+                    take: 1,
+                },
             },
             orderBy: [{ deadlineAt: 'asc' }, { id: 'asc' }],
         });
         // An empty deadline stays open with its decision; it is due again only after an edit.
         const due = candidates.filter(
-            (session) =>
-                !session.deadlineDecisions.some(
-                    (decision) => decision.deadlineVersion === session.deadlineVersion,
-                ),
+            (session) => session.deadlineDecisions[0]?.deadlineVersion !== session.deadlineVersion,
         );
         this.log({ event: 'deadline.cycle', due: due.length });
         for (const session of due) {

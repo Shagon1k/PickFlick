@@ -436,7 +436,8 @@ delivery remains Proposed for the later notification phase; these rows do not se
 
 Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
 Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
-`deadlineVersion`. The worker locks Club → Session and rechecks those conditions. Zero accepted
+`deadlineVersion`. Migration 23 indexes `Session (phase, deadlineAt)` for that poll, and the worker
+reads only each candidate's newest decision. It locks Club → Session and rechecks the conditions. Zero accepted
 nominations leave Nomination open and record one operator-alert decision per deadline version.
 One selects that Movie for Watching; two or more nominations, including repeated Movies, open
 Selection. Transitions clear the deadline and increment phase/details/deadline versions. The

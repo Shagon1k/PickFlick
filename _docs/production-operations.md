@@ -142,7 +142,7 @@ provider responses.
 
 ## Deadline worker operations
 
-Apply all migrations (through 22) before starting the candidate API and `worker`. Check the worker's Compose
+Apply all migrations (through 23) before starting the candidate API and `worker`. Check the worker's Compose
 heartbeat health and `deadline.worker.started` / `deadline.cycle` events after release.
 An overdue Nomination is decided on the next cycle; a completed empty decision stays handled
 until the deadline changes. Archived Clubs resume after reactivation. Restarting the worker
