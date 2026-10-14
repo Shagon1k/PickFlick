@@ -79,7 +79,7 @@ describe('AuthService', () => {
         });
 
         it('should retain invitation continuation in transient state without sending it to the provider', async () => {
-            const callbackURL = '/invite/club/' + 'x'.repeat(43);
+            const callbackURL = `/invite/club/${'x'.repeat(43)}`;
             const response = await signIn(callbackURL);
             const body = (await response.json()) as { url: string };
             expect(response.status).toBe(200);

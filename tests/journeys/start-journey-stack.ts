@@ -10,7 +10,7 @@ const backend = spawn(process.execPath, ['apps/backend/dist/main.js'], {
         ...process.env,
         AUTH_BASE_URL: WEB_ORIGIN,
         BACKEND_HOST: '127.0.0.1',
-        BACKEND_PORT: BACKEND_PORT,
+        BACKEND_PORT,
     },
     stdio: 'inherit',
 });

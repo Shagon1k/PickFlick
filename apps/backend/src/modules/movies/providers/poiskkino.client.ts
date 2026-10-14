@@ -143,7 +143,7 @@ export class PoiskkinoClient {
         const ratings = (['kp', 'imdb', 'tmdb'] as const).flatMap((source) => {
             const value = movie.rating?.[source];
             const votes = movie.votes?.[source];
-            return value != null && value > 0
+            return typeof value === 'number' && value > 0
                 ? [
                       {
                           source: source === 'kp' ? 'kinopoisk' : source,

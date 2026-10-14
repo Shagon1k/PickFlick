@@ -73,7 +73,7 @@ export class SessionRosterService {
                 subjectUserId: target.userId,
                 subjectMembershipId: membershipId,
                 clubId: session.clubId,
-                sessionId: sessionId,
+                sessionId,
                 action: 'SESSION_INVITE_CREATED',
             });
             return { id: invitation.id, token, expiresAt: invitation.expiresAt.toISOString() };
@@ -100,7 +100,7 @@ export class SessionRosterService {
                 subjectUserId: invite.participant.membership.userId,
                 subjectMembershipId: invite.participant.membershipId,
                 clubId: session.clubId,
-                sessionId: sessionId,
+                sessionId,
                 action: 'SESSION_INVITE_REVOKED',
             });
         });
@@ -139,7 +139,7 @@ export class SessionRosterService {
                 subjectUserId: participant.membership.userId,
                 subjectMembershipId: participant.membershipId,
                 clubId: session.clubId,
-                sessionId: sessionId,
+                sessionId,
                 action: isRemoving ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
             });
         });

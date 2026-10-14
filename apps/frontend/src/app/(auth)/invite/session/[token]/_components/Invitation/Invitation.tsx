@@ -50,7 +50,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
             }
         });
     }
-    const returnPath = encodeURIComponent('/invite/session/' + token);
+    const returnPath = encodeURIComponent(`/invite/session/${token}`);
     return (
         <div className={styles.card}>
             <div className={styles.intro}>

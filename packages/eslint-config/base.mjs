@@ -76,6 +76,13 @@ export default [
         },
         rules: {
             curly: ['error', 'all'],
+            // Rules from the Airbnb and Google guides that the house style keeps.
+            eqeqeq: ['error', 'always'],
+            'no-else-return': ['error', { allowElseIf: false }],
+            'object-shorthand': ['error', 'always'],
+            'prefer-template': 'error',
+            // Delete code instead of commenting it out; history keeps it.
+            'sonarjs/no-commented-code': 'error',
             // Props are plain types in this codebase (see .agent-docs/rules/typescript.md).
             'sonarjs/prefer-read-only-props': 'off',
             'no-duplicate-imports': 'error',

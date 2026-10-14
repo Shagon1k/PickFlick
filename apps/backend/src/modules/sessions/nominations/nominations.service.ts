@@ -14,7 +14,6 @@ import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
-/** Personal suggestions offer at most twelve past losing nominations. */
 const MAX_SUGGESTIONS = 12;
 
 @Injectable()
@@ -137,7 +136,7 @@ export class NominationsService {
     }
 }
 
-/** Up to 12 Movies the viewer nominated in earlier decided Sessions of this Club that did not win. */
+/** Up to MAX_SUGGESTIONS Movies the viewer nominated in earlier decided Sessions of this Club that did not win. */
 async function findPastLosingNominations(
     tx: Prisma.TransactionClient,
     userId: string,

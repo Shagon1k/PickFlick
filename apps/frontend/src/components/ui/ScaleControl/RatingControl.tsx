@@ -1,6 +1,5 @@
 import ScaleControl, { type IScaleControlProps } from './ScaleControl';
 
-// Personal and Session ratings use a 1..10 scale.
 const RATING_MIN = 1;
 const RATING_MAX = 10;
 

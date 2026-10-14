@@ -12,7 +12,7 @@ import {
 
 import { ApiError, requestApi } from '@/lib/api.server';
 
-// Details may wait on several slow providers in sequence before the API answers.
+// Three provider calls can each use the configured 30s maximum, followed by image ingestion.
 const DETAILS_TIMEOUT_MS = 100_000;
 
 export const searchMovies = (input: TMovieSearch): Promise<TMovieResult<TMovieSearchResults>> =>
@@ -37,7 +37,6 @@ function getFailureReason(error: unknown): TMovieProviderReason | null {
 export async function getMovieDetails(movieId: string): Promise<TMovieDetailsResponse> {
     let response: unknown;
     try {
-        // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
         response = await requestApi<unknown>(`/movies/${movieId}`, {
             timeoutMs: DETAILS_TIMEOUT_MS,
         });
