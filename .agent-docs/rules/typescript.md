@@ -3,7 +3,8 @@
 Write the obvious version. If a reader needs a comment to follow the control flow, simplify the
 code instead.
 
-`pnpm lint` enforces these rules, and the pre-commit hook runs it on staged files:
+`pnpm lint` enforces these rules and fails on warnings too; the pre-commit hook runs it on staged
+files:
 
 - the `I`/`T` prefixes and the ban on `Readonly<>`;
 - sorted imports and inline `type` imports for types (Nest constructor injections stay value

@@ -14,7 +14,7 @@
         "build": "pnpm -r --if-present build",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "build:images": "node scripts/build-images.mjs",
-        "lint": "eslint . && stylelint \"apps/frontend/src/**/*.scss\"",
+        "lint": "eslint . --max-warnings 0 && stylelint \"apps/frontend/src/**/*.scss\"",
         "lint:fix": "eslint . --fix && stylelint \"apps/frontend/src/**/*.scss\" --fix",
         "format": "prettier --write .",
         "format:check": "prettier --check .",

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = 'http://127.0.0.1:41740';
+const BASE_URL = 'http://127.0.0.1:41740';
 
 /** Browser journeys through the real web app, API, and an isolated `pickflick_test` database. */
 export default defineConfig({
@@ -15,7 +15,7 @@ export default defineConfig({
     testDir: 'tests/journeys',
     timeout: 120_000,
     use: {
-        baseURL,
+        baseURL: BASE_URL,
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
     },
@@ -25,7 +25,7 @@ export default defineConfig({
             'pnpm build:packages && pnpm --filter @pickflick/backend build && BACKEND_INTERNAL_URL=http://127.0.0.1:42741 pnpm --filter @pickflick/frontend build && cp -R apps/frontend/.next/static apps/frontend/.next/standalone/apps/frontend/.next/static && node tests/journeys/start-journey-stack.ts',
         reuseExistingServer: false,
         timeout: 240_000,
-        url: baseURL,
+        url: BASE_URL,
     },
     workers: 1,
 });

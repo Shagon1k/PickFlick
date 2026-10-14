@@ -44,7 +44,7 @@ fi
 # Lint TS/TSX/JS files with ESLint (auto-fix what we can; block commit if errors remain)
 STAGED_TS=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|mjs)$' || true)
 if [ -n "$STAGED_TS" ]; then
-  echo "$STAGED_TS" | tr '\n' '\0' | xargs -0 pnpm exec eslint --fix
+  echo "$STAGED_TS" | tr '\n' '\0' | xargs -0 pnpm exec eslint --fix --max-warnings 0
   ESLINT_STATUS=$?
   echo "$STAGED_TS" | tr '\n' '\0' | xargs -0 git add
   exit $ESLINT_STATUS
