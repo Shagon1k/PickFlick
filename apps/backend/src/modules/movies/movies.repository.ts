@@ -54,14 +54,13 @@ export class MoviesRepository {
             : null;
     }
 
+    // Cache rows outlive deploys: a row in an older shape counts as a miss and is refetched.
     async findCachedDetails(movieId: string, key: string): Promise<ICached<TMovieDetails> | null> {
         const row = await this.prisma.movieDetailsCache.findUnique({
             where: { movieId_key: { movieId, key } },
         });
         const parsed = row ? movieDetailsSchema.safeParse(row.data) : null;
-        return row && parsed?.success && parsed.data.id === movieId
-            ? { data: parsed.data, fetchedAt: row.fetchedAt }
-            : null;
+        return row && parsed?.success ? { data: parsed.data, fetchedAt: row.fetchedAt } : null;
     }
 
     async findCachedSearch(key: string): Promise<ICached<TMovieSearchResults> | null> {
@@ -112,12 +111,12 @@ export class MoviesRepository {
                 for (const ids of record.similarExternalIds)
                     similarMovieIds.push(await this.resolveMovie(transaction, ids));
             }
-            const data = movieDetailsSchema.parse({
+            const data: TMovieDetails = {
                 id: movieId,
                 ...record.data,
                 provenance: record.provenance,
                 similarMovieIds,
-            });
+            };
             await transaction.movieDetailsCache.upsert({
                 where: { movieId_key: { movieId, key } },
                 create: { movieId, key, data, fetchedAt },
@@ -139,11 +138,10 @@ export class MoviesRepository {
      */
     private async resolveMovie(
         transaction: Prisma.TransactionClient,
-        input: TMovieExternalId[],
+        ids: TMovieExternalId[],
         summary?: Pick<TMovieMetadata, 'title' | 'originalTitle' | 'releaseYear'>,
         expectedId?: string,
     ): Promise<string> {
-        const ids = input.map((id) => movieExternalIdSchema.parse(id));
         if (!ids.length || new Set(ids.map((id) => id.source)).size !== ids.length)
             throw new MovieProviderError('IDENTITY_CONFLICT');
         const mappings = await transaction.movieExternalId.findMany({ where: { OR: ids } });

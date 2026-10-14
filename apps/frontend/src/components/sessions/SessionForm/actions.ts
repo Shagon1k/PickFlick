@@ -1,6 +1,11 @@
 'use server';
 
-import { createSessionSchema, HTTP_STATUS, updateSessionSchema } from '@pickflick/contracts';
+import {
+    createSessionSchema,
+    HTTP_STATUS,
+    type TSession,
+    updateSessionSchema,
+} from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -16,19 +21,30 @@ export async function saveSessionAction(clubId: string, id: string | null, input
             message: 'This Session address is invalid. Return to the Club Hub.',
         };
     }
-    const parsed = id ? updateSessionSchema.safeParse(input) : createSessionSchema.safeParse(input);
-    if (!parsed.success)
-        return { ok: false as const, message: 'Review the highlighted fields and try again.' };
     try {
-        const session = id
-            ? await updateSession(id, updateSessionSchema.parse(parsed.data))
-            : await createSession(clubId, createSessionSchema.parse(parsed.data));
+        const session = await sendSession(clubId, id, input);
+        if (!session)
+            return { ok: false as const, message: 'Review the highlighted fields and try again.' };
         revalidatePath(`/clubs/${session.clubId}`);
         revalidatePath(`/sessions/${session.id}`);
         return { ok: true as const, session };
     } catch (error) {
         return saveFailure(error);
     }
+}
+
+/** Validates the input against the schema for its action once, then sends it; null when invalid. */
+async function sendSession(
+    clubId: string,
+    id: string | null,
+    input: unknown,
+): Promise<TSession | null> {
+    if (id) {
+        const parsed = updateSessionSchema.safeParse(input);
+        return parsed.success ? updateSession(id, parsed.data) : null;
+    }
+    const parsed = createSessionSchema.safeParse(input);
+    return parsed.success ? createSession(clubId, parsed.data) : null;
 }
 
 function saveFailure(error: unknown) {

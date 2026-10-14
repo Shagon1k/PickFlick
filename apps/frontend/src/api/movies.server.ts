@@ -2,7 +2,6 @@ import 'server-only';
 
 import {
     HTTP_STATUS,
-    movieDetailsResponseSchema,
     type TMovieDetailsResponse,
     type TMovieProviderReason,
     type TMovieResult,
@@ -35,9 +34,8 @@ function getFailureReason(error: unknown): TMovieProviderReason | null {
 }
 
 export async function getMovieDetails(movieId: string): Promise<TMovieDetailsResponse> {
-    let response: unknown;
     try {
-        response = await requestApi<unknown>(`/movies/${movieId}`, {
+        return await requestApi<TMovieDetailsResponse>(`/movies/${movieId}`, {
             timeoutMs: DETAILS_TIMEOUT_MS,
         });
     } catch (error) {
@@ -45,12 +43,4 @@ export async function getMovieDetails(movieId: string): Promise<TMovieDetailsRes
         if (!reason) throw error;
         return toUnavailableResponse(reason);
     }
-    const parsed = movieDetailsResponseSchema.safeParse(response);
-    const isWrongMovie =
-        parsed.success &&
-        parsed.data.result.state !== 'unavailable' &&
-        parsed.data.result.data.id !== movieId;
-    return parsed.success && !isWrongMovie
-        ? parsed.data
-        : toUnavailableResponse('INVALID_RESPONSE');
 }

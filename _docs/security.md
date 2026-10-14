@@ -188,8 +188,8 @@ contain opaque same-origin `/api/movies/images/:key` paths for detail posters. S
 backdrops and cast portraits are returned as null without image I/O. The authenticated image endpoint
 serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
 and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
-Provider text is escaped by React; the response schema rejects provider image URLs and mismatched
-Movie identities before rendering.
+Provider text is escaped by React. Provider records are validated once, when the backend ingests
+them; the web app trusts the API's contract types and does not re-validate its responses.
 
 Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
 identifiers; details responses expose no external identifiers.

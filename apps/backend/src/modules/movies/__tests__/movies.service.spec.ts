@@ -226,9 +226,9 @@ describe('MoviesService', () => {
         await expect(service.getDetails(MOVIE_ID)).rejects.toThrow('database write failed');
     });
 
-    it('should keep search cache keys specific to trimmed query and page', async () => {
+    it('should keep search cache keys specific to query and page', async () => {
         provider.search.mockResolvedValue(emptySearch);
-        await service.search({ ...search, query: ' film ' });
+        await service.search(search);
         await service.search(search);
         await service.search({ ...search, page: 2 });
         const calls = repository.saveSearch.mock.calls;

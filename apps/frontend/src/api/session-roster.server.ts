@@ -5,10 +5,10 @@ import {
     type IPendingClubInvitation,
     type IPendingSessionInvitation,
     type ISessionRoster,
-    sessionInvitationPreviewSchema,
     type TInvitationDecision,
     type TInvitationPreview,
     type TRespondInvitation,
+    type TSessionInvitationPreview,
 } from '@pickflick/contracts';
 
 import { requestApi } from '@/lib/api.server';
@@ -29,16 +29,12 @@ export const removeSessionParticipant = (id: string, participantId: string): Pro
         method: 'POST',
         json: { confirmation: 'REMOVE' },
     });
-export async function previewSessionInvitation(token: string) {
-    return sessionInvitationPreviewSchema.parse(
-        await requestApi('/session-invitations/preview', { method: 'POST', json: { token } }),
-    );
-}
-export async function respondSessionInvitation(input: TRespondInvitation) {
-    return sessionInvitationPreviewSchema.parse(
-        await requestApi('/session-invitations/respond', { method: 'POST', json: input }),
-    );
-}
+export const previewSessionInvitation = (token: string): Promise<TSessionInvitationPreview> =>
+    requestApi('/session-invitations/preview', { method: 'POST', json: { token } });
+export const respondSessionInvitation = (
+    input: TRespondInvitation,
+): Promise<TSessionInvitationPreview> =>
+    requestApi('/session-invitations/respond', { method: 'POST', json: input });
 export const listPendingClubInvitations = (): Promise<IPendingClubInvitation[]> =>
     requestApi('/club-invitations/pending');
 export const listPendingSessionInvitations = (): Promise<IPendingSessionInvitation[]> =>
@@ -48,8 +44,8 @@ export const respondPendingClubInvitation = (
     input: TInvitationDecision,
 ): Promise<TInvitationPreview> =>
     requestApi(`/club-invitations/${id}/respond`, { method: 'POST', json: input });
-export async function respondPendingSessionInvitation(id: string, input: TInvitationDecision) {
-    return sessionInvitationPreviewSchema.parse(
-        await requestApi(`/session-invitations/${id}/respond`, { method: 'POST', json: input }),
-    );
-}
+export const respondPendingSessionInvitation = (
+    id: string,
+    input: TInvitationDecision,
+): Promise<TSessionInvitationPreview> =>
+    requestApi(`/session-invitations/${id}/respond`, { method: 'POST', json: input });

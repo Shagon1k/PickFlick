@@ -1,34 +1,21 @@
 import 'server-only';
 
-import {
-    sessionProgressSchema,
-    sessionSchema,
-    type TCancelSession,
-    type TCreateSession,
-    type TUpdateSession,
+import type {
+    TCancelSession,
+    TCreateSession,
+    TSession,
+    TSessionProgress,
+    TUpdateSession,
 } from '@pickflick/contracts';
 
 import { requestApi } from '@/lib/api.server';
 
-export async function getSession(id: string) {
-    return sessionSchema.parse(await requestApi(`/sessions/${id}`));
-}
-export async function createSession(clubId: string, input: TCreateSession) {
-    return sessionSchema.parse(
-        await requestApi(`/clubs/${clubId}/sessions`, { method: 'POST', json: input }),
-    );
-}
-export async function updateSession(id: string, input: TUpdateSession) {
-    return sessionSchema.parse(
-        await requestApi(`/sessions/${id}`, { method: 'PATCH', json: input }),
-    );
-}
-export async function cancelSession(id: string, input: TCancelSession) {
-    return sessionSchema.parse(
-        await requestApi(`/sessions/${id}/cancel`, { method: 'POST', json: input }),
-    );
-}
-
-export async function getSessionProgress(id: string) {
-    return sessionProgressSchema.parse(await requestApi(`/sessions/${id}/progress`));
-}
+export const getSession = (id: string): Promise<TSession> => requestApi(`/sessions/${id}`);
+export const createSession = (clubId: string, input: TCreateSession): Promise<TSession> =>
+    requestApi(`/clubs/${clubId}/sessions`, { method: 'POST', json: input });
+export const updateSession = (id: string, input: TUpdateSession): Promise<TSession> =>
+    requestApi(`/sessions/${id}`, { method: 'PATCH', json: input });
+export const cancelSession = (id: string, input: TCancelSession): Promise<TSession> =>
+    requestApi(`/sessions/${id}/cancel`, { method: 'POST', json: input });
+export const getSessionProgress = (id: string): Promise<TSessionProgress> =>
+    requestApi(`/sessions/${id}/progress`);

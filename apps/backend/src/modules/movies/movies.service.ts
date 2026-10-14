@@ -1,8 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
-    movieIdSchema,
-    movieSearchSchema,
     type TMovieDetails,
     type TMovieDetailsResponse,
     type TMovieResult,
@@ -77,15 +75,14 @@ export class MoviesService {
         input: TMovieSearch,
         shouldAllowStale = false,
     ): Promise<TMovieResult<TMovieSearchResults>> {
-        const parsed = movieSearchSchema.parse(input);
-        const key = buildSearchCacheKey(this.environment.catalog.provider, parsed);
+        const key = buildSearchCacheKey(this.environment.catalog.provider, input);
         const cached = await this.repository.findCachedSearch(key);
         if (cached && this.isFresh(cached)) return toCachedResult(cached);
         const fetchedAt = new Date();
         try {
             const data = await this.repository.saveSearch(
                 key,
-                await this.provider.search(parsed),
+                await this.provider.search(input),
                 fetchedAt,
             );
             return toCachedResult({ data, fetchedAt });
@@ -109,7 +106,6 @@ export class MoviesService {
         movieId: string,
         options: { allowStale?: boolean; forceRefresh?: boolean } = {},
     ): Promise<TMovieResult<TMovieDetails>> {
-        movieIdSchema.parse(movieId);
         const locale = this.environment.catalog.locale;
         const key = buildDetailsCacheKey(this.environment.catalog.provider, locale);
         const cached = await this.repository.findCachedDetails(movieId, key);
