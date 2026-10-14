@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Icon from '@/components/ui/Icon/Icon';
-import { startSocialSignIn, type TIdentityProvider } from '@/lib/auth-client';
+import Button from '#components/ui/Button/Button';
+import Icon from '#components/ui/Icon/Icon';
+import { startSocialSignIn, type TIdentityProvider } from '#lib/auth-client';
 
 import styles from '../../page.module.scss';
 

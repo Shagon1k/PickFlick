@@ -6,9 +6,9 @@ import {
 } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { buildClubNavigation } from '@/components/shells/shell-navigation';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 
 import styles from '../../page.module.scss';
 import ClubSwitcher from '../ClubSwitcher/ClubSwitcher';

@@ -7,8 +7,13 @@ const source = (path: string): string => fileURLToPath(new URL(path, import.meta
 export default defineConfig({
     resolve: {
         alias: {
-            '@/': source('./apps/frontend/src/'),
-            '@brand/': source('./assets/brand/'),
+            '#api/': source('./apps/frontend/src/api/'),
+            '#app/': source('./apps/frontend/src/app/'),
+            '#components/': source('./apps/frontend/src/components/'),
+            '#lib/': source('./apps/frontend/src/lib/'),
+            '#styles/': source('./apps/frontend/src/styles/'),
+            '#theme/': source('./apps/frontend/src/theme/'),
+            '#brand/': source('./assets/brand/'),
             '@pickflick/contracts': source('./packages/contracts/src/index.ts'),
             '@pickflick/database': source('./packages/database/src/index.ts'),
             // Next swaps `server-only` for an empty module on the server; tests run on the server too.

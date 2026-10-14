@@ -1,11 +1,11 @@
-import '@/styles/globals.scss';
+import '#styles/globals.scss';
 
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 
-import ThemeProvider, { themeHtmlProps } from '@/components/ui/ThemeProvider/ThemeProvider';
-import ThemeScript from '@/components/ui/ThemeProvider/ThemeScript';
-import { rootMetadata } from '@/lib/public-metadata';
+import ThemeProvider, { themeHtmlProps } from '#components/ui/ThemeProvider/ThemeProvider';
+import ThemeScript from '#components/ui/ThemeProvider/ThemeScript';
+import { rootMetadata } from '#lib/public-metadata';
 
 export const metadata = rootMetadata;
 

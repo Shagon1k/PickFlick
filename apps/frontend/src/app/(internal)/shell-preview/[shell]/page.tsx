@@ -1,15 +1,15 @@
 import { notFound } from 'next/navigation';
 
-import AdminShell from '@/components/shells/AdminShell/AdminShell';
-import ControlShell from '@/components/shells/ControlShell/ControlShell';
-import ProductShell from '@/components/shells/ProductShell/ProductShell';
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import SessionShell from '@/components/shells/SessionShell/SessionShell';
-import SetupShell from '@/components/shells/SetupShell/SetupShell';
-import type { IShellRouteMap } from '@/components/shells/shell-navigation';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import AdminShell from '#components/shells/AdminShell/AdminShell';
+import ControlShell from '#components/shells/ControlShell/ControlShell';
+import ProductShell from '#components/shells/ProductShell/ProductShell';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import SessionShell from '#components/shells/SessionShell/SessionShell';
+import SetupShell from '#components/shells/SetupShell/SetupShell';
+import type { IShellRouteMap } from '#components/shells/shell-navigation';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import TextInput from '#components/ui/TextInput/TextInput';
 
 import DenseRegion from './_components/DenseRegion/DenseRegion';
 import ShellPlaceholder from './_components/ShellPlaceholder/ShellPlaceholder';

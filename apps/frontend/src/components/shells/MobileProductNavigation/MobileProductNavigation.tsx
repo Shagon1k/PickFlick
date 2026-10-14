@@ -2,16 +2,16 @@
 
 import { useEffect, useRef } from 'react';
 
-import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
-import NotificationsPanel from '@/components/shells/NotificationsPanel/NotificationsPanel';
-import styles from '@/components/shells/product-navigation.module.scss';
+import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
+import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
     useOverlayDismissal,
     useProductOverlay,
-} from '@/components/shells/product-overlay';
-import type { TMobileNavigationEntry } from '@/components/shells/shell-navigation';
-import Icon from '@/components/ui/Icon/Icon';
+} from '#components/shells/product-overlay';
+import type { TMobileNavigationEntry } from '#components/shells/shell-navigation';
+import Icon from '#components/ui/Icon/Icon';
 
 interface IMobileProductNavigationProps {
     entries: readonly TMobileNavigationEntry[];

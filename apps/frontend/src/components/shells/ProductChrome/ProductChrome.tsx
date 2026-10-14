@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import PendingInvites from '@/components/clubs/PendingInvites/PendingInvites';
-import Brand from '@/components/shells/Brand/Brand';
-import MobileProductNavigation from '@/components/shells/MobileProductNavigation/MobileProductNavigation';
-import ProductHeaderActions from '@/components/shells/ProductHeaderActions/ProductHeaderActions';
-import ProductOverlayProvider from '@/components/shells/ProductOverlayProvider/ProductOverlayProvider';
-import ProductSearch from '@/components/shells/ProductSearch/ProductSearch';
+import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
+import Brand from '#components/shells/Brand/Brand';
+import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
+import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
+import ProductOverlayProvider from '#components/shells/ProductOverlayProvider/ProductOverlayProvider';
+import ProductSearch from '#components/shells/ProductSearch/ProductSearch';
 import {
     buildAccountNavigation,
     buildMobileNavigation,
@@ -15,9 +15,9 @@ import {
     type IShellNavigationItem,
     type IShellRouteMap,
     type TShellArea,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
-import SiteFooter from '@/components/shells/SiteFooter/SiteFooter';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
+import SiteFooter from '#components/shells/SiteFooter/SiteFooter';
 
 interface IProductChromeProps {
     admin?: boolean;

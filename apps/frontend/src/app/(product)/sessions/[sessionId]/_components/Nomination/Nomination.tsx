@@ -4,10 +4,10 @@ import type { TNominationMovie, TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 
-import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
-import Button from '@/components/ui/Button/Button';
-import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import { getOfflineMessage } from '@/lib/offline';
+import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import Button from '#components/ui/Button/Button';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import { getOfflineMessage } from '#lib/offline';
 
 import {
     closeNominationsAction,

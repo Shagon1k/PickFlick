@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api.server';
+import { ApiError } from '#lib/api.server';
 
 import { selectClubAction } from '../actions';
 
@@ -10,7 +10,7 @@ const navigation = vi.hoisted(() => ({
     }),
 }));
 
-vi.mock('@/api/clubs.server', () => api);
+vi.mock('#api/clubs.server', () => api);
 vi.mock('next/headers', () => ({ cookies: () => Promise.resolve(preference) }));
 vi.mock('next/navigation', () => navigation);
 

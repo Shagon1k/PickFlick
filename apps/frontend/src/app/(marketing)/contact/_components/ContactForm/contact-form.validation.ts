@@ -1,6 +1,6 @@
 import { contactSubmissionSchema } from '@pickflick/contracts';
 
-import { toFieldErrors } from '@/lib/form-errors';
+import { toFieldErrors } from '#lib/form-errors';
 
 import type { IContactFormValues, TContactFieldErrors } from './contact-form.types';
 

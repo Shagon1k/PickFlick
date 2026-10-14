@@ -1,4 +1,4 @@
-import type { TIconName } from '@/components/ui/Icon/Icon';
+import type { TIconName } from '#components/ui/Icon/Icon';
 
 /** Product areas that mark the matching mobile tab and navigation group as current. */
 export type TShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';

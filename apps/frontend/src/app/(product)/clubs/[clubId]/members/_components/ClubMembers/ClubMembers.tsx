@@ -4,14 +4,14 @@ import type { IClubMember, IClubSettings } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 
-import { initialClubActionState } from '@/app/(product)/clubs/[clubId]/settings/action-state';
-import { removeClubMemberAction } from '@/app/(product)/clubs/[clubId]/settings/actions';
-import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { buildClubNavigation } from '@/components/shells/shell-navigation';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import { formatUtcDate, getMonogram } from '@/lib/format';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/settings/action-state';
+import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/settings/actions';
+import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import { formatUtcDate, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 

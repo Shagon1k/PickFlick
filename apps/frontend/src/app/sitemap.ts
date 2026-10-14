@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { CANONICAL_ORIGIN, INDEXABLE_PUBLIC_ROUTES } from '@/lib/indexing';
+import { CANONICAL_ORIGIN, INDEXABLE_PUBLIC_ROUTES } from '#lib/indexing';
 
 const SECONDARY_PAGE_PRIORITY = 0.7;
 

@@ -8,11 +8,11 @@ import {
 } from '@pickflick/contracts';
 import { useState, useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
-import { getOfflineMessage } from '@/lib/offline';
+import Button from '#components/ui/Button/Button';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '#lib/form-errors';
+import { getOfflineMessage } from '#lib/offline';
 
 import { sendContact } from '../../actions';
 import styles from '../../page.module.scss';

@@ -8,7 +8,7 @@ import type {
     TUpdateSession,
 } from '@pickflick/contracts';
 
-import { apiPath, requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '#lib/api.server';
 
 export const getSession = (id: string): Promise<TSession> => requestApi(apiPath`/sessions/${id}`);
 export const createSession = (clubId: string, input: TCreateSession): Promise<TSession> =>

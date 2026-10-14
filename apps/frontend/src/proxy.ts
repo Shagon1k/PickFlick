@@ -1,10 +1,10 @@
 import { HTTP_STATUS } from '@pickflick/contracts';
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { getClubHub } from '@/api/clubs.server';
-import { ApiError } from '@/lib/api.server';
-import { NOT_FOUND_STATUSES } from '@/lib/http-status';
-import { buildContentSecurityPolicy } from '@/lib/security-headers';
+import { getClubHub } from '#api/clubs.server';
+import { ApiError } from '#lib/api.server';
+import { NOT_FOUND_STATUSES } from '#lib/http-status';
+import { buildContentSecurityPolicy } from '#lib/security-headers';
 
 // The page itself answers these; any other failure is unexpected here.
 const PAGE_HANDLED_STATUSES = [...NOT_FOUND_STATUSES, HTTP_STATUS.UNAUTHORIZED];

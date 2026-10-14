@@ -8,9 +8,9 @@ import {
 } from '@pickflick/contracts';
 import { useActionState } from 'react';
 
-import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
 
 import { initialClubActionState } from '../../action-state';
 import { updateClubSettingsAction } from '../../actions';

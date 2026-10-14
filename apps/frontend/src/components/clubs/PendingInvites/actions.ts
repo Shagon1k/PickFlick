@@ -13,8 +13,8 @@ import {
     listPendingSessionInvitations,
     respondPendingClubInvitation,
     respondPendingSessionInvitation,
-} from '@/api/session-roster.server';
-import { ApiError } from '@/lib/api.server';
+} from '#api/session-roster.server';
+import { ApiError } from '#lib/api.server';
 
 export async function loadPendingInvitesAction(): Promise<{
     invitations?: TPendingInvitation[];

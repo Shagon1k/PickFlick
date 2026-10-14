@@ -3,8 +3,8 @@
 import type { IClubSettings, ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import { toIsoDate } from '@/lib/format';
+import Button from '#components/ui/Button/Button';
+import { toIsoDate } from '#lib/format';
 
 import { loadInvitationsAction, manageInvitationsAction } from '../../invitation-actions';
 import styles from '../../page.module.scss';

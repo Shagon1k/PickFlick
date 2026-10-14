@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
+import Button from '#components/ui/Button/Button';
 
 export default function ErrorRecoveryPreviewPage() {
     const [isPending, startTransition] = useTransition();

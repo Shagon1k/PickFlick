@@ -1,10 +1,10 @@
-import { searchMovies } from '@/api/movies.server';
-import { ApiError } from '@/lib/api.server';
+import { searchMovies } from '#api/movies.server';
+import { ApiError } from '#lib/api.server';
 
 import { searchMoviesAction } from '../actions';
 
-vi.mock('@/api/movies.server', () => ({ searchMovies: vi.fn() }));
-vi.mock('@/lib/api.server', () => ({
+vi.mock('#api/movies.server', () => ({ searchMovies: vi.fn() }));
+vi.mock('#lib/api.server', () => ({
     ApiError: class extends Error {
         constructor(public status: number) {
             super();

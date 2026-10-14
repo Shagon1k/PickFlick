@@ -1,8 +1,8 @@
 'use server';
 
-import { getSessionProgress } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+import { getSessionProgress } from '#api/sessions.server';
+import { ApiError } from '#lib/api.server';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 export async function getSessionProgressAction(id: string) {
     try {

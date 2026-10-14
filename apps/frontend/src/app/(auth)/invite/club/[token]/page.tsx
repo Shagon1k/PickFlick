@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 
-import { previewInvitation } from '@/api/invitations.server';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Icon from '@/components/ui/Icon/Icon';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
-import { ApiError } from '@/lib/api.server';
+import { previewInvitation } from '#api/invitations.server';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import Icon from '#components/ui/Icon/Icon';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { ApiError } from '#lib/api.server';
 
 import Invitation from './_components/Invitation/Invitation';
 import styles from './page.module.scss';

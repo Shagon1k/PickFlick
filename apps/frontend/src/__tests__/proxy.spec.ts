@@ -5,11 +5,12 @@ import {
 } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 
-import { ApiError } from '@/lib/api.server';
-import { config, proxy } from '@/proxy';
+import { ApiError } from '#lib/api.server';
+
+import { config, proxy } from '../proxy';
 
 const api = vi.hoisted(() => ({ getClubHub: vi.fn() }));
-vi.mock('@/api/clubs.server', () => api);
+vi.mock('#api/clubs.server', () => api);
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 

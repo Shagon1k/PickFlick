@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
-import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
-import NavigationItemIcon from '@/components/shells/NavigationItemIcon/NavigationItemIcon';
-import styles from '@/components/shells/product-navigation.module.scss';
-import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
-import type { IShellNavigationItem } from '@/components/shells/shell-navigation';
+import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import NavigationItemIcon from '#components/shells/NavigationItemIcon/NavigationItemIcon';
+import styles from '#components/shells/product-navigation.module.scss';
+import { useOverlayDismissal, useProductOverlay } from '#components/shells/product-overlay';
+import type { IShellNavigationItem } from '#components/shells/shell-navigation';
 
 interface ISectionNavigationProps {
     items: readonly IShellNavigationItem[];

@@ -2,8 +2,8 @@
 
 import { HTTP_STATUS, movieSearchSchema } from '@pickflick/contracts';
 
-import { searchMovies } from '@/api/movies.server';
-import { ApiError } from '@/lib/api.server';
+import { searchMovies } from '#api/movies.server';
+import { ApiError } from '#lib/api.server';
 
 export async function searchMoviesAction(query: unknown) {
     const parsed = movieSearchSchema.safeParse({ query });

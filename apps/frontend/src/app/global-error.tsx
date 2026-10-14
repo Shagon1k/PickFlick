@@ -1,6 +1,6 @@
 'use client';
 
-import '@/styles/globals.scss';
+import '#styles/globals.scss';
 
 import styles from './global-error.module.scss';
 

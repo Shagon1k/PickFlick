@@ -7,7 +7,7 @@ import {
     type TRespondInvitation,
 } from '@pickflick/contracts';
 
-import { apiPath, requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '#lib/api.server';
 
 export const previewInvitation = (token: string): Promise<TInvitationPreview> =>
     requestApi('/club-invitations/preview', { method: 'POST', json: { token } });

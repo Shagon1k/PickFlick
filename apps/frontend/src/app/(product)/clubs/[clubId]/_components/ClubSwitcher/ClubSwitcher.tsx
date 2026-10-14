@@ -1,8 +1,8 @@
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import { selectClubAction } from '@/app/(product)/app/actions';
-import { getMonogram } from '@/lib/format';
+import { selectClubAction } from '#app/(product)/app/actions';
+import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 

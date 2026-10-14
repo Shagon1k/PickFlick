@@ -3,8 +3,8 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { buildClubNavigation } from '@/components/shells/shell-navigation';
+import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
 import AvatarCard from './AvatarCard';

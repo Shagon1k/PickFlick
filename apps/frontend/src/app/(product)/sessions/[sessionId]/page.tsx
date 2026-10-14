@@ -2,13 +2,13 @@ import { HTTP_STATUS } from '@pickflick/contracts';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { buildLoginPath } from '@/api/session.server';
-import { getSessionRoster } from '@/api/session-roster.server';
-import { getSession } from '@/api/sessions.server';
-import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { ApiError } from '@/lib/api.server';
-import { NOT_FOUND_STATUSES } from '@/lib/http-status';
+import { buildLoginPath } from '#api/session.server';
+import { getSessionRoster } from '#api/session-roster.server';
+import { getSession } from '#api/sessions.server';
+import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { ApiError } from '#lib/api.server';
+import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
 import SessionDetails from './_components/SessionDetails/SessionDetails';
 import SessionProgress from './_components/SessionProgress/SessionProgress';

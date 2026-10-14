@@ -3,9 +3,9 @@
 import { cancelSessionSchema } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
-import { cancelSession } from '@/api/sessions.server';
-import { getFailureMessage } from '@/lib/action-failure';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+import { cancelSession } from '#api/sessions.server';
+import { getFailureMessage } from '#lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 export async function cancelSessionAction(id: string, input: unknown) {
     const parsed = cancelSessionSchema.safeParse(input);

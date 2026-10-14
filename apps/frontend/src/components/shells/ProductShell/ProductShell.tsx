@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import ProductChrome from '@/components/shells/ProductChrome/ProductChrome';
+import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
 import {
     canonicalRoutes,
     type IShellNavigationItem,
     type IShellRouteMap,
     type TShellArea,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
 
 interface IProductShellProps {
     admin?: boolean;

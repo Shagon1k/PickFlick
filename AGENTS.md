@@ -131,7 +131,8 @@ well-known libraries. `pnpm lint` enforces what it can; the rule files hold the 
 - Interfaces are `IName`, type aliases `TName`; no `Readonly<>`; optional fields are `field?: T`.
 - UI components are `components/ui/<Name>/<Name>.tsx` with `<Name>.module.scss`, a default export,
   and Mantine underneath. Only the UI kit imports `@mantine/*` (except `@mantine/form`).
-- Routes keep their styles and `_components/` next to `page.tsx`; import with `@/`.
+- Routes keep their styles and `_components/` next to `page.tsx`; import through the `#` folder
+  aliases (`#components/...`).
 - Comment why, never what.
 - [Add a feature end to end](_docs/adding-a-feature.md) walks through every layer. Templates to
   copy: backend module `apps/backend/src/modules/contact`, UI component

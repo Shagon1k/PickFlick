@@ -9,7 +9,7 @@ import {
     type TMovieSearchResults,
 } from '@pickflick/contracts';
 
-import { ApiError, apiPath, requestApi } from '@/lib/api.server';
+import { ApiError, apiPath, requestApi } from '#lib/api.server';
 
 // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
 const DETAILS_TIMEOUT_MS = 100_000;

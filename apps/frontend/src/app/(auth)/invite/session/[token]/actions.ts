@@ -7,8 +7,8 @@ import {
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
-import { respondSessionInvitation } from '@/api/session-roster.server';
-import { ApiError } from '@/lib/api.server';
+import { respondSessionInvitation } from '#api/session-roster.server';
+import { ApiError } from '#lib/api.server';
 
 export async function respondSessionInvitationAction(
     input: unknown,

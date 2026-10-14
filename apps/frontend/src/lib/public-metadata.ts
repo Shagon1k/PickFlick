@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { CANONICAL_ORIGIN } from '@/lib/indexing';
+import { CANONICAL_ORIGIN } from '#lib/indexing';
 
 const SOCIAL_IMAGE = {
     alt: 'PickFlick — choose a film together',

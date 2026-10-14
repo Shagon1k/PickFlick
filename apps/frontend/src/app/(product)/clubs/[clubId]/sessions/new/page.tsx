@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getClubHub } from '@/api/clubs.server';
-import { buildLoginPath } from '@/api/session.server';
-import SessionForm from '@/components/sessions/SessionForm/SessionForm';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
-import { ApiError } from '@/lib/api.server';
+import { getClubHub } from '#api/clubs.server';
+import { buildLoginPath } from '#api/session.server';
+import SessionForm from '#components/sessions/SessionForm/SessionForm';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { ApiError } from '#lib/api.server';
 
 import styles from './page.module.scss';
 

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Fragment } from 'react';
 
-import type { IShellRouteMap } from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
+import type { IShellRouteMap } from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
 
 interface ISiteFooterProps {
     routes: IShellRouteMap;

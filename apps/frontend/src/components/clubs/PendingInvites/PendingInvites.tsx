@@ -3,10 +3,10 @@
 import type { TPendingInvitation } from '@pickflick/contracts';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
-import { useProductOverlay } from '@/components/shells/product-overlay';
-import Button from '@/components/ui/Button/Button';
-import Popover from '@/components/ui/Popover/Popover';
-import { formatUtcDate } from '@/lib/format';
+import { useProductOverlay } from '#components/shells/product-overlay';
+import Button from '#components/ui/Button/Button';
+import Popover from '#components/ui/Popover/Popover';
+import { formatUtcDate } from '#lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';

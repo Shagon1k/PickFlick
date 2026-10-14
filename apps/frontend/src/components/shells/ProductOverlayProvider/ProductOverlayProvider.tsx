@@ -2,7 +2,7 @@
 
 import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
-import { ProductOverlayContext, type TProductOverlay } from '@/components/shells/product-overlay';
+import { ProductOverlayContext, type TProductOverlay } from '#components/shells/product-overlay';
 
 interface IProductOverlayProviderProps {
     children: ReactNode;

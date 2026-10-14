@@ -3,11 +3,11 @@
 import { HTTP_STATUS } from '@pickflick/contracts';
 import { cookies } from 'next/headers';
 
-import { createClub } from '@/api/clubs.server';
-import type { IClubFormValues, TClubFieldName } from '@/components/clubs/club-form.types';
-import { parseClubValues, validateClubValues } from '@/components/clubs/club-form.validation';
-import { ApiError } from '@/lib/api.server';
-import type { TFormResult } from '@/lib/form-errors';
+import { createClub } from '#api/clubs.server';
+import type { IClubFormValues, TClubFieldName } from '#components/clubs/club-form.types';
+import { parseClubValues, validateClubValues } from '#components/clubs/club-form.validation';
+import { ApiError } from '#lib/api.server';
+import type { TFormResult } from '#lib/form-errors';
 
 export async function createClubAction(
     values: IClubFormValues,

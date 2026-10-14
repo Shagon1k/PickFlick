@@ -2,7 +2,7 @@ import { Button as MantineButton, type ButtonProps as IMantineButtonProps } from
 import clsx from 'clsx';
 import type { ButtonHTMLAttributes } from 'react';
 
-import type { TOmitStyling } from '@/components/ui/types';
+import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Button.module.scss';
 

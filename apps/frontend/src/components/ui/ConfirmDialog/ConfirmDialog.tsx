@@ -2,9 +2,9 @@
 
 import { type ReactNode, useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import Button from '#components/ui/Button/Button';
+import Modal from '#components/ui/Modal/Modal';
+import TextInput from '#components/ui/TextInput/TextInput';
 
 export interface IConfirmDialogProps {
     open: boolean;

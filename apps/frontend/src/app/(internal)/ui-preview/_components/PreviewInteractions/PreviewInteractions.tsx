@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import RatingControl from '@/components/ui/ScaleControl/RatingControl';
-import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
+import Button from '#components/ui/Button/Button';
+import Modal from '#components/ui/Modal/Modal';
+import RatingControl from '#components/ui/ScaleControl/RatingControl';
+import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 
 import styles from '../../page.module.scss';
 

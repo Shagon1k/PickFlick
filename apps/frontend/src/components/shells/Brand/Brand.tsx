@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import styles from '@/components/shells/shells.module.scss';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
+import styles from '#components/shells/shells.module.scss';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
 
 interface IBrandProps {
     href?: string;

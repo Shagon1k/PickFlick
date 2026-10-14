@@ -3,9 +3,9 @@
 import { closeNominationSchema, HTTP_STATUS, submitNominationSchema } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
-import { closeNominations, submitNomination } from '@/api/nominations.server';
-import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+import { closeNominations, submitNomination } from '#api/nominations.server';
+import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 const NOMINATION_FAILURE: IFailureCopy = {
     reasons: {

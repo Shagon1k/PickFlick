@@ -2,17 +2,17 @@
 
 import { useEffect, useRef } from 'react';
 
-import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
-import NotificationsPanel from '@/components/shells/NotificationsPanel/NotificationsPanel';
-import styles from '@/components/shells/product-navigation.module.scss';
+import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
+import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
     useOverlayDismissal,
     useProductOverlay,
-} from '@/components/shells/product-overlay';
-import type { TShellMenuItem } from '@/components/shells/shell-navigation';
-import Icon from '@/components/ui/Icon/Icon';
-import { authClient } from '@/lib/auth-client';
+} from '#components/shells/product-overlay';
+import type { TShellMenuItem } from '#components/shells/shell-navigation';
+import Icon from '#components/ui/Icon/Icon';
+import { authClient } from '#lib/auth-client';
 
 /** Up to two initials from the viewer's display name; empty when no usable name exists. */
 function getInitials(name: string | null | undefined): string {

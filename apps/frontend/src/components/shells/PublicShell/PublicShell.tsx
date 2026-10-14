@@ -1,15 +1,15 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import Brand from '@/components/shells/Brand/Brand';
+import Brand from '#components/shells/Brand/Brand';
 import {
     buildPublicNavigation,
     canonicalRoutes,
     type IShellRouteMap,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
-import SiteFooter from '@/components/shells/SiteFooter/SiteFooter';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
+import SiteFooter from '#components/shells/SiteFooter/SiteFooter';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 
 interface IPublicShellProps {
     children: ReactNode;

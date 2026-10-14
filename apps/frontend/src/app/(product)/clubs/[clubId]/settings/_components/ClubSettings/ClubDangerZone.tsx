@@ -3,11 +3,11 @@
 import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
 import { startTransition, useActionState, useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import InfoTip from '@/components/ui/InfoTip/InfoTip';
-import Modal from '@/components/ui/Modal/Modal';
-import { formatUtcDate, getMonogram } from '@/lib/format';
+import Button from '#components/ui/Button/Button';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
+import Modal from '#components/ui/Modal/Modal';
+import { formatUtcDate, getMonogram } from '#lib/format';
 
 import { initialClubActionState } from '../../action-state';
 import { changeClubLifecycleAction, changeClubMemberRoleAction } from '../../actions';

@@ -3,11 +3,11 @@
 import type { ISessionRoster } from '@pickflick/contracts';
 import { useRef, useState, useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import Select from '@/components/ui/Select/Select';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { getOfflineMessage } from '@/lib/offline';
+import Button from '#components/ui/Button/Button';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import Select from '#components/ui/Select/Select';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { getOfflineMessage } from '#lib/offline';
 
 import { changeRosterAction } from '../../roster-actions';
 import styles from './SessionRoster.module.scss';

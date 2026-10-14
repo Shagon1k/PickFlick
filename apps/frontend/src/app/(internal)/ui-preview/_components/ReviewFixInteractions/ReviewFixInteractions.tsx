@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
-import Select from '@/components/ui/Select/Select';
-import Tabs from '@/components/ui/Tabs/Tabs';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { readFormText } from '@/lib/form-data';
+import Button from '#components/ui/Button/Button';
+import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
+import Select from '#components/ui/Select/Select';
+import Tabs from '#components/ui/Tabs/Tabs';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { readFormText } from '#lib/form-data';
 
 import styles from '../../page.module.scss';
 

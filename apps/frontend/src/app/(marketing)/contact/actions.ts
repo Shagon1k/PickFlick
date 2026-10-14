@@ -2,9 +2,9 @@
 
 import { contactSubmissionSchema, HTTP_STATUS } from '@pickflick/contracts';
 
-import { sendContactMessage } from '@/api/contact.server';
-import { ApiError } from '@/lib/api.server';
-import type { TFormResult } from '@/lib/form-errors';
+import { sendContactMessage } from '#api/contact.server';
+import { ApiError } from '#lib/api.server';
+import type { TFormResult } from '#lib/form-errors';
 
 import type {
     IContactFormValues,

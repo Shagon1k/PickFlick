@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getSessionState, isAppleSignInEnabled } from '@/api/session.server';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Icon from '@/components/ui/Icon/Icon';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
+import { getSessionState, isAppleSignInEnabled } from '#api/session.server';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import Icon from '#components/ui/Icon/Icon';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
 import LoginActions from './_components/LoginActions/LoginActions';
 import { getFirstSearchValue } from './login.utils';

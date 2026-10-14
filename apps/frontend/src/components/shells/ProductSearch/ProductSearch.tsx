@@ -10,11 +10,11 @@ import {
     getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
-} from '@/components/movies/movie-search';
-import SearchCredits from '@/components/movies/SearchCredits/SearchCredits';
-import styles from '@/components/shells/product-navigation.module.scss';
-import { useOverlayDismissal, useProductOverlay } from '@/components/shells/product-overlay';
-import Icon from '@/components/ui/Icon/Icon';
+} from '#components/movies/movie-search';
+import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
+import styles from '#components/shells/product-navigation.module.scss';
+import { useOverlayDismissal, useProductOverlay } from '#components/shells/product-overlay';
+import Icon from '#components/ui/Icon/Icon';
 
 export default function ProductSearch() {
     const router = useRouter();

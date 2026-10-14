@@ -56,7 +56,7 @@ packages/
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
   config/     environment schema and TypeScript presets
   eslint-config/ dev-only ESLint presets and plugins
-assets/brand/ production brand imagery (imported as @brand/…)
+assets/brand/ production brand imagery (imported as #brand/…)
 tests/        Playwright: ui (local build + typed mock API), journeys (real API) and uat (deployed smoke)
 _docs/        guides, decisions, design prototypes
 ```

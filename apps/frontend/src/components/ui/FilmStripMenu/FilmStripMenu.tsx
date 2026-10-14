@@ -3,7 +3,7 @@
 import { Menu as MantineMenu } from '@mantine/core';
 import { type FocusEvent, useEffect, useRef, useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
+import Button from '#components/ui/Button/Button';
 
 import styles from './FilmStripMenu.module.scss';
 

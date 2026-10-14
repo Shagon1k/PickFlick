@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 
-import Icon from '@/components/ui/Icon/Icon';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from './InfoTip.module.scss';
 

@@ -10,9 +10,9 @@ import type {
     IClubFormValues,
     TClubFieldErrors,
     TClubFieldName,
-} from '@/components/clubs/club-form.types';
-import { readFormText } from '@/lib/form-data';
-import { toFieldErrors } from '@/lib/form-errors';
+} from '#components/clubs/club-form.types';
+import { readFormText } from '#lib/form-data';
+import { toFieldErrors } from '#lib/form-errors';
 
 const FIELD_MESSAGES: Record<TClubFieldName, string> = {
     name: `Use ${CLUB_NAME_MIN_LENGTH}–${CLUB_NAME_MAX_LENGTH} characters on a single line.`,

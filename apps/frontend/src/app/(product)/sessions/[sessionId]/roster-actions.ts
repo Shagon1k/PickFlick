@@ -14,10 +14,10 @@ import {
     leaveSession,
     removeSessionParticipant,
     revokeSessionInvitation,
-} from '@/api/session-roster.server';
-import { getSession } from '@/api/sessions.server';
-import { getFailureMessage } from '@/lib/action-failure';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+} from '#api/session-roster.server';
+import { getSession } from '#api/sessions.server';
+import { getFailureMessage } from '#lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 // Lost access or a roster that changed meanwhile: the action no longer applies.
 const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];

@@ -1,7 +1,7 @@
 import { createSessionSchema, type TSession, updateSessionSchema } from '@pickflick/contracts';
 
-import { toFieldErrors } from '@/lib/form-errors';
-import { toIsoDate } from '@/lib/format';
+import { toFieldErrors } from '#lib/form-errors';
+import { toIsoDate } from '#lib/format';
 
 const MINUTES_PER_HOUR = 60;
 const MINUTE_MS = 60_000;

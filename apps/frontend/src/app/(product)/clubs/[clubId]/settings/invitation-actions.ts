@@ -2,9 +2,9 @@
 
 import type { ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 
-import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
-import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+import { createInvitation, listInvitations, revokeInvitation } from '#api/invitations.server';
+import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 type TInvitationResult =
     | { ok: false; message: string }

@@ -6,12 +6,12 @@ import {
 } from '@mantine/core';
 import clsx from 'clsx';
 
-import styles from '@/components/ui/Field/Field.module.scss';
-import { getFieldState, type IFieldProps } from '@/components/ui/Field/field.types';
-import FieldAnnouncements from '@/components/ui/Field/FieldAnnouncements';
-import FieldLabel from '@/components/ui/Field/FieldLabel';
-import FieldMessage from '@/components/ui/Field/FieldMessage';
-import type { TOmitStyling } from '@/components/ui/types';
+import styles from '#components/ui/Field/Field.module.scss';
+import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
+import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
+import FieldLabel from '#components/ui/Field/FieldLabel';
+import FieldMessage from '#components/ui/Field/FieldMessage';
+import type { TOmitStyling } from '#components/ui/types';
 
 export interface ITextareaProps
     extends

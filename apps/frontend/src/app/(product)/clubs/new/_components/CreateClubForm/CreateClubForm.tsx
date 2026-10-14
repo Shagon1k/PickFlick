@@ -5,14 +5,14 @@ import { CLUB_DESCRIPTION_MAX_LENGTH, CLUB_NAME_MAX_LENGTH } from '@pickflick/co
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import type { IClubFormValues } from '@/components/clubs/club-form.types';
-import { validateClubValues } from '@/components/clubs/club-form.validation';
-import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
-import Button from '@/components/ui/Button/Button';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
-import { getOfflineMessage } from '@/lib/offline';
+import type { IClubFormValues } from '#components/clubs/club-form.types';
+import { validateClubValues } from '#components/clubs/club-form.validation';
+import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
+import Button from '#components/ui/Button/Button';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '#lib/form-errors';
+import { getOfflineMessage } from '#lib/offline';
 
 import { createClubAction } from '../../actions';
 import styles from './CreateClubForm.module.scss';

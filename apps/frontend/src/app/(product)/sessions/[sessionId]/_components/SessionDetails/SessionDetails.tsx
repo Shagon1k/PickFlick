@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
-import SessionForm from '@/components/sessions/SessionForm/SessionForm';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
-import Modal from '@/components/ui/Modal/Modal';
-import { formatUtcDateTime, toIsoDate } from '@/lib/format';
-import { getOfflineMessage } from '@/lib/offline';
+import SessionForm from '#components/sessions/SessionForm/SessionForm';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import Modal from '#components/ui/Modal/Modal';
+import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';

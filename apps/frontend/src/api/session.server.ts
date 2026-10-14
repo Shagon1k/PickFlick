@@ -3,7 +3,7 @@ import 'server-only';
 import { resolveAuthReturnTarget } from '@pickflick/contracts';
 import { headers } from 'next/headers';
 
-import { buildVisitorHeaders } from '@/lib/api.server';
+import { buildVisitorHeaders } from '#lib/api.server';
 
 const SESSION_CHECK_TIMEOUT_MS = 2_000;
 

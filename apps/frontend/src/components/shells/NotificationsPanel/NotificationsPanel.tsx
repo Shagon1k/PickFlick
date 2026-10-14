@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 
-import styles from '@/components/shells/product-navigation.module.scss';
+import styles from '#components/shells/product-navigation.module.scss';
 
 interface INotificationsPanelProps {
     id: string;

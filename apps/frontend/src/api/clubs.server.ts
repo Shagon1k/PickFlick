@@ -9,7 +9,7 @@ import type {
     TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
 
-import { apiPath, requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '#lib/api.server';
 
 export const listClubs = (): Promise<IClubSummary[]> => requestApi('/clubs');
 

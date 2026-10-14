@@ -6,8 +6,8 @@ import {
     type TInvitationPreview,
 } from '@pickflick/contracts';
 
-import { respondInvitation } from '@/api/invitations.server';
-import { ApiError } from '@/lib/api.server';
+import { respondInvitation } from '#api/invitations.server';
+import { ApiError } from '#lib/api.server';
 
 export async function respondInvitationAction(
     input: unknown,

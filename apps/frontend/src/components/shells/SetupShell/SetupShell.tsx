@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import Brand from '@/components/shells/Brand/Brand';
-import { canonicalRoutes, type IShellRouteMap } from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
+import Brand from '#components/shells/Brand/Brand';
+import { canonicalRoutes, type IShellRouteMap } from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
 
 interface ISetupShellProps {
     children: ReactNode;

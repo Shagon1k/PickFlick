@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-import NavigationItemIcon from '@/components/shells/NavigationItemIcon/NavigationItemIcon';
-import styles from '@/components/shells/product-navigation.module.scss';
-import type { TShellMenuItem } from '@/components/shells/shell-navigation';
-import { authClient } from '@/lib/auth-client';
+import NavigationItemIcon from '#components/shells/NavigationItemIcon/NavigationItemIcon';
+import styles from '#components/shells/product-navigation.module.scss';
+import type { TShellMenuItem } from '#components/shells/shell-navigation';
+import { authClient } from '#lib/auth-client';
 
 function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     const content = (

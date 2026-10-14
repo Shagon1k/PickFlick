@@ -2,7 +2,7 @@
 
 import type { MouseEvent } from 'react';
 
-import Icon from '@/components/ui/Icon/Icon';
+import Icon from '#components/ui/Icon/Icon';
 
 /**
  * Returns to the previous PickFlick page. Direct visits, external referrers, and modified clicks

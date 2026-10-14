@@ -18,10 +18,10 @@ import {
     replaceClubAvatar,
     type TClubLifecycleAction,
     updateClubSettings,
-} from '@/api/clubs.server';
-import { readClubValues } from '@/components/clubs/club-form.validation';
-import { ApiError } from '@/lib/api.server';
-import { readFormText } from '@/lib/form-data';
+} from '#api/clubs.server';
+import { readClubValues } from '#components/clubs/club-form.validation';
+import { ApiError } from '#lib/api.server';
+import { readFormText } from '#lib/form-data';
 
 import type { IClubActionState } from './action-state';
 import { getClubFailureMessage } from './club-errors';

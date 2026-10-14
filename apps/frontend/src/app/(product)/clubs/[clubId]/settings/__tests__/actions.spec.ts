@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api.server';
+import { ApiError } from '#lib/api.server';
 
 import {
     changeClubLifecycleAction,
@@ -19,8 +19,8 @@ const navigation = vi.hoisted(() => ({ redirect: vi.fn() }));
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => navigation);
-vi.mock('@/api/clubs.server', () => api);
-vi.mock('@/lib/api.server', () => ({
+vi.mock('#api/clubs.server', () => api);
+vi.mock('#lib/api.server', () => ({
     ApiError: class extends Error {
         constructor(
             readonly status: number,

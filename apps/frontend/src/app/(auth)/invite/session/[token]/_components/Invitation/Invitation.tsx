@@ -3,10 +3,10 @@
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
 import { useState, useSyncExternalStore, useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { formatUtcDateTime, toIsoDate } from '@/lib/format';
-import { getOfflineMessage } from '@/lib/offline';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';

@@ -117,9 +117,9 @@ specs, script tests, and config files.
 - Components are `export default function Name(...)`, one per file; hooks and utilities use named
   exports. Related components may share a folder (`Button/ButtonLink.tsx`).
 - Forms use `@mantine/form` with the shared zod-backed validator, and submit by calling their
-  server action as an async function that returns `TFormResult` (`@/lib/form-errors`). Copy
+  server action as an async function that returns `TFormResult` (`#lib/form-errors`). Copy
   `app/(marketing)/contact/_components/ContactForm`.
-- In `apps/frontend`, import through `@/` instead of `../../../`; relative paths are for the route or
-  component folder you are in.
+- In `apps/frontend`, import through the `#` folder aliases (`#components/...`) instead of
+  `../../../`; relative paths are for the route or component folder you are in.
 - Don't use `React.FC`; type props and the return value explicitly.
 - Use `React.<Event>Event<HTML...Element>` for event handler types.

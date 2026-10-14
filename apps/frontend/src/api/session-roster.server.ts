@@ -11,7 +11,7 @@ import {
     type TSessionInvitationPreview,
 } from '@pickflick/contracts';
 
-import { apiPath, requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '#lib/api.server';
 
 export const getSessionRoster = (id: string): Promise<ISessionRoster> =>
     requestApi(apiPath`/sessions/${id}/roster`);

@@ -1,10 +1,10 @@
 import Link from 'next/link';
 
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Icon from '@/components/ui/Icon/Icon';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import Icon from '#components/ui/Icon/Icon';
+import { createPublicMetadata } from '#lib/public-metadata';
 
 import LandingReveal from './_components/LandingReveal/LandingReveal';
 import styles from './marketing.module.scss';

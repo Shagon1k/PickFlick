@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { ApiError } from '@/lib/api.server';
+import { ApiError } from '#lib/api.server';
 
 export interface IFailureCopy {
     /** Copy for a stable API reason; checked first. */

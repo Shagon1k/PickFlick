@@ -8,10 +8,10 @@ import {
     getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
-} from '@/components/movies/movie-search';
-import SearchCredits from '@/components/movies/SearchCredits/SearchCredits';
-import Button from '@/components/ui/Button/Button';
-import TextInput from '@/components/ui/TextInput/TextInput';
+} from '#components/movies/movie-search';
+import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
+import Button from '#components/ui/Button/Button';
+import TextInput from '#components/ui/TextInput/TextInput';
 
 import styles from './MoviePicker.module.scss';
 

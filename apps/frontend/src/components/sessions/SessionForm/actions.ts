@@ -8,8 +8,8 @@ import {
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
-import { createSession, updateSession } from '@/api/sessions.server';
-import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
+import { createSession, updateSession } from '#api/sessions.server';
+import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
 
 const SAVE_FAILURE: IFailureCopy = {
     reasons: {

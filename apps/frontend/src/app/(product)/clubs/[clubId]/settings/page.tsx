@@ -3,12 +3,12 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getClubSettings } from '@/api/clubs.server';
-import { buildLoginPath } from '@/api/session.server';
-import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import { buildClubNavigation } from '@/components/shells/shell-navigation';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { ApiError } from '@/lib/api.server';
+import { getClubSettings } from '#api/clubs.server';
+import { buildLoginPath } from '#api/session.server';
+import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { ApiError } from '#lib/api.server';
 
 import ClubSettings from './_components/ClubSettings/ClubSettings';
 import styles from './page.module.scss';

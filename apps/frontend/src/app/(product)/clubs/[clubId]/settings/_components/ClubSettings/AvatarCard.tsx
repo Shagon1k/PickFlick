@@ -3,8 +3,8 @@
 import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
 import { useActionState, useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import { getMonogram } from '@/lib/format';
+import Button from '#components/ui/Button/Button';
+import { getMonogram } from '#lib/format';
 
 import { initialClubActionState } from '../../action-state';
 import { removeClubAvatarAction, uploadClubAvatarAction } from '../../actions';

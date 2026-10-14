@@ -7,7 +7,7 @@ const api = vi.hoisted(() => ({
     listInvitations: vi.fn<() => Promise<IManagedInvitation[]>>(),
     revokeInvitation: vi.fn<() => Promise<void>>(),
 }));
-vi.mock('@/api/invitations.server', () => api);
+vi.mock('#api/invitations.server', () => api);
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const created = {

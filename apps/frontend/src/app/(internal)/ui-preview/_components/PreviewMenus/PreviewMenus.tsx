@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import FilmStripMenu from '@/components/ui/FilmStripMenu/FilmStripMenu';
+import FilmStripMenu from '#components/ui/FilmStripMenu/FilmStripMenu';
 
 import styles from '../../page.module.scss';
 

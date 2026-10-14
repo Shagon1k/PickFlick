@@ -10,14 +10,14 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Switch from '@/components/ui/Switch/Switch';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { focusFirstInvalid } from '@/lib/form-errors';
-import { getOfflineMessage } from '@/lib/offline';
+import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import Switch from '#components/ui/Switch/Switch';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { focusFirstInvalid } from '#lib/form-errors';
+import { getOfflineMessage } from '#lib/offline';
 
 import { saveSessionAction } from './actions';
 import {

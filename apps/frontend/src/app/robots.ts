@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { CANONICAL_ORIGIN, NON_PUBLIC_INDEXING_BOUNDARIES } from '@/lib/indexing';
+import { CANONICAL_ORIGIN, NON_PUBLIC_INDEXING_BOUNDARIES } from '#lib/indexing';
 
 export default function robots(): MetadataRoute.Robots {
     return {

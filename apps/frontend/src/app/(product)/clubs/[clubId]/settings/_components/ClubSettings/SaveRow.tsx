@@ -1,6 +1,6 @@
 'use client';
 
-import Button from '@/components/ui/Button/Button';
+import Button from '#components/ui/Button/Button';
 
 import { type IClubActionState } from '../../action-state';
 import styles from '../../page.module.scss';

@@ -3,8 +3,8 @@
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
 import { useState, useSyncExternalStore } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 
 import { respondInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';

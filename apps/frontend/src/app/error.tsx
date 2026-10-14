@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 
-import SystemState from '@/components/shells/SystemState/SystemState';
-import { authClient } from '@/lib/auth-client';
+import SystemState from '#components/shells/SystemState/SystemState';
+import { authClient } from '#lib/auth-client';
 
 export default function ApplicationError({
     retry: handleRetry,
