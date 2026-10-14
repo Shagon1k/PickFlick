@@ -29,15 +29,21 @@ interface IApiRequestInit {
     contentType?: string;
 }
 
+// Encoding leaves these unchanged, and URL resolution would turn them into a move up the path.
+const DOT_SEGMENTS = new Set(['.', '..']);
+
 /**
  * An API path whose interpolated values are each encoded as one path segment, so an ID taken from a
- * URL or a server action argument cannot add segments. The API validates the IDs themselves.
+ * URL or a server action argument cannot add or remove segments. The API validates the IDs
+ * themselves.
  */
 export function apiPath(parts: TemplateStringsArray, ...segments: string[]): string {
-    return parts.reduce(
-        (path, part, index) => path + part + encodeURIComponent(segments[index] ?? ''),
-        '',
-    );
+    return parts.reduce((path, part, index) => {
+        const segment = segments[index] ?? '';
+        if (DOT_SEGMENTS.has(segment))
+            throw new Error('An API path segment cannot be a dot segment.');
+        return path + part + encodeURIComponent(segment);
+    }, '');
 }
 
 /** The visitor's cookie and client address, so the API rate-limits each visitor separately. */

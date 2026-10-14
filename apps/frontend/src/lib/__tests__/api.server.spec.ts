@@ -31,4 +31,7 @@ describe('apiPath', () => {
             '/clubs/abc/members/def/remove',
         );
     });
+    it.each(['.', '..'])('should reject the dot segment %s', (segment) => {
+        expect(() => apiPath`/sessions/${segment}/roster`).toThrow();
+    });
 });
