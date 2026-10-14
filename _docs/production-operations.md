@@ -95,6 +95,14 @@ The `release` service runs migrations, then the required seed step; `backend` an
 4. Clean up destructive contract changes in a later release, once the old runtime is gone.
 5. Fix forward when the applied schema cannot run the previous tag.
 
+### Migrations 20–22 are a one-way boundary
+
+Migrations 20–22 (#172) drop `Session.rosterVersion`, `MovieSourceCache`,
+`MovieExternalId.unavailableAt`, and `NominationDeadlineJob`, and empty the catalog caches. They are
+contract changes, not expand-first: no image built before them can run on the migrated schema, and
+old `backend` and `worker` containers that keep running while `release` migrates log errors until
+Dokploy replaces them. Never roll back across this boundary; fix forward.
+
 A failed release keeps the candidate `backend` and `frontend` from starting, but Dokploy may already
 have replaced containers: this topology promises neither zero downtime nor the old runtime.
 

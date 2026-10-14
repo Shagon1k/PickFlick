@@ -122,6 +122,9 @@ have replaced containers, so the previous runtime is not guaranteed to survive. 
 the environment), then run an approved deployment. Never paste environment values, connection URLs,
 tokens, or raw provider responses into evidence.
 
+Migrations 20–22 are a one-way boundary: no image from before them runs on the migrated schema (see
+[production operations](production-operations.md#migrations-2022-are-a-one-way-boundary)).
+
 ## Deadline worker operations
 
 Apply all migrations (through 22) before starting the candidate API and `worker`. Check the worker's Compose
@@ -141,8 +144,8 @@ Use the preview built from the PR's exact head SHA. Open one Session in two auth
 submit a nomination in one, and confirm the other refreshes progress without a manual action.
 Complete the accepted roster and verify the resulting Selection or sole-Movie Watching phase in
 both clients. Disconnect a client before the final change, then reconnect and confirm its phase
-matches a fresh page load. Verify periodic recovery with the stream blocked and access loss after
-Club departure. The stream carries versions only; the page enforces nomination visibility.
+matches a fresh page load. Verify recovery after the progress request fails and access loss after Club departure. The progress
+response carries a version only; the page enforces nomination visibility.
 
 Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
 owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.
