@@ -62,13 +62,12 @@ updated baseline is not proof that a visual change is right.
 
 ## CI
 
-The `UI smoke` job runs on ordinary PR updates. The full `UI contract` and `UI visual regression`
-jobs run on `main` pushes and manual CI runs; both are skipped on ordinary PR updates. All run on
-Linux in `mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in `ci.yml`, so fonts and
-browser dependencies do not drift with the GitHub runner. CI uses the locked Node and pnpm versions,
-retries a failure once, and fails on flaky tests.
+One UI job runs as a matrix: ordinary PR updates run `UI smoke`, while `main` pushes and manual CI
+runs run the full `UI contract` and `UI visual` suites. All run on Linux in
+`mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in `ci.yml`, so fonts and browser
+dependencies do not drift with the GitHub runner. CI uses the locked Node and pnpm versions, retries
+a failure once, and fails on flaky tests.
 
 To compare a branch's screenshots before merging, open **Actions → CI → Run workflow**, select the
-branch, and run it. The manual run requires both full UI jobs. On `main`, contract and visual
-regression must pass the Delivery gate before `deploy-uat.yml` can start its automatic deployment.
-PRs require the smoke job; the Delivery gate accepts skipped full UI jobs only on PRs.
+branch, and run it. The Delivery gate requires every suite the run selected to pass, so on `main`
+contract and visual regression must pass before `deploy-uat.yml` can start its automatic deployment.

@@ -149,6 +149,7 @@ until the deadline changes. Archived Clubs resume after reactivation. Restarting
 retries unfinished transactions; do not delete decision records to force a retry.
 
 `deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
-and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
-operator-alert or participant-notification intent; transport remains later work. Production activation
-still requires its existing authorization and promotion guards.
+and applied migrations, then check that the next `deadline.cycle` picks up the overdue Sessions
+without a new `deadline.failure`. Recipient rows retain operator-alert or participant-notification
+intent; transport remains later work. Production activation still requires its existing
+authorization and promotion guards.
