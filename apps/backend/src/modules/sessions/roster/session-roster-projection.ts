@@ -4,7 +4,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { inviteState } from '../../../common/invite-token.js';
 import { findMembership } from '../../clubs/access/club-access.js';
-import { canManage } from '../session-roster-access.js';
+import { canManage } from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,

@@ -9,15 +9,14 @@ import type {
 import { digestInviteToken, newInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { lockClub } from '../../clubs/access/club-access.js';
+import { assertManager, assertOpen } from '../session-access.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import {
-    assertManager,
-    assertOpen,
     inviteInclude,
-    preview,
-    revokePending,
-    rosterAudit,
-} from '../session-roster-access.js';
+    recordRosterChange,
+    revokePendingInvites,
+    toInvitationPreview,
+} from './session-invites.js';
 import { readRoster } from './session-roster-projection.js';
 
 @Injectable()
@@ -58,7 +57,7 @@ export class SessionRosterService {
                 create: { sessionId, membershipId, clubId: session.clubId },
                 update: { status: 'INVITED' },
             });
-            await revokePending(tx, participant.id);
+            await revokePendingInvites(tx, participant.id);
             const { token, tokenDigest, expiresAt } = newInviteToken();
             const invitation = await tx.sessionInvite.create({
                 data: {
@@ -69,7 +68,7 @@ export class SessionRosterService {
                     expiresAt,
                 },
             });
-            await rosterAudit(tx, {
+            await recordRosterChange(tx, {
                 actorUserId: userId,
                 subjectUserId: target.userId,
                 subjectMembershipId: membershipId,
@@ -96,7 +95,7 @@ export class SessionRosterService {
                 where: { id: inviteId },
                 data: { revokedAt: new Date() },
             });
-            await rosterAudit(tx, {
+            await recordRosterChange(tx, {
                 actorUserId: userId,
                 subjectUserId: invite.participant.membership.userId,
                 subjectMembershipId: invite.participant.membershipId,
@@ -134,8 +133,8 @@ export class SessionRosterService {
             )
                 throw new ConflictException({ reason: 'NOT_PARTICIPATING' });
             await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
-            await revokePending(tx, participant.id);
-            await rosterAudit(tx, {
+            await revokePendingInvites(tx, participant.id);
+            await recordRosterChange(tx, {
                 actorUserId: userId,
                 subjectUserId: participant.membership.userId,
                 subjectMembershipId: participant.membershipId,
@@ -149,7 +148,7 @@ export class SessionRosterService {
     async preview(userId: string, token: string): Promise<TSessionInvitationPreview> {
         return this.prisma.$transaction(
             async (tx) =>
-                preview(
+                toInvitationPreview(
                     await tx.sessionInvite.findUnique({
                         where: { tokenDigest: digestInviteToken(token) },
                         include: inviteInclude,
@@ -174,7 +173,7 @@ export class SessionRosterService {
                     orderBy: { createdAt: 'desc' },
                 });
                 return invites.flatMap((invite) => {
-                    const view = preview(invite, userId);
+                    const view = toInvitationPreview(invite, userId);
                     return view.state === 'valid'
                         ? [
                               {
@@ -213,7 +212,7 @@ export class SessionRosterService {
                 where,
                 include: inviteInclude,
             });
-            const view = preview(invite, userId);
+            const view = toInvitationPreview(invite, userId);
             if (view.state !== 'valid') return view;
             const accepted = decision === 'accept';
             await tx.sessionInvite.update({
@@ -224,7 +223,7 @@ export class SessionRosterService {
                 where: { id: invite.participantId },
                 data: { status: accepted ? 'ACCEPTED' : 'DECLINED' },
             });
-            await rosterAudit(tx, {
+            await recordRosterChange(tx, {
                 actorUserId: userId,
                 subjectUserId: userId,
                 subjectMembershipId: invite.participant.membershipId,

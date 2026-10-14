@@ -2,7 +2,8 @@ import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../../clubs/access/club-access.js';
 import { lockSession } from '../session-lock.js';
-import { advanceNomination, publishProgress } from '../session-progress.js';
+import { publishProgress } from '../session-progress.js';
+import { advanceNomination } from './nomination-completion.js';
 
 interface IDeadlineEvent {
     event: string;

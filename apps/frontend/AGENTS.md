@@ -27,6 +27,9 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
 - `src/components/ui/<Name>/` is the UI kit (Mantine wrappers). Shared app pieces live in
   `src/components/<group>/<Name>/<Name>.tsx`, such as `shells/PublicShell`; lint enforces the
   folder names, and a new group joins the rule's `ignoreWords`.
+- Pages wrap themselves in `shells/PublicShell` (marketing) or `shells/ProductFrame` (signed in).
+  `AdminShell`, `ControlShell`, `ProductShell`, `SessionShell`, and `SetupShell` are layouts for
+  later phases; only the `/shell-preview` gallery renders them.
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Import with the `@/` alias; images from `assets/brand` with `@brand/`.

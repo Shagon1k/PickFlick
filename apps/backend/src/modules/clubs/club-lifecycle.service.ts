@@ -3,9 +3,9 @@ import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { completeNomination } from '../sessions/nominations/nomination-completion.js';
 import { departSessions } from '../sessions/roster/session-departure.js';
 import { lockSession } from '../sessions/session-lock.js';
-import { completeNomination } from '../sessions/session-progress.js';
 import { StorageService } from '../storage/storage.service.js';
 import {
     assertActive,

@@ -9,9 +9,10 @@ import type { Prisma } from '@pickflick/database';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
+import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
-import { advanceNomination, completeNomination, publishProgress } from '../session-progress.js';
-import { assertManager } from '../session-roster-access.js';
+import { publishProgress } from '../session-progress.js';
+import { advanceNomination, completeNomination } from './nomination-completion.js';
 
 @Injectable()
 export class NominationsService {
