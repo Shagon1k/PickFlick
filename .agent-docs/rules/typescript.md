@@ -17,7 +17,13 @@ code instead.
 - the Vitest and Playwright plugin rules for tests (see [testing.md](testing.md));
 - a 300-line file limit (500 for specs), cognitive complexity of 12 (15 for specs), and at most
   four function parameters outside specs;
+- the naming rules below: boolean prefixes, `UPPER_SNAKE_CASE` constants, no single-letter names,
+  `handleX` event handlers, and named numbers;
+- `eqeqeq`, `no-else-return`, `object-shorthand`, `prefer-template`, and no commented-out code;
 - the frontend import boundaries below.
+
+Prettier wraps lines at 100 characters. The selectors live in
+`packages/eslint-config/restricted-syntax.mjs`.
 
 `pnpm typecheck` covers every package plus the root `tsconfig.json`, which holds the Playwright
 specs, script tests, and config files.
@@ -52,6 +58,26 @@ specs, script tests, and config files.
   `SessionRating`, and `PersonalMovieRating`.
 - Files are kebab-case (`club-settings.service.ts`). React component folders and files are
   PascalCase (`Button/Button.tsx`).
+- A boolean variable or parameter reads as a question: `is`, `are`, `has`, `can`, `should`,
+  `was`, `did`, `will`, or `with` (`isOpen`, `hasDeadlineChanged`, `withDetails`); its state
+  setter follows (`setIsOpen`). Destructured names keep the property they come from, and API and
+  database fields keep their names (`permissions.manageSessions`, `hidden`).
+- A function name is a verb phrase: `get`/`find`/`list` read, `build`/`create` make a new value,
+  `to`/`format` convert, `assert` throws, `is`/`has` answer a question. Names a framework requires
+  (`robots`, `sitemap`, `proxy`, React components) and zod schema factories (`singleLineText`) are
+  the exception.
+- A component's own event handler is `handleX`; a prop that receives one is `onX`.
+- A module-level constant set from a literal is `UPPER_SNAKE_CASE` (`MAX_SUGGESTIONS`,
+  `HTTP_STATUS`).
+- Collections are plural nouns without a type suffix (`members`, not `memberList`), and a callback
+  names the item it receives (`members.map((member) => ...)`). Single letters are only `a`/`b` in
+  a sort comparator, `i` in a counter loop, and `_` for an unused position.
+- Privacy uses TypeScript's `private`; never prefix a member with `_` or `#`.
+- A number inside logic gets a name as a module-level constant. Constant initializers may hold
+  arithmetic and schema limits (`7 * DAY_MS`, `.max(200)`); 0, 1, 2, defaults, enums, and types
+  are exempt, and tests keep literal expectations. Take a limit the schema already owns from
+  `@pickflick/contracts` (`SESSION_NOTES_MAX_LENGTH`) instead of repeating it. String literals
+  stay inline: their union types already catch a typo.
 
 ## Validation
 
@@ -64,7 +90,11 @@ specs, script tests, and config files.
 
 - Comment the why, not the what. Explain a non-obvious decision or workaround; delete narration
   that repeats the code.
-- Delete commented-out code.
+- Keep legal notices, informative comments (a format, a unit, a protocol fact), intent, and
+  warnings about consequences. Drop noise, journaling, closing-brace labels, and comments that
+  repeat a neighbouring one.
+- Delete commented-out code; `sonarjs/no-commented-code` enforces it.
+- Track later work as a Project 3 issue, not a `TODO` comment; `sonarjs/todo-tag` rejects them.
 
 ## Scope
 
