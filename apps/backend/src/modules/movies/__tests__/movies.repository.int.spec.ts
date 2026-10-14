@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, randomUUID } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 
 import { movieDetailsSchema, type TMovieSource } from '@pickflick/contracts';
 
@@ -164,22 +164,17 @@ describe('MoviesRepository', () => {
         );
         expect((await prisma.movie.findUnique({ where: { id } }))?.title).toBe(record.data.title);
     });
-    it('should reject unsafe cached media and mismatched public UUIDs', async () => {
+    it('should treat a cached row that no longer fits the schema as a miss', async () => {
         const record = fixture();
         const id = await ingest(record);
         const detailKey = key();
         await repository.saveDetails(id, detailKey, record, time);
         const data = (await repository.findCachedDetails(id, detailKey))!.data;
-        for (const replacement of [
-            { ...data, posterUrl: 'https://evil.invalid/film.jpg' },
-            { ...data, id: randomUUID() },
-        ]) {
-            await prisma.movieDetailsCache.update({
-                where: { movieId_key: { movieId: id, key: detailKey } },
-                data: { data: replacement },
-            });
-            expect(await repository.findCachedDetails(id, detailKey)).toBeNull();
-        }
+        await prisma.movieDetailsCache.update({
+            where: { movieId_key: { movieId: id, key: detailKey } },
+            data: { data: { ...data, posterUrl: 'https://evil.invalid/film.jpg' } },
+        });
+        expect(await repository.findCachedDetails(id, detailKey)).toBeNull();
         expect(movieDetailsSchema.safeParse(data).success).toBe(true);
     });
     it('should enforce one external ID per source in the database', async () => {

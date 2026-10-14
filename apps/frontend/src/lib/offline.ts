@@ -1,4 +1,4 @@
-export const OFFLINE_MESSAGE =
+const OFFLINE_MESSAGE =
     'You appear to be offline. Reconnect, then try again; nothing you entered is lost.';
 
 /**
