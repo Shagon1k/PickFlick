@@ -74,7 +74,7 @@ export default function SessionForm({
             router.refresh();
         });
     }
-    const submit = (event: React.SubmitEvent<HTMLFormElement>) =>
+    const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) =>
         form.onSubmit(
             (values, submitEvent) => save(values, submitEvent?.currentTarget),
             (_errors, _values, invalidEvent) => {
@@ -91,7 +91,7 @@ export default function SessionForm({
             </>
         );
     return (
-        <form className={styles.form} noValidate onSubmit={submit}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <TextInput
                 {...form.getInputProps('date')}
                 disabled={isPending}

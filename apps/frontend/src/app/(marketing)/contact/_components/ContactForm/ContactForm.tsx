@@ -29,7 +29,7 @@ export default function ContactForm() {
         onValuesChange: () => setFeedback(IDLE),
     });
 
-    const submit = form.onSubmit(
+    const handleSubmit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
             if (!navigator.onLine) {
@@ -72,7 +72,7 @@ export default function ContactForm() {
 
     const wasSent = feedback.tone === 'success';
     return (
-        <form className={styles.form} noValidate onSubmit={submit}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <Textarea
                 {...form.getInputProps('message')}
                 disabled={isPending}

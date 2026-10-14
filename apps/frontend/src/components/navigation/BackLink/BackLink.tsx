@@ -15,7 +15,7 @@ export default function BackLink({
     className?: string | undefined;
     fallbackHref: string;
 }) {
-    function goBack(event: MouseEvent<HTMLAnchorElement>): void {
+    function handleBackClick(event: MouseEvent<HTMLAnchorElement>): void {
         if (
             event.button !== 0 ||
             event.metaKey ||
@@ -33,7 +33,7 @@ export default function BackLink({
     }
 
     return (
-        <a className={className} href={fallbackHref} onClick={goBack}>
+        <a className={className} href={fallbackHref} onClick={handleBackClick}>
             <Icon name="arrow-left" />
             Back
         </a>

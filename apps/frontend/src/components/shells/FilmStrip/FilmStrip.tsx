@@ -50,7 +50,7 @@ function SignOutMenuItem({ content }: { content: ReactNode }) {
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState('');
 
-    async function signOut() {
+    async function handleSignOut() {
         setIsPending(true);
         setError('');
         try {
@@ -76,7 +76,7 @@ function SignOutMenuItem({ content }: { content: ReactNode }) {
                 className={styles.filmFrame}
                 data-shell-action="sign-out"
                 disabled={isPending}
-                onClick={signOut}
+                onClick={handleSignOut}
                 type="button"
             >
                 {content}

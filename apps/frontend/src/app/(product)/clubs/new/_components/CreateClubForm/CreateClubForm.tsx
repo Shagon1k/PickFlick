@@ -34,7 +34,7 @@ export default function CreateClubForm() {
         onValuesChange: () => setFeedback(IDLE),
     });
 
-    const submit = form.onSubmit(
+    const handleSubmit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
             if (!navigator.onLine) {
@@ -80,7 +80,7 @@ export default function CreateClubForm() {
     );
 
     return (
-        <form className={styles.form} noValidate onSubmit={submit}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <TextInput
                 {...form.getInputProps('name')}
                 autoComplete="organization"

@@ -6,7 +6,7 @@ import SystemState from '@/components/shells/SystemState/SystemState';
 import { authClient } from '@/lib/auth-client';
 
 export default function ApplicationError({
-    retry,
+    retry: handleRetry,
 }: {
     error: Error & { digest?: string };
     retry: () => void;
@@ -19,5 +19,5 @@ export default function ApplicationError({
         globalThis.document.getElementById('system-state-title')?.focus({ preventScroll: true });
     }, [isSignedIn]);
 
-    return <SystemState onRetry={retry} signedIn={isSignedIn} variant="application-error" />;
+    return <SystemState onRetry={handleRetry} signedIn={isSignedIn} variant="application-error" />;
 }

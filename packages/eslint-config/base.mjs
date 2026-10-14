@@ -162,6 +162,13 @@ export default [
                 noReadonlyWrapper,
                 constantNaming,
                 {
+                    // A component's own event handler is handleX; a forwarded prop is onX and a
+                    // state setter is setX.
+                    selector:
+                        'JSXAttribute[name.name=/^on[A-Z]/] > JSXExpressionContainer > Identifier[name!=/^(handle|on|set)[A-Z]/]',
+                    message: 'Name an event handler handleX (or pass an onX prop or setX setter).',
+                },
+                {
                     selector: 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^[A-Z]/]',
                     message:
                         'Export a component as the default export of its own file (export default function Name).',

@@ -62,7 +62,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         );
     }
 
-    async function copy() {
+    async function handleCopy() {
         try {
             await globalThis.navigator.clipboard.writeText(link);
             setMessage('Invitation link copied.');
@@ -115,7 +115,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         <div className={styles.invitationLink}>
                             <label htmlFor="invitation-link">Invitation link</label>
                             <input id="invitation-link" readOnly value={link} />
-                            <Button disabled={isPending} onClick={copy} variant="secondary">
+                            <Button disabled={isPending} onClick={handleCopy} variant="secondary">
                                 Copy link
                             </Button>
                         </div>

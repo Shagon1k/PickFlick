@@ -33,14 +33,14 @@ export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmS
         }
     }, [isOpen]);
 
-    function closeWhenFocusLeaves(event: FocusEvent<HTMLDivElement>): void {
+    function handleMenuBlur(event: FocusEvent<HTMLDivElement>): void {
         if (!event.currentTarget.contains(event.relatedTarget)) {
             setIsOpen(false);
         }
     }
 
     return (
-        <div className={styles.menu} onBlur={closeWhenFocusLeaves}>
+        <div className={styles.menu} onBlur={handleMenuBlur}>
             <MantineMenu
                 closeOnClickOutside
                 closeOnEscape
