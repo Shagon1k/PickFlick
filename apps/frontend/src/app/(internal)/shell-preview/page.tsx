@@ -1,6 +1,6 @@
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Pill from '@/components/ui/Pill/Pill';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import Pill from '#components/ui/Pill/Pill';
 
 import styles from './page.module.scss';
 

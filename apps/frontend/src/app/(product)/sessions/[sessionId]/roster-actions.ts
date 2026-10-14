@@ -2,6 +2,7 @@
 
 import {
     createSessionInvitationSchema,
+    HTTP_STATUS,
     leaveSessionSchema,
     removeSessionParticipantSchema,
 } from '@pickflick/contracts';
@@ -13,9 +14,13 @@ import {
     leaveSession,
     removeSessionParticipant,
     revokeSessionInvitation,
-} from '@/api/session-roster.server';
-import { getSession } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
+} from '#api/session-roster.server';
+import { getSession } from '#api/sessions.server';
+import { getFailureMessage } from '#lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '#lib/http-status';
+
+// Lost access or a roster that changed meanwhile: the action no longer applies.
+const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];
 
 const commandSchema = z.discriminatedUnion('action', [
     createSessionInvitationSchema.extend({ action: z.literal('invite') }),
@@ -28,8 +33,7 @@ const commandSchema = z.discriminatedUnion('action', [
 ]);
 export async function changeRosterAction(id: string, input: unknown) {
     const parsed = commandSchema.safeParse(input);
-    if (!z.uuidv4().safeParse(id).success || !parsed.success)
-        return { ok: false, message: 'Check your selection and confirmation.' };
+    if (!parsed.success) return { ok: false, message: 'Check your selection and confirmation.' };
     try {
         const session = await getSession(id);
         const command = parsed.data;
@@ -51,12 +55,16 @@ export async function changeRosterAction(id: string, input: unknown) {
                     : 'Roster updated.',
         };
     } catch (error) {
-        return {
-            ok: false,
-            message:
-                error instanceof ApiError && [401, 403, 404, 409].includes(error.status)
-                    ? 'This action is no longer available. Reload to check your access and the Session.'
-                    : 'We could not save your change. Check your connection and retry.',
-        };
+        const message = getFailureMessage(error, {
+            statuses: [
+                [
+                    STALE_ACTION_STATUSES,
+                    'This action is no longer available. Reload to check your access and the Session.',
+                ],
+            ],
+            fallback: 'We could not save your change. Check your connection and retry.',
+            request: 'Session roster change',
+        });
+        return { ok: false, message };
     }
 }

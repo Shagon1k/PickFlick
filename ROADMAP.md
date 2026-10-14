@@ -229,10 +229,9 @@ remains undecided.
 ### Automatic phase transitions
 
 `N` is the count of accepted SessionParticipants, excluding invited, declined, left, and removed
-rows. A roster write increments `rosterVersion` in its transaction; attendance-only edits do not.
-Phase decisions lock the Session before reading its phase, `phaseVersion`, `rosterVersion`, and
-accepted participants, and keep that lock until the decision commits. Leaving or removal updates
-the participant state before completion is checked. Every transition is idempotent and serialized
+rows. Roster writes and phase decisions lock the Session; decisions read its phase, `phaseVersion`,
+and accepted participants under that lock and hold it until the decision commits. Leaving or
+removal updates the participant state before completion is checked. Every transition is idempotent and serialized
 so two clients or a deadline job cannot advance a Session twice.
 
 | Phase      | Trigger                                        | Result                                                                         |
@@ -407,15 +406,15 @@ hidden from normal history unless product copy exposes it.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) and the [ADR registry](_docs/decisions/README.md) own the detail.
 
-| Area       | Decision                                                                                                     | ADR               |
-| ---------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
-| Repository | pnpm monorepo with `frontend` and `backend`; a backend worker reconciles Nomination deadlines in PostgreSQL. | ADR-014, ADR-018  |
-| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles.              | ADR-013           |
-| Validation | Shared zod schemas for requests, forms, and the environment.                                                 | ADR-012           |
-| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                   | ADR-002, 010, 011 |
-| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                 | ADR-003           |
-| Jobs       | Nomination-specific PostgreSQL scheduling intent and separate backend worker; no queue library.              | ADR-018           |
-| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                   | ADR-007, 008      |
+| Area       | Decision                                                                                                    | ADR               |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | ----------------- |
+| Repository | pnpm monorepo with `frontend` and `backend`; a backend worker applies Nomination deadlines from PostgreSQL. | ADR-014, ADR-018  |
+| Frontend   | Next.js App Router; UI kit on unstyled Mantine inside the frontend; Projector Noir owns styles.             | ADR-013           |
+| Validation | Shared zod schemas for requests, forms, and the environment.                                                | ADR-012           |
+| Backend    | NestJS feature modules; Better Auth database sessions at the API boundary.                                  | ADR-002, 010, 011 |
+| Database   | PostgreSQL with reviewed Prisma migrations and database-enforced invariants.                                | ADR-003           |
+| Jobs       | Separate backend worker reads due Sessions from PostgreSQL; no job table or queue library.                  | ADR-018           |
+| Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                  | ADR-007, 008      |
 
 | Provider              | Purpose                                                                                    | Status                                                                                   |
 | --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -461,6 +460,10 @@ flowchart LR
 
 Hexagons are verification gates. The graph shows the main dependencies; each phase lists all of
 its own.
+
+**Where the build stands:** Phases 1–5 and 7–10 are built. They stay In progress until their
+verification gate records the evidence: Phase 6 for 1–5 (running now) and Phase 12 for 7–11.
+Phase 11 Selection is the next delivery phase.
 
 ### Phase 0 — Guidance Baseline · Done
 
@@ -830,7 +833,7 @@ inbox.
 **Tickets:** [#42](https://github.com/Shagon1k/PickFlick/issues/42) nominations, personal
 suggestions, visibility · [#43](https://github.com/Shagon1k/PickFlick/issues/43) deadlines with durable
 reconciliation · [#44](https://github.com/Shagon1k/PickFlick/issues/44) serialized transitions and
-live progress events
+live progress (version polling since #172)
 
 **Scope:**
 
@@ -840,8 +843,9 @@ live progress events
       Do not add a separate saved-film entity or manual add/remove operations.
 - [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
-- [ ] Implement durable delayed deadline jobs with stable IDs, stale-job guards, periodic overdue
-      reconciliation, and safe deadline changes and cancellation.
+- [ ] Implement durable deadline automation driven by the Session row, with stale-decision guards
+      and safe deadline changes and cancellation (simplified from job rows and reconciliation in
+      #172).
 - [ ] Implement the automatic `N/N` transition: two or more nominations open Selection; one selects
       that Movie and advances to Watching.
 - [ ] Implement deadline outcomes: none stays open and alerts operators; one advances to Watching;
@@ -910,7 +914,7 @@ in UAT
       severity-classified register.
 - [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
-- [ ] Exercise concurrent tabs and users, process and job restarts, SSE reconnect and fallback, stale
+- [ ] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
       data, provider failures, and permission changes mid-flow.
 - [ ] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.

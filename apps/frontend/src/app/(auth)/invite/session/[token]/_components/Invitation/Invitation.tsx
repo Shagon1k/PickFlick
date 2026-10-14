@@ -3,16 +3,18 @@
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
 import { useState, useSyncExternalStore, useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
 
 type TView = TSessionInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const subscribe = () => () => {};
-const clientReady = () => true;
-const serverReady = () => false;
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 const messages = {
     valid: 'Join your Club for this screening.',
     accepted: 'Your participation is confirmed.',
@@ -26,11 +28,12 @@ const messages = {
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [message, setMessage] = useState('');
-    const [pending, startTransition] = useTransition();
-    const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
+    const [isPending, startTransition] = useTransition();
+    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
     function respond(decision: 'accept' | 'decline') {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before responding.');
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         startTransition(async () => {
@@ -49,7 +52,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
             }
         });
     }
-    const returnPath = encodeURIComponent('/invite/session/' + token);
+    const returnPath = encodeURIComponent(`/invite/session/${token}`);
     return (
         <div className={styles.card}>
             <div className={styles.intro}>
@@ -63,21 +66,19 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         <p>{view.topic ?? 'Untitled Session'}</p>
                         <p>
                             {view.scheduledAt
-                                ? new Date(view.scheduledAt).toLocaleString('en', {
-                                      timeZone: 'UTC',
-                                  }) + ' UTC'
+                                ? formatUtcDateTime(view.scheduledAt)
                                 : 'Not scheduled'}
                         </p>
                         <p>{view.location}</p>
                         <p>Invited by {view.inviterName}</p>
-                        <p>Expires {view.expiresAt.slice(0, 10)}</p>
+                        <p>Expires {toIsoDate(view.expiresAt)}</p>
                     </div>
                     <div className={styles.actions}>
-                        <Button disabled={!ready || pending} onClick={() => respond('accept')}>
+                        <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>
                             Accept invitation
                         </Button>
                         <Button
-                            disabled={!ready || pending}
+                            disabled={!isReady || isPending}
                             variant="secondary"
                             onClick={() => respond('decline')}
                         >

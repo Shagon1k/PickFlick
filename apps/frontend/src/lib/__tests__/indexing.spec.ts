@@ -1,13 +1,13 @@
-import { legalDocuments } from '@/app/(marketing)/legal/[document]/legal-content';
-import robots from '@/app/robots';
-import sitemap from '@/app/sitemap';
+import { legalDocuments } from '#app/(marketing)/legal/[document]/legal-content';
+import robots from '#app/robots';
+import sitemap from '#app/sitemap';
 import {
     CANONICAL_ORIGIN,
     INDEXABLE_PUBLIC_ROUTES,
     NOINDEX_HEADER,
     NON_PUBLIC_INDEXING_BOUNDARIES,
-} from '@/lib/indexing';
-import { createPublicMetadata, rootMetadata } from '@/lib/public-metadata';
+} from '#lib/indexing';
+import { createPublicMetadata, rootMetadata } from '#lib/public-metadata';
 
 import nextConfig from '../../../next.config';
 

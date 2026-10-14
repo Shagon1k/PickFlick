@@ -5,13 +5,14 @@ import {
 } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 
-import { ApiError } from '@/lib/api.server';
-import { config, proxy } from '@/proxy';
+import { ApiError } from '#lib/api.server';
+
+import { config, proxy } from '../proxy';
 
 const api = vi.hoisted(() => ({ getClubHub: vi.fn() }));
-vi.mock('@/api/clubs.server', () => api);
+vi.mock('#api/clubs.server', () => api);
 
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 
 describe('proxy', () => {
     beforeEach(() => {
@@ -61,18 +62,18 @@ describe('proxy', () => {
     });
 
     it('should save a direct Club visit only after the Hub authorizes the request', async () => {
-        const request = new NextRequest(`https://pick-flick.app/clubs/${clubId}`, {
+        const request = new NextRequest(`https://pick-flick.app/clubs/${CLUB_ID}`, {
             headers: { cookie: 'pickflick.session_token=test-session' },
         });
         const response = await proxy(request);
 
-        expect(api.getClubHub).toHaveBeenCalledWith(clubId, request.headers);
-        expect(response.cookies.get('pickflick.last_club')?.value).toBe(clubId);
+        expect(api.getClubHub).toHaveBeenCalledWith(CLUB_ID, request.headers);
+        expect(response.cookies.get('pickflick.last_club')?.value).toBe(CLUB_ID);
     });
 
     it.each([401, 404])('should preserve the last Club when the Hub returns %s', async (status) => {
         api.getClubHub.mockRejectedValueOnce(new ApiError(status));
-        const request = new NextRequest(`https://pick-flick.app/clubs/${clubId}/settings`, {
+        const request = new NextRequest(`https://pick-flick.app/clubs/${CLUB_ID}/settings`, {
             headers: { cookie: 'pickflick.last_club=previous-club' },
         });
         const response = await proxy(request);
@@ -85,7 +86,9 @@ describe('proxy', () => {
         api.getClubHub.mockRejectedValueOnce(new TypeError('fetch failed'));
         const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {
-            const response = await proxy(new NextRequest(`https://pick-flick.app/clubs/${clubId}`));
+            const response = await proxy(
+                new NextRequest(`https://pick-flick.app/clubs/${CLUB_ID}`),
+            );
 
             expect(response.cookies.get('pickflick.last_club')).toBeUndefined();
             expect(log).toHaveBeenCalledWith('Club preference authorization failed.');

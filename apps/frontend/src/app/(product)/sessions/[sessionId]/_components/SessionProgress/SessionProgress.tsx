@@ -3,10 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 
-import { watchSessionProgress } from '@/api/session-progress';
+import { getSessionProgressAction } from '../../progress-actions';
 
-import { sessionProgressAction } from '../../progress-actions';
+const POLL_MS = 5000;
 
+/**
+ * Polls the Session's progress version while the page is visible and reloads the server-rendered
+ * projections when it grows. Losing access reloads once and stops polling.
+ */
 export default function SessionProgress({
     sessionId,
     version,
@@ -15,63 +19,49 @@ export default function SessionProgress({
     version: number | null;
 }) {
     const router = useRouter();
-    const [unavailable, setUnavailable] = useState(false);
-    const [refreshing, startTransition] = useTransition();
+    const [isUnavailable, setIsUnavailable] = useState(false);
+    const [isRefreshing, startTransition] = useTransition();
     const onVersion = useEffectEvent((current: number) => {
         // A failed page load has no rendered version and must retry even an unchanged signal.
-        if ((version === null || current > version) && !refreshing && navigator.onLine) {
+        if ((version === null || current > version) && !isRefreshing) {
             startTransition(() => router.refresh());
         }
     });
+    const onDenied = useEffectEvent(() => router.refresh());
     useEffect(() => {
-        let connected = false;
-        let stopped = false;
-        let polling = false;
-        function denied() {
-            stopped = true;
-            close();
-            router.refresh();
-        }
-        const close = watchSessionProgress(sessionId, {
-            progress: onVersion,
-            connected: (value) => {
-                connected = value;
-                setUnavailable(!value);
-            },
-            denied,
-        });
+        let isStopped = false;
+        let isPolling = false;
         async function poll() {
-            if (stopped || polling || !navigator.onLine) return;
-            polling = true;
+            if (isStopped || isPolling || document.visibilityState !== 'visible') return;
+            isPolling = true;
             try {
-                const result = await sessionProgressAction(sessionId);
-                if (stopped) return;
-                if (result.state === 'denied') denied();
-                else if (result.state === 'ready') onVersion(result.version);
-                else setUnavailable(true);
+                const result = await getSessionProgressAction(sessionId);
+                if (isStopped) return;
+                setIsUnavailable(result.state === 'unavailable');
+                if (result.state === 'denied') {
+                    isStopped = true;
+                    onDenied();
+                } else if (result.state === 'ready') onVersion(result.version);
             } catch {
-                if (!stopped) setUnavailable(true);
+                if (!isStopped) setIsUnavailable(true);
             } finally {
-                polling = false;
+                isPolling = false;
             }
         }
         const refresh = () => {
             void poll();
         };
-        const interval = window.setInterval(() => {
-            if (!connected) refresh();
-        }, 15000);
+        const interval = window.setInterval(refresh, POLL_MS);
         window.addEventListener('online', refresh);
         window.addEventListener('focus', refresh);
         return () => {
-            stopped = true;
-            close();
+            isStopped = true;
             window.clearInterval(interval);
             window.removeEventListener('online', refresh);
             window.removeEventListener('focus', refresh);
         };
-    }, [sessionId, router]);
-    return unavailable ? (
-        <p role="status">Live updates unavailable. Progress refreshes periodically.</p>
+    }, [sessionId]);
+    return isUnavailable ? (
+        <p role="status">Could not check for updates. Retrying shortly.</p>
     ) : null;
 }

@@ -1,10 +1,15 @@
 import { z } from 'zod';
 
+const TAB = 0x09;
+const LINE_FEED = 0x0a;
+const FIRST_PRINTABLE = 0x20;
+const DELETE = 0x7f;
+
 // Tab and newline are the only control characters user text may contain.
-const safeText = (value: string): boolean =>
+const isSafeText = (value: string): boolean =>
     [...value].every((character) => {
         const code = character.codePointAt(0) ?? 0;
-        return code === 9 || code === 10 || (code >= 32 && code !== 127);
+        return code === TAB || code === LINE_FEED || (code >= FIRST_PRINTABLE && code !== DELETE);
     });
 
 /** Trimmed single-line text such as a name. */
@@ -14,7 +19,10 @@ export function singleLineText(min: number, max: number) {
         .trim()
         .min(min)
         .max(max)
-        .refine((value) => safeText(value) && !/[\r\n]/u.test(value), 'Use a single line of text.');
+        .refine(
+            (value) => isSafeText(value) && !/[\r\n]/u.test(value),
+            'Use a single line of text.',
+        );
 }
 
 /** Trimmed multi-line text with normalised line endings, such as a message. */
@@ -22,7 +30,7 @@ export function multilineText(min: number, max: number) {
     return z
         .string()
         .transform((value) => value.replace(/\r\n?/gu, '\n').trim())
-        .pipe(z.string().min(min).max(max).refine(safeText, 'Remove control characters.'));
+        .pipe(z.string().min(min).max(max).refine(isSafeText, 'Remove control characters.'));
 }
 
 /** An optional form field where an empty string means "not provided". */

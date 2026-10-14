@@ -4,7 +4,7 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
-const path = '/sessions/30000000-0000-4000-8000-000000000042';
+const PATH = '/sessions/30000000-0000-4000-8000-000000000042';
 async function authenticate(context: BrowserContext, scenario = '', token?: string) {
     await context.addCookies([
         {
@@ -23,7 +23,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'hidden-anonymous');
-        await page.goto(path);
+        await page.goto(PATH);
         await expect(
             page.getByText('Nominations are hidden until you submit your own Movie.'),
         ).toBeVisible();
@@ -48,7 +48,7 @@ test('Search selection and failure/offline states retain the selected Movie', as
     page,
 }) => {
     await authenticate(context, 'failure');
-    await page.goto(path);
+    await page.goto(PATH);
     const search = page.getByRole('combobox', { name: 'Select a Movie' });
     await search.fill('Dune');
     await expect(page.getByRole('option').first()).toBeVisible();
@@ -63,7 +63,7 @@ test('Search selection and failure/offline states retain the selected Movie', as
     await page.getByRole('button', { name: 'Nominate This' }).click();
     await expect(
         page.getByText(
-            'You appear to be offline. Reconnect before continuing; your selection is still here.',
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
         ),
     ).toBeVisible();
 });
@@ -73,7 +73,7 @@ test('Operator early close traps and returns focus and requires confirmation', a
     page,
 }) => {
     await authenticate(context, 'operator');
-    await page.goto(path);
+    await page.goto(PATH);
     const close = page.getByRole('button', { name: 'Close nominations early' });
     await close.click();
     await expect(page.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
@@ -96,7 +96,7 @@ for (const viewport of canonicalViewports) {
     }) => {
         await authenticate(context);
         await page.setViewportSize(viewport);
-        await page.goto(path, { waitUntil: 'load' });
+        await page.goto(PATH, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         expect(
@@ -118,7 +118,7 @@ test(
         const actorPage = await actor.newPage();
         const viewerPage = await viewer.newPage();
         try {
-            await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
+            await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
             await expect(viewerPage.getByText('1 of 3 participants have nominated.')).toBeVisible();
             await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
             await actorPage.getByRole('button', { name: 'Nominate This' }).click();
@@ -137,7 +137,7 @@ test(
     },
 );
 
-test('Progress polling recovers when the live stream is unavailable', async ({ browser }) => {
+test('Progress polling shows another participant nomination', async ({ browser }) => {
     const actor = await browser.newContext();
     const viewer = await browser.newContext();
     const token = `valid-nomination-live-${crypto.randomUUID()}`;
@@ -145,12 +145,8 @@ test('Progress polling recovers when the live stream is unavailable', async ({ b
     await authenticate(viewer, '', token);
     const actorPage = await actor.newPage();
     const viewerPage = await viewer.newPage();
-    await viewerPage.route('**/progress/events', (route) => route.abort());
     try {
-        await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
-        await expect(
-            viewerPage.getByText('Live updates unavailable. Progress refreshes periodically.'),
-        ).toBeVisible();
+        await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
         await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
         await actorPage.getByRole('button', { name: 'Nominate This' }).click();
         await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible({
@@ -175,7 +171,7 @@ for (const projection of ['detail', 'roster']) {
             const actorPage = await actor.newPage();
             const viewerPage = await viewer.newPage();
             try {
-                await Promise.all([actorPage.goto(path), viewerPage.goto(path)]);
+                await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
                 await expect(
                     viewerPage.getByText('1 of 3 participants have nominated.'),
                 ).toBeVisible();
@@ -186,9 +182,10 @@ for (const projection of ['detail', 'roster']) {
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toBeVisible();
+                // Recovery waits for the failure window and one or two progress polls.
                 await expect(
                     viewerPage.getByText('2 of 3 participants have nominated.'),
-                ).toBeVisible();
+                ).toBeVisible({ timeout: 20000 });
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toHaveCount(0);
@@ -205,11 +202,8 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'split-roster');
-        await page.route('**/progress/events', async (route) => {
-            await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
-            await route.continue();
-        });
-        await page.goto(path);
+        await page.goto(PATH);
+        await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('1 of 2 participants have nominated.')).toBeVisible();
         await expect(page.getByText('2 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);

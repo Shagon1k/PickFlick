@@ -1,3 +1,4 @@
+import { CLUB_SELECTION_SCALE_CEILING } from '@pickflick/contracts';
 /** Club score scales are inclusive 0..N or 1..N ranges with N no greater than 10. */
 export function createInclusiveScale(min: number, max: number): number[] {
     if (
@@ -5,7 +6,7 @@ export function createInclusiveScale(min: number, max: number): number[] {
         !Number.isInteger(max) ||
         (min !== 0 && min !== 1) ||
         max < min ||
-        max > 10
+        max > CLUB_SELECTION_SCALE_CEILING
     ) {
         throw new RangeError(
             'Scale must be an inclusive 0..N or 1..N range with N no greater than 10.',

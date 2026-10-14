@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 
 import styles from './Modal.module.scss';
 
+const FADE_DURATION_MS = 200;
+
 export interface IModalProps {
     open: boolean;
     title: string;
@@ -50,7 +52,7 @@ export default function Modal({
             returnFocus
             size="min(560px, calc(100vw - 32px))"
             title={title}
-            transitionProps={{ duration: 200, transition: 'fade-down' }}
+            transitionProps={{ duration: FADE_DURATION_MS, transition: 'fade-down' }}
             trapFocus
             unstyled
             withCloseButton={dismissible}

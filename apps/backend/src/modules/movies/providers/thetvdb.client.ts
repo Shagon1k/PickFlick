@@ -1,13 +1,15 @@
-import { movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
+import { MOVIE_CAST_LIMIT, movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
 import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     MovieProviderError,
     parseSourceSnapshot,
     type TSourceSnapshot,
 } from './movie-provider.js';
+
+const MAX_REMOTE_ID_MATCHES = 100;
 
 const id = z.number().int().positive();
 const response = <TData extends z.ZodType>(data: TData) =>
@@ -50,12 +52,6 @@ const extended = z.object({
         .nullish(),
 });
 export class ThetvdbClient {
-    get enabled() {
-        return this.settings.enabled;
-    }
-    get configurationKey() {
-        return `thetvdb:v1:enabled=${this.settings.enabled}`;
-    }
     private http: MovieHttp;
     constructor(
         private settings: { enabled: boolean; readToken?: string; timeoutMs: number },
@@ -68,37 +64,16 @@ export class ThetvdbClient {
             request,
         );
     }
-    async details(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
+    async fetchDetails(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
         if (!this.settings.enabled || !this.settings.readToken)
             throw new MovieProviderError('DISABLED', undefined, 'thetvdb');
         const fetchedAt = new Date().toISOString();
         const imdb = externalIds.find((id) => id.source === 'imdb')?.externalId;
-        let tvdbId = externalIds.find((id) => id.source === 'thetvdb')?.externalId;
-        if (!tvdbId && !imdb)
-            throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
-        if (!tvdbId && imdb) {
-            const found = await this.http.get(
-                `/v4/search/remoteid/${imdb}`,
-                response(z.array(z.object({ movie: z.object({ id }).nullish() })).max(100)),
-                this.headers(),
-            );
-            const candidates = [
-                ...new Set(
-                    found.data.flatMap((result) => (result.movie ? [String(result.movie.id)] : [])),
-                ),
-            ];
-            if (candidates.length > 1)
-                throw new MovieProviderError('IDENTITY_CONFLICT', undefined, 'thetvdb');
-            tvdbId = candidates[0];
-        }
-        if (!tvdbId)
-            throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb', [
-                { source: 'thetvdb', attemptedAt: fetchedAt },
-            ]);
+        const tvdbId = await this.resolveTvdbId(externalIds, imdb);
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,
             response(extended),
-            this.headers(),
+            this.buildHeaders(),
         );
         const movie = result.data;
         if (String(movie.id) !== tvdbId)
@@ -118,7 +93,7 @@ export class ThetvdbClient {
             externalIds: mappedIds,
             similarExternalIds: null,
             data: {
-                ...emptyMetadata(),
+                ...createEmptyMetadata(),
                 title:
                     movie.translations?.nameTranslations?.find((text) => text.language === 'eng')
                         ?.name || null,
@@ -148,7 +123,7 @@ export class ThetvdbClient {
                                 person.peopleType.toLowerCase() === 'actor' && person.personName,
                         )
                         .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-                        .slice(0, 50)
+                        .slice(0, MOVIE_CAST_LIMIT)
                         .map((person) => ({
                             name: person.personName ?? '',
                             character: person.name || null,
@@ -157,7 +132,30 @@ export class ThetvdbClient {
             },
         });
     }
-    private headers() {
+    /** A known TheTVDB ID, or the single movie TheTVDB maps to the IMDb ID. */
+    private async resolveTvdbId(externalIds: TMovieExternalId[], imdb: string | undefined) {
+        const known = externalIds.find((id) => id.source === 'thetvdb')?.externalId;
+        if (known) return known;
+        if (!imdb) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
+        const found = await this.http.get(
+            `/v4/search/remoteid/${imdb}`,
+            response(
+                z.array(z.object({ movie: z.object({ id }).nullish() })).max(MAX_REMOTE_ID_MATCHES),
+            ),
+            this.buildHeaders(),
+        );
+        const candidates = [
+            ...new Set(
+                found.data.flatMap((result) => (result.movie ? [String(result.movie.id)] : [])),
+            ),
+        ];
+        if (candidates.length > 1)
+            throw new MovieProviderError('IDENTITY_CONFLICT', undefined, 'thetvdb');
+        if (!candidates[0]) throw new MovieProviderError('NOT_FOUND', undefined, 'thetvdb');
+        return candidates[0];
+    }
+
+    private buildHeaders() {
         return {
             Authorization: `Bearer ${this.settings.readToken ?? ''}`,
             Accept: 'application/json',

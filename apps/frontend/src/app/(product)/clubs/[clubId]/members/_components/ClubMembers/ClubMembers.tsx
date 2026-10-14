@@ -4,27 +4,29 @@ import type { IClubMember, IClubSettings } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 
-import { initialClubActionState } from '@/app/(product)/clubs/[clubId]/settings/action-state';
-import { removeClubMemberAction } from '@/app/(product)/clubs/[clubId]/settings/actions';
-import ClubStatus from '@/components/clubs/ClubStatus/ClubStatus';
-import { clubNavigation } from '@/components/shells/shell-navigation';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/settings/action-state';
+import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/settings/actions';
+import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import { formatUtcDate, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
 export default function ClubMembers({ projection }: { projection: IClubSettings }) {
     const [selected, setSelected] = useState<IClubMember | null>(null);
     const [message, setMessage] = useState('');
-    const [pending, setPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const returnToHeading = useRef(false);
+    const returnToHeadingRef = useRef(false);
     const { club, permissions, members, currentMembershipId } = projection;
-    async function remove(formData: FormData) {
+    async function remove(confirmation: string) {
         if (!selected) return;
-        setPending(true);
+        const formData = new FormData();
+        formData.set('confirmation', confirmation);
+        setIsPending(true);
         try {
             const result = await removeClubMemberAction(
                 club.id,
@@ -34,7 +36,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
             );
             setMessage(result.message);
             if (result.status === 'success') {
-                returnToHeading.current = true;
+                returnToHeadingRef.current = true;
                 setSelected(null);
             }
         } catch {
@@ -42,7 +44,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 'Member removal could not be confirmed. Reload to check the roster, then retry.',
             );
         } finally {
-            setPending(false);
+            setIsPending(false);
         }
     }
     const roleExplanation = {
@@ -61,7 +63,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 </p>
             </header>
             <nav aria-label="Club sections" className={styles.tabs}>
-                {clubNavigation(club.id, 'members').map((item) => (
+                {buildClubNavigation(club.id, 'members').map((item) => (
                     <Link
                         aria-current={item.current ? 'page' : undefined}
                         href={item.href}
@@ -89,7 +91,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     <li className={styles.member} key={member.id}>
                         <div className={styles.identity}>
                             <span aria-hidden="true" className={styles.monogram}>
-                                {member.displayName.slice(0, 2).toUpperCase()}
+                                {getMonogram(member.displayName)}
                             </span>
                             <div>
                                 <strong>
@@ -98,16 +100,11 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                                 </strong>
                                 <small>
                                     {member.role.toLowerCase()} · Joined{' '}
-                                    {new Date(member.joinedAt).toLocaleDateString('en', {
-                                        timeZone: 'UTC',
-                                    })}
+                                    {formatUtcDate(member.joinedAt)}
                                 </small>
                             </div>
                         </div>
-                        {permissions.manageMembers &&
-                        member.id !== currentMembershipId &&
-                        member.role !== 'ADMIN' &&
-                        (club.membershipRole === 'ADMIN' || member.role === 'MEMBER') ? (
+                        {member.canRemove ? (
                             <Button
                                 aria-label={`Remove ${member.displayName}`}
                                 onClick={() => {
@@ -122,48 +119,32 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     </li>
                 ))}
             </ul>
-            <Modal
-                dismissible={!pending}
+            <ConfirmDialog
+                confirmLabel="Confirm removal"
+                inputId="remove-confirmation"
                 onClose={() => setSelected(null)}
+                onConfirm={(confirmation) => void remove(confirmation)}
                 onExitTransitionEnd={() => {
-                    if (returnToHeading.current) {
+                    if (returnToHeadingRef.current) {
                         headingRef.current?.focus();
-                        returnToHeading.current = false;
+                        returnToHeadingRef.current = false;
                     }
                 }}
                 open={Boolean(selected)}
-                title="Remove this member?"
-                tone="danger"
-            >
-                <form action={remove} className={styles.confirmation}>
-                    <p>
-                        {selected?.displayName} will lose access to this private Club. Shared Club
-                        and Session history remains.
-                    </p>
-                    <TextInput
-                        id="remove-confirmation"
-                        autoComplete="off"
-                        label="Type REMOVE to confirm"
-                        name="confirmation"
-                        required
-                    />
+                pending={isPending}
+                status={
                     <p aria-live="polite" role="status">
                         {message}
                     </p>
-                    <div className={styles.actions}>
-                        <Button
-                            disabled={pending}
-                            onClick={() => setSelected(null)}
-                            variant="secondary"
-                        >
-                            Cancel
-                        </Button>
-                        <Button loading={pending} type="submit" variant="danger">
-                            Confirm removal
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+                }
+                title="Remove this member?"
+                word="REMOVE"
+            >
+                <p>
+                    {selected?.displayName} will lose access to this private Club. Shared Club and
+                    Session history remains.
+                </p>
+            </ConfirmDialog>
         </main>
     );
 }

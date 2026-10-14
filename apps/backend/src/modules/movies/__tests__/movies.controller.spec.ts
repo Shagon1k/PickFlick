@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
-import { canonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
+import { buildCanonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
 import { MovieImagesService } from '../movie-images.service.js';
@@ -13,7 +13,7 @@ import { MoviesService } from '../movies.service.js';
 describe('MoviesController', () => {
     let app: NestExpressApplication;
     let url: string;
-    const detailsResponse = vi.fn<MoviesService['detailsResponse']>();
+    const getDetailsResponse = vi.fn<MoviesService['getDetailsResponse']>();
     const getImage = vi.fn<MovieImagesService['get']>();
     const storeMedia = vi.fn<MovieImagesService['storeMedia']>();
     const search = vi.fn<MoviesService['search']>();
@@ -24,7 +24,7 @@ describe('MoviesController', () => {
             providers: [
                 AuthGuard,
                 { provide: MovieImagesService, useValue: { get: getImage, storeMedia } },
-                { provide: MoviesService, useValue: { search, detailsResponse } },
+                { provide: MoviesService, useValue: { search, getDetailsResponse } },
                 {
                     provide: AuthService,
                     useValue: {
@@ -43,16 +43,16 @@ describe('MoviesController', () => {
         search.mockReset();
         getImage.mockReset();
         storeMedia.mockReset();
-        detailsResponse.mockReset();
+        getDetailsResponse.mockReset();
     });
     afterAll(() => app.close());
 
-    function request(body: unknown, authenticated = true) {
+    function request(body: unknown, isAuthenticated = true) {
         return fetch(url, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
-                ...(authenticated ? { 'x-test-user': 'user' } : {}),
+                ...(isAuthenticated ? { 'x-test-user': 'user' } : {}),
             },
             body: JSON.stringify(body),
         });
@@ -65,8 +65,8 @@ describe('MoviesController', () => {
             (await fetch(url.replace('/search', '/100'), { headers: { 'x-test-user': 'user' } }))
                 .status,
         ).toBe(400);
-        expect(detailsResponse).not.toHaveBeenCalled();
-        detailsResponse.mockResolvedValue({
+        expect(getDetailsResponse).not.toHaveBeenCalled();
+        getDetailsResponse.mockResolvedValue({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
             links: { imdb: null },
         });
@@ -76,7 +76,7 @@ describe('MoviesController', () => {
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
             links: { imdb: null },
         });
-        expect(detailsResponse).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000100');
+        expect(getDetailsResponse).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000100');
     });
 
     it('should guard stored images, validate keys and serve bytes from storage', async () => {
@@ -103,10 +103,10 @@ describe('MoviesController', () => {
     });
 
     it('should replace internal image URLs in successful detail responses', async () => {
-        const data = canonicalDetails();
+        const data = buildCanonicalDetails();
         const stored = { ...data, posterUrl: `/api/movies/images/${'a'.repeat(64)}` };
         storeMedia.mockResolvedValue(stored);
-        detailsResponse.mockResolvedValue({
+        getDetailsResponse.mockResolvedValue({
             result: { state: 'fresh', data, fetchedAt: '2026-10-10T12:00:00.000Z' },
             links: { imdb: null },
         });
@@ -124,7 +124,7 @@ describe('MoviesController', () => {
         'should omit unused search media from $state results without ingestion',
         async (result) => {
             const data = {
-                ...canonicalDetails(),
+                ...buildCanonicalDetails(),
                 backdropUrl: 'https://image.tmdb.org/backdrop.jpg',
             };
             search.mockResolvedValue({
@@ -150,7 +150,7 @@ describe('MoviesController', () => {
     it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {
         vi.useFakeTimers();
         try {
-            const data = canonicalDetails();
+            const data = buildCanonicalDetails();
             search.mockImplementation(
                 () =>
                     new Promise((resolve) => {

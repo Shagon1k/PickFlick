@@ -1,12 +1,14 @@
+import { HTTP_STATUS } from '@pickflick/contracts';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { loginPath } from '@/api/session.server';
-import { getSessionRoster } from '@/api/session-roster.server';
-import { getSession } from '@/api/sessions.server';
-import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { ApiError } from '@/lib/api.server';
+import { buildLoginPath } from '#api/session.server';
+import { getSessionRoster } from '#api/session-roster.server';
+import { getSession } from '#api/sessions.server';
+import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { ApiError } from '#lib/api.server';
+import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
 import SessionDetails from './_components/SessionDetails/SessionDetails';
 import SessionProgress from './_components/SessionProgress/SessionProgress';
@@ -21,9 +23,9 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     try {
         [session, roster] = await Promise.all([getSession(sessionId), getSessionRoster(sessionId)]);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/sessions/${sessionId}`));
-        if (error instanceof ApiError && [400, 404].includes(error.status)) notFound();
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+            redirect(buildLoginPath(`/sessions/${sessionId}`));
+        if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status)) notFound();
         return (
             <ProductFrame>
                 <SessionProgress sessionId={sessionId} version={null} />

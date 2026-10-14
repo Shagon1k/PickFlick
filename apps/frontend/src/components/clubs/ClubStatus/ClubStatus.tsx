@@ -1,6 +1,6 @@
 import type { IClubAccess } from '@pickflick/contracts';
 
-import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
+import StatusBanner from '#components/ui/StatusBanner/StatusBanner';
 
 export default function ClubStatus({ access }: { access: IClubAccess }) {
     if (access.reasons.length === 0) return null;

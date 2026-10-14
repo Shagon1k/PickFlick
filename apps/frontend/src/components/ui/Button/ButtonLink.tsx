@@ -4,7 +4,7 @@ import { Button as MantineButton } from '@mantine/core';
 import Link from 'next/link';
 import type { AnchorHTMLAttributes } from 'react';
 
-import { buttonClassName, type TButtonSize, type TButtonVariant } from './Button';
+import { getButtonClassName, type TButtonSize, type TButtonVariant } from './Button';
 import styles from './Button.module.scss';
 
 export interface IButtonLinkProps extends Omit<
@@ -30,7 +30,7 @@ export default function ButtonLink({
         <MantineButton
             {...props}
             aria-disabled={disabled || undefined}
-            classNames={{ root: buttonClassName(variant, size), label: styles.button__label }}
+            classNames={{ root: getButtonClassName(variant, size), label: styles.button__label }}
             component="a"
             href={disabled ? undefined : href}
             onClick={disabled ? (event) => event.preventDefault() : onClick}

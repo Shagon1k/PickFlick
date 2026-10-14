@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = 'http://127.0.0.1:41730';
+const BASE_URL = 'http://127.0.0.1:41730';
 
 export default defineConfig({
     expect: {
@@ -29,7 +29,7 @@ export default defineConfig({
     testDir: 'tests/ui',
     timeout: 60_000,
     use: {
-        baseURL,
+        baseURL: BASE_URL,
         colorScheme: 'dark',
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
@@ -37,10 +37,10 @@ export default defineConfig({
     },
     webServer: {
         command:
-            'pnpm build:packages && BACKEND_INTERNAL_URL=http://127.0.0.1:42731 pnpm --filter @pickflick/frontend build && cp -R apps/frontend/.next/static apps/frontend/.next/standalone/apps/frontend/.next/static && node tests/ui/start-frontend-with-mock-api.mjs',
+            'pnpm build:packages && BACKEND_INTERNAL_URL=http://127.0.0.1:42731 pnpm --filter @pickflick/frontend build && cp -R apps/frontend/.next/static apps/frontend/.next/standalone/apps/frontend/.next/static && node tests/ui/start-frontend-with-mock-api.ts',
         reuseExistingServer: false,
         timeout: 180_000,
-        url: `${baseURL}/ui-preview`,
+        url: `${BASE_URL}/ui-preview`,
     },
     workers: 1,
 });

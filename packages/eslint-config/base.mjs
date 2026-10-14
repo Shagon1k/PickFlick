@@ -13,13 +13,10 @@ import globals from 'globals';
 import { resolve } from 'node:path';
 import tseslint from 'typescript-eslint';
 
+import { restrictedSyntax } from './restricted-syntax.mjs';
+
 const reactConfig = reactPlugin.configs['recommended-typescript'];
 const repositoryRoot = resolve(import.meta.dirname, '../..');
-
-const noReadonlyWrapper = {
-    selector: "TSTypeReference[typeName.name='Readonly']",
-    message: 'Write plain types; props and data are not wrapped in Readonly<>.',
-};
 
 export default [
     {
@@ -74,11 +71,28 @@ export default [
         },
         rules: {
             curly: ['error', 'all'],
+            // Rules from the Airbnb and Google guides that the house style keeps.
+            eqeqeq: ['error', 'always'],
+            'no-else-return': ['error', { allowElseIf: false }],
+            'object-shorthand': ['error', 'always'],
+            'prefer-template': 'error',
+            // Delete code instead of commenting it out; history keeps it.
+            'sonarjs/no-commented-code': 'error',
             // Props are plain types in this codebase (see .agent-docs/rules/typescript.md).
             'sonarjs/prefer-read-only-props': 'off',
             'no-duplicate-imports': 'error',
             // A file past 300 lines holds more than one idea; split it.
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+            // Tighter than SonarJS's default 15: past 12, extract a named step.
+            'sonarjs/cognitive-complexity': ['error', 12],
+            // Past four arguments, pass one object so call sites name what they send.
+            'max-params': ['error', 4],
+            // Name callback parameters after the item (`members.map((member) => ...)`); `a` and `b`
+            // stay for sort comparators, `i` for a loop counter, `_` for an unused position.
+            'id-length': [
+                'error',
+                { min: 2, exceptions: ['_', 'a', 'b', 'i'], properties: 'never' },
+            ],
         },
     },
     {
@@ -86,6 +100,8 @@ export default [
         files: ['**/__tests__/**', 'tests/**'],
         rules: {
             'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+            'sonarjs/cognitive-complexity': ['error', 15],
+            'max-params': 'off',
         },
     },
     {
@@ -104,8 +120,22 @@ export default [
                 'error',
                 { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
                 { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
+                // A boolean reads as a question. Destructured names come from object properties and
+                // props (API fields, DOM attributes), which keep their own names.
+                {
+                    selector: ['variable', 'parameter'],
+                    types: ['boolean'],
+                    format: ['PascalCase'],
+                    prefix: ['is', 'are', 'has', 'can', 'should', 'was', 'did', 'will', 'with'],
+                },
+                {
+                    selector: ['variable', 'parameter'],
+                    modifiers: ['destructured'],
+                    types: ['boolean'],
+                    format: null,
+                },
             ],
-            'no-restricted-syntax': ['error', noReadonlyWrapper],
+            'no-restricted-syntax': restrictedSyntax({ withNumbers: true }),
             'check-file/filename-naming-convention': [
                 'error',
                 { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
@@ -116,16 +146,8 @@ export default [
     {
         files: ['apps/frontend/**/*.{ts,tsx}'],
         rules: {
-            // Restating the rule replaces the shared entry, so the Readonly ban is listed again.
-            'no-restricted-syntax': [
-                'error',
-                noReadonlyWrapper,
-                {
-                    selector: 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^[A-Z]/]',
-                    message:
-                        'Export a component as the default export of its own file (export default function Name).',
-                },
-            ],
+            // A restated rule replaces the shared entry; restrictedSyntax() keeps the lists aligned.
+            'no-restricted-syntax': restrictedSyntax({ withNumbers: true, withFrontend: true }),
             'no-restricted-imports': [
                 'error',
                 {
@@ -149,7 +171,7 @@ export default [
                     'apps/frontend/src/components/*/': 'KEBAB_CASE',
                     'apps/frontend/src/components/*/!(__tests__)/': 'PASCAL_CASE',
                 },
-                { ignoreWords: ['clubs', 'navigation', 'sessions', 'shells', 'ui'] },
+                { ignoreWords: ['clubs', 'movies', 'navigation', 'sessions', 'shells', 'ui'] },
             ],
         },
     },
@@ -234,6 +256,21 @@ export default [
         plugins: { '@next/next': nextPlugin },
         settings: { next: { rootDir: 'apps/frontend' } },
         rules: nextPlugin.configs['core-web-vitals'].rules,
+    },
+    {
+        // Tests and Playwright suites keep literal expectations.
+        files: [
+            '**/__tests__/**',
+            'tests/**',
+            '**/*.config.ts',
+            'apps/backend/src/testing/**',
+            'apps/frontend/src/app/(internal)/**',
+        ],
+        rules: { 'no-restricted-syntax': restrictedSyntax() },
+    },
+    {
+        files: ['apps/frontend/**/__tests__/**', 'apps/frontend/src/app/(internal)/**'],
+        rules: { 'no-restricted-syntax': restrictedSyntax({ withFrontend: true }) },
     },
     {
         files: ['**/__tests__/**/*.{ts,tsx}'],

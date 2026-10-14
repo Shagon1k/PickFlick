@@ -1,23 +1,23 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import PendingInvites from '@/components/clubs/PendingInvites/PendingInvites';
-import Brand from '@/components/shells/Brand/Brand';
-import MobileProductNavigation from '@/components/shells/MobileProductNavigation/MobileProductNavigation';
-import ProductHeaderActions from '@/components/shells/ProductHeaderActions/ProductHeaderActions';
-import ProductOverlayProvider from '@/components/shells/ProductOverlayProvider/ProductOverlayProvider';
-import ProductSearch from '@/components/shells/ProductSearch/ProductSearch';
+import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
+import Brand from '#components/shells/Brand/Brand';
+import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
+import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
+import ProductOverlayProvider from '#components/shells/ProductOverlayProvider/ProductOverlayProvider';
+import ProductSearch from '#components/shells/ProductSearch/ProductSearch';
 import {
-    accountNavigation,
+    buildAccountNavigation,
+    buildMobileNavigation,
+    buildProductNavigation,
     canonicalRoutes,
     type IShellNavigationItem,
     type IShellRouteMap,
-    mobileNavigation,
-    productNavigation,
     type TShellArea,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
-import SiteFooter from '@/components/shells/SiteFooter/SiteFooter';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
+import SiteFooter from '#components/shells/SiteFooter/SiteFooter';
 
 interface IProductChromeProps {
     admin?: boolean;
@@ -42,7 +42,7 @@ export default function ProductChrome({
     sessionBackHref,
     settingsItems,
 }: IProductChromeProps) {
-    const desktopItems = (currentArea === 'session' ? [] : productNavigation(routes)).map(
+    const desktopItems = (currentArea === 'session' ? [] : buildProductNavigation(routes)).map(
         (item) => ({
             ...item,
             current:
@@ -76,7 +76,9 @@ export default function ProductChrome({
                                     ← Back to Hub
                                 </Link>
                             ) : null}
-                            <ProductHeaderActions accountItems={accountNavigation(routes, admin)} />
+                            <ProductHeaderActions
+                                accountItems={buildAccountNavigation(routes, admin)}
+                            />
                         </div>
                     </div>
                     <ProductSearch />
@@ -85,7 +87,7 @@ export default function ProductChrome({
                 <SiteFooter routes={routes} />
                 <PendingInvites />
                 <MobileProductNavigation
-                    entries={mobileNavigation({
+                    entries={buildMobileNavigation({
                         admin,
                         clubItems,
                         currentArea,

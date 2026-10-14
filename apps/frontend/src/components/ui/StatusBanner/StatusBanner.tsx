@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { TFeedbackTone } from '@/components/ui/Alert/Alert';
+import type { TFeedbackTone } from '#components/ui/Alert/Alert';
 
 import styles from './StatusBanner.module.scss';
 

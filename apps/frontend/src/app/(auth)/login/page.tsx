@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getSessionState, isAppleSignInEnabled } from '@/api/session.server';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Icon from '@/components/ui/Icon/Icon';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
+import { getSessionState, isAppleSignInEnabled } from '#api/session.server';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import Icon from '#components/ui/Icon/Icon';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
 import LoginActions from './_components/LoginActions/LoginActions';
-import { firstSearchValue } from './login.utils';
-import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
+import { getFirstSearchValue } from './login.utils';
+import { resolveLoginErrorMessage, SESSION_UNAVAILABLE_MESSAGE } from './login-errors';
 import styles from './page.module.scss';
 
 export const metadata: Metadata = {
@@ -26,16 +26,16 @@ export default async function LoginPage({
 }) {
     await connection();
     const parameters = await searchParams;
-    const returnTo = resolveAuthReturnTarget(firstSearchValue(parameters.returnTo));
+    const returnTo = resolveAuthReturnTarget(getFirstSearchValue(parameters.returnTo));
     const session = await getSessionState();
     if (session === 'authenticated') {
         redirect(returnTo);
     }
-    const appleSignInEnabled = isAppleSignInEnabled();
+    const isAppleEnabled = isAppleSignInEnabled();
     // Sign-in stays available during a session-API outage; the notice explains a stale signed-in state.
     const errorMessage =
-        resolveLoginErrorMessage(firstSearchValue(parameters.error)) ??
-        (session === 'unavailable' ? sessionUnavailableMessage : undefined);
+        resolveLoginErrorMessage(getFirstSearchValue(parameters.error)) ??
+        (session === 'unavailable' ? SESSION_UNAVAILABLE_MESSAGE : undefined);
 
     return (
         <main className={styles.page}>
@@ -59,7 +59,7 @@ export default async function LoginPage({
                             {errorMessage}
                         </p>
                     ) : null}
-                    <LoginActions appleSignInEnabled={appleSignInEnabled} returnTo={returnTo} />
+                    <LoginActions appleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}
                         <Link href="/legal/terms">Terms of Service</Link> and{' '}

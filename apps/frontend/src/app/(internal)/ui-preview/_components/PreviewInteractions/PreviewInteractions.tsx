@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import RatingControl from '@/components/ui/ScaleControl/RatingControl';
-import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
+import Button from '#components/ui/Button/Button';
+import Modal from '#components/ui/Modal/Modal';
+import RatingControl from '#components/ui/ScaleControl/RatingControl';
+import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 
 import styles from '../../page.module.scss';
 
 export default function PreviewInteractions() {
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [dangerDialogOpen, setDangerDialogOpen] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isDangerDialogOpen, setIsDangerDialogOpen] = useState(false);
     const [adjustableMax, setAdjustableMax] = useState(5);
 
     return (
@@ -44,17 +44,17 @@ export default function PreviewInteractions() {
                 {adjustableMax === 5 ? 'Reduce adjustable scale' : 'Restore adjustable scale'}
             </Button>
             <div className={styles.dialogActions}>
-                <Button onClick={() => setDialogOpen(true)} variant="secondary">
+                <Button onClick={() => setIsDialogOpen(true)} variant="secondary">
                     Open dialog
                 </Button>
-                <Button onClick={() => setDangerDialogOpen(true)} variant="secondary-danger">
+                <Button onClick={() => setIsDangerDialogOpen(true)} variant="secondary-danger">
                     Delete Club
                 </Button>
             </div>
             <Modal
-                actions={<Button onClick={() => setDialogOpen(false)}>Continue</Button>}
-                onClose={() => setDialogOpen(false)}
-                open={dialogOpen}
+                actions={<Button onClick={() => setIsDialogOpen(false)}>Continue</Button>}
+                onClose={() => setIsDialogOpen(false)}
+                open={isDialogOpen}
                 title="Move to Selection?"
             >
                 Members who have not nominated will lose their remaining nomination opportunity.
@@ -62,16 +62,16 @@ export default function PreviewInteractions() {
             <Modal
                 actions={
                     <>
-                        <Button onClick={() => setDangerDialogOpen(false)} variant="secondary">
+                        <Button onClick={() => setIsDangerDialogOpen(false)} variant="secondary">
                             Cancel
                         </Button>
-                        <Button onClick={() => setDangerDialogOpen(false)} variant="danger">
+                        <Button onClick={() => setIsDangerDialogOpen(false)} variant="danger">
                             Delete Club
                         </Button>
                     </>
                 }
-                onClose={() => setDangerDialogOpen(false)}
-                open={dangerDialogOpen}
+                onClose={() => setIsDangerDialogOpen(false)}
+                open={isDangerDialogOpen}
                 title="Delete Friday Night?"
                 tone="danger"
             >

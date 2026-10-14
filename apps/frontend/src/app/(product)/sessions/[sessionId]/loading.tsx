@@ -1,4 +1,4 @@
-import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
+import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 
 import styles from './page.module.scss';
 

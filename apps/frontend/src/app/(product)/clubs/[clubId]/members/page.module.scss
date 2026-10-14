@@ -91,18 +91,6 @@
     border-radius: var(--radius);
 }
 
-.confirmation {
-    display: grid;
-    gap: var(--gap-md);
-}
-
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    justify-content: flex-end;
-}
-
 @media (width < 576px) {
     .layout {
         width: calc(100% - var(--gap-md) * 2);

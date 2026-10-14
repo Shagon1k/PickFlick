@@ -2,7 +2,9 @@ import { createHash } from 'node:crypto';
 
 import type { IClubSummary, TClubRole } from '@pickflick/contracts';
 
-import { clubEntitlements } from './club-tiers.js';
+import { getClubEntitlements } from './access/club-tiers.js';
+
+const AVATAR_VERSION_LENGTH = 16;
 
 interface IClubRow {
     id: string;
@@ -26,13 +28,13 @@ export function toClubSummary(club: IClubRow, role: TClubRole): IClubSummary {
                   avatarVersion: createHash('sha256')
                       .update(club.avatarObjectKey)
                       .digest('hex')
-                      .slice(0, 16),
+                      .slice(0, AVATAR_VERSION_LENGTH),
               }
             : {}),
         lifecycle: club.lifecycle,
         membershipRole: role,
         selectionScaleMin: club.selectionScaleMin === 1 ? 1 : 0,
         selectionScaleMax: club.selectionScaleMax,
-        tier: clubEntitlements(club.id).tier,
+        tier: getClubEntitlements(club.id).tier,
     };
 }

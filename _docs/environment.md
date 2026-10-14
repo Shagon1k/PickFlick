@@ -116,25 +116,23 @@ and exits with status 1.
 toolchain:
 
 - **Secret scan** — gitleaks over history.
-- **Dependency security** — `pnpm security:audit` (full raw audit with the verified temporary braces
-  exception; see [Security](security.md)), independently of the static checks.
+- **Dependency security** — `pnpm security:audit` (production dependencies, high and critical;
+  see [Security](security.md)), independently of the static checks.
 - **Lint, type-check, test** — ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
-  `pnpm test:integration`, and `pnpm test:e2e` against the built frontend and backend. CI layers
+  `pnpm test:integration`, `pnpm test:e2e` against the built frontend and backend, and
+  `pnpm test:journeys` (browser journeys through the real web app and API). CI layers
   `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
-- **UI smoke** — six tagged checks with `pnpm test:ui:smoke` on PRs, covering security headers,
-  CSP, public accessibility and interaction, product navigation, and 1024px overflow.
-- **UI contract** — the full `pnpm test:ui:contract` selection on `main` pushes and manual CI runs,
-  including accessibility, interaction, CSP, and responsive behavior checks.
-- **UI visual** — `pnpm test:ui:visual` on `main` pushes and manual CI dispatches. All UI jobs use
-  the same digest-pinned Linux Playwright image; failures upload screenshots, diffs, traces, and
-  the HTML report.
+- **UI** — one matrix job on the digest-pinned Linux Playwright image. PRs run `smoke`
+  (`pnpm test:ui:smoke`: security headers, CSP, public accessibility and interaction, product
+  navigation, 1024px overflow). `main` pushes and manual runs run `contract`
+  (`pnpm test:ui:contract`: accessibility, interaction, CSP, responsive behavior) and `visual`
+  (`pnpm test:ui:visual`). Failures upload screenshots, diffs, traces, and the HTML report.
 - **Images** — `pnpm build:images`.
 
 A terminal `Delivery gate` job always requires successful secret scan, dependency security, static,
-integration, and image jobs. It requires the smoke job and skipped full UI jobs on PRs. On `main`
-pushes and manual runs, it requires both full UI jobs and a skipped smoke job. UAT deployment waits for a
+integration, image, and UI jobs; the UI matrix picks its suites from the event. UAT deployment waits for a
 successful `main` push CI run, including visual regression. The production image build remains on
 PRs because it verifies all four release targets; path gating would remove that check from some
 code changes without equivalent release-image evidence.
@@ -205,15 +203,15 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 
 The worker reads only `APP_ENV` and `DATABASE_URL` through the existing database environment schema.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
-`pnpm test:worker` checks built-process overdue repair, restart idempotence and graceful shutdown
+`pnpm test:worker` checks built-process overdue decisions, restart idempotence and graceful shutdown
 against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
 
-The worker polls every five seconds and processes database-only transactions sequentially. It repairs
-missing overdue jobs before executing due intent. `deadline.reconciliation` records the repair count;
-`deadline.repaired`, `deadline.outcome` and `deadline.stale` identify Sessions and deadline versions.
+The worker polls every five seconds and processes database-only transactions sequentially.
+`deadline.cycle` records each cycle's due count; `deadline.outcome` and `deadline.stale` identify
+Sessions and deadline versions.
 Outcome events include `latenessMs`. `deadline.failure` and `deadline.cycle.failed` omit raw exceptions;
-inspect PostgreSQL health and schema compatibility when they recur. Pending jobs remain retryable.
-Archived Clubs pause. Completed empty decisions are preserved until a new deadline version is scheduled.
+inspect PostgreSQL health and schema compatibility when they recur. Due Sessions remain retryable.
+Archived Clubs pause. Completed empty decisions are preserved until the deadline changes.
 
 Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
 seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
@@ -221,16 +219,10 @@ disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and fin
 transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
 transport and inbox delivery are not implemented.
 
-## Session progress streams
+## Session progress
 
-The API exposes same-origin private SSE at `/sessions/:sessionId/progress/events`. It sends only
-committed progress versions on connection and every five seconds, rechecking authentication and
-Club access each time. `Cache-Control: private, no-store, no-transform` prevents caching and
-compression buffering; `X-Accel-Buffering: no` disables proxy buffering. Preserve these headers
-through the frontend and hosting proxy. A fixed “Session progress stream failed.” log indicates
-an internal read failure without exposing credentials or participant data.
-
-If streaming is unavailable, the Session page shows feedback and checks the private progress
-snapshot every fifteen seconds. Reconnection, focus and online recovery fetch the current version.
+`GET /sessions/:sessionId/progress` returns the committed progress version to current Club members
+with `Cache-Control: private, no-store`. The Session page polls it every five seconds while visible
+and on focus and online events; a failed poll shows feedback and the next poll retries.
 Migration 19 must precede updated API and worker images. There is no new service, runtime variable
 or notification transport; the PostgreSQL outbox retains later notification intent.

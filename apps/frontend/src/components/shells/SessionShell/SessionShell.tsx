@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
 
-import ProductChrome from '@/components/shells/ProductChrome/ProductChrome';
+import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
 import {
     canonicalRoutes,
     type IShellNavigationItem,
     type IShellRouteMap,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
-import Pill from '@/components/ui/Pill/Pill';
-import StatusBanner from '@/components/ui/StatusBanner/StatusBanner';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
+import Pill from '#components/ui/Pill/Pill';
+import StatusBanner from '#components/ui/StatusBanner/StatusBanner';
 
 interface ISessionShellProps {
     admin?: boolean;

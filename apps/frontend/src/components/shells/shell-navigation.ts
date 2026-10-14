@@ -1,4 +1,4 @@
-import type { TIconName } from '@/components/ui/Icon/Icon';
+import type { TIconName } from '#components/ui/Icon/Icon';
 
 /** Product areas that mark the matching mobile tab and navigation group as current. */
 export type TShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';
@@ -74,7 +74,7 @@ export const canonicalRoutes: IShellRouteMap = {
     setup: '/login',
 };
 
-export function publicNavigation(
+export function buildPublicNavigation(
     routes: IShellRouteMap,
     currentPage?: 'pricing',
 ): readonly IShellNavigationItem[] {
@@ -85,7 +85,7 @@ export function publicNavigation(
     ];
 }
 
-export function productNavigation(routes: IShellRouteMap): readonly IShellNavigationItem[] {
+export function buildProductNavigation(routes: IShellRouteMap): readonly IShellNavigationItem[] {
     return [
         { href: routes.product, label: 'Hub' },
         { href: routes.library, label: 'My Library' },
@@ -94,16 +94,16 @@ export function productNavigation(routes: IShellRouteMap): readonly IShellNaviga
 
 const signOutItem: IShellActionItem = { action: 'sign-out', label: 'Sign out' };
 
-function sectionHref(route: string, tab: string): string {
+function buildSectionHref(route: string, tab: string): string {
     return `${route}${route.includes('?') ? '&' : '?'}tab=${tab}`;
 }
 
-export function accountNavigation(
+export function buildAccountNavigation(
     routes: IShellRouteMap,
-    admin: boolean,
+    isAdmin: boolean,
 ): readonly TShellMenuItem[] {
     return [
-        ...(admin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
+        ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
         { href: routes.settings, label: 'Settings' },
         { href: routes.privacy, label: 'Privacy & data' },
         signOutItem,
@@ -111,7 +111,7 @@ export function accountNavigation(
 }
 
 /** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
-export function clubNavigation(
+export function buildClubNavigation(
     clubId: string,
     current: 'overview' | 'members' | 'manage',
 ): readonly IShellNavigationItem[] {
@@ -123,7 +123,7 @@ export function clubNavigation(
     ];
 }
 
-export function mobileNavigation({
+export function buildMobileNavigation({
     admin,
     clubItems,
     currentArea,
@@ -138,11 +138,11 @@ export function mobileNavigation({
     routes: IShellRouteMap;
     settingsItems?: readonly IShellNavigationItem[] | undefined;
 }): readonly TMobileNavigationEntry[] {
-    const hubArea = currentArea === 'hub' || currentArea === 'session';
-    const currentClubItem = hubArea ? clubItems.find((item) => item.current) : undefined;
+    const isHubArea = currentArea === 'hub' || currentArea === 'session';
+    const currentClubItem = isHubArea ? clubItems.find((item) => item.current) : undefined;
     const hubItems: readonly TShellMenuItem[] =
         clubItems.length > 0
-            ? clubItems.map((item) => ({ ...item, current: hubArea && item.current === true }))
+            ? clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }))
             : [
                   { href: routes.createClub, label: 'Create a Club' },
                   { href: routes.joinClub, label: 'Join a Club' },
@@ -150,7 +150,7 @@ export function mobileNavigation({
 
     return [
         {
-            current: hubArea,
+            current: isHubArea,
             icon: 'hub',
             id: 'hub',
             items: hubItems,
@@ -162,9 +162,9 @@ export function mobileNavigation({
             icon: 'library',
             id: 'library',
             items: libraryItems ?? [
-                { href: sectionHref(routes.library, 'my-ratings'), label: 'My Ratings' },
-                { href: sectionHref(routes.library, 'watchlist'), label: 'Watchlist' },
-                { href: sectionHref(routes.library, 'achievements'), label: 'Achievements' },
+                { href: buildSectionHref(routes.library, 'my-ratings'), label: 'My Ratings' },
+                { href: buildSectionHref(routes.library, 'watchlist'), label: 'Watchlist' },
+                { href: buildSectionHref(routes.library, 'achievements'), label: 'Achievements' },
             ],
             label: 'My Library',
             name: 'My Library',
@@ -186,8 +186,14 @@ export function mobileNavigation({
                     : []),
                 ...(settingsItems ?? [
                     { href: routes.settings, label: 'Profile' },
-                    { href: sectionHref(routes.settings, 'notifications'), label: 'Notifications' },
-                    { href: sectionHref(routes.settings, 'subscription'), label: 'Subscription' },
+                    {
+                        href: buildSectionHref(routes.settings, 'notifications'),
+                        label: 'Notifications',
+                    },
+                    {
+                        href: buildSectionHref(routes.settings, 'subscription'),
+                        label: 'Subscription',
+                    },
                     { href: routes.privacy, label: 'Privacy & data' },
                 ]),
                 signOutItem,

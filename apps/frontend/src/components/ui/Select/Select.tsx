@@ -4,14 +4,16 @@ import { Select as MantineSelect, type SelectProps as IMantineSelectProps } from
 import clsx from 'clsx';
 import { useRef, useState } from 'react';
 
-import fieldStyles from '@/components/ui/Field/Field.module.scss';
-import { fieldState, type IFieldProps } from '@/components/ui/Field/field.types';
-import FieldAnnouncements from '@/components/ui/Field/FieldAnnouncements';
-import FieldLabel from '@/components/ui/Field/FieldLabel';
-import FieldMessage from '@/components/ui/Field/FieldMessage';
-import type { TOmitStyling } from '@/components/ui/types';
+import fieldStyles from '#components/ui/Field/Field.module.scss';
+import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
+import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
+import FieldLabel from '#components/ui/Field/FieldLabel';
+import FieldMessage from '#components/ui/Field/FieldMessage';
+import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Select.module.scss';
+
+const DROPDOWN_FADE_MS = 150;
 
 export interface ISelectProps
     extends
@@ -34,12 +36,12 @@ export default function Select({
     const inputRef = useRef<HTMLInputElement>(null);
     // Mantine's combobox is not a native control, so a hidden required input carries the
     // browser's form constraint and reports a failed submit back to the visible field.
-    const [constraintFailed, setConstraintFailed] = useState(false);
-    const constrained = Boolean(required) && !readOnly;
-    if (constraintFailed && (!constrained || disabled || value)) {
-        setConstraintFailed(false);
+    const [hasConstraintFailed, setHasConstraintFailed] = useState(false);
+    const isConstrained = Boolean(required) && !readOnly;
+    if (hasConstraintFailed && (!isConstrained || disabled || value)) {
+        setHasConstraintFailed(false);
     }
-    const invalid = Boolean(error) || constraintFailed;
+    const isInvalid = Boolean(error) || hasConstraintFailed;
 
     return (
         <MantineSelect
@@ -55,19 +57,19 @@ export default function Select({
                 section: styles.select__section,
                 wrapper: styles.select__wrapper,
             }}
-            comboboxProps={{ transitionProps: { duration: 150 } }}
-            data-state={invalid ? 'error' : fieldState(error, success)}
+            comboboxProps={{ transitionProps: { duration: DROPDOWN_FADE_MS } }}
+            data-state={isInvalid ? 'error' : getFieldState(error, success)}
             description={<FieldMessage error={error} hint={hint} success={success} />}
             disabled={disabled}
-            error={invalid}
+            error={isInvalid}
             hiddenInputProps={
-                constrained
+                isConstrained
                     ? {
                           'aria-hidden': true,
                           className: 'visually-hidden',
                           onInvalid: (event) => {
                               event.preventDefault();
-                              setConstraintFailed(true);
+                              setHasConstraintFailed(true);
                               inputRef.current?.focus();
                           },
                           required: true,
@@ -85,12 +87,12 @@ export default function Select({
             inputWrapperOrder={['label', 'input', 'description']}
             label={<FieldLabel hint={labelHint} label={label} />}
             onChange={(nextValue, option) => {
-                setConstraintFailed(false);
+                setHasConstraintFailed(false);
                 onChange?.(nextValue, option);
             }}
             readOnly={readOnly}
             ref={inputRef}
-            required={constrained}
+            required={isConstrained}
             unstyled
             value={value}
             withAsterisk={false}

@@ -1,15 +1,15 @@
 import { notFound } from 'next/navigation';
 
-import AdminShell from '@/components/shells/AdminShell/AdminShell';
-import ControlShell from '@/components/shells/ControlShell/ControlShell';
-import ProductShell from '@/components/shells/ProductShell/ProductShell';
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import SessionShell from '@/components/shells/SessionShell/SessionShell';
-import SetupShell from '@/components/shells/SetupShell/SetupShell';
-import type { IShellRouteMap } from '@/components/shells/shell-navigation';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import AdminShell from '#components/shells/AdminShell/AdminShell';
+import ControlShell from '#components/shells/ControlShell/ControlShell';
+import ProductShell from '#components/shells/ProductShell/ProductShell';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import SessionShell from '#components/shells/SessionShell/SessionShell';
+import SetupShell from '#components/shells/SetupShell/SetupShell';
+import type { IShellRouteMap } from '#components/shells/shell-navigation';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import TextInput from '#components/ui/TextInput/TextInput';
 
 import DenseRegion from './_components/DenseRegion/DenseRegion';
 import ShellPlaceholder from './_components/ShellPlaceholder/ShellPlaceholder';
@@ -67,7 +67,7 @@ function isPreviewShellName(value: string): value is TPreviewShellName {
     return [...shellNames, ...adminShellNames].some((name) => name === value);
 }
 
-function shellVariant(shell: TPreviewShellName): { admin: boolean; shell: TShellName } {
+function getShellVariant(shell: TPreviewShellName): { admin: boolean; shell: TShellName } {
     switch (shell) {
         case 'session-admin':
             return { admin: true, shell: 'session' };
@@ -89,7 +89,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
     if (!isPreviewShellName(previewShell)) {
         notFound();
     }
-    const { admin, shell } = shellVariant(previewShell);
+    const { admin, shell } = getShellVariant(previewShell);
 
     switch (shell) {
         case 'public':

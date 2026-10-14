@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
 
-import ProductChrome from '@/components/shells/ProductChrome/ProductChrome';
-import SectionNavigation from '@/components/shells/SectionNavigation/SectionNavigation';
+import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
+import SectionNavigation from '#components/shells/SectionNavigation/SectionNavigation';
 import {
     canonicalRoutes,
     type IShellNavigationItem,
     type IShellRouteMap,
-} from '@/components/shells/shell-navigation';
-import styles from '@/components/shells/shells.module.scss';
-import Pill from '@/components/ui/Pill/Pill';
+} from '#components/shells/shell-navigation';
+import styles from '#components/shells/shells.module.scss';
+import Pill from '#components/ui/Pill/Pill';
 
 interface IAdminShellProps {
     children: ReactNode;

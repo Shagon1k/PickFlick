@@ -19,6 +19,12 @@
 - Browser tests are Playwright `*.spec.ts` files: `tests/ui/` runs against a local
   production build with a mock API (`pnpm test:ui`), `tests/uat/` smokes a deployed environment
   (`pnpm test:uat`). Shared viewports live in `tests/ui/viewports.ts`.
+- `tests/journeys/` runs a few core flows through the built web app and the real API against
+  `pickflick_test` (`PICKFLICK_ENV_FILE=.env.test pnpm test:journeys`). Users sign in through Better
+  Auth's test plugin in the test process, and catalog searches are seeded, so no provider or
+  test-only endpoint is involved. Keep scripted failures and edge states on the UI mock.
+- The UI mock API is TypeScript that Node runs directly. Annotate every response with its
+  `@pickflick/contracts` type so `pnpm typecheck` fails when the mock drifts from the real API.
 - Build test data with small factory functions instead of repeating inline objects.
 
 ## Naming and structure

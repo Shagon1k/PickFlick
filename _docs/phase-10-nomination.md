@@ -26,7 +26,7 @@ Zero accepted nominations stay open; one selects the sole Movie; multiple nomina
 including repeated Movies. Keep automatic decisions and progress/notification intent in the same
 transaction through a Session-specific PostgreSQL outbox. Add no dependency or process.
 
-Version-only SSE signals revalidate Session detail. Send the current version on connection and each
+Version-only signals revalidate Session detail (SSE in #44; replaced by five-second polling in #172). Send the current version on connection and each
 five-second heartbeat, with authentication and membership rechecked each time. Clients compare the
 signal to the rendered version; stale signals do nothing, gaps and reconnects cause a fresh read.
 A fifteen-second snapshot fallback and focus/online refresh cover stream failure. Film rows and
@@ -136,8 +136,8 @@ clearing, cancellation and manual closure invalidate pending intent. Deadline de
 participants' nominations, count repeated Movies separately and serialize Club → Session → job.
 `NominationDeadlineDecision` is the automatic audit without a fabricated human actor;
 `NominationDeadlineNotification` retains recipient intent atomically. Delivery and completion on
-submission remain separate work. The independent backend worker reconciles on startup and every
-five seconds, pauses archived Clubs, logs safe outcomes/lateness/failures and shuts down gracefully.
+submission remain separate work. The independent backend worker selects due Sessions every five
+seconds (migration 22 removed the job table and reconciliation; see the ADR-018 amendment), pauses archived Clubs, logs safe outcomes/lateness/failures and shuts down gracefully.
 Local scripts, CI, worker image target, preview/UAT topology and operational health checks include it.
 
 Verification evidence:

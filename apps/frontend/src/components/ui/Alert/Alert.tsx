@@ -11,13 +11,13 @@ export interface IAlertProps {
 }
 
 export default function Alert({ children, title, tone = 'neutral' }: IAlertProps) {
-    const urgent = tone === 'danger';
+    const isUrgent = tone === 'danger';
     return (
         <div
-            aria-live={urgent ? 'assertive' : 'polite'}
+            aria-live={isUrgent ? 'assertive' : 'polite'}
             className={styles.alert}
             data-tone={tone}
-            role={urgent ? 'alert' : 'status'}
+            role={isUrgent ? 'alert' : 'status'}
         >
             <span aria-hidden="true" className={styles.alert__mark} />
             <span>

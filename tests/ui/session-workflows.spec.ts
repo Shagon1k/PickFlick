@@ -4,8 +4,8 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
-const clubId = '10000000-0000-4000-8000-000000000031';
-const route = `/clubs/${clubId}/sessions/new`;
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const ROUTE = `/clubs/${CLUB_ID}/sessions/new`;
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
         {
@@ -24,7 +24,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-full');
-        await page.goto(`/clubs/${clubId}`);
+        await page.goto(`/clubs/${CLUB_ID}`);
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
@@ -71,7 +71,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-preselected');
-        await page.goto(route);
+        await page.goto(ROUTE);
         await page.getByLabel('Date').fill('2026-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('radio', { name: 'Pre-selected Movie' }).check();
@@ -100,7 +100,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
     page,
 }) => {
     await authenticate(context, 'valid-session-workflow-failure');
-    await page.goto(route);
+    await page.goto(ROUTE);
     await page.getByLabel('Date').fill('2026-12-01');
     await page.getByLabel('Location').fill('Room A');
     await page.getByLabel('Topic').fill('API failure');
@@ -113,7 +113,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
     await page.getByRole('button', { name: 'Create Session', exact: true }).click();
     await expect(
         page.getByText(
-            'You appear to be offline. Reconnect, then try again; your entries are still here.',
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
         ),
     ).toBeVisible();
 });
@@ -125,7 +125,7 @@ for (const viewport of canonicalViewports) {
     }) => {
         await authenticate(context, `valid-session-workflow-${viewport.name}`);
         await page.setViewportSize(viewport);
-        await page.goto(route, { waitUntil: 'load' });
+        await page.goto(ROUTE, { waitUntil: 'load' });
         await settle(page);
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -153,13 +153,13 @@ for (const viewport of canonicalViewports) {
 
 test('Members and archived Clubs have no create form', async ({ context, page }) => {
     await authenticate(context, 'valid-session-workflow-member');
-    await page.goto(route);
+    await page.goto(ROUTE);
     await expect(
         page.getByText('You cannot create a Session in this Club right now.'),
     ).toBeVisible();
     await expect(page.getByLabel('Location')).toHaveCount(0);
     await authenticate(context, 'valid-session-workflow-archived');
-    await page.goto(route);
+    await page.goto(ROUTE);
     await expect(
         page.getByText('You cannot create a Session in this Club right now.'),
     ).toBeVisible();

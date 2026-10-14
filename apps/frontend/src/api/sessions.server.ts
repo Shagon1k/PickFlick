@@ -1,34 +1,21 @@
 import 'server-only';
 
-import {
-    sessionProgressSchema,
-    sessionSchema,
-    type TCancelSession,
-    type TCreateSession,
-    type TUpdateSession,
+import type {
+    TCancelSession,
+    TCreateSession,
+    TSession,
+    TSessionProgress,
+    TUpdateSession,
 } from '@pickflick/contracts';
 
-import { apiRequest } from '@/lib/api.server';
+import { apiPath, requestApi } from '#lib/api.server';
 
-export async function getSession(id: string) {
-    return sessionSchema.parse(await apiRequest(`/sessions/${id}`));
-}
-export async function createSession(clubId: string, input: TCreateSession) {
-    return sessionSchema.parse(
-        await apiRequest(`/clubs/${clubId}/sessions`, { method: 'POST', json: input }),
-    );
-}
-export async function updateSession(id: string, input: TUpdateSession) {
-    return sessionSchema.parse(
-        await apiRequest(`/sessions/${id}`, { method: 'PATCH', json: input }),
-    );
-}
-export async function cancelSession(id: string, input: TCancelSession) {
-    return sessionSchema.parse(
-        await apiRequest(`/sessions/${id}/cancel`, { method: 'POST', json: input }),
-    );
-}
-
-export async function getSessionProgress(id: string) {
-    return sessionProgressSchema.parse(await apiRequest(`/sessions/${id}/progress`));
-}
+export const getSession = (id: string): Promise<TSession> => requestApi(apiPath`/sessions/${id}`);
+export const createSession = (clubId: string, input: TCreateSession): Promise<TSession> =>
+    requestApi(apiPath`/clubs/${clubId}/sessions`, { method: 'POST', json: input });
+export const updateSession = (id: string, input: TUpdateSession): Promise<TSession> =>
+    requestApi(apiPath`/sessions/${id}`, { method: 'PATCH', json: input });
+export const cancelSession = (id: string, input: TCancelSession): Promise<TSession> =>
+    requestApi(apiPath`/sessions/${id}/cancel`, { method: 'POST', json: input });
+export const getSessionProgress = (id: string): Promise<TSessionProgress> =>
+    requestApi(apiPath`/sessions/${id}/progress`);

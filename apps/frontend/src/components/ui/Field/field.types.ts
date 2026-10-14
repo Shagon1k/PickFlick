@@ -11,7 +11,10 @@ export interface IFieldProps {
     success?: string;
 }
 
-export function fieldState(error?: ReactNode, success?: string): 'error' | 'success' | undefined {
+export function getFieldState(
+    error?: ReactNode,
+    success?: string,
+): 'error' | 'success' | undefined {
     if (error) {
         return 'error';
     }

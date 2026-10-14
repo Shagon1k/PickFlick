@@ -10,7 +10,7 @@ import {
 } from '@pickflick/contracts';
 import { z } from 'zod';
 
-export const sourceSnapshotSchema = z.strictObject({
+const sourceSnapshotSchema = z.strictObject({
     source: movieSourceSchema,
     locale: z.literal('en-US'),
     fetchedAt: z.iso.datetime(),
@@ -24,33 +24,24 @@ export function parseSourceSnapshot(value: unknown): TSourceSnapshot {
     if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
     return parsed.data;
 }
-const sourceRemovalSchema = z.strictObject({
-    source: movieSourceSchema,
-    attemptedAt: z.iso.datetime(),
-});
-export type TSourceRemoval = z.infer<typeof sourceRemovalSchema>;
-export const providerRecordSchema = z.strictObject({
+const providerRecordSchema = z.strictObject({
     externalIds: z.array(movieExternalIdSchema).min(1).max(10),
     data: movieMetadataSchema,
     similarExternalIds: sourceSnapshotSchema.shape.similarExternalIds,
-    snapshots: z.array(sourceSnapshotSchema).min(1).max(3),
-    removals: z.array(sourceRemovalSchema).max(3).default([]),
     provenance: z.array(movieProvenanceSchema).min(1).max(3),
 });
 export type TProviderRecord = z.infer<typeof providerRecordSchema>;
-export const providerSearchSchema = z.strictObject({
-    movies: z.array(providerRecordSchema).max(100),
-    page: z.number().int().min(1).max(500),
-    totalPages: z.number().int().nonnegative(),
-    totalResults: z.number().int().nonnegative(),
-});
-export type TProviderSearch = z.infer<typeof providerSearchSchema>;
-export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
+export type TProviderSearch = {
+    movies: TProviderRecord[];
+    page: number;
+    totalPages: number;
+    totalResults: number;
+};
+export function toProviderRecord(snapshot: TSourceSnapshot): TProviderRecord {
     return parseProviderRecord({
         externalIds: snapshot.externalIds,
         data: snapshot.data,
         similarExternalIds: snapshot.similarExternalIds,
-        snapshots: [snapshot],
         provenance: [
             {
                 source: snapshot.source,
@@ -61,7 +52,7 @@ export function singleSource(snapshot: TSourceSnapshot): TProviderRecord {
         ],
     });
 }
-export function emptyMetadata() {
+export function createEmptyMetadata() {
     return movieMetadataSchema.parse({
         title: null,
         originalTitle: null,
@@ -85,31 +76,21 @@ export function parseProviderRecord(value: unknown): TProviderRecord {
     if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
     return parsed.data;
 }
-export function parseProviderSearch(value: unknown): TProviderSearch {
-    const parsed = providerSearchSchema.safeParse(value);
-    if (!parsed.success) throw new MovieProviderError('INVALID_RESPONSE');
-    return parsed.data;
-}
 
 export const MOVIE_PROVIDER = Symbol('MOVIE_PROVIDER');
 export interface IMovieLookup {
-    movieId: string;
     externalIds: TMovieExternalId[];
     locale: 'en-US';
-    allowStale: boolean;
-    forceRefresh: boolean;
 }
 export interface IMovieProvider {
-    configurationKey: string;
     search(input: TMovieSearch): Promise<TProviderSearch>;
-    details(input: IMovieLookup): Promise<TProviderRecord>;
+    fetchDetails(input: IMovieLookup): Promise<TProviderRecord>;
 }
 export class MovieProviderError extends Error {
     constructor(
         public reason: TMovieProviderReason,
         public retryAt?: Date,
         public source?: TMovieSource,
-        public removals: TSourceRemoval[] = [],
     ) {
         super(`Movie provider: ${reason}`);
     }

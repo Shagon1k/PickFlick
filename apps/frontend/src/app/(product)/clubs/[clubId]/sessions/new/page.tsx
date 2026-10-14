@@ -1,15 +1,16 @@
+import { HTTP_STATUS, isBlockingSessionPhase } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getClubHub } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
-import SessionForm from '@/components/sessions/SessionForm/SessionForm';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
-import { ApiError } from '@/lib/api.server';
+import { getClubHub } from '#api/clubs.server';
+import { buildLoginPath } from '#api/session.server';
+import SessionForm from '#components/sessions/SessionForm/SessionForm';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { ApiError } from '#lib/api.server';
 
 import styles from './page.module.scss';
 
@@ -25,8 +26,8 @@ export default async function CreateSessionPage({
     try {
         hub = await getClubHub(clubId);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
-            redirect(loginPath(`/clubs/${clubId}/sessions/new`));
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+            redirect(buildLoginPath(`/clubs/${clubId}/sessions/new`));
         return (
             <main className={styles.main}>
                 <section className={styles.card}>
@@ -39,12 +40,10 @@ export default async function CreateSessionPage({
             </main>
         );
     }
-    const blocked =
-        hub.activeSession &&
-        ['NOMINATION', 'SELECTION', 'WATCHING'].includes(hub.activeSession.phase);
+    const isBlocked = isBlockingSessionPhase(hub.activeSession?.phase);
     let restriction: 'blocking' | 'permission' | undefined;
     if (!hub.permissions.manageSessions) restriction = 'permission';
-    else if (blocked) restriction = 'blocking';
+    else if (isBlocked) restriction = 'blocking';
     return (
         <main className={styles.main}>
             <Link className={styles.back} href={`/clubs/${clubId}`}>

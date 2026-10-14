@@ -5,7 +5,7 @@ import { loadDatabaseEnvironment } from '@pickflick/config/environment';
 import { createDatabaseClient } from '../client.js';
 import type { Prisma, SessionPhase } from '../generated/prisma/client.js';
 import { assertSafeSeedOrResetTarget } from '../safety.js';
-import { readSessionRoster, snapshotSessionSettings } from '../session.js';
+import { snapshotSessionSettings } from '../session.js';
 
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);
@@ -170,7 +170,6 @@ describe('Session foundation', () => {
         for (const data of [
             { selectionScaleMax: 11 },
             { selectionScaleMin: 1, selectionScaleMax: 1 },
-            { rosterVersion: 0 },
             { phaseVersion: 0 },
         ]) {
             await expect(
@@ -179,72 +178,34 @@ describe('Session foundation', () => {
         }
     });
 
-    it('should version roster changes and count only accepted participants while preserving attendance', async () => {
+    it('should keep attendance after a participant leaves and never move the row', async () => {
         const session = await createSession('NOMINATION');
+        const ratingSession = await createSession('RATING');
         const participant = await database.sessionParticipant.create({
-            data: { sessionId: session.id, clubId, membershipId },
+            data: {
+                sessionId: session.id,
+                clubId,
+                membershipId,
+                status: 'ACCEPTED',
+                attended: true,
+            },
         });
-        const roster = () =>
-            database.$transaction((transaction) => readSessionRoster(transaction, session.id));
-        expect(await roster()).toMatchObject({ phaseVersion: 1, rosterVersion: 2, denominator: 0 });
-        await database.sessionParticipant.update({
-            where: { id: participant.id },
-            data: { status: 'ACCEPTED' },
-        });
-        expect(await roster()).toMatchObject({
-            rosterVersion: 3,
-            denominator: 1,
-            participants: [{ id: participant.id, membershipId }],
-        });
-        await database.sessionParticipant.update({
-            where: { id: participant.id },
-            data: { status: 'ACCEPTED', attended: true },
-        });
-        expect(await roster()).toMatchObject({ rosterVersion: 3, denominator: 1 });
         await database.sessionParticipant.update({
             where: { id: participant.id },
             data: { status: 'LEFT' },
         });
-        expect(await roster()).toMatchObject({ rosterVersion: 4, denominator: 0 });
         expect(
             await database.sessionParticipant.findUnique({ where: { id: participant.id } }),
-        ).toMatchObject({ attended: true });
+        ).toMatchObject({ status: 'LEFT', attended: true });
+        await expect(
+            database.sessionParticipant.update({
+                where: { id: participant.id },
+                data: { sessionId: ratingSession.id },
+            }),
+        ).rejects.toThrow('SessionParticipant identity is immutable');
     });
 
-    it('should keep the roster stable while a phase decision holds its Session lock', async () => {
-        const session = await createSession('NOMINATION');
-        const participant = await database.sessionParticipant.create({
-            data: { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' },
-        });
-        await database.$transaction(async (transaction) => {
-            const before = await readSessionRoster(transaction, session.id);
-            await expect(
-                database.$transaction(async (writer) => {
-                    await writer.$executeRaw`SET LOCAL lock_timeout = '100ms'`;
-                    await writer.sessionParticipant.update({
-                        where: { id: participant.id },
-                        data: { status: 'REMOVED' },
-                    });
-                }),
-            ).rejects.toThrow();
-            expect(await readSessionRoster(transaction, session.id)).toEqual(before);
-        });
-        await database.sessionParticipant.update({
-            where: { id: participant.id },
-            data: { status: 'REMOVED' },
-        });
-        expect(
-            await database.$transaction((transaction) =>
-                readSessionRoster(transaction, session.id),
-            ),
-        ).toMatchObject({ rosterVersion: 3, denominator: 0 });
-        await database.sessionParticipant.delete({ where: { id: participant.id } });
-        expect(
-            await database.session.findUniqueOrThrow({ where: { id: session.id } }),
-        ).toMatchObject({ rosterVersion: 4 });
-    });
-
-    it('should roll back the version with a failed roster write and reject duplicate or moved identities', async () => {
+    it('should roll back a failed roster write and reject duplicate or moved identities', async () => {
         const session = await createSession('NOMINATION');
         const data = { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' as const };
         const participant = await database.sessionParticipant.create({ data });
@@ -264,10 +225,8 @@ describe('Session foundation', () => {
         };
         await expect(database.$transaction(abort)).rejects.toThrow('abort roster test');
         expect(
-            await database.$transaction((transaction) =>
-                readSessionRoster(transaction, session.id),
-            ),
-        ).toMatchObject({ rosterVersion: 2, denominator: 1 });
+            await database.sessionParticipant.findUnique({ where: { id: participant.id } }),
+        ).toMatchObject({ status: 'ACCEPTED' });
     });
 
     it('should bind invite recipients and inviters to existing Memberships in the Session Club', async () => {

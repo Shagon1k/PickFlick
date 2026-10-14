@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from 'react';
 
-import InfoTip from '@/components/ui/InfoTip/InfoTip';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 
 import styles from './SelectionScaleField.module.scss';
 

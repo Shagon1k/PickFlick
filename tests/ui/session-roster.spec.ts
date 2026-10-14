@@ -4,8 +4,8 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
-const sessionId = '30000000-0000-4000-8000-000000000041';
-const invitationPath = `/invite/session/${'s'.repeat(43)}`;
+const SESSION_ID = '30000000-0000-4000-8000-000000000041';
+const INVITATION_PATH = `/invite/session/${'s'.repeat(43)}`;
 async function authenticate(context: BrowserContext, scenario: string) {
     await context.addCookies([
         {
@@ -23,10 +23,10 @@ test(
     'Session invite sign-in continuation and private denial',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await page.goto(invitationPath);
+        await page.goto(INVITATION_PATH);
         await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveAttribute(
             'href',
-            `/login?returnTo=${encodeURIComponent(invitationPath)}`,
+            `/login?returnTo=${encodeURIComponent(INVITATION_PATH)}`,
         );
         await authenticate(context, 'outsider');
         await page.reload();
@@ -42,7 +42,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'member');
-        await page.goto(invitationPath);
+        await page.goto(INVITATION_PATH);
         await page.getByRole('button', { name: 'Accept invitation' }).click();
         await expect(page.getByText('Your participation is confirmed.')).toBeVisible();
         await page.getByRole('link', { name: 'Open Session' }).click();
@@ -64,10 +64,23 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'admin');
-        await page.goto(`/sessions/${sessionId}`);
-        await page.getByRole('combobox', { name: 'Invite a Club member' }).click();
-        await page.keyboard.press('ArrowDown');
+        await page.goto(`/sessions/${SESSION_ID}`);
+        const memberSelect = page.getByRole('combobox', { name: 'Invite a Club member' });
+        const listbox = page.getByRole('listbox');
+        // A click before hydration opens nothing; retry until the dropdown is really open.
+        await expect(async () => {
+            await memberSelect.click();
+            await expect(listbox).toBeVisible({ timeout: 250 });
+        }).toPass({ timeout: 5_000 });
+        // Mantine seeds its keyboard position shortly after opening; arrow until the member is highlighted.
+        await expect(async () => {
+            await page.keyboard.press('ArrowDown');
+            await expect(listbox.locator('[data-combobox-selected]')).toHaveText('Jordan Member', {
+                timeout: 250,
+            });
+        }).toPass({ timeout: 5_000 });
         await page.keyboard.press('Enter');
+        await expect(memberSelect).toHaveValue('Jordan Member');
         await page.getByRole('button', { name: 'Create Session invitation' }).click();
         await expect(page.getByLabel('Session invitation link')).toHaveValue(
             new RegExp(`/invite/session/${'s'.repeat(43)}$`),
@@ -92,7 +105,7 @@ test(
 
 test('Pending Session row opens its accepted Session', async ({ context, page }) => {
     await authenticate(context, 'pending-member');
-    await page.goto(`/sessions/${sessionId}`);
+    await page.goto(`/sessions/${SESSION_ID}`);
     await page.getByRole('button', { name: 'Open pending invites' }).click();
     const row = page
         .getByRole('dialog', { name: 'Pending invites' })
@@ -108,7 +121,7 @@ test('Invitation failures retain preview and offline decline explains recovery',
     page,
 }) => {
     await authenticate(context, 'failure');
-    await page.goto(invitationPath);
+    await page.goto(INVITATION_PATH);
     await page.getByRole('button', { name: 'Accept invitation' }).click();
     await expect(
         page.getByText('We could not confirm your response. Check your connection and retry.'),
@@ -117,7 +130,9 @@ test('Invitation failures retain preview and offline decline explains recovery',
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Decline invitation' }).click();
     await expect(
-        page.getByText('You appear to be offline. Reconnect before responding.'),
+        page.getByText(
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
+        ),
     ).toBeVisible();
 });
 
@@ -128,14 +143,14 @@ for (const viewport of canonicalViewports) {
     }) => {
         await authenticate(context, 'admin');
         await page.setViewportSize(viewport);
-        await page.goto(invitationPath, { waitUntil: 'load' });
+        await page.goto(INVITATION_PATH, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         await page.screenshot({
             path: test.info().outputPath('session-invitation.png'),
             fullPage: true,
         });
-        await page.goto(`/sessions/${sessionId}`, { waitUntil: 'load' });
+        await page.goto(`/sessions/${SESSION_ID}`, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         expect(

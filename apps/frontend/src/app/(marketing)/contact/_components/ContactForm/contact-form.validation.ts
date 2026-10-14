@@ -1,6 +1,6 @@
 import { contactSubmissionSchema } from '@pickflick/contracts';
 
-import { fieldErrors } from '@/lib/form-errors';
+import { toFieldErrors } from '#lib/form-errors';
 
 import type { IContactFormValues, TContactFieldErrors } from './contact-form.types';
 
@@ -12,5 +12,5 @@ const FIELD_MESSAGES = {
 
 export function validateContactValues(values: IContactFormValues): TContactFieldErrors {
     const result = contactSubmissionSchema.safeParse(values);
-    return result.success ? {} : fieldErrors(result.error, FIELD_MESSAGES);
+    return result.success ? {} : toFieldErrors(result.error, FIELD_MESSAGES);
 }

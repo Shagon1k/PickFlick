@@ -5,13 +5,14 @@ import { CLUB_DESCRIPTION_MAX_LENGTH, CLUB_NAME_MAX_LENGTH } from '@pickflick/co
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import type { IClubFormValues } from '@/components/clubs/club-form.types';
-import { validateClubValues } from '@/components/clubs/club-form.validation';
-import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
-import Button from '@/components/ui/Button/Button';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
+import type { IClubFormValues } from '#components/clubs/club-form.types';
+import { validateClubValues } from '#components/clubs/club-form.validation';
+import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
+import Button from '#components/ui/Button/Button';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '#lib/form-errors';
+import { getOfflineMessage } from '#lib/offline';
 
 import { createClubAction } from '../../actions';
 import styles from './CreateClubForm.module.scss';
@@ -26,7 +27,7 @@ const INITIAL_VALUES: IClubFormValues = {
 
 export default function CreateClubForm() {
     const router = useRouter();
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState(IDLE);
     const form = useForm<IClubFormValues>({
         initialValues: INITIAL_VALUES,
@@ -34,13 +35,13 @@ export default function CreateClubForm() {
         onValuesChange: () => setFeedback(IDLE),
     });
 
-    const submit = form.onSubmit(
+    const handleSubmit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
-            if (!navigator.onLine) {
+            const offlineMessage = getOfflineMessage();
+            if (offlineMessage) {
                 setFeedback({
-                    message:
-                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
+                    message: offlineMessage,
                     tone: 'warning',
                 });
                 return;
@@ -80,11 +81,11 @@ export default function CreateClubForm() {
     );
 
     return (
-        <form className={styles.form} noValidate onSubmit={submit}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <TextInput
                 {...form.getInputProps('name')}
                 autoComplete="organization"
-                disabled={pending}
+                disabled={isPending}
                 id="club-name"
                 label="Club name"
                 labelHint="required"
@@ -94,7 +95,7 @@ export default function CreateClubForm() {
             />
             <Textarea
                 {...form.getInputProps('description')}
-                disabled={pending}
+                disabled={isPending}
                 id="club-description"
                 label="Description"
                 labelHint="optional"
@@ -107,7 +108,7 @@ export default function CreateClubForm() {
             <div className={styles.scaleSection}>
                 <SelectionScaleField
                     defaultMax={Number(INITIAL_VALUES.selectionScaleMax)}
-                    disabled={pending}
+                    disabled={isPending}
                     idPrefix="selection-scale"
                     maxError={form.errors.selectionScaleMax ?? form.errors.selectionScaleMin}
                     min={Number(INITIAL_VALUES.selectionScaleMin)}
@@ -116,7 +117,7 @@ export default function CreateClubForm() {
             </div>
 
             <div className={styles.submitZone}>
-                <Button fullWidth loading={pending} type="submit">
+                <Button fullWidth loading={isPending} type="submit">
                     Create Screening Room
                 </Button>
                 <p

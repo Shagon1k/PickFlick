@@ -7,7 +7,11 @@ import { testUtils } from 'better-auth/plugins';
 import { RuntimeModule } from '../../../config/runtime.module.js';
 import { DatabaseModule } from '../../../database/database.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { createUser, integrationEnvironment, removeUsers } from '../../../testing/integration.js';
+import {
+    createUser,
+    loadIntegrationEnvironment,
+    removeUsers,
+} from '../../../testing/integration.js';
 import { AUTH_PLUGINS, AuthService } from '../auth.service.js';
 
 interface ITestLogin {
@@ -16,7 +20,7 @@ interface ITestLogin {
 }
 
 describe('AuthService', () => {
-    const environment = integrationEnvironment();
+    const environment = loadIntegrationEnvironment();
     let service: AuthService;
     let prisma: PrismaService;
     let login: (userId: string) => Promise<ITestLogin>;
@@ -75,7 +79,7 @@ describe('AuthService', () => {
         });
 
         it('should retain invitation continuation in transient state without sending it to the provider', async () => {
-            const callbackURL = '/invite/club/' + 'x'.repeat(43);
+            const callbackURL = `/invite/club/${'x'.repeat(43)}`;
             const response = await signIn(callbackURL);
             const body = (await response.json()) as { url: string };
             expect(response.status).toBe(200);

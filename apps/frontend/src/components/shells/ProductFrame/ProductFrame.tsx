@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import ProductChrome from '@/components/shells/ProductChrome/ProductChrome';
-import type { IShellNavigationItem, IShellRouteMap } from '@/components/shells/shell-navigation';
+import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
+import type { IShellNavigationItem, IShellRouteMap } from '#components/shells/shell-navigation';
 
 interface IProductFrameProps {
     admin?: boolean;

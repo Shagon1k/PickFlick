@@ -81,7 +81,7 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 2. **Service.** Put the rule here and throw Nest exceptions. When the client must tell causes apart,
    pass a reason from contracts: `throw new ConflictException({ reason: 'CLUB_ARCHIVED' })`.
    `ApiExceptionFilter` builds the error envelope; never format errors by hand.
-3. **Club data.** Start with `findMembership` from `modules/clubs/club-access.ts`; it answers `404`
+3. **Club data.** Start with `findMembership` from `modules/clubs/access/club-access.ts`; it answers `404`
    to anyone who is not an active member. Add `assertAdmin` or `assertActive` as the rule needs.
 4. **External services.** Inject them behind a token (as `EMAIL_CLIENT` is) so tests can swap them,
    and build them from the validated runtime environment, never from `process.env`.
@@ -91,16 +91,16 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 ## 4. Call it from the frontend
 
 1. Add a function to `apps/frontend/src/api/<area>.server.ts`. The file starts with
-   `import 'server-only'` and uses `apiRequest`, which forwards the cookie and client address and
+   `import 'server-only'` and uses `requestApi`, which forwards the cookie and client address and
    throws `ApiError` for any non-2xx answer:
 
     ```ts
     export const sendContactMessage = (submission: TContactSubmission): Promise<void> =>
-        apiRequest('/contact', { method: 'POST', json: submission });
+        requestApi('/contact', { method: 'POST', json: submission });
     ```
 
 2. Add a server action in the route's `actions.ts` (`'use server'`). Validate with the same schema,
-   call the API function, and return a `TFormResult` from `@/lib/form-errors`: `{ ok: true }` or a
+   call the API function, and return a `TFormResult` from `#lib/form-errors`: `{ ok: true }` or a
    message, a tone, and per-field errors. Map `ApiError` statuses and reasons to copy here.
 3. Build the form in the route's `_components/<Name>/<Name>.tsx` with `@mantine/form` and the UI kit
    (`TextInput`, `Textarea`, `Button`). Copy `app/(marketing)/contact/_components/ContactForm`: it
@@ -116,8 +116,9 @@ Copy `apps/backend/src/modules/contact` into `apps/backend/src/modules/<feature>
 | Schema        | `packages/contracts/src/<area>/__tests__/*.spec.ts`                                                                            | `pnpm test:unit`        |
 | Service       | `modules/<feature>/__tests__/<feature>.service.spec.ts`, with injected fakes (see `contact.service.spec.ts`)                   | `pnpm test:unit`        |
 | Endpoint      | `modules/<feature>/__tests__/<feature>.int.spec.ts` with `startTestApi()` and `createUser()` from `src/testing/integration.ts` | `pnpm test:integration` |
-| Server action | `app/.../__tests__/actions.spec.ts`, mocking `@/api/*.server`                                                                  | `pnpm test:unit`        |
-| Screen        | A Playwright spec in `tests/ui/`, with any new backend answers added to `start-frontend-with-mock-api.mjs`                     | `pnpm test:ui`          |
+| Server action | `app/.../__tests__/actions.spec.ts`, mocking `#api/*.server`                                                                   | `pnpm test:unit`        |
+| Screen        | A Playwright spec in `tests/ui/`, with any new backend answers added to `start-frontend-with-mock-api.ts`                      | `pnpm test:ui`          |
+| Journey       | A step in `tests/journeys/` when the feature joins a core flow; it runs the real web app and API                               | `pnpm test:journeys`    |
 
 `startTestApi()` boots the real application against the local database; send
 `{ userId }` with a request to act as that User.

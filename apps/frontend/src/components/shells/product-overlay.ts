@@ -2,6 +2,9 @@
 
 import { createContext, type RefObject, use, useEffect, useLayoutEffect } from 'react';
 
+// Menus keep this gap from the viewport edges.
+const VIEWPORT_MARGIN_PX = 8;
+
 /**
  * One product overlay (search, notifications, account, or a navigation strip) is open at a time.
  * Opening another closes the first, and closing returns focus to the trigger that opened it.
@@ -17,7 +20,7 @@ interface IProductOverlayContextValue {
 
 export const ProductOverlayContext = createContext<IProductOverlayContextValue | null>(null);
 
-const focusableSelector =
+const FOCUSABLE_SELECTOR =
     "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
 export function useProductOverlay() {
@@ -30,13 +33,13 @@ export function useProductOverlay() {
 
 /** Closes an open overlay on Escape or an outside pointer, optionally keeping Tab inside it. */
 export function useOverlayDismissal(
-    open: boolean,
+    isOpen: boolean,
     rootRef: RefObject<HTMLElement | null>,
     closeOverlay: (returnFocus?: boolean) => void,
-    trapFocus = false,
+    shouldTrapFocus = false,
 ) {
     useEffect(() => {
-        if (!open) {
+        if (!isOpen) {
             return;
         }
 
@@ -45,7 +48,7 @@ export function useOverlayDismissal(
                 closeOverlay();
                 return;
             }
-            if (!trapFocus || event.key !== 'Tab') {
+            if (!shouldTrapFocus || event.key !== 'Tab') {
                 return;
             }
 
@@ -53,7 +56,7 @@ export function useOverlayDismissal(
             if (!root) {
                 return;
             }
-            const focusable = [...root.querySelectorAll<HTMLElement>(focusableSelector)];
+            const focusable = [...root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)];
             const first = focusable[0];
             const last = focusable.at(-1);
             const activeElement = document.activeElement;
@@ -90,14 +93,17 @@ export function useOverlayDismissal(
             document.removeEventListener('keydown', handleKeyboard);
             document.removeEventListener('pointerdown', closeOnPointer);
         };
-    }, [closeOverlay, open, rootRef, trapFocus]);
+    }, [closeOverlay, isOpen, rootRef, shouldTrapFocus]);
 }
 
 /** Centres a film strip on its trigger, nudging it inside the viewport when it would overflow. */
 function alignToAnchor(menu: HTMLElement, anchor: HTMLElement) {
     const anchorBox = anchor.getBoundingClientRect();
     const centered = anchorBox.left + (anchorBox.width - menu.offsetWidth) / 2;
-    const clamped = Math.min(Math.max(centered, 8), window.innerWidth - menu.offsetWidth - 8);
+    const clamped = Math.min(
+        Math.max(centered, VIEWPORT_MARGIN_PX),
+        window.innerWidth - menu.offsetWidth - VIEWPORT_MARGIN_PX,
+    );
     const initialLeft =
         menu.dataset.menuAlign === 'right' ? anchorBox.right - menu.offsetWidth : centered;
     menu.style.setProperty('--menu-shift', `${clamped - initialLeft}px`);
@@ -130,7 +136,7 @@ export function useAnchoredMenus(openMenu: string | null, rootRef: RefObject<HTM
         }
         rootRef.current
             ?.querySelector<HTMLElement>(`[data-anchored-menu="${openMenu}"]`)
-            ?.querySelector<HTMLElement>(focusableSelector)
+            ?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
             ?.focus({ preventScroll: true });
     }, [openMenu, rootRef]);
 }

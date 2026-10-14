@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { ILivenessReport, IReadinessReport } from '@pickflick/contracts';
 import type { Response } from 'express';
@@ -13,15 +13,17 @@ export class HealthController {
     constructor(private readonly healthService: HealthService) {}
 
     @Get('live')
-    liveness(): ILivenessReport {
-        return this.healthService.liveness();
+    checkLiveness(): ILivenessReport {
+        return this.healthService.checkLiveness();
     }
 
     @Get('ready')
-    async readiness(@Res({ passthrough: true }) response: Response): Promise<IReadinessReport> {
-        const report = await this.healthService.readiness();
+    async checkReadiness(
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<IReadinessReport> {
+        const report = await this.healthService.checkReadiness();
         if (report.status === 'not_ready') {
-            response.status(503);
+            response.status(HttpStatus.SERVICE_UNAVAILABLE);
         }
         return report;
     }

@@ -51,6 +51,8 @@ export interface IClubMember {
     displayName: string;
     role: TClubRole;
     joinedAt: string;
+    /** Whether the viewer may remove this member; the server enforces the same rule. */
+    canRemove: boolean;
 }
 
 export const CLUB_AUDIT_ACTIONS = [

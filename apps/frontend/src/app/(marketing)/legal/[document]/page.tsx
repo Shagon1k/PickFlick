@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import { createPublicMetadata } from '#lib/public-metadata';
 
 import { isLegalDocumentName, legalDocuments } from './legal-content';
 import styles from './page.module.scss';

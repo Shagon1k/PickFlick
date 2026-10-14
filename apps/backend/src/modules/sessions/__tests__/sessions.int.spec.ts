@@ -4,6 +4,7 @@ import type { IClubHub, TSession } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
+    addMember,
     createUser,
     type ITestApi,
     removeUsers,
@@ -46,9 +47,7 @@ describe('Session workflows', () => {
             [moderator, 'MODERATOR'],
             [member, 'MEMBER'],
         ] as const) {
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
+            await addMember(api.prisma, clubId, userId, role);
         }
     });
     afterAll(async () => {
@@ -60,7 +59,7 @@ describe('Session workflows', () => {
         return api.request(`/clubs/${clubId}/sessions`, {
             userId,
             method: 'POST',
-            json: { ...details, id: randomUUID(), type: 'FULL_CYCLE', movieId: null, ...input },
+            json: { ...details, type: 'FULL_CYCLE', movieId: null, ...input },
         });
     }
     async function edit(session: TSession, userId = admin, input = {}) {
@@ -90,11 +89,9 @@ describe('Session workflows', () => {
         const preselected = await create(moderator, { type: 'PRE_SELECTED', movieId });
         expect(await preselected.json()).toMatchObject({ phase: 'WATCHING', movieId });
     });
-    it('should reject non-v4 IDs and allow a v4 Session to be read and cancelled', async () => {
-        const id = '01931234-5678-7abc-8def-0123456789ab';
-        expect((await create(admin, { id })).status).toBe(400);
+    it('should assign a server ID and allow the Session to be read and cancelled', async () => {
+        expect((await create(admin, { id: randomUUID() })).status).toBe(400);
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(0);
-        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(0);
         const created = await create();
         expect(created.status).toBe(201);
         const session = (await created.json()) as TSession;
@@ -106,20 +103,13 @@ describe('Session workflows', () => {
             await (await api.request(`/sessions/${session.id}`, { userId: admin })).json(),
         ).toMatchObject({ phase: 'CANCELLED' });
     });
-    it('should serialize duplicate creation and reject two different blocking Sessions', async () => {
-        const id = randomUUID();
-        const duplicates = await Promise.all([create(admin, { id }), create(admin, { id })]);
-        expect(duplicates.map((response) => response.status)).toEqual([201, 201]);
-        expect(
-            await api.prisma.clubAuditEvent.count({
-                where: { sessionId: id, action: 'SESSION_CREATED' },
-            }),
-        ).toBe(1);
-        expect((await create()).status).toBe(409);
-        expect((await create(admin, { id, location: 'Changed request' })).status).toBe(409);
-        expect((await create(moderator, { id })).status).toBe(409);
-        const session = (await duplicates[0]?.json()) as TSession;
-        await cancel(session);
+    it('should allow one blocking Session per Club, including concurrent creation', async () => {
+        const first = await create();
+        expect(first.status).toBe(201);
+        const repeated = await create();
+        expect(repeated.status).toBe(409);
+        expect(await repeated.json()).toMatchObject({ error: { reason: 'BLOCKING_SESSION' } });
+        await cancel((await first.json()) as TSession);
         const concurrent = await Promise.all([create(), create(moderator)]);
         expect(concurrent.map((response) => response.status).toSorted((a, b) => a - b)).toEqual([
             201, 409,
@@ -259,9 +249,7 @@ describe('Session workflows', () => {
         for (let index = 0; index < 6; index++) {
             const userId = await createUser(api.prisma);
             users.push(userId);
-            await api.prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role: 'MEMBER' },
-            });
+            await addMember(api.prisma, clubId, userId);
         }
         expect((await create()).status).toBe(409);
     });

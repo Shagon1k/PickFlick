@@ -1,23 +1,23 @@
+import { randomUUID } from 'node:crypto';
+
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
-import type {
-    TCancelSession,
-    TCreateSession,
-    TSession,
-    TUpdateSession,
+    BLOCKING_SESSION_PHASES,
+    isOpenSessionPhase,
+    type TCancelSession,
+    type TCreateSession,
+    type TSession,
+    type TSessionProgress,
+    type TUpdateSession,
 } from '@pickflick/contracts';
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { findMembership, lockClub, recordAudit } from '../clubs/club-access.js';
-import { invalidateDeadline, scheduleDeadline } from './nomination-deadline-intent.js';
-import { NominationsService } from './nominations.service.js';
+import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
+import { NominationsService } from './nominations/nominations.service.js';
+import { assertManager, assertOpen, canManage } from './session-access.js';
+import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
-import { canManage } from './session-roster-access.js';
 
 @Injectable()
 export class SessionsService {
@@ -32,18 +32,16 @@ export class SessionsService {
                 const session = await transaction.session.findUnique({ where: { id } });
                 if (!session) throw new NotFoundException();
                 const membership = await findMembership(transaction, userId, session.clubId);
-                const allowed = await canManage(transaction, membership);
+                const canManageSession = await canManage(transaction, membership);
                 return {
-                    ...project(session, membership.club.name, allowed),
+                    ...toSession(session, membership.club.name, canManageSession),
                     nominations:
                         session.phase === 'NOMINATION'
-                            ? await this.nominations.project(
-                                  transaction,
+                            ? await this.nominations.loadNominations(transaction, session, {
                                   userId,
-                                  session,
                                   membership,
-                                  allowed,
-                              )
+                                  canManage: canManageSession,
+                              })
                             : null,
                 };
             },
@@ -51,36 +49,26 @@ export class SessionsService {
         );
     }
 
+    async getProgress(userId: string, id: string): Promise<TSessionProgress> {
+        const session = await this.prisma.session.findUnique({
+            where: { id },
+            select: { clubId: true, progressVersion: true },
+        });
+        if (!session) throw new NotFoundException();
+        await findMembership(this.prisma, userId, session.clubId);
+        return { version: session.progressVersion };
+    }
+
     async create(userId: string, clubId: string, input: TCreateSession): Promise<TSession> {
+        const id = randomUUID();
         try {
             await this.prisma.$transaction(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
-                if (membership.role === 'MEMBER') throw new ForbiddenException();
-                const existing = await transaction.session.findUnique({ where: { id: input.id } });
-                if (existing) {
-                    const creation = await transaction.clubAuditEvent.findFirst({
-                        where: {
-                            sessionId: input.id,
-                            actorUserId: userId,
-                            action: 'SESSION_CREATED',
-                        },
-                    });
-                    if (
-                        existing.clubId !== clubId ||
-                        !creation ||
-                        existing.type !== input.type ||
-                        existing.movieId !== input.movieId ||
-                        !matchesDetails(existing, input)
-                    )
-                        throw new ConflictException({ reason: 'SESSION_ID_CONFLICT' });
-                    return;
-                }
-                if (!(await canManage(transaction, membership)))
-                    throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+                await assertManager(transaction, membership);
                 validateDeadline(input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
-                    where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING'] } },
+                    where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
                     select: { id: true },
                 });
                 if (blocking) throw new ConflictException({ reason: 'BLOCKING_SESSION' });
@@ -90,9 +78,10 @@ export class SessionsService {
                 ) {
                     throw new ConflictException({ reason: 'MOVIE_UNAVAILABLE' });
                 }
-                const created = await transaction.session.create({
+                await transaction.session.create({
                     data: {
                         ...input,
+                        id,
                         topic: input.topic ?? null,
                         notes: input.notes ?? null,
                         clubId,
@@ -100,30 +89,28 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
-                await scheduleDeadline(transaction, created);
-                await audit(
-                    transaction,
-                    membership.id,
-                    userId,
+                await recordSessionAudit(transaction, {
                     clubId,
-                    input.id,
-                    'SESSION_CREATED',
-                );
+                    sessionId: id,
+                    membershipId: membership.id,
+                    userId,
+                    action: 'SESSION_CREATED',
+                });
             });
         } catch (error) {
+            // The partial unique index is the last guard for one blocking Session per Club.
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-                throw new ConflictException({ reason: 'SESSION_CONFLICT' });
+                throw new ConflictException({ reason: 'BLOCKING_SESSION' });
             }
             throw error;
         }
-        return this.get(userId, input.id);
+        return this.get(userId, id);
     }
 
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {
         await this.prisma.$transaction(async (transaction) => {
-            const { session, membership } = await writableSession(transaction, userId, id);
-            if (['COMPLETED', 'CANCELLED'].includes(session.phase))
-                throw new ConflictException({ reason: 'SESSION_CLOSED' });
+            const { session, membership } = await loadWritableSession(transaction, userId, id);
+            assertOpen(session.phase);
             const data = {
                 scheduledAt: new Date(input.scheduledAt),
                 location: input.location,
@@ -134,25 +121,27 @@ export class SessionsService {
             if (matchesDetails(session, input)) return;
             if (session.detailsVersion !== input.version)
                 throw new ConflictException({ reason: 'SESSION_CHANGED' });
-            const deadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
-            if (deadlineChanged) {
+            const hasDeadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
+            if (hasDeadlineChanged) {
                 if (session.phase !== 'NOMINATION' && input.deadlineAt !== null)
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
             }
-            const updated = await transaction.session.update({
+            await transaction.session.update({
                 where: { id },
                 data: {
                     ...data,
                     detailsVersion: { increment: 1 },
-                    deadlineVersion: deadlineChanged ? { increment: 1 } : undefined,
+                    deadlineVersion: hasDeadlineChanged ? { increment: 1 } : undefined,
                 },
             });
-            if (deadlineChanged) {
-                await invalidateDeadline(transaction, id);
-                await scheduleDeadline(transaction, updated);
-            }
-            await audit(transaction, membership.id, userId, session.clubId, id, 'SESSION_UPDATED');
+            await recordSessionAudit(transaction, {
+                clubId: session.clubId,
+                sessionId: id,
+                membershipId: membership.id,
+                userId,
+                action: 'SESSION_UPDATED',
+            });
             await publishProgress(transaction, id, 'DETAILS');
         });
         return this.get(userId, id);
@@ -160,7 +149,7 @@ export class SessionsService {
 
     async cancel(userId: string, id: string, input: TCancelSession): Promise<TSession> {
         await this.prisma.$transaction(async (transaction) => {
-            const { session, membership } = await writableSession(transaction, userId, id);
+            const { session, membership } = await loadWritableSession(transaction, userId, id);
             if (session.phase === 'CANCELLED') return;
             if (session.phase === 'COMPLETED')
                 throw new ConflictException({ reason: 'SESSION_CLOSED' });
@@ -176,38 +165,30 @@ export class SessionsService {
                     detailsVersion: { increment: 1 },
                 },
             });
-            await invalidateDeadline(transaction, id);
             await transaction.sessionInvite.updateMany({
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },
             });
-            await audit(
-                transaction,
-                membership.id,
+            await recordSessionAudit(transaction, {
+                clubId: session.clubId,
+                sessionId: id,
+                membershipId: membership.id,
                 userId,
-                session.clubId,
-                id,
-                'SESSION_CANCELLED',
-            );
+                action: 'SESSION_CANCELLED',
+            });
             await publishProgress(transaction, id, 'CANCELLED');
         });
         return this.get(userId, id);
     }
 }
 
-async function writableSession(transaction: Prisma.TransactionClient, userId: string, id: string) {
-    const initial = await transaction.session.findUnique({
-        where: { id },
-        select: { clubId: true },
-    });
-    if (!initial) throw new NotFoundException();
-    await lockClub(transaction, initial.clubId);
-    const membership = await findMembership(transaction, userId, initial.clubId);
-    if (membership.role === 'MEMBER') throw new ForbiddenException();
-    if (!(await canManage(transaction, membership)))
-        throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
-    await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${id}::uuid FOR UPDATE`;
-    const session = await transaction.session.findUniqueOrThrow({ where: { id } });
+async function loadWritableSession(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+    id: string,
+) {
+    const { session, membership } = await lockSessionForMember(transaction, userId, id);
+    await assertManager(transaction, membership);
     return { session, membership };
 }
 
@@ -216,12 +197,12 @@ function validateDeadline(value: string | null) {
         throw new ConflictException({ reason: 'DEADLINE_PAST' });
 }
 
-function project(
+function toSession(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
-    allowed: boolean,
+    canManageSession: boolean,
 ): Omit<TSession, 'nominations'> {
-    const open = !['COMPLETED', 'CANCELLED'].includes(session.phase);
+    const isOpen = isOpenSessionPhase(session.phase);
     return {
         id: session.id,
         clubId: session.clubId,
@@ -237,33 +218,33 @@ function project(
         version: session.detailsVersion,
         phaseVersion: session.phaseVersion,
         progressVersion: session.progressVersion,
-        canEdit: allowed && open,
-        canCancel: allowed && open,
+        canEdit: canManageSession && isOpen,
+        canCancel: canManageSession && isOpen,
     };
 }
 
-async function audit(
+/** Session lifecycle events record the acting member as their own subject. */
+async function recordSessionAudit(
     transaction: Prisma.TransactionClient,
-    membershipId: string,
-    userId: string,
-    clubId: string,
-    sessionId: string,
-    action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED',
+    event: {
+        clubId: string;
+        sessionId: string;
+        membershipId: string;
+        userId: string;
+        action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED';
+    },
 ) {
     await recordAudit(transaction, {
-        clubId,
-        sessionId,
-        actorUserId: userId,
-        subjectUserId: userId,
-        subjectMembershipId: membershipId,
-        action,
+        clubId: event.clubId,
+        sessionId: event.sessionId,
+        actorUserId: event.userId,
+        subjectUserId: event.userId,
+        subjectMembershipId: event.membershipId,
+        action: event.action,
     });
 }
 
-function matchesDetails(
-    session: Prisma.SessionGetPayload<object>,
-    input: TUpdateSession | TCreateSession,
-): boolean {
+function matchesDetails(session: Prisma.SessionGetPayload<object>, input: TUpdateSession): boolean {
     return (
         session.scheduledAt?.getTime() === new Date(input.scheduledAt).getTime() &&
         session.location === input.location &&

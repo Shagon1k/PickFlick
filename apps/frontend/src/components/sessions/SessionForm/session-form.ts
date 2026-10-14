@@ -1,6 +1,10 @@
 import { createSessionSchema, type TSession, updateSessionSchema } from '@pickflick/contracts';
 
-import { fieldErrors } from '@/lib/form-errors';
+import { toFieldErrors } from '#lib/form-errors';
+import { toIsoDate } from '#lib/format';
+
+const MINUTES_PER_HOUR = 60;
+const MINUTE_MS = 60_000;
 
 export interface ISessionValues {
     date: string;
@@ -13,16 +17,40 @@ export interface ISessionValues {
     movieId: string | null;
 }
 
-export function sessionInput(
+/** Form values for a new Session, or the editable details of an existing one. */
+export function getInitialSessionValues(session?: TSession): ISessionValues {
+    return {
+        date: session?.scheduledAt ? toIsoDate(session.scheduledAt) : '',
+        location: session?.location ?? '',
+        topic: session?.topic ?? '',
+        notes: session?.notes ?? '',
+        type: session?.type === 'PRE_SELECTED' ? 'PRE_SELECTED' : 'FULL_CYCLE',
+        duration: '',
+        removeDeadline: false,
+        movieId: session?.movieId ?? null,
+    };
+}
+
+/** The deadline to save: removed, recalculated from an `hh:mm` duration, or the current one. */
+export function getNextDeadline(values: ISessionValues, session?: TSession): string | null {
+    if (values.removeDeadline) return null;
+    if (values.type !== 'FULL_CYCLE' || !values.duration) return session?.deadlineAt ?? null;
+    const [hours = '0', minutes = '0'] = values.duration.split(':');
+    return new Date(
+        Date.now() + (Number(hours) * MINUTES_PER_HOUR + Number(minutes)) * MINUTE_MS,
+    ).toISOString();
+}
+
+export function buildSessionInput(
     values: ISessionValues,
-    id: string,
     deadlineAt: string | null,
     session?: TSession,
 ) {
     let scheduledAt = /^\d{4}-\d{2}-\d{2}$/u.test(values.date)
         ? `${values.date}T00:00:00.000Z`
         : '';
-    if (session?.scheduledAt?.slice(0, 10) === values.date) scheduledAt = session.scheduledAt;
+    if (session?.scheduledAt && toIsoDate(session.scheduledAt) === values.date)
+        scheduledAt = session.scheduledAt;
     const details = {
         scheduledAt,
         location: values.location,
@@ -32,17 +60,17 @@ export function sessionInput(
     };
     return session
         ? { ...details, version: session.version }
-        : { ...details, id, type: values.type, movieId: values.movieId };
+        : { ...details, type: values.type, movieId: values.movieId };
 }
 
 export function validateSession(values: ISessionValues, session?: TSession) {
-    const input = sessionInput(values, '00000000-0000-4000-8000-000000000000', null, session);
+    const input = buildSessionInput(values, null, session);
     const parsed = session
         ? updateSessionSchema.safeParse(input)
         : createSessionSchema.safeParse(input);
     const errors = parsed.success
         ? {}
-        : fieldErrors(parsed.error, {
+        : toFieldErrors(parsed.error, {
               scheduledAt: 'Choose a valid date.',
               location: 'Use 1–200 characters on one line.',
               topic: 'Use up to 200 characters on one line.',

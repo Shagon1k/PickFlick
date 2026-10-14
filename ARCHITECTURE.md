@@ -42,7 +42,7 @@ flowchart LR
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.        | Partial — Users, auth, Clubs, Session skeleton, cached Movies; other entities Proposed                   | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                        | Partial — Club avatars and catalog images                                                                | —                 |
 | Background | Nomination-specific PostgreSQL jobs and a backend worker; no queue dependency.        | Active                                                                                                   | ADR-018           |
-| Real-time  | SSE version signals from the API for Session progress.                                | Active                                                                                                   | —                 |
+| Real-time  | Session progress versions polled from the API every five seconds.                     | Active                                                                                                   | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.        | Partial — repository-verified; live production not provisioned                                           | ADR-007, 008      |
 
 ## 2. Repository
@@ -56,8 +56,8 @@ packages/
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
   config/     environment schema and TypeScript presets
   eslint-config/ dev-only ESLint presets and plugins
-assets/brand/ production brand imagery (imported as @brand/…)
-tests/        Playwright: ui-preview (local build + mock API) and uat (deployed smoke)
+assets/brand/ production brand imagery (imported as #brand/…)
+tests/        Playwright: ui (local build + typed mock API), journeys (real API) and uat (deployed smoke)
 _docs/        guides, decisions, design prototypes
 ```
 
@@ -78,7 +78,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                                                                  | Resend client; a logging stub when delivery is disabled.                                                                                                        | Active                                                                                   |
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                               | Active                                                                                   |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                       | Active                                                                                   |
-| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states.                                             | Partial — authenticated search/details and stored catalog images; refresh worker pending |
+| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                  | Partial — authenticated search/details and stored catalog images; refresh worker pending |
 | sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-targeted invitations, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination automatic transitions; later phases pending                          |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                         | Proposed                                                                                 |
 
@@ -104,7 +104,7 @@ sequenceDiagram
 
   Browser->>N: Submit a form (server action)
   N->>N: Validate with the shared zod schema
-  N->>A: apiRequest() with cookie and client address
+  N->>A: requestApi() with cookie and client address
   A->>A: ThrottlerGuard, then AuthGuard resolves the session
   A->>A: ZodValidationPipe validates the body again
   A->>DB: Service reads and writes through PrismaService
@@ -126,7 +126,7 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 
 The schema (`packages/database/prisma/schema.prisma`, sixteen migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `Movie`, `MovieExternalId`, `MovieSourceCache`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -146,12 +146,13 @@ remain reachable for revocation. The creation action preserves its returned toke
 list refresh fails; the UI shows the link and a separate refresh warning.
 
 Session invitations use separate digest-only tokens and target an existing Membership through a
-SessionParticipant. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
+SessionParticipant. One rule governs every Session roster control (invite, revoke, remove): an
+Admin or Moderator in an active Club that has an Admin and is within its member limit;
+participants can always leave. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
 response tokens travel only in POST bodies. Pending responses by invitation ID use the same locked
 eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
 state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
-and roster changes lock Club → Session before writing; the participant trigger increments
-`rosterVersion`. Roster projections use a repeatable-read snapshot. Club departure updates open
+and roster changes lock Club → Session before writing. Roster projections use a repeatable-read snapshot. Club departure updates open
 Session participants and revokes their pending links in its membership transaction, preserving
 completed history. Migration 16 adds five Session invitation/participant audit actions without
 changing existing data. No worker or automatic phase transition is added.
@@ -192,21 +193,17 @@ storage constraints do not authorize a request: the member-only preview, active 
 operator authorization, token generation, and invitation/leave/removal flows belong to #40/#41.
 
 The existing partial unique index still enforces one Nomination/Selection/Watching Session per
-Club; Rating is outside it. The roster trigger increments `rosterVersion` on insert, delete, or
-status change and locks the parent Session in the same transaction. Attendance-only and repeated
-status writes do not change the version; participant identity cannot move between Sessions or
-Memberships. `readSessionRoster` takes the same lock and returns phase, phase version, roster version,
-accepted participant identities, and their count. Callers must use a transaction and retain the lock
-through the phase decision. Workflow writes take the Club lock before the Session lock and before
+Club; Rating is outside it. A trigger keeps participant identity from moving between Sessions,
+Memberships, or Clubs (migration 20). Phase decisions lock the Session and count accepted
+participants inside that transaction, keeping the lock through the decision. Workflow writes take the Club lock before the Session lock and before
 participant writes. #41 must update participant state on Club departure before checking completion;
 no automatic transition or membership-departure propagation is implemented by this foundation.
 
 `POST /clubs/:clubId/sessions` validates live modes, date, location, optional topic/notes/deadline,
 and a canonical Movie UUID for pre-selected Sessions. Full-cycle starts in Nomination;
-pre-selected starts in Watching. The caller supplies a v4 UUID retained across retries. A saved
-`SESSION_CREATED` audit event identifies its creator; an authorized replay with unchanged details
-returns the existing Session without another insert. A changed payload or different creator
-conflicts. Creation locks the Club and checks current operator role, access,
+pre-selected starts in Watching. The server assigns the Session ID. A repeated request after a
+lost response meets the one-blocking-Session rule and returns `BLOCKING_SESSION`, which the web
+form explains with a link back to the Club Hub. Creation locks the Club and checks current operator role, access,
 the blocking slot, and Movie existence before saving settings and audit together.
 
 `GET /sessions/:sessionId` requires current Club Membership and returns a private/no-store detail
@@ -217,6 +214,15 @@ writes; an identical edit is a no-op. Cancellation requires typed `CANCEL`, incr
 versions, revokes pending invitations, retains history and releases the blocking slot. Repeated
 cancellation creates no extra audit event. Completed and Cancelled Sessions cannot be edited.
 Archived, adminless and over-limit Clubs follow the existing manage-Sessions restriction.
+
+A Session row carries four counters; each guards one kind of change:
+
+| Counter           | Increments when                                   | Used for                                                                                 |
+| ----------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `detailsVersion`  | An edit, a cancellation, or any phase change      | Optimistic concurrency for edits and cancellation; the API calls it `version`.           |
+| `phaseVersion`    | Any phase change                                  | Early Nomination close sends it, so a close never applies to a phase already left.       |
+| `progressVersion` | Any roster, nomination, or phase change           | Clients poll `GET /sessions/:id/progress` and reload the detail when it moves.           |
+| `deadlineVersion` | The nomination deadline is set, changed, or ended | The worker records one deadline decision per version, so a changed deadline is new work. |
 
 Migration 15 adds the nullable Movie relation, details version, and Session references/actions in
 Club audit events. Legacy skeleton Sessions keep nullable details and Movies; no history is invented.
@@ -237,14 +243,14 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                        |
 | Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                         |
 | Club avatar       | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                         |
-| Live progress     | Frontend → API                               | Authenticated SSE versions, re-fetch after gaps                                | Active                                                         |
+| Live progress     | Frontend → API                               | Authenticated version polling, re-fetch on change                              | Active                                                         |
 | Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active — disabled until configured; live provider not verified |
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                       |
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                       |
 
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
-and transition at most once in one transaction. The deadline worker reloads and rechecks each
-Session and reconciles missing overdue intent. Proposed Paddle flows verify events, store provider
+and transition at most once in one transaction. The deadline worker reads due Sessions directly and
+rechecks each one under its locks. Proposed Paddle flows verify events, store provider
 IDs and apply changes idempotently; proposed account deletion anonymizes shared history and revokes
 every authentication session.
 
@@ -252,7 +258,7 @@ every authentication session.
 
 - **Movie catalog:** `MoviesService` accepts canonical Movie UUIDs and exposes normalized PickFlick
   DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
-  owns enrichment and source-cache reuse; the service consumes an aggregate cache status.
+  fetches and merges both sources; the service owns the single freshness rule.
   `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS` apply to every source in the selected adapter.
   The module keeps service and persistence in its root; `providers/` contains the shared
   contract, composite, three API clients and their common HTTP transport. Source clients return
@@ -261,15 +267,15 @@ every authentication session.
   deduplicate concurrent ingestion; title/year never establishes identity. Movie UUIDs survive
   source changes. Public links and future Session/Library relationships use those UUIDs.
   [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources)
-  defines matching, section precedence and missing English metadata behavior. Source snapshots
-  retain independent locale/clock values; search cannot renew details. Projection/search keys
-  include the provider configuration/merge version and locale. — Active internal service
-- **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Source failures
-  stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source data.
-  Stale fallback requires opt-in, validated data within `CATALOG_STALE_HOURS` and a transient
-  error. Invalid payloads, authentication, disabled configuration and removal cannot reuse stale
-  source data. Every observed removal is persisted, including when all sources fail. Removal
-  clocks use the individual source attempt start; timestamp ties retain the source tombstone.
+  defines matching, section precedence and missing English metadata behavior. The merged details
+  projection is the only details cache; search cannot renew details. Projection/search keys hash
+  the configured provider and locale. `Movie.title`/`releaseYear` hold nomination summaries.
+  — Active internal service
+- **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Cached data
+  younger than `CATALOG_REFRESH_HOURS` is served as is, including `partial` details. Source
+  failures stay in provenance; a single-source NOT_FOUND preserves Movie identity and other-source
+  data. Stale fallback requires opt-in, a cache younger than `CATALOG_STALE_HOURS` and a transient
+  error; invalid payloads, authentication, disabled configuration and NOT_FOUND never reuse it.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
   Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.
@@ -284,7 +290,7 @@ every authentication session.
   Authenticated `POST /movies/search` validates the shared search schema and opts into bounded
   stale cache use. Responses are private/no-store; the existing global auth guard and a
   60-request/minute endpoint limit apply. The header calls it through a server action and
-  `apiRequest`, keeping credentials and provider calls on the server. Debounced queries discard
+  `requestApi`, keeping credentials and provider calls on the server. Debounced queries discard
   obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
   UUIDs. Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
   detail state with backend-built outbound links; it has the same private/no-store and rate-limit
@@ -311,10 +317,10 @@ every authentication session.
   projection with the same access contract.
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
-- **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the
-  visitor address Express resolves by trusting two proxy hops (the Next.js rewrite and the
-  Cloudflare entry); Better Auth limits its own routes to 60 a minute (10 for social sign-in). —
-  Active
+- **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact, 600/min for
+  Session progress polling) keyed by the visitor address Express resolves by trusting two proxy
+  hops (the Next.js rewrite and the Cloudflare entry); Better Auth limits its own routes to 60 a
+  minute (10 for social sign-in). — Active
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
 - **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared
@@ -331,12 +337,12 @@ every authentication session.
 
 ## 6. Runtime and delivery
 
-| Environment | Topology                                                                                                                    | Data                           |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Local       | Frontend, backend and deadline worker run natively; PostgreSQL and MinIO in Docker.                                         | Synthetic seed; email disabled |
-| CI          | Audit, lint, knip, types, unit, integration, images; PRs run UI smoke, main/manual run full contract and visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`) + managed data.                                                | Synthetic; test-inbox email    |
-| Production  | Same shape, pinned to a SemVer tag.                                                                                         | Real users; live providers     |
+| Environment | Topology                                                                                                                                      | Data                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Local       | Frontend, backend and deadline worker run natively; PostgreSQL and MinIO in Docker.                                                           | Synthetic seed; email disabled |
+| CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs run UI smoke, main/manual run full contract and visual regression. | Ephemeral services             |
+| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`) + managed data.                                                                  | Synthetic; test-inbox email    |
+| Production  | Same shape, pinned to a SemVer tag.                                                                                                           | Real users; live providers     |
 
 ```mermaid
 flowchart LR
@@ -423,25 +429,25 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, durable `NominationDeadlineJob` scheduling intent,
-`NominationDeadlineDecision` audit records without a human actor, and recipient-specific
-`NominationDeadlineNotification` intent. Notification delivery remains Proposed for the later
-notification phase; these rows do not send messages.
+Migration 18 adds Session `deadlineVersion`, `NominationDeadlineDecision` audit records without a
+human actor, and recipient-specific `NominationDeadlineNotification` intent. Migration 22 removed
+the separate `NominationDeadlineJob` scheduling table: the Session row is the schedule. Notification
+delivery remains Proposed for the later notification phase; these rows do not send messages.
 
-Creation and deadline edits schedule intent in their Session transaction. Edits increment only
-`deadlineVersion` when the deadline changes; clearing, cancellation and manual closure finish pending
-intent. The worker selects candidates without locking jobs, then locks Club → Session → job and
-rechecks phase, lifecycle, phase version, deadline version and timestamp. Zero accepted nominations
-leave Nomination open and retain one operator-alert decision per deadline version. One selects that
-Movie for Watching; two or more nominations, including repeated Movies, open Selection. Transitions
-clear the deadline and increment phase/details/deadline versions. Decision audit, recipient intent
-and job completion commit atomically with the transition.
+Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
+Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
+`deadlineVersion`. Migration 23 indexes `Session (phase, deadlineAt)` for that poll, and the worker
+reads only each candidate's newest decision. It locks Club → Session and rechecks the conditions. Zero accepted
+nominations leave Nomination open and record one operator-alert decision per deadline version.
+One selects that Movie for Watching; two or more nominations, including repeated Movies, open
+Selection. Transitions clear the deadline and increment phase/details/deadline versions. The
+decision, recipient intent and transition commit atomically.
 
-`apps/backend/src/deadline-worker.ts` runs independently of the API. It reconciles missing overdue
-intent on startup and every five seconds, preserving handled empty deadlines, then executes pending
-due jobs through the same transaction. Archived Clubs pause until reactivation. Structured events
-record repairs, outcomes, stale work, safe failure reasons and lateness without user text or database
-error details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
+`apps/backend/src/deadline-worker.ts` runs independently of the API. Every five seconds it selects
+due Sessions and decides each in its own transaction; crashes and restarts leave nothing to repair.
+Archived Clubs pause until reactivation. Structured events record each cycle's due count,
+outcomes, stale work, safe failure reasons and lateness without user text or database error
+details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
 stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
 file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
 framework is introduced. Production activation remains unauthorized.
@@ -451,32 +457,30 @@ framework is introduced. Production activation remains unauthorized.
 Migration 19 adds Session `progressVersion` and `SessionProgressEvent`, a Session-specific
 transactional outbox keyed by `(sessionId, version)`. Nomination, roster, details, cancellation,
 manual closure and deadline transitions persist their new version with an event. Events retain
-phase, phase/details/roster versions, accepted/nominated counts and accepted Membership recipients
+phase, phase/details versions, accepted/nominated counts and accepted Membership recipients
 for later notification work. `AUTOMATIC` records the machine decision without a human actor.
 Notification delivery and retention policy remain later phases; no dispatcher or message broker is
-introduced. Existing rows start at version 1 without invented events or retrospective transitions.
+introduced. Nothing reads these rows yet: the outbox is kept by owner decision (#172) as the source
+for the notification phase, an explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
 
 Submission and roster changes evaluate accepted participants under Club → Session locks. Positive
 N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
 repeated Movies count separately. Session/Club departure and removal update participation first.
 Archived Clubs publish progress without advancing; reactivation checks the current roster.
-The shared transition clears deadline intent and increments phase/details versions exactly once.
+The shared transition clears the deadline and increments phase/details versions exactly once.
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
 independent, preserving ADR-018's empty-deadline operator intent.
 
 Session detail and roster expose their snapshot's `progressVersion` separately from editing,
 phase and roster concurrency tokens.
-`GET /sessions/:sessionId/progress` returns only `{ version }` for fallback checks.
-`GET /sessions/:sessionId/progress/events` sends private, uncached same-origin SSE with current
-version and event ID on connection and every five seconds. Current snapshots heal gaps and old
-`Last-Event-ID` values; they do not replay private projections. Each heartbeat resolves the current
-API-owned authentication session and active Club Membership. Access loss terminates the stream;
-other failures log a fixed safe message and permit reconnect. Disconnect unsubscribes the timer; API shutdown finishes active streams.
+`GET /sessions/:sessionId/progress` returns only `{ version }` to current Club members. The Session
+page polls it every five seconds while visible, and on focus and when the browser comes online.
+SSE was removed in #172: the stream itself polled the database every five seconds per connection,
+so a client poll gives the same latency with no long-lived connections or proxy buffering rules.
 
-The frontend compares signals to the older of the rendered Session detail and roster progress versions and
-refreshes authoritative server components after newer versions. Recovery stays mounted when either
-page read fails transiently; without a rendered version, an unchanged signal also retries the page.
-An unavailable stream shows feedback and polls the snapshot every
-fifteen seconds; focus and online recovery also check it. Manual refresh remains available. The
-client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
+The frontend compares the version to the older of the rendered Session detail and roster progress
+versions and refreshes authoritative server components after newer versions. Recovery stays mounted
+when either page read fails transiently; without a rendered version, an unchanged version also
+retries the page. A failed poll shows feedback; losing access reloads once and stops polling.
+Manual refresh remains available. The client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
 are required. Apply migration 19 before releasing the API and worker images.

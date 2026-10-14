@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http';
 
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Optional } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import type { BetterAuthPlugin } from 'better-auth';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
@@ -47,9 +47,11 @@ export class AuthService {
     ): Promise<void> => {
         const path = new URL(request.url ?? '/', 'http://localhost').pathname;
         if (!EXPOSED_ROUTES.has(`${request.method} ${path}`)) {
-            response.statusCode = 404;
+            response.statusCode = HttpStatus.NOT_FOUND;
             response.setHeader('content-type', 'application/json');
-            response.end(JSON.stringify({ statusCode: 404, message: 'Not Found' }));
+            response.end(
+                JSON.stringify({ statusCode: HttpStatus.NOT_FOUND, message: 'Not Found' }),
+            );
             return;
         }
         if (path === '/api/auth/get-session') {

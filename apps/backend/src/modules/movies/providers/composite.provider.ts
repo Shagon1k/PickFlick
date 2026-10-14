@@ -1,175 +1,110 @@
 import type { TMovieExternalId, TMovieSearch } from '@pickflick/contracts';
 
-import type { MoviesRepository } from '../movies.repository.js';
 import {
-    canUseStale,
-    emptyMetadata,
+    createEmptyMetadata,
     type IMovieLookup,
     type IMovieProvider,
     MovieProviderError,
     parseProviderRecord,
-    singleSource,
+    toProviderRecord,
     type TProviderRecord,
     type TSourceSnapshot,
 } from './movie-provider.js';
 import type { PoiskkinoClient } from './poiskkino.client.js';
 import type { ThetvdbClient } from './thetvdb.client.js';
 
+interface ILoaded {
+    record: TSourceSnapshot | null;
+    error: MovieProviderError | null;
+}
+
+/** PoiskKino supplies search, media, ratings and related titles; TheTVDB adds English text. */
 export class CompositeMovieProvider implements IMovieProvider {
-    get configurationKey() {
-        return `composite:v1:${this.poiskkino.configurationKey}:${this.thetvdb.configurationKey}`;
-    }
     constructor(
-        private poiskkino: Pick<
-            PoiskkinoClient,
-            'search' | 'details' | 'configurationKey' | 'enabled'
-        >,
-        private thetvdb: Pick<ThetvdbClient, 'details' | 'configurationKey' | 'enabled'>,
-        private policy: { refreshHours: number; staleHours: number },
-        private cache: Pick<MoviesRepository, 'cachedSources'>,
+        private poiskkino: Pick<PoiskkinoClient, 'search' | 'fetchDetails'>,
+        private thetvdb: Pick<ThetvdbClient, 'fetchDetails'>,
     ) {}
+
     async search(input: TMovieSearch) {
         const result = await this.poiskkino.search(input);
-        return { ...result, movies: result.movies.map(singleSource) };
+        return { ...result, movies: result.movies.map(toProviderRecord) };
     }
-    async details(input: IMovieLookup): Promise<TProviderRecord> {
-        const cachedSources = await this.cache.cachedSources(input.movieId, input.locale);
-        const { record: primary, error: primaryError } = await this.loadPoiskkino({
-            ...input,
-            cachedSources,
-        });
-        const ids = this.combineIds(input.externalIds, primary?.externalIds ?? []);
-        const cached = cachedSources.find(
-            (snapshot) =>
-                snapshot.source === 'thetvdb' &&
-                snapshot.locale === input.locale &&
-                this.matches(ids, snapshot.externalIds),
-        );
-        const { record: enrichment, error: enrichmentError } = await this.loadThetvdb(
-            input,
-            ids,
-            cached,
-        );
-        const removals = [...(primaryError?.removals ?? []), ...(enrichmentError?.removals ?? [])];
-        if (!primary && !enrichment) {
-            const error = primaryError ?? enrichmentError ?? new MovieProviderError('NOT_FOUND');
-            throw new MovieProviderError(error.reason, error.retryAt, error.source, removals);
+
+    async fetchDetails(input: IMovieLookup): Promise<TProviderRecord> {
+        const primary = await this.loadPrimary(input.externalIds);
+        const ids = combineIds(input.externalIds, primary.record?.externalIds ?? []);
+        const enrichment = await load(() => this.thetvdb.fetchDetails(ids));
+        if (!primary.record && !enrichment.record) {
+            throw primary.error ?? enrichment.error ?? new MovieProviderError('NOT_FOUND');
         }
-        const base = primary?.data ?? emptyMetadata();
-        const english = enrichment?.data;
-        const externalIds = this.combineIds(
-            primary?.externalIds ?? input.externalIds,
-            enrichment?.externalIds ?? [],
-        );
         return parseProviderRecord({
-            externalIds,
-            data: {
-                ...base,
-                title: english?.title ?? base.title,
-                overview: english?.overview ?? null,
-                originalTitle: english?.originalTitle ?? base.originalTitle,
-                releaseDate: english?.releaseDate ?? base.releaseDate,
-                originalLanguage: english?.originalLanguage ?? base.originalLanguage,
-                runtime: english?.runtime ?? base.runtime,
-                genres: english?.genres ?? null,
-                directors: english?.directors ?? null,
-                cast: english?.cast ?? null,
-            },
-            similarExternalIds: primary?.similarExternalIds ?? null,
-            snapshots: [...(primary ? [primary] : []), ...(enrichment ? [enrichment] : [])],
-            removals,
+            externalIds: combineIds(
+                primary.record?.externalIds ?? input.externalIds,
+                enrichment.record?.externalIds ?? [],
+            ),
+            data: mergeMetadata(primary.record, enrichment.record),
+            similarExternalIds: primary.record?.similarExternalIds ?? null,
             provenance: [
                 {
                     source: 'poiskkino',
-                    fetchedAt: primary?.fetchedAt ?? null,
-                    reason: primaryError?.reason ?? null,
+                    fetchedAt: primary.record?.fetchedAt ?? null,
+                    reason: primary.error?.reason ?? null,
                     sections: ['metadata', 'media', 'ratings', 'similar'],
                 },
                 {
                     source: 'thetvdb',
-                    fetchedAt: enrichment?.fetchedAt ?? null,
-                    reason: enrichmentError?.reason ?? null,
+                    fetchedAt: enrichment.record?.fetchedAt ?? null,
+                    reason: enrichment.error?.reason ?? null,
                     sections: ['metadata'],
                 },
             ],
         });
     }
-    private async loadPoiskkino(input: IMovieLookup & { cachedSources: TSourceSnapshot[] }) {
-        const cached = input.cachedSources.find(
-            (snapshot) =>
-                snapshot.source === 'poiskkino' &&
-                snapshot.locale === input.locale &&
-                this.matches(input.externalIds, snapshot.externalIds),
-        );
-        if (
-            this.poiskkino.enabled &&
-            !input.forceRefresh &&
-            cached &&
-            this.within(cached.fetchedAt, this.policy.refreshHours)
-        )
-            return { record: cached, error: null };
-        try {
-            return { record: await this.poiskkino.details(input.externalIds), error: null };
-        } catch (error) {
-            if (
-                !(error instanceof MovieProviderError) ||
-                !['NOT_FOUND', 'MISSING_EXTERNAL_ID'].includes(error.reason)
-            )
-                throw error;
-            return { record: null, error };
+
+    /** A Movie PoiskKino no longer knows can still be described by TheTVDB. */
+    private async loadPrimary(ids: TMovieExternalId[]): Promise<ILoaded> {
+        const loaded = await load(() => this.poiskkino.fetchDetails(ids));
+        if (loaded.error && !['NOT_FOUND', 'MISSING_EXTERNAL_ID'].includes(loaded.error.reason)) {
+            throw loaded.error;
         }
+        return loaded;
     }
-    private async loadThetvdb(
-        input: IMovieLookup,
-        ids: TMovieExternalId[],
-        cached: TSourceSnapshot | undefined,
-    ) {
-        if (
-            this.thetvdb.enabled &&
-            !input.forceRefresh &&
-            cached &&
-            this.within(cached.fetchedAt, this.policy.refreshHours)
-        )
-            return { record: cached, error: null };
-        try {
-            return { record: await this.thetvdb.details(ids), error: null };
-        } catch (error) {
-            if (!(error instanceof MovieProviderError)) throw error;
-            const record =
-                input.allowStale &&
-                canUseStale(error.reason) &&
-                cached &&
-                this.within(cached.fetchedAt, this.policy.staleHours)
-                    ? cached
-                    : null;
-            return { record, error };
-        }
+}
+
+async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoaded> {
+    try {
+        return { record: await fetchSnapshot(), error: null };
+    } catch (error) {
+        if (!(error instanceof MovieProviderError)) throw error;
+        return { record: null, error };
     }
-    private combineIds(left: TMovieExternalId[], right: TMovieExternalId[]) {
-        const ids = new Map(left.map((id) => [id.source, id]));
-        for (const id of right) {
-            if (ids.has(id.source) && ids.get(id.source)?.externalId !== id.externalId)
-                throw new MovieProviderError('IDENTITY_CONFLICT');
-            ids.set(id.source, id);
-        }
-        return [...ids.values()];
+}
+
+/** English text comes from TheTVDB; media, ratings and year stay with PoiskKino. */
+function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
+    const base = primary?.data ?? createEmptyMetadata();
+    const english = enrichment?.data;
+    return {
+        ...base,
+        title: english?.title ?? base.title,
+        overview: english?.overview ?? null,
+        originalTitle: english?.originalTitle ?? base.originalTitle,
+        releaseDate: english?.releaseDate ?? base.releaseDate,
+        originalLanguage: english?.originalLanguage ?? base.originalLanguage,
+        runtime: english?.runtime ?? base.runtime,
+        genres: english?.genres ?? null,
+        directors: english?.directors ?? null,
+        cast: english?.cast ?? null,
+    };
+}
+
+/** Two sources may agree on an ID or add a new one; a different ID for one source is a conflict. */
+function combineIds(left: TMovieExternalId[], right: TMovieExternalId[]): TMovieExternalId[] {
+    const ids = new Map(left.map((id) => [id.source, id]));
+    for (const id of right) {
+        if (ids.has(id.source) && ids.get(id.source)?.externalId !== id.externalId)
+            throw new MovieProviderError('IDENTITY_CONFLICT');
+        ids.set(id.source, id);
     }
-    private matches(left: TMovieExternalId[], right: TMovieExternalId[]) {
-        return (
-            left.some((id) =>
-                right.some(
-                    (other) => id.source === other.source && id.externalId === other.externalId,
-                ),
-            ) &&
-            !left.some((id) =>
-                right.some(
-                    (other) => id.source === other.source && id.externalId !== other.externalId,
-                ),
-            )
-        );
-    }
-    private within(date: string, hours: number) {
-        const age = Date.now() - Date.parse(date);
-        return age >= 0 && age < hours * 3600000;
-    }
+    return [...ids.values()];
 }

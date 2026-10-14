@@ -1,6 +1,8 @@
 import { setTimeout } from 'node:timers/promises';
 
-import type { NominationDeadlines } from './modules/sessions/nomination-deadlines.js';
+import type { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
+
+const POLL_INTERVAL_MS = 5000;
 
 export async function runDeadlineWorker(
     deadlines: Pick<NominationDeadlines, 'runOnce'>,
@@ -15,7 +17,7 @@ export async function runDeadlineWorker(
         }
         if (signal.aborted) break;
         try {
-            await setTimeout(5000, undefined, { signal });
+            await setTimeout(POLL_INTERVAL_MS, undefined, { signal });
         } catch (error) {
             if (!signal.aborted) throw error;
         }

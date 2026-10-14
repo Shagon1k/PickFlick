@@ -1,0 +1,11 @@
+.credits {
+    padding: var(--gap-sm) var(--gap-md);
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    border-top: 1px solid var(--border);
+
+    a {
+        color: var(--fg);
+        text-decoration: underline;
+    }
+}

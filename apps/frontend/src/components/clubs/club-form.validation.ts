@@ -10,9 +10,9 @@ import type {
     IClubFormValues,
     TClubFieldErrors,
     TClubFieldName,
-} from '@/components/clubs/club-form.types';
-import { formText } from '@/lib/form-data';
-import { fieldErrors } from '@/lib/form-errors';
+} from '#components/clubs/club-form.types';
+import { readFormText } from '#lib/form-data';
+import { toFieldErrors } from '#lib/form-errors';
 
 const FIELD_MESSAGES: Record<TClubFieldName, string> = {
     name: `Use ${CLUB_NAME_MIN_LENGTH}–${CLUB_NAME_MAX_LENGTH} characters on a single line.`,
@@ -21,12 +21,12 @@ const FIELD_MESSAGES: Record<TClubFieldName, string> = {
     selectionScaleMax: `Choose a final score above the first score, up to ${CLUB_SELECTION_SCALE_CEILING}.`,
 };
 
-export function clubValues(formData: FormData): IClubFormValues {
+export function readClubValues(formData: FormData): IClubFormValues {
     return {
-        name: formText(formData, 'name'),
-        description: formText(formData, 'description'),
-        selectionScaleMin: formText(formData, 'selectionScaleMin'),
-        selectionScaleMax: formText(formData, 'selectionScaleMax'),
+        name: readFormText(formData, 'name'),
+        description: readFormText(formData, 'description'),
+        selectionScaleMin: readFormText(formData, 'selectionScaleMin'),
+        selectionScaleMax: readFormText(formData, 'selectionScaleMax'),
     };
 }
 
@@ -41,5 +41,5 @@ export function parseClubValues(values: IClubFormValues) {
 
 export function validateClubValues(values: IClubFormValues): TClubFieldErrors {
     const parsed = parseClubValues(values);
-    return parsed.success ? {} : fieldErrors(parsed.error, FIELD_MESSAGES);
+    return parsed.success ? {} : toFieldErrors(parsed.error, FIELD_MESSAGES);
 }

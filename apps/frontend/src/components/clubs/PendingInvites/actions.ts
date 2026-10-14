@@ -1,16 +1,20 @@
 'use server';
 
-import { invitationDecisionSchema, type TPendingInvitation } from '@pickflick/contracts';
+import {
+    HTTP_STATUS,
+    invitationDecisionSchema,
+    type TPendingInvitation,
+} from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import {
-    pendingClubInvitations,
-    pendingSessionInvitations,
+    listPendingClubInvitations,
+    listPendingSessionInvitations,
     respondPendingClubInvitation,
     respondPendingSessionInvitation,
-} from '@/api/session-roster.server';
-import { ApiError } from '@/lib/api.server';
+} from '#api/session-roster.server';
+import { ApiError } from '#lib/api.server';
 
 export async function loadPendingInvitesAction(): Promise<{
     invitations?: TPendingInvitation[];
@@ -18,8 +22,8 @@ export async function loadPendingInvitesAction(): Promise<{
 }> {
     try {
         const [clubs, sessions] = await Promise.all([
-            pendingClubInvitations(),
-            pendingSessionInvitations(),
+            listPendingClubInvitations(),
+            listPendingSessionInvitations(),
         ]);
         return {
             invitations: [
@@ -30,7 +34,7 @@ export async function loadPendingInvitesAction(): Promise<{
     } catch (error) {
         return {
             message:
-                error instanceof ApiError && error.status === 401
+                error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED
                     ? 'Sign in again to view pending invites.'
                     : 'Pending invites could not be loaded. Check your connection and retry.',
         };

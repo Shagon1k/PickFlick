@@ -2,20 +2,20 @@
 
 import { useEffect, useRef } from 'react';
 
-import FilmStrip from '@/components/shells/FilmStrip/FilmStrip';
-import NotificationsPanel from '@/components/shells/NotificationsPanel/NotificationsPanel';
-import styles from '@/components/shells/product-navigation.module.scss';
+import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
+import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
     useOverlayDismissal,
     useProductOverlay,
-} from '@/components/shells/product-overlay';
-import type { TShellMenuItem } from '@/components/shells/shell-navigation';
-import Icon from '@/components/ui/Icon/Icon';
-import { authClient } from '@/lib/auth-client';
+} from '#components/shells/product-overlay';
+import type { TShellMenuItem } from '#components/shells/shell-navigation';
+import Icon from '#components/ui/Icon/Icon';
+import { authClient } from '#lib/auth-client';
 
 /** Up to two initials from the viewer's display name; empty when no usable name exists. */
-function initialsFor(name: string | null | undefined): string {
+function getInitials(name: string | null | undefined): string {
     const words = (name ?? '').trim().split(/\s+/u).filter(Boolean);
     const initials =
         words.length > 1
@@ -33,21 +33,21 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const accountRef = useRef<HTMLDivElement>(null);
     const actionsRef = useRef<HTMLDivElement>(null);
     const notificationsRef = useRef<HTMLDivElement>(null);
-    const accountOpen = activeOverlay === 'account';
-    const notificationsOpen = activeOverlay === 'notifications';
+    const isAccountMenuOpen = activeOverlay === 'account';
+    const isNotificationsPanelOpen = activeOverlay === 'notifications';
     const { data: session } = authClient.useSession();
-    const initials = initialsFor(session?.user.name);
+    const initials = getInitials(session?.user.name);
 
-    useOverlayDismissal(accountOpen, accountRef, closeOverlay, true);
-    useOverlayDismissal(notificationsOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal(isAccountMenuOpen, accountRef, closeOverlay, true);
+    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
 
-    useAnchoredMenus(accountOpen ? 'account' : null, actionsRef);
+    useAnchoredMenus(isAccountMenuOpen ? 'account' : null, actionsRef);
 
     useEffect(() => {
-        if (notificationsOpen) {
+        if (isNotificationsPanelOpen) {
             notificationsRef.current?.focus({ preventScroll: true });
         }
-    }, [notificationsOpen]);
+    }, [isNotificationsPanelOpen]);
 
     return (
         <div className={styles.headerActions} ref={actionsRef}>
@@ -65,7 +65,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
             <div className={`${styles.popoverAnchor} ${styles.desktopHeaderAction}`}>
                 <button
                     aria-controls="shell-notifications"
-                    aria-expanded={notificationsOpen}
+                    aria-expanded={isNotificationsPanelOpen}
                     aria-haspopup="dialog"
                     aria-label="Notifications"
                     className={styles.roundButton}
@@ -77,7 +77,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                 </button>
                 <NotificationsPanel
                     id="shell-notifications"
-                    open={notificationsOpen}
+                    open={isNotificationsPanelOpen}
                     panelRef={notificationsRef}
                 />
             </div>
@@ -87,7 +87,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
             >
                 <button
                     aria-controls="shell-account-menu"
-                    aria-expanded={accountOpen}
+                    aria-expanded={isAccountMenuOpen}
                     aria-label="Account menu"
                     className={styles.avatarButton}
                     data-product-overlay-control
@@ -100,9 +100,9 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                     className={styles.accountPopover}
                     data-anchored-menu="account"
                     data-menu-align="right"
-                    data-open={accountOpen || undefined}
+                    data-open={isAccountMenuOpen || undefined}
                     id="shell-account-menu"
-                    inert={!accountOpen}
+                    inert={!isAccountMenuOpen}
                     ref={accountRef}
                 >
                     <span aria-hidden="true" className={styles.filmTail} />

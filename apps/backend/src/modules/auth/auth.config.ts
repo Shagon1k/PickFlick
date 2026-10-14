@@ -11,15 +11,15 @@ import { authLogger } from './auth-logger.js';
 const DAY_SECONDS = 24 * 60 * 60;
 
 /** `cf-connecting-ip` is trusted only behind Cloudflare; local runs use the proxy chain. */
-function clientAddressHeader(environment: TRuntimeEnvironment): string {
+function getClientAddressHeader(environment: TRuntimeEnvironment): string {
     return environment.auth.secureCookies ? 'cf-connecting-ip' : 'x-forwarded-for';
 }
 
-function loginPath(returnTo: string): string {
+function buildLoginPath(returnTo: string): string {
     return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-function nameFromEmail(email: string | undefined): string {
+function getNameFromEmail(email: string | undefined): string {
     return email?.split('@')[0] || 'PickFlick member';
 }
 
@@ -42,7 +42,7 @@ export function createAuth(
         database: prismaAdapter(prisma, { provider: 'postgresql', transaction: true }),
         advanced: {
             database: { generateId: 'uuid' },
-            ipAddress: { ipAddressHeaders: [clientAddressHeader(environment)] },
+            ipAddress: { ipAddressHeaders: [getClientAddressHeader(environment)] },
             // The `__Host-` cookie name already implies Secure; attributes stay explicit below.
             useSecureCookies: false,
             defaultCookieAttributes: {
@@ -66,7 +66,7 @@ export function createAuth(
                           clientSecret: createAppleClientSecret(auth),
                           // Apple shares a name only on first sign-in; fall back to the email.
                           mapProfileToUser: (profile: { name?: string; email?: string }) => ({
-                              name: profile.name || nameFromEmail(profile.email),
+                              name: profile.name || getNameFromEmail(profile.email),
                           }),
                       },
                   }
@@ -114,7 +114,7 @@ export function createAuth(
                     });
                 }
                 body.newUserCallbackURL = returnTo;
-                body.errorCallbackURL = loginPath(returnTo);
+                body.errorCallbackURL = buildLoginPath(returnTo);
             }),
         },
         databaseHooks: {

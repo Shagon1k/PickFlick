@@ -2,9 +2,9 @@ import { generateKeyPairSync } from 'node:crypto';
 
 import {
     EnvironmentValidationError,
+    getSafeEnvironmentValidationFailures,
     parseDatabaseEnvironment,
     parseRuntimeEnvironment,
-    safeEnvironmentValidationFailures,
 } from '../environment.js';
 
 const local = {
@@ -42,7 +42,7 @@ function failuresOf(source: Record<string, string>): string[] {
     try {
         parseRuntimeEnvironment(source);
     } catch (error) {
-        return safeEnvironmentValidationFailures(error) ?? [];
+        return getSafeEnvironmentValidationFailures(error) ?? [];
     }
     return [];
 }

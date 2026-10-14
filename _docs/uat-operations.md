@@ -122,18 +122,22 @@ have replaced containers, so the previous runtime is not guaranteed to survive. 
 the environment), then run an approved deployment. Never paste environment values, connection URLs,
 tokens, or raw provider responses into evidence.
 
+Migrations 20–22 are a one-way boundary: no image from before them runs on the migrated schema (see
+[production operations](production-operations.md#migrations-2022-are-a-one-way-boundary)).
+
 ## Deadline worker operations
 
-Apply migration 18 before starting the candidate API and `worker`. Check the worker's Compose
-heartbeat health and `deadline.worker.started` / `deadline.reconciliation` events after release.
-An overdue Nomination with missing scheduling intent is repaired on startup; completed empty
-intent stays handled. Archived Clubs resume pending work after reactivation. Restarting the worker
-retries unfinished transactions; do not delete jobs or decision records to force a retry.
+Apply all migrations (through 23) before starting the candidate API and `worker`. Check the worker's Compose
+heartbeat health and `deadline.worker.started` / `deadline.cycle` events after release.
+An overdue Nomination is decided on the next cycle; a completed empty decision stays handled
+until the deadline changes. Archived Clubs resume after reactivation. Restarting the worker
+retries unfinished transactions; do not delete decision records to force a retry.
 
 `deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
-and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
-operator-alert or participant-notification intent; transport remains later work. Production activation
-still requires its existing authorization and promotion guards.
+and applied migrations, then check that the next `deadline.cycle` picks up the overdue Sessions
+without a new `deadline.failure`. Recipient rows retain operator-alert or participant-notification
+intent; transport remains later work. Production activation still requires its existing
+authorization and promotion guards.
 
 ## Verify Session progress on a preview
 
@@ -141,8 +145,8 @@ Use the preview built from the PR's exact head SHA. Open one Session in two auth
 submit a nomination in one, and confirm the other refreshes progress without a manual action.
 Complete the accepted roster and verify the resulting Selection or sole-Movie Watching phase in
 both clients. Disconnect a client before the final change, then reconnect and confirm its phase
-matches a fresh page load. Verify periodic recovery with the stream blocked and access loss after
-Club departure. The stream carries versions only; the page enforces nomination visibility.
+matches a fresh page load. Verify recovery after the progress request fails and access loss after Club departure. The progress
+response carries a version only; the page enforces nomination visibility.
 
 Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
 owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.

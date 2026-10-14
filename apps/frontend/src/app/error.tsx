@@ -2,22 +2,22 @@
 
 import { useEffect } from 'react';
 
-import SystemState from '@/components/shells/SystemState/SystemState';
-import { authClient } from '@/lib/auth-client';
+import SystemState from '#components/shells/SystemState/SystemState';
+import { authClient } from '#lib/auth-client';
 
 export default function ApplicationError({
-    retry,
+    retry: handleRetry,
 }: {
     error: Error & { digest?: string };
     retry: () => void;
 }) {
     // Until the session resolves, the public recovery chrome stays safe even when the API is down.
     const { data: session } = authClient.useSession();
-    const signedIn = Boolean(session?.user);
+    const isSignedIn = Boolean(session?.user);
 
     useEffect(() => {
         globalThis.document.getElementById('system-state-title')?.focus({ preventScroll: true });
-    }, [signedIn]);
+    }, [isSignedIn]);
 
-    return <SystemState onRetry={retry} signedIn={signedIn} variant="application-error" />;
+    return <SystemState onRetry={handleRetry} signedIn={isSignedIn} variant="application-error" />;
 }

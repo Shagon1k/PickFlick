@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
     cancelSessionSchema,
     createSessionSchema,
@@ -14,6 +15,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { SessionsService } from './sessions.service.js';
 
 const uuid = new ParseUUIDPipe({ version: '4' });
+// Every open Session page polls progress every 5 seconds, and a watch party shares one address.
+const PROGRESS_RATE_LIMIT = { default: { ttl: 60_000, limit: 600 } };
+
 @Controller()
 export class SessionsController {
     constructor(private readonly sessions: SessionsService) {}
@@ -32,6 +36,14 @@ export class SessionsController {
         @Body(new ZodValidationPipe(createSessionSchema)) input: TCreateSession,
     ) {
         return this.sessions.create(user.id, clubId, input);
+    }
+
+    /** Clients poll this version and reload the Session projections when it grows. */
+    @Get('sessions/:sessionId/progress')
+    @Header('Cache-Control', 'private, no-store')
+    @Throttle(PROGRESS_RATE_LIMIT)
+    getProgress(@CurrentUser() user: IAuthUser, @Param('sessionId', uuid) id: string) {
+        return this.sessions.getProgress(user.id, id);
     }
 
     @Patch('sessions/:sessionId')

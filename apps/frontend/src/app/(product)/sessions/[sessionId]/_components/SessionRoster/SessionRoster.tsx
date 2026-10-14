@@ -3,10 +3,11 @@
 import type { ISessionRoster } from '@pickflick/contracts';
 import { useRef, useState, useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import Select from '@/components/ui/Select/Select';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import Button from '#components/ui/Button/Button';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import Select from '#components/ui/Select/Select';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { getOfflineMessage } from '#lib/offline';
 
 import { changeRosterAction } from '../../roster-actions';
 import styles from './SessionRoster.module.scss';
@@ -29,11 +30,11 @@ export default function SessionRoster({
         participantId?: string;
         name: string;
     } | null>(null);
-    const [confirmation, setConfirmation] = useState('');
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     function run(input: unknown) {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before changing the roster.');
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         startTransition(async () => {
@@ -55,7 +56,6 @@ export default function SessionRoster({
     }
     function confirm(action: 'leave' | 'remove', name: string, participantId?: string) {
         setMessage('');
-        setConfirmation('');
         setDialog({ action, name, participantId });
     }
     return (
@@ -85,7 +85,7 @@ export default function SessionRoster({
                             <div className={styles.actions}>
                                 {participant.invitation?.state === 'pending' && roster.canManage ? (
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="secondary"
                                         onClick={() =>
                                             run({
@@ -99,7 +99,7 @@ export default function SessionRoster({
                                 ) : null}
                                 {participant.canRemove ? (
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="secondary-danger"
                                         onClick={() =>
                                             confirm(
@@ -125,14 +125,14 @@ export default function SessionRoster({
                         placeholder="Choose a member"
                         value={memberId}
                         onChange={setMemberId}
-                        disabled={pending}
+                        disabled={isPending}
                         data={roster.eligibleMembers.map((member) => ({
                             value: member.id,
                             label: member.displayName,
                         }))}
                     />
                     <Button
-                        disabled={!memberId || pending}
+                        disabled={!memberId || isPending}
                         onClick={() => run({ action: 'invite', membershipId: memberId })}
                     >
                         Create Session invitation
@@ -155,7 +155,7 @@ export default function SessionRoster({
             ) : null}
             {roster.canLeave ? (
                 <Button
-                    disabled={pending}
+                    disabled={isPending}
                     variant="secondary-danger"
                     onClick={() => confirm('leave', 'your participation')}
                 >
@@ -165,7 +165,22 @@ export default function SessionRoster({
             <p aria-live="polite" role="status">
                 {message}
             </p>
-            <Modal
+            <ConfirmDialog
+                cancelLabel="Keep participation"
+                confirmLabel={`Confirm ${dialog?.action === 'leave' ? 'leaving' : 'removal'}`}
+                inputId="session-roster-confirmation"
+                onClose={() => setDialog(null)}
+                onConfirm={(confirmation) =>
+                    run(
+                        dialog?.action === 'leave'
+                            ? { action: 'leave', confirmation }
+                            : {
+                                  action: 'remove',
+                                  participantId: dialog?.participantId,
+                                  confirmation,
+                              },
+                    )
+                }
                 onExitTransitionEnd={() => {
                     if (restoreFocusRef.current) {
                         headingRef.current?.focus();
@@ -173,55 +188,20 @@ export default function SessionRoster({
                     }
                 }}
                 open={dialog !== null}
-                dismissible={!pending}
-                title={dialog?.action === 'leave' ? 'Leave Session' : 'Remove participant'}
-                tone="danger"
-                onClose={() => setDialog(null)}
-                actions={
-                    <>
-                        <Button
-                            disabled={pending}
-                            variant="secondary"
-                            onClick={() => setDialog(null)}
-                        >
-                            Keep participation
-                        </Button>
-                        <Button
-                            loading={pending}
-                            variant="danger"
-                            disabled={confirmation !== dialog?.action.toUpperCase()}
-                            onClick={() =>
-                                run(
-                                    dialog?.action === 'leave'
-                                        ? { action: 'leave', confirmation }
-                                        : {
-                                              action: 'remove',
-                                              participantId: dialog?.participantId,
-                                              confirmation,
-                                          },
-                                )
-                            }
-                        >
-                            Confirm {dialog?.action === 'leave' ? 'leaving' : 'removal'}
-                        </Button>
-                    </>
+                pending={isPending}
+                status={
+                    <p aria-live="polite" role="status">
+                        {message}
+                    </p>
                 }
+                title={dialog?.action === 'leave' ? 'Leave Session' : 'Remove participant'}
+                word={dialog?.action === 'leave' ? 'LEAVE' : 'REMOVE'}
             >
                 <p>
                     End {dialog?.name}? This participant will no longer count toward Session
                     progress. Their existing history stays.
                 </p>
-                <TextInput
-                    id="session-roster-confirmation"
-                    label={`Type ${dialog?.action.toUpperCase() ?? 'REMOVE'} to confirm`}
-                    value={confirmation}
-                    disabled={pending}
-                    onChange={(event) => setConfirmation(event.currentTarget.value)}
-                />
-                <p aria-live="polite" role="status">
-                    {message}
-                </p>
-            </Modal>
+            </ConfirmDialog>
         </section>
     );
 }

@@ -4,7 +4,12 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { loadRuntimeEnvironment, type TRuntimeEnvironment } from '@pickflick/config/environment';
-import { assertSafeSeedOrResetTarget, type PrismaClient } from '@pickflick/database';
+import {
+    assertSafeSeedOrResetTarget,
+    type Prisma,
+    type PrismaClient,
+    snapshotSessionSettings,
+} from '@pickflick/database';
 
 import { AppModule } from '../app.module.js';
 import { configureApplication } from '../config/configure-application.js';
@@ -14,7 +19,7 @@ import type { IAuthUser } from '../modules/auth/auth.types.js';
 import { type IStoredObject, StorageService } from '../modules/storage/storage.service.js';
 
 /** Loads the local or test environment and refuses to run against any other database. */
-export function integrationEnvironment(): TRuntimeEnvironment {
+export function loadIntegrationEnvironment(): TRuntimeEnvironment {
     const environment = loadRuntimeEnvironment();
     assertSafeSeedOrResetTarget(environment);
     return environment;
@@ -37,6 +42,36 @@ export async function createUser(
     return id;
 }
 
+/** Adds an active Membership and returns its ID. */
+export async function addMember(
+    prisma: PrismaClient,
+    clubId: string,
+    userId: string,
+    role: 'ADMIN' | 'MODERATOR' | 'MEMBER' = 'MEMBER',
+): Promise<string> {
+    const membership = await prisma.membership.create({
+        data: { id: randomUUID(), clubId, userId, role },
+    });
+    return membership.id;
+}
+
+/** Creates a Session with the Club's current settings snapshot; `data` overrides any column. */
+export async function createSession(
+    prisma: PrismaClient,
+    clubId: string,
+    data: Partial<Prisma.SessionUncheckedCreateInput> &
+        Pick<Prisma.SessionUncheckedCreateInput, 'type' | 'phase'>,
+) {
+    return prisma.session.create({
+        data: {
+            id: randomUUID(),
+            clubId,
+            ...(await snapshotSessionSettings(prisma, clubId)),
+            ...data,
+        },
+    });
+}
+
 /** Removes the users and every Club, Membership, Session, and audit row tied to them. */
 export async function removeUsers(prisma: PrismaClient, userIds: string[]): Promise<void> {
     const memberships = await prisma.membership.findMany({
@@ -50,12 +85,9 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     await prisma.nomination.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
     await prisma.sessionParticipant.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.nominationDeadlineNotification.deleteMany({
-        where: { decision: { job: { session: { clubId: { in: clubIds } } } } },
+        where: { decision: { session: { clubId: { in: clubIds } } } },
     });
     await prisma.nominationDeadlineDecision.deleteMany({
-        where: { job: { session: { clubId: { in: clubIds } } } },
-    });
-    await prisma.nominationDeadlineJob.deleteMany({
         where: { session: { clubId: { in: clubIds } } },
     });
     await prisma.session.deleteMany({ where: { clubId: { in: clubIds } } });
@@ -100,7 +132,7 @@ export interface ITestApi {
 export async function startTestApi(): Promise<ITestApi> {
     const storage = new MemoryStorage();
     const moduleRef = await Test.createTestingModule({
-        imports: [AppModule.register(integrationEnvironment())],
+        imports: [AppModule.register(loadIntegrationEnvironment())],
     })
         .overrideProvider(StorageService)
         .useValue(storage)

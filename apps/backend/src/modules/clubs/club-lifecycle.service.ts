@@ -1,12 +1,21 @@
 import { ConflictException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { departSessions } from '../sessions/session-departure.js';
-import { completeNomination } from '../sessions/session-progress.js';
+import { completeNomination } from '../sessions/nominations/nomination-completion.js';
+import { departSessions } from '../sessions/roster/session-departure.js';
+import { lockSession } from '../sessions/session-lock.js';
 import { StorageService } from '../storage/storage.service.js';
-import { assertActive, assertAdmin, findMembership, lockClub, recordAudit } from './club-access.js';
-import { clubEntitlements } from './club-tiers.js';
+import {
+    assertActive,
+    assertAdmin,
+    findMembership,
+    lockClub,
+    recordAudit,
+} from './access/club-access.js';
+import { canRemoveMember } from './access/club-permissions.js';
+import { getClubEntitlements } from './access/club-tiers.js';
 import { assertBelowAdminLimit } from './clubs.service.js';
 
 function assertConfirmed(confirmation: string, expected: string): void {
@@ -73,12 +82,7 @@ export class ClubLifecycleService {
             const target = await transaction.membership.findFirst({
                 where: { id: membershipId, clubId },
             });
-            if (
-                !target ||
-                target.role === 'ADMIN' ||
-                target.id === actor.id ||
-                (actor.role === 'MODERATOR' && target.role !== 'MEMBER')
-            ) {
+            if (!target || !canRemoveMember(actor, target, actor.club.lifecycle)) {
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             }
             if (target.status !== 'ACTIVE') return;
@@ -153,17 +157,17 @@ export class ClubLifecycleService {
                 await assertBelowAdminLimit(
                     transaction,
                     userId,
-                    clubEntitlements(clubId).adminClubLimit,
+                    getClubEntitlements(clubId).adminClubLimit,
                 );
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });
             const sessions = await transaction.session.findMany({
-                where: { clubId, phase: { in: ['NOMINATION', 'SELECTION', 'WATCHING', 'RATING'] } },
+                where: { clubId, phase: { in: [...OPEN_SESSION_PHASES] } },
                 orderBy: { id: 'asc' },
                 select: { id: true },
             });
             for (const session of sessions) {
-                await transaction.$queryRaw`SELECT id FROM "Session" WHERE id = ${session.id}::uuid FOR UPDATE`;
+                await lockSession(transaction, session.id);
                 await completeNomination(transaction, session.id);
             }
             await recordAudit(transaction, {

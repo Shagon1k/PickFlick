@@ -2,32 +2,32 @@
 
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
-import ScoreControl from '@/components/ui/ScaleControl/ScoreControl';
-import Select from '@/components/ui/Select/Select';
-import Tabs from '@/components/ui/Tabs/Tabs';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { formText } from '@/lib/form-data';
+import Button from '#components/ui/Button/Button';
+import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
+import Select from '#components/ui/Select/Select';
+import Tabs from '#components/ui/Tabs/Tabs';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { readFormText } from '#lib/form-data';
 
 import styles from '../../page.module.scss';
 
 export default function ReviewFixInteractions() {
     const [feedback, setFeedback] = useState<'error' | 'success' | undefined>();
-    const [readOnlySubmitted, setReadOnlySubmitted] = useState(false);
-    const [secondTabDisabled, setSecondTabDisabled] = useState(false);
-    const [secondTabRemoved, setSecondTabRemoved] = useState(false);
+    const [isReadOnlySubmitted, setIsReadOnlySubmitted] = useState(false);
+    const [isSecondTabDisabled, setIsSecondTabDisabled] = useState(false);
+    const [isSecondTabRemoved, setIsSecondTabRemoved] = useState(false);
     const [submittedScore, setSubmittedScore] = useState('Not submitted');
     const [submittedValue, setSubmittedValue] = useState('Not submitted');
     const tabItems = [
         { id: 'first', label: 'First enabled', content: 'First enabled panel' },
-        ...(secondTabRemoved
+        ...(isSecondTabRemoved
             ? []
             : [
                   {
                       id: 'selected',
                       label: 'Selected tab',
                       content: 'Selected panel',
-                      disabled: secondTabDisabled,
+                      disabled: isSecondTabDisabled,
                   },
               ]),
     ];
@@ -40,7 +40,7 @@ export default function ReviewFixInteractions() {
                 onSubmit={(event) => {
                     event.preventDefault();
                     setSubmittedValue(
-                        formText(new FormData(event.currentTarget), 'required-range'),
+                        readFormText(new FormData(event.currentTarget), 'required-range'),
                     );
                 }}
             >
@@ -65,7 +65,7 @@ export default function ReviewFixInteractions() {
                 className={`${styles.panel} ${styles.formStack}`}
                 onSubmit={(event) => {
                     event.preventDefault();
-                    setReadOnlySubmitted(true);
+                    setIsReadOnlySubmitted(true);
                 }}
             >
                 <Select
@@ -80,7 +80,7 @@ export default function ReviewFixInteractions() {
                     Submit read-only select
                 </Button>
                 <output data-read-only-submitted>
-                    {readOnlySubmitted ? 'Submitted' : 'Not submitted'}
+                    {isReadOnlySubmitted ? 'Submitted' : 'Not submitted'}
                 </output>
             </form>
             <form
@@ -89,7 +89,7 @@ export default function ReviewFixInteractions() {
                 onSubmit={(event) => {
                     event.preventDefault();
                     setSubmittedScore(
-                        formText(new FormData(event.currentTarget), 'required-score'),
+                        readFormText(new FormData(event.currentTarget), 'required-score'),
                     );
                 }}
             >
@@ -109,16 +109,16 @@ export default function ReviewFixInteractions() {
                 <Tabs initialId="selected" items={tabItems} label="Changing views" />
                 <div className={styles.buttonRow}>
                     <Button
-                        onClick={() => setSecondTabDisabled((current) => !current)}
+                        onClick={() => setIsSecondTabDisabled((wasDisabled) => !wasDisabled)}
                         variant="ghost"
                     >
-                        {secondTabDisabled ? 'Enable selected tab' : 'Disable selected tab'}
+                        {isSecondTabDisabled ? 'Enable selected tab' : 'Disable selected tab'}
                     </Button>
                     <Button
-                        onClick={() => setSecondTabRemoved((current) => !current)}
+                        onClick={() => setIsSecondTabRemoved((wasRemoved) => !wasRemoved)}
                         variant="ghost"
                     >
-                        {secondTabRemoved ? 'Restore selected tab' : 'Remove selected tab'}
+                        {isSecondTabRemoved ? 'Restore selected tab' : 'Remove selected tab'}
                     </Button>
                 </div>
             </div>

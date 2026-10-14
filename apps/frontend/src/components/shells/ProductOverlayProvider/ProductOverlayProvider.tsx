@@ -2,7 +2,7 @@
 
 import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
-import { ProductOverlayContext, type TProductOverlay } from '@/components/shells/product-overlay';
+import { ProductOverlayContext, type TProductOverlay } from '#components/shells/product-overlay';
 
 interface IProductOverlayProviderProps {
     children: ReactNode;
@@ -12,10 +12,10 @@ export default function ProductOverlayProvider({ children }: IProductOverlayProv
     const [activeOverlay, setActiveOverlay] = useState<TProductOverlay | null>(null);
     const returnFocusRef = useRef<HTMLElement | null>(null);
 
-    const closeOverlay = useCallback((returnFocus = true) => {
+    const closeOverlay = useCallback((shouldReturnFocus = true) => {
         const returnTarget = returnFocusRef.current;
         setActiveOverlay(null);
-        if (returnFocus) {
+        if (shouldReturnFocus) {
             requestAnimationFrame(() => returnTarget?.focus());
         }
     }, []);

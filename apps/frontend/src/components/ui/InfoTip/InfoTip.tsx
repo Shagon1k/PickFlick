@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 
-import Icon from '@/components/ui/Icon/Icon';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from './InfoTip.module.scss';
 
@@ -19,20 +19,20 @@ export interface IInfoTipProps {
 export default function InfoTip({ children, label }: IInfoTipProps) {
     const tipId = useId();
     const rootRef = useRef<HTMLSpanElement>(null);
-    const [open, setOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        if (!open) {
+        if (!isOpen) {
             return;
         }
         const closeOnEscape = (event: globalThis.KeyboardEvent) => {
             if (event.key === 'Escape') {
-                setOpen(false);
+                setIsOpen(false);
             }
         };
         const closeOnOutsidePointer = (event: PointerEvent) => {
             if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
-                setOpen(false);
+                setIsOpen(false);
             }
         };
         document.addEventListener('keydown', closeOnEscape);
@@ -41,30 +41,30 @@ export default function InfoTip({ children, label }: IInfoTipProps) {
             document.removeEventListener('keydown', closeOnEscape);
             document.removeEventListener('pointerdown', closeOnOutsidePointer);
         };
-    }, [open]);
+    }, [isOpen]);
 
     return (
         <span
             className={styles.infoTip}
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
             ref={rootRef}
         >
             <button
                 aria-describedby={tipId}
-                aria-expanded={open}
+                aria-expanded={isOpen}
                 aria-label={label}
                 className={styles.infoTip__trigger}
-                onBlur={() => setOpen(false)}
-                onClick={() => setOpen(true)}
-                onFocus={() => setOpen(true)}
+                onBlur={() => setIsOpen(false)}
+                onClick={() => setIsOpen(true)}
+                onFocus={() => setIsOpen(true)}
                 type="button"
             >
                 <Icon className={styles.infoTip__icon} name="question" />
             </button>
             <span
                 className={styles.infoTip__bubble}
-                data-open={open || undefined}
+                data-open={isOpen || undefined}
                 id={tipId}
                 role="tooltip"
             >

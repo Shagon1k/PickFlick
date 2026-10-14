@@ -1,8 +1,8 @@
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { createPublicMetadata } from '#lib/public-metadata';
 
 import styles from '../marketing.module.scss';
 import {

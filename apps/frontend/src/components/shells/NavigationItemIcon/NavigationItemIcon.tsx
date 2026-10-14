@@ -1,5 +1,5 @@
-import styles from '@/components/shells/product-navigation.module.scss';
-import Icon, { type TIconName } from '@/components/ui/Icon/Icon';
+import styles from '#components/shells/product-navigation.module.scss';
+import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 
 interface INavigationItemIconProps {
     label: string;

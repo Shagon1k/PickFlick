@@ -1,6 +1,6 @@
 import { Switch as MantineSwitch, type SwitchProps as IMantineSwitchProps } from '@mantine/core';
 
-import type { TOmitStyling } from '@/components/ui/types';
+import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Switch.module.scss';
 

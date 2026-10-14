@@ -95,6 +95,14 @@ The `release` service runs migrations, then the required seed step; `backend` an
 4. Clean up destructive contract changes in a later release, once the old runtime is gone.
 5. Fix forward when the applied schema cannot run the previous tag.
 
+### Migrations 20–22 are a one-way boundary
+
+Migrations 20–22 (#172) drop `Session.rosterVersion`, `MovieSourceCache`,
+`MovieExternalId.unavailableAt`, and `NominationDeadlineJob`, and empty the catalog caches. They are
+contract changes, not expand-first: no image built before them can run on the migrated schema, and
+old `backend` and `worker` containers that keep running while `release` migrates log errors until
+Dokploy replaces them. Never roll back across this boundary; fix forward.
+
 A failed release keeps the candidate `backend` and `frontend` from starting, but Dokploy may already
 have replaced containers: this topology promises neither zero downtime nor the old runtime.
 
@@ -134,13 +142,14 @@ provider responses.
 
 ## Deadline worker operations
 
-Apply migration 18 before starting the candidate API and `worker`. Check the worker's Compose
-heartbeat health and `deadline.worker.started` / `deadline.reconciliation` events after release.
-An overdue Nomination with missing scheduling intent is repaired on startup; completed empty
-intent stays handled. Archived Clubs resume pending work after reactivation. Restarting the worker
-retries unfinished transactions; do not delete jobs or decision records to force a retry.
+Apply all migrations (through 23) before starting the candidate API and `worker`. Check the worker's Compose
+heartbeat health and `deadline.worker.started` / `deadline.cycle` events after release.
+An overdue Nomination is decided on the next cycle; a completed empty decision stays handled
+until the deadline changes. Archived Clubs resume after reactivation. Restarting the worker
+retries unfinished transactions; do not delete decision records to force a retry.
 
 `deadline.failure` indicates a pending database transaction failure. Check PostgreSQL availability
-and applied migrations, then inspect repair and outcome events after recovery. Recipient rows retain
-operator-alert or participant-notification intent; transport remains later work. Production activation
-still requires its existing authorization and promotion guards.
+and applied migrations, then check that the next `deadline.cycle` picks up the overdue Sessions
+without a new `deadline.failure`. Recipient rows retain operator-alert or participant-notification
+intent; transport remains later work. Production activation still requires its existing
+authorization and promotion guards.

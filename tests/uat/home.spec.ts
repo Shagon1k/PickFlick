@@ -14,9 +14,9 @@ test('should serve the landing page without errors or horizontal overflow', asyn
     expect(response?.ok()).toBe(true);
     await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page).toHaveTitle(/^PickFlick/u);
-    const overflows = await page.evaluate(
+    const isOverflowing = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
-    expect(overflows).toBe(false);
+    expect(isOverflowing).toBe(false);
     expect(browserErrors).toEqual([]);
 });

@@ -3,17 +3,31 @@ import { z } from 'zod';
 import { multilineText, optionalText, singleLineText } from '../common/text.js';
 import { nominationsSchema } from './nomination.schema.js';
 
+/** Phases that hold a Club's single active slot; Rating Sessions are non-blocking. */
+export const BLOCKING_SESSION_PHASES = ['NOMINATION', 'SELECTION', 'WATCHING'] as const;
+/** Phases in which a Session still accepts roster and participation changes. */
+export const OPEN_SESSION_PHASES = [...BLOCKING_SESSION_PHASES, 'RATING'] as const;
+export function isBlockingSessionPhase(phase: string | undefined): boolean {
+    return BLOCKING_SESSION_PHASES.some((blocking) => blocking === phase);
+}
+export function isOpenSessionPhase(phase: string): boolean {
+    return OPEN_SESSION_PHASES.some((open) => open === phase);
+}
+
+export const SESSION_LOCATION_MAX_LENGTH = 200;
+export const SESSION_TOPIC_MAX_LENGTH = 200;
+export const SESSION_NOTES_MAX_LENGTH = 2000;
+
 export const sessionDetailsSchema = z.strictObject({
     scheduledAt: z.iso.datetime(),
-    location: singleLineText(1, 200),
-    topic: optionalText(singleLineText(1, 200)),
-    notes: optionalText(multilineText(1, 2000)),
+    location: singleLineText(1, SESSION_LOCATION_MAX_LENGTH),
+    topic: optionalText(singleLineText(1, SESSION_TOPIC_MAX_LENGTH)),
+    notes: optionalText(multilineText(1, SESSION_NOTES_MAX_LENGTH)),
     deadlineAt: z.iso.datetime().nullable(),
 });
 
 export const createSessionSchema = sessionDetailsSchema
     .extend({
-        id: z.uuidv4(),
         type: z.enum(['FULL_CYCLE', 'PRE_SELECTED']),
         movieId: z.uuid().nullable(),
     })

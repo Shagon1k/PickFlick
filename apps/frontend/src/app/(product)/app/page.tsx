@@ -1,15 +1,15 @@
-import type { IClubSummary } from '@pickflick/contracts';
+import { HTTP_STATUS, type IClubSummary } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { listClubs } from '@/api/clubs.server';
-import { loginPath } from '@/api/session.server';
-import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { ApiError } from '@/lib/api.server';
+import { listClubs } from '#api/clubs.server';
+import { buildLoginPath } from '#api/session.server';
+import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { ApiError } from '#lib/api.server';
 
 import styles from '../onboarding.module.scss';
 
@@ -73,8 +73,8 @@ export default async function AppPage() {
     try {
         clubs = await listClubs();
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
-            redirect(loginPath('/app'));
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
+            redirect(buildLoginPath('/app'));
         }
         return <ClubsUnavailable />;
     }

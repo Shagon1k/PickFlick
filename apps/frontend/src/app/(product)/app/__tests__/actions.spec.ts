@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api.server';
+import { ApiError } from '#lib/api.server';
 
 import { selectClubAction } from '../actions';
 
@@ -10,29 +10,29 @@ const navigation = vi.hoisted(() => ({
     }),
 }));
 
-vi.mock('@/api/clubs.server', () => api);
+vi.mock('#api/clubs.server', () => api);
 vi.mock('next/headers', () => ({ cookies: () => Promise.resolve(preference) }));
 vi.mock('next/navigation', () => navigation);
 
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const selection = () => {
     const form = new FormData();
-    form.set('clubId', clubId);
+    form.set('clubId', CLUB_ID);
     return form;
 };
 
 describe('selectClubAction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        api.listClubs.mockResolvedValue([{ id: clubId }]);
+        api.listClubs.mockResolvedValue([{ id: CLUB_ID }]);
         api.getClubHub.mockResolvedValue(undefined);
     });
 
     it('should save the preference and open a Club after Hub authorization', async () => {
-        await expect(selectClubAction(selection())).rejects.toThrow(`Redirect: /clubs/${clubId}`);
+        await expect(selectClubAction(selection())).rejects.toThrow(`Redirect: /clubs/${CLUB_ID}`);
 
-        expect(api.getClubHub).toHaveBeenCalledWith(clubId);
-        expect(preference.set).toHaveBeenCalledWith('pickflick.last_club', clubId, {
+        expect(api.getClubHub).toHaveBeenCalledWith(CLUB_ID);
+        expect(preference.set).toHaveBeenCalledWith('pickflick.last_club', CLUB_ID, {
             httpOnly: true,
             sameSite: 'lax',
             secure: false,

@@ -4,8 +4,8 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
-const clubId = '10000000-0000-4000-8000-000000000031';
-const route = `/clubs/${clubId}/settings`;
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const ROUTE = `/clubs/${CLUB_ID}/settings`;
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
         {
@@ -24,7 +24,7 @@ async function open(
     viewport: { height: number; width: number } = canonicalViewports[0],
 ) {
     await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'load' });
+    await page.goto(ROUTE, { waitUntil: 'load' });
     await settle(page);
 }
 
@@ -32,11 +32,11 @@ test('Club settings redirects an unauthenticated visitor and withholds outsider 
     context,
     page,
 }) => {
-    await page.goto(route);
-    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/clubs/${clubId}/settings$`, 'u'));
+    await page.goto(ROUTE);
+    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/clubs/${CLUB_ID}/settings$`, 'u'));
 
     await authenticate(context, 'valid-settings-outsider');
-    await page.goto(route);
+    await page.goto(ROUTE);
     await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
     await expect(page.getByText('Midnight Society')).toHaveCount(0);
 });
@@ -126,7 +126,7 @@ test('avatar replacements refresh the image and removal keeps the latest status'
     const avatarInput = page.getByLabel('Club avatar', { exact: true });
     const upload = async () => {
         const avatarResponse = page.waitForResponse(
-            (response) => new URL(response.url()).pathname === `/api/clubs/${clubId}/avatar`,
+            (response) => new URL(response.url()).pathname === `/api/clubs/${CLUB_ID}/avatar`,
         );
         await avatarInput.setInputFiles({
             name: 'avatar.png',
@@ -210,8 +210,12 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
     await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Leave Club' }).click();
     const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
-    await dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' }).fill('LEAVE');
-    await dialog.getByRole('button', { name: 'Confirm leave club' }).click();
+    const confirmation = dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' });
+    await confirmation.fill('LEAV');
+    await confirmation.press('Enter');
+    await expect(dialog).toBeVisible();
+    await confirmation.fill('LEAVE');
+    await confirmation.press('Enter');
     await expect(page).toHaveURL(/\/app$/u);
 });
 

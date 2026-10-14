@@ -1,10 +1,11 @@
 'use server';
 
+import { HTTP_STATUS } from '@pickflick/contracts';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { getClubHub, listClubs } from '@/api/clubs.server';
-import { ApiError } from '@/lib/api.server';
+import { getClubHub, listClubs } from '#api/clubs.server';
+import { ApiError } from '#lib/api.server';
 
 /** Save the preference only after both the list and the Hub authorize this Membership. */
 export async function selectClubAction(formData: FormData): Promise<void> {
@@ -17,7 +18,7 @@ export async function selectClubAction(formData: FormData): Promise<void> {
     try {
         await getClubHub(club.id);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.NOT_FOUND) {
             redirect('/app');
         }
         throw error;

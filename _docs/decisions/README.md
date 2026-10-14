@@ -37,8 +37,8 @@ separately.
 | [ADR-015](#adr-015--send-a-nonce-based-csp-and-security-headers-from-each-runtime)  | Send a nonce-based CSP and security headers from each runtime  | Accepted                                                                              | 2026-09-26 |
 | [ADR-016](#adr-016--use-a-postgresql-queue-for-movie-refresh)                       | Use a PostgreSQL queue for Movie refresh                       | Proposed — developer queue checkpoint pending                                         | 2026-10-09 |
 
-| [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160 | 2026-10-09 |
-| [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13 | 2026-10-12 |
+| [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160; amended in #172 | 2026-10-09 |
+| [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13; amended in #172 | 2026-10-12 |
 
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
@@ -1296,6 +1296,27 @@ Live response completeness remains a separate check; synthetic adapter tests ver
 structure and omission rules. Provider attribution/usage rights remain owner work before
 public exposure. Queue/worker selection remains separately Proposed in ADR-016.
 
+### Amendment — 2026-10-13: one projection cache
+
+- **Status:** Accepted by the developer in [#172](https://github.com/Shagon1k/PickFlick/issues/172)
+
+The per-source snapshot cache, source removal tombstones, monotonic source clocks and
+configuration-key hashing protected against rare provider races at a large code and test cost.
+Migration 21 drops `MovieSourceCache` and `MovieExternalId.unavailableAt`. The merged details
+projection is the only details cache; the composite fetches both sources whenever it is refreshed.
+One freshness rule applies to details and search: data younger than `CATALOG_REFRESH_HOURS` is
+served, including `partial` details, and older data is refetched. A transient provider error
+returns the cache as `stale` to an opted-in caller while it is younger than
+`CATALOG_STALE_HOURS`. A provider `NOT_FOUND` is reported when the cache next refreshes; it no
+longer invalidates a fresh cache early. Cache keys hash the configured provider name and locale,
+so switching provider starts a separate cache. `Movie.title` and `Movie.releaseYear` hold the
+summary used by nominations. The decision table, identity rules and provenance above still apply.
+
+Cache writes are serialized by one advisory lock but no longer compare timestamps, so when two
+refreshes of one key race, the one that finishes last wins even if it started first. Each saved
+search also refreshes the title and year of the Movies it returns. Both are accepted: a search or
+detail result is at most one refresh old, and Movie summaries track the newest provider data.
+
 ### API references
 
 - [PoiskKino OpenAPI](https://api.poiskkino.dev/documentation-json)
@@ -1368,6 +1389,19 @@ deadline version. Test archived-Club pause/reactivation, safe logs and shutdown.
 migration to fresh and pre-change isolated databases and preserve existing Session data. Run
 `pnpm verify`, `pnpm test:integration`, `pnpm deploy:check`, worker image/startup checks and relevant
 Session/Nomination smoke checks after implementation.
+
+### Amendment — 2026-10-13: the Session row is the schedule
+
+- **Status:** Accepted by the developer in [#172](https://github.com/Shagon1k/PickFlick/issues/172)
+
+`NominationDeadlineJob` copied `deadlineAt`, `deadlineVersion` and `phaseVersion` from the
+Session, and reconciliation existed only to repair job rows the same transaction already wrote.
+Migration 22 drops the table and points `NominationDeadlineDecision` at `Session`. The worker
+selects Sessions in Nomination whose deadline has passed in an active Club and that have no
+decision for their current `deadlineVersion`, then decides each under Club → Session locks. One
+decision per deadline version still limits empty-deadline alerts to one per version; clearing,
+cancellation and manual closure need no invalidation because the Session itself no longer matches.
+Each cycle logs `deadline.cycle` with its due count instead of a reconciliation event.
 
 ### Alternatives
 

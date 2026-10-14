@@ -3,9 +3,10 @@
 PickFlick helps private film clubs nominate, select, watch, rate, and remember films together, and
 gives each registered user a personal film library.
 
-Today the frontend (Next.js) and backend (NestJS) run the public site, Contact, sign-in, and Club
-creation and management. Sessions, the film library, billing, and the rest are later phases; see
-the [Roadmap](ROADMAP.md).
+Today the frontend (Next.js) and backend (NestJS) run the public site, Contact, sign-in, Clubs
+(Hub, invitations, members, settings), film search and details, and Sessions through Nomination,
+including deadlines. Selection, Watching and Rating, the film library, billing, and the rest are
+later phases; see the [Roadmap](ROADMAP.md#8-phase-plan).
 
 ## Run locally
 

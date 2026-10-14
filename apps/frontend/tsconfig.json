@@ -3,8 +3,13 @@
     "compilerOptions": {
         "types": ["node", "vitest/globals", "next/image-types/global"],
         "paths": {
-            "@/*": ["./src/*"],
-            "@brand/*": ["../../assets/brand/*"]
+            "#api/*": ["./src/api/*"],
+            "#app/*": ["./src/app/*"],
+            "#components/*": ["./src/components/*"],
+            "#lib/*": ["./src/lib/*"],
+            "#styles/*": ["./src/styles/*"],
+            "#theme/*": ["./src/theme/*"],
+            "#brand/*": ["../../assets/brand/*"]
         }
     },
     "include": [

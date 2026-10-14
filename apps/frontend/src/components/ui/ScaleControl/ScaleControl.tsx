@@ -21,12 +21,15 @@ export interface IScaleControlProps {
 }
 
 /** The candidate when it belongs to the scale; anything outside it counts as no selection. */
-function inScale(values: readonly number[], candidate: number | undefined): number | undefined {
+function findScaleValue(
+    values: readonly number[],
+    candidate: number | undefined,
+): number | undefined {
     return candidate !== undefined && values.includes(candidate) ? candidate : undefined;
 }
 
 /** Radio-group keys: arrows step within the scale, Home and End jump to its ends. */
-function keyboardScaleValue(
+function getKeyboardScaleValue(
     key: string,
     current: number,
     min: number,
@@ -59,14 +62,14 @@ export default function ScaleControl({
 }: IScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
     const firstValue = values[0] ?? min;
-    const initialValue = inScale(values, defaultValue);
+    const initialValue = findScaleValue(values, defaultValue);
     const [internalValue, setInternalValue] = useState<number | undefined>(initialValue);
     const [previewValue, setPreviewValue] = useState<number | undefined>();
-    const selectedValue = inScale(values, value ?? internalValue);
-    const activeValue = inScale(values, previewValue) ?? selectedValue;
-    const locked = disabled || readOnly || submitted;
-    const constraintRequired = required && !locked;
-    const [constraintInvalid, setConstraintInvalid] = useState(false);
+    const selectedValue = findScaleValue(values, value ?? internalValue);
+    const activeValue = findScaleValue(values, previewValue) ?? selectedValue;
+    const isLocked = disabled || readOnly || submitted;
+    const isConstraintRequired = required && !isLocked;
+    const [isConstraintInvalid, setIsConstraintInvalid] = useState(false);
     const controlsRef = useRef(new Map<number, HTMLButtonElement>());
     const feedbackId = useId();
 
@@ -77,13 +80,13 @@ export default function ScaleControl({
     if (previewValue !== undefined && !values.includes(previewValue)) {
         setPreviewValue(undefined);
     }
-    if (constraintInvalid && (!constraintRequired || selectedValue !== undefined)) {
-        setConstraintInvalid(false);
+    if (isConstraintInvalid && (!isConstraintRequired || selectedValue !== undefined)) {
+        setIsConstraintInvalid(false);
     }
 
     const selectionLabel =
         selectedValue === undefined ? 'Not selected' : `${selectedValue} of ${max}`;
-    const scaleStatus = constraintInvalid ? `Select a ${presentation}.` : selectionLabel;
+    const scaleStatus = isConstraintInvalid ? `Select a ${presentation}.` : selectionLabel;
 
     if (submitted) {
         return (
@@ -98,18 +101,18 @@ export default function ScaleControl({
     }
 
     function select(nextValue: number): void {
-        if (locked) {
+        if (isLocked) {
             return;
         }
         if (value === undefined) {
             setInternalValue(nextValue);
         }
-        setConstraintInvalid(false);
+        setIsConstraintInvalid(false);
         onChange?.(nextValue);
     }
 
     function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentValue: number): void {
-        const nextValue = keyboardScaleValue(event.key, currentValue, min, max);
+        const nextValue = getKeyboardScaleValue(event.key, currentValue, min, max);
         if (nextValue !== undefined) {
             event.preventDefault();
             select(nextValue);
@@ -123,10 +126,10 @@ export default function ScaleControl({
             {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
             <div
                 aria-describedby={feedbackId}
-                aria-invalid={constraintInvalid || undefined}
+                aria-invalid={isConstraintInvalid || undefined}
                 aria-label={label}
                 aria-readonly={readOnly || undefined}
-                aria-required={constraintRequired || undefined}
+                aria-required={isConstraintRequired || undefined}
                 className={styles.scale__rail}
                 data-presentation={presentation}
                 onBlur={(event) => {
@@ -138,26 +141,26 @@ export default function ScaleControl({
                 role="radiogroup"
             >
                 {values.map((scaleValue) => {
-                    const selected = scaleValue === selectedValue;
-                    const active = activeValue !== undefined && scaleValue <= activeValue;
+                    const isSelected = scaleValue === selectedValue;
+                    const isActive = activeValue !== undefined && scaleValue <= activeValue;
                     return (
                         <button
-                            aria-checked={selected}
+                            aria-checked={isSelected}
                             aria-label={`${scaleValue} of ${max}`}
                             className={styles.scale__option}
-                            data-active={active || undefined}
-                            data-selected={selected || undefined}
+                            data-active={isActive || undefined}
+                            data-selected={isSelected || undefined}
                             disabled={disabled}
                             key={scaleValue}
                             onClick={() => select(scaleValue)}
                             onFocus={() => {
-                                if (!locked) {
+                                if (!isLocked) {
                                     setPreviewValue(scaleValue);
                                 }
                             }}
                             onKeyDown={(event) => handleKeyDown(event, scaleValue)}
                             onMouseEnter={() => {
-                                if (!locked) {
+                                if (!isLocked) {
                                     setPreviewValue(scaleValue);
                                 }
                             }}
@@ -170,7 +173,7 @@ export default function ScaleControl({
                             }}
                             role="radio"
                             tabIndex={
-                                selected ||
+                                isSelected ||
                                 (selectedValue === undefined && scaleValue === firstValue)
                                     ? 0
                                     : -1
@@ -187,7 +190,7 @@ export default function ScaleControl({
                 })}
             </div>
             <input name={name} type="hidden" value={selectedValue ?? ''} />
-            {constraintRequired ? (
+            {isConstraintRequired ? (
                 <input
                     aria-hidden="true"
                     className="visually-hidden"
@@ -195,7 +198,7 @@ export default function ScaleControl({
                     onChange={() => undefined}
                     onInvalid={(event) => {
                         event.preventDefault();
-                        setConstraintInvalid(true);
+                        setIsConstraintInvalid(true);
                         controlsRef.current.get(firstValue)?.focus();
                     }}
                     required

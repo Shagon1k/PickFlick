@@ -2,12 +2,12 @@
 
 import { useTransition } from 'react';
 
-import Button from '@/components/ui/Button/Button';
+import Button from '#components/ui/Button/Button';
 
 export default function ErrorRecoveryPreviewPage() {
     const [isPending, startTransition] = useTransition();
 
-    function triggerFailure() {
+    function handleFailureClick() {
         startTransition(() => {
             throw new Error(
                 'Preview provider failure with a deliberately long diagnostic payload that must remain outside the rendered recovery boundary. '.repeat(
@@ -26,7 +26,7 @@ export default function ErrorRecoveryPreviewPage() {
                     Trigger a controlled provider-style failure to inspect the production
                     application boundary.
                 </p>
-                <Button loading={isPending} onClick={triggerFailure}>
+                <Button loading={isPending} onClick={handleFailureClick}>
                     Simulate provider failure
                 </Button>
             </div>

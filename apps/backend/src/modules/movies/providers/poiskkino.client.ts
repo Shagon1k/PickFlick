@@ -9,11 +9,15 @@ import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
 import {
-    emptyMetadata,
+    createEmptyMetadata,
     MovieProviderError,
     parseSourceSnapshot,
     type TSourceSnapshot,
 } from './movie-provider.js';
+
+const RATING_SCALE = 10;
+// The provider sends a full timestamp; Movies keep its `YYYY-MM-DD` part.
+const ISO_DATE_LENGTH = 10;
 
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
@@ -65,12 +69,6 @@ const searchWire = z.object({
     total: z.number().int().nonnegative(),
 });
 export class PoiskkinoClient {
-    get enabled() {
-        return this.settings.enabled;
-    }
-    get configurationKey() {
-        return `poiskkino:v1:enabled=${this.settings.enabled}`;
-    }
     private http: MovieHttp;
     constructor(
         private settings: { enabled: boolean; apiKey?: string; timeoutMs: number },
@@ -95,7 +93,7 @@ export class PoiskkinoClient {
         const result = await this.http.get(
             `/v1.5/movie/search?${query.toString()}`,
             searchWire,
-            this.headers(),
+            this.buildHeaders(),
         );
         if (result.page !== parsed.page)
             throw new MovieProviderError('INVALID_RESPONSE', undefined, 'poiskkino');
@@ -116,12 +114,12 @@ export class PoiskkinoClient {
             totalResults: result.total,
         };
     }
-    async details(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
+    async fetchDetails(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
         this.requireEnabled();
         const id = externalIds.find((id) => id.source === 'poiskkino')?.externalId;
         if (!id) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'poiskkino');
         const fetchedAt = new Date().toISOString();
-        const movie = await this.http.get(`/v1.5/movie/${id}`, wire, this.headers());
+        const movie = await this.http.get(`/v1.5/movie/${id}`, wire, this.buildHeaders());
         if (
             String(movie.id) !== id ||
             !['movie', 'cartoon'].includes(movie.type ?? '') ||
@@ -130,7 +128,11 @@ export class PoiskkinoClient {
             throw new MovieProviderError('INVALID_RESPONSE', undefined, 'poiskkino');
         return this.map(movie, fetchedAt, true);
     }
-    private map(movie: z.infer<typeof wire>, fetchedAt: string, details: boolean): TSourceSnapshot {
+    private map(
+        movie: z.infer<typeof wire>,
+        fetchedAt: string,
+        withDetails: boolean,
+    ): TSourceSnapshot {
         const externalIds: TMovieExternalId[] = [
             { source: 'poiskkino', externalId: String(movie.id) },
         ];
@@ -141,12 +143,12 @@ export class PoiskkinoClient {
         const ratings = (['kp', 'imdb', 'tmdb'] as const).flatMap((source) => {
             const value = movie.rating?.[source];
             const votes = movie.votes?.[source];
-            return value != null && value > 0
+            return typeof value === 'number' && value > 0
                 ? [
                       {
                           source: source === 'kp' ? 'kinopoisk' : source,
                           value,
-                          scale: 10,
+                          scale: RATING_SCALE,
                           voteCount: votes ?? null,
                       },
                   ]
@@ -158,16 +160,16 @@ export class PoiskkinoClient {
             fetchedAt,
             externalIds,
             similarExternalIds:
-                details && movie.similarMovies
+                withDetails && movie.similarMovies
                     ? movie.similarMovies.map((movie) => [
                           { source: 'poiskkino', externalId: String(movie.id) },
                       ])
                     : null,
             data: {
-                ...emptyMetadata(),
+                ...createEmptyMetadata(),
                 title: movie.enName || null,
                 // alternativeName and description have no guaranteed English locale.
-                releaseDate: movie.premiere?.world?.slice(0, 10) ?? null,
+                releaseDate: movie.premiere?.world?.slice(0, ISO_DATE_LENGTH) ?? null,
                 releaseYear: movie.year ?? null,
                 runtime: movie.movieLength || null,
                 posterUrl: movie.poster?.url ?? null,
@@ -175,7 +177,7 @@ export class PoiskkinoClient {
                 ratings,
                 // Trailer labels have no guaranteed English locale.
                 trailers:
-                    details && movie.videos?.trailers
+                    withDetails && movie.videos?.trailers
                         ? movie.videos.trailers.flatMap((video) =>
                               video.url && movieTrailerUrlSchema.safeParse(video.url).success
                                   ? [{ url: video.url, name: null, official: null }]
@@ -185,7 +187,7 @@ export class PoiskkinoClient {
             },
         });
     }
-    private headers() {
+    private buildHeaders() {
         return { 'X-API-KEY': this.settings.apiKey ?? '', Accept: 'application/json' };
     }
     private requireEnabled() {

@@ -1,7 +1,7 @@
-import PublicShell from '@/components/shells/PublicShell/PublicShell';
-import BrandImage from '@/components/ui/BrandImage/BrandImage';
-import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
-import { createPublicMetadata } from '@/lib/public-metadata';
+import PublicShell from '#components/shells/PublicShell/PublicShell';
+import BrandImage from '#components/ui/BrandImage/BrandImage';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { createPublicMetadata } from '#lib/public-metadata';
 
 import ContactForm from './_components/ContactForm/ContactForm';
 import styles from './page.module.scss';

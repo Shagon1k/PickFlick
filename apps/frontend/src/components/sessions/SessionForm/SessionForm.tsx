@@ -1,21 +1,36 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import type { TSession } from '@pickflick/contracts';
+import {
+    SESSION_LOCATION_MAX_LENGTH,
+    SESSION_NOTES_MAX_LENGTH,
+    SESSION_TOPIC_MAX_LENGTH,
+    type TSession,
+} from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
-import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
-import Button from '@/components/ui/Button/Button';
-import ButtonLink from '@/components/ui/Button/ButtonLink';
-import Switch from '@/components/ui/Switch/Switch';
-import Textarea from '@/components/ui/Textarea/Textarea';
-import TextInput from '@/components/ui/TextInput/TextInput';
-import { focusFirstInvalid } from '@/lib/form-errors';
+import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import Button from '#components/ui/Button/Button';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import Switch from '#components/ui/Switch/Switch';
+import Textarea from '#components/ui/Textarea/Textarea';
+import TextInput from '#components/ui/TextInput/TextInput';
+import { focusFirstInvalid } from '#lib/form-errors';
+import { getOfflineMessage } from '#lib/offline';
 
 import { saveSessionAction } from './actions';
-import { type ISessionValues, sessionInput, validateSession } from './session-form';
+import {
+    buildSessionInput,
+    getInitialSessionValues,
+    getNextDeadline,
+    type ISessionValues,
+    validateSession,
+} from './session-form';
 import styles from './SessionForm.module.scss';
+
+// The deadline field takes `hh:mm`.
+const DURATION_INPUT_LENGTH = 5;
 
 interface ISessionFormProps {
     clubId: string;
@@ -30,79 +45,49 @@ export default function SessionForm({
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
-    const requestRef = useRef<{ values: string; input: ReturnType<typeof sessionInput> } | null>(
-        null,
-    );
-    const idRef = useRef<string | null>(session?.id ?? null);
     const form = useForm<ISessionValues>({
-        initialValues: {
-            date: session?.scheduledAt?.slice(0, 10) ?? '',
-            location: session?.location ?? '',
-            topic: session?.topic ?? '',
-            notes: session?.notes ?? '',
-            type: session?.type === 'PRE_SELECTED' ? 'PRE_SELECTED' : 'FULL_CYCLE',
-            duration: '',
-            removeDeadline: false,
-            movieId: session?.movieId ?? null,
-        },
+        initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
     });
-    const submit = (event: React.SubmitEvent<HTMLFormElement>) =>
+    function save(values: ISessionValues, element?: HTMLFormElement) {
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
+            return;
+        }
+        const input = buildSessionInput(values, getNextDeadline(values, session), session);
+        setMessage('Saving Session…');
+        startTransition(async () => {
+            const result = await saveSessionAction(clubId, session?.id ?? null, input).catch(
+                () => ({
+                    ok: false as const,
+                    message:
+                        'We could not reach PickFlick. Your entries are still here; try again.',
+                }),
+            );
+            if (!result.ok) {
+                setMessage(result.message);
+                focusFirstInvalid(element);
+                return;
+            }
+            setMessage(session ? 'Session details saved.' : 'Session created.');
+            if (!session) {
+                setCreated(result.session);
+                return;
+            }
+            onSaved?.();
+            router.refresh();
+        });
+    }
+    const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) =>
         form.onSubmit(
-            (values, event) => {
-                if (!navigator.onLine) {
-                    setMessage(
-                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
-                    );
-                    return;
-                }
-                idRef.current ??= crypto.randomUUID();
-                const serialized = JSON.stringify(values);
-                if (requestRef.current?.values !== serialized) {
-                    const [hours = '0', minutes = '0'] = values.duration.split(':');
-                    let deadlineAt = session?.deadlineAt ?? null;
-                    if (values.removeDeadline) deadlineAt = null;
-                    else if (values.type === 'FULL_CYCLE' && values.duration) {
-                        deadlineAt = new Date(
-                            Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000,
-                        ).toISOString();
-                    }
-                    requestRef.current = {
-                        values: serialized,
-                        input: sessionInput(values, idRef.current, deadlineAt, session),
-                    };
-                }
-                const input = requestRef.current.input;
-                const element = event?.currentTarget;
-                setMessage('Saving Session…');
-                startTransition(async () => {
-                    const result = await saveSessionAction(
-                        clubId,
-                        session?.id ?? null,
-                        input,
-                    ).catch(() => ({
-                        ok: false as const,
-                        message:
-                            'We could not reach PickFlick. Your entries are still here; try again.',
-                    }));
-                    if (!result.ok) {
-                        setMessage(result.message);
-                        focusFirstInvalid(element);
-                        return;
-                    }
-                    setMessage(session ? 'Session details saved.' : 'Session created.');
-                    if (session) {
-                        onSaved?.();
-                        router.refresh();
-                    } else setCreated(result.session);
-                });
-            },
-            (_errors, _values, event) => {
+            (values, submitEvent) => save(values, submitEvent?.currentTarget),
+            (_errors, _values, invalidEvent) => {
                 setMessage('Review the highlighted fields and try again.');
-                focusFirstInvalid(event?.currentTarget);
+                focusFirstInvalid(invalidEvent?.currentTarget);
             },
         )(event);
     if (created) return <SessionResult session={created} />;
@@ -114,10 +99,10 @@ export default function SessionForm({
             </>
         );
     return (
-        <form className={styles.form} noValidate onSubmit={submit}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <TextInput
                 {...form.getInputProps('date')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-date"
                 label="Date"
                 labelHint="required"
@@ -126,66 +111,52 @@ export default function SessionForm({
             />
             <TextInput
                 {...form.getInputProps('location')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-location"
                 label="Location"
                 labelHint="required"
-                maxLength={200}
+                maxLength={SESSION_LOCATION_MAX_LENGTH}
                 placeholder="e.g. Sarah’s place, Zoom, Alamo Drafthouse"
                 required
             />
             <TextInput
                 {...form.getInputProps('topic')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-topic"
                 label="Topic"
                 labelHint="optional"
-                maxLength={200}
+                maxLength={SESSION_TOPIC_MAX_LENGTH}
             />
             <Textarea
                 {...form.getInputProps('notes')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-notes"
                 label="Notes"
                 labelHint="optional"
-                maxLength={2000}
+                maxLength={SESSION_NOTES_MAX_LENGTH}
                 size="compact"
             />
             {!session ? (
-                <fieldset className={styles.modes} disabled={pending}>
-                    <legend>Session type</legend>
-                    <label>
-                        <input
-                            checked={form.values.type === 'FULL_CYCLE'}
-                            name="session-type"
-                            type="radio"
-                            value="FULL_CYCLE"
-                            onChange={() =>
-                                form.setValues({ type: 'FULL_CYCLE', movieId: null, duration: '' })
-                            }
-                        />
-                        Full cycle
-                    </label>
-                    <label>
-                        <input
-                            checked={form.values.type === 'PRE_SELECTED'}
-                            name="session-type"
-                            type="radio"
-                            value="PRE_SELECTED"
-                            onChange={() => form.setValues({ type: 'PRE_SELECTED', duration: '' })}
-                        />
-                        Pre-selected Movie
-                    </label>
-                </fieldset>
+                <SessionTypeField
+                    disabled={isPending}
+                    value={form.values.type}
+                    onChange={(type) =>
+                        form.setValues(
+                            type === 'FULL_CYCLE'
+                                ? { type, movieId: null, duration: '' }
+                                : { type, duration: '' },
+                        )
+                    }
+                />
             ) : null}
             {form.values.type === 'FULL_CYCLE' && (!session || session.phase === 'NOMINATION') ? (
                 <TextInput
                     {...form.getInputProps('duration')}
-                    disabled={pending || form.values.removeDeadline}
+                    disabled={isPending || form.values.removeDeadline}
                     id="session-deadline"
                     label="Nomination phase ends in"
                     labelHint="optional"
-                    maxLength={5}
+                    maxLength={DURATION_INPUT_LENGTH}
                     placeholder="hh:mm"
                     hint={
                         session?.deadlineAt
@@ -197,20 +168,20 @@ export default function SessionForm({
             {session?.phase === 'NOMINATION' && session.deadlineAt ? (
                 <Switch
                     {...form.getInputProps('removeDeadline', { type: 'checkbox' })}
-                    disabled={pending}
+                    disabled={isPending}
                     label="Remove nomination deadline"
                 />
             ) : null}
             {!session && form.values.type === 'PRE_SELECTED' ? (
                 <MoviePicker
-                    disabled={pending}
+                    disabled={isPending}
                     error={form.errors.movieId}
                     value={form.values.movieId}
                     onChange={(movieId) => form.setFieldValue('movieId', movieId)}
                 />
             ) : null}
             <div className={styles.submit}>
-                <Button fullWidth loading={pending} type="submit">
+                <Button fullWidth loading={isPending} type="submit">
                     {session ? 'Save changes' : 'Create Session'}
                 </Button>
                 <p aria-atomic="true" aria-live="polite" role="status">
@@ -220,6 +191,39 @@ export default function SessionForm({
         </form>
     );
 }
+
+function SessionTypeField({
+    disabled,
+    onChange,
+    value,
+}: {
+    disabled: boolean;
+    value: ISessionValues['type'];
+    onChange: (type: ISessionValues['type']) => void;
+}) {
+    return (
+        <fieldset className={styles.modes} disabled={disabled}>
+            <legend>Session type</legend>
+            {SESSION_TYPES.map(({ type, label }) => (
+                <label key={type}>
+                    <input
+                        checked={value === type}
+                        name="session-type"
+                        type="radio"
+                        value={type}
+                        onChange={() => onChange(type)}
+                    />
+                    {label}
+                </label>
+            ))}
+        </fieldset>
+    );
+}
+
+const SESSION_TYPES = [
+    { type: 'FULL_CYCLE', label: 'Full cycle' },
+    { type: 'PRE_SELECTED', label: 'Pre-selected Movie' },
+] as const;
 
 const CREATION_RESTRICTIONS = {
     blocking: 'This Club already has a Session in Nomination, Selection, or Watching.',

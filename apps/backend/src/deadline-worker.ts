@@ -6,14 +6,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
+    getSafeEnvironmentValidationFailures,
     loadDatabaseEnvironment,
-    safeEnvironmentValidationFailures,
 } from '@pickflick/config/environment';
 import { createDatabaseClient } from '@pickflick/database';
 import pino from 'pino';
 
 import { runDeadlineWorker } from './deadline-worker-loop.js';
-import { NominationDeadlines } from './modules/sessions/nomination-deadlines.js';
+import { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
+
+const OWNER_READ_WRITE = 0o600;
 
 const logger = pino({ base: { service: 'deadline-worker' } });
 const shutdown = new AbortController();
@@ -43,7 +45,7 @@ try {
                                 constants.O_WRONLY |
                                 constants.O_TRUNC |
                                 constants.O_NOFOLLOW,
-                            mode: 0o600,
+                            mode: OWNER_READ_WRITE,
                         },
                     );
                 },
@@ -58,7 +60,7 @@ try {
 } catch (error) {
     logger.fatal({
         event: 'deadline.worker.failed',
-        failures: safeEnvironmentValidationFailures(error),
+        failures: getSafeEnvironmentValidationFailures(error),
     });
     process.exitCode = 1;
 }

@@ -3,6 +3,10 @@ import 'server-only';
 import { resolveAuthReturnTarget } from '@pickflick/contracts';
 import { headers } from 'next/headers';
 
+import { buildVisitorHeaders } from '#lib/api.server';
+
+const SESSION_CHECK_TIMEOUT_MS = 2_000;
+
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:3001';
 
 /**
@@ -17,12 +21,11 @@ export async function getSessionState(): Promise<TSessionState> {
     if (!cookie) {
         return 'anonymous';
     }
-    const clientAddress = incoming.get('cf-connecting-ip');
     try {
         const response = await fetch(new URL('/api/auth/get-session', BACKEND_URL), {
             cache: 'no-store',
-            headers: { cookie, ...(clientAddress ? { 'cf-connecting-ip': clientAddress } : {}) },
-            signal: AbortSignal.timeout(2_000),
+            headers: buildVisitorHeaders(incoming),
+            signal: AbortSignal.timeout(SESSION_CHECK_TIMEOUT_MS),
         });
         if (!response.ok) {
             return 'unavailable';
@@ -35,7 +38,7 @@ export async function getSessionState(): Promise<TSessionState> {
 }
 
 /** Login URL that returns to `path` when it is an allowed target, otherwise to `/app`. */
-export function loginPath(path: string): string {
+export function buildLoginPath(path: string): string {
     return `/login?returnTo=${resolveAuthReturnTarget(path)}`;
 }
 

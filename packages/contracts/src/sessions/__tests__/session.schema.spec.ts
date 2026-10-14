@@ -4,8 +4,8 @@ import {
     updateSessionSchema,
 } from '../session.schema.js';
 
+const MOVIE_ID = '30000000-0000-4000-8000-000000000040';
 const full = {
-    id: '30000000-0000-4000-8000-000000000040',
     type: 'FULL_CYCLE',
     scheduledAt: '2026-12-10T00:00:00.000Z',
     location: 'Room A',
@@ -21,18 +21,12 @@ describe('Session schemas', () => {
             topic: undefined,
         });
         expect(
-            createSessionSchema.safeParse({ ...full, type: 'PRE_SELECTED', movieId: full.id })
+            createSessionSchema.safeParse({ ...full, type: 'PRE_SELECTED', movieId: MOVIE_ID })
                 .success,
         ).toBe(true);
     });
-    it('should accept v4 creation IDs and reject other UUID versions', () => {
-        expect(createSessionSchema.safeParse(full).success).toBe(true);
-        expect(
-            createSessionSchema.safeParse({
-                ...full,
-                id: '01931234-5678-7abc-8def-0123456789ab',
-            }).success,
-        ).toBe(false);
+    it('should leave Session IDs to the server', () => {
+        expect(createSessionSchema.safeParse({ ...full, id: MOVIE_ID }).success).toBe(false);
     });
     it('should reject missing fields, unsafe text, invalid dates and incompatible mode fields', () => {
         for (const input of [
@@ -41,9 +35,9 @@ describe('Session schemas', () => {
             { ...full, topic: 'two\nlines' },
             { ...full, notes: 'bad\u0000text' },
             { ...full, type: 'PRE_SELECTED' },
-            { ...full, movieId: full.id },
+            { ...full, movieId: MOVIE_ID },
             { ...full, type: 'PAST' },
-            { ...full, type: 'PRE_SELECTED', movieId: full.id, deadlineAt: full.scheduledAt },
+            { ...full, type: 'PRE_SELECTED', movieId: MOVIE_ID, deadlineAt: full.scheduledAt },
         ])
             expect(createSessionSchema.safeParse(input).success).toBe(false);
     });

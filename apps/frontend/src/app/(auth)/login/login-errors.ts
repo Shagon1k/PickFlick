@@ -12,11 +12,11 @@ const safeErrorMessages: Record<string, string> = {
     state_not_found: 'That sign-in request expired or was already used. Please start again.',
 };
 
-export const sessionUnavailableMessage =
+export const SESSION_UNAVAILABLE_MESSAGE =
     'We could not check your session right now. If you are already signed in, try again in a moment.';
 
-const defaultErrorMessage = 'Sign-in could not be completed safely. Please try again.';
+const DEFAULT_ERROR_MESSAGE = 'Sign-in could not be completed safely. Please try again.';
 
 export function resolveLoginErrorMessage(errorCode: string | undefined): string | undefined {
-    return errorCode ? (safeErrorMessages[errorCode] ?? defaultErrorMessage) : undefined;
+    return errorCode ? (safeErrorMessages[errorCode] ?? DEFAULT_ERROR_MESSAGE) : undefined;
 }

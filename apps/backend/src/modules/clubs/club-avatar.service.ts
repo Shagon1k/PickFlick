@@ -3,29 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CLUB_AVATAR_MAX_BYTES, type TClubAvatarMediaType } from '@pickflick/contracts';
 
+import { detectImageType } from '../../common/image-type.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { type IStoredObject, StorageService } from '../storage/storage.service.js';
-import { assertActive, assertAdmin, findMembership, recordAudit } from './club-access.js';
+import { assertActive, assertAdmin, findMembership, recordAudit } from './access/club-access.js';
 
-const signatures: Record<
-    TClubAvatarMediaType,
-    { extension: string; matches: (body: Buffer) => boolean }
-> = {
-    'image/png': {
-        extension: 'png',
-        matches: (body) =>
-            body.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
-    },
-    'image/jpeg': {
-        extension: 'jpg',
-        matches: (body) => body[0] === 0xff && body[1] === 0xd8 && body[2] === 0xff,
-    },
-    'image/webp': {
-        extension: 'webp',
-        matches: (body) =>
-            body.subarray(0, 4).toString('ascii') === 'RIFF' &&
-            body.subarray(8, 12).toString('ascii') === 'WEBP',
-    },
+const EXTENSIONS: Record<TClubAvatarMediaType, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
 };
 
 interface IAvatarUpload {
@@ -35,7 +21,7 @@ interface IAvatarUpload {
 }
 
 function isAvatarMediaType(value: string | undefined): value is TClubAvatarMediaType {
-    return value !== undefined && value in signatures;
+    return value !== undefined && value in EXTENSIONS;
 }
 
 /** Accepts a PNG, JPEG, or WebP no larger than 512 KiB whose bytes match its declared type. */
@@ -46,11 +32,11 @@ export function parseAvatarUpload(body: unknown, contentType: string | undefined
         !Buffer.isBuffer(body) ||
         body.length === 0 ||
         body.length > CLUB_AVATAR_MAX_BYTES ||
-        !signatures[mediaType].matches(body)
+        detectImageType(body) !== mediaType
     ) {
         throw new BadRequestException();
     }
-    return { body, mediaType, extension: signatures[mediaType].extension };
+    return { body, mediaType, extension: EXTENSIONS[mediaType] };
 }
 
 @Injectable()

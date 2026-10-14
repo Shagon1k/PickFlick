@@ -4,10 +4,10 @@ import type { TNominationMovie, TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 
-import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
-import Button from '@/components/ui/Button/Button';
-import Modal from '@/components/ui/Modal/Modal';
-import TextInput from '@/components/ui/TextInput/TextInput';
+import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import Button from '#components/ui/Button/Button';
+import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import { getOfflineMessage } from '#lib/offline';
 
 import {
     closeNominationsAction,
@@ -29,14 +29,12 @@ export default function Nomination({
     const [selected, setSelected] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
-    const [dialog, setDialog] = useState(false);
-    const [confirmation, setConfirmation] = useState('');
-    const [pending, startTransition] = useTransition();
-    function run(action: 'submit' | 'refresh' | 'close') {
-        if (!navigator.onLine) {
-            setMessage(
-                'You appear to be offline. Reconnect before continuing; your selection is still here.',
-            );
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isPending, startTransition] = useTransition();
+    function run(action: 'submit' | 'refresh' | 'close', confirmation = '') {
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');
@@ -58,7 +56,7 @@ export default function Nomination({
                 return;
             }
             setMessage(result.message);
-            if (action === 'close') setDialog(false);
+            if (action === 'close') setIsDialogOpen(false);
             if (action === 'submit') headingRef.current?.focus();
         });
     }
@@ -73,7 +71,7 @@ export default function Nomination({
                     value={data.nominatedCount}
                     max={Math.max(data.acceptedCount, 1)}
                 />
-                <Button variant="ghost" disabled={pending} onClick={() => run('refresh')}>
+                <Button variant="ghost" disabled={isPending} onClick={() => run('refresh')}>
                     Refresh nominations
                 </Button>
             </div>
@@ -86,9 +84,9 @@ export default function Nomination({
                         <>
                             {suggestion ? (
                                 <div className={styles.selected}>
-                                    <p>Selected: {movieLabel(suggestion)}</p>
+                                    <p>Selected: {formatMovieLabel(suggestion)}</p>
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="ghost"
                                         onClick={() => {
                                             setSuggestion(null);
@@ -100,14 +98,14 @@ export default function Nomination({
                                 </div>
                             ) : (
                                 <MoviePicker
-                                    disabled={pending}
+                                    disabled={isPending}
                                     value={selected}
                                     onChange={setSelected}
                                 />
                             )}
                             <Button
                                 disabled={!selected}
-                                loading={pending}
+                                loading={isPending}
                                 onClick={() => run('submit')}
                             >
                                 Nominate This
@@ -122,7 +120,7 @@ export default function Nomination({
                                         <li key={movie.id}>
                                             <button
                                                 type="button"
-                                                disabled={pending}
+                                                disabled={isPending}
                                                 onClick={() => {
                                                     setSelected(movie.id);
                                                     setSuggestion(movie);
@@ -131,7 +129,7 @@ export default function Nomination({
                                                 <span className={styles.poster} aria-hidden="true">
                                                     PF
                                                 </span>
-                                                <strong>{movieLabel(movie)}</strong>
+                                                <strong>{formatMovieLabel(movie)}</strong>
                                             </button>
                                         </li>
                                     ))}
@@ -153,11 +151,8 @@ export default function Nomination({
                     {data.canClose ? (
                         <Button
                             variant="secondary"
-                            disabled={pending}
-                            onClick={() => {
-                                setConfirmation('');
-                                setDialog(true);
-                            }}
+                            disabled={isPending}
+                            onClick={() => setIsDialogOpen(true)}
                         >
                             Close nominations early
                         </Button>
@@ -167,47 +162,28 @@ export default function Nomination({
             <p aria-atomic="true" aria-live="polite" role="status">
                 {message}
             </p>
-            <Modal
-                open={dialog}
+            <ConfirmDialog
+                cancelLabel="Keep nominations open"
+                confirmLabel="Confirm close"
+                inputId="close-nomination-confirmation"
+                onClose={() => setIsDialogOpen(false)}
+                onConfirm={(confirmation) => run('close', confirmation)}
+                open={isDialogOpen}
+                pending={isPending}
+                status={<p role="status">{message}</p>}
                 title="Close nominations early"
-                dismissible={!pending}
-                onClose={() => setDialog(false)}
-                actions={
-                    <>
-                        <Button
-                            variant="secondary"
-                            disabled={pending}
-                            onClick={() => setDialog(false)}
-                        >
-                            Keep nominations open
-                        </Button>
-                        <Button
-                            loading={pending}
-                            disabled={confirmation !== 'CLOSE'}
-                            onClick={() => run('close')}
-                        >
-                            Confirm close
-                        </Button>
-                    </>
-                }
+                tone="neutral"
+                word="CLOSE"
             >
                 <p>
                     End Nomination now? One nomination selects that Movie for Watching. Two or more
                     open Selection. Remaining participants cannot nominate.
                 </p>
-                <TextInput
-                    id="close-nomination-confirmation"
-                    label="Type CLOSE to confirm"
-                    value={confirmation}
-                    disabled={pending}
-                    onChange={(event) => setConfirmation(event.currentTarget.value)}
-                />
-                <p role="status">{message}</p>
-            </Modal>
+            </ConfirmDialog>
         </section>
     );
 }
-function movieLabel(movie: TNominationMovie) {
+function formatMovieLabel(movie: TNominationMovie) {
     const year = movie.year ? ` (${movie.year})` : '';
     return `${movie.title ?? 'Movie title unavailable'}${year}`;
 }
@@ -221,8 +197,8 @@ function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
         );
     return (
         <p role="status">
-            Your nomination: <Link href={`/movies/${movie.id}`}>{movieLabel(movie)}</Link>. Your
-            submission is locked.
+            Your nomination: <Link href={`/movies/${movie.id}`}>{formatMovieLabel(movie)}</Link>.
+            Your submission is locked.
         </p>
     );
 }
@@ -232,12 +208,13 @@ function NominationList({ data }: { data: TNominations }) {
     return (
         <ul className={styles.movies}>
             {data.nominations.map((row, index) => (
+                // eslint-disable-next-line @eslint-react/no-array-index-key -- several participants may nominate the same Movie; rows are only appended
                 <li key={`${row.movie.id}-${index}`}>
                     <span className={styles.poster} aria-hidden="true">
                         PF
                     </span>
                     <div>
-                        <Link href={`/movies/${row.movie.id}`}>{movieLabel(row.movie)}</Link>
+                        <Link href={`/movies/${row.movie.id}`}>{formatMovieLabel(row.movie)}</Link>
                         {row.author !== null ? <p>by {row.author}</p> : null}
                     </div>
                 </li>
