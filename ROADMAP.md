@@ -461,6 +461,10 @@ flowchart LR
 Hexagons are verification gates. The graph shows the main dependencies; each phase lists all of
 its own.
 
+**Where the build stands:** Phases 1–5 and 7–10 are built. They stay In progress until their
+verification gate records the evidence: Phase 6 for 1–5 (running now) and Phase 12 for 7–11.
+Phase 11 Selection is the next delivery phase.
+
 ### Phase 0 — Guidance Baseline · Done
 
 **Goal:** One coherent, source-backed product, design, and architecture contract.

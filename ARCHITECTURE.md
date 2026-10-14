@@ -57,7 +57,7 @@ packages/
   config/     environment schema and TypeScript presets
   eslint-config/ dev-only ESLint presets and plugins
 assets/brand/ production brand imagery (imported as @brand/…)
-tests/        Playwright: ui-preview (local build + mock API) and uat (deployed smoke)
+tests/        Playwright: ui (local build + typed mock API), journeys (real API) and uat (deployed smoke)
 _docs/        guides, decisions, design prototypes
 ```
 
@@ -78,7 +78,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                                                                  | Resend client; a logging stub when delivery is disabled.                                                                                                        | Active                                                                                   |
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                               | Active                                                                                   |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                       | Active                                                                                   |
-| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, per-source cache and explicit failure states.                                             | Partial — authenticated search/details and stored catalog images; refresh worker pending |
+| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                  | Partial — authenticated search/details and stored catalog images; refresh worker pending |
 | sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-targeted invitations, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination automatic transitions; later phases pending                          |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                         | Proposed                                                                                 |
 
@@ -214,6 +214,15 @@ writes; an identical edit is a no-op. Cancellation requires typed `CANCEL`, incr
 versions, revokes pending invitations, retains history and releases the blocking slot. Repeated
 cancellation creates no extra audit event. Completed and Cancelled Sessions cannot be edited.
 Archived, adminless and over-limit Clubs follow the existing manage-Sessions restriction.
+
+A Session row carries four counters; each guards one kind of change:
+
+| Counter           | Increments when                                   | Used for                                                                                 |
+| ----------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `detailsVersion`  | An edit, a cancellation, or any phase change      | Optimistic concurrency for edits and cancellation; the API calls it `version`.           |
+| `phaseVersion`    | Any phase change                                  | Early Nomination close sends it, so a close never applies to a phase already left.       |
+| `progressVersion` | Any roster, nomination, or phase change           | Clients poll `GET /sessions/:id/progress` and reload the detail when it moves.           |
+| `deadlineVersion` | The nomination deadline is set, changed, or ended | The worker records one deadline decision per version, so a changed deadline is new work. |
 
 Migration 15 adds the nullable Movie relation, details version, and Session references/actions in
 Club audit events. Legacy skeleton Sessions keep nullable details and Movies; no history is invented.

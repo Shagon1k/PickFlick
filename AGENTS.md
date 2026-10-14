@@ -18,8 +18,8 @@ Before finishing, remove unnecessary indirection, redundant checks, and speculat
 
 These guidelines do not override repository-specific approval requirements, architecture constraints, or verification gates.
 
-> Operating instructions for agents in this repository. Phases 1–5 (foundations, design system,
-> public site, authentication, Clubs) are built; Phase 6 human verification is in progress.
+> Operating instructions for agents in this repository. Phases 1–5 and 7–10 (foundations through
+> Sessions and Nomination) are built and await their verification gates; Phase 11 is next.
 
 ## Core contract
 
