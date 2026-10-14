@@ -3,21 +3,17 @@ import { createHash } from 'node:crypto';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { movieImageUrlSchema, type TMovieMetadata } from '@pickflick/contracts';
 
+import { detectImageType, type TImageType } from '../../common/image-type.js';
 import { StorageService } from '../storage/storage.service.js';
 import { readBoundedBody } from './providers/movie-http.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 5000;
 
-function detectImageType(body: Buffer): string {
-    if (body.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])))
-        return 'image/png';
-    if (body[0] === 0xff && body[1] === 0xd8 && body[2] === 0xff) return 'image/jpeg';
-    if (
-        body.subarray(0, 4).toString('ascii') === 'RIFF' &&
-        body.subarray(8, 12).toString('ascii') === 'WEBP'
-    )
-        return 'image/webp';
-    throw new Error('Invalid catalog image');
+function requireImageType(body: Buffer): TImageType {
+    const type = detectImageType(body);
+    if (!type) throw new Error('Invalid catalog image');
+    return type;
 }
 
 @Injectable()
@@ -55,11 +51,11 @@ export class MovieImagesService {
             // Never follow a provider redirect to an unvalidated host or private network.
             const response = await fetch(url, {
                 redirect: 'error',
-                signal: AbortSignal.timeout(5000),
+                signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
             });
             if (!response.ok || !response.body) throw new Error('Catalog image unavailable');
             body = await readBoundedBody(response, MAX_BYTES);
-            contentType = detectImageType(body);
+            contentType = requireImageType(body);
         } catch {
             this.logger.warn({ event: 'movies.image.unavailable', key });
             return null;

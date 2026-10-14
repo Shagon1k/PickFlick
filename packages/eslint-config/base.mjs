@@ -13,27 +13,15 @@ import globals from 'globals';
 import { resolve } from 'node:path';
 import tseslint from 'typescript-eslint';
 
+import {
+    constantNaming,
+    frontendSyntax,
+    magicNumbers,
+    noReadonlyWrapper,
+} from './restricted-syntax.mjs';
+
 const reactConfig = reactPlugin.configs['recommended-typescript'];
 const repositoryRoot = resolve(import.meta.dirname, '../..');
-
-const noReadonlyWrapper = {
-    selector: "TSTypeReference[typeName.name='Readonly']",
-    message: 'Write plain types; props and data are not wrapped in Readonly<>.',
-};
-
-// Module-level constants set from a literal are UPPER_SNAKE_CASE. Values computed at runtime and the
-// export names Next.js requires (alt, contentType, ...) keep camelCase.
-const constantNaming = {
-    selector: [
-        ":matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration[kind='const']",
-        "> VariableDeclarator[id.type='Identifier']",
-        ':matches([init.type=/^(Literal|TemplateLiteral)$/],',
-        " [init.type='BinaryExpression']:not(:has(CallExpression, MemberExpression)))",
-        ':not([id.name=/^[A-Z][A-Z0-9_]*$/])',
-        ':not([id.name=/^(alt|contentType|dynamic|revalidate|runtime)$/])',
-    ].join(''),
-    message: 'Name a module-level literal constant in UPPER_SNAKE_CASE.',
-};
 
 export default [
     {
@@ -145,7 +133,7 @@ export default [
                     format: null,
                 },
             ],
-            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming],
+            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming, ...magicNumbers],
             'check-file/filename-naming-convention': [
                 'error',
                 { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
@@ -156,23 +144,13 @@ export default [
     {
         files: ['apps/frontend/**/*.{ts,tsx}'],
         rules: {
-            // Restating the rule replaces the shared entry, so the Readonly ban is listed again.
+            // Restating the rule replaces the shared entry, so the shared selectors are listed again.
             'no-restricted-syntax': [
                 'error',
                 noReadonlyWrapper,
                 constantNaming,
-                {
-                    // A component's own event handler is handleX; a forwarded prop is onX and a
-                    // state setter is setX.
-                    selector:
-                        'JSXAttribute[name.name=/^on[A-Z]/] > JSXExpressionContainer > Identifier[name!=/^(handle|on|set)[A-Z]/]',
-                    message: 'Name an event handler handleX (or pass an onX prop or setX setter).',
-                },
-                {
-                    selector: 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^[A-Z]/]',
-                    message:
-                        'Export a component as the default export of its own file (export default function Name).',
-                },
+                ...magicNumbers,
+                ...frontendSyntax,
             ],
             'no-restricted-imports': [
                 'error',
@@ -282,6 +260,23 @@ export default [
         plugins: { '@next/next': nextPlugin },
         settings: { next: { rootDir: 'apps/frontend' } },
         rules: nextPlugin.configs['core-web-vitals'].rules,
+    },
+    {
+        // Tests and Playwright suites keep literal expectations.
+        files: [
+            '**/__tests__/**',
+            'tests/**',
+            '**/*.config.ts',
+            'apps/backend/src/testing/**',
+            'apps/frontend/src/app/(internal)/**',
+        ],
+        rules: { 'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming] },
+    },
+    {
+        files: ['apps/frontend/**/__tests__/**', 'apps/frontend/src/app/(internal)/**'],
+        rules: {
+            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming, ...frontendSyntax],
+        },
     },
     {
         files: ['**/__tests__/**/*.{ts,tsx}'],

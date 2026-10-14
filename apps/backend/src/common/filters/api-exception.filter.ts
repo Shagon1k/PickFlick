@@ -8,7 +8,7 @@ import {
     HttpStatus,
     Logger,
 } from '@nestjs/common';
-import type { IApiErrorEnvelope, TApiErrorCode } from '@pickflick/contracts';
+import { HTTP_STATUS, type IApiErrorEnvelope, type TApiErrorCode } from '@pickflick/contracts';
 import type { Request, Response } from 'express';
 
 const errors: Partial<Record<number, { code: TApiErrorCode; message: string }>> = {
@@ -36,13 +36,19 @@ const errors: Partial<Record<number, { code: TApiErrorCode; message: string }>> 
     },
 };
 
+const LAST_HTTP_STATUS = 599;
+
 function getErrorStatus(exception: unknown): number {
     if (exception instanceof HttpException) {
         return exception.getStatus();
     }
     // Body-parser errors carry a status (400 for bad JSON, 413 for oversize) but aren't HttpExceptions.
     const status = (exception as { status?: unknown } | null)?.status;
-    return typeof status === 'number' && status >= 400 && status < 600 ? status : 500;
+    return typeof status === 'number' &&
+        status >= HTTP_STATUS.BAD_REQUEST &&
+        status <= LAST_HTTP_STATUS
+        ? status
+        : HTTP_STATUS.INTERNAL_SERVER_ERROR;
 }
 
 /** Passes through only a stable upper-case reason code, never free-form exception text. */
@@ -64,14 +70,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
         const known = errors[status];
         const error =
             known ??
-            (status >= 500
+            (status >= HTTP_STATUS.INTERNAL_SERVER_ERROR
                 ? { code: 'INTERNAL_ERROR' as const, message: 'An unexpected error occurred.' }
                 : {
                       code: 'REQUEST_FAILED' as const,
                       message: 'The request could not be completed.',
                   });
 
-        if (status >= 500) {
+        if (status >= HTTP_STATUS.INTERNAL_SERVER_ERROR) {
             this.logger.error(exception instanceof Error ? exception.stack : String(exception));
         }
 

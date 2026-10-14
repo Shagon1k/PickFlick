@@ -5,6 +5,9 @@ import { SYNTHETIC_FIXTURES } from '../fixtures.js';
 import { assertSafeSeedOrResetTarget } from '../safety.js';
 import { snapshotSessionSettings } from '../session.js';
 
+// A reseed restores the synthetic Club's 1..5 Selection scale.
+const SEED_SELECTION_SCALE_MAX = 5;
+
 const environment = loadDatabaseEnvironment();
 assertSafeSeedOrResetTarget(environment);
 const database = createDatabaseClient(environment.databaseUrl);
@@ -32,7 +35,7 @@ try {
                 name: SYNTHETIC_FIXTURES.club.name,
                 lifecycle: 'ACTIVE',
                 selectionScaleMin: 1,
-                selectionScaleMax: 5,
+                selectionScaleMax: SEED_SELECTION_SCALE_MAX,
             },
         });
         await transaction.membership.upsert({

@@ -1,4 +1,4 @@
-import { isBlockingSessionPhase } from '@pickflick/contracts';
+import { HTTP_STATUS, isBlockingSessionPhase } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -26,7 +26,7 @@ export default async function CreateSessionPage({
     try {
         hub = await getClubHub(clubId);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             redirect(buildLoginPath(`/clubs/${clubId}/sessions/new`));
         return (
             <main className={styles.main}>

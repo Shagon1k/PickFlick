@@ -1,11 +1,13 @@
 'use server';
 
-import { createSessionSchema, updateSessionSchema } from '@pickflick/contracts';
+import { createSessionSchema, HTTP_STATUS, updateSessionSchema } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { createSession, updateSession } from '@/api/sessions.server';
 import { ApiError } from '@/lib/api.server';
+
+const NO_PERMISSION_STATUSES = [HTTP_STATUS.FORBIDDEN, HTTP_STATUS.NOT_FOUND];
 
 export async function saveSessionAction(clubId: string, id: string | null, input: unknown) {
     if (!z.uuid().safeParse(clubId).success || (id !== null && !z.uuid().safeParse(id).success)) {
@@ -31,12 +33,12 @@ export async function saveSessionAction(clubId: string, id: string | null, input
 
 function saveFailure(error: unknown) {
     if (error instanceof ApiError) {
-        if (error.status === 401)
+        if (error.status === HTTP_STATUS.UNAUTHORIZED)
             return {
                 ok: false as const,
                 message: 'Your sign-in expired. Sign in again; your entries are still here.',
             };
-        if ([403, 404].includes(error.status))
+        if (NO_PERMISSION_STATUSES.includes(error.status))
             return {
                 ok: false as const,
                 message: 'You no longer have permission to manage this Session.',

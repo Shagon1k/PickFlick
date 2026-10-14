@@ -1,8 +1,13 @@
+import { HTTP_STATUS } from '@pickflick/contracts';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getClubHub } from '@/api/clubs.server';
 import { ApiError } from '@/lib/api.server';
+import { NOT_FOUND_STATUSES } from '@/lib/http-status';
 import { buildContentSecurityPolicy } from '@/lib/security-headers';
+
+// The page itself answers these; any other failure is unexpected here.
+const PAGE_HANDLED_STATUSES = [...NOT_FOUND_STATUSES, HTTP_STATUS.UNAUTHORIZED];
 
 const PREVIEW_PREFIXES = ['/ui-preview', '/shell-preview'];
 const CLUB_PATH =
@@ -40,7 +45,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         try {
             await getClubHub(clubId, request.headers);
         } catch (error) {
-            if (!(error instanceof ApiError && [400, 401, 404].includes(error.status))) {
+            if (!(error instanceof ApiError && PAGE_HANDLED_STATUSES.includes(error.status))) {
                 console.error('Club preference authorization failed.');
             }
             // The page owns access and service-failure states; keep the previous preference.

@@ -1,6 +1,10 @@
 'use server';
 
-import { invitationDecisionSchema, type TPendingInvitation } from '@pickflick/contracts';
+import {
+    HTTP_STATUS,
+    invitationDecisionSchema,
+    type TPendingInvitation,
+} from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -30,7 +34,7 @@ export async function loadPendingInvitesAction(): Promise<{
     } catch (error) {
         return {
             message:
-                error instanceof ApiError && error.status === 401
+                error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED
                     ? 'Sign in again to view pending invites.'
                     : 'Pending invites could not be loaded. Check your connection and retry.',
         };

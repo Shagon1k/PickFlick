@@ -1,5 +1,6 @@
 'use server';
 
+import { HTTP_STATUS } from '@pickflick/contracts';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -17,7 +18,7 @@ export async function selectClubAction(formData: FormData): Promise<void> {
     try {
         await getClubHub(club.id);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.NOT_FOUND) {
             redirect('/app');
         }
         throw error;

@@ -1,6 +1,6 @@
 'use server';
 
-import { contactSubmissionSchema } from '@pickflick/contracts';
+import { contactSubmissionSchema, HTTP_STATUS } from '@pickflick/contracts';
 
 import { sendContactMessage } from '@/api/contact.server';
 import { ApiError } from '@/lib/api.server';
@@ -29,7 +29,7 @@ export async function sendContact(
         await sendContactMessage(parsed.data);
         return { ok: true };
     } catch (error) {
-        if (error instanceof ApiError && error.status === 429) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
             return {
                 ok: false,
                 message:

@@ -1,4 +1,4 @@
-import type { IClubSettings } from '@pickflick/contracts';
+import { HTTP_STATUS, type IClubSettings } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -58,11 +58,15 @@ export default async function ClubSettingsPage({
     try {
         settings = await getClubSettings(clubId);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
             redirect(buildLoginPath(`/clubs/${clubId}/settings`));
         }
         // A Club the visitor cannot see answers 404, so nothing about it is disclosed.
-        return <SafeFailure forbidden={error instanceof ApiError && error.status === 404} />;
+        return (
+            <SafeFailure
+                forbidden={error instanceof ApiError && error.status === HTTP_STATUS.NOT_FOUND}
+            />
+        );
     }
     return (
         <ProductFrame clubItems={buildClubNavigation(clubId, 'manage')}>

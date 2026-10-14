@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '@/components/ui/Modal/Modal';
-import { formatUtcDateTime } from '@/lib/format';
+import { formatUtcDateTime, toIsoDate } from '@/lib/format';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -57,7 +57,9 @@ export default function SessionDetails({
                 <dl className={styles.facts}>
                     <div>
                         <dt>Date</dt>
-                        <dd>{session.scheduledAt?.slice(0, 10) ?? 'Not scheduled'}</dd>
+                        <dd>
+                            {session.scheduledAt ? toIsoDate(session.scheduledAt) : 'Not scheduled'}
+                        </dd>
                     </div>
                     <div>
                         <dt>Location</dt>

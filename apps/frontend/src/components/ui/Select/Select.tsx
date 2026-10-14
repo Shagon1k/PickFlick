@@ -13,6 +13,8 @@ import type { TOmitStyling } from '@/components/ui/types';
 
 import styles from './Select.module.scss';
 
+const DROPDOWN_FADE_MS = 150;
+
 export interface ISelectProps
     extends
         IFieldProps,
@@ -55,7 +57,7 @@ export default function Select({
                 section: styles.select__section,
                 wrapper: styles.select__wrapper,
             }}
-            comboboxProps={{ transitionProps: { duration: 150 } }}
+            comboboxProps={{ transitionProps: { duration: DROPDOWN_FADE_MS } }}
             data-state={isInvalid ? 'error' : getFieldState(error, success)}
             description={<FieldMessage error={error} hint={hint} success={success} />}
             disabled={disabled}

@@ -4,6 +4,7 @@ import type { IClubSettings, ICreatedInvitation, IManagedInvitation } from '@pic
 import { useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
+import { toIsoDate } from '@/lib/format';
 
 import { loadInvitationsAction, manageInvitationsAction } from '../../invitation-actions';
 import styles from '../../page.module.scss';
@@ -124,7 +125,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         {invitations.map((invite) => (
                             <li key={invite.id}>
                                 <span>
-                                    {invite.state} · expires {invite.expiresAt.slice(0, 10)}
+                                    {invite.state} · expires {toIsoDate(invite.expiresAt)}
                                 </span>
                                 {invite.state === 'pending' ? (
                                     <Button

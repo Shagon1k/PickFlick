@@ -4,6 +4,7 @@ import {
     Get,
     Header,
     HttpCode,
+    HttpStatus,
     Param,
     ParseUUIDPipe,
     Post,
@@ -48,7 +49,7 @@ export class SessionRosterController {
 
     @Post('sessions/:sessionId/invitations/:inviteId/revoke')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(204)
+    @HttpCode(HttpStatus.NO_CONTENT)
     revoke(
         @CurrentUser() user: IAuthUser,
         @Param('sessionId', uuid) id: string,
@@ -59,7 +60,7 @@ export class SessionRosterController {
 
     @Post('sessions/:sessionId/leave')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(204)
+    @HttpCode(HttpStatus.NO_CONTENT)
     leave(
         @CurrentUser() user: IAuthUser,
         @Param('sessionId', uuid) id: string,
@@ -70,7 +71,7 @@ export class SessionRosterController {
 
     @Post('sessions/:sessionId/participants/:participantId/remove')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(204)
+    @HttpCode(HttpStatus.NO_CONTENT)
     remove(
         @CurrentUser() user: IAuthUser,
         @Param('sessionId', uuid) id: string,
@@ -89,7 +90,7 @@ export class SessionRosterController {
 
     @Post('session-invitations/preview')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     preview(
         @CurrentUser() user: IAuthUser,
         @Body(new ZodValidationPipe(previewInvitationSchema))
@@ -100,7 +101,7 @@ export class SessionRosterController {
 
     @Post('session-invitations/respond')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     respond(
         @CurrentUser() user: IAuthUser,
         @Body(new ZodValidationPipe(respondInvitationSchema)) input: TRespondInvitation,
@@ -110,7 +111,7 @@ export class SessionRosterController {
 
     @Post('session-invitations/:inviteId/respond')
     @Header('Cache-Control', 'private, no-store')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     respondPending(
         @CurrentUser() user: IAuthUser,
         @Param('inviteId', uuid) id: string,

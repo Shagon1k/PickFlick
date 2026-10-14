@@ -3,6 +3,8 @@ import 'server-only';
 import type { IApiErrorEnvelope } from '@pickflick/contracts';
 import { headers } from 'next/headers';
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:3001';
 
 // The API needs the visitor's session cookie and real client address, not the web server's.
@@ -56,7 +58,7 @@ export async function requestApi<TResponse = void>(
         headers: outgoing,
         body: init.json === undefined ? init.body : JSON.stringify(init.json),
         cache: 'no-store',
-        signal: AbortSignal.timeout(init.timeoutMs ?? 10_000),
+        signal: AbortSignal.timeout(init.timeoutMs ?? DEFAULT_TIMEOUT_MS),
     });
     if (!response.ok) {
         const envelope = (await response.json().catch(() => undefined)) as

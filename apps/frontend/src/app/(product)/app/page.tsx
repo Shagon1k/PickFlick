@@ -1,4 +1,4 @@
-import type { IClubSummary } from '@pickflick/contracts';
+import { HTTP_STATUS, type IClubSummary } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -73,7 +73,7 @@ export default async function AppPage() {
     try {
         clubs = await listClubs();
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
             redirect(buildLoginPath('/app'));
         }
         return <ClubsUnavailable />;

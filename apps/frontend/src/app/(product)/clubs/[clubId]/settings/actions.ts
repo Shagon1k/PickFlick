@@ -4,6 +4,7 @@ import {
     changeMemberRoleSchema,
     CLUB_AVATAR_MAX_BYTES,
     CLUB_AVATAR_MEDIA_TYPES,
+    HTTP_STATUS,
     updateClubSettingsSchema,
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
@@ -45,7 +46,7 @@ async function run(
     } catch (error) {
         return error instanceof ApiError
             ? next(previous, 'error', getClubFailureMessage(error.status, error.reason))
-            : next(previous, 'error', getClubFailureMessage(503));
+            : next(previous, 'error', getClubFailureMessage(HTTP_STATUS.SERVICE_UNAVAILABLE));
     }
 }
 

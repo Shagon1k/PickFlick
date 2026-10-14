@@ -13,8 +13,12 @@ export const movieExternalIdSchema = z
         source === 'imdb' ? /^tt\d{7,12}$/u.test(externalId) : /^[1-9]\d{0,15}$/u.test(externalId),
     );
 export type TMovieExternalId = z.infer<typeof movieExternalIdSchema>;
+export const MOVIE_QUERY_MAX_LENGTH = 200;
+/** Providers send long casts; details keep the first fifty credits. */
+export const MOVIE_CAST_LIMIT = 50;
+
 export const movieSearchSchema = z.strictObject({
-    query: z.string().trim().min(1).max(200),
+    query: z.string().trim().min(1).max(MOVIE_QUERY_MAX_LENGTH),
     page: z.number().int().min(1).max(500).default(1),
     locale: z.literal('en-US').default('en-US'),
 });
@@ -131,7 +135,7 @@ export const movieMetadataSchema = z.strictObject({
                 profileUrl: movieImageUrlSchema.nullable(),
             }),
         )
-        .max(50)
+        .max(MOVIE_CAST_LIMIT)
         .nullable(),
     trailers: z
         .array(
@@ -198,7 +202,7 @@ const publicDetailsSchema = movieDetailsSchema.extend({
             profileUrl: storedImageUrlSchema.nullable(),
         })
         .array()
-        .max(50)
+        .max(MOVIE_CAST_LIMIT)
         .nullable(),
 });
 

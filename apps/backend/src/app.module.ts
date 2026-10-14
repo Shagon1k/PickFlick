@@ -16,6 +16,9 @@ import { MoviesModule } from './modules/movies/movies.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 
+// Each client may send 120 requests a minute.
+const DEFAULT_RATE_LIMIT = { ttl: 60_000, limit: 120 };
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 // Invitation URLs can also arrive as a sign-in callback or a same-origin referrer.
@@ -52,7 +55,7 @@ export class AppModule {
                         redact: HTTP_LOG_REDACTIONS,
                     },
                 }),
-                ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+                ThrottlerModule.forRoot([DEFAULT_RATE_LIMIT]),
                 DatabaseModule,
                 StorageModule,
                 AuthModule,

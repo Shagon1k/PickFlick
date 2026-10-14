@@ -1,6 +1,6 @@
 'use server';
 
-import { movieSearchSchema } from '@pickflick/contracts';
+import { HTTP_STATUS, movieSearchSchema } from '@pickflick/contracts';
 
 import { searchMovies } from '@/api/movies.server';
 import { ApiError } from '@/lib/api.server';
@@ -11,7 +11,7 @@ export async function searchMoviesAction(query: unknown) {
     try {
         return await searchMovies(parsed.data);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             return { state: 'signed-out' as const };
         console.error('Movie search request failed.');
         return { state: 'error' as const };

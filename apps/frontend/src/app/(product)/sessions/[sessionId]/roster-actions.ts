@@ -2,6 +2,7 @@
 
 import {
     createSessionInvitationSchema,
+    HTTP_STATUS,
     leaveSessionSchema,
     removeSessionParticipantSchema,
 } from '@pickflick/contracts';
@@ -16,6 +17,10 @@ import {
 } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
 import { ApiError } from '@/lib/api.server';
+import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+
+// Lost access or a roster that changed meanwhile: the action no longer applies.
+const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];
 
 const commandSchema = z.discriminatedUnion('action', [
     createSessionInvitationSchema.extend({ action: z.literal('invite') }),
@@ -54,7 +59,7 @@ export async function changeRosterAction(id: string, input: unknown) {
         return {
             ok: false,
             message:
-                error instanceof ApiError && [401, 403, 404, 409].includes(error.status)
+                error instanceof ApiError && STALE_ACTION_STATUSES.includes(error.status)
                     ? 'This action is no longer available. Reload to check your access and the Session.'
                     : 'We could not save your change. Check your connection and retry.',
         };

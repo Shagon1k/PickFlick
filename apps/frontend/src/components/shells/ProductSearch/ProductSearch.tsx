@@ -1,5 +1,6 @@
 'use client';
 
+import { MOVIE_QUERY_MAX_LENGTH } from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -83,7 +84,7 @@ export default function ProductSearch() {
                     autoComplete="off"
                     className={styles.globalSearchInput}
                     id="shell-search-input"
-                    maxLength={200}
+                    maxLength={MOVIE_QUERY_MAX_LENGTH}
                     onChange={(event) => {
                         setQuery(event.target.value);
                         setActiveIndex(-1);

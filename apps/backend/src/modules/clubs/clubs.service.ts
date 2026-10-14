@@ -28,6 +28,10 @@ import { canRemoveMember, getClubPermissions } from './access/club-permissions.j
 import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 
+const RECENT_SESSIONS_LIMIT = 5;
+const HISTORY_SESSIONS_LIMIT = 20;
+const AUDIT_EVENTS_LIMIT = 20;
+
 @Injectable()
 export class ClubsService {
     constructor(private readonly prisma: PrismaService) {}
@@ -69,7 +73,7 @@ export class ClubsService {
                     transaction.session.findMany({
                         where: { clubId, phase: { not: 'CANCELLED' } },
                         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                        take: 5,
+                        take: RECENT_SESSIONS_LIMIT,
                     }),
                     transaction.session.findMany({
                         where: { clubId, phase: 'RATING' },
@@ -78,7 +82,7 @@ export class ClubsService {
                     transaction.session.findMany({
                         where: { clubId, phase: { in: ['COMPLETED', 'CANCELLED'] } },
                         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                        take: 20,
+                        take: HISTORY_SESSIONS_LIMIT,
                     }),
                 ]);
                 const activeSession = blockingSession ?? ratings[0];
@@ -139,7 +143,7 @@ export class ClubsService {
                         ? transaction.clubAuditEvent.findMany({
                               where: { clubId },
                               orderBy: { createdAt: 'desc' },
-                              take: 20,
+                              take: AUDIT_EVENTS_LIMIT,
                               select: { id: true, action: true, createdAt: true },
                           })
                         : [],

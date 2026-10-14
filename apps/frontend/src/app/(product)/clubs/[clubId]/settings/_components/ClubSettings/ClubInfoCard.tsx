@@ -1,6 +1,11 @@
 'use client';
 
-import { type IClubSettings } from '@pickflick/contracts';
+import {
+    CLUB_DESCRIPTION_MAX_LENGTH,
+    CLUB_NAME_MAX_LENGTH,
+    CLUB_NAME_MIN_LENGTH,
+    type IClubSettings,
+} from '@pickflick/contracts';
 import { useActionState } from 'react';
 
 import SelectionScaleField from '@/components/clubs/SelectionScaleField/SelectionScaleField';
@@ -13,6 +18,8 @@ import styles from '../../page.module.scss';
 import { isWritable } from './club-settings';
 import SaveRow from './SaveRow';
 import StoredVisibility from './StoredVisibility';
+
+const DESCRIPTION_ROWS = 3;
 
 export default function ClubInfoCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
@@ -28,8 +35,8 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     disabled={!canEdit}
                     id="club-name"
                     label="Club name"
-                    maxLength={100}
-                    minLength={3}
+                    maxLength={CLUB_NAME_MAX_LENGTH}
+                    minLength={CLUB_NAME_MIN_LENGTH}
                     name="name"
                     required
                 />
@@ -38,9 +45,9 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     disabled={!canEdit}
                     id="club-description"
                     label="Description"
-                    maxLength={500}
+                    maxLength={CLUB_DESCRIPTION_MAX_LENGTH}
                     name="description"
-                    rows={3}
+                    rows={DESCRIPTION_ROWS}
                 />
                 <SelectionScaleField
                     defaultMax={projection.club.selectionScaleMax}

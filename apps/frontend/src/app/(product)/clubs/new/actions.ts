@@ -1,5 +1,6 @@
 'use server';
 
+import { HTTP_STATUS } from '@pickflick/contracts';
 import { cookies } from 'next/headers';
 
 import { createClub } from '@/api/clubs.server';
@@ -31,7 +32,7 @@ export async function createClubAction(
         });
         return { ok: true };
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
             return {
                 ok: false,
                 message: 'Your session expired. Sign in again; your entries are still here.',

@@ -1,7 +1,12 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import type { TSession } from '@pickflick/contracts';
+import {
+    SESSION_LOCATION_MAX_LENGTH,
+    SESSION_NOTES_MAX_LENGTH,
+    SESSION_TOPIC_MAX_LENGTH,
+    type TSession,
+} from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -22,6 +27,9 @@ import {
     validateSession,
 } from './session-form';
 import styles from './SessionForm.module.scss';
+
+// The deadline field takes `hh:mm`.
+const DURATION_INPUT_LENGTH = 5;
 
 interface ISessionFormProps {
     clubId: string;
@@ -107,7 +115,7 @@ export default function SessionForm({
                 id="session-location"
                 label="Location"
                 labelHint="required"
-                maxLength={200}
+                maxLength={SESSION_LOCATION_MAX_LENGTH}
                 placeholder="e.g. Sarah’s place, Zoom, Alamo Drafthouse"
                 required
             />
@@ -117,7 +125,7 @@ export default function SessionForm({
                 id="session-topic"
                 label="Topic"
                 labelHint="optional"
-                maxLength={200}
+                maxLength={SESSION_TOPIC_MAX_LENGTH}
             />
             <Textarea
                 {...form.getInputProps('notes')}
@@ -125,7 +133,7 @@ export default function SessionForm({
                 id="session-notes"
                 label="Notes"
                 labelHint="optional"
-                maxLength={2000}
+                maxLength={SESSION_NOTES_MAX_LENGTH}
                 size="compact"
             />
             {!session ? (
@@ -148,7 +156,7 @@ export default function SessionForm({
                     id="session-deadline"
                     label="Nomination phase ends in"
                     labelHint="optional"
-                    maxLength={5}
+                    maxLength={DURATION_INPUT_LENGTH}
                     placeholder="hh:mm"
                     hint={
                         session?.deadlineAt

@@ -4,6 +4,7 @@ import {
     Get,
     Header,
     HttpCode,
+    HttpStatus,
     Param,
     Post,
     Res,
@@ -21,6 +22,9 @@ import type { Response } from 'express';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { MovieImagesService } from './movie-images.service.js';
 import { MoviesService } from './movies.service.js';
+
+// Catalog reads reach paid providers: sixty a minute per client.
+const CATALOG_RATE_LIMIT = { default: { ttl: 60_000, limit: 60 } };
 
 @Controller('movies')
 export class MoviesController {
@@ -42,7 +46,7 @@ export class MoviesController {
 
     @Get(':movieId')
     @Header('Cache-Control', 'private, no-store')
-    @Throttle({ default: { ttl: 60_000, limit: 60 } })
+    @Throttle(CATALOG_RATE_LIMIT)
     async details(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
         const response = await this.movies.detailsResponse(movieId);
         const { result } = response;
@@ -54,9 +58,9 @@ export class MoviesController {
     }
 
     @Post('search')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Header('Cache-Control', 'private, no-store')
-    @Throttle({ default: { ttl: 60_000, limit: 60 } })
+    @Throttle(CATALOG_RATE_LIMIT)
     async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
         const result = await this.movies.search(input, true);
         if (result.state === 'unavailable') return result;

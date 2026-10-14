@@ -29,6 +29,8 @@ import {
 import { getClubEntitlements } from '../access/club-tiers.js';
 import { inspectInvitation } from './club-invitation-access.js';
 
+const RECENT_INVITATIONS_LIMIT = 20;
+
 async function findManagerMembership(
     transaction: Prisma.TransactionClient,
     userId: string,
@@ -94,7 +96,7 @@ export class ClubInvitationsService {
         const recent = await this.prisma.clubInvite.findMany({
             where: { clubId },
             orderBy: { createdAt: 'desc' },
-            take: 20,
+            take: RECENT_INVITATIONS_LIMIT,
             select: { id: true },
         });
         const invitations = await this.prisma.clubInvite.findMany({

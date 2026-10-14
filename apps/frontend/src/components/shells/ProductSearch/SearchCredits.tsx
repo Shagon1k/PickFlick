@@ -6,6 +6,9 @@ import styles from '@/components/shells/product-navigation.module.scss';
 // Next.js declares SVG imports as any; the static image loader returns StaticImageData.
 import tmdbLogo from './assets/tmdb.svg';
 
+const PROVIDER_LOGO_WIDTH = 90;
+const PROVIDER_LOGO_HEIGHT = 12;
+
 export default function SearchCredits({
     movies,
     label = 'Catalog credits',
@@ -34,8 +37,8 @@ export default function SearchCredits({
                         <Image
                             src={tmdbLogo as StaticImageData}
                             alt="TMDB"
-                            width={90}
-                            height={12}
+                            width={PROVIDER_LOGO_WIDTH}
+                            height={PROVIDER_LOGO_HEIGHT}
                             unoptimized
                         />
                     </a>{' '}

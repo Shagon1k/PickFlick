@@ -5,6 +5,9 @@ import { useState } from 'react';
 
 import styles from '../../page.module.scss';
 
+const POSTER_WIDTH = 300;
+const POSTER_HEIGHT = 450;
+
 interface IMoviePosterProps {
     url: string | null;
     title: string;
@@ -18,8 +21,8 @@ export default function MoviePoster({ url, title }: IMoviePosterProps) {
                 <Image
                     src={url}
                     alt={`${title} poster`}
-                    width={300}
-                    height={450}
+                    width={POSTER_WIDTH}
+                    height={POSTER_HEIGHT}
                     unoptimized
                     onError={() => setFailedUrl(url)}
                 />

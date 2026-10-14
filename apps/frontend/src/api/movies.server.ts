@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+    HTTP_STATUS,
     movieDetailsResponseSchema,
     type TMovieDetailsResponse,
     type TMovieProviderReason,
@@ -10,6 +11,9 @@ import {
 } from '@pickflick/contracts';
 
 import { ApiError, requestApi } from '@/lib/api.server';
+
+// Details may wait on several slow providers in sequence before the API answers.
+const DETAILS_TIMEOUT_MS = 100_000;
 
 export const searchMovies = (input: TMovieSearch): Promise<TMovieResult<TMovieSearchResults>> =>
     requestApi('/movies/search', { method: 'POST', json: input });
@@ -22,8 +26,8 @@ function toUnavailableResponse(reason: TMovieProviderReason): TMovieDetailsRespo
 function getFailureReason(error: unknown): TMovieProviderReason | null {
     if (error instanceof SyntaxError) return 'INVALID_RESPONSE';
     if (error instanceof ApiError) {
-        if (error.status === 429) return 'RATE_LIMITED';
-        return error.status >= 500 ? 'UNAVAILABLE' : null;
+        if (error.status === HTTP_STATUS.TOO_MANY_REQUESTS) return 'RATE_LIMITED';
+        return error.status >= HTTP_STATUS.INTERNAL_SERVER_ERROR ? 'UNAVAILABLE' : null;
     }
     const hasTimedOut =
         error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
@@ -34,7 +38,9 @@ export async function getMovieDetails(movieId: string): Promise<TMovieDetailsRes
     let response: unknown;
     try {
         // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
-        response = await requestApi<unknown>(`/movies/${movieId}`, { timeoutMs: 100_000 });
+        response = await requestApi<unknown>(`/movies/${movieId}`, {
+            timeoutMs: DETAILS_TIMEOUT_MS,
+        });
     } catch (error) {
         const reason = getFailureReason(error);
         if (!reason) throw error;

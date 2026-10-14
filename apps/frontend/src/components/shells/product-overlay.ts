@@ -2,6 +2,9 @@
 
 import { createContext, type RefObject, use, useEffect, useLayoutEffect } from 'react';
 
+// Menus keep this gap from the viewport edges.
+const VIEWPORT_MARGIN_PX = 8;
+
 /**
  * One product overlay (search, notifications, account, or a navigation strip) is open at a time.
  * Opening another closes the first, and closing returns focus to the trigger that opened it.
@@ -97,7 +100,10 @@ export function useOverlayDismissal(
 function alignToAnchor(menu: HTMLElement, anchor: HTMLElement) {
     const anchorBox = anchor.getBoundingClientRect();
     const centered = anchorBox.left + (anchorBox.width - menu.offsetWidth) / 2;
-    const clamped = Math.min(Math.max(centered, 8), window.innerWidth - menu.offsetWidth - 8);
+    const clamped = Math.min(
+        Math.max(centered, VIEWPORT_MARGIN_PX),
+        window.innerWidth - menu.offsetWidth - VIEWPORT_MARGIN_PX,
+    );
     const initialLeft =
         menu.dataset.menuAlign === 'right' ? anchorBox.right - menu.offsetWidth : centered;
     menu.style.setProperty('--menu-shift', `${clamped - initialLeft}px`);

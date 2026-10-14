@@ -1,7 +1,13 @@
-import type { TMovieSource } from '@pickflick/contracts';
+import { HTTP_STATUS, type TMovieSource } from '@pickflick/contracts';
 import type { z } from 'zod';
 
 import { MovieProviderError } from './movie-provider.js';
+
+const SECOND_MS = 1000;
+// A provider's Retry-After is honored between one second and one day; a missing one waits a minute.
+const MIN_RETRY_MS = SECOND_MS;
+const MAX_RETRY_MS = 24 * 60 * 60 * SECOND_MS;
+const DEFAULT_RETRY_MS = 60 * SECOND_MS;
 
 export class MovieHttp {
     private retryAt?: Date;
@@ -41,22 +47,26 @@ export class MovieHttp {
         }
     }
     private checkResponse(response: Response): void {
-        if (response.status === 429) {
+        if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
             const value = response.headers.get('retry-after');
             const delay =
                 value && /^\d+$/u.test(value)
-                    ? Number(value) * 1000
+                    ? Number(value) * SECOND_MS
                     : Date.parse(value ?? '') - Date.now();
             const retryAt = new Date(
                 Date.now() +
-                    (Number.isFinite(delay) ? Math.max(1000, Math.min(delay, 86400000)) : 60000),
+                    (Number.isFinite(delay)
+                        ? Math.max(MIN_RETRY_MS, Math.min(delay, MAX_RETRY_MS))
+                        : DEFAULT_RETRY_MS),
             );
             if (!this.retryAt || retryAt > this.retryAt) this.retryAt = retryAt;
             throw new MovieProviderError('RATE_LIMITED', this.retryAt, this.source);
         }
-        if ([401, 403].includes(response.status)) throw new MovieProviderError('AUTHENTICATION');
-        if (response.status === 404) throw new MovieProviderError('NOT_FOUND');
-        if (response.status >= 500) throw new MovieProviderError('UNAVAILABLE');
+        if ([HTTP_STATUS.UNAUTHORIZED, HTTP_STATUS.FORBIDDEN].includes(response.status))
+            throw new MovieProviderError('AUTHENTICATION');
+        if (response.status === HTTP_STATUS.NOT_FOUND) throw new MovieProviderError('NOT_FOUND');
+        if (response.status >= HTTP_STATUS.INTERNAL_SERVER_ERROR)
+            throw new MovieProviderError('UNAVAILABLE');
         if (!response.ok) throw new MovieProviderError('INVALID_RESPONSE');
     }
 }

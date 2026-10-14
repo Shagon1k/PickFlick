@@ -1,4 +1,4 @@
-import { invitationTokenSchema, type TInvitationPreview } from '@pickflick/contracts';
+import { HTTP_STATUS, invitationTokenSchema, type TInvitationPreview } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -31,7 +31,10 @@ async function InvitationContent({ params }: { params: Promise<{ token: string }
         initial = await previewInvitation(token);
     } catch (error) {
         initial = {
-            state: error instanceof ApiError && error.status === 401 ? 'sign-in' : 'error',
+            state:
+                error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED
+                    ? 'sign-in'
+                    : 'error',
         };
     }
     return <Invitation initial={initial} key={token} token={token} />;

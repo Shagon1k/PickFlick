@@ -1,4 +1,4 @@
-import { movieIdSchema } from '@pickflick/contracts';
+import { HTTP_STATUS, movieIdSchema } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -15,6 +15,8 @@ import { formatUtcDate } from '@/lib/format';
 import MovieHero from './_components/MovieHero/MovieHero';
 import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
 import styles from './page.module.scss';
+
+const MAX_RELATED_MOVIES = 6;
 
 export const metadata: Metadata = {
     title: 'Movie Details — PickFlick',
@@ -42,7 +44,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     const imdb = response?.links.imdb;
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
         .filter((id) => id !== movieId)
-        .slice(0, 6);
+        .slice(0, MAX_RELATED_MOVIES);
     return (
         <ProductFrame>
             <main className={styles.movieMain}>
@@ -90,7 +92,7 @@ async function loadDetails(movieId: string) {
     try {
         return await getMovieDetails(movieId);
     } catch (error) {
-        if (error instanceof ApiError && error.status === 401)
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             redirect(buildLoginPath(`/movies/${movieId}`));
         throw error;
     }

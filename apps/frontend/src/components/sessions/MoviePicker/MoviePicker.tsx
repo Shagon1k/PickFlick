@@ -1,5 +1,6 @@
 'use client';
 
+import { MOVIE_QUERY_MAX_LENGTH } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
 import {
@@ -68,7 +69,7 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
                 labelHint="required"
                 required
                 value={value ? selectedTitle : query}
-                maxLength={200}
+                maxLength={MOVIE_QUERY_MAX_LENGTH}
                 onChange={(event) => {
                     setQuery(event.currentTarget.value);
                     setIndex(-1);

@@ -1,6 +1,10 @@
 'use server';
 
-import { respondInvitationSchema, type TSessionInvitationPreview } from '@pickflick/contracts';
+import {
+    HTTP_STATUS,
+    respondInvitationSchema,
+    type TSessionInvitationPreview,
+} from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
 import { respondSessionInvitation } from '@/api/session-roster.server';
@@ -20,6 +24,11 @@ export async function respondSessionInvitationAction(
         revalidatePath('/app');
         return result;
     } catch (error) {
-        return { state: error instanceof ApiError && error.status === 401 ? 'sign-in' : 'error' };
+        return {
+            state:
+                error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED
+                    ? 'sign-in'
+                    : 'error',
+        };
     }
 }

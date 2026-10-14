@@ -5,7 +5,7 @@ import { useState, useSyncExternalStore, useTransition } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
-import { formatUtcDateTime } from '@/lib/format';
+import { formatUtcDateTime, toIsoDate } from '@/lib/format';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -69,7 +69,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         </p>
                         <p>{view.location}</p>
                         <p>Invited by {view.inviterName}</p>
-                        <p>Expires {view.expiresAt.slice(0, 10)}</p>
+                        <p>Expires {toIsoDate(view.expiresAt)}</p>
                     </div>
                     <div className={styles.actions}>
                         <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>

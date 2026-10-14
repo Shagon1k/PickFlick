@@ -1,3 +1,10 @@
+const ISO_DATE_LENGTH = 10;
+
+/** The `YYYY-MM-DD` part of an ISO timestamp, as date inputs and compact labels show it. */
+export function toIsoDate(value: string): string {
+    return value.slice(0, ISO_DATE_LENGTH);
+}
+
 /** A calendar date in UTC, the zone every PickFlick date is shown in. */
 export function formatUtcDate(value: string): string {
     return new Date(value).toLocaleDateString('en', { timeZone: 'UTC' });

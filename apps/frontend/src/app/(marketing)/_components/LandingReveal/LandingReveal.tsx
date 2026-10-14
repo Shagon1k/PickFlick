@@ -4,6 +4,9 @@ import { type ReactNode, useEffect, useRef } from 'react';
 
 import styles from '../../marketing.module.scss';
 
+// Reveal a section once 15% of it is on screen.
+const REVEAL_THRESHOLD = 0.15;
+
 export default function LandingReveal({ children }: { children: ReactNode }) {
     const rootRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +46,7 @@ export default function LandingReveal({ children }: { children: ReactNode }) {
                     }
                 }
             },
-            { threshold: 0.15 },
+            { threshold: REVEAL_THRESHOLD },
         );
 
         sections.forEach((section) => observer.observe(section));

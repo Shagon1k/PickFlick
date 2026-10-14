@@ -14,11 +14,12 @@ type TInvitationResult =
 
 import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
 import { ApiError } from '@/lib/api.server';
+import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
 
 function getFailureMessage(error: unknown): string {
     if (error instanceof ApiError && error.reason === 'MEMBER_LIMIT_REACHED')
         return 'This Club has reached its member limit.';
-    if (error instanceof ApiError && [401, 403, 404].includes(error.status))
+    if (error instanceof ApiError && ACCESS_LOST_STATUSES.includes(error.status))
         return 'Invitation management is no longer available to you.';
     return 'Invitations could not be updated. Check your connection and try again.';
 }

@@ -2,6 +2,8 @@ import { createPrivateKey, sign } from 'node:crypto';
 
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 
+const MS_PER_SECOND = 1_000;
+
 const APPLE_AUDIENCE = 'https://appleid.apple.com';
 // Apple accepts client secrets for up to six months; every API start signs a fresh one.
 const CLIENT_SECRET_LIFETIME_SECONDS = 150 * 24 * 60 * 60;
@@ -14,7 +16,7 @@ export function createAppleClientSecret(
     auth: Extract<TRuntimeEnvironment['auth'], { appleSignInEnabled: true }>,
     now: Date = new Date(),
 ): string {
-    const issuedAt = Math.floor(now.getTime() / 1_000);
+    const issuedAt = Math.floor(now.getTime() / MS_PER_SECOND);
     const header = encodeJson({ alg: 'ES256', kid: auth.appleKeyId, typ: 'JWT' });
     const payload = encodeJson({
         aud: APPLE_AUDIENCE,

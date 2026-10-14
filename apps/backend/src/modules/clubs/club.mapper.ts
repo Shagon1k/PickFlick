@@ -4,6 +4,8 @@ import type { IClubSummary, TClubRole } from '@pickflick/contracts';
 
 import { getClubEntitlements } from './access/club-tiers.js';
 
+const AVATAR_VERSION_LENGTH = 16;
+
 interface IClubRow {
     id: string;
     name: string;
@@ -26,7 +28,7 @@ export function toClubSummary(club: IClubRow, role: TClubRole): IClubSummary {
                   avatarVersion: createHash('sha256')
                       .update(club.avatarObjectKey)
                       .digest('hex')
-                      .slice(0, 16),
+                      .slice(0, AVATAR_VERSION_LENGTH),
               }
             : {}),
         lifecycle: club.lifecycle,

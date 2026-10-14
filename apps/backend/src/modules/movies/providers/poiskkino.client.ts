@@ -15,6 +15,10 @@ import {
     type TSourceSnapshot,
 } from './movie-provider.js';
 
+const RATING_SCALE = 10;
+// The provider sends a full timestamp; Movies keep its `YYYY-MM-DD` part.
+const ISO_DATE_LENGTH = 10;
+
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
 const image = z.object({ url: movieImageUrlSchema.nullish() }).nullish();
@@ -144,7 +148,7 @@ export class PoiskkinoClient {
                       {
                           source: source === 'kp' ? 'kinopoisk' : source,
                           value,
-                          scale: 10,
+                          scale: RATING_SCALE,
                           voteCount: votes ?? null,
                       },
                   ]
@@ -165,7 +169,7 @@ export class PoiskkinoClient {
                 ...createEmptyMetadata(),
                 title: movie.enName || null,
                 // alternativeName and description have no guaranteed English locale.
-                releaseDate: movie.premiere?.world?.slice(0, 10) ?? null,
+                releaseDate: movie.premiere?.world?.slice(0, ISO_DATE_LENGTH) ?? null,
                 releaseYear: movie.year ?? null,
                 runtime: movie.movieLength || null,
                 posterUrl: movie.poster?.url ?? null,

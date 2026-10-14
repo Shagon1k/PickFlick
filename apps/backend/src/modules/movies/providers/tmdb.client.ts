@@ -1,4 +1,5 @@
 import {
+    MOVIE_CAST_LIMIT,
     movieSearchSchema,
     tmdbDetailsSchema,
     tmdbIdSchema,
@@ -20,6 +21,9 @@ import {
     type TProviderSearch,
 } from './movie-provider.js';
 
+const RATING_SCALE = 10;
+const YEAR_LENGTH = 4;
+
 function toSummary(movie: TTmdbMovie) {
     return {
         ...createEmptyMetadata(),
@@ -27,7 +31,7 @@ function toSummary(movie: TTmdbMovie) {
         originalTitle: movie.original_title,
         overview: movie.overview || null,
         releaseDate: movie.release_date,
-        releaseYear: movie.release_date ? Number(movie.release_date.slice(0, 4)) : null,
+        releaseYear: movie.release_date ? Number(movie.release_date.slice(0, YEAR_LENGTH)) : null,
         adult: movie.adult,
         originalLanguage: movie.original_language || null,
         posterUrl: toImageUrl(movie.poster_path),
@@ -38,7 +42,7 @@ function toSummary(movie: TTmdbMovie) {
                       {
                           source: 'tmdb',
                           value: movie.vote_average,
-                          scale: 10,
+                          scale: RATING_SCALE,
                           voteCount: movie.vote_count,
                       },
                   ]
@@ -125,7 +129,7 @@ export class TmdbClient implements IMovieProvider {
                     .map((person) => ({ name: person.name })),
                 cast: movie.credits.cast
                     .toSorted((a, b) => a.order - b.order)
-                    .slice(0, 50)
+                    .slice(0, MOVIE_CAST_LIMIT)
                     .map((person) => ({
                         name: person.name,
                         character: person.character || null,

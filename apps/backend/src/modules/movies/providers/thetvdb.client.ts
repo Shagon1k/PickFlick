@@ -1,4 +1,4 @@
-import { movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
+import { MOVIE_CAST_LIMIT, movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
 import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
@@ -8,6 +8,8 @@ import {
     parseSourceSnapshot,
     type TSourceSnapshot,
 } from './movie-provider.js';
+
+const MAX_REMOTE_ID_MATCHES = 100;
 
 const id = z.number().int().positive();
 const response = <TData extends z.ZodType>(data: TData) =>
@@ -121,7 +123,7 @@ export class ThetvdbClient {
                                 person.peopleType.toLowerCase() === 'actor' && person.personName,
                         )
                         .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-                        .slice(0, 50)
+                        .slice(0, MOVIE_CAST_LIMIT)
                         .map((person) => ({
                             name: person.personName ?? '',
                             character: person.name || null,
@@ -137,7 +139,9 @@ export class ThetvdbClient {
         if (!imdb) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb');
         const found = await this.http.get(
             `/v4/search/remoteid/${imdb}`,
-            response(z.array(z.object({ movie: z.object({ id }).nullish() })).max(100)),
+            response(
+                z.array(z.object({ movie: z.object({ id }).nullish() })).max(MAX_REMOTE_ID_MATCHES),
+            ),
             this.headers(),
         );
         const candidates = [

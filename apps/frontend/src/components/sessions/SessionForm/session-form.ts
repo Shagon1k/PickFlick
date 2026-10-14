@@ -1,6 +1,10 @@
 import { createSessionSchema, type TSession, updateSessionSchema } from '@pickflick/contracts';
 
 import { toFieldErrors } from '@/lib/form-errors';
+import { toIsoDate } from '@/lib/format';
+
+const MINUTES_PER_HOUR = 60;
+const MINUTE_MS = 60_000;
 
 export interface ISessionValues {
     date: string;
@@ -16,7 +20,7 @@ export interface ISessionValues {
 /** Form values for a new Session, or the editable details of an existing one. */
 export function getInitialSessionValues(session?: TSession): ISessionValues {
     return {
-        date: session?.scheduledAt?.slice(0, 10) ?? '',
+        date: session?.scheduledAt ? toIsoDate(session.scheduledAt) : '',
         location: session?.location ?? '',
         topic: session?.topic ?? '',
         notes: session?.notes ?? '',
@@ -32,7 +36,9 @@ export function nextDeadline(values: ISessionValues, session?: TSession): string
     if (values.removeDeadline) return null;
     if (values.type !== 'FULL_CYCLE' || !values.duration) return session?.deadlineAt ?? null;
     const [hours = '0', minutes = '0'] = values.duration.split(':');
-    return new Date(Date.now() + (Number(hours) * 60 + Number(minutes)) * 60_000).toISOString();
+    return new Date(
+        Date.now() + (Number(hours) * MINUTES_PER_HOUR + Number(minutes)) * MINUTE_MS,
+    ).toISOString();
 }
 
 export function buildSessionInput(
@@ -43,7 +49,8 @@ export function buildSessionInput(
     let scheduledAt = /^\d{4}-\d{2}-\d{2}$/u.test(values.date)
         ? `${values.date}T00:00:00.000Z`
         : '';
-    if (session?.scheduledAt?.slice(0, 10) === values.date) scheduledAt = session.scheduledAt;
+    if (session?.scheduledAt && toIsoDate(session.scheduledAt) === values.date)
+        scheduledAt = session.scheduledAt;
     const details = {
         scheduledAt,
         location: values.location,

@@ -14,6 +14,9 @@ import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
+/** Personal suggestions offer at most twelve past losing nominations. */
+const MAX_SUGGESTIONS = 12;
+
 @Injectable()
 export class NominationsService {
     constructor(
@@ -157,5 +160,5 @@ async function findPastLosingNominations(
         ...new Set(
             history.filter((row) => row.movieId !== row.session.movieId).map((row) => row.movieId),
         ),
-    ].slice(0, 12);
+    ].slice(0, MAX_SUGGESTIONS);
 }

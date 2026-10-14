@@ -2,6 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import type { IManagedInvitation } from '@pickflick/contracts';
 
+const TOKEN_BYTES = 32;
+
 const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Club and Session invitations store only this digest; the raw token lives in the link. */
@@ -11,7 +13,7 @@ export function digestInviteToken(token: string): string {
 
 /** A fresh link token, its stored digest, and the seven-day expiry shared by all invitations. */
 export function newInviteToken() {
-    const token = randomBytes(32).toString('base64url');
+    const token = randomBytes(TOKEN_BYTES).toString('base64url');
     return {
         token,
         tokenDigest: digestInviteToken(token),

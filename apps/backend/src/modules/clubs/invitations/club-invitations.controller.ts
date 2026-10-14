@@ -4,6 +4,7 @@ import {
     Get,
     Header,
     HttpCode,
+    HttpStatus,
     Param,
     ParseUUIDPipe,
     Post,
@@ -46,7 +47,7 @@ export class ClubInvitationsController {
     }
 
     @Post('clubs/:clubId/invitations/:inviteId/revoke')
-    @HttpCode(204)
+    @HttpCode(HttpStatus.NO_CONTENT)
     revoke(
         @CurrentUser() user: IAuthUser,
         @Param('clubId', uuid) clubId: string,
@@ -62,7 +63,7 @@ export class ClubInvitationsController {
     }
 
     @Post('club-invitations/:inviteId/respond')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Header('Cache-Control', 'private, no-store')
     respondPending(
         @CurrentUser() user: IAuthUser,
@@ -73,7 +74,7 @@ export class ClubInvitationsController {
     }
 
     @Post('club-invitations/preview')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Header('Cache-Control', 'private, no-store')
     preview(
         @CurrentUser() user: IAuthUser,
@@ -84,7 +85,7 @@ export class ClubInvitationsController {
     }
 
     @Post('club-invitations/respond')
-    @HttpCode(200)
+    @HttpCode(HttpStatus.OK)
     @Header('Cache-Control', 'private, no-store')
     respond(
         @CurrentUser() user: IAuthUser,
