@@ -148,12 +148,6 @@ backend deploy/prune does not include that package or its plugins. This separati
 runtime tool inclusion; it does not replace full-workspace audit or claim every production dependency
 is vulnerability-free.
 
-**Retirement:** monitor the official advisory and upstream releases. When a reviewed fixed release
-exists, upgrade all dependency paths, regenerate the lockfile, remove the local patch and this
-exception together, and prove full audit, regressions, lint, production packaging and `pnpm verify`.
-If the advisory disappears first, investigate rather than extending the exception automatically.
-At expiry the gate blocks even if audit no longer reports the advisory, forcing explicit retirement.
-
 ## Infrastructure
 
 - Only the frontend is published. The backend, PostgreSQL, and MinIO sit on the internal Compose

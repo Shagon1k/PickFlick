@@ -1,7 +1,7 @@
 import nextConfig from '../../../next.config';
 import { buildContentSecurityPolicy, SECURITY_HEADERS } from '../security-headers';
 
-describe('contentSecurityPolicy', () => {
+describe('buildContentSecurityPolicy', () => {
     it('should allow scripts only with the nonce and forbid framing', () => {
         const policy = buildContentSecurityPolicy('abc123', false);
 

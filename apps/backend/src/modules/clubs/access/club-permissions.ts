@@ -6,8 +6,8 @@ import type {
 } from '@pickflick/contracts';
 
 /**
- * What the member may do in the UI. Every mutation still checks its own rule on the server; this
- * only decides which controls to show.
+ * What the member may do. Pages use these flags to choose controls, and services enforce the same
+ * flags: `manageSessions` is the Session management rule. Loosening one loosens the server too.
  */
 export function getClubPermissions(
     role: TClubRole,

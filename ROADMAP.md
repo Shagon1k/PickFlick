@@ -914,7 +914,7 @@ in UAT
       severity-classified register.
 - [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
-- [ ] Exercise concurrent tabs and users, process and job restarts, SSE reconnect and fallback, stale
+- [ ] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
       data, provider failures, and permission changes mid-flow.
 - [ ] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.

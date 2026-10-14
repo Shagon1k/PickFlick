@@ -1,6 +1,6 @@
 import { getClubPermissions } from '../club-permissions.js';
 
-describe('clubPermissions', () => {
+describe('getClubPermissions', () => {
     it('should let an active Admin manage everything except leaving', () => {
         expect(getClubPermissions('ADMIN', 'ACTIVE')).toEqual({
             viewClub: true,

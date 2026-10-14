@@ -178,29 +178,31 @@ describe('Session foundation', () => {
         }
     });
 
-    it('should count only accepted participants while preserving attendance', async () => {
+    it('should keep attendance after a participant leaves and never move the row', async () => {
         const session = await createSession('NOMINATION');
+        const ratingSession = await createSession('RATING');
         const participant = await database.sessionParticipant.create({
-            data: { sessionId: session.id, clubId, membershipId },
+            data: {
+                sessionId: session.id,
+                clubId,
+                membershipId,
+                status: 'ACCEPTED',
+                attended: true,
+            },
         });
-        const accepted = () =>
-            database.sessionParticipant.count({
-                where: { sessionId: session.id, status: 'ACCEPTED' },
-            });
-        expect(await accepted()).toBe(0);
-        await database.sessionParticipant.update({
-            where: { id: participant.id },
-            data: { status: 'ACCEPTED', attended: true },
-        });
-        expect(await accepted()).toBe(1);
         await database.sessionParticipant.update({
             where: { id: participant.id },
             data: { status: 'LEFT' },
         });
-        expect(await accepted()).toBe(0);
         expect(
             await database.sessionParticipant.findUnique({ where: { id: participant.id } }),
-        ).toMatchObject({ attended: true });
+        ).toMatchObject({ status: 'LEFT', attended: true });
+        await expect(
+            database.sessionParticipant.update({
+                where: { id: participant.id },
+                data: { sessionId: ratingSession.id },
+            }),
+        ).rejects.toThrow('SessionParticipant identity is immutable');
     });
 
     it('should roll back a failed roster write and reject duplicate or moved identities', async () => {

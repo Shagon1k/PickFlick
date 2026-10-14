@@ -62,6 +62,6 @@ export default function SessionProgress({
         };
     }, [sessionId]);
     return isUnavailable ? (
-        <p role="status">Live updates unavailable. Progress refreshes periodically.</p>
+        <p role="status">Could not check for updates. Retrying shortly.</p>
     ) : null;
 }

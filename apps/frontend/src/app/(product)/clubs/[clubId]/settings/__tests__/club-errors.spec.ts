@@ -2,7 +2,7 @@ import { CLUB_CONFLICT_REASONS } from '@pickflick/contracts';
 
 import { getClubFailureMessage } from '../club-errors';
 
-describe('clubFailureMessage', () => {
+describe('getClubFailureMessage', () => {
     it('should give every conflict reason its own recovery copy', () => {
         const messages = CLUB_CONFLICT_REASONS.map((reason) => getClubFailureMessage(409, reason));
 

@@ -1,7 +1,7 @@
 import { getClubAccess } from '../club-access.js';
 import { getClubPermissions } from '../club-permissions.js';
 
-describe('clubAccess', () => {
+describe('getClubAccess', () => {
     it('should keep a Club at capacity writable and make an over-limit Club read-only for new work', () => {
         expect(getClubAccess('ACTIVE', true, 8, 8)).toEqual({
             adminless: false,

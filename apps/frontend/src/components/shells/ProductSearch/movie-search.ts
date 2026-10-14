@@ -51,7 +51,11 @@ export function searchMessage(term: string, result: TMovieSearchResponse | null)
     if (result.state === 'stale')
         return 'Showing cached results while the provider is unavailable.';
     if (!result.data.movies.length) return 'No films found. Try another title.';
-    return `${result.data.movies.length} films found.`;
+    return formatFilmCount(result.data.movies.length);
+}
+
+function formatFilmCount(count: number): string {
+    return `${count} ${count === 1 ? 'film' : 'films'} found.`;
 }
 
 /** Moves a listbox's active option for ArrowDown/ArrowUp, wrapping at both ends. */

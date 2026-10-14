@@ -34,8 +34,7 @@ function toCachedResult<TData extends TMovieDetails | TMovieSearchResults>(
     cached: ICached<TData>,
 ): TMovieResult<TData> {
     const isPartial =
-        'provenance' in cached.data &&
-        cached.data.provenance.some((participant) => participant.reason);
+        'provenance' in cached.data && cached.data.provenance.some((source) => source.reason);
     return {
         state: isPartial ? 'partial' : 'fresh',
         data: cached.data,
