@@ -78,6 +78,7 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Lint, knip, formatting, types, tests, build | `pnpm verify`           |
 | Known high-severity vulnerabilities         | `pnpm security:audit`   |
 | Database, auth, and Club integration specs  | `pnpm test:integration` |
+| Core flows through the real web app and API | `pnpm test:journeys`    |
 | Playwright PR smoke checks                  | `pnpm test:ui:smoke`    |
 | Full Playwright behavior checks             | `pnpm test:ui:contract` |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
@@ -85,8 +86,23 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Smoke the built deadline worker             | `pnpm test:worker`      |
 | Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
-`pnpm test:integration` needs the local services running. The UI selections build the frontend and
-serve it against a mock backend, so they need no database. Install Chromium once with
+`pnpm test:integration` needs the local services running. Run it and `pnpm test:journeys` against
+an isolated test database so they never touch your local data:
+
+1. Create the database once (use your `POSTGRES_USER`):
+
+    ```bash
+    docker compose --env-file .env -f compose.local.yaml exec postgres createdb -U pickflick pickflick_test
+    ```
+
+2. Copy `.env` to `.env.test`, then set `APP_ENV=test` and point `DATABASE_URL` at
+   `pickflick_test`. Git ignores the file.
+3. Apply the migrations and run the specs with `PICKFLICK_ENV_FILE=.env.test`, for example
+   `PICKFLICK_ENV_FILE=.env.test pnpm db:migrate` and then `pnpm test:integration` the same way.
+
+The UI selections build the frontend and serve it against a mock backend, so they need no database.
+The UI selections and the journeys each rebuild `apps/frontend/.next` for their own API address, so
+rebuild before `pnpm start` after running them. Install Chromium once with
 `pnpm exec playwright install chromium`. Run screenshot comparisons in the pinned Linux image;
 see [UI quality checks](ui-quality.md).
 

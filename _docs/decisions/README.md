@@ -1312,6 +1312,11 @@ longer invalidates a fresh cache early. Cache keys hash the configured provider 
 so switching provider starts a separate cache. `Movie.title` and `Movie.releaseYear` hold the
 summary used by nominations. The decision table, identity rules and provenance above still apply.
 
+Cache writes are serialized by one advisory lock but no longer compare timestamps, so when two
+refreshes of one key race, the one that finishes last wins even if it started first. Each saved
+search also refreshes the title and year of the Movies it returns. Both are accepted: a search or
+detail result is at most one refresh old, and Movie summaries track the newest provider data.
+
 ### API references
 
 - [PoiskKino OpenAPI](https://api.poiskkino.dev/documentation-json)

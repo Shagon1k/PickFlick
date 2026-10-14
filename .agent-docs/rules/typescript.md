@@ -61,8 +61,9 @@ specs, script tests, and config files.
   PascalCase (`Button/Button.tsx`).
 - A boolean variable or parameter reads as a question: `is`, `are`, `has`, `can`, `should`,
   `was`, `did`, `will`, or `with` (`isOpen`, `hasDeadlineChanged`, `withDetails`); its state
-  setter follows (`setIsOpen`). Destructured names keep the property they come from, and API and
-  database fields keep their names (`permissions.manageSessions`, `hidden`).
+  setter follows (`setIsOpen`). Destructured names keep the property they come from, API and
+  database fields keep their names (`permissions.manageSessions`, `hidden`), and component props
+  that mirror DOM or Mantine props keep those names (`open`, `disabled`, `loading`).
 - A function or method name is a verb phrase: `get`/`find`/`list` read, `build`/`create` make a new
   value, `to`/`format` convert, `assert` throws, `is`/`has` answer a question. Controller handlers
   follow it too (`listPending`, `getProgress`); the route lives in the decorator. Names a framework

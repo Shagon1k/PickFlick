@@ -460,7 +460,8 @@ manual closure and deadline transitions persist their new version with an event.
 phase, phase/details versions, accepted/nominated counts and accepted Membership recipients
 for later notification work. `AUTOMATIC` records the machine decision without a human actor.
 Notification delivery and retention policy remain later phases; no dispatcher or message broker is
-introduced. Existing rows start at version 1 without invented events or retrospective transitions.
+introduced. Nothing reads these rows yet: the outbox is kept by owner decision (#172) as the source
+for the notification phase, an explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
 
 Submission and roster changes evaluate accepted participants under Club → Session locks. Positive
 N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
