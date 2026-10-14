@@ -210,8 +210,12 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
     await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Leave Club' }).click();
     const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
-    await dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' }).fill('LEAVE');
-    await dialog.getByRole('button', { name: 'Confirm leave club' }).click();
+    const confirmation = dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' });
+    await confirmation.fill('LEAV');
+    await confirmation.press('Enter');
+    await expect(dialog).toBeVisible();
+    await confirmation.fill('LEAVE');
+    await confirmation.press('Enter');
     await expect(page).toHaveURL(/\/app$/u);
 });
 

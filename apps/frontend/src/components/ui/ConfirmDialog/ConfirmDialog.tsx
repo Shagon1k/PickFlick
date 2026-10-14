@@ -41,6 +41,7 @@ export default function ConfirmDialog({
     word,
 }: IConfirmDialogProps) {
     const [confirmation, setConfirmation] = useState('');
+    const canConfirm = confirmation === word && !pending;
     const [wasOpen, setWasOpen] = useState(open);
     if (wasOpen !== open) {
         setWasOpen(open);
@@ -77,6 +78,9 @@ export default function ConfirmDialog({
                 id={inputId}
                 label={`Type ${word} to confirm`}
                 onChange={(event) => setConfirmation(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' && canConfirm) onConfirm(confirmation);
+                }}
                 value={confirmation}
             />
             {status}
