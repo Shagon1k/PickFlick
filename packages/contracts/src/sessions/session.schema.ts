@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { multilineText, optionalText, singleLineText } from '../common/text.js';
 import { nominationsSchema } from './nomination.schema.js';
+import { selectionSchema } from './selection.schema.js';
 
 /** Phases that hold a Club's single active slot; Rating Sessions are non-blocking. */
 export const BLOCKING_SESSION_PHASES = ['NOMINATION', 'SELECTION', 'WATCHING'] as const;
@@ -74,6 +75,7 @@ export const sessionSchema = z.strictObject({
     phaseVersion: z.number().int().positive(),
     progressVersion: z.number().int().positive(),
     nominations: nominationsSchema.nullable(),
+    selection: selectionSchema.nullable(),
     canEdit: z.boolean(),
     canCancel: z.boolean(),
 });

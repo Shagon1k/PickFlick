@@ -139,6 +139,7 @@ export function handleNominations(
                 phaseVersion: 1,
                 progressVersion: state.version,
                 nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
+                selection: null,
                 canEdit: token.includes('operator'),
                 canCancel: token.includes('operator'),
             };

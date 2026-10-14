@@ -16,6 +16,7 @@ import { getOfflineMessage } from '#lib/offline';
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
+import Selection from '../Selection/Selection';
 import SessionRoster from '../SessionRoster/SessionRoster';
 
 export default function SessionDetails({
@@ -53,6 +54,9 @@ export default function SessionDetails({
                     phaseVersion={session.phaseVersion}
                     data={session.nominations}
                 />
+            ) : null}
+            {session.selection ? (
+                <Selection sessionId={session.id} data={session.selection} />
             ) : null}
             <section className={styles.card} aria-label="Session details">
                 <dl className={styles.facts}>

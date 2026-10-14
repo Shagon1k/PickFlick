@@ -1,0 +1,168 @@
+'use client';
+
+import { useForm } from '@mantine/form';
+import { submitSelectionSchema, type TSelection } from '@pickflick/contracts';
+import Link from 'next/link';
+import { useState, useTransition } from 'react';
+
+import Button from '#components/ui/Button/Button';
+import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
+import { getOfflineMessage } from '#lib/offline';
+
+import { refreshSelectionAction, submitSelectionAction } from '../../selection-actions';
+import styles from './Selection.module.scss';
+
+export default function Selection({ sessionId, data }: { sessionId: string; data: TSelection }) {
+    const [message, setMessage] = useState('');
+    const [isPending, startTransition] = useTransition();
+    const form = useForm<{ scores: { nominationId: string; score: number | undefined }[] }>({
+        initialValues: {
+            scores: data.nominations.map((row) => ({ nominationId: row.id, score: undefined })),
+        },
+        validate: (values) =>
+            submitSelectionSchema.safeParse(values).success
+                ? {}
+                : { scores: 'Choose a score for every nomination.' },
+    });
+    const scoredCount = form.values.scores.filter((row) => row.score !== undefined).length;
+    const handleSubmit = form.onSubmit(
+        (values, event) => {
+            const heading = event?.currentTarget
+                .closest('section')
+                ?.querySelector<HTMLHeadingElement>('h2');
+            const offline = getOfflineMessage();
+            if (offline) {
+                setMessage(offline);
+                return;
+            }
+            setMessage('Saving your ballot…');
+            startTransition(async () => {
+                const result = await submitSelectionAction(sessionId, values).catch(() => ({
+                    ok: false as const,
+                    message: 'We could not reach PickFlick. Your scores are still here; try again.',
+                }));
+                setMessage(result.ok ? 'Ballot submitted.' : result.message);
+                if (result.ok) heading?.focus();
+            });
+        },
+        (_errors, _values, event) => {
+            setMessage('Choose a score for every nomination.');
+            const firstMissing = form.values.scores.findIndex((row) => row.score === undefined);
+            event?.currentTarget
+                .querySelectorAll('[role="radiogroup"]')
+                [firstMissing]?.querySelector<HTMLButtonElement>('[tabindex="0"]')
+                ?.focus();
+        },
+    );
+    function handleRefresh() {
+        const offline = getOfflineMessage();
+        if (offline) {
+            setMessage(offline);
+            return;
+        }
+        startTransition(async () => {
+            try {
+                await refreshSelectionAction(sessionId);
+                setMessage('Selection refreshed.');
+            } catch {
+                setMessage('We could not refresh Selection. Try again.');
+            }
+        });
+    }
+    return (
+        <section className={styles.selection} aria-labelledby="selection-heading">
+            <div className={styles.progress}>
+                <p role="status">
+                    Selection in progress — {data.submittedCount} of {data.acceptedCount}{' '}
+                    participants have submitted.
+                </p>
+                <progress
+                    aria-label="Selection progress"
+                    value={data.submittedCount}
+                    max={Math.max(data.acceptedCount, 1)}
+                />
+                <Button variant="ghost" disabled={isPending} onClick={handleRefresh}>
+                    Refresh Selection
+                </Button>
+            </div>
+            <h2 id="selection-heading" tabIndex={-1}>
+                Movie Selection
+            </h2>
+            <p>
+                Score every nominated film from {data.scaleMin} to {data.scaleMax}. Submit once;
+                your scores cannot be changed.
+            </p>
+            {!data.nominations.length ? (
+                <p>No nominations are available for Selection.</p>
+            ) : (
+                <form onSubmit={handleSubmit} noValidate>
+                    <ul className={styles.movies} aria-label="Nominated films">
+                        {data.nominations.map((row, index) => (
+                            <li key={row.id} className={styles.movie}>
+                                <div className={styles.poster} aria-hidden="true">
+                                    PF
+                                </div>
+                                <div className={styles.info}>
+                                    <h3>
+                                        <Link href={`/movies/${row.movie.id}`}>
+                                            {row.movie.title ?? 'Movie title unavailable'}
+                                        </Link>
+                                    </h3>
+                                    {row.movie.year ? <p>{row.movie.year}</p> : null}
+                                    {row.author !== null ? <p>Nominated by {row.author}</p> : null}
+                                </div>
+                                <div className={styles.control}>
+                                    <ScoreControl
+                                        label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
+                                        name={`score-${row.id}`}
+                                        min={data.scaleMin}
+                                        max={data.scaleMax}
+                                        value={
+                                            data.submittedAt
+                                                ? (row.ownScore ?? undefined)
+                                                : form.values.scores[index]?.score
+                                        }
+                                        onChange={(score) =>
+                                            form.setFieldValue(`scores.${index}.score`, score)
+                                        }
+                                        disabled={
+                                            isPending || (!data.canSubmit && !data.submittedAt)
+                                        }
+                                        submitted={Boolean(data.submittedAt)}
+                                    />
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                    <div className={styles.submit}>
+                        {data.submittedAt ? (
+                            <p role="status">Your ballot is saved. Your scores are locked.</p>
+                        ) : null}
+                        {data.canSubmit && !data.submittedAt ? (
+                            <>
+                                <p role="status">
+                                    {scoredCount} of {data.nominations.length} films scored ·{' '}
+                                    {scoredCount === data.nominations.length
+                                        ? 'Ready to submit'
+                                        : 'Score every film to submit'}
+                                </p>
+                                <Button type="submit" loading={isPending}>
+                                    Submit scores
+                                </Button>
+                            </>
+                        ) : null}
+                        {!data.canSubmit && !data.submittedAt ? (
+                            <p>
+                                Only accepted participants can submit while Selection is open in an
+                                active Club.
+                            </p>
+                        ) : null}
+                        <p aria-live="polite" aria-atomic="true" role="status">
+                            {message}
+                        </p>
+                    </div>
+                </form>
+            )}
+        </section>
+    );
+}
