@@ -295,4 +295,13 @@ describe('Session progress', () => {
             (await api.request(`/sessions/${sessionId}/progress`, { userId: users[1] })).status,
         ).toBe(404);
     });
+    it('should let a group polling from one address stay above the default rate limit', async () => {
+        const statuses = [];
+        for (let request = 0; request < 130; request += 1) {
+            statuses.push(
+                (await api.request(`/sessions/${sessionId}/progress`, { userId: users[0] })).status,
+            );
+        }
+        expect(statuses.every((status) => status === 200)).toBe(true);
+    });
 });

@@ -317,10 +317,10 @@ every authentication session.
   projection with the same access contract.
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
-- **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact) keyed by the
-  visitor address Express resolves by trusting two proxy hops (the Next.js rewrite and the
-  Cloudflare entry); Better Auth limits its own routes to 60 a minute (10 for social sign-in). —
-  Active
+- **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact, 600/min for
+  Session progress polling) keyed by the visitor address Express resolves by trusting two proxy
+  hops (the Next.js rewrite and the Cloudflare entry); Better Auth limits its own routes to 60 a
+  minute (10 for social sign-in). — Active
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
 - **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared

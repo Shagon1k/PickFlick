@@ -92,7 +92,9 @@ See [Authentication and sessions](authentication.md#authorizing-a-request) for t
 
 ## Abuse limits
 
-`@nestjs/throttler` allows 120 requests a minute per client and 5 Contact messages per 10 minutes.
+`@nestjs/throttler` allows 120 requests a minute per client, 5 Contact messages per 10 minutes, and
+600 Session progress checks a minute, because every open Session page polls and a group often
+shares one address.
 Better Auth allows 60 requests a minute on its routes and 10 for social sign-in. The backend finds
 the client address by trusting exactly two proxy hops (the frontend rewrite and the Cloudflare
 entry), so a client cannot spoof it with its own `X-Forwarded-For`.
