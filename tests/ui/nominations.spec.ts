@@ -63,7 +63,7 @@ test('Search selection and failure/offline states retain the selected Movie', as
     await page.getByRole('button', { name: 'Nominate This' }).click();
     await expect(
         page.getByText(
-            'You appear to be offline. Reconnect before continuing; your selection is still here.',
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
         ),
     ).toBeVisible();
 });

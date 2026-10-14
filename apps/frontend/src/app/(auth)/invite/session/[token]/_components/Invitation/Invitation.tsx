@@ -6,6 +6,7 @@ import { useState, useSyncExternalStore, useTransition } from 'react';
 import Button from '@/components/ui/Button/Button';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { formatUtcDateTime, toIsoDate } from '@/lib/format';
+import { getOfflineMessage } from '@/lib/offline';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -30,8 +31,9 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     const [isPending, startTransition] = useTransition();
     const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
     function respond(decision: 'accept' | 'decline') {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before responding.');
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         startTransition(async () => {

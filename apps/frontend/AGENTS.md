@@ -32,6 +32,9 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
   later phases; only the `/shell-preview` gallery renders them.
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
+- Build API paths with `apiPath` so each ID stays one segment. A server action maps a failed
+  request to copy with `getFailureMessage` (`@/lib/action-failure`); a component checks
+  `getOfflineMessage` (`@/lib/offline`) before sending and shows its copy when offline.
 - Import with the `@/` alias; images from `assets/brand` with `@brand/`.
 - Navigate inside the app with `next/link` (or `ButtonLink`, which wraps it). A plain `<a>` is for
   `mailto:`, in-page `#` anchors, and `BackLink`, whose history check needs a real page load.

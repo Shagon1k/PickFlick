@@ -113,7 +113,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
     await page.getByRole('button', { name: 'Create Session', exact: true }).click();
     await expect(
         page.getByText(
-            'You appear to be offline. Reconnect, then try again; your entries are still here.',
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
         ),
     ).toBeVisible();
 });

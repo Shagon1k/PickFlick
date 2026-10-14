@@ -7,6 +7,7 @@ import { useRef, useState, useTransition } from 'react';
 import MoviePicker from '@/components/sessions/MoviePicker/MoviePicker';
 import Button from '@/components/ui/Button/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
+import { getOfflineMessage } from '@/lib/offline';
 
 import {
     closeNominationsAction,
@@ -31,10 +32,9 @@ export default function Nomination({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     function run(action: 'submit' | 'refresh' | 'close', confirmation = '') {
-        if (!navigator.onLine) {
-            setMessage(
-                'You appear to be offline. Reconnect before continuing; your selection is still here.',
-            );
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');

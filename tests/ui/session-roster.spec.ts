@@ -117,7 +117,9 @@ test('Invitation failures retain preview and offline decline explains recovery',
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Decline invitation' }).click();
     await expect(
-        page.getByText('You appear to be offline. Reconnect before responding.'),
+        page.getByText(
+            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
+        ),
     ).toBeVisible();
 });
 

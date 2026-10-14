@@ -430,7 +430,7 @@ test('contact preserves input across rate-limit, service, and offline recovery',
 
     await page.context().setOffline(true);
     await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByRole('status')).toContainText('Reconnect, then send again');
+    await expect(page.getByRole('status')).toContainText('Reconnect, then try again');
     await expect(message).toHaveValue('Service unavailable message');
     await page.context().setOffline(false);
 });

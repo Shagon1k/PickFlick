@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import Select from '@/components/ui/Select/Select';
 import TextInput from '@/components/ui/TextInput/TextInput';
+import { getOfflineMessage } from '@/lib/offline';
 
 import { changeRosterAction } from '../../roster-actions';
 import styles from './SessionRoster.module.scss';
@@ -31,8 +32,9 @@ export default function SessionRoster({
     } | null>(null);
     const [isPending, startTransition] = useTransition();
     function run(input: unknown) {
-        if (!navigator.onLine) {
-            setMessage('You appear to be offline. Reconnect before changing the roster.');
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         startTransition(async () => {

@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button/Button';
 import Textarea from '@/components/ui/Textarea/Textarea';
 import TextInput from '@/components/ui/TextInput/TextInput';
 import { focusFirstInvalid, type TFeedbackTone, type TFormResult } from '@/lib/form-errors';
+import { getOfflineMessage } from '@/lib/offline';
 
 import { createClubAction } from '../../actions';
 import styles from './CreateClubForm.module.scss';
@@ -37,10 +38,10 @@ export default function CreateClubForm() {
     const handleSubmit = form.onSubmit(
         (values, event) => {
             const formElement = event?.currentTarget;
-            if (!navigator.onLine) {
+            const offlineMessage = getOfflineMessage();
+            if (offlineMessage) {
                 setFeedback({
-                    message:
-                        'You appear to be offline. Reconnect, then try again; your entries are still here.',
+                    message: offlineMessage,
                     tone: 'warning',
                 });
                 return;

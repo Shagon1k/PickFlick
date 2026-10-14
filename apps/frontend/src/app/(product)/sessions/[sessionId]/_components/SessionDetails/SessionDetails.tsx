@@ -11,6 +11,7 @@ import ButtonLink from '@/components/ui/Button/ButtonLink';
 import ConfirmDialog from '@/components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '@/components/ui/Modal/Modal';
 import { formatUtcDateTime, toIsoDate } from '@/lib/format';
+import { getOfflineMessage } from '@/lib/offline';
 
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -117,8 +118,9 @@ export default function SessionDetails({
                 inputId="cancel-confirmation"
                 onClose={() => setDialog(null)}
                 onConfirm={(confirmation) => {
-                    if (!navigator.onLine) {
-                        setMessage('You appear to be offline. Reconnect before cancelling.');
+                    const offlineMessage = getOfflineMessage();
+                    if (offlineMessage) {
+                        setMessage(offlineMessage);
                         return;
                     }
                     startTransition(async () => {

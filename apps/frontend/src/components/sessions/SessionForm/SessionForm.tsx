@@ -17,6 +17,7 @@ import Switch from '@/components/ui/Switch/Switch';
 import Textarea from '@/components/ui/Textarea/Textarea';
 import TextInput from '@/components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '@/lib/form-errors';
+import { getOfflineMessage } from '@/lib/offline';
 
 import { saveSessionAction } from './actions';
 import {
@@ -52,10 +53,9 @@ export default function SessionForm({
         validate: (values) => validateSession(values, session),
     });
     function save(values: ISessionValues, element?: HTMLFormElement) {
-        if (!navigator.onLine) {
-            setMessage(
-                'You appear to be offline. Reconnect, then try again; your entries are still here.',
-            );
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setMessage(offlineMessage);
             return;
         }
         const input = buildSessionInput(values, getNextDeadline(values, session), session);
