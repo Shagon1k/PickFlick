@@ -4,8 +4,23 @@ import { closeNominationSchema, HTTP_STATUS, submitNominationSchema } from '@pic
 import { revalidatePath } from 'next/cache';
 
 import { closeNominations, submitNomination } from '@/api/nominations.server';
-import { ApiError } from '@/lib/api.server';
+import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
 import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+
+const NOMINATION_FAILURE: IFailureCopy = {
+    reasons: {
+        ALREADY_NOMINATED: 'You already nominated a Movie. Refresh to see your nomination.',
+    },
+    statuses: [
+        [
+            [HTTP_STATUS.CONFLICT],
+            'This Session changed or nominations are unavailable. Refresh before trying again.',
+        ],
+        [ACCESS_LOST_STATUSES, 'You no longer have permission for this action.'],
+    ],
+    fallback: 'We could not save this action. Your selection is still here; try again.',
+    request: 'Nomination request',
+};
 
 export async function refreshNominationsAction(id: string) {
     revalidatePath(`/sessions/${id}`);
@@ -19,7 +34,7 @@ export async function nominateAction(id: string, input: unknown) {
         revalidatePath(`/sessions/${id}`);
         return { ok: true as const, message: 'Your nomination is confirmed.' };
     } catch (error) {
-        return getNominationErrorMessage(error);
+        return { ok: false as const, message: getFailureMessage(error, NOMINATION_FAILURE) };
     }
 }
 export async function closeNominationsAction(id: string, input: unknown) {
@@ -30,31 +45,6 @@ export async function closeNominationsAction(id: string, input: unknown) {
         revalidatePath(`/sessions/${id}`);
         return { ok: true as const, message: 'Nominations closed.' };
     } catch (error) {
-        return getNominationErrorMessage(error);
+        return { ok: false as const, message: getFailureMessage(error, NOMINATION_FAILURE) };
     }
-}
-function getNominationErrorMessage(error: unknown) {
-    if (error instanceof ApiError) {
-        if (error.reason === 'ALREADY_NOMINATED')
-            return {
-                ok: false as const,
-                message: 'You already nominated a Movie. Refresh to see your nomination.',
-            };
-        if (error.status === HTTP_STATUS.CONFLICT)
-            return {
-                ok: false as const,
-                message:
-                    'This Session changed or nominations are unavailable. Refresh before trying again.',
-            };
-        if (ACCESS_LOST_STATUSES.includes(error.status))
-            return {
-                ok: false as const,
-                message: 'You no longer have permission for this action.',
-            };
-    }
-    console.error('Nomination request failed.');
-    return {
-        ok: false as const,
-        message: 'We could not save this action. Your selection is still here; try again.',
-    };
 }

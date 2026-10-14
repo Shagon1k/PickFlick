@@ -9,9 +9,31 @@ import {
 import { revalidatePath } from 'next/cache';
 
 import { createSession, updateSession } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
+import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
 
-const NO_PERMISSION_STATUSES = [HTTP_STATUS.FORBIDDEN, HTTP_STATUS.NOT_FOUND];
+const SAVE_FAILURE: IFailureCopy = {
+    reasons: {
+        BLOCKING_SESSION:
+            'This Club already has a Session in Nomination, Selection, or Watching. Open the Club Hub to view it.',
+        SESSION_CHANGED: 'This Session changed. Reload to see the latest details before editing.',
+        SESSION_CLOSED: 'This Session is closed. Reload to view its current state.',
+        CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
+        MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
+        DEADLINE_PAST: 'The nomination deadline has passed. Choose a new deadline.',
+    },
+    statuses: [
+        [
+            [HTTP_STATUS.UNAUTHORIZED],
+            'Your sign-in expired. Sign in again; your entries are still here.',
+        ],
+        [
+            [HTTP_STATUS.FORBIDDEN, HTTP_STATUS.NOT_FOUND],
+            'You no longer have permission to manage this Session.',
+        ],
+    ],
+    fallback: 'We could not save your Session. Your entries are still here; try again.',
+    request: 'Session save',
+};
 
 export async function saveSessionAction(clubId: string, id: string | null, input: unknown) {
     try {
@@ -22,7 +44,7 @@ export async function saveSessionAction(clubId: string, id: string | null, input
         revalidatePath(`/sessions/${session.id}`);
         return { ok: true as const, session };
     } catch (error) {
-        return saveFailure(error);
+        return { ok: false as const, message: getFailureMessage(error, SAVE_FAILURE) };
     }
 }
 
@@ -38,36 +60,4 @@ async function sendSession(
     }
     const parsed = createSessionSchema.safeParse(input);
     return parsed.success ? createSession(clubId, parsed.data) : null;
-}
-
-function saveFailure(error: unknown) {
-    if (error instanceof ApiError) {
-        if (error.status === HTTP_STATUS.UNAUTHORIZED)
-            return {
-                ok: false as const,
-                message: 'Your sign-in expired. Sign in again; your entries are still here.',
-            };
-        if (NO_PERMISSION_STATUSES.includes(error.status))
-            return {
-                ok: false as const,
-                message: 'You no longer have permission to manage this Session.',
-            };
-        const messages: Record<string, string> = {
-            BLOCKING_SESSION:
-                'This Club already has a Session in Nomination, Selection, or Watching. Open the Club Hub to view it.',
-            SESSION_CHANGED:
-                'This Session changed. Reload to see the latest details before editing.',
-            SESSION_CLOSED: 'This Session is closed. Reload to view its current state.',
-            CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
-            MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
-            DEADLINE_PAST: 'The nomination deadline has passed. Choose a new deadline.',
-        };
-        const message = error.reason ? messages[error.reason] : undefined;
-        if (message) return { ok: false as const, message };
-    }
-    console.error('Session save failed.');
-    return {
-        ok: false as const,
-        message: 'We could not save your Session. Your entries are still here; try again.',
-    };
 }

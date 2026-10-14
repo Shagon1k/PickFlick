@@ -2,6 +2,10 @@
 
 import type { ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 
+import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
+import { getFailureMessage, type IFailureCopy } from '@/lib/action-failure';
+import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
+
 type TInvitationResult =
     | { ok: false; message: string }
     | {
@@ -11,17 +15,12 @@ type TInvitationResult =
           refreshError?: string;
       };
 
-import { createInvitation, listInvitations, revokeInvitation } from '@/api/invitations.server';
-import { ApiError } from '@/lib/api.server';
-import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
-
-function getFailureMessage(error: unknown): string {
-    if (error instanceof ApiError && error.reason === 'MEMBER_LIMIT_REACHED')
-        return 'This Club has reached its member limit.';
-    if (error instanceof ApiError && ACCESS_LOST_STATUSES.includes(error.status))
-        return 'Invitation management is no longer available to you.';
-    return 'Invitations could not be updated. Check your connection and try again.';
-}
+const INVITATION_FAILURE: IFailureCopy = {
+    reasons: { MEMBER_LIMIT_REACHED: 'This Club has reached its member limit.' },
+    statuses: [[ACCESS_LOST_STATUSES, 'Invitation management is no longer available to you.']],
+    fallback: 'Invitations could not be updated. Check your connection and try again.',
+    request: 'Club invitation request',
+};
 
 export async function manageInvitationsAction(
     clubId: string,
@@ -43,7 +42,7 @@ export async function manageInvitationsAction(
                       'Invitation list could not be refreshed. Use Recent invitations to try again.',
               };
     } catch (error) {
-        return { ok: false as const, message: getFailureMessage(error) };
+        return { ok: false as const, message: getFailureMessage(error, INVITATION_FAILURE) };
     }
 }
 
@@ -51,6 +50,6 @@ export async function loadInvitationsAction(clubId: string): Promise<TInvitation
     try {
         return { ok: true as const, invitations: await listInvitations(clubId) };
     } catch (error) {
-        return { ok: false as const, message: getFailureMessage(error) };
+        return { ok: false as const, message: getFailureMessage(error, INVITATION_FAILURE) };
     }
 }

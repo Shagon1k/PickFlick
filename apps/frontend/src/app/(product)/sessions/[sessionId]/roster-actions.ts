@@ -16,7 +16,7 @@ import {
     revokeSessionInvitation,
 } from '@/api/session-roster.server';
 import { getSession } from '@/api/sessions.server';
-import { ApiError } from '@/lib/api.server';
+import { getFailureMessage } from '@/lib/action-failure';
 import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
 
 // Lost access or a roster that changed meanwhile: the action no longer applies.
@@ -55,12 +55,16 @@ export async function changeRosterAction(id: string, input: unknown) {
                     : 'Roster updated.',
         };
     } catch (error) {
-        return {
-            ok: false,
-            message:
-                error instanceof ApiError && STALE_ACTION_STATUSES.includes(error.status)
-                    ? 'This action is no longer available. Reload to check your access and the Session.'
-                    : 'We could not save your change. Check your connection and retry.',
-        };
+        const message = getFailureMessage(error, {
+            statuses: [
+                [
+                    STALE_ACTION_STATUSES,
+                    'This action is no longer available. Reload to check your access and the Session.',
+                ],
+            ],
+            fallback: 'We could not save your change. Check your connection and retry.',
+            request: 'Session roster change',
+        });
+        return { ok: false, message };
     }
 }
