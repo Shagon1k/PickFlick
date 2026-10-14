@@ -1,7 +1,6 @@
 'use server';
 
 import type { ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
-import { z } from 'zod';
 
 type TInvitationResult =
     | { ok: false; message: string }
@@ -28,12 +27,6 @@ export async function manageInvitationsAction(
     clubId: string,
     inviteId?: string,
 ): Promise<TInvitationResult> {
-    if (
-        !z.uuid().safeParse(clubId).success ||
-        (inviteId && !z.uuid().safeParse(inviteId).success)
-    ) {
-        return { ok: false as const, message: 'Invitation unavailable.' };
-    }
     try {
         if (inviteId) {
             await revokeInvitation(clubId, inviteId);
@@ -55,8 +48,6 @@ export async function manageInvitationsAction(
 }
 
 export async function loadInvitationsAction(clubId: string): Promise<TInvitationResult> {
-    if (!z.uuid().safeParse(clubId).success)
-        return { ok: false as const, message: 'Invitation unavailable.' };
     try {
         return { ok: true as const, invitations: await listInvitations(clubId) };
     } catch (error) {

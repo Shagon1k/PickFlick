@@ -9,7 +9,7 @@ import {
     type TMovieSearchResults,
 } from '@pickflick/contracts';
 
-import { ApiError, requestApi } from '@/lib/api.server';
+import { ApiError, apiPath, requestApi } from '@/lib/api.server';
 
 // Three provider calls can each use the configured 30s maximum, followed by image ingestion.
 const DETAILS_TIMEOUT_MS = 100_000;
@@ -35,7 +35,7 @@ function getFailureReason(error: unknown): TMovieProviderReason | null {
 
 export async function getMovieDetails(movieId: string): Promise<TMovieDetailsResponse> {
     try {
-        return await requestApi<TMovieDetailsResponse>(`/movies/${movieId}`, {
+        return await requestApi<TMovieDetailsResponse>(apiPath`/movies/${movieId}`, {
             timeoutMs: DETAILS_TIMEOUT_MS,
         });
     } catch (error) {

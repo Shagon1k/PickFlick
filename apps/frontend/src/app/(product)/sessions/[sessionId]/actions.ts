@@ -2,15 +2,12 @@
 
 import { cancelSessionSchema } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 
 import { cancelSession } from '@/api/sessions.server';
 import { ApiError } from '@/lib/api.server';
 import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
 
 export async function cancelSessionAction(id: string, input: unknown) {
-    if (!z.uuid().safeParse(id).success)
-        return { ok: false, message: 'This Session address is invalid.' };
     const parsed = cancelSessionSchema.safeParse(input);
     if (!parsed.success) return { ok: false, message: 'Type CANCEL to confirm.' };
     try {

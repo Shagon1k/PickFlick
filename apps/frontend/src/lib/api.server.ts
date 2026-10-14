@@ -29,6 +29,17 @@ interface IApiRequestInit {
     contentType?: string;
 }
 
+/**
+ * An API path whose interpolated values are each encoded as one path segment, so an ID taken from a
+ * URL or a server action argument cannot add segments. The API validates the IDs themselves.
+ */
+export function apiPath(parts: TemplateStringsArray, ...segments: string[]): string {
+    return parts.reduce(
+        (path, part, index) => path + part + encodeURIComponent(segments[index] ?? ''),
+        '',
+    );
+}
+
 /** The visitor's cookie and client address, so the API rate-limits each visitor separately. */
 export function buildVisitorHeaders(incoming: Headers): Headers {
     const outgoing = new Headers();

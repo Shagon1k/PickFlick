@@ -33,8 +33,7 @@ const commandSchema = z.discriminatedUnion('action', [
 ]);
 export async function changeRosterAction(id: string, input: unknown) {
     const parsed = commandSchema.safeParse(input);
-    if (!z.uuidv4().safeParse(id).success || !parsed.success)
-        return { ok: false, message: 'Check your selection and confirmation.' };
+    if (!parsed.success) return { ok: false, message: 'Check your selection and confirmation.' };
     try {
         const session = await getSession(id);
         const command = parsed.data;

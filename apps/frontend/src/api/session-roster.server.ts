@@ -11,21 +11,21 @@ import {
     type TSessionInvitationPreview,
 } from '@pickflick/contracts';
 
-import { requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '@/lib/api.server';
 
 export const getSessionRoster = (id: string): Promise<ISessionRoster> =>
-    requestApi(`/sessions/${id}/roster`);
+    requestApi(apiPath`/sessions/${id}/roster`);
 export const createSessionInvitation = (
     id: string,
     membershipId: string,
 ): Promise<ICreatedInvitation> =>
-    requestApi(`/sessions/${id}/invitations`, { method: 'POST', json: { membershipId } });
+    requestApi(apiPath`/sessions/${id}/invitations`, { method: 'POST', json: { membershipId } });
 export const revokeSessionInvitation = (id: string, inviteId: string): Promise<void> =>
-    requestApi(`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
+    requestApi(apiPath`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
 export const leaveSession = (id: string): Promise<void> =>
-    requestApi(`/sessions/${id}/leave`, { method: 'POST', json: { confirmation: 'LEAVE' } });
+    requestApi(apiPath`/sessions/${id}/leave`, { method: 'POST', json: { confirmation: 'LEAVE' } });
 export const removeSessionParticipant = (id: string, participantId: string): Promise<void> =>
-    requestApi(`/sessions/${id}/participants/${participantId}/remove`, {
+    requestApi(apiPath`/sessions/${id}/participants/${participantId}/remove`, {
         method: 'POST',
         json: { confirmation: 'REMOVE' },
     });
@@ -43,9 +43,9 @@ export const respondPendingClubInvitation = (
     id: string,
     input: TInvitationDecision,
 ): Promise<TInvitationPreview> =>
-    requestApi(`/club-invitations/${id}/respond`, { method: 'POST', json: input });
+    requestApi(apiPath`/club-invitations/${id}/respond`, { method: 'POST', json: input });
 export const respondPendingSessionInvitation = (
     id: string,
     input: TInvitationDecision,
 ): Promise<TSessionInvitationPreview> =>
-    requestApi(`/session-invitations/${id}/respond`, { method: 'POST', json: input });
+    requestApi(apiPath`/session-invitations/${id}/respond`, { method: 'POST', json: input });

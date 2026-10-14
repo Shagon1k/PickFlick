@@ -7,7 +7,6 @@ import {
     updateSessionSchema,
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 
 import { createSession, updateSession } from '@/api/sessions.server';
 import { ApiError } from '@/lib/api.server';
@@ -15,12 +14,6 @@ import { ApiError } from '@/lib/api.server';
 const NO_PERMISSION_STATUSES = [HTTP_STATUS.FORBIDDEN, HTTP_STATUS.NOT_FOUND];
 
 export async function saveSessionAction(clubId: string, id: string | null, input: unknown) {
-    if (!z.uuid().safeParse(clubId).success || (id !== null && !z.uuid().safeParse(id).success)) {
-        return {
-            ok: false as const,
-            message: 'This Session address is invalid. Return to the Club Hub.',
-        };
-    }
     try {
         const session = await sendSession(clubId, id, input);
         if (!session)

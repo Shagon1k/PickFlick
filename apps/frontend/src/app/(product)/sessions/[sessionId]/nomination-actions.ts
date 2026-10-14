@@ -2,22 +2,18 @@
 
 import { closeNominationSchema, HTTP_STATUS, submitNominationSchema } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 
 import { closeNominations, submitNomination } from '@/api/nominations.server';
 import { ApiError } from '@/lib/api.server';
 import { ACCESS_LOST_STATUSES } from '@/lib/http-status';
 
 export async function refreshNominationsAction(id: string) {
-    if (!z.uuidv4().safeParse(id).success)
-        return { ok: false as const, message: 'This Session address is invalid.' };
     revalidatePath(`/sessions/${id}`);
     return { ok: true as const, message: 'Nominations refreshed.' };
 }
 export async function nominateAction(id: string, input: unknown) {
     const parsed = submitNominationSchema.safeParse(input);
-    if (!z.uuidv4().safeParse(id).success || !parsed.success)
-        return { ok: false as const, message: 'Choose a Movie first.' };
+    if (!parsed.success) return { ok: false as const, message: 'Choose a Movie first.' };
     try {
         await submitNomination(id, parsed.data);
         revalidatePath(`/sessions/${id}`);
@@ -28,8 +24,7 @@ export async function nominateAction(id: string, input: unknown) {
 }
 export async function closeNominationsAction(id: string, input: unknown) {
     const parsed = closeNominationSchema.safeParse(input);
-    if (!z.uuidv4().safeParse(id).success || !parsed.success)
-        return { ok: false as const, message: 'Type CLOSE to confirm.' };
+    if (!parsed.success) return { ok: false as const, message: 'Type CLOSE to confirm.' };
     try {
         await closeNominations(id, parsed.data);
         revalidatePath(`/sessions/${id}`);

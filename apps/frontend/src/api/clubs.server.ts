@@ -9,31 +9,34 @@ import type {
     TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
 
-import { requestApi } from '@/lib/api.server';
+import { apiPath, requestApi } from '@/lib/api.server';
 
 export const listClubs = (): Promise<IClubSummary[]> => requestApi('/clubs');
 
 export const getClubHub = (clubId: string, incomingHeaders?: Headers): Promise<IClubHub> =>
-    requestApi(`/clubs/${clubId}/hub`, {}, incomingHeaders);
+    requestApi(apiPath`/clubs/${clubId}/hub`, {}, incomingHeaders);
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>
     requestApi('/clubs', { method: 'POST', json: input });
 
 export const getClubSettings = (clubId: string): Promise<IClubSettings> =>
-    requestApi(`/clubs/${clubId}/settings`);
+    requestApi(apiPath`/clubs/${clubId}/settings`);
 
 export const updateClubSettings = (
     clubId: string,
     input: TUpdateClubSettingsRequest,
 ): Promise<IClubSettings> =>
-    requestApi(`/clubs/${clubId}/settings`, { method: 'PATCH', json: input });
+    requestApi(apiPath`/clubs/${clubId}/settings`, { method: 'PATCH', json: input });
 
 export const changeMemberRole = (
     clubId: string,
     membershipId: string,
     input: TChangeMemberRoleRequest,
 ): Promise<void> =>
-    requestApi(`/clubs/${clubId}/members/${membershipId}/role`, { method: 'PATCH', json: input });
+    requestApi(apiPath`/clubs/${clubId}/members/${membershipId}/role`, {
+        method: 'PATCH',
+        json: input,
+    });
 
 export type TClubLifecycleAction = 'archive' | 'reactivate' | 'leave' | 'delete';
 
@@ -42,27 +45,27 @@ export const changeClubLifecycle = (
     action: TClubLifecycleAction,
     confirmation: string,
 ): Promise<void> =>
-    requestApi(`/clubs/${clubId}/${action}`, {
+    requestApi(apiPath`/clubs/${clubId}/${action}`, {
         method: 'POST',
         json: action === 'reactivate' ? {} : { confirmation },
     });
 
 export const replaceClubAvatar = async (clubId: string, file: File): Promise<void> =>
-    requestApi(`/clubs/${clubId}/avatar`, {
+    requestApi(apiPath`/clubs/${clubId}/avatar`, {
         method: 'PUT',
         body: await file.arrayBuffer(),
         contentType: file.type,
     });
 
 export const removeClubAvatar = (clubId: string): Promise<void> =>
-    requestApi(`/clubs/${clubId}/avatar`, { method: 'DELETE' });
+    requestApi(apiPath`/clubs/${clubId}/avatar`, { method: 'DELETE' });
 
 export const removeClubMember = (
     clubId: string,
     membershipId: string,
     confirmation: string,
 ): Promise<void> =>
-    requestApi(`/clubs/${clubId}/members/${membershipId}/remove`, {
+    requestApi(apiPath`/clubs/${clubId}/members/${membershipId}/remove`, {
         method: 'POST',
         json: { confirmation },
     });
