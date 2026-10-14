@@ -36,7 +36,7 @@ export function useMovieSearch(term: string, isEnabled: boolean): TMovieSearchRe
 }
 
 /** The live status line shared by every film search field. */
-export function searchMessage(term: string, result: TMovieSearchResponse | null): string {
+export function getSearchMessage(term: string, result: TMovieSearchResponse | null): string {
     if (!term) return '';
     if (!result) return 'Searching films…';
     if (result.state === 'signed-out') return 'Your session has ended. Sign in to search films.';
@@ -59,7 +59,7 @@ function formatFilmCount(count: number): string {
 }
 
 /** Moves a listbox's active option for ArrowDown/ArrowUp, wrapping at both ends. */
-export function nextOptionIndex(key: string, current: number, count: number): number {
+export function getNextOptionIndex(key: string, current: number, count: number): number {
     if (key === 'ArrowDown') return (current + 1) % count;
     return current < 0 ? count - 1 : (current - 1 + count) % count;
 }

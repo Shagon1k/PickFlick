@@ -10,8 +10,8 @@ import { useOverlayDismissal, useProductOverlay } from '@/components/shells/prod
 import Icon from '@/components/ui/Icon/Icon';
 
 import {
-    nextOptionIndex,
-    searchMessage,
+    getNextOptionIndex,
+    getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
 } from './movie-search';
@@ -49,7 +49,7 @@ export default function ProductSearch() {
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
         if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && movies.length) {
             event.preventDefault();
-            setActiveIndex((index) => nextOptionIndex(event.key, index, movies.length));
+            setActiveIndex((index) => getNextOptionIndex(event.key, index, movies.length));
         }
         if (event.key === 'Enter' && movies[activeIndex]) {
             event.preventDefault();
@@ -58,7 +58,7 @@ export default function ProductSearch() {
         }
     }
 
-    const message = searchMessage(term, result);
+    const message = getSearchMessage(term, result);
 
     return (
         <div

@@ -93,7 +93,7 @@ export class PoiskkinoClient {
         const result = await this.http.get(
             `/v1.5/movie/search?${query.toString()}`,
             searchWire,
-            this.headers(),
+            this.buildHeaders(),
         );
         if (result.page !== parsed.page)
             throw new MovieProviderError('INVALID_RESPONSE', undefined, 'poiskkino');
@@ -114,12 +114,12 @@ export class PoiskkinoClient {
             totalResults: result.total,
         };
     }
-    async details(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
+    async fetchDetails(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
         this.requireEnabled();
         const id = externalIds.find((id) => id.source === 'poiskkino')?.externalId;
         if (!id) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'poiskkino');
         const fetchedAt = new Date().toISOString();
-        const movie = await this.http.get(`/v1.5/movie/${id}`, wire, this.headers());
+        const movie = await this.http.get(`/v1.5/movie/${id}`, wire, this.buildHeaders());
         if (
             String(movie.id) !== id ||
             !['movie', 'cartoon'].includes(movie.type ?? '') ||
@@ -187,7 +187,7 @@ export class PoiskkinoClient {
             },
         });
     }
-    private headers() {
+    private buildHeaders() {
         return { 'X-API-KEY': this.settings.apiKey ?? '', Accept: 'application/json' };
     }
     private requireEnabled() {

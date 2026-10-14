@@ -58,8 +58,8 @@ export class ClubInvitationsController {
 
     @Get('club-invitations/pending')
     @Header('Cache-Control', 'private, no-store')
-    pending(@CurrentUser() user: IAuthUser) {
-        return this.invitations.pending(user.id);
+    listPending(@CurrentUser() user: IAuthUser) {
+        return this.invitations.listPending(user.id);
     }
 
     @Post('club-invitations/:inviteId/respond')

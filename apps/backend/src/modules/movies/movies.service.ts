@@ -56,7 +56,7 @@ export class MoviesService {
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
     ) {}
 
-    async cachedSummaries(
+    async findSummaries(
         tx: Prisma.TransactionClient,
         ids: string[],
     ): Promise<Map<string, TNominationMovie>> {
@@ -78,8 +78,8 @@ export class MoviesService {
         shouldAllowStale = false,
     ): Promise<TMovieResult<TMovieSearchResults>> {
         const parsed = movieSearchSchema.parse(input);
-        const key = this.cacheKey(parsed.locale, parsed.query, parsed.page);
-        const cached = await this.repository.cachedSearch(key);
+        const key = this.buildCacheKey(parsed.locale, parsed.query, parsed.page);
+        const cached = await this.repository.findCachedSearch(key);
         if (cached && this.isFresh(cached)) return toCachedResult(cached);
         const fetchedAt = new Date();
         try {
@@ -90,14 +90,14 @@ export class MoviesService {
             );
             return toCachedResult({ data, fetchedAt });
         } catch (error) {
-            return this.failure(error, shouldAllowStale ? cached : null);
+            return this.toFailureResult(error, shouldAllowStale ? cached : null);
         }
     }
 
-    async detailsResponse(movieId: string): Promise<TMovieDetailsResponse> {
-        const result = await this.details(movieId, { allowStale: true });
+    async getDetailsResponse(movieId: string): Promise<TMovieDetailsResponse> {
+        const result = await this.getDetails(movieId, { allowStale: true });
         const lookup =
-            result.state === 'unavailable' ? null : await this.repository.lookup(movieId);
+            result.state === 'unavailable' ? null : await this.repository.findExternalIds(movieId);
         const imdb = lookup?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
         return {
             result,
@@ -105,28 +105,31 @@ export class MoviesService {
         };
     }
 
-    async details(
+    async getDetails(
         movieId: string,
         options: { allowStale?: boolean; forceRefresh?: boolean } = {},
     ): Promise<TMovieResult<TMovieDetails>> {
         movieIdSchema.parse(movieId);
         const locale = this.environment.catalog.locale;
-        const key = this.cacheKey(locale);
-        const cached = await this.repository.cachedDetails(movieId, key);
+        const key = this.buildCacheKey(locale);
+        const cached = await this.repository.findCachedDetails(movieId, key);
         if (!options.forceRefresh && cached && this.isFresh(cached)) return toCachedResult(cached);
-        const lookup = await this.repository.lookup(movieId);
+        const lookup = await this.repository.findExternalIds(movieId);
         if (!lookup) return { state: 'unavailable', reason: 'NOT_FOUND' };
         const fetchedAt = new Date();
         try {
-            const record = await this.provider.details({ ...lookup, locale });
+            const record = await this.provider.fetchDetails({ ...lookup, locale });
             const data = await this.repository.saveDetails(movieId, key, record, fetchedAt);
             return toCachedResult({ data, fetchedAt });
         } catch (error) {
-            return this.failure(error, options.allowStale ? cached : null);
+            return this.toFailureResult(error, options.allowStale ? cached : null);
         }
     }
 
-    private failure<TData>(error: unknown, cached: ICached<TData> | null): TMovieResult<TData> {
+    private toFailureResult<TData>(
+        error: unknown,
+        cached: ICached<TData> | null,
+    ): TMovieResult<TData> {
         if (!(error instanceof MovieProviderError)) throw error;
         this.logger.warn({
             event: 'movies.provider.unavailable',
@@ -159,7 +162,7 @@ export class MoviesService {
         return age >= 0 && age < hours * HOUR_MS;
     }
 
-    private cacheKey(...values: unknown[]): string {
+    private buildCacheKey(...values: unknown[]): string {
         return buildCatalogCacheKey(this.environment.catalog.provider, ...values);
     }
 }

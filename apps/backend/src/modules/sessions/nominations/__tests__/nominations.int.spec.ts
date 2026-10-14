@@ -90,7 +90,7 @@ describe('Nominations', () => {
                 totalPages: 1,
                 totalResults: 1,
             }),
-            details: vi.fn(),
+            fetchDetails: vi.fn(),
         };
         const environment = loadIntegrationEnvironment();
         const catalog = new MoviesService(provider, new MoviesRepository(api.prisma), environment);
@@ -108,7 +108,7 @@ describe('Nominations', () => {
         const summary = { id: movieId, title: 'Synthetic Movie', year: 2026 };
         expect(data.ownMovie).toEqual(summary);
         expect(data.nominations).toEqual([expect.objectContaining({ movie: summary })]);
-        expect(provider.details).not.toHaveBeenCalled();
+        expect(provider.fetchDetails).not.toHaveBeenCalled();
     });
     it('should serialize submissions and enforce database uniqueness without service locks', async () => {
         const responses = await Promise.all([submit(), submit(member, movies[1])]);

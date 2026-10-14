@@ -18,12 +18,15 @@ describe('HealthService', () => {
     }
 
     it('should report the running revision', () => {
-        expect(service(true).liveness()).toEqual({ status: 'alive', revision: 'a'.repeat(40) });
+        expect(service(true).checkLiveness()).toEqual({
+            status: 'alive',
+            revision: 'a'.repeat(40),
+        });
     });
 
     it('should be ready only when every dependency answers', async () => {
-        await expect(service(true).readiness()).resolves.toMatchObject({ status: 'ready' });
-        await expect(service(false).readiness()).resolves.toEqual({
+        await expect(service(true).checkReadiness()).resolves.toMatchObject({ status: 'ready' });
+        await expect(service(false).checkReadiness()).resolves.toEqual({
             status: 'not_ready',
             checks: [
                 { name: 'database', status: 'up' },

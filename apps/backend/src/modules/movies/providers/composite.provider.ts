@@ -21,8 +21,8 @@ interface ILoaded {
 /** PoiskKino supplies search, media, ratings and related titles; TheTVDB adds English text. */
 export class CompositeMovieProvider implements IMovieProvider {
     constructor(
-        private poiskkino: Pick<PoiskkinoClient, 'search' | 'details'>,
-        private thetvdb: Pick<ThetvdbClient, 'details'>,
+        private poiskkino: Pick<PoiskkinoClient, 'search' | 'fetchDetails'>,
+        private thetvdb: Pick<ThetvdbClient, 'fetchDetails'>,
     ) {}
 
     async search(input: TMovieSearch) {
@@ -30,10 +30,10 @@ export class CompositeMovieProvider implements IMovieProvider {
         return { ...result, movies: result.movies.map(toProviderRecord) };
     }
 
-    async details(input: IMovieLookup): Promise<TProviderRecord> {
+    async fetchDetails(input: IMovieLookup): Promise<TProviderRecord> {
         const primary = await this.loadPrimary(input.externalIds);
         const ids = combineIds(input.externalIds, primary.record?.externalIds ?? []);
-        const enrichment = await load(() => this.thetvdb.details(ids));
+        const enrichment = await load(() => this.thetvdb.fetchDetails(ids));
         if (!primary.record && !enrichment.record) {
             throw primary.error ?? enrichment.error ?? new MovieProviderError('NOT_FOUND');
         }
@@ -63,7 +63,7 @@ export class CompositeMovieProvider implements IMovieProvider {
 
     /** A Movie PoiskKino no longer knows can still be described by TheTVDB. */
     private async loadPrimary(ids: TMovieExternalId[]): Promise<ILoaded> {
-        const loaded = await load(() => this.poiskkino.details(ids));
+        const loaded = await load(() => this.poiskkino.fetchDetails(ids));
         if (loaded.error && !['NOT_FOUND', 'MISSING_EXTERNAL_ID'].includes(loaded.error.reason)) {
             throw loaded.error;
         }

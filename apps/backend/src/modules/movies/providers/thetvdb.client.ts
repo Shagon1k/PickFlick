@@ -64,7 +64,7 @@ export class ThetvdbClient {
             request,
         );
     }
-    async details(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
+    async fetchDetails(externalIds: TMovieExternalId[]): Promise<TSourceSnapshot> {
         if (!this.settings.enabled || !this.settings.readToken)
             throw new MovieProviderError('DISABLED', undefined, 'thetvdb');
         const fetchedAt = new Date().toISOString();
@@ -73,7 +73,7 @@ export class ThetvdbClient {
         const result = await this.http.get(
             `/v4/movies/${tvdbId}/extended?meta=translations`,
             response(extended),
-            this.headers(),
+            this.buildHeaders(),
         );
         const movie = result.data;
         if (String(movie.id) !== tvdbId)
@@ -142,7 +142,7 @@ export class ThetvdbClient {
             response(
                 z.array(z.object({ movie: z.object({ id }).nullish() })).max(MAX_REMOTE_ID_MATCHES),
             ),
-            this.headers(),
+            this.buildHeaders(),
         );
         const candidates = [
             ...new Set(
@@ -155,7 +155,7 @@ export class ThetvdbClient {
         return candidates[0];
     }
 
-    private headers() {
+    private buildHeaders() {
         return {
             Authorization: `Bearer ${this.settings.readToken ?? ''}`,
             Accept: 'application/json',

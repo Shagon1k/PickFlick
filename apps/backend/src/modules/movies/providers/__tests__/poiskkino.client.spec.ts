@@ -51,7 +51,7 @@ describe('PoiskkinoClient', () => {
                 },
             }),
         );
-        const result = await client().details([{ source: 'poiskkino', externalId: '100' }]);
+        const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
         expect(result.data.ratings).toEqual([
             { source: 'kinopoisk', value: 7.5, scale: 10, voteCount: 1000 },
         ]);
@@ -61,7 +61,7 @@ describe('PoiskkinoClient', () => {
     });
     it('should preserve unknown dates, ratings, language and content flags', async () => {
         request.mockResolvedValue(Response.json({ id: 100, type: 'movie' }));
-        const result = await client().details([{ source: 'poiskkino', externalId: '100' }]);
+        const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
         expect(result.data).toMatchObject({
             releaseDate: null,
             releaseYear: null,
@@ -95,16 +95,16 @@ describe('PoiskkinoClient', () => {
             }),
         );
         await expect(
-            client().details([{ source: 'poiskkino', externalId: '100' }]),
+            client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
         request.mockResolvedValueOnce(Response.json({ ...wire(), id: 101 }));
         await expect(
-            client().details([{ source: 'poiskkino', externalId: '100' }]),
+            client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]),
         ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
     });
     it('should avoid outbound requests when disabled', async () => {
         await expect(
-            new PoiskkinoClient({ enabled: false, timeoutMs: 1000 }, request).details([]),
+            new PoiskkinoClient({ enabled: false, timeoutMs: 1000 }, request).fetchDetails([]),
         ).rejects.toMatchObject({ reason: 'DISABLED' });
         expect(request).not.toHaveBeenCalled();
     });

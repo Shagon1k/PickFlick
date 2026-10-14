@@ -6,7 +6,7 @@ import type {
     TSessionInvitationPreview,
 } from '@pickflick/contracts';
 
-import { digestInviteToken, newInviteToken } from '../../../common/invite-token.js';
+import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { lockClub } from '../../clubs/access/club-access.js';
 import { assertManager, assertOpen } from '../session-access.js';
@@ -58,7 +58,7 @@ export class SessionRosterService {
                 update: { status: 'INVITED' },
             });
             await revokePendingInvites(tx, participant.id);
-            const { token, tokenDigest, expiresAt } = newInviteToken();
+            const { token, tokenDigest, expiresAt } = createInviteToken();
             const invitation = await tx.sessionInvite.create({
                 data: {
                     tokenDigest,
@@ -159,7 +159,7 @@ export class SessionRosterService {
         );
     }
 
-    async pending(userId: string): Promise<IPendingSessionInvitation[]> {
+    async listPending(userId: string): Promise<IPendingSessionInvitation[]> {
         return this.prisma.$transaction(
             async (tx) => {
                 const invites = await tx.sessionInvite.findMany({

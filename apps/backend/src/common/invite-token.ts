@@ -12,7 +12,7 @@ export function digestInviteToken(token: string): string {
 }
 
 /** A fresh link token, its stored digest, and the seven-day expiry shared by all invitations. */
-export function newInviteToken() {
+export function createInviteToken() {
     const token = randomBytes(TOKEN_BYTES).toString('base64url');
     return {
         token,
@@ -21,7 +21,7 @@ export function newInviteToken() {
     };
 }
 
-export function inviteState(invite: {
+export function getInviteState(invite: {
     revokedAt: Date | null;
     respondedAt: Date | null;
     accepted: boolean | null;

@@ -17,7 +17,11 @@ import type {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { digestInviteToken, inviteState, newInviteToken } from '../../../common/invite-token.js';
+import {
+    createInviteToken,
+    digestInviteToken,
+    getInviteState,
+} from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import {
     assertActive,
@@ -70,7 +74,7 @@ export class ClubInvitationsService {
                 throw new ConflictException({ reason: 'INVITATION_TARGET_UNAVAILABLE' });
             }
             if (access.adminless) throw new ConflictException({ reason: 'CLUB_ADMIN_UNAVAILABLE' });
-            const { token, tokenDigest, expiresAt } = newInviteToken();
+            const { token, tokenDigest, expiresAt } = createInviteToken();
             const invitation = await transaction.clubInvite.create({
                 data: {
                     tokenDigest,
@@ -112,7 +116,7 @@ export class ClubInvitationsService {
         return invitations.map((invite) => ({
             id: invite.id,
             expiresAt: invite.expiresAt.toISOString(),
-            state: inviteState(invite),
+            state: getInviteState(invite),
         }));
     }
 
@@ -148,7 +152,7 @@ export class ClubInvitationsService {
         );
     }
 
-    async pending(userId: string): Promise<IPendingClubInvitation[]> {
+    async listPending(userId: string): Promise<IPendingClubInvitation[]> {
         return this.prisma.$transaction(
             async (transaction) => {
                 const invitations = await transaction.clubInvite.findMany({

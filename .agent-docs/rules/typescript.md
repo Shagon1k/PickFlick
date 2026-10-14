@@ -63,10 +63,11 @@ specs, script tests, and config files.
   `was`, `did`, `will`, or `with` (`isOpen`, `hasDeadlineChanged`, `withDetails`); its state
   setter follows (`setIsOpen`). Destructured names keep the property they come from, and API and
   database fields keep their names (`permissions.manageSessions`, `hidden`).
-- A function name is a verb phrase: `get`/`find`/`list` read, `build`/`create` make a new value,
-  `to`/`format` convert, `assert` throws, `is`/`has` answer a question. Names a framework requires
-  (`robots`, `sitemap`, `proxy`, React components) and zod schema factories (`singleLineText`) are
-  the exception.
+- A function or method name is a verb phrase: `get`/`find`/`list` read, `build`/`create` make a new
+  value, `to`/`format` convert, `assert` throws, `is`/`has` answer a question. Controller handlers
+  follow it too (`listPending`, `getProgress`); the route lives in the decorator. Names a framework
+  requires (`robots`, `sitemap`, `proxy`, Nest's static `register`, React components and `useX`
+  hooks) and zod schema factories (`singleLineText`) are the exception.
 - A component's own event handler is `handleX`; a prop that receives one is `onX`.
 - A module-level constant set from a string, number, template, or literal arithmetic is
   `UPPER_SNAKE_CASE` (`MAX_SUGGESTIONS`, `DAY_MS`); lint enforces it. A boolean constant follows

@@ -37,8 +37,8 @@ export class SessionsController {
     /** Clients poll this version and reload the Session projections when it grows. */
     @Get('sessions/:sessionId/progress')
     @Header('Cache-Control', 'private, no-store')
-    progress(@CurrentUser() user: IAuthUser, @Param('sessionId', uuid) id: string) {
-        return this.sessions.progress(user.id, id);
+    getProgress(@CurrentUser() user: IAuthUser, @Param('sessionId', uuid) id: string) {
+        return this.sessions.getProgress(user.id, id);
     }
 
     @Patch('sessions/:sessionId')

@@ -36,7 +36,7 @@ export class SessionsService {
                     ...project(session, membership.club.name, isAllowed),
                     nominations:
                         session.phase === 'NOMINATION'
-                            ? await this.nominations.project(transaction, session, {
+                            ? await this.nominations.loadNominations(transaction, session, {
                                   userId,
                                   member: membership,
                                   canManage: isAllowed,
@@ -48,7 +48,7 @@ export class SessionsService {
         );
     }
 
-    async progress(userId: string, id: string): Promise<TSessionProgress> {
+    async getProgress(userId: string, id: string): Promise<TSessionProgress> {
         const session = await this.prisma.session.findUnique({
             where: { id },
             select: { clubId: true, progressVersion: true },

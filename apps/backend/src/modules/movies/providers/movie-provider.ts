@@ -84,7 +84,7 @@ export interface IMovieLookup {
 }
 export interface IMovieProvider {
     search(input: TMovieSearch): Promise<TProviderSearch>;
-    details(input: IMovieLookup): Promise<TProviderRecord>;
+    fetchDetails(input: IMovieLookup): Promise<TProviderRecord>;
 }
 export class MovieProviderError extends Error {
     constructor(

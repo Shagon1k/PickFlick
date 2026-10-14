@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { inviteState } from '../../../common/invite-token.js';
+import { getInviteState } from '../../../common/invite-token.js';
 import { findMembership } from '../../clubs/access/club-access.js';
 import { canManage } from '../session-access.js';
 
@@ -58,7 +58,7 @@ export async function readRoster(
                         ? {
                               id: participant.invitations[0].id,
                               expiresAt: participant.invitations[0].expiresAt.toISOString(),
-                              state: inviteState(participant.invitations[0]),
+                              state: getInviteState(participant.invitations[0]),
                           }
                         : null,
             })),

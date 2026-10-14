@@ -40,7 +40,7 @@ function toSummaryColumns(data: Pick<TMovieMetadata, 'title' | 'originalTitle' |
 export class MoviesRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async lookup(movieId: string): Promise<{ externalIds: TMovieExternalId[] } | null> {
+    async findExternalIds(movieId: string): Promise<{ externalIds: TMovieExternalId[] } | null> {
         const movie = await this.prisma.movie.findUnique({
             where: { id: movieId },
             include: { externalIds: true },
@@ -54,7 +54,7 @@ export class MoviesRepository {
             : null;
     }
 
-    async cachedDetails(movieId: string, key: string): Promise<ICached<TMovieDetails> | null> {
+    async findCachedDetails(movieId: string, key: string): Promise<ICached<TMovieDetails> | null> {
         const row = await this.prisma.movieDetailsCache.findUnique({
             where: { movieId_key: { movieId, key } },
         });
@@ -64,7 +64,7 @@ export class MoviesRepository {
             : null;
     }
 
-    async cachedSearch(key: string): Promise<ICached<TMovieSearchResults> | null> {
+    async findCachedSearch(key: string): Promise<ICached<TMovieSearchResults> | null> {
         const row = await this.prisma.movieSearchCache.findUnique({ where: { key } });
         const parsed = row ? movieSearchResultsSchema.safeParse(row.data) : null;
         return row && parsed?.success ? { data: parsed.data, fetchedAt: row.fetchedAt } : null;

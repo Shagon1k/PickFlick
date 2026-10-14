@@ -7,8 +7,8 @@ import {
 } from '../movie-provider.js';
 
 describe('CompositeMovieProvider', () => {
-    const primary = { search: vi.fn(), details: vi.fn<() => Promise<TSourceSnapshot>>() };
-    const enrichment = { details: vi.fn<() => Promise<TSourceSnapshot>>() };
+    const primary = { search: vi.fn(), fetchDetails: vi.fn<() => Promise<TSourceSnapshot>>() };
+    const enrichment = { fetchDetails: vi.fn<() => Promise<TSourceSnapshot>>() };
     const now = new Date('2026-10-09T12:00:00Z');
     let provider: CompositeMovieProvider;
     function record(source: 'poiskkino' | 'thetvdb'): TSourceSnapshot {
@@ -39,8 +39,8 @@ describe('CompositeMovieProvider', () => {
         vi.resetAllMocks();
         vi.useFakeTimers();
         vi.setSystemTime(now);
-        primary.details.mockResolvedValue(record('poiskkino'));
-        enrichment.details.mockResolvedValue(record('thetvdb'));
+        primary.fetchDetails.mockResolvedValue(record('poiskkino'));
+        enrichment.fetchDetails.mockResolvedValue(record('thetvdb'));
         provider = new CompositeMovieProvider(primary, enrichment);
     });
     afterEach(() => vi.useRealTimers());
@@ -49,25 +49,25 @@ describe('CompositeMovieProvider', () => {
         async (isTimeout) => {
             const delay = (milliseconds: number) =>
                 new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
-            primary.details.mockImplementation(async () => {
+            primary.fetchDetails.mockImplementation(async () => {
                 await delay(4000);
                 return record('poiskkino');
             });
-            enrichment.details.mockImplementation(async () => {
+            enrichment.fetchDetails.mockImplementation(async () => {
                 await delay(4000);
                 await delay(isTimeout ? 5000 : 4000);
                 if (isTimeout) throw new MovieProviderError('TIMEOUT', undefined, 'thetvdb');
                 return record('thetvdb');
             });
-            const pending = provider.details(buildMovieLookup());
+            const pending = provider.fetchDetails(buildMovieLookup());
             await vi.advanceTimersByTimeAsync(13_000);
             const result = await pending;
             expect(result.data.title).toBe(isTimeout ? 'English primary title' : 'English title');
             expect(result.provenance.find(({ source }) => source === 'thetvdb')?.reason).toBe(
                 isTimeout ? 'TIMEOUT' : null,
             );
-            expect(primary.details).toHaveBeenCalledOnce();
-            expect(enrichment.details).toHaveBeenCalledOnce();
+            expect(primary.fetchDetails).toHaveBeenCalledOnce();
+            expect(enrichment.fetchDetails).toHaveBeenCalledOnce();
         },
     );
 
@@ -76,10 +76,10 @@ describe('CompositeMovieProvider', () => {
         expect(await provider.search({ query: 'film', page: 1, locale: 'en-US' })).toMatchObject({
             movies: [],
         });
-        expect(enrichment.details).not.toHaveBeenCalled();
+        expect(enrichment.fetchDetails).not.toHaveBeenCalled();
     });
     it('should use TVDB English metadata and primary media with explicit source provenance', async () => {
-        const result = await provider.details({
+        const result = await provider.fetchDetails({
             ...buildMovieLookup(),
             externalIds: record('poiskkino').externalIds,
         });
@@ -104,17 +104,17 @@ describe('CompositeMovieProvider', () => {
         ]);
     });
     it('should keep a missing English description null', async () => {
-        enrichment.details.mockResolvedValue(record('thetvdb'));
+        enrichment.fetchDetails.mockResolvedValue(record('thetvdb'));
         const english = record('thetvdb');
         english.data.overview = null;
-        enrichment.details.mockResolvedValue(english);
-        expect((await provider.details(buildMovieLookup())).data.overview).toBeNull();
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data.overview).toBeNull();
     });
     it('should expose enrichment failure and preserve primary data', async () => {
-        enrichment.details.mockRejectedValue(
+        enrichment.fetchDetails.mockRejectedValue(
             new MovieProviderError('UNAVAILABLE', undefined, 'thetvdb'),
         );
-        const result = await provider.details(buildMovieLookup());
+        const result = await provider.fetchDetails(buildMovieLookup());
         expect(result.data).toMatchObject({
             overview: null,
             posterUrl: 'https://image.openmoviedb.com/posters/synthetic.jpg',
@@ -126,37 +126,37 @@ describe('CompositeMovieProvider', () => {
         });
     });
     it('should preserve the Movie from TVDB when the primary source is removed', async () => {
-        primary.details.mockRejectedValue(
+        primary.fetchDetails.mockRejectedValue(
             new MovieProviderError('NOT_FOUND', undefined, 'poiskkino'),
         );
-        const result = await provider.details(buildMovieLookup());
+        const result = await provider.fetchDetails(buildMovieLookup());
         expect(result.data.title).toBe('English title');
         expect(result.provenance[0]).toMatchObject({ fetchedAt: null, reason: 'NOT_FOUND' });
     });
     it('should reject contradictory source IDs instead of matching title and year', async () => {
         const english = record('thetvdb');
         english.externalIds[1]!.externalId = 'tt9999999';
-        enrichment.details.mockResolvedValue(english);
-        await expect(provider.details(buildMovieLookup())).rejects.toMatchObject({
+        enrichment.fetchDetails.mockResolvedValue(english);
+        await expect(provider.fetchDetails(buildMovieLookup())).rejects.toMatchObject({
             reason: 'IDENTITY_CONFLICT',
         });
     });
     it('should fail when neither source knows the Movie', async () => {
-        primary.details.mockRejectedValue(
+        primary.fetchDetails.mockRejectedValue(
             new MovieProviderError('NOT_FOUND', undefined, 'poiskkino'),
         );
-        enrichment.details.mockRejectedValue(
+        enrichment.fetchDetails.mockRejectedValue(
             new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'thetvdb'),
         );
-        await expect(provider.details(buildMovieLookup())).rejects.toMatchObject({
+        await expect(provider.fetchDetails(buildMovieLookup())).rejects.toMatchObject({
             reason: 'NOT_FOUND',
         });
     });
     it('should report a disabled enrichment source in provenance', async () => {
-        enrichment.details.mockRejectedValue(
+        enrichment.fetchDetails.mockRejectedValue(
             new MovieProviderError('DISABLED', undefined, 'thetvdb'),
         );
-        const result = await provider.details(buildMovieLookup());
+        const result = await provider.fetchDetails(buildMovieLookup());
         expect(result.data.overview).toBeNull();
         expect(result.provenance[1]?.reason).toBe('DISABLED');
     });

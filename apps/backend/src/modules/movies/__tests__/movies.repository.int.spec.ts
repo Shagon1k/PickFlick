@@ -42,7 +42,7 @@ describe('MoviesRepository', () => {
     async function ingest(record: TProviderRecord) {
         const searchKey = key();
         await repository.saveSearch(searchKey, search([record]), time);
-        const cached = await repository.cachedSearch(searchKey);
+        const cached = await repository.findCachedSearch(searchKey);
         const id = cached?.data.movies[0]?.id;
         if (!id) throw new Error('Missing canonical identity');
         if (!ownedIds.includes(id)) ownedIds.push(id);
@@ -77,7 +77,7 @@ describe('MoviesRepository', () => {
         await Promise.all(
             Array.from({ length: 10 }, () => repository.saveDetails(id, detailKey, tmdb, time)),
         );
-        expect((await repository.cachedDetails(id, detailKey))?.data.id).toBe(id);
+        expect((await repository.findCachedDetails(id, detailKey))?.data.id).toBe(id);
     });
     it('should retain UUID when provider configuration and external identities change', async () => {
         const original = fixture();
@@ -89,10 +89,10 @@ describe('MoviesRepository', () => {
         const secondKey = key();
         await repository.saveDetails(id, firstKey, original, time);
         await repository.saveDetails(id, secondKey, switched, later);
-        expect((await repository.cachedDetails(id, firstKey))?.data.id).toBe(id);
-        expect((await repository.cachedDetails(id, secondKey))?.data.id).toBe(id);
+        expect((await repository.findCachedDetails(id, firstKey))?.data.id).toBe(id);
+        expect((await repository.findCachedDetails(id, secondKey))?.data.id).toBe(id);
         expect(
-            (await repository.lookup(id))?.externalIds.map((id) => id.source).toSorted(),
+            (await repository.findExternalIds(id))?.externalIds.map((id) => id.source).toSorted(),
         ).toEqual(['imdb', 'poiskkino', 'tmdb']);
     });
     it('should keep identical titles and release years separate without a shared external ID', async () => {
@@ -128,7 +128,7 @@ describe('MoviesRepository', () => {
             { ...record, similarExternalIds: [related.externalIds] },
             time,
         );
-        expect((await repository.cachedDetails(id, detailKey))?.data.similarMovieIds).toEqual([
+        expect((await repository.findCachedDetails(id, detailKey))?.data.similarMovieIds).toEqual([
             relatedId,
         ]);
     });
@@ -142,11 +142,11 @@ describe('MoviesRepository', () => {
             search([fixture(later, 'poiskkino', record.externalIds[1]!.externalId)]),
             later,
         );
-        expect((await repository.cachedDetails(id, detailKey))?.fetchedAt).toEqual(earlier);
+        expect((await repository.findCachedDetails(id, detailKey))?.fetchedAt).toEqual(earlier);
     });
     it('should treat a search-only Movie as incomplete for details', async () => {
         const id = await ingest(fixture());
-        expect(await repository.cachedDetails(id, key())).toBeNull();
+        expect(await repository.findCachedDetails(id, key())).toBeNull();
     });
     it('should keep Movie summary columns and never erase them with a sparse search', async () => {
         const record = fixture();
@@ -169,7 +169,7 @@ describe('MoviesRepository', () => {
         const id = await ingest(record);
         const detailKey = key();
         await repository.saveDetails(id, detailKey, record, time);
-        const data = (await repository.cachedDetails(id, detailKey))!.data;
+        const data = (await repository.findCachedDetails(id, detailKey))!.data;
         for (const replacement of [
             { ...data, posterUrl: 'https://evil.invalid/film.jpg' },
             { ...data, id: randomUUID() },
@@ -178,7 +178,7 @@ describe('MoviesRepository', () => {
                 where: { movieId_key: { movieId: id, key: detailKey } },
                 data: { data: replacement },
             });
-            expect(await repository.cachedDetails(id, detailKey)).toBeNull();
+            expect(await repository.findCachedDetails(id, detailKey)).toBeNull();
         }
         expect(movieDetailsSchema.safeParse(data).success).toBe(true);
     });

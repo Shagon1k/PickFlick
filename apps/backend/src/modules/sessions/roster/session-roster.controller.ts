@@ -84,8 +84,8 @@ export class SessionRosterController {
 
     @Get('session-invitations/pending')
     @Header('Cache-Control', 'private, no-store')
-    pending(@CurrentUser() user: IAuthUser) {
-        return this.roster.pending(user.id);
+    listPending(@CurrentUser() user: IAuthUser) {
+        return this.roster.listPending(user.id);
     }
 
     @Post('session-invitations/preview')

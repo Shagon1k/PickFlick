@@ -35,7 +35,7 @@ export class MoviesController {
 
     @Get('images/:key')
     @Header('Cache-Control', 'private, max-age=86400')
-    async image(
+    async getImage(
         @Param('key', new ZodValidationPipe(movieStoredImageKeySchema)) key: string,
         @Res({ passthrough: true }) response: Response,
     ): Promise<StreamableFile> {
@@ -47,8 +47,8 @@ export class MoviesController {
     @Get(':movieId')
     @Header('Cache-Control', 'private, no-store')
     @Throttle(CATALOG_RATE_LIMIT)
-    async details(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
-        const response = await this.movies.detailsResponse(movieId);
+    async getDetails(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
+        const response = await this.movies.getDetailsResponse(movieId);
         const { result } = response;
         if (result.state === 'unavailable') return response;
         return {

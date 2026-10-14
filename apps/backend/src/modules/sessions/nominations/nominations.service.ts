@@ -23,7 +23,7 @@ export class NominationsService {
         private readonly movies: MoviesService,
     ) {}
 
-    async project(
+    async loadNominations(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
         viewer: {
@@ -71,7 +71,7 @@ export class NominationsService {
                 ...(own?.nomination ? [own.nomination.movieId] : []),
             ]),
         ];
-        const summaries = await this.movies.cachedSummaries(tx, ids);
+        const summaries = await this.movies.findSummaries(tx, ids);
         const getMovie = (movieId: string) => summaries.get(movieId)!;
         return {
             acceptedCount: participants.length,

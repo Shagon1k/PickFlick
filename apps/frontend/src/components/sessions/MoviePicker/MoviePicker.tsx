@@ -4,8 +4,8 @@ import { MOVIE_QUERY_MAX_LENGTH } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
 import {
-    nextOptionIndex,
-    searchMessage,
+    getNextOptionIndex,
+    getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
 } from '@/components/shells/ProductSearch/movie-search';
@@ -39,7 +39,7 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
         if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && movies.length) {
             event.preventDefault();
-            setIndex((current) => nextOptionIndex(event.key, current, movies.length));
+            setIndex((current) => getNextOptionIndex(event.key, current, movies.length));
         }
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -88,7 +88,7 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
                     Remove selected Movie
                 </Button>
             ) : null}
-            <p role="status">{searchMessage(term, result)}</p>
+            <p role="status">{getSearchMessage(term, result)}</p>
             <div
                 aria-label="Movie results"
                 id="session-movies"

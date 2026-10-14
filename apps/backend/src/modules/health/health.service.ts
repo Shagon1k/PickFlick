@@ -33,13 +33,13 @@ export class HealthService {
         private readonly storage: StorageService,
     ) {}
 
-    liveness(): ILivenessReport {
+    checkLiveness(): ILivenessReport {
         const { sourceRevision } = this.environment;
         return { status: 'alive', ...(sourceRevision ? { revision: sourceRevision } : {}) };
     }
 
     /** Ready when the database and object storage both answer within two seconds. */
-    async readiness(): Promise<IReadinessReport> {
+    async checkReadiness(): Promise<IReadinessReport> {
         const checks = await Promise.all([
             probe('database', () => this.prisma.$queryRaw`SELECT 1`),
             probe('objectStorage', () => this.storage.ping()),

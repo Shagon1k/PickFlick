@@ -94,7 +94,7 @@ export class TmdbClient implements IMovieProvider {
         ];
         return { movies, page, totalPages: result.total_pages, totalResults: result.total_results };
     }
-    async details(input: IMovieLookup): Promise<TProviderRecord> {
+    async fetchDetails(input: IMovieLookup): Promise<TProviderRecord> {
         const externalId = input.externalIds.find((id) => id.source === 'tmdb')?.externalId;
         if (!externalId) throw new MovieProviderError('MISSING_EXTERNAL_ID', undefined, 'tmdb');
         const tmdbId = tmdbIdSchema.parse(Number(externalId));

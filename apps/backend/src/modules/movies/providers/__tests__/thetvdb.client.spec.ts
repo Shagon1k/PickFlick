@@ -20,7 +20,7 @@ describe('ThetvdbClient', () => {
             Response.json({ status: 'success', data: [{ movie: { id: 10 } }] }),
         );
         request.mockResolvedValueOnce(Response.json({ status: 'success', data: movie() }));
-        const result = await client().details([...ids]);
+        const result = await client().fetchDetails([...ids]);
         expect(result.externalIds).toContainEqual({ source: 'thetvdb', externalId: '10' });
         expect(result.data).toMatchObject({ title: 'English title', overview: null });
         expect(request.mock.calls[0]?.[0]).toEqual(
@@ -40,7 +40,7 @@ describe('ThetvdbClient', () => {
                 data: { ...movie(), remoteIds: [{ sourceName: 'IMDB', id: 'tt9999999' }] },
             }),
         );
-        await expect(client().details([...ids])).rejects.toMatchObject({
+        await expect(client().fetchDetails([...ids])).rejects.toMatchObject({
             reason: 'IDENTITY_CONFLICT',
         });
     });
@@ -51,19 +51,21 @@ describe('ThetvdbClient', () => {
                 data: [{ movie: { id: 10 } }, { movie: { id: 11 } }],
             }),
         );
-        await expect(client().details([...ids])).rejects.toMatchObject({
+        await expect(client().fetchDetails([...ids])).rejects.toMatchObject({
             reason: 'IDENTITY_CONFLICT',
         });
         expect(request).toHaveBeenCalledOnce();
     });
     it('should never search by title/year when mappings are missing', async () => {
-        await expect(client().details([])).rejects.toMatchObject({ reason: 'MISSING_EXTERNAL_ID' });
+        await expect(client().fetchDetails([])).rejects.toMatchObject({
+            reason: 'MISSING_EXTERNAL_ID',
+        });
         expect(request).not.toHaveBeenCalled();
     });
     it('should preserve not-found as a source-specific error', async () => {
         request.mockResolvedValue(new Response(null, { status: 404 }));
         await expect(
-            client().details([{ source: 'thetvdb', externalId: '10' }]),
+            client().fetchDetails([{ source: 'thetvdb', externalId: '10' }]),
         ).rejects.toMatchObject({ reason: 'NOT_FOUND', source: 'thetvdb' });
     });
 });

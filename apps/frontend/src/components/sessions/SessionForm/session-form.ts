@@ -32,7 +32,7 @@ export function getInitialSessionValues(session?: TSession): ISessionValues {
 }
 
 /** The deadline to save: removed, recalculated from an `hh:mm` duration, or the current one. */
-export function nextDeadline(values: ISessionValues, session?: TSession): string | null {
+export function getNextDeadline(values: ISessionValues, session?: TSession): string | null {
     if (values.removeDeadline) return null;
     if (values.type !== 'FULL_CYCLE' || !values.duration) return session?.deadlineAt ?? null;
     const [hours = '0', minutes = '0'] = values.duration.split(':');
