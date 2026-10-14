@@ -4,8 +4,8 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
-const firstClubId = '10000000-0000-4000-8000-000000000031';
-const secondClubId = '10000000-0000-4000-8000-000000000032';
+const FIRST_CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const SECOND_CLUB_ID = '10000000-0000-4000-8000-000000000032';
 
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
@@ -26,7 +26,7 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'valid-hub-switch');
         await page.goto('/app');
-        await expect(page).toHaveURL(new RegExp(`/clubs/${firstClubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${FIRST_CLUB_ID}$`, 'u'));
         await expect(
             page.getByRole('heading', { level: 1, name: 'Midnight Society' }),
         ).toBeVisible();
@@ -34,7 +34,7 @@ test(
         await page.getByRole('button', { name: 'Open Second Screening Room' }).focus();
         await page.keyboard.press('Enter');
 
-        await expect(page).toHaveURL(new RegExp(`/clubs/${secondClubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
         await expect(
             page.getByRole('heading', { level: 1, name: 'Second Screening Room' }),
         ).toBeVisible();
@@ -44,7 +44,7 @@ test(
         await expect(page.getByText('Room A')).toHaveCount(0);
 
         await page.goto('/app');
-        await expect(page).toHaveURL(new RegExp(`/clubs/${secondClubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
     },
 );
 
@@ -56,7 +56,7 @@ test(
         await context.addCookies([
             {
                 name: 'pickflick.last_club',
-                value: secondClubId,
+                value: SECOND_CLUB_ID,
                 domain: '127.0.0.1',
                 path: '/',
                 httpOnly: true,
@@ -64,8 +64,8 @@ test(
             },
         ]);
         await page.goto('/app');
-        await expect(page).toHaveURL(new RegExp(`/clubs/${firstClubId}$`, 'u'));
-        await page.goto(`/clubs/${secondClubId}`);
+        await expect(page).toHaveURL(new RegExp(`/clubs/${FIRST_CLUB_ID}$`, 'u'));
+        await page.goto(`/clubs/${SECOND_CLUB_ID}`);
         await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
         await expect(page.getByText('Second Club private screening')).toHaveCount(0);
     },
@@ -76,7 +76,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'valid-hub-preference');
-        await page.goto(`/clubs/${secondClubId}`);
+        await page.goto(`/clubs/${SECOND_CLUB_ID}`);
         await expect(
             page.getByRole('heading', { level: 1, name: 'Second Screening Room' }),
         ).toBeVisible();
@@ -84,13 +84,13 @@ test(
         await page.goto('/clubs/10000000-0000-4000-8000-000000000033');
         await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
         await page.goto('/app');
-        await expect(page).toHaveURL(new RegExp(`/clubs/${secondClubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
     },
 );
 
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
     await authenticate(context, 'valid-hub-archived');
-    await page.goto(`/clubs/${firstClubId}`);
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
 
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('read-only');
     await expect(page.getByRole('heading', { level: 1, name: 'Midnight Society' })).toBeVisible();
@@ -104,7 +104,7 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         const page = await context.newPage();
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await page.setViewportSize(viewport);
-            await page.goto(`/clubs/${firstClubId}`, { waitUntil: 'load' });
+            await page.goto(`/clubs/${FIRST_CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
             const widths = await page.evaluate(() => ({
                 body: document.body.scrollWidth,
@@ -118,7 +118,7 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         const next = page.getByRole('button', { name: 'Open Second Screening Room' });
         expect((await next.boundingBox())?.height).toBeGreaterThanOrEqual(44);
         await next.tap();
-        await expect(page).toHaveURL(new RegExp(`/clubs/${secondClubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
     } finally {
         await context.close();
     }
@@ -131,7 +131,7 @@ for (const viewport of screenshotViewports) {
         async ({ context, page }) => {
             await authenticate(context, `valid-hub-visual-${viewport.name}`);
             await page.setViewportSize(viewport);
-            await page.goto(`/clubs/${firstClubId}`, { waitUntil: 'load' });
+            await page.goto(`/clubs/${FIRST_CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
             await expect(page).toHaveScreenshot(`club-hub-${viewport.name}.png`, {
                 animations: 'disabled',

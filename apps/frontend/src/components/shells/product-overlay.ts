@@ -17,7 +17,7 @@ interface IProductOverlayContextValue {
 
 export const ProductOverlayContext = createContext<IProductOverlayContextValue | null>(null);
 
-const focusableSelector =
+const FOCUSABLE_SELECTOR =
     "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
 export function useProductOverlay() {
@@ -53,7 +53,7 @@ export function useOverlayDismissal(
             if (!root) {
                 return;
             }
-            const focusable = [...root.querySelectorAll<HTMLElement>(focusableSelector)];
+            const focusable = [...root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)];
             const first = focusable[0];
             const last = focusable.at(-1);
             const activeElement = document.activeElement;
@@ -130,7 +130,7 @@ export function useAnchoredMenus(openMenu: string | null, rootRef: RefObject<HTM
         }
         rootRef.current
             ?.querySelector<HTMLElement>(`[data-anchored-menu="${openMenu}"]`)
-            ?.querySelector<HTMLElement>(focusableSelector)
+            ?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
             ?.focus({ preventScroll: true });
     }, [openMenu, rootRef]);
 }

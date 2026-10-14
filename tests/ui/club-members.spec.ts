@@ -4,7 +4,7 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 async function authenticate(context: BrowserContext, token: string) {
     await context.addCookies([
         {
@@ -23,7 +23,7 @@ test(
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, `valid-members-remove-${test.info().repeatEachIndex}`);
-        await page.goto(`/clubs/${clubId}/members`);
+        await page.goto(`/clubs/${CLUB_ID}/members`);
         const trigger = page.getByRole('button', { name: 'Remove Morgan Member' });
         await trigger.focus();
         await page.keyboard.press('Enter');
@@ -48,24 +48,24 @@ test('Member and restricted Club views explain unavailable actions without losin
     page,
 }) => {
     await authenticate(context, 'valid-members-member');
-    await page.goto(`/clubs/${clubId}/members`);
+    await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('button', { name: /remove/iu })).toHaveCount(0);
     await expect(page.getByText('Morgan Member')).toBeVisible();
     await authenticate(context, 'valid-members-adminless');
-    await page.goto(`/clubs/${clubId}/members`);
+    await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
     await expect(page.getByRole('link', { name: 'Invite members' })).toHaveCount(0);
-    await page.goto(`/clubs/${clubId}/settings`);
+    await page.goto(`/clubs/${CLUB_ID}/settings`);
     await expect(page.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
     await authenticate(context, 'valid-members-over-limit');
-    await page.goto(`/clubs/${clubId}/members`);
+    await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText(
         'over its member limit',
     );
     await expect(page.getByRole('button', { name: 'Remove Morgan Member' })).toBeVisible();
     await authenticate(context, 'valid-members-archived');
-    await page.goto(`/clubs/${clubId}/members`);
+    await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('button', { name: /remove/iu })).toHaveCount(0);
 });
 
@@ -95,7 +95,7 @@ test(
         await page.goto('/app');
         await trigger.click();
         await dialog.getByRole('button', { name: 'Accept', exact: true }).click();
-        await expect(page).toHaveURL(new RegExp(`/clubs/${clubId}$`, 'u'));
+        await expect(page).toHaveURL(new RegExp(`/clubs/${CLUB_ID}$`, 'u'));
         await expect(page.getByRole('heading', { name: 'Midnight Society' })).toBeVisible();
     },
 );
@@ -140,7 +140,7 @@ test('Moderator management remains accessible and keeps keyboard focus inside it
     page,
 }) => {
     await authenticate(context, 'valid-settings-admin-moderation');
-    await page.goto(`/clubs/${clubId}/settings`);
+    await page.goto(`/clubs/${CLUB_ID}/settings`);
     const trigger = page.getByRole('button', { name: 'Manage Moderators' });
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Manage Moderators' });
@@ -164,7 +164,7 @@ test('invite and notification overlays close each other and keep keyboard focus 
 }) => {
     await authenticate(context, 'valid-hub-pending-overlays');
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/clubs/${clubId}/members`);
+    await page.goto(`/clubs/${CLUB_ID}/members`);
     await page.getByRole('button', { name: 'Notifications', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Notifications', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Open pending invites' }).click();
@@ -205,7 +205,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
         const page = await context.newPage();
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await page.setViewportSize(viewport);
-            await page.goto(`/clubs/${clubId}/members`, { waitUntil: 'load' });
+            await page.goto(`/clubs/${CLUB_ID}/members`, { waitUntil: 'load' });
             await settle(page);
             await page.getByRole('button', { name: 'Open pending invites' }).tap();
             const dialog = page.getByRole('dialog', { name: 'Pending invites' });
@@ -250,7 +250,7 @@ for (const viewport of screenshotViewports) {
             async ({ context, page }) => {
                 await authenticate(context, `valid-members-${state}-visual-${viewport.name}`);
                 await page.setViewportSize(viewport);
-                await page.goto(`/clubs/${clubId}/members`, { waitUntil: 'load' });
+                await page.goto(`/clubs/${CLUB_ID}/members`, { waitUntil: 'load' });
                 await settle(page);
                 await expect(page).toHaveScreenshot(`club-members-${state}-${viewport.name}.png`, {
                     fullPage: true,
@@ -265,7 +265,7 @@ for (const viewport of screenshotViewports) {
         async ({ context, page }) => {
             await authenticate(context, `valid-hub-pending-visual-${viewport.name}`);
             await page.setViewportSize(viewport);
-            await page.goto(`/clubs/${clubId}`, { waitUntil: 'load' });
+            await page.goto(`/clubs/${CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
             await page.getByRole('button', { name: 'Open pending invites' }).click();
             await expect(

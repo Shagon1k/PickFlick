@@ -1,6 +1,6 @@
 import type { IClubAccess, IClubMember, IClubSettings, TClubRole } from '@pickflick/contracts';
 
-const settingsClubId = '10000000-0000-4000-8000-000000000031';
+const SETTINGS_CLUB_ID = '10000000-0000-4000-8000-000000000031';
 
 export function settingsProjection(
     token: string | undefined,
@@ -34,7 +34,7 @@ export function settingsProjection(
             ] satisfies IClubAccess['reasons'],
         },
         club: {
-            id: settingsClubId,
+            id: SETTINGS_CLUB_ID,
             name: 'Midnight Society',
             description: 'Noir, classics, and arguments.',
             hasAvatar: Boolean(avatarVersion),

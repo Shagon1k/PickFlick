@@ -9,7 +9,7 @@ import {
 } from './mock-http.ts';
 
 const responses = new Map<string, string>();
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 
 export function handlePendingInvitation(
     request: TMockRequest,
@@ -50,7 +50,9 @@ export function handlePendingInvitation(
             sendJson(
                 response,
                 200,
-                decision === 'accept' ? { state: 'accepted', clubId } : { state: 'declined' },
+                decision === 'accept'
+                    ? { state: 'accepted', clubId: CLUB_ID }
+                    : { state: 'declined' },
             );
         });
     }

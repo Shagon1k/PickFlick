@@ -26,8 +26,8 @@ interface INominationState {
     failedPath?: string;
 }
 const states = new Map<string | undefined, INominationState>();
-const sessionId = '30000000-0000-4000-8000-000000000042';
-const clubId = '10000000-0000-4000-8000-000000000031';
+const SESSION_ID = '30000000-0000-4000-8000-000000000042';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const movie: TNominationMovie = {
     id: '20000000-0000-4000-8000-000000000001',
     title: 'Past losing nomination',
@@ -67,7 +67,7 @@ function handleRoster(
     token: string | undefined,
     state: INominationState,
 ): boolean {
-    if (!token?.includes('nomination') || pathname !== `/sessions/${sessionId}/roster`)
+    if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/roster`)
         return false;
     const version = state.version;
     const departed = state.departed;
@@ -114,18 +114,18 @@ export function handleNominations(
     if (handleProgress(response, pathname, token)) return true;
     if (
         !/^\/sessions\/[^/]+\/nominations(?:\/close)?$/u.test(pathname) &&
-        !(token?.includes('nomination') && pathname === `/sessions/${sessionId}`)
+        !(token?.includes('nomination') && pathname === `/sessions/${SESSION_ID}`)
     )
         return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'nomination-auth');
         return true;
     }
-    if (pathname === `/sessions/${sessionId}`) {
+    if (pathname === `/sessions/${SESSION_ID}`) {
         const sendDetail = () => {
             const detail: TSession = {
-                id: sessionId,
-                clubId,
+                id: SESSION_ID,
+                clubId: CLUB_ID,
                 clubName: 'Midnight Society',
                 topic: 'Nomination night',
                 notes: 'Everyone nominates one film.',
@@ -172,8 +172,8 @@ export function handleNominations(
                 // Longer than one progress poll, so the viewer's next refresh hits the failure.
                 state.recoverAt = Date.now() + 5500;
                 state.failedPath = token.includes('refresh-roster')
-                    ? `/sessions/${sessionId}/roster`
-                    : `/sessions/${sessionId}`;
+                    ? `/sessions/${SESSION_ID}/roster`
+                    : `/sessions/${SESSION_ID}`;
             }
             sendJson(response, 201, null);
         });
@@ -185,7 +185,7 @@ function handleProgress(
     pathname: string,
     token: string | undefined,
 ): boolean {
-    if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${sessionId}/progress`))
+    if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${SESSION_ID}/progress`))
         return false;
     const state = stateFor(token);
     const progress: TSessionProgress = { version: state.version };

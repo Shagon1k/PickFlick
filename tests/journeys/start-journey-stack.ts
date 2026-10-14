@@ -1,16 +1,16 @@
 import { spawn } from 'node:child_process';
 
 /** Starts the built API, waits until it is live, then starts the built web app in front of it. */
-const backendPort = '42741';
-const webPort = '41740';
-const webOrigin = `http://127.0.0.1:${webPort}`;
+const BACKEND_PORT = '42741';
+const WEB_PORT = '41740';
+const WEB_ORIGIN = `http://127.0.0.1:${WEB_PORT}`;
 
 const backend = spawn(process.execPath, ['apps/backend/dist/main.js'], {
     env: {
         ...process.env,
-        AUTH_BASE_URL: webOrigin,
+        AUTH_BASE_URL: WEB_ORIGIN,
         BACKEND_HOST: '127.0.0.1',
-        BACKEND_PORT: backendPort,
+        BACKEND_PORT: BACKEND_PORT,
     },
     stdio: 'inherit',
 });
@@ -27,9 +27,9 @@ while (!(await isLive())) {
 const web = spawn(process.execPath, ['apps/frontend/.next/standalone/apps/frontend/server.js'], {
     env: {
         ...process.env,
-        BACKEND_INTERNAL_URL: `http://127.0.0.1:${backendPort}`,
+        BACKEND_INTERNAL_URL: `http://127.0.0.1:${BACKEND_PORT}`,
         HOSTNAME: '127.0.0.1',
-        PORT: webPort,
+        PORT: WEB_PORT,
     },
     stdio: 'inherit',
 });
@@ -49,7 +49,7 @@ for (const child of [backend, web]) {
 
 async function isLive(): Promise<boolean> {
     try {
-        const response = await fetch(`http://127.0.0.1:${backendPort}/health/live`);
+        const response = await fetch(`http://127.0.0.1:${BACKEND_PORT}/health/live`);
         return response.ok;
     } catch {
         return false;

@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('@/api/invitations.server', () => api);
 
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const created = {
     id: '60000000-0000-4000-8000-000000000034',
     token: 'v'.repeat(43),
@@ -27,7 +27,7 @@ describe('Invitation management action', () => {
     });
 
     it('should return the created token and refreshed list', async () => {
-        await expect(manageInvitationsAction(clubId)).resolves.toEqual({
+        await expect(manageInvitationsAction(CLUB_ID)).resolves.toEqual({
             ok: true,
             created,
             invitations,
@@ -37,19 +37,19 @@ describe('Invitation management action', () => {
     it('should preserve creation when only the list refresh fails', async () => {
         api.listInvitations.mockRejectedValue(new TypeError('fetch failed'));
 
-        await expect(manageInvitationsAction(clubId)).resolves.toEqual({
+        await expect(manageInvitationsAction(CLUB_ID)).resolves.toEqual({
             ok: true,
             created,
             refreshError:
                 'Invitation list could not be refreshed. Use Recent invitations to try again.',
         });
-        expect(api.createInvitation).toHaveBeenCalledExactlyOnceWith(clubId);
+        expect(api.createInvitation).toHaveBeenCalledExactlyOnceWith(CLUB_ID);
     });
 
     it('should report creation failure without fetching the list', async () => {
         api.createInvitation.mockRejectedValue(new TypeError('fetch failed'));
 
-        await expect(manageInvitationsAction(clubId)).resolves.toMatchObject({ ok: false });
+        await expect(manageInvitationsAction(CLUB_ID)).resolves.toMatchObject({ ok: false });
         expect(api.listInvitations).not.toHaveBeenCalled();
     });
 });

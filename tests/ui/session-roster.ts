@@ -20,16 +20,16 @@ interface IRosterState {
     invite: NonNullable<TParticipant['invitation']>['state'];
 }
 
-const sessionId = '30000000-0000-4000-8000-000000000041';
-const clubId = '10000000-0000-4000-8000-000000000031';
-const participantId = '40000000-0000-4000-8000-000000000041';
-const membershipId = '50000000-0000-4000-8000-000000000041';
-const inviteId = '60000000-0000-4000-8000-000000000041';
+const SESSION_ID = '30000000-0000-4000-8000-000000000041';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const PARTICIPANT_ID = '40000000-0000-4000-8000-000000000041';
+const MEMBERSHIP_ID = '50000000-0000-4000-8000-000000000041';
+const INVITE_ID = '60000000-0000-4000-8000-000000000041';
 const states = new Map<string, IRosterState>();
-const expiresAt = '2026-12-01T12:00:00.000Z';
+const EXPIRES_AT = '2026-12-01T12:00:00.000Z';
 const session: Omit<TSession, 'canEdit' | 'canCancel'> = {
-    id: sessionId,
-    clubId,
+    id: SESSION_ID,
+    clubId: CLUB_ID,
     clubName: 'Midnight Society',
     type: 'FULL_CYCLE',
     phase: 'NOMINATION',
@@ -63,21 +63,24 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
         participants: token.includes('session-roster')
             ? [
                   {
-                      id: participantId,
-                      membershipId,
+                      id: PARTICIPANT_ID,
+                      membershipId: MEMBERSHIP_ID,
                       displayName: 'Jordan Member',
                       status: state.status,
                       canRemove: manager && ['ACCEPTED', 'INVITED'].includes(state.status),
-                      invitation: manager ? { id: inviteId, expiresAt, state: state.invite } : null,
+                      invitation: manager
+                          ? { id: INVITE_ID, expiresAt: EXPIRES_AT, state: state.invite }
+                          : null,
                   },
               ]
             : [],
-        eligibleMembers: manager ? [{ id: membershipId, displayName: 'Jordan Member' }] : [],
+        eligibleMembers: manager ? [{ id: MEMBERSHIP_ID, displayName: 'Jordan Member' }] : [],
     };
 }
 function previewProjection(token: string, state: IRosterState): TSessionInvitationPreview {
     if (token.includes('outsider') || token.includes('invalid')) return { state: 'unavailable' };
-    if (state.status === 'ACCEPTED') return { state: 'accepted', sessionId, clubId };
+    if (state.status === 'ACCEPTED')
+        return { state: 'accepted', sessionId: SESSION_ID, clubId: CLUB_ID };
     return {
         state: 'valid',
         clubName: session.clubName,
@@ -85,7 +88,7 @@ function previewProjection(token: string, state: IRosterState): TSessionInvitati
         scheduledAt: session.scheduledAt,
         location: session.location,
         inviterName: 'Avery Admin',
-        expiresAt,
+        expiresAt: EXPIRES_AT,
     };
 }
 function mutate(
@@ -115,7 +118,7 @@ function mutate(
             sendPreview(
                 response,
                 input.decision === 'accept'
-                    ? { state: 'accepted', sessionId, clubId }
+                    ? { state: 'accepted', sessionId: SESSION_ID, clubId: CLUB_ID }
                     : { state: 'declined' },
             );
             return;
@@ -123,7 +126,11 @@ function mutate(
         if (pathname.endsWith('/invitations')) {
             state.status = 'INVITED';
             state.invite = 'pending';
-            const created: ICreatedInvitation = { id: inviteId, token: 's'.repeat(43), expiresAt };
+            const created: ICreatedInvitation = {
+                id: INVITE_ID,
+                token: 's'.repeat(43),
+                expiresAt: EXPIRES_AT,
+            };
             sendJson(response, 201, created);
             return;
         }
@@ -144,7 +151,7 @@ export function handleSessionRoster(
 ): boolean {
     const invitation = pathname.startsWith('/session-invitations/');
     const roster = /^\/sessions\/[^/]+\/(?:roster|invitations|participants|leave)/u.test(pathname);
-    const detail = pathname === `/sessions/${sessionId}` && token?.includes('session-roster');
+    const detail = pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
     if (!invitation && !roster && !detail) return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'roster-auth');
@@ -163,11 +170,11 @@ export function handleSessionRoster(
         const invitations: IPendingSessionInvitation[] = pending
             ? [
                   {
-                      id: inviteId,
+                      id: INVITE_ID,
                       clubName: session.clubName,
                       topic: session.topic,
                       inviterName: 'Avery Admin',
-                      expiresAt,
+                      expiresAt: EXPIRES_AT,
                   },
               ]
             : [];

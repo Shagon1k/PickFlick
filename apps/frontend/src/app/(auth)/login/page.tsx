@@ -11,7 +11,7 @@ import SprocketDivider from '@/components/ui/SprocketDivider/SprocketDivider';
 
 import LoginActions from './_components/LoginActions/LoginActions';
 import { firstSearchValue } from './login.utils';
-import { resolveLoginErrorMessage, sessionUnavailableMessage } from './login-errors';
+import { resolveLoginErrorMessage, SESSION_UNAVAILABLE_MESSAGE } from './login-errors';
 import styles from './page.module.scss';
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default async function LoginPage({
     // Sign-in stays available during a session-API outage; the notice explains a stale signed-in state.
     const errorMessage =
         resolveLoginErrorMessage(firstSearchValue(parameters.error)) ??
-        (session === 'unavailable' ? sessionUnavailableMessage : undefined);
+        (session === 'unavailable' ? SESSION_UNAVAILABLE_MESSAGE : undefined);
 
     return (
         <main className={styles.page}>

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import { settle } from './settle';
 
-const movieId = '10000000-0000-4000-8000-000000000037';
+const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
 
 for (const width of [390, 768, 1024, 1440]) {
     test(
@@ -29,7 +29,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     ),
                 }),
             );
-            await page.goto(`/movies/${movieId}`, { waitUntil: 'load' });
+            await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
             await expect(page.getByRole('heading', { level: 1 })).toHaveText(
                 '<script>alert(1)</script> & Film',
             );
@@ -91,7 +91,7 @@ for (const [state, message] of [
             },
         ]);
         await page.route('**/api/movies/images/**', (route) => route.abort());
-        await page.goto(`/movies/${movieId}`);
+        await page.goto(`/movies/${MOVIE_ID}`);
         await expect(page.getByText(message, { exact: false }).first()).toBeVisible();
     });
 }
@@ -108,7 +108,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
             path: '/',
         },
     ]);
-    await page.goto(`/movies/${movieId}`);
+    await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByText('Poster unavailable')).toBeVisible();
     await expect(page.getByText('No trailer is available.')).toBeVisible();
     await expect(page.getByText('No related titles are available.')).toBeVisible();
@@ -133,7 +133,7 @@ test('unknown or malformed Movie identity uses safe recovery; related failure pr
             path: '/',
         },
     ]);
-    await page.goto(`/movies/${movieId}`);
+    await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reel Not Found');
     await page.goto('/movies/100');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reel Not Found');
@@ -146,7 +146,7 @@ test('unknown or malformed Movie identity uses safe recovery; related failure pr
         },
     ]);
     await page.route('**/api/movies/images/**', (route) => route.abort());
-    await page.goto(`/movies/${movieId}`);
+    await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
         '<script>alert(1)</script> & Film',
     );
@@ -166,7 +166,7 @@ test('desktop credits and synopsis share the row equally below the media', async
             path: '/',
         },
     ]);
-    await page.goto(`/movies/${movieId}`, { waitUntil: 'load' });
+    await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
     await settle(page);
     const credits = await page.getByRole('region', { name: 'Credits', exact: true }).boundingBox();
     const synopsis = await page.getByRole('region', { name: 'Synopsis' }).boundingBox();

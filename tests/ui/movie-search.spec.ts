@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import { settle } from './settle';
 
-const movieId = '10000000-0000-4000-8000-000000000037';
+const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
 
 for (const width of [390, 768, 1024, 1440]) {
     test(
@@ -35,7 +35,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 name: '<script>alert(1)</script> & Film 2026',
             });
             await expect(first).toBeVisible();
-            await expect(first).toHaveAttribute('href', `/movies/${movieId}`);
+            await expect(first).toHaveAttribute('href', `/movies/${MOVIE_ID}`);
             await expect(page.getByRole('option')).toHaveCount(2);
             await input.press('ArrowUp');
             await expect(page.getByRole('option').nth(1)).toHaveAttribute('aria-selected', 'true');
@@ -59,7 +59,7 @@ for (const width of [390, 768, 1024, 1440]) {
             await expect(first).toBeVisible();
             await input.press('ArrowDown');
             await input.press('Enter');
-            await expect(page).toHaveURL(`/movies/${movieId}`);
+            await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
             await expect(
                 page.getByRole('heading', {
                     name: '<script>alert(1)</script> & Film',
@@ -131,8 +131,8 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
         viewport: { width: 390, height: 844 },
     });
     const page = await context.newPage();
-    await page.goto(`/movies/${movieId}`);
-    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/movies/${movieId}$`, 'u'));
+    await page.goto(`/movies/${MOVIE_ID}`);
+    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/movies/${MOVIE_ID}$`, 'u'));
     await context.addCookies([
         {
             name: 'pickflick.session_token',
@@ -149,6 +149,6 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
         .tap();
     await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
     await page.getByRole('option').first().tap();
-    await expect(page).toHaveURL(`/movies/${movieId}`);
+    await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
     await context.close();
 });

@@ -2,9 +2,9 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { settle } from './settle';
 
-const clubId = '10000000-0000-4000-8000-000000000031';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const publicRoutes = ['/', '/pricing', '/contact', '/legal/privacy', '/login', '/ui-preview'];
-const signedInRoutes = ['/app', '/clubs/new', `/clubs/${clubId}/settings`];
+const signedInRoutes = ['/app', '/clubs/new', `/clubs/${CLUB_ID}/settings`];
 
 async function authenticate(context: BrowserContext) {
     await context.addCookies([

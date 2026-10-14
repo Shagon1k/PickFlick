@@ -31,8 +31,8 @@ type TToken = string | undefined;
 const clubsBySession = new Map<TToken, IClubSummary[]>();
 const removedMembersBySession = new Set<TToken>();
 const avatarVersionsBySession = new Map<TToken, string>();
-const settingsClubId = '10000000-0000-4000-8000-000000000031';
-const secondClubId = '10000000-0000-4000-8000-000000000032';
+const SETTINGS_CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const SECOND_CLUB_ID = '10000000-0000-4000-8000-000000000032';
 const avatarPng = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     'base64',
@@ -53,7 +53,7 @@ function hubClubs(token: TToken): IClubSummary[] {
     const first = settingsProjection(token).club;
     const second: IClubSummary = {
         ...first,
-        id: secondClubId,
+        id: SECOND_CLUB_ID,
         name: 'Second Screening Room',
         description: 'A different Club.',
         membershipRole: 'MEMBER',
@@ -62,12 +62,13 @@ function hubClubs(token: TToken): IClubSummary[] {
 }
 
 function hubProjection(token: TToken, clubId: string): IClubHub | null {
-    if (token?.includes('session-workflow') && clubId === settingsClubId) return sessionHub(token);
+    if (token?.includes('session-workflow') && clubId === SETTINGS_CLUB_ID)
+        return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
     if (!club) {
         return null;
     }
-    if (clubId !== settingsClubId && clubId !== secondClubId) {
+    if (clubId !== SETTINGS_CLUB_ID && clubId !== SECOND_CLUB_ID) {
         return {
             club,
             access: settingsProjection(token).access,
@@ -80,7 +81,7 @@ function hubProjection(token: TToken, clubId: string): IClubHub | null {
             historySessions: [],
         };
     }
-    const second = clubId === secondClubId;
+    const second = clubId === SECOND_CLUB_ID;
     const session: IClubHubSession = {
         id: second
             ? '30000000-0000-4000-8000-000000000032'
@@ -385,13 +386,13 @@ function handleInvitation(request: TMockRequest, response: TMockResponse, pathna
                     expiresAt: '2026-10-10T12:00:00.000Z',
                 };
             else if (state === 'member')
-                preview = { state: 'already-member', clubId: settingsClubId };
+                preview = { state: 'already-member', clubId: SETTINGS_CLUB_ID };
             else preview = { state: unavailableInvitationState(state) };
         }
         if (pathname.endsWith('/respond') && preview.state === 'valid') {
             preview =
                 decision === 'accept'
-                    ? { state: 'accepted', clubId: settingsClubId }
+                    ? { state: 'accepted', clubId: SETTINGS_CLUB_ID }
                     : { state: 'declined' };
             invitationResponses.set(key, preview);
             if (decision === 'accept')

@@ -21,6 +21,20 @@ const noReadonlyWrapper = {
     message: 'Write plain types; props and data are not wrapped in Readonly<>.',
 };
 
+// Module-level constants set from a literal are UPPER_SNAKE_CASE. Values computed at runtime and the
+// export names Next.js requires (alt, contentType, ...) keep camelCase.
+const constantNaming = {
+    selector: [
+        ":matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration[kind='const']",
+        "> VariableDeclarator[id.type='Identifier']",
+        ':matches([init.type=/^(Literal|TemplateLiteral)$/],',
+        " [init.type='BinaryExpression']:not(:has(CallExpression, MemberExpression)))",
+        ':not([id.name=/^[A-Z][A-Z0-9_]*$/])',
+        ':not([id.name=/^(alt|contentType|dynamic|revalidate|runtime)$/])',
+    ].join(''),
+    message: 'Name a module-level literal constant in UPPER_SNAKE_CASE.',
+};
+
 export default [
     {
         // A disable directive that no longer suppresses anything fails the lint.
@@ -111,7 +125,7 @@ export default [
                 { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
                 { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
             ],
-            'no-restricted-syntax': ['error', noReadonlyWrapper],
+            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming],
             'check-file/filename-naming-convention': [
                 'error',
                 { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
@@ -126,6 +140,7 @@ export default [
             'no-restricted-syntax': [
                 'error',
                 noReadonlyWrapper,
+                constantNaming,
                 {
                     selector: 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^[A-Z]/]',
                     message:

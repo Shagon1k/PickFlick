@@ -32,8 +32,8 @@ vi.mock('@/lib/api.server', () => ({
     },
 }));
 
-const clubId = '10000000-0000-4000-8000-000000000031';
-const membershipId = '10000000-0000-4000-8000-000000000041';
+const CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const MEMBERSHIP_ID = '10000000-0000-4000-8000-000000000041';
 const previous = { message: '', revision: 2, status: 'idle' as const };
 
 function formData(values: Record<string, string | File>): FormData {
@@ -66,12 +66,12 @@ describe('Club settings actions', () => {
     });
 
     it('should send parsed settings to the API', async () => {
-        await expect(updateClubSettingsAction(clubId, previous, settingsForm())).resolves.toEqual({
+        await expect(updateClubSettingsAction(CLUB_ID, previous, settingsForm())).resolves.toEqual({
             message: 'Club settings saved.',
             revision: 3,
             status: 'success',
         });
-        expect(api.updateClubSettings).toHaveBeenCalledWith(clubId, {
+        expect(api.updateClubSettings).toHaveBeenCalledWith(CLUB_ID, {
             name: 'Midnight Society',
             selectionScaleMin: 0,
             selectionScaleMax: 7,
@@ -87,7 +87,7 @@ describe('Club settings actions', () => {
         const form = settingsForm();
         form.set('selectionScaleMax', '0');
 
-        await expect(updateClubSettingsAction(clubId, previous, form)).resolves.toMatchObject({
+        await expect(updateClubSettingsAction(CLUB_ID, previous, form)).resolves.toMatchObject({
             status: 'error',
         });
         expect(api.updateClubSettings).not.toHaveBeenCalled();
@@ -95,13 +95,13 @@ describe('Club settings actions', () => {
 
     it('should send the chosen member role', async () => {
         await changeClubMemberRoleAction(
-            clubId,
-            membershipId,
+            CLUB_ID,
+            MEMBERSHIP_ID,
             previous,
             formData({ role: 'MODERATOR' }),
         );
 
-        expect(api.changeMemberRole).toHaveBeenCalledWith(clubId, membershipId, {
+        expect(api.changeMemberRole).toHaveBeenCalledWith(CLUB_ID, MEMBERSHIP_ID, {
             role: 'MODERATOR',
         });
     });
@@ -112,16 +112,16 @@ describe('Club settings actions', () => {
         }
 
         const results = await Promise.all([
-            updateClubSettingsAction(clubId, previous, settingsForm()),
+            updateClubSettingsAction(CLUB_ID, previous, settingsForm()),
             changeClubMemberRoleAction(
-                clubId,
-                membershipId,
+                CLUB_ID,
+                MEMBERSHIP_ID,
                 previous,
                 formData({ role: 'MEMBER' }),
             ),
-            clubLifecycleAction(clubId, 'reactivate', previous, formData({})),
-            uploadClubAvatarAction(clubId, previous, avatarForm()),
-            removeClubAvatarAction(clubId, previous),
+            clubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
+            uploadClubAvatarAction(CLUB_ID, previous, avatarForm()),
+            removeClubAvatarAction(CLUB_ID, previous),
         ]);
 
         for (const result of results) {
@@ -139,7 +139,7 @@ describe('Club settings actions', () => {
         );
 
         await expect(
-            clubLifecycleAction(clubId, 'reactivate', previous, formData({})),
+            clubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
         ).resolves.toMatchObject({
             message: expect.stringContaining('most active Clubs your plan allows'),
             status: 'error',
@@ -148,13 +148,13 @@ describe('Club settings actions', () => {
 
     it('should leave the settings page after deleting the Club', async () => {
         await clubLifecycleAction(
-            clubId,
+            CLUB_ID,
             'delete',
             previous,
             formData({ confirmation: 'Midnight Society' }),
         );
 
-        expect(api.changeClubLifecycle).toHaveBeenCalledWith(clubId, 'delete', 'Midnight Society');
+        expect(api.changeClubLifecycle).toHaveBeenCalledWith(CLUB_ID, 'delete', 'Midnight Society');
         expect(navigation.redirect).toHaveBeenCalledWith('/app');
     });
 });
