@@ -20,7 +20,7 @@ export async function lockSessionForMember(
     const initial = await tx.session.findUnique({ where: { id }, select: { clubId: true } });
     if (!initial) throw new NotFoundException();
     await lockClub(tx, initial.clubId);
-    const member = await findMembership(tx, userId, initial.clubId);
+    const membership = await findMembership(tx, userId, initial.clubId);
     await lockSession(tx, id);
-    return { session: await tx.session.findUniqueOrThrow({ where: { id } }), member };
+    return { session: await tx.session.findUniqueOrThrow({ where: { id } }), membership };
 }

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
     BLOCKING_SESSION_PHASES,
+    isOpenSessionPhase,
     type TCancelSession,
     type TCreateSession,
     type TSession,
@@ -14,7 +15,7 @@ import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
 import { NominationsService } from './nominations/nominations.service.js';
-import { assertManager, canManage } from './session-access.js';
+import { assertManager, assertOpen, canManage } from './session-access.js';
 import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
 
@@ -31,15 +32,15 @@ export class SessionsService {
                 const session = await transaction.session.findUnique({ where: { id } });
                 if (!session) throw new NotFoundException();
                 const membership = await findMembership(transaction, userId, session.clubId);
-                const isAllowed = await canManage(transaction, membership);
+                const canManageSession = await canManage(transaction, membership);
                 return {
-                    ...project(session, membership.club.name, isAllowed),
+                    ...toSession(session, membership.club.name, canManageSession),
                     nominations:
                         session.phase === 'NOMINATION'
                             ? await this.nominations.loadNominations(transaction, session, {
                                   userId,
-                                  member: membership,
-                                  canManage: isAllowed,
+                                  membership,
+                                  canManage: canManageSession,
                               })
                             : null,
                 };
@@ -109,8 +110,7 @@ export class SessionsService {
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {
         await this.prisma.$transaction(async (transaction) => {
             const { session, membership } = await loadWritableSession(transaction, userId, id);
-            if (['COMPLETED', 'CANCELLED'].includes(session.phase))
-                throw new ConflictException({ reason: 'SESSION_CLOSED' });
+            assertOpen(session.phase);
             const data = {
                 scheduledAt: new Date(input.scheduledAt),
                 location: input.location,
@@ -187,9 +187,9 @@ async function loadWritableSession(
     userId: string,
     id: string,
 ) {
-    const { session, member } = await lockSessionForMember(transaction, userId, id);
-    await assertManager(transaction, member);
-    return { session, membership: member };
+    const { session, membership } = await lockSessionForMember(transaction, userId, id);
+    await assertManager(transaction, membership);
+    return { session, membership };
 }
 
 function validateDeadline(value: string | null) {
@@ -197,12 +197,12 @@ function validateDeadline(value: string | null) {
         throw new ConflictException({ reason: 'DEADLINE_PAST' });
 }
 
-function project(
+function toSession(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
-    isAllowed: boolean,
+    canManageSession: boolean,
 ): Omit<TSession, 'nominations'> {
-    const isOpen = !['COMPLETED', 'CANCELLED'].includes(session.phase);
+    const isOpen = isOpenSessionPhase(session.phase);
     return {
         id: session.id,
         clubId: session.clubId,
@@ -218,8 +218,8 @@ function project(
         version: session.detailsVersion,
         phaseVersion: session.phaseVersion,
         progressVersion: session.progressVersion,
-        canEdit: isAllowed && isOpen,
-        canCancel: isAllowed && isOpen,
+        canEdit: canManageSession && isOpen,
+        canCancel: canManageSession && isOpen,
     };
 }
 

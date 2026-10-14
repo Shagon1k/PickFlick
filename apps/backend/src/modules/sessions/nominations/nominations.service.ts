@@ -28,11 +28,11 @@ export class NominationsService {
         session: Prisma.SessionGetPayload<object>,
         viewer: {
             userId: string;
-            member: Awaited<ReturnType<typeof findMembership>>;
+            membership: Awaited<ReturnType<typeof findMembership>>;
             canManage: boolean;
         },
     ): Promise<TNominations> {
-        const { member } = viewer;
+        const { membership } = viewer;
         const id = session.id;
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: id, status: 'ACCEPTED' },
@@ -42,7 +42,7 @@ export class NominationsService {
                 membership: { select: { user: { select: { displayName: true } } } },
             },
         });
-        const own = participants.find((participant) => participant.membershipId === member.id);
+        const own = participants.find((participant) => participant.membershipId === membership.id);
         const rows = participants
             .flatMap((participant) =>
                 participant.nomination
@@ -59,7 +59,8 @@ export class NominationsService {
                     a.submittedAt.getTime() - b.submittedAt.getTime() || a.id.localeCompare(b.id),
             );
         const isHidden = !session.showNominationsBeforeSubmit && !own?.nomination;
-        const canSubmit = member.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
+        const canSubmit =
+            membership.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
         const suggestionIds = canSubmit
             ? await findPastLosingNominations(tx, viewer.userId, session)
             : [];
@@ -90,13 +91,13 @@ export class NominationsService {
 
     async submit(userId: string, id: string, input: TSubmitNomination): Promise<void> {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await lockSessionForMember(tx, userId, id);
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'NOMINATION')
                 throw new ConflictException({ reason: 'NOMINATION_CLOSED' });
-            if (member.club.lifecycle !== 'ACTIVE')
+            if (membership.club.lifecycle !== 'ACTIVE')
                 throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
             const participant = await tx.sessionParticipant.findUnique({
-                where: { sessionId_membershipId: { sessionId: id, membershipId: member.id } },
+                where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { nomination: true },
             });
             if (participant?.status !== 'ACCEPTED') throw new ForbiddenException();
@@ -113,8 +114,8 @@ export class NominationsService {
 
     async close(userId: string, id: string, input: TCloseNomination): Promise<void> {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await lockSessionForMember(tx, userId, id);
-            await assertManager(tx, member);
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
+            await assertManager(tx, membership);
             if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'NOMINATION_CHANGED' });
             const nominations = await tx.nomination.findMany({
@@ -127,7 +128,7 @@ export class NominationsService {
                 sessionId: id,
                 actorUserId: userId,
                 subjectUserId: userId,
-                subjectMembershipId: member.id,
+                subjectMembershipId: membership.id,
                 action: 'SESSION_NOMINATION_CLOSED',
             });
             await advanceNomination(tx, session, nominations);

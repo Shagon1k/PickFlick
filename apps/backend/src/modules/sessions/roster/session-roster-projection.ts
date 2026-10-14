@@ -13,10 +13,10 @@ export async function readRoster(
 ): Promise<ISessionRoster> {
     const session = await tx.session.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException();
-    const member = await findMembership(tx, userId, session.clubId);
+    const membership = await findMembership(tx, userId, session.clubId);
     const isOpen = isOpenSessionPhase(session.phase);
     // One rule decides every roster control: invite, revoke, and remove.
-    const isManager = isOpen && (await canManage(tx, member));
+    const isManager = isOpen && (await canManage(tx, membership));
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },
@@ -35,14 +35,14 @@ export async function readRoster(
             isOpen &&
             participants.some(
                 (participant) =>
-                    participant.membershipId === member.id && participant.status === 'ACCEPTED',
+                    participant.membershipId === membership.id && participant.status === 'ACCEPTED',
             ),
         participants: participants
             .filter(
                 (participant) =>
                     isManager ||
                     participant.status === 'ACCEPTED' ||
-                    participant.membershipId === member.id,
+                    participant.membershipId === membership.id,
             )
             .map((participant) => ({
                 id: participant.id,
@@ -51,7 +51,7 @@ export async function readRoster(
                 status: participant.status,
                 canRemove:
                     isManager &&
-                    participant.membershipId !== member.id &&
+                    participant.membershipId !== membership.id &&
                     ['INVITED', 'ACCEPTED'].includes(participant.status),
                 invitation:
                     isManager && participant.invitations[0]

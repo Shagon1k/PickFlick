@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { loadRuntimeEnvironment } from '@pickflick/config/environment';
-import type { TMovieSearchResults } from '@pickflick/contracts';
+import { movieSearchSchema, type TMovieSearchResults } from '@pickflick/contracts';
 import {
     assertSafeSeedOrResetTarget,
     createDatabaseClient,
@@ -10,7 +10,7 @@ import {
 import { testUtils } from 'better-auth/plugins';
 
 import { createAuth } from '../modules/auth/auth.config.js';
-import { buildCatalogCacheKey } from '../modules/movies/catalog-cache-key.js';
+import { buildSearchCacheKey } from '../modules/movies/catalog-cache-key.js';
 
 interface IBrowserCookie {
     name: string;
@@ -47,6 +47,7 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
     assertSafeSeedOrResetTarget(environment);
     const prisma = createDatabaseClient(environment.databaseUrl);
     const auth = createAuth(environment, prisma, [testUtils()]);
+    // Better Auth adds the test plugin's helpers to the context without typing them.
     const context = (await auth.$context) as unknown as {
         test: {
             getCookies(input: { userId: string; domain: string }): Promise<IBrowserCookie[]>;
@@ -58,7 +59,10 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
         seedMovieSearch: (query, movies) =>
             seedMovieSearch(
                 prisma,
-                buildCatalogCacheKey(environment.catalog.provider, 'en-US', query, 1),
+                buildSearchCacheKey(
+                    environment.catalog.provider,
+                    movieSearchSchema.parse({ query }),
+                ),
                 movies,
             ),
         close: () => prisma.$disconnect(),

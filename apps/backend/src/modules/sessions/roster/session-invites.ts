@@ -1,9 +1,6 @@
 import { isOpenSessionPhase, type TSessionInvitationPreview } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
-import { completeNomination } from '../nominations/nomination-completion.js';
-
 export const inviteInclude = {
     participant: {
         include: { session: true, membership: { include: { user: true, club: true } } },
@@ -54,12 +51,4 @@ export async function revokePendingInvites(tx: Prisma.TransactionClient, partici
         where: { participantId, respondedAt: null, revokedAt: null },
         data: { revokedAt: new Date() },
     });
-}
-/** Records a roster event, then re-checks whether Nomination is complete. */
-export async function recordRosterChange(
-    tx: Prisma.TransactionClient,
-    event: TAuditEvent & { sessionId: string },
-) {
-    await recordAudit(tx, event);
-    await completeNomination(tx, event.sessionId);
 }

@@ -13,7 +13,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
-import { buildCatalogCacheKey } from './catalog-cache-key.js';
+import { buildDetailsCacheKey, buildSearchCacheKey } from './catalog-cache-key.js';
 import { MoviesRepository } from './movies.repository.js';
 import {
     canUseStale,
@@ -78,7 +78,7 @@ export class MoviesService {
         shouldAllowStale = false,
     ): Promise<TMovieResult<TMovieSearchResults>> {
         const parsed = movieSearchSchema.parse(input);
-        const key = this.buildCacheKey(parsed.locale, parsed.query, parsed.page);
+        const key = buildSearchCacheKey(this.environment.catalog.provider, parsed);
         const cached = await this.repository.findCachedSearch(key);
         if (cached && this.isFresh(cached)) return toCachedResult(cached);
         const fetchedAt = new Date();
@@ -111,7 +111,7 @@ export class MoviesService {
     ): Promise<TMovieResult<TMovieDetails>> {
         movieIdSchema.parse(movieId);
         const locale = this.environment.catalog.locale;
-        const key = this.buildCacheKey(locale);
+        const key = buildDetailsCacheKey(this.environment.catalog.provider, locale);
         const cached = await this.repository.findCachedDetails(movieId, key);
         if (!options.forceRefresh && cached && this.isFresh(cached)) return toCachedResult(cached);
         const lookup = await this.repository.findExternalIds(movieId);
@@ -160,9 +160,5 @@ export class MoviesService {
     private isYoungerThan(cached: { fetchedAt: Date }, hours: number): boolean {
         const age = Date.now() - cached.fetchedAt.getTime();
         return age >= 0 && age < hours * HOUR_MS;
-    }
-
-    private buildCacheKey(...values: unknown[]): string {
-        return buildCatalogCacheKey(this.environment.catalog.provider, ...values);
     }
 }

@@ -5,18 +5,15 @@ import type {
     ISessionRoster,
     TSessionInvitationPreview,
 } from '@pickflick/contracts';
+import type { Prisma } from '@pickflick/database';
 
 import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { lockClub } from '../../clubs/access/club-access.js';
+import { lockClub, recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
+import { completeNomination } from '../nominations/nomination-completion.js';
 import { assertManager, assertOpen } from '../session-access.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
-import {
-    inviteInclude,
-    recordRosterChange,
-    revokePendingInvites,
-    toInvitationPreview,
-} from './session-invites.js';
+import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
 import { readRoster } from './session-roster-projection.js';
 
 @Injectable()
@@ -35,9 +32,9 @@ export class SessionRosterService {
         membershipId: string,
     ): Promise<ICreatedInvitation> {
         return this.prisma.$transaction(async (tx) => {
-            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
+            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
-            await assertManager(tx, member);
+            await assertManager(tx, membership);
             const target = await tx.membership.findFirst({
                 where: {
                     id: membershipId,
@@ -64,7 +61,7 @@ export class SessionRosterService {
                     tokenDigest,
                     participantId: participant.id,
                     clubId: session.clubId,
-                    inviterMembershipId: member.id,
+                    inviterMembershipId: membership.id,
                     expiresAt,
                 },
             });
@@ -82,9 +79,9 @@ export class SessionRosterService {
 
     async revoke(userId: string, sessionId: string, inviteId: string) {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
+            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
-            await assertManager(tx, member);
+            await assertManager(tx, membership);
             const invite = await tx.sessionInvite.findFirst({
                 where: { id: inviteId, participant: { sessionId } },
                 include: inviteInclude,
@@ -112,18 +109,18 @@ export class SessionRosterService {
         input: { confirmation: 'LEAVE' } | { confirmation: 'REMOVE'; participantId: string },
     ) {
         await this.prisma.$transaction(async (tx) => {
-            const { session, member } = await lockSessionForMember(tx, userId, sessionId);
+            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             const isRemoving = input.confirmation === 'REMOVE';
-            if (isRemoving) await assertManager(tx, member);
+            if (isRemoving) await assertManager(tx, membership);
             const participant = await tx.sessionParticipant.findFirst({
                 where: isRemoving
                     ? { id: input.participantId, sessionId }
-                    : { membershipId: member.id, sessionId },
+                    : { membershipId: membership.id, sessionId },
                 include: { membership: true },
             });
             if (!participant) throw new NotFoundException();
-            if (isRemoving && participant.membershipId === member.id)
+            if (isRemoving && participant.membershipId === membership.id)
                 throw new ConflictException({ reason: 'USE_LEAVE' });
             const status = isRemoving ? 'REMOVED' : 'LEFT';
             if (participant.status === status) return;
@@ -240,4 +237,13 @@ export class SessionRosterService {
                 : { state: 'declined' };
         });
     }
+}
+
+/** Records a roster event, then re-checks whether Nomination is complete. */
+async function recordRosterChange(
+    tx: Prisma.TransactionClient,
+    event: TAuditEvent & { sessionId: string },
+) {
+    await recordAudit(tx, event);
+    await completeNomination(tx, event.sessionId);
 }

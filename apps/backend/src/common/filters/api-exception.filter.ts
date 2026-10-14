@@ -5,32 +5,34 @@ import {
     Catch,
     type ExceptionFilter,
     HttpException,
-    HttpStatus,
     Logger,
 } from '@nestjs/common';
 import { HTTP_STATUS, type IApiErrorEnvelope, type TApiErrorCode } from '@pickflick/contracts';
 import type { Request, Response } from 'express';
 
 const errors: Partial<Record<number, { code: TApiErrorCode; message: string }>> = {
-    [HttpStatus.BAD_REQUEST]: { code: 'VALIDATION_FAILED', message: 'Request validation failed.' },
-    [HttpStatus.UNAUTHORIZED]: { code: 'UNAUTHORIZED', message: 'Authentication is required.' },
-    [HttpStatus.FORBIDDEN]: { code: 'FORBIDDEN', message: 'This action is not allowed.' },
-    [HttpStatus.NOT_FOUND]: { code: 'NOT_FOUND', message: 'Resource not found.' },
-    [HttpStatus.METHOD_NOT_ALLOWED]: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed.' },
-    [HttpStatus.CONFLICT]: {
+    [HTTP_STATUS.BAD_REQUEST]: { code: 'VALIDATION_FAILED', message: 'Request validation failed.' },
+    [HTTP_STATUS.UNAUTHORIZED]: { code: 'UNAUTHORIZED', message: 'Authentication is required.' },
+    [HTTP_STATUS.FORBIDDEN]: { code: 'FORBIDDEN', message: 'This action is not allowed.' },
+    [HTTP_STATUS.NOT_FOUND]: { code: 'NOT_FOUND', message: 'Resource not found.' },
+    [HTTP_STATUS.METHOD_NOT_ALLOWED]: {
+        code: 'METHOD_NOT_ALLOWED',
+        message: 'Method not allowed.',
+    },
+    [HTTP_STATUS.CONFLICT]: {
         code: 'CONFLICT',
         message: 'The request conflicts with current state.',
     },
-    [HttpStatus.PAYLOAD_TOO_LARGE]: {
+    [HTTP_STATUS.PAYLOAD_TOO_LARGE]: {
         code: 'PAYLOAD_TOO_LARGE',
         message: 'Request payload is too large.',
     },
-    [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: {
+    [HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE]: {
         code: 'UNSUPPORTED_MEDIA_TYPE',
         message: 'Request media type is not supported.',
     },
-    [HttpStatus.TOO_MANY_REQUESTS]: { code: 'RATE_LIMITED', message: 'Too many requests.' },
-    [HttpStatus.SERVICE_UNAVAILABLE]: {
+    [HTTP_STATUS.TOO_MANY_REQUESTS]: { code: 'RATE_LIMITED', message: 'Too many requests.' },
+    [HTTP_STATUS.SERVICE_UNAVAILABLE]: {
         code: 'SERVICE_UNAVAILABLE',
         message: 'The service is temporarily unavailable.',
     },

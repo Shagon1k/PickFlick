@@ -22,9 +22,9 @@ export function assertOpen(phase: string) {
  */
 export async function assertManager(
     transaction: Prisma.TransactionClient,
-    member: Awaited<ReturnType<typeof findMembership>>,
+    membership: Awaited<ReturnType<typeof findMembership>>,
 ) {
-    if (member.role === 'MEMBER') throw new ForbiddenException();
-    if (!(await canManage(transaction, member)))
+    if (membership.role === 'MEMBER') throw new ForbiddenException();
+    if (!(await canManage(transaction, membership)))
         throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
 }
