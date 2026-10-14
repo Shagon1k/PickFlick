@@ -33,7 +33,9 @@ const HOUR_MS = 3_600_000;
 function cachedResult<TData extends TMovieDetails | TMovieSearchResults>(
     cached: ICached<TData>,
 ): TMovieResult<TData> {
-    const isPartial = 'provenance' in cached.data && cached.data.provenance.some((p) => p.reason);
+    const isPartial =
+        'provenance' in cached.data &&
+        cached.data.provenance.some((participant) => participant.reason);
     return {
         state: isPartial ? 'partial' : 'fresh',
         data: cached.data,

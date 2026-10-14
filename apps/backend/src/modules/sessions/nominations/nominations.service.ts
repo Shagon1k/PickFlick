@@ -40,14 +40,14 @@ export class NominationsService {
                 membership: { select: { user: { select: { displayName: true } } } },
             },
         });
-        const own = participants.find((p) => p.membershipId === member.id);
+        const own = participants.find((participant) => participant.membershipId === member.id);
         const rows = participants
-            .flatMap((p) =>
-                p.nomination
+            .flatMap((participant) =>
+                participant.nomination
                     ? [
                           {
-                              ...p.nomination,
-                              author: p.membership.user.displayName,
+                              ...participant.nomination,
+                              author: participant.membership.user.displayName,
                           },
                       ]
                     : [],

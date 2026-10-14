@@ -87,7 +87,7 @@ describe('Session progress', () => {
         });
     it('should serialize concurrent final submissions and publish one automatic decision with repeated Movies', async () => {
         const results = await Promise.all([submit(), submit(users[1])]);
-        expect(results.map((r) => r.status)).toEqual([201, 201]);
+        expect(results.map((result) => result.status)).toEqual([201, 201]);
         expect(await state()).toMatchObject({
             phase: 'SELECTION',
             movieId: null,
@@ -258,7 +258,7 @@ describe('Session progress', () => {
             where: { sessionId_version: { sessionId, version: 3 } },
         });
         expect((await submit(users[1])).status).toBe(201);
-        expect((await events()).filter((e) => e.kind === 'AUTOMATIC')).toHaveLength(1);
+        expect((await events()).filter((event) => event.kind === 'AUTOMATIC')).toHaveLength(1);
     });
     it('should serialize deadline execution against the final submission without a second transition', async () => {
         const deadlineAt = new Date(Date.now() + 60000);
@@ -271,7 +271,7 @@ describe('Session progress', () => {
         ]);
         expect(await state()).toMatchObject({ phaseVersion: 2, deadlineAt: null });
         expect(
-            (await events()).filter((e) => ['AUTOMATIC', 'DEADLINE'].includes(e.kind)),
+            (await events()).filter((event) => ['AUTOMATIC', 'DEADLINE'].includes(event.kind)),
         ).toHaveLength(1);
         expect(await worker.execute(sessionId, new Date(deadlineAt.getTime() + 2))).toBe('STALE');
     });

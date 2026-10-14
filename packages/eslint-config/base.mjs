@@ -97,6 +97,12 @@ export default [
             'sonarjs/cognitive-complexity': ['error', 12],
             // Past four arguments, pass one object so call sites name what they send.
             'max-params': ['error', 4],
+            // Name callback parameters after the item (`members.map((member) => ...)`); `a` and `b`
+            // stay for sort comparators, `i` for a loop counter, `_` for an unused position.
+            'id-length': [
+                'error',
+                { min: 2, exceptions: ['_', 'a', 'b', 'i'], properties: 'never' },
+            ],
         },
     },
     {

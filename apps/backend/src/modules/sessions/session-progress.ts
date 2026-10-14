@@ -22,8 +22,8 @@ export async function publishProgress(
             phaseVersion: session.phaseVersion,
             detailsVersion: session.detailsVersion,
             acceptedCount: participants.length,
-            nominatedCount: participants.filter((p) => p.nomination).length,
-            recipientIds: participants.map((p) => p.membershipId),
+            nominatedCount: participants.filter((participant) => participant.nomination).length,
+            recipientIds: participants.map((participant) => participant.membershipId),
         },
     });
 }

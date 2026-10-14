@@ -32,7 +32,9 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
             where: { sessionId, status: 'ACCEPTED' },
             select: { nomination: { select: { movieId: true } } },
         });
-        const nominations = participants.flatMap((p) => (p.nomination ? [p.nomination] : []));
+        const nominations = participants.flatMap((participant) =>
+            participant.nomination ? [participant.nomination] : [],
+        );
         if (nominations.length > 0 && nominations.length === participants.length) {
             await advanceNomination(tx, session, nominations);
             hasAdvanced = true;

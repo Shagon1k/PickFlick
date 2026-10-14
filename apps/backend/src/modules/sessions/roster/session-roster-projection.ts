@@ -27,29 +27,38 @@ export async function readRoster(
     });
     return {
         progressVersion: session.progressVersion,
-        acceptedCount: participants.filter((p) => p.status === 'ACCEPTED').length,
+        acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
+            .length,
         canInvite: isManager,
         canManage: isManager,
         canLeave:
             isOpen &&
-            participants.some((p) => p.membershipId === member.id && p.status === 'ACCEPTED'),
+            participants.some(
+                (participant) =>
+                    participant.membershipId === member.id && participant.status === 'ACCEPTED',
+            ),
         participants: participants
-            .filter((p) => isManager || p.status === 'ACCEPTED' || p.membershipId === member.id)
-            .map((p) => ({
-                id: p.id,
-                membershipId: p.membershipId,
-                displayName: p.membership.user.displayName,
-                status: p.status,
+            .filter(
+                (participant) =>
+                    isManager ||
+                    participant.status === 'ACCEPTED' ||
+                    participant.membershipId === member.id,
+            )
+            .map((participant) => ({
+                id: participant.id,
+                membershipId: participant.membershipId,
+                displayName: participant.membership.user.displayName,
+                status: participant.status,
                 canRemove:
                     isManager &&
-                    p.membershipId !== member.id &&
-                    ['INVITED', 'ACCEPTED'].includes(p.status),
+                    participant.membershipId !== member.id &&
+                    ['INVITED', 'ACCEPTED'].includes(participant.status),
                 invitation:
-                    isManager && p.invitations[0]
+                    isManager && participant.invitations[0]
                         ? {
-                              id: p.invitations[0].id,
-                              expiresAt: p.invitations[0].expiresAt.toISOString(),
-                              state: inviteState(p.invitations[0]),
+                              id: participant.invitations[0].id,
+                              expiresAt: participant.invitations[0].expiresAt.toISOString(),
+                              state: inviteState(participant.invitations[0]),
                           }
                         : null,
             })),
@@ -67,7 +76,10 @@ export async function readRoster(
                       orderBy: { joinedAt: 'asc' },
                       include: { user: true },
                   })
-              ).map((m) => ({ id: m.id, displayName: m.user.displayName }))
+              ).map((membership) => ({
+                  id: membership.id,
+                  displayName: membership.user.displayName,
+              }))
             : [],
     };
 }

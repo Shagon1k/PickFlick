@@ -43,8 +43,8 @@ describe('Nominations', () => {
         clubId = randomUUID();
         sessionId = randomUUID();
         await api.prisma.club.create({ data: { id: clubId, name: 'Nomination Club' } });
-        const a = await addMember(api.prisma, clubId, admin, 'ADMIN');
-        const m = await addMember(api.prisma, clubId, member);
+        const adminMembershipId = await addMember(api.prisma, clubId, admin, 'ADMIN');
+        const memberMembershipId = await addMember(api.prisma, clubId, member);
         await createSession(api.prisma, clubId, {
             id: sessionId,
             type: 'FULL_CYCLE',
@@ -52,12 +52,12 @@ describe('Nominations', () => {
         });
         adminParticipant = (
             await api.prisma.sessionParticipant.create({
-                data: { sessionId, clubId, membershipId: a, status: 'ACCEPTED' },
+                data: { sessionId, clubId, membershipId: adminMembershipId, status: 'ACCEPTED' },
             })
         ).id;
         memberParticipant = (
             await api.prisma.sessionParticipant.create({
-                data: { sessionId, clubId, membershipId: m, status: 'ACCEPTED' },
+                data: { sessionId, clubId, membershipId: memberMembershipId, status: 'ACCEPTED' },
             })
         ).id;
     });
@@ -112,7 +112,9 @@ describe('Nominations', () => {
     });
     it('should serialize submissions and enforce database uniqueness without service locks', async () => {
         const responses = await Promise.all([submit(), submit(member, movies[1])]);
-        expect(responses.map((r) => r.status).toSorted((a, b) => a - b)).toEqual([201, 409]);
+        expect(responses.map((response) => response.status).toSorted((a, b) => a - b)).toEqual([
+            201, 409,
+        ]);
         expect(
             await api.prisma.nomination.count({ where: { participantId: memberParticipant } }),
         ).toBe(1);
@@ -292,7 +294,9 @@ describe('Nominations', () => {
             close(admin, detail.phaseVersion),
             close(admin, detail.phaseVersion),
         ]);
-        expect(results.map((r) => r.status).toSorted((a, b) => a - b)).toEqual([201, 409]);
+        expect(results.map((result) => result.status).toSorted((a, b) => a - b)).toEqual([
+            201, 409,
+        ]);
         expect(await api.prisma.session.findUnique({ where: { id: sessionId } })).toMatchObject({
             phase: 'WATCHING',
             movieId: movies[0],
