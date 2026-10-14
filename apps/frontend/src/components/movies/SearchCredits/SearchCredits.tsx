@@ -1,10 +1,9 @@
 import type { TMovieSummary } from '@pickflick/contracts';
 import Image, { type StaticImageData } from 'next/image';
 
-import styles from '@/components/shells/product-navigation.module.scss';
-
 // Next.js declares SVG imports as any; the static image loader returns StaticImageData.
 import tmdbLogo from './assets/tmdb.svg';
+import styles from './SearchCredits.module.scss';
 
 const PROVIDER_LOGO_WIDTH = 90;
 const PROVIDER_LOGO_HEIGHT = 12;
@@ -20,7 +19,7 @@ export default function SearchCredits({
         movies.flatMap((movie) => movie.provenance.map(({ source }) => source)),
     );
     return (
-        <aside aria-label={label} className={styles.searchCredits}>
+        <aside aria-label={label} className={styles.credits}>
             {sources.has('poiskkino') ? (
                 <p>
                     Film data from <a href="https://poiskkino.dev/">PoiskKino</a>.

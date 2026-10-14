@@ -5,8 +5,8 @@ import { Suspense } from 'react';
 
 import { getMovieDetails } from '@/api/movies.server';
 import { buildLoginPath, getSessionState } from '@/api/session.server';
+import SearchCredits from '@/components/movies/SearchCredits/SearchCredits';
 import ProductFrame from '@/components/shells/ProductFrame/ProductFrame';
-import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
 import Alert from '@/components/ui/Alert/Alert';
 import ButtonLink from '@/components/ui/Button/ButtonLink';
 import { ApiError } from '@/lib/api.server';

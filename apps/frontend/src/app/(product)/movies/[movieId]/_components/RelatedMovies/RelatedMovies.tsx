@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { getMovieDetails } from '@/api/movies.server';
-import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
+import SearchCredits from '@/components/movies/SearchCredits/SearchCredits';
 
 import styles from '../../page.module.scss';
 import MoviePoster from '../MoviePoster/MoviePoster';

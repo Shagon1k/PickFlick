@@ -8,8 +8,8 @@ import {
     getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
-} from '@/components/shells/ProductSearch/movie-search';
-import SearchCredits from '@/components/shells/ProductSearch/SearchCredits';
+} from '@/components/movies/movie-search';
+import SearchCredits from '@/components/movies/SearchCredits/SearchCredits';
 import Button from '@/components/ui/Button/Button';
 import TextInput from '@/components/ui/TextInput/TextInput';
 
