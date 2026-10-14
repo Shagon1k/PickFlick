@@ -28,8 +28,8 @@ export default function Nomination({
     const [selected, setSelected] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
-    const [dialog, setDialog] = useState(false);
-    const [pending, startTransition] = useTransition();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isPending, startTransition] = useTransition();
     function run(action: 'submit' | 'refresh' | 'close', confirmation = '') {
         if (!navigator.onLine) {
             setMessage(
@@ -56,7 +56,7 @@ export default function Nomination({
                 return;
             }
             setMessage(result.message);
-            if (action === 'close') setDialog(false);
+            if (action === 'close') setIsDialogOpen(false);
             if (action === 'submit') headingRef.current?.focus();
         });
     }
@@ -71,7 +71,7 @@ export default function Nomination({
                     value={data.nominatedCount}
                     max={Math.max(data.acceptedCount, 1)}
                 />
-                <Button variant="ghost" disabled={pending} onClick={() => run('refresh')}>
+                <Button variant="ghost" disabled={isPending} onClick={() => run('refresh')}>
                     Refresh nominations
                 </Button>
             </div>
@@ -86,7 +86,7 @@ export default function Nomination({
                                 <div className={styles.selected}>
                                     <p>Selected: {movieLabel(suggestion)}</p>
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="ghost"
                                         onClick={() => {
                                             setSuggestion(null);
@@ -98,14 +98,14 @@ export default function Nomination({
                                 </div>
                             ) : (
                                 <MoviePicker
-                                    disabled={pending}
+                                    disabled={isPending}
                                     value={selected}
                                     onChange={setSelected}
                                 />
                             )}
                             <Button
                                 disabled={!selected}
-                                loading={pending}
+                                loading={isPending}
                                 onClick={() => run('submit')}
                             >
                                 Nominate This
@@ -120,7 +120,7 @@ export default function Nomination({
                                         <li key={movie.id}>
                                             <button
                                                 type="button"
-                                                disabled={pending}
+                                                disabled={isPending}
                                                 onClick={() => {
                                                     setSelected(movie.id);
                                                     setSuggestion(movie);
@@ -151,8 +151,8 @@ export default function Nomination({
                     {data.canClose ? (
                         <Button
                             variant="secondary"
-                            disabled={pending}
-                            onClick={() => setDialog(true)}
+                            disabled={isPending}
+                            onClick={() => setIsDialogOpen(true)}
                         >
                             Close nominations early
                         </Button>
@@ -166,10 +166,10 @@ export default function Nomination({
                 cancelLabel="Keep nominations open"
                 confirmLabel="Confirm close"
                 inputId="close-nomination-confirmation"
-                onClose={() => setDialog(false)}
+                onClose={() => setIsDialogOpen(false)}
                 onConfirm={(confirmation) => run('close', confirmation)}
-                open={dialog}
-                pending={pending}
+                open={isDialogOpen}
+                pending={isPending}
                 status={<p role="status">{message}</p>}
                 title="Close nominations early"
                 tone="neutral"

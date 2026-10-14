@@ -40,10 +40,10 @@ export default async function CreateSessionPage({
             </main>
         );
     }
-    const blocked = isBlockingSessionPhase(hub.activeSession?.phase);
+    const isBlocked = isBlockingSessionPhase(hub.activeSession?.phase);
     let restriction: 'blocking' | 'permission' | undefined;
     if (!hub.permissions.manageSessions) restriction = 'permission';
-    else if (blocked) restriction = 'blocking';
+    else if (isBlocked) restriction = 'blocking';
     return (
         <main className={styles.main}>
             <Link className={styles.back} href={`/clubs/${clubId}`}>

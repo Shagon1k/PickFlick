@@ -201,12 +201,12 @@ describe('Nominations', () => {
             movieId: string,
             winner: string | null,
             phase: 'COMPLETED' | 'CANCELLED' = 'COMPLETED',
-            otherClub = false,
-            earlier = true,
+            isOtherClub = false,
+            isEarlier = true,
         ) {
             let historyClub = clubId;
             let membershipId = owner;
-            if (otherClub) {
+            if (isOtherClub) {
                 historyClub = randomUUID();
                 await api.prisma.club.create({ data: { id: historyClub, name: 'Other Club' } });
                 membershipId = (
@@ -227,7 +227,7 @@ describe('Nominations', () => {
                     type: 'FULL_CYCLE',
                     phase,
                     movieId: winner,
-                    createdAt: new Date(earlier ? '2020-01-01' : '2090-01-01'),
+                    createdAt: new Date(isEarlier ? '2020-01-01' : '2090-01-01'),
                     ...settings,
                 },
             });

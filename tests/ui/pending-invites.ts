@@ -18,14 +18,14 @@ export function handlePendingInvitation(
     token: string | undefined,
     accept: (token: string) => void,
 ): boolean {
-    const list = pathname === '/club-invitations/pending';
-    const respond = /^\/club-invitations\/[^/]+\/respond$/u.test(pathname);
-    if (!list && !respond) return false;
+    const isPendingListRequest = pathname === '/club-invitations/pending';
+    const isRespondRequest = /^\/club-invitations\/[^/]+\/respond$/u.test(pathname);
+    if (!isPendingListRequest && !isRespondRequest) return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'pending-auth');
         return true;
     }
-    if (list) {
+    if (isPendingListRequest) {
         if (token.includes('pending-error')) {
             sendError(response, 503, 'SERVICE_UNAVAILABLE', 'pending-error');
             return true;

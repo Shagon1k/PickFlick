@@ -34,12 +34,12 @@ export default function Select({
     const inputRef = useRef<HTMLInputElement>(null);
     // Mantine's combobox is not a native control, so a hidden required input carries the
     // browser's form constraint and reports a failed submit back to the visible field.
-    const [constraintFailed, setConstraintFailed] = useState(false);
-    const constrained = Boolean(required) && !readOnly;
-    if (constraintFailed && (!constrained || disabled || value)) {
-        setConstraintFailed(false);
+    const [hasConstraintFailed, setHasConstraintFailed] = useState(false);
+    const isConstrained = Boolean(required) && !readOnly;
+    if (hasConstraintFailed && (!isConstrained || disabled || value)) {
+        setHasConstraintFailed(false);
     }
-    const invalid = Boolean(error) || constraintFailed;
+    const isInvalid = Boolean(error) || hasConstraintFailed;
 
     return (
         <MantineSelect
@@ -56,18 +56,18 @@ export default function Select({
                 wrapper: styles.select__wrapper,
             }}
             comboboxProps={{ transitionProps: { duration: 150 } }}
-            data-state={invalid ? 'error' : fieldState(error, success)}
+            data-state={isInvalid ? 'error' : fieldState(error, success)}
             description={<FieldMessage error={error} hint={hint} success={success} />}
             disabled={disabled}
-            error={invalid}
+            error={isInvalid}
             hiddenInputProps={
-                constrained
+                isConstrained
                     ? {
                           'aria-hidden': true,
                           className: 'visually-hidden',
                           onInvalid: (event) => {
                               event.preventDefault();
-                              setConstraintFailed(true);
+                              setHasConstraintFailed(true);
                               inputRef.current?.focus();
                           },
                           required: true,
@@ -85,12 +85,12 @@ export default function Select({
             inputWrapperOrder={['label', 'input', 'description']}
             label={<FieldLabel hint={labelHint} label={label} />}
             onChange={(nextValue, option) => {
-                setConstraintFailed(false);
+                setHasConstraintFailed(false);
                 onChange?.(nextValue, option);
             }}
             readOnly={readOnly}
             ref={inputRef}
-            required={constrained}
+            required={isConstrained}
             unstyled
             value={value}
             withAsterisk={false}

@@ -56,12 +56,12 @@ export class NominationsService {
                 (a, b) =>
                     a.submittedAt.getTime() - b.submittedAt.getTime() || a.id.localeCompare(b.id),
             );
-        const hidden = !session.showNominationsBeforeSubmit && !own?.nomination;
+        const isHidden = !session.showNominationsBeforeSubmit && !own?.nomination;
         const canSubmit = member.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
         const suggestionIds = canSubmit
             ? await pastLosingNominations(tx, viewer.userId, session)
             : [];
-        const visible = hidden ? [] : rows;
+        const visible = isHidden ? [] : rows;
         const ids = [
             ...new Set([
                 ...visible.map((row) => row.movieId),
@@ -76,7 +76,7 @@ export class NominationsService {
             nominatedCount: rows.length,
             canSubmit,
             canClose: rows.length > 0 && viewer.canManage,
-            hidden,
+            hidden: isHidden,
             ownMovie: own?.nomination ? movie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
                 movie: movie(row.movieId),

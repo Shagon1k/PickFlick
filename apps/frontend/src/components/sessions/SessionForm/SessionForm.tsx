@@ -36,7 +36,7 @@ export default function SessionForm({
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
@@ -94,7 +94,7 @@ export default function SessionForm({
         <form className={styles.form} noValidate onSubmit={submit}>
             <TextInput
                 {...form.getInputProps('date')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-date"
                 label="Date"
                 labelHint="required"
@@ -103,7 +103,7 @@ export default function SessionForm({
             />
             <TextInput
                 {...form.getInputProps('location')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-location"
                 label="Location"
                 labelHint="required"
@@ -113,7 +113,7 @@ export default function SessionForm({
             />
             <TextInput
                 {...form.getInputProps('topic')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-topic"
                 label="Topic"
                 labelHint="optional"
@@ -121,7 +121,7 @@ export default function SessionForm({
             />
             <Textarea
                 {...form.getInputProps('notes')}
-                disabled={pending}
+                disabled={isPending}
                 id="session-notes"
                 label="Notes"
                 labelHint="optional"
@@ -130,7 +130,7 @@ export default function SessionForm({
             />
             {!session ? (
                 <SessionTypeField
-                    disabled={pending}
+                    disabled={isPending}
                     value={form.values.type}
                     onChange={(type) =>
                         form.setValues(
@@ -144,7 +144,7 @@ export default function SessionForm({
             {form.values.type === 'FULL_CYCLE' && (!session || session.phase === 'NOMINATION') ? (
                 <TextInput
                     {...form.getInputProps('duration')}
-                    disabled={pending || form.values.removeDeadline}
+                    disabled={isPending || form.values.removeDeadline}
                     id="session-deadline"
                     label="Nomination phase ends in"
                     labelHint="optional"
@@ -160,20 +160,20 @@ export default function SessionForm({
             {session?.phase === 'NOMINATION' && session.deadlineAt ? (
                 <Switch
                     {...form.getInputProps('removeDeadline', { type: 'checkbox' })}
-                    disabled={pending}
+                    disabled={isPending}
                     label="Remove nomination deadline"
                 />
             ) : null}
             {!session && form.values.type === 'PRE_SELECTED' ? (
                 <MoviePicker
-                    disabled={pending}
+                    disabled={isPending}
                     error={form.errors.movieId}
                     value={form.values.movieId}
                     onChange={(movieId) => form.setFieldValue('movieId', movieId)}
                 />
             ) : null}
             <div className={styles.submit}>
-                <Button fullWidth loading={pending} type="submit">
+                <Button fullWidth loading={isPending} type="submit">
                     {session ? 'Save changes' : 'Create Session'}
                 </Button>
                 <p aria-atomic="true" aria-live="polite" role="status">

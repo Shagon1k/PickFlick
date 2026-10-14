@@ -31,7 +31,7 @@ export default async function LoginPage({
     if (session === 'authenticated') {
         redirect(returnTo);
     }
-    const appleSignInEnabled = isAppleSignInEnabled();
+    const isAppleEnabled = isAppleSignInEnabled();
     // Sign-in stays available during a session-API outage; the notice explains a stale signed-in state.
     const errorMessage =
         resolveLoginErrorMessage(firstSearchValue(parameters.error)) ??
@@ -59,7 +59,7 @@ export default async function LoginPage({
                             {errorMessage}
                         </p>
                     ) : null}
-                    <LoginActions appleSignInEnabled={appleSignInEnabled} returnTo={returnTo} />
+                    <LoginActions appleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}
                         <Link href="/legal/terms">Terms of Service</Link> and{' '}

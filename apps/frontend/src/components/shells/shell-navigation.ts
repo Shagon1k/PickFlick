@@ -100,10 +100,10 @@ function sectionHref(route: string, tab: string): string {
 
 export function accountNavigation(
     routes: IShellRouteMap,
-    admin: boolean,
+    isAdmin: boolean,
 ): readonly TShellMenuItem[] {
     return [
-        ...(admin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
+        ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
         { href: routes.settings, label: 'Settings' },
         { href: routes.privacy, label: 'Privacy & data' },
         signOutItem,
@@ -138,11 +138,11 @@ export function mobileNavigation({
     routes: IShellRouteMap;
     settingsItems?: readonly IShellNavigationItem[] | undefined;
 }): readonly TMobileNavigationEntry[] {
-    const hubArea = currentArea === 'hub' || currentArea === 'session';
-    const currentClubItem = hubArea ? clubItems.find((item) => item.current) : undefined;
+    const isHubArea = currentArea === 'hub' || currentArea === 'session';
+    const currentClubItem = isHubArea ? clubItems.find((item) => item.current) : undefined;
     const hubItems: readonly TShellMenuItem[] =
         clubItems.length > 0
-            ? clubItems.map((item) => ({ ...item, current: hubArea && item.current === true }))
+            ? clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }))
             : [
                   { href: routes.createClub, label: 'Create a Club' },
                   { href: routes.joinClub, label: 'Join a Club' },
@@ -150,7 +150,7 @@ export function mobileNavigation({
 
     return [
         {
-            current: hubArea,
+            current: isHubArea,
             icon: 'hub',
             id: 'hub',
             items: hubItems,

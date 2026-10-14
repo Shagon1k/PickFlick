@@ -33,9 +33,9 @@ const HOUR_MS = 3_600_000;
 function cachedResult<TData extends TMovieDetails | TMovieSearchResults>(
     cached: ICached<TData>,
 ): TMovieResult<TData> {
-    const partial = 'provenance' in cached.data && cached.data.provenance.some((p) => p.reason);
+    const isPartial = 'provenance' in cached.data && cached.data.provenance.some((p) => p.reason);
     return {
-        state: partial ? 'partial' : 'fresh',
+        state: isPartial ? 'partial' : 'fresh',
         data: cached.data,
         fetchedAt: cached.fetchedAt.toISOString(),
     };
@@ -74,7 +74,7 @@ export class MoviesService {
 
     async search(
         input: TMovieSearch,
-        allowStale = false,
+        shouldAllowStale = false,
     ): Promise<TMovieResult<TMovieSearchResults>> {
         const parsed = movieSearchSchema.parse(input);
         const key = this.cacheKey(parsed.locale, parsed.query, parsed.page);
@@ -89,7 +89,7 @@ export class MoviesService {
             );
             return cachedResult({ data, fetchedAt });
         } catch (error) {
-            return this.failure(error, allowStale ? cached : null);
+            return this.failure(error, shouldAllowStale ? cached : null);
         }
     }
 

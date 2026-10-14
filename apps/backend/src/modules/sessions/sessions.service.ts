@@ -31,15 +31,15 @@ export class SessionsService {
                 const session = await transaction.session.findUnique({ where: { id } });
                 if (!session) throw new NotFoundException();
                 const membership = await findMembership(transaction, userId, session.clubId);
-                const allowed = await canManage(transaction, membership);
+                const isAllowed = await canManage(transaction, membership);
                 return {
-                    ...project(session, membership.club.name, allowed),
+                    ...project(session, membership.club.name, isAllowed),
                     nominations:
                         session.phase === 'NOMINATION'
                             ? await this.nominations.project(transaction, session, {
                                   userId,
                                   member: membership,
-                                  canManage: allowed,
+                                  canManage: isAllowed,
                               })
                             : null,
                 };
@@ -121,8 +121,8 @@ export class SessionsService {
             if (matchesDetails(session, input)) return;
             if (session.detailsVersion !== input.version)
                 throw new ConflictException({ reason: 'SESSION_CHANGED' });
-            const deadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
-            if (deadlineChanged) {
+            const hasDeadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
+            if (hasDeadlineChanged) {
                 if (session.phase !== 'NOMINATION' && input.deadlineAt !== null)
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
@@ -132,7 +132,7 @@ export class SessionsService {
                 data: {
                     ...data,
                     detailsVersion: { increment: 1 },
-                    deadlineVersion: deadlineChanged ? { increment: 1 } : undefined,
+                    deadlineVersion: hasDeadlineChanged ? { increment: 1 } : undefined,
                 },
             });
             await audit(transaction, {
@@ -196,9 +196,9 @@ function validateDeadline(value: string | null) {
 function project(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
-    allowed: boolean,
+    isAllowed: boolean,
 ): Omit<TSession, 'nominations'> {
-    const open = !['COMPLETED', 'CANCELLED'].includes(session.phase);
+    const isOpen = !['COMPLETED', 'CANCELLED'].includes(session.phase);
     return {
         id: session.id,
         clubId: session.clubId,
@@ -214,8 +214,8 @@ function project(
         version: session.detailsVersion,
         phaseVersion: session.phaseVersion,
         progressVersion: session.progressVersion,
-        canEdit: allowed && open,
-        canCancel: allowed && open,
+        canEdit: isAllowed && isOpen,
+        canCancel: isAllowed && isOpen,
     };
 }
 

@@ -18,17 +18,17 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const sectionId = label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-');
     const overlay = `section:${sectionId}` as const;
-    const open = activeOverlay === overlay;
+    const isOpen = activeOverlay === overlay;
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    useOverlayDismissal(open, containerRef, closeOverlay);
+    useOverlayDismissal(isOpen, containerRef, closeOverlay);
 
     useEffect(() => {
-        if (open) {
+        if (isOpen) {
             menuRef.current?.querySelector<HTMLAnchorElement>('a')?.focus();
         }
-    }, [open]);
+    }, [isOpen]);
 
     return (
         <>
@@ -49,7 +49,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
             <div className={styles.sectionMobileNavigation} ref={containerRef}>
                 <button
                     aria-controls={`section-${sectionId}-menu`}
-                    aria-expanded={open}
+                    aria-expanded={isOpen}
                     className={styles.sectionMenuTrigger}
                     data-product-overlay-control
                     onClick={(event) => toggleOverlay(overlay, event.currentTarget)}
@@ -58,7 +58,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
                     <span>{label}</span>
                     <strong>{items.find((item) => item.current)?.label ?? items[0]?.label}</strong>
                 </button>
-                {open ? (
+                {isOpen ? (
                     <div
                         className={styles.sectionMobileMenu}
                         id={`section-${sectionId}-menu`}

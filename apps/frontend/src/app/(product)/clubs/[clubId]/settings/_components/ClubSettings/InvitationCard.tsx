@@ -12,12 +12,12 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [invitations, setInvitations] = useState<IManagedInvitation[]>([]);
     const [link, setLink] = useState('');
     const [createdId, setCreatedId] = useState('');
-    const [pending, setPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     const [message, setMessage] = useState('');
-    const allowed = projection.permissions.manageMembers;
+    const isAllowed = projection.permissions.manageMembers;
 
     async function run(kind: 'create' | 'load', inviteId?: string) {
-        setPending(true);
+        setIsPending(true);
         setMessage('Updating invitations…');
         try {
             const result =
@@ -38,13 +38,13 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         } catch {
             setMessage('Invitations could not be updated. Check your connection and try again.');
         } finally {
-            setPending(false);
+            setIsPending(false);
         }
     }
 
     /** Shows the new link once; without a refreshed list, the new link joins the current one. */
-    function showCreated(created: ICreatedInvitation, listed: boolean, refreshError?: string) {
-        if (!listed) {
+    function showCreated(created: ICreatedInvitation, isListed: boolean, refreshError?: string) {
+        if (!isListed) {
             setInvitations((current) => [
                 { id: created.id, expiresAt: created.expiresAt, state: 'pending' },
                 ...current,
@@ -81,7 +81,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                     another invitation.
                 </p>
             ) : null}
-            {!allowed ? (
+            {!isAllowed ? (
                 <p>Invitations require an active Club and an Admin or Moderator.</p>
             ) : (
                 <>
@@ -95,7 +95,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         {projection.permissions.createInvitations ? (
                             <Button
                                 disabled={
-                                    pending ||
+                                    isPending ||
                                     projection.members.length >= projection.entitlements.memberLimit
                                 }
                                 onClick={() => run('create')}
@@ -103,7 +103,11 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                                 Create invitation
                             </Button>
                         ) : null}
-                        <Button disabled={pending} onClick={() => run('load')} variant="secondary">
+                        <Button
+                            disabled={isPending}
+                            onClick={() => run('load')}
+                            variant="secondary"
+                        >
                             Recent invitations
                         </Button>
                     </div>
@@ -111,7 +115,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         <div className={styles.invitationLink}>
                             <label htmlFor="invitation-link">Invitation link</label>
                             <input id="invitation-link" readOnly value={link} />
-                            <Button disabled={pending} onClick={copy} variant="secondary">
+                            <Button disabled={isPending} onClick={copy} variant="secondary">
                                 Copy link
                             </Button>
                         </div>
@@ -124,7 +128,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                                 </span>
                                 {invite.state === 'pending' ? (
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         onClick={() => run('create', invite.id)}
                                         variant="secondary-danger"
                                     >

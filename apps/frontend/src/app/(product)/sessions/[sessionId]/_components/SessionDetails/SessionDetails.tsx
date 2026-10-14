@@ -33,7 +33,7 @@ export default function SessionDetails({
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
     const [message, setMessage] = useState('');
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     return (
         <main className={styles.main}>
             <Link href={`/clubs/${session.clubId}`}>← {session.clubName}</Link>
@@ -135,7 +135,7 @@ export default function SessionDetails({
                     });
                 }}
                 open={dialog === 'cancel'}
-                pending={pending}
+                pending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}

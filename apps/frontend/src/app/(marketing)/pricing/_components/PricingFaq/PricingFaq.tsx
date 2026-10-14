@@ -12,7 +12,7 @@ export default function PricingFaq() {
     return (
         <div className={styles.faqList}>
             {pricingFaqs.map((faq, index) => {
-                const open = index === openIndex;
+                const isOpen = index === openIndex;
                 const buttonId = `${instanceId}-question-${index}`;
                 const panelId = `${instanceId}-answer-${index}`;
 
@@ -21,10 +21,10 @@ export default function PricingFaq() {
                         <h3>
                             <button
                                 aria-controls={panelId}
-                                aria-expanded={open}
+                                aria-expanded={isOpen}
                                 className={styles.faqQuestion}
                                 id={buttonId}
-                                onClick={() => setOpenIndex(open ? -1 : index)}
+                                onClick={() => setOpenIndex(isOpen ? -1 : index)}
                                 type="button"
                             >
                                 <span className={styles.faqNumber}>
@@ -39,7 +39,7 @@ export default function PricingFaq() {
                         <div
                             aria-labelledby={buttonId}
                             className={styles.faqPanel}
-                            hidden={!open}
+                            hidden={!isOpen}
                             id={panelId}
                             role="region"
                         >

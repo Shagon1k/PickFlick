@@ -29,7 +29,7 @@ export default function SessionRoster({
         participantId?: string;
         name: string;
     } | null>(null);
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     function run(input: unknown) {
         if (!navigator.onLine) {
             setMessage('You appear to be offline. Reconnect before changing the roster.');
@@ -83,7 +83,7 @@ export default function SessionRoster({
                             <div className={styles.actions}>
                                 {participant.invitation?.state === 'pending' && roster.canManage ? (
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="secondary"
                                         onClick={() =>
                                             run({
@@ -97,7 +97,7 @@ export default function SessionRoster({
                                 ) : null}
                                 {participant.canRemove ? (
                                     <Button
-                                        disabled={pending}
+                                        disabled={isPending}
                                         variant="secondary-danger"
                                         onClick={() =>
                                             confirm(
@@ -123,14 +123,14 @@ export default function SessionRoster({
                         placeholder="Choose a member"
                         value={memberId}
                         onChange={setMemberId}
-                        disabled={pending}
+                        disabled={isPending}
                         data={roster.eligibleMembers.map((member) => ({
                             value: member.id,
                             label: member.displayName,
                         }))}
                     />
                     <Button
-                        disabled={!memberId || pending}
+                        disabled={!memberId || isPending}
                         onClick={() => run({ action: 'invite', membershipId: memberId })}
                     >
                         Create Session invitation
@@ -153,7 +153,7 @@ export default function SessionRoster({
             ) : null}
             {roster.canLeave ? (
                 <Button
-                    disabled={pending}
+                    disabled={isPending}
                     variant="secondary-danger"
                     onClick={() => confirm('leave', 'your participation')}
                 >
@@ -186,7 +186,7 @@ export default function SessionRoster({
                     }
                 }}
                 open={dialog !== null}
-                pending={pending}
+                pending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}

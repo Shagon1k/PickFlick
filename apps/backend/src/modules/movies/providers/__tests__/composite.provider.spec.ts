@@ -38,7 +38,7 @@ describe('CompositeMovieProvider', () => {
     afterEach(() => vi.useRealTimers());
     it.each([false, true])(
         'should preserve available details after delayed primary, remote-ID and enrichment calls (timeout=%s)',
-        async (timeout) => {
+        async (isTimeout) => {
             const delay = (milliseconds: number) =>
                 new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
             primary.details.mockImplementation(async () => {
@@ -47,16 +47,16 @@ describe('CompositeMovieProvider', () => {
             });
             enrichment.details.mockImplementation(async () => {
                 await delay(4000);
-                await delay(timeout ? 5000 : 4000);
-                if (timeout) throw new MovieProviderError('TIMEOUT', undefined, 'thetvdb');
+                await delay(isTimeout ? 5000 : 4000);
+                if (isTimeout) throw new MovieProviderError('TIMEOUT', undefined, 'thetvdb');
                 return record('thetvdb');
             });
             const pending = provider.details(movieLookup());
             await vi.advanceTimersByTimeAsync(13_000);
             const result = await pending;
-            expect(result.data.title).toBe(timeout ? 'English primary title' : 'English title');
+            expect(result.data.title).toBe(isTimeout ? 'English primary title' : 'English title');
             expect(result.provenance.find(({ source }) => source === 'thetvdb')?.reason).toBe(
-                timeout ? 'TIMEOUT' : null,
+                isTimeout ? 'TIMEOUT' : null,
             );
             expect(primary.details).toHaveBeenCalledOnce();
             expect(enrichment.details).toHaveBeenCalledOnce();

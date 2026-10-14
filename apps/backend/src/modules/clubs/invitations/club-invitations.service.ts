@@ -214,8 +214,8 @@ export class ClubInvitationsService {
                 tokenDigest,
             );
             if (!invitation || preview.state !== 'valid') return preview;
-            const accepted = decision === 'accept';
-            if (accepted) {
+            const isAccepted = decision === 'accept';
+            if (isAccepted) {
                 const membership = await transaction.membership.create({
                     data: {
                         id: randomUUID(),
@@ -237,10 +237,10 @@ export class ClubInvitationsService {
                 data: {
                     responderId: userId,
                     respondedAt: new Date(),
-                    accepted,
+                    accepted: isAccepted,
                 },
             });
-            return accepted
+            return isAccepted
                 ? { state: 'accepted', clubId: invitation.clubId }
                 : { state: 'declined' };
         });

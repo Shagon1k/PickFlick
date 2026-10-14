@@ -27,8 +27,8 @@ const messages = {
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [message, setMessage] = useState('');
-    const [pending, startTransition] = useTransition();
-    const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
+    const [isPending, startTransition] = useTransition();
+    const isReady = useSyncExternalStore(subscribe, clientReady, serverReady);
     function respond(decision: 'accept' | 'decline') {
         if (!navigator.onLine) {
             setMessage('You appear to be offline. Reconnect before responding.');
@@ -72,11 +72,11 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         <p>Expires {view.expiresAt.slice(0, 10)}</p>
                     </div>
                     <div className={styles.actions}>
-                        <Button disabled={!ready || pending} onClick={() => respond('accept')}>
+                        <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>
                             Accept invitation
                         </Button>
                         <Button
-                            disabled={!ready || pending}
+                            disabled={!isReady || isPending}
                             variant="secondary"
                             onClick={() => respond('decline')}
                         >

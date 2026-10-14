@@ -47,12 +47,12 @@ describe('MoviesController', () => {
     });
     afterAll(() => app.close());
 
-    function request(body: unknown, authenticated = true) {
+    function request(body: unknown, isAuthenticated = true) {
         return fetch(url, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
-                ...(authenticated ? { 'x-test-user': 'user' } : {}),
+                ...(isAuthenticated ? { 'x-test-user': 'user' } : {}),
             },
             body: JSON.stringify(body),
         });

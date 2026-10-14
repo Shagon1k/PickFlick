@@ -14,19 +14,19 @@ export function clubPermissions(
     lifecycle: TClubLifecycle,
     access?: IClubAccess,
 ): TClubPermissions {
-    const admin = role === 'ADMIN';
-    const active = lifecycle === 'ACTIVE';
+    const isAdmin = role === 'ADMIN';
+    const isActive = lifecycle === 'ACTIVE';
     return {
         viewClub: true,
-        participate: active,
-        leaveClub: !admin,
-        manageSessions: active && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
-        createInvitations: active && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
-        manageMembers: active && role !== 'MEMBER',
-        manageRoles: active && admin,
-        manageSettings: active && admin,
-        manageLifecycle: admin,
-        viewAudit: admin,
+        participate: isActive,
+        leaveClub: !isAdmin,
+        manageSessions: isActive && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
+        createInvitations: isActive && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
+        manageMembers: isActive && role !== 'MEMBER',
+        manageRoles: isActive && isAdmin,
+        manageSettings: isActive && isAdmin,
+        manageLifecycle: isAdmin,
+        viewAudit: isAdmin,
     };
 }
 

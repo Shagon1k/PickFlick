@@ -25,8 +25,9 @@ function failureReason(error: unknown): TMovieProviderReason | null {
         if (error.status === 429) return 'RATE_LIMITED';
         return error.status >= 500 ? 'UNAVAILABLE' : null;
     }
-    const timedOut = error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
-    return error instanceof TypeError || timedOut ? 'UNAVAILABLE' : null;
+    const hasTimedOut =
+        error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
+    return error instanceof TypeError || hasTimedOut ? 'UNAVAILABLE' : null;
 }
 
 export async function getMovieDetails(movieId: string): Promise<TMovieDetailsResponse> {
@@ -40,9 +41,9 @@ export async function getMovieDetails(movieId: string): Promise<TMovieDetailsRes
         return unavailable(reason);
     }
     const parsed = movieDetailsResponseSchema.safeParse(response);
-    const wrongMovie =
+    const isWrongMovie =
         parsed.success &&
         parsed.data.result.state !== 'unavailable' &&
         parsed.data.result.data.id !== movieId;
-    return parsed.success && !wrongMovie ? parsed.data : unavailable('INVALID_RESPONSE');
+    return parsed.success && !isWrongMovie ? parsed.data : unavailable('INVALID_RESPONSE');
 }

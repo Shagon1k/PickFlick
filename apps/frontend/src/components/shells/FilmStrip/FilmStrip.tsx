@@ -47,17 +47,17 @@ export default function FilmStrip({ items, label }: IFilmStripProps) {
 }
 
 function SignOutMenuItem({ content }: { content: ReactNode }) {
-    const [pending, setPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState('');
 
     async function signOut() {
-        setPending(true);
+        setIsPending(true);
         setError('');
         try {
             const result = await authClient.signOut();
             if (result.error) {
                 setError('Sign out failed. Please try again.');
-                setPending(false);
+                setIsPending(false);
                 return;
             }
             // A full load after sign-out drops every cached signed-in page.
@@ -65,17 +65,17 @@ function SignOutMenuItem({ content }: { content: ReactNode }) {
             window.location.assign('/login');
         } catch {
             setError('Sign out failed. Please try again.');
-            setPending(false);
+            setIsPending(false);
         }
     }
 
     return (
         <>
             <button
-                aria-busy={pending || undefined}
+                aria-busy={isPending || undefined}
                 className={styles.filmFrame}
                 data-shell-action="sign-out"
-                disabled={pending}
+                disabled={isPending}
                 onClick={signOut}
                 type="button"
             >

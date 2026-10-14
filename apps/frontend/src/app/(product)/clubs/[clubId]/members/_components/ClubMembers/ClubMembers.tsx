@@ -18,7 +18,7 @@ import styles from '../../page.module.scss';
 export default function ClubMembers({ projection }: { projection: IClubSettings }) {
     const [selected, setSelected] = useState<IClubMember | null>(null);
     const [message, setMessage] = useState('');
-    const [pending, setPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const returnToHeadingRef = useRef(false);
     const { club, permissions, members, currentMembershipId } = projection;
@@ -26,7 +26,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
         if (!selected) return;
         const formData = new FormData();
         formData.set('confirmation', confirmation);
-        setPending(true);
+        setIsPending(true);
         try {
             const result = await removeClubMemberAction(
                 club.id,
@@ -44,7 +44,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 'Member removal could not be confirmed. Reload to check the roster, then retry.',
             );
         } finally {
-            setPending(false);
+            setIsPending(false);
         }
     }
     const roleExplanation = {
@@ -131,7 +131,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     }
                 }}
                 open={Boolean(selected)}
-                pending={pending}
+                pending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}

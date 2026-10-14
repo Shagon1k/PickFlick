@@ -22,10 +22,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', policy);
 
-    const hidePreview =
+    const shouldHidePreview =
         process.env.APP_ENV === 'production' &&
         PREVIEW_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
-    const response = hidePreview
+    const response = shouldHidePreview
         ? NextResponse.rewrite(new URL('/__preview-unavailable', request.url), {
               request: { headers: requestHeaders },
           })

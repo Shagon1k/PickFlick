@@ -53,12 +53,12 @@ function stateFor(token: string): IRosterState {
     return state;
 }
 function rosterProjection(token: string, state: IRosterState): ISessionRoster {
-    const manager = !token.includes('member');
+    const isManager = !token.includes('member');
     return {
         progressVersion: 1,
         acceptedCount: state.status === 'ACCEPTED' ? 1 : 0,
-        canInvite: manager && token.includes('session-roster'),
-        canManage: manager,
+        canInvite: isManager && token.includes('session-roster'),
+        canManage: isManager,
         canLeave: state.status === 'ACCEPTED',
         participants: token.includes('session-roster')
             ? [
@@ -67,14 +67,14 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
                       membershipId: MEMBERSHIP_ID,
                       displayName: 'Jordan Member',
                       status: state.status,
-                      canRemove: manager && ['ACCEPTED', 'INVITED'].includes(state.status),
-                      invitation: manager
+                      canRemove: isManager && ['ACCEPTED', 'INVITED'].includes(state.status),
+                      invitation: isManager
                           ? { id: INVITE_ID, expiresAt: EXPIRES_AT, state: state.invite }
                           : null,
                   },
               ]
             : [],
-        eligibleMembers: manager ? [{ id: MEMBERSHIP_ID, displayName: 'Jordan Member' }] : [],
+        eligibleMembers: isManager ? [{ id: MEMBERSHIP_ID, displayName: 'Jordan Member' }] : [],
     };
 }
 function previewProjection(token: string, state: IRosterState): TSessionInvitationPreview {
@@ -149,25 +149,28 @@ export function handleSessionRoster(
     pathname: string,
     token: string | undefined,
 ): boolean {
-    const invitation = pathname.startsWith('/session-invitations/');
-    const roster = /^\/sessions\/[^/]+\/(?:roster|invitations|participants|leave)/u.test(pathname);
-    const detail = pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
-    if (!invitation && !roster && !detail) return false;
+    const isInvitationRoute = pathname.startsWith('/session-invitations/');
+    const isRosterRoute = /^\/sessions\/[^/]+\/(?:roster|invitations|participants|leave)/u.test(
+        pathname,
+    );
+    const isDetailRoute =
+        pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
+    if (!isInvitationRoute && !isRosterRoute && !isDetailRoute) return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'roster-auth');
         return true;
     }
     const state = stateFor(token);
-    if (detail) {
-        const manager = !token.includes('member');
-        const projection: TSession = { ...session, canEdit: manager, canCancel: manager };
+    if (isDetailRoute) {
+        const isManager = !token.includes('member');
+        const projection: TSession = { ...session, canEdit: isManager, canCancel: isManager };
         sendJson(response, 200, projection);
     } else if (pathname === '/session-invitations/pending') {
-        const pending =
+        const isPending =
             token.includes('session-roster-pending') &&
             state.status === 'INVITED' &&
             state.invite === 'pending';
-        const invitations: IPendingSessionInvitation[] = pending
+        const invitations: IPendingSessionInvitation[] = isPending
             ? [
                   {
                       id: INVITE_ID,

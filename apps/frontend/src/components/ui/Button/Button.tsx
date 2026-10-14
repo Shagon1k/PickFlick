@@ -20,11 +20,11 @@ export interface IButtonProps
     success?: string;
 }
 
-function buttonState(success?: string, loading?: boolean): 'success' | 'loading' | undefined {
+function buttonState(success?: string, isLoading?: boolean): 'success' | 'loading' | undefined {
     if (success) {
         return 'success';
     }
-    return loading ? 'loading' : undefined;
+    return isLoading ? 'loading' : undefined;
 }
 
 export function buttonClassName(variant: TButtonVariant, size: TButtonSize): string {

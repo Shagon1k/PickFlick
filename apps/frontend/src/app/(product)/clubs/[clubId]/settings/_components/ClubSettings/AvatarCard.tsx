@@ -15,16 +15,16 @@ import { isWritable } from './club-settings';
 export default function AvatarCard({ projection }: { projection: IClubSettings }) {
     const upload = uploadClubAvatarAction.bind(null, projection.club.id);
     const remove = removeClubAvatarAction.bind(null, projection.club.id);
-    const [uploadState, uploadAction, uploadPending] = useActionState(
+    const [uploadState, uploadAction, isUploadPending] = useActionState(
         upload,
         initialClubActionState,
     );
-    const [removeState, removeAction, removePending] = useActionState(
+    const [removeState, removeAction, isRemovePending] = useActionState(
         remove,
         initialClubActionState,
     );
     const [latestAction, setLatestAction] = useState<'remove' | 'upload'>('upload');
-    const writable = isWritable(projection);
+    const canEdit = isWritable(projection);
     const state = latestAction === 'remove' ? removeState : uploadState;
     const avatarVersion = projection.club.avatarVersion
         ? `?v=${encodeURIComponent(projection.club.avatarVersion)}`
@@ -57,15 +57,15 @@ export default function AvatarCard({ projection }: { projection: IClubSettings }
                                 <span className="visually-hidden">Club avatar</span>
                                 <input
                                     accept={CLUB_AVATAR_MEDIA_TYPES.join(',')}
-                                    disabled={!writable}
+                                    disabled={!canEdit}
                                     name="avatar"
                                     required
                                     type="file"
                                 />
                             </label>
                             <Button
-                                disabled={!writable}
-                                loading={uploadPending}
+                                disabled={!canEdit}
+                                loading={isUploadPending}
                                 size="small"
                                 type="submit"
                             >
@@ -75,8 +75,8 @@ export default function AvatarCard({ projection }: { projection: IClubSettings }
                         {projection.club.hasAvatar ? (
                             <form action={removeAction} onSubmit={() => setLatestAction('remove')}>
                                 <Button
-                                    disabled={!writable}
-                                    loading={removePending}
+                                    disabled={!canEdit}
+                                    loading={isRemovePending}
                                     size="small"
                                     type="submit"
                                     variant="secondary"

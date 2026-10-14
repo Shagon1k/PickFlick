@@ -30,13 +30,13 @@ export function useProductOverlay() {
 
 /** Closes an open overlay on Escape or an outside pointer, optionally keeping Tab inside it. */
 export function useOverlayDismissal(
-    open: boolean,
+    isOpen: boolean,
     rootRef: RefObject<HTMLElement | null>,
     closeOverlay: (returnFocus?: boolean) => void,
-    trapFocus = false,
+    shouldTrapFocus = false,
 ) {
     useEffect(() => {
-        if (!open) {
+        if (!isOpen) {
             return;
         }
 
@@ -45,7 +45,7 @@ export function useOverlayDismissal(
                 closeOverlay();
                 return;
             }
-            if (!trapFocus || event.key !== 'Tab') {
+            if (!shouldTrapFocus || event.key !== 'Tab') {
                 return;
             }
 
@@ -90,7 +90,7 @@ export function useOverlayDismissal(
             document.removeEventListener('keydown', handleKeyboard);
             document.removeEventListener('pointerdown', closeOnPointer);
         };
-    }, [closeOverlay, open, rootRef, trapFocus]);
+    }, [closeOverlay, isOpen, rootRef, shouldTrapFocus]);
 }
 
 /** Centres a film strip on its trigger, nudging it inside the viewport when it would overflow. */

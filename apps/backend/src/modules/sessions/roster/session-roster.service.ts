@@ -114,22 +114,22 @@ export class SessionRosterService {
         await this.prisma.$transaction(async (tx) => {
             const { session, member } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
-            const removing = input.confirmation === 'REMOVE';
-            if (removing) await assertManager(tx, member);
+            const isRemoving = input.confirmation === 'REMOVE';
+            if (isRemoving) await assertManager(tx, member);
             const participant = await tx.sessionParticipant.findFirst({
-                where: removing
+                where: isRemoving
                     ? { id: input.participantId, sessionId }
                     : { membershipId: member.id, sessionId },
                 include: { membership: true },
             });
             if (!participant) throw new NotFoundException();
-            if (removing && participant.membershipId === member.id)
+            if (isRemoving && participant.membershipId === member.id)
                 throw new ConflictException({ reason: 'USE_LEAVE' });
-            const status = removing ? 'REMOVED' : 'LEFT';
+            const status = isRemoving ? 'REMOVED' : 'LEFT';
             if (participant.status === status) return;
             if (
                 participant.status !== 'ACCEPTED' &&
-                !(removing && participant.status === 'INVITED')
+                !(isRemoving && participant.status === 'INVITED')
             )
                 throw new ConflictException({ reason: 'NOT_PARTICIPATING' });
             await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
@@ -140,7 +140,7 @@ export class SessionRosterService {
                 subjectMembershipId: participant.membershipId,
                 clubId: session.clubId,
                 sessionId: sessionId,
-                action: removing ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
+                action: isRemoving ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
             });
         });
     }
@@ -214,14 +214,14 @@ export class SessionRosterService {
             });
             const view = toInvitationPreview(invite, userId);
             if (view.state !== 'valid') return view;
-            const accepted = decision === 'accept';
+            const isAccepted = decision === 'accept';
             await tx.sessionInvite.update({
                 where: { id: invite.id },
-                data: { respondedAt: new Date(), accepted },
+                data: { respondedAt: new Date(), accepted: isAccepted },
             });
             await tx.sessionParticipant.update({
                 where: { id: invite.participantId },
-                data: { status: accepted ? 'ACCEPTED' : 'DECLINED' },
+                data: { status: isAccepted ? 'ACCEPTED' : 'DECLINED' },
             });
             await recordRosterChange(tx, {
                 actorUserId: userId,
@@ -231,7 +231,7 @@ export class SessionRosterService {
                 sessionId: invite.participant.sessionId,
                 action: 'SESSION_INVITE_RESPONDED',
             });
-            return accepted
+            return isAccepted
                 ? {
                       state: 'accepted',
                       sessionId: invite.participant.sessionId,

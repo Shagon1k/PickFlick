@@ -33,9 +33,9 @@ export function handleMovieDetails(
         sendDetails(response, { result: { state: 'unavailable', reason }, links: { imdb: null } });
         return true;
     }
-    const missing = token === 'valid-movie-missing';
-    const related = id.endsWith('038');
-    const data = movieData(id, missing, related);
+    const isMissing = token === 'valid-movie-missing';
+    const isRelated = id.endsWith('038');
+    const data = movieData(id, isMissing, isRelated);
     const fetchedAt = '2026-10-10T12:00:00.000Z';
     let result: TMovieDetailsResponse['result'] = { state: 'fresh', fetchedAt, data };
     if (token === 'valid-movie-stale')
@@ -43,7 +43,7 @@ export function handleMovieDetails(
     if (token === 'valid-movie-partial') result = { state: 'partial', fetchedAt, data };
     sendDetails(response, {
         result,
-        links: { imdb: missing ? null : 'https://www.imdb.com/title/tt1234567/' },
+        links: { imdb: isMissing ? null : 'https://www.imdb.com/title/tt1234567/' },
     });
     return true;
 }
@@ -54,24 +54,24 @@ function sendDetails(response: TMockResponse, body: TMovieDetailsResponse): void
     sendJson(response, 200, body);
 }
 
-function movieData(id: string, missing: boolean, related: boolean): TPublicDetails {
+function movieData(id: string, isMissing: boolean, isRelated: boolean): TPublicDetails {
     return {
         id,
-        title: related ? 'Related Film' : '<script>alert(1)</script> & Film',
+        title: isRelated ? 'Related Film' : '<script>alert(1)</script> & Film',
         originalTitle: null,
-        overview: missing ? null : 'A synthetic synopsis. '.repeat(100),
+        overview: isMissing ? null : 'A synthetic synopsis. '.repeat(100),
         releaseDate: null,
-        releaseYear: missing ? null : 2026,
+        releaseYear: isMissing ? null : 2026,
         adult: false,
         originalLanguage: 'en',
-        posterUrl: missing ? null : `/api/movies/images/${'a'.repeat(64)}`,
+        posterUrl: isMissing ? null : `/api/movies/images/${'a'.repeat(64)}`,
         backdropUrl: null,
-        ratings: missing ? [] : [{ source: 'tmdb', value: 7, scale: 10, voteCount: 10 }],
-        runtime: missing ? null : 120,
-        genres: missing ? null : ['Drama'],
-        directors: missing ? null : [{ name: '<Synthetic Director>' }],
-        cast: missing ? null : [{ name: 'Synthetic Actor', character: 'Lead', profileUrl: null }],
-        trailers: missing
+        ratings: isMissing ? [] : [{ source: 'tmdb', value: 7, scale: 10, voteCount: 10 }],
+        runtime: isMissing ? null : 120,
+        genres: isMissing ? null : ['Drama'],
+        directors: isMissing ? null : [{ name: '<Synthetic Director>' }],
+        cast: isMissing ? null : [{ name: 'Synthetic Actor', character: 'Lead', profileUrl: null }],
+        trailers: isMissing
             ? null
             : [
                   {
@@ -88,6 +88,6 @@ function movieData(id: string, missing: boolean, related: boolean): TPublicDetai
                 sections: ['metadata', 'media', 'similar'],
             },
         ],
-        similarMovieIds: missing || related ? null : ['10000000-0000-4000-8000-000000000038'],
+        similarMovieIds: isMissing || isRelated ? null : ['10000000-0000-4000-8000-000000000038'],
     };
 }

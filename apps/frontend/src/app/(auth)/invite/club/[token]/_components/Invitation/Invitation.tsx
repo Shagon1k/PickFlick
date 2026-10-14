@@ -49,15 +49,15 @@ const serverReady = () => false;
 
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
-    const [pending, setPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
-    const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
+    const isReady = useSyncExternalStore(subscribe, clientReady, serverReady);
     const [failure, setFailure] = useState('');
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
 
     async function respond(decision: 'accept' | 'decline') {
-        setPending(true);
+        setIsPending(true);
         setFailure('');
         try {
             const next = await respondInvitationAction({ token, decision });
@@ -69,12 +69,12 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
         } catch {
             setFailure('The invitation could not be updated. Check your connection and retry.');
         } finally {
-            setPending(false);
+            setIsPending(false);
         }
     }
 
     return (
-        <div aria-busy={pending || view.state === 'loading'} className={styles.card}>
+        <div aria-busy={isPending || view.state === 'loading'} className={styles.card}>
             <div aria-live="polite" className={styles.intro}>
                 <h1>{title}</h1>
                 <p data-error={Boolean(failure)} role="status">
@@ -100,16 +100,16 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 {view.state === 'valid' ? (
                     <>
                         <Button
-                            disabled={!ready}
+                            disabled={!isReady}
                             fullWidth
-                            loading={pending}
+                            loading={isPending}
                             size="large"
                             onClick={() => respond('accept')}
                         >
                             Accept Invitation
                         </Button>
                         <Button
-                            disabled={!ready || pending}
+                            disabled={!isReady || isPending}
                             fullWidth
                             onClick={() => respond('decline')}
                             variant="ghost"

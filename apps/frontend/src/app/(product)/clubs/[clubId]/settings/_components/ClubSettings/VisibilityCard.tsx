@@ -12,30 +12,30 @@ import StoredClubInfo from './StoredClubInfo';
 
 export default function VisibilityCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
-    const [state, formAction, pending] = useActionState(action, initialClubActionState);
-    const writable = isWritable(projection);
-    const resultsLocked = projection.entitlements.voteResultVisibility !== 'ADMIN_CONFIGURABLE';
+    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
+    const canEdit = isWritable(projection);
+    const areResultsLocked = projection.entitlements.voteResultVisibility !== 'ADMIN_CONFIGURABLE';
     return (
         <section aria-labelledby="club-visibility-title" className={styles.card}>
             <h2 id="club-visibility-title">Settings</h2>
             <form action={formAction} className={styles.cardForm}>
                 <StoredClubInfo projection={projection} />
-                <fieldset className={styles.checks} disabled={!writable}>
+                <fieldset className={styles.checks} disabled={!canEdit}>
                     <legend className="visually-hidden">Visibility and presentation</legend>
                     {visibilityOptions.map(({ label, name }) => {
-                        const locked = name === 'showVoteResults' && resultsLocked;
+                        const isLocked = name === 'showVoteResults' && areResultsLocked;
                         return (
                             <div key={name}>
                                 <label className={styles.check}>
                                     <span>{label}</span>
                                     <input
                                         defaultChecked={projection.visibility[name]}
-                                        disabled={locked}
+                                        disabled={isLocked}
                                         name={name}
                                         type="checkbox"
                                     />
                                 </label>
-                                {locked ? (
+                                {isLocked ? (
                                     <p className={styles.checkNote}>
                                         Free Clubs keep individual Selection results hidden.
                                     </p>
@@ -45,7 +45,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                     })}
                 </fieldset>
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!writable} pending={pending} state={state} />
+                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
                 ) : null}
             </form>
         </section>

@@ -7,12 +7,12 @@ import { HealthService } from '../health.service.js';
 describe('HealthService', () => {
     const environment = { sourceRevision: 'a'.repeat(40) } as TRuntimeEnvironment;
 
-    function service(storageUp: boolean): HealthService {
+    function service(isStorageUp: boolean): HealthService {
         const prisma = {
             $queryRaw: vi.fn(async () => [{ '?column?': 1 }]),
         } as unknown as PrismaService;
         const storage = {
-            ping: vi.fn(async () => (storageUp ? undefined : Promise.reject(new Error('down')))),
+            ping: vi.fn(async () => (isStorageUp ? undefined : Promise.reject(new Error('down')))),
         } as unknown as StorageService;
         return new HealthService(environment, prisma, storage);
     }

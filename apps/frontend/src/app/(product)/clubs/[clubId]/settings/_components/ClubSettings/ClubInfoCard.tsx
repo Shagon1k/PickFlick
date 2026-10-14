@@ -16,8 +16,8 @@ import StoredVisibility from './StoredVisibility';
 
 export default function ClubInfoCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
-    const [state, formAction, pending] = useActionState(action, initialClubActionState);
-    const writable = isWritable(projection);
+    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
+    const canEdit = isWritable(projection);
     return (
         <section aria-labelledby="club-info-title" className={styles.card}>
             <h2 id="club-info-title">Club Info</h2>
@@ -25,7 +25,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                 <StoredVisibility projection={projection} />
                 <TextInput
                     defaultValue={projection.club.name}
-                    disabled={!writable}
+                    disabled={!canEdit}
                     id="club-name"
                     label="Club name"
                     maxLength={100}
@@ -35,7 +35,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                 />
                 <Textarea
                     defaultValue={projection.club.description ?? ''}
-                    disabled={!writable}
+                    disabled={!canEdit}
                     id="club-description"
                     label="Description"
                     maxLength={500}
@@ -44,12 +44,12 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                 />
                 <SelectionScaleField
                     defaultMax={projection.club.selectionScaleMax}
-                    disabled={!writable}
+                    disabled={!canEdit}
                     idPrefix="selection-scale"
                     min={projection.club.selectionScaleMin}
                 />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!writable} pending={pending} state={state} />
+                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
                 ) : null}
             </form>
         </section>

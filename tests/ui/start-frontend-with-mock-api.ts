@@ -81,27 +81,27 @@ function hubProjection(token: TToken, clubId: string): IClubHub | null {
             historySessions: [],
         };
     }
-    const second = clubId === SECOND_CLUB_ID;
+    const isSecondClub = clubId === SECOND_CLUB_ID;
     const session: IClubHubSession = {
-        id: second
+        id: isSecondClub
             ? '30000000-0000-4000-8000-000000000032'
             : '30000000-0000-4000-8000-000000000031',
-        phase: second ? 'RATING' : 'NOMINATION',
-        topic: second ? 'Second Club private screening' : 'Midnight private screening',
+        phase: isSecondClub ? 'RATING' : 'NOMINATION',
+        topic: isSecondClub ? 'Second Club private screening' : 'Midnight private screening',
         scheduledAt: '2026-10-01T20:00:00.000Z',
-        location: second ? 'Room B' : 'Room A',
+        location: isSecondClub ? 'Room B' : 'Room A',
         updatedAt: '2026-09-29T12:00:00.000Z',
     };
     return {
         club,
         access: settingsProjection(token).access,
         permissions: settingsProjection(token).permissions,
-        memberCount: second ? 4 : 2,
-        sessionCount: second ? 7 : 1,
-        completedSessionCount: second ? 3 : 0,
+        memberCount: isSecondClub ? 4 : 2,
+        sessionCount: isSecondClub ? 7 : 1,
+        completedSessionCount: isSecondClub ? 3 : 0,
         activeSession: session,
         recentSessions: [session],
-        ratingSessions: second ? [session] : [],
+        ratingSessions: isSecondClub ? [session] : [],
         historySessions: [],
     };
 }
@@ -120,8 +120,8 @@ function handleSession(request: TMockRequest, response: TMockResponse): void {
         sendJson(response, 503, null);
         return;
     }
-    const authenticated = token?.startsWith('valid') ?? false;
-    sendJson(response, 200, authenticated ? { user: { id: `user-${token}` } } : null);
+    const isAuthenticated = token?.startsWith('valid') ?? false;
+    sendJson(response, 200, isAuthenticated ? { user: { id: `user-${token}` } } : null);
 }
 
 function createClub(request: TMockRequest, response: TMockResponse, token: string): void {

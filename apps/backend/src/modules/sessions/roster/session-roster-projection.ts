@@ -14,9 +14,9 @@ export async function readRoster(
     const session = await tx.session.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException();
     const member = await findMembership(tx, userId, session.clubId);
-    const open = isOpenSessionPhase(session.phase);
+    const isOpen = isOpenSessionPhase(session.phase);
     // One rule decides every roster control: invite, revoke, and remove.
-    const manager = open && (await canManage(tx, member));
+    const isManager = isOpen && (await canManage(tx, member));
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },
@@ -28,24 +28,24 @@ export async function readRoster(
     return {
         progressVersion: session.progressVersion,
         acceptedCount: participants.filter((p) => p.status === 'ACCEPTED').length,
-        canInvite: manager,
-        canManage: manager,
+        canInvite: isManager,
+        canManage: isManager,
         canLeave:
-            open &&
+            isOpen &&
             participants.some((p) => p.membershipId === member.id && p.status === 'ACCEPTED'),
         participants: participants
-            .filter((p) => manager || p.status === 'ACCEPTED' || p.membershipId === member.id)
+            .filter((p) => isManager || p.status === 'ACCEPTED' || p.membershipId === member.id)
             .map((p) => ({
                 id: p.id,
                 membershipId: p.membershipId,
                 displayName: p.membership.user.displayName,
                 status: p.status,
                 canRemove:
-                    manager &&
+                    isManager &&
                     p.membershipId !== member.id &&
                     ['INVITED', 'ACCEPTED'].includes(p.status),
                 invitation:
-                    manager && p.invitations[0]
+                    isManager && p.invitations[0]
                         ? {
                               id: p.invitations[0].id,
                               expiresAt: p.invitations[0].expiresAt.toISOString(),
@@ -53,7 +53,7 @@ export async function readRoster(
                           }
                         : null,
             })),
-        eligibleMembers: manager
+        eligibleMembers: isManager
             ? (
                   await tx.membership.findMany({
                       where: {

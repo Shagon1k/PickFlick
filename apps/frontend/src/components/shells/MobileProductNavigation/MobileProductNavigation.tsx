@@ -24,18 +24,18 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
     const activeMenu = activeOverlay?.startsWith('mobile:')
         ? activeOverlay.slice('mobile:'.length)
         : null;
-    const notificationsOpen = activeOverlay === 'notifications-mobile';
+    const isNotificationsPanelOpen = activeOverlay === 'notifications-mobile';
 
     useOverlayDismissal(activeMenu !== null, navigationRef, closeOverlay);
-    useOverlayDismissal(notificationsOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
 
     useAnchoredMenus(activeMenu, navigationRef);
 
     useEffect(() => {
-        if (notificationsOpen) {
+        if (isNotificationsPanelOpen) {
             notificationsRef.current?.focus({ preventScroll: true });
         }
-    }, [notificationsOpen]);
+    }, [isNotificationsPanelOpen]);
 
     return (
         <>
@@ -51,7 +51,7 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                                 <div className={styles.navGroup} key={entry.id}>
                                     <button
                                         aria-controls="shell-notifications-mobile"
-                                        aria-expanded={notificationsOpen}
+                                        aria-expanded={isNotificationsPanelOpen}
                                         aria-haspopup="dialog"
                                         className={styles.navTrigger}
                                         data-product-overlay-control
@@ -70,18 +70,18 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                             );
                         }
 
-                        const open = activeMenu === entry.id;
+                        const isOpen = activeMenu === entry.id;
                         return (
                             <div
                                 className={styles.navGroup}
                                 data-menu-anchor
-                                data-open={open || undefined}
+                                data-open={isOpen || undefined}
                                 key={entry.id}
                             >
                                 <button
                                     aria-controls={`mobile-${entry.id}-menu`}
                                     aria-current={entry.current ? 'page' : undefined}
-                                    aria-expanded={open}
+                                    aria-expanded={isOpen}
                                     className={styles.navTrigger}
                                     data-product-overlay-control
                                     onClick={(event) =>
@@ -96,7 +96,7 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                                     className={styles.filmMenu}
                                     data-anchored-menu={entry.id}
                                     id={`mobile-${entry.id}-menu`}
-                                    inert={!open}
+                                    inert={!isOpen}
                                 >
                                     <FilmStrip
                                         items={entry.items}
@@ -112,7 +112,7 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
             <NotificationsPanel
                 id="shell-notifications-mobile"
                 mobile
-                open={notificationsOpen}
+                open={isNotificationsPanelOpen}
                 panelRef={notificationsRef}
             />
         </>

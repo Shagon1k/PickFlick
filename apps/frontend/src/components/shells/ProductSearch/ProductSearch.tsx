@@ -19,29 +19,29 @@ import SearchCredits from './SearchCredits';
 export default function ProductSearch() {
     const router = useRouter();
     const { activeOverlay, closeOverlay } = useProductOverlay();
-    const open = activeOverlay === 'search';
+    const isOpen = activeOverlay === 'search';
     const rootRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
-    const [wasOpen, setWasOpen] = useState(open);
+    const [wasOpen, setWasOpen] = useState(isOpen);
     const term = query.trim();
-    const result = useMovieSearch(term, open);
+    const result = useMovieSearch(term, isOpen);
     const movies = result && 'data' in result ? result.data.movies : [];
 
-    if (wasOpen !== open) {
-        setWasOpen(open);
-        if (!open) {
+    if (wasOpen !== isOpen) {
+        setWasOpen(isOpen);
+        if (!isOpen) {
             setQuery('');
             setActiveIndex(-1);
         }
     }
 
-    useOverlayDismissal(open, rootRef, closeOverlay, true);
+    useOverlayDismissal(isOpen, rootRef, closeOverlay, true);
 
     useEffect(() => {
-        if (open) inputRef.current?.focus({ preventScroll: true });
-    }, [open]);
+        if (isOpen) inputRef.current?.focus({ preventScroll: true });
+    }, [isOpen]);
 
     useActiveOptionVisible('movie-search', activeIndex);
 
@@ -63,9 +63,9 @@ export default function ProductSearch() {
         <div
             aria-label="Film search"
             className={styles.globalSearch}
-            data-open={open || undefined}
+            data-open={isOpen || undefined}
             id="shell-search"
-            inert={!open}
+            inert={!isOpen}
             ref={rootRef}
             role="search"
         >

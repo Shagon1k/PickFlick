@@ -21,7 +21,7 @@ import { validateContactValues } from './contact-form.validation';
 const IDLE = { message: '', tone: 'neutral' as TFeedbackTone };
 
 export default function ContactForm() {
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState(IDLE);
     const form = useForm<IContactFormValues>({
         initialValues: { message: '', name: '', email: '' },
@@ -70,12 +70,12 @@ export default function ContactForm() {
         },
     );
 
-    const sent = feedback.tone === 'success';
+    const wasSent = feedback.tone === 'success';
     return (
         <form className={styles.form} noValidate onSubmit={submit}>
             <Textarea
                 {...form.getInputProps('message')}
-                disabled={pending}
+                disabled={isPending}
                 id="contact-message"
                 label="Message"
                 labelHint="required"
@@ -88,7 +88,7 @@ export default function ContactForm() {
             <TextInput
                 {...form.getInputProps('name')}
                 autoComplete="name"
-                disabled={pending}
+                disabled={isPending}
                 id="contact-name"
                 label="Your name"
                 labelHint="optional"
@@ -98,7 +98,7 @@ export default function ContactForm() {
             <TextInput
                 {...form.getInputProps('email')}
                 autoComplete="email"
-                disabled={pending}
+                disabled={isPending}
                 id="contact-email"
                 label="Your email"
                 labelHint="optional"
@@ -108,8 +108,8 @@ export default function ContactForm() {
             />
 
             <div className={styles.submitZone}>
-                <Button disabled={sent} fullWidth loading={pending} type="submit">
-                    {sent ? 'Message sent' : 'Send message'}
+                <Button disabled={wasSent} fullWidth loading={isPending} type="submit">
+                    {wasSent ? 'Message sent' : 'Send message'}
                 </Button>
                 <p
                     aria-atomic="true"

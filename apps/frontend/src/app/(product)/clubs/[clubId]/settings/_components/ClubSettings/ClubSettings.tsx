@@ -20,7 +20,7 @@ const roleLabels: Record<IClubSettings['club']['membershipRole'], string> = {
 };
 
 export default function ClubSettings({ projection }: { projection: IClubSettings }) {
-    const active = projection.club.lifecycle === 'ACTIVE';
+    const isActive = projection.club.lifecycle === 'ACTIVE';
     const role = projection.club.membershipRole;
     const roleLabel = roleLabels[role];
     return (
@@ -39,7 +39,7 @@ export default function ClubSettings({ projection }: { projection: IClubSettings
                         ·
                     </span>
                     <span>You are {roleLabel}</span>
-                    {!active ? (
+                    {!isActive ? (
                         <>
                             <span aria-hidden="true" className={styles.sep}>
                                 ·

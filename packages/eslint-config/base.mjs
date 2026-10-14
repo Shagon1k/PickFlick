@@ -124,6 +124,20 @@ export default [
                 'error',
                 { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
                 { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
+                // A boolean reads as a question. Destructured names come from object properties and
+                // props (API fields, DOM attributes), which keep their own names.
+                {
+                    selector: ['variable', 'parameter'],
+                    types: ['boolean'],
+                    format: ['PascalCase'],
+                    prefix: ['is', 'are', 'has', 'can', 'should', 'was', 'did', 'will', 'with'],
+                },
+                {
+                    selector: ['variable', 'parameter'],
+                    modifiers: ['destructured'],
+                    types: ['boolean'],
+                    format: null,
+                },
             ],
             'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming],
             'check-file/filename-naming-convention': [

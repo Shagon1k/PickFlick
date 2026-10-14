@@ -39,15 +39,15 @@ function stateFor(token: string | undefined): INominationState {
     return state;
 }
 function projection(token: string, state: INominationState): TNominations {
-    const hidden = token.includes('hidden') && !state.own;
+    const isHidden = token.includes('hidden') && !state.own;
     return {
         acceptedCount: state.departed ? 2 : 3,
         nominatedCount: state.own ? 2 : 1,
         canSubmit: !state.own && state.phase === 'NOMINATION' && !token.includes('readonly'),
         canClose: token.includes('operator') && state.phase === 'NOMINATION',
-        hidden,
+        hidden: isHidden,
         ownMovie: state.own,
-        nominations: hidden
+        nominations: isHidden
             ? []
             : [
                   {
@@ -70,20 +70,20 @@ function handleRoster(
     if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/roster`)
         return false;
     const version = state.version;
-    const departed = state.departed;
+    const hasDeparted = state.departed;
     // Commit a departure after the roster snapshot, before the detail response.
-    if (token.includes('split-roster') && !departed) {
+    if (token.includes('split-roster') && !hasDeparted) {
         state.departed = true;
         state.version++;
         state.sendDetail?.();
     }
     const roster: ISessionRoster = {
         progressVersion: version,
-        acceptedCount: departed ? 2 : 3,
+        acceptedCount: hasDeparted ? 2 : 3,
         canInvite: false,
         canManage: false,
         canLeave: false,
-        participants: (departed ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
+        participants: (hasDeparted ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
             (name, index) => ({
                 id: `30000000-0000-4000-8000-00000000000${index}`,
                 membershipId: `40000000-0000-4000-8000-00000000000${index}`,

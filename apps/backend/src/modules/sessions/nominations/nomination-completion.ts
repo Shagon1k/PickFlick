@@ -26,7 +26,7 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
         where: { id: sessionId },
         include: { club: true },
     });
-    let advanced = false;
+    let hasAdvanced = false;
     if (session.phase === 'NOMINATION' && session.club.lifecycle === 'ACTIVE') {
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId, status: 'ACCEPTED' },
@@ -35,8 +35,8 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
         const nominations = participants.flatMap((p) => (p.nomination ? [p.nomination] : []));
         if (nominations.length > 0 && nominations.length === participants.length) {
             await advanceNomination(tx, session, nominations);
-            advanced = true;
+            hasAdvanced = true;
         }
     }
-    await publishProgress(tx, sessionId, advanced ? 'AUTOMATIC' : 'PROGRESS');
+    await publishProgress(tx, sessionId, hasAdvanced ? 'AUTOMATIC' : 'PROGRESS');
 }

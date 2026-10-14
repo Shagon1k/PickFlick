@@ -13,27 +13,27 @@ import styles from './PendingInvites.module.scss';
 
 export default function PendingInvites() {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
-    const open = activeOverlay === 'invites';
+    const isOpen = activeOverlay === 'invites';
     const triggerRef = useRef<HTMLButtonElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
-    const [loaded, setLoaded] = useState(false);
-    const [pending, startTransition] = useTransition();
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const id = useId();
     async function load() {
         try {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
-                setLoaded(true);
+                setIsLoaded(true);
                 setMessage('');
             } else {
-                setLoaded(false);
+                setIsLoaded(false);
                 setMessage(result.message ?? 'Pending invites are unavailable.');
             }
         } catch {
-            setLoaded(false);
+            setIsLoaded(false);
             setMessage('Pending invites could not be loaded. Check your connection and retry.');
         }
     }
@@ -75,17 +75,17 @@ export default function PendingInvites() {
                 id={id}
                 label="Pending invites"
                 onChange={() => closeOverlay()}
-                open={open}
+                open={isOpen}
                 trigger={
                     <button
                         aria-controls={`${id}-dropdown`}
-                        aria-expanded={open}
+                        aria-expanded={isOpen}
                         aria-haspopup="dialog"
                         aria-label="Open pending invites"
                         className={styles.ticket}
                         data-product-overlay-control
                         ref={triggerRef}
-                        onClick={() => (open ? closeOverlay() : openInvites())}
+                        onClick={() => (isOpen ? closeOverlay() : openInvites())}
                         type="button"
                     >
                         <svg
@@ -106,7 +106,7 @@ export default function PendingInvites() {
                             </small>
                         </span>
                         <span className={styles.stub}>
-                            <strong>{loaded ? invitations.length : '—'}</strong>
+                            <strong>{isLoaded ? invitations.length : '—'}</strong>
                             <small>open</small>
                         </span>
                     </button>
@@ -121,9 +121,9 @@ export default function PendingInvites() {
                 <p aria-live="polite" role="status">
                     {message || (invitations.length === 0 ? 'No pending invitations.' : countLabel)}
                 </p>
-                {!loaded ? (
+                {!isLoaded ? (
                     <Button
-                        disabled={pending}
+                        disabled={isPending}
                         onClick={() => startTransition(load)}
                         variant="secondary"
                     >
@@ -148,7 +148,7 @@ export default function PendingInvites() {
                             <p>Expires {formatUtcDate(invitation.expiresAt)}</p>
                             <div className={styles.actions}>
                                 <Button
-                                    disabled={pending}
+                                    disabled={isPending}
                                     onClick={() =>
                                         respond(invitation.id, 'decline', invitation.kind)
                                     }
@@ -157,7 +157,7 @@ export default function PendingInvites() {
                                     Decline
                                 </Button>
                                 <Button
-                                    disabled={pending}
+                                    disabled={isPending}
                                     onClick={() =>
                                         respond(invitation.id, 'accept', invitation.kind)
                                     }

@@ -13,11 +13,11 @@ export default function ApplicationError({
 }) {
     // Until the session resolves, the public recovery chrome stays safe even when the API is down.
     const { data: session } = authClient.useSession();
-    const signedIn = Boolean(session?.user);
+    const isSignedIn = Boolean(session?.user);
 
     useEffect(() => {
         globalThis.document.getElementById('system-state-title')?.focus({ preventScroll: true });
-    }, [signedIn]);
+    }, [isSignedIn]);
 
-    return <SystemState onRetry={retry} signedIn={signedIn} variant="application-error" />;
+    return <SystemState onRetry={retry} signedIn={isSignedIn} variant="application-error" />;
 }

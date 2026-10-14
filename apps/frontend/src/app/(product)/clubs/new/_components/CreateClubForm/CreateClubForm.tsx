@@ -26,7 +26,7 @@ const INITIAL_VALUES: IClubFormValues = {
 
 export default function CreateClubForm() {
     const router = useRouter();
-    const [pending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState(IDLE);
     const form = useForm<IClubFormValues>({
         initialValues: INITIAL_VALUES,
@@ -84,7 +84,7 @@ export default function CreateClubForm() {
             <TextInput
                 {...form.getInputProps('name')}
                 autoComplete="organization"
-                disabled={pending}
+                disabled={isPending}
                 id="club-name"
                 label="Club name"
                 labelHint="required"
@@ -94,7 +94,7 @@ export default function CreateClubForm() {
             />
             <Textarea
                 {...form.getInputProps('description')}
-                disabled={pending}
+                disabled={isPending}
                 id="club-description"
                 label="Description"
                 labelHint="optional"
@@ -107,7 +107,7 @@ export default function CreateClubForm() {
             <div className={styles.scaleSection}>
                 <SelectionScaleField
                     defaultMax={Number(INITIAL_VALUES.selectionScaleMax)}
-                    disabled={pending}
+                    disabled={isPending}
                     idPrefix="selection-scale"
                     maxError={form.errors.selectionScaleMax ?? form.errors.selectionScaleMin}
                     min={Number(INITIAL_VALUES.selectionScaleMin)}
@@ -116,7 +116,7 @@ export default function CreateClubForm() {
             </div>
 
             <div className={styles.submitZone}>
-                <Button fullWidth loading={pending} type="submit">
+                <Button fullWidth loading={isPending} type="submit">
                     Create Screening Room
                 </Button>
                 <p

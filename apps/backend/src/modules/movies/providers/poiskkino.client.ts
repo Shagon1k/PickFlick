@@ -124,7 +124,11 @@ export class PoiskkinoClient {
             throw new MovieProviderError('INVALID_RESPONSE', undefined, 'poiskkino');
         return this.map(movie, fetchedAt, true);
     }
-    private map(movie: z.infer<typeof wire>, fetchedAt: string, details: boolean): TSourceSnapshot {
+    private map(
+        movie: z.infer<typeof wire>,
+        fetchedAt: string,
+        withDetails: boolean,
+    ): TSourceSnapshot {
         const externalIds: TMovieExternalId[] = [
             { source: 'poiskkino', externalId: String(movie.id) },
         ];
@@ -152,7 +156,7 @@ export class PoiskkinoClient {
             fetchedAt,
             externalIds,
             similarExternalIds:
-                details && movie.similarMovies
+                withDetails && movie.similarMovies
                     ? movie.similarMovies.map((movie) => [
                           { source: 'poiskkino', externalId: String(movie.id) },
                       ])
@@ -169,7 +173,7 @@ export class PoiskkinoClient {
                 ratings,
                 // Trailer labels have no guaranteed English locale.
                 trailers:
-                    details && movie.videos?.trailers
+                    withDetails && movie.videos?.trailers
                         ? movie.videos.trailers.flatMap((video) =>
                               video.url && movieTrailerUrlSchema.safeParse(video.url).success
                                   ? [{ url: video.url, name: null, official: null }]

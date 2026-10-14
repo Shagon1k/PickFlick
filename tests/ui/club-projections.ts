@@ -5,17 +5,17 @@ const SETTINGS_CLUB_ID = '10000000-0000-4000-8000-000000000031';
 export function settingsProjection(
     token: string | undefined,
     avatarVersion?: string,
-    removed?: boolean,
+    isMemberRemoved?: boolean,
 ): IClubSettings {
     let role: TClubRole =
         ROLES.find((name) => token?.split('-').includes(name.toLowerCase())) ?? 'ADMIN';
     const lifecycle = token?.includes('archived') ? 'ARCHIVED' : 'ACTIVE';
     if (token?.includes('adminless')) role = 'MODERATOR';
-    const admin = role === 'ADMIN';
-    const adminless = token?.includes('adminless') ?? false;
-    const overLimit = token?.includes('over-limit') ?? false;
-    const active = lifecycle === 'ACTIVE';
-    const newWorkAllowed = active && !adminless && !overLimit;
+    const isAdmin = role === 'ADMIN';
+    const isAdminless = token?.includes('adminless') ?? false;
+    const isOverLimit = token?.includes('over-limit') ?? false;
+    const isActive = lifecycle === 'ACTIVE';
+    const isNewWorkAllowed = isActive && !isAdminless && !isOverLimit;
     return {
         currentMembershipId: (
             {
@@ -25,12 +25,12 @@ export function settingsProjection(
             } satisfies Record<TClubRole, string>
         )[role],
         access: {
-            adminless,
-            newWorkAllowed,
+            adminless: isAdminless,
+            newWorkAllowed: isNewWorkAllowed,
             reasons: [
-                ...(active ? [] : (['ARCHIVED'] as const)),
-                ...(adminless ? (['ADMINLESS'] as const) : []),
-                ...(overLimit ? (['MEMBER_LIMIT'] as const) : []),
+                ...(isActive ? [] : (['ARCHIVED'] as const)),
+                ...(isAdminless ? (['ADMINLESS'] as const) : []),
+                ...(isOverLimit ? (['MEMBER_LIMIT'] as const) : []),
             ] satisfies IClubAccess['reasons'],
         },
         club: {
@@ -47,15 +47,15 @@ export function settingsProjection(
         },
         permissions: {
             viewClub: true,
-            participate: active,
-            leaveClub: !admin,
-            manageSessions: newWorkAllowed && role !== 'MEMBER',
-            createInvitations: newWorkAllowed && role !== 'MEMBER',
-            manageMembers: active && role !== 'MEMBER',
-            manageRoles: active && admin,
-            manageSettings: active && admin,
-            manageLifecycle: admin,
-            viewAudit: admin,
+            participate: isActive,
+            leaveClub: !isAdmin,
+            manageSessions: isNewWorkAllowed && role !== 'MEMBER',
+            createInvitations: isNewWorkAllowed && role !== 'MEMBER',
+            manageMembers: isActive && role !== 'MEMBER',
+            manageRoles: isActive && isAdmin,
+            manageSettings: isActive && isAdmin,
+            manageLifecycle: isAdmin,
+            viewAudit: isAdmin,
         },
         entitlements: {
             tier: 'FREE',
@@ -70,16 +70,16 @@ export function settingsProjection(
             showRatingResults: true,
             useMonochromeMedia: true,
         },
-        members: memberRoster(role, adminless, overLimit, removed).map((member) => ({
+        members: memberRoster(role, isAdminless, isOverLimit, isMemberRemoved).map((member) => ({
             ...member,
             canRemove:
-                active &&
+                isActive &&
                 role !== 'MEMBER' &&
                 member.role !== 'ADMIN' &&
                 member.role !== role &&
-                (admin || member.role === 'MEMBER'),
+                (isAdmin || member.role === 'MEMBER'),
         })),
-        auditEvents: admin
+        auditEvents: isAdmin
             ? [
                   {
                       id: '50000000-0000-4000-8000-000000000031',
@@ -95,9 +95,9 @@ const ROLES = ['MEMBER', 'MODERATOR'] as const;
 
 function memberRoster(
     role: TClubRole,
-    adminless: boolean,
-    overLimit: boolean,
-    removed: boolean | undefined,
+    isAdminless: boolean,
+    isOverLimit: boolean,
+    isMemberRemoved: boolean | undefined,
 ): Omit<IClubMember, 'canRemove'>[] {
     const members: Omit<IClubMember, 'canRemove'>[] = [
         {
@@ -122,7 +122,7 @@ function memberRoster(
                   },
               ]
             : []),
-        ...(overLimit
+        ...(isOverLimit
             ? Array.from({ length: 7 }, (_, index) => ({
                   id: `20000000-0000-4000-8000-00000000004${index}`,
                   displayName: `Club member ${index + 1}`,
@@ -133,6 +133,7 @@ function memberRoster(
     ];
     return members.filter(
         (member) =>
-            (!adminless || member.role !== 'ADMIN') && (!removed || member.role !== 'MEMBER'),
+            (!isAdminless || member.role !== 'ADMIN') &&
+            (!isMemberRemoved || member.role !== 'MEMBER'),
     );
 }

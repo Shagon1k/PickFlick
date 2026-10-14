@@ -9,30 +9,30 @@ export type TMovieSearchResponse = Awaited<ReturnType<typeof searchMoviesAction>
 const DEBOUNCE_MS = 300;
 
 /** Debounces a film search and returns the result for the current term, or null while it loads. */
-export function useMovieSearch(term: string, enabled: boolean): TMovieSearchResponse | null {
+export function useMovieSearch(term: string, isEnabled: boolean): TMovieSearchResponse | null {
     const [response, setResponse] = useState<{
         query: string;
         result: TMovieSearchResponse;
     } | null>(null);
     useEffect(() => {
-        if (!enabled || !term) return;
-        let cancelled = false;
+        if (!isEnabled || !term) return;
+        let isCancelled = false;
         const timer = setTimeout(() => {
             void searchMoviesAction(term).then(
                 (result) => {
-                    if (!cancelled) setResponse({ query: term, result });
+                    if (!isCancelled) setResponse({ query: term, result });
                 },
                 () => {
-                    if (!cancelled) setResponse({ query: term, result: { state: 'error' } });
+                    if (!isCancelled) setResponse({ query: term, result: { state: 'error' } });
                 },
             );
         }, DEBOUNCE_MS);
         return () => {
-            cancelled = true;
+            isCancelled = true;
             clearTimeout(timer);
         };
-    }, [enabled, term]);
-    return enabled && response?.query === term ? response.result : null;
+    }, [isEnabled, term]);
+    return isEnabled && response?.query === term ? response.result : null;
 }
 
 /** The live status line shared by every film search field. */

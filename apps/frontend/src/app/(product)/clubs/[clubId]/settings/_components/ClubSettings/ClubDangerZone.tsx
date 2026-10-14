@@ -24,7 +24,7 @@ function MemberRoleForm({
     writable: boolean;
 }) {
     const action = changeClubMemberRoleAction.bind(null, clubId, member.id);
-    const [state, formAction, pending] = useActionState(action, initialClubActionState);
+    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
     if (member.role === 'ADMIN') {
         return <span className={styles.lockedRole}>Admin</span>;
     }
@@ -46,7 +46,7 @@ function MemberRoleForm({
             </fieldset>
             <Button
                 disabled={!writable}
-                loading={pending}
+                loading={isPending}
                 size="small"
                 type="submit"
                 variant="secondary"
@@ -59,14 +59,14 @@ function MemberRoleForm({
 }
 
 function ManageModerators({ projection }: { projection: IClubSettings }) {
-    const [open, setOpen] = useState(false);
-    const writable = projection.permissions.manageRoles && projection.club.lifecycle === 'ACTIVE';
+    const [isOpen, setIsOpen] = useState(false);
+    const canEdit = projection.permissions.manageRoles && projection.club.lifecycle === 'ACTIVE';
     return (
         <>
-            <Button onClick={() => setOpen(true)} size="small" variant="secondary">
+            <Button onClick={() => setIsOpen(true)} size="small" variant="secondary">
                 Manage Moderators
             </Button>
-            <Modal onClose={() => setOpen(false)} open={open} title="Manage Moderators">
+            <Modal onClose={() => setIsOpen(false)} open={isOpen} title="Manage Moderators">
                 <p className={styles.explanation}>
                     Moderators run Sessions with you. {projection.members.length} of{' '}
                     {projection.entitlements.memberLimit} member places are in use.
@@ -84,7 +84,7 @@ function ManageModerators({ projection }: { projection: IClubSettings }) {
                             <MemberRoleForm
                                 clubId={projection.club.id}
                                 member={member}
-                                writable={writable}
+                                writable={canEdit}
                             />
                         </li>
                     ))}
@@ -112,24 +112,24 @@ function ConfirmAction({
     variant?: 'secondary-danger' | 'danger';
 }) {
     const serverAction = clubLifecycleAction.bind(null, clubId, action);
-    const [state, formAction, pending] = useActionState(serverAction, initialClubActionState);
-    const [open, setOpen] = useState(false);
+    const [state, formAction, isPending] = useActionState(serverAction, initialClubActionState);
+    const [isOpen, setIsOpen] = useState(false);
     return (
         <>
-            <Button onClick={() => setOpen(true)} size="small" variant={variant}>
+            <Button onClick={() => setIsOpen(true)} size="small" variant={variant}>
                 {label}
             </Button>
             <ConfirmDialog
                 confirmLabel={`Confirm ${label.toLowerCase()}`}
                 inputId={`${action}-confirmation`}
-                onClose={() => setOpen(false)}
+                onClose={() => setIsOpen(false)}
                 onConfirm={(typed) => {
                     const formData = new FormData();
                     formData.set('confirmation', typed);
                     startTransition(() => formAction(formData));
                 }}
-                open={open}
-                pending={pending}
+                open={isOpen}
+                pending={isPending}
                 status={<ActionStatus state={state} />}
                 title={title}
                 word={confirmation}
@@ -142,10 +142,10 @@ function ConfirmAction({
 
 function ReactivateAction({ clubId }: { clubId: string }) {
     const action = clubLifecycleAction.bind(null, clubId, 'reactivate');
-    const [state, formAction, pending] = useActionState(action, initialClubActionState);
+    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
     return (
         <form action={formAction} className={styles.inlineForm}>
-            <Button loading={pending} size="small" type="submit">
+            <Button loading={isPending} size="small" type="submit">
                 Reactivate Club
             </Button>
             <ActionStatus state={state} />
@@ -154,7 +154,7 @@ function ReactivateAction({ clubId }: { clubId: string }) {
 }
 
 export default function ClubDangerZone({ projection }: { projection: IClubSettings }) {
-    const active = projection.club.lifecycle === 'ACTIVE';
+    const isActive = projection.club.lifecycle === 'ACTIVE';
     const isAdmin = projection.club.membershipRole === 'ADMIN';
     const clubId = projection.club.id;
     const deleteAction = (
@@ -183,8 +183,8 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
             {isAdmin ? (
                 <>
                     <div className={styles.dangerActions}>
-                        {active ? <ManageModerators projection={projection} /> : null}
-                        {active ? (
+                        {isActive ? <ManageModerators projection={projection} /> : null}
+                        {isActive ? (
                             <ConfirmAction
                                 action="archive"
                                 clubId={clubId}

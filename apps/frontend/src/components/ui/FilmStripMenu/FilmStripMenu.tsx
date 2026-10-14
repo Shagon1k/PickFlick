@@ -24,18 +24,18 @@ export interface IFilmStripMenuProps {
 }
 
 export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmStripMenuProps) {
-    const [open, setOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const itemsRef = useRef<Array<HTMLElement | null>>([]);
 
     useEffect(() => {
-        if (open) {
+        if (isOpen) {
             requestAnimationFrame(() => itemsRef.current[0]?.focus());
         }
-    }, [open]);
+    }, [isOpen]);
 
     function closeWhenFocusLeaves(event: FocusEvent<HTMLDivElement>): void {
         if (!event.currentTarget.contains(event.relatedTarget)) {
-            setOpen(false);
+            setIsOpen(false);
         }
     }
 
@@ -46,8 +46,8 @@ export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmS
                 closeOnEscape
                 loop
                 menuItemTabIndex={0}
-                onChange={setOpen}
-                opened={open}
+                onChange={setIsOpen}
+                opened={isOpen}
                 position="bottom-end"
                 returnFocus
                 trapFocus={false}

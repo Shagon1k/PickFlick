@@ -12,10 +12,10 @@ export default function ProductOverlayProvider({ children }: IProductOverlayProv
     const [activeOverlay, setActiveOverlay] = useState<TProductOverlay | null>(null);
     const returnFocusRef = useRef<HTMLElement | null>(null);
 
-    const closeOverlay = useCallback((returnFocus = true) => {
+    const closeOverlay = useCallback((shouldReturnFocus = true) => {
         const returnTarget = returnFocusRef.current;
         setActiveOverlay(null);
-        if (returnFocus) {
+        if (shouldReturnFocus) {
             requestAnimationFrame(() => returnTarget?.focus());
         }
     }, []);
