@@ -1,18 +1,20 @@
 // Syntax rules shared by the ESLint config; each selector enforces one house convention.
 
-export const noReadonlyWrapper = {
+const noReadonlyWrapper = {
     selector: "TSTypeReference[typeName.name='Readonly']",
     message: 'Write plain types; props and data are not wrapped in Readonly<>.',
 };
 
 // Module-level constants set from a literal are UPPER_SNAKE_CASE. Values computed at runtime and the
 // export names Next.js requires (alt, contentType, ...) keep camelCase.
-export const constantNaming = {
+const constantNaming = {
     selector: [
         ":matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration[kind='const']",
         "> VariableDeclarator[id.type='Identifier']",
         ':matches([init.type=/^(Literal|TemplateLiteral)$/],',
         " [init.type='BinaryExpression']:not(:has(CallExpression, MemberExpression)))",
+        // A boolean constant follows the boolean naming rule instead (`isEnabled`).
+        ':not([init.raw=/^(true|false)$/])',
         ':not([id.name=/^[A-Z][A-Z0-9_]*$/])',
         ':not([id.name=/^(alt|contentType|dynamic|revalidate|runtime)$/])',
     ].join(''),
@@ -31,7 +33,7 @@ const EXEMPT_NUMBER = [
     ':not(TSEnumMember Literal)',
 ].join('');
 const MAGIC_NUMBER_MESSAGE = 'Name this number as a module-level UPPER_SNAKE_CASE constant.';
-export const magicNumbers = [
+const magicNumbers = [
     { selector: `:function ${NUMBER_LITERAL}${EXEMPT_NUMBER}`, message: MAGIC_NUMBER_MESSAGE },
     {
         selector: [
@@ -46,7 +48,7 @@ export const magicNumbers = [
     },
 ];
 
-export const frontendSyntax = [
+const frontendSyntax = [
     {
         // A component's own event handler is handleX; a forwarded prop is onX and a state setter
         // is setX.
@@ -60,3 +62,17 @@ export const frontendSyntax = [
             'Export a component as the default export of its own file (export default function Name).',
     },
 ];
+
+/**
+ * The `no-restricted-syntax` entry for one group of files. A flat config that restates the rule
+ * replaces it entirely, so every group builds its list here.
+ */
+export function restrictedSyntax({ withNumbers = false, withFrontend = false } = {}) {
+    return [
+        'error',
+        noReadonlyWrapper,
+        constantNaming,
+        ...(withNumbers ? magicNumbers : []),
+        ...(withFrontend ? frontendSyntax : []),
+    ];
+}

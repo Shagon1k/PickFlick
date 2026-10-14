@@ -68,8 +68,11 @@ specs, script tests, and config files.
   (`robots`, `sitemap`, `proxy`, React components) and zod schema factories (`singleLineText`) are
   the exception.
 - A component's own event handler is `handleX`; a prop that receives one is `onX`.
-- A module-level constant set from a literal is `UPPER_SNAKE_CASE` (`MAX_SUGGESTIONS`,
-  `HTTP_STATUS`).
+- A module-level constant set from a string, number, template, or literal arithmetic is
+  `UPPER_SNAKE_CASE` (`MAX_SUGGESTIONS`, `DAY_MS`); lint enforces it. A boolean constant follows
+  the boolean rule (`isEnabled`). Name a fixed lookup table or list `UPPER_SNAKE_CASE` too
+  (`HTTP_STATUS`, `BLOCKING_SESSION_PHASES`); objects built for a library call (a Prisma `include`)
+  stay camelCase.
 - Collections are plural nouns without a type suffix (`members`, not `memberList`), and a callback
   names the item it receives (`members.map((member) => ...)`). Single letters are only `a`/`b` in
   a sort comparator, `i` in a counter loop, and `_` for an unused position.

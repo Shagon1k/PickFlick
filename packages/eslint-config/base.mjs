@@ -13,12 +13,7 @@ import globals from 'globals';
 import { resolve } from 'node:path';
 import tseslint from 'typescript-eslint';
 
-import {
-    constantNaming,
-    frontendSyntax,
-    magicNumbers,
-    noReadonlyWrapper,
-} from './restricted-syntax.mjs';
+import { restrictedSyntax } from './restricted-syntax.mjs';
 
 const reactConfig = reactPlugin.configs['recommended-typescript'];
 const repositoryRoot = resolve(import.meta.dirname, '../..');
@@ -140,7 +135,7 @@ export default [
                     format: null,
                 },
             ],
-            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming, ...magicNumbers],
+            'no-restricted-syntax': restrictedSyntax({ withNumbers: true }),
             'check-file/filename-naming-convention': [
                 'error',
                 { '**/__tests__/**/*.{ts,tsx}': '*.?(int.)spec' },
@@ -151,14 +146,8 @@ export default [
     {
         files: ['apps/frontend/**/*.{ts,tsx}'],
         rules: {
-            // Restating the rule replaces the shared entry, so the shared selectors are listed again.
-            'no-restricted-syntax': [
-                'error',
-                noReadonlyWrapper,
-                constantNaming,
-                ...magicNumbers,
-                ...frontendSyntax,
-            ],
+            // A restated rule replaces the shared entry; restrictedSyntax() keeps the lists aligned.
+            'no-restricted-syntax': restrictedSyntax({ withNumbers: true, withFrontend: true }),
             'no-restricted-imports': [
                 'error',
                 {
@@ -277,13 +266,11 @@ export default [
             'apps/backend/src/testing/**',
             'apps/frontend/src/app/(internal)/**',
         ],
-        rules: { 'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming] },
+        rules: { 'no-restricted-syntax': restrictedSyntax() },
     },
     {
         files: ['apps/frontend/**/__tests__/**', 'apps/frontend/src/app/(internal)/**'],
-        rules: {
-            'no-restricted-syntax': ['error', noReadonlyWrapper, constantNaming, ...frontendSyntax],
-        },
+        rules: { 'no-restricted-syntax': restrictedSyntax({ withFrontend: true }) },
     },
     {
         files: ['**/__tests__/**/*.{ts,tsx}'],
