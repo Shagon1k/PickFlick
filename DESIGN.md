@@ -409,6 +409,22 @@ unscored nomination and produce live feedback. Recoverable and offline errors pr
 The form explains that submission is final. A saved ballot replaces controls with the caller's
 scores and a locked message; refresh keeps that state. Aggregate accepted/submitted progress
 shares the warm Selection route; ordinary film rows stay neutral. Archived Clubs and ineligible
-participants cannot submit. The server filters nominator names independently. Result totals,
-winner UI and early closure belong to the remaining Phase 11 work. Hosted visual review remains
-required before #45 acceptance.
+participants cannot submit. The server filters nominator names independently. Hosted visual
+review remains required before #45 acceptance.
+
+### Selection results and early closure
+
+After closure, a restrained warm winner card replaces the ballot. It links to the selected Movie,
+shows the permitted nominator and records automatic or operator closure. When allowed, a neutral
+ordered list shows frozen totals, maximum scores and supporting voters, with the decisive
+tie-break explained in plain text. Mobile stacks each Movie above its metrics. Hidden results
+show the winner and a visibility explanation without rankings or numeric breakdowns. Missing
+Movie metadata uses the existing title placeholder; zero-ballot closure explains the tie-break.
+
+Operators can close Selection through the shared focus-trapped confirmation dialog by typing
+`CLOSE`. The dialog shows accepted/submitted progress, explains that all received ballots count
+and that remaining participants cannot submit, and retains confirmation after offline/API errors.
+Cancel returns focus to the trigger; a successful phase change focuses the Session heading.
+The existing progress poll refreshes other clients and recovers on reconnect. Watching and Rating
+workflows remain later work. Exact-head hosted preview and owner visual acknowledgment remain
+required before #47 acceptance.

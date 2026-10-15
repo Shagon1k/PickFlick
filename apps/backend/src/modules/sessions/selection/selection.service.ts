@@ -8,6 +8,7 @@ import { MoviesService } from '../../movies/movies.service.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceSelection, completeSelection } from './selection-completion.js';
+import { loadSelectionOutcome } from './selection-outcome.js';
 
 @Injectable()
 export class SelectionService {
@@ -15,6 +16,14 @@ export class SelectionService {
         private readonly prisma: PrismaService,
         private readonly movies: MoviesService,
     ) {}
+
+    async loadOutcome(
+        tx: Prisma.TransactionClient,
+        session: Prisma.SessionGetPayload<object>,
+        membership: Awaited<ReturnType<typeof findMembership>>,
+    ) {
+        return loadSelectionOutcome(tx, session, membership, this.movies);
+    }
 
     async loadSelection(
         tx: Prisma.TransactionClient,

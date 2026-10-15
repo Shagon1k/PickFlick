@@ -530,5 +530,19 @@ and timestamp. Migration 25 adds the column, audit action and a trigger that rej
 saved snapshot or its selected Movie. It leaves historical Sessions untouched. Apply it before the
 updated API; existing Selection Sessions are checked on their next workflow mutation.
 
-This internal snapshot is never included in Session detail responses. Policy-filtered result
-projections, operator UI controls and richer live result presentation remain Proposed under #47.
+This internal snapshot is never included in Session detail responses. Session detail returns a
+separate `selectionOutcome` after closure, including in later phases. Every current Club member
+can see the winning Movie and closure information. Admins and Moderators can read aggregate
+rankings; ordinary members need the current Pro entitlement and the Session's snapshotted
+`showVoteResults`. Free members receive `breakdown: null`, even if that flag is stored as true.
+App Admin status grants no Club access. Nominator names follow the independent Session author
+setting for both winner and ranking. Individual ballots, participant IDs, provider mappings,
+closure actor IDs and the internal snapshot never enter the DTO.
+
+Totals, maximum-score counts, supporting-voter counts, order and the decisive tie-break come
+from the saved snapshot; reads and closure retries never recompute them. Movie summaries and
+permitted author display names use current catalog/account data. The existing transactional
+`PROGRESS` and `AUTOMATIC`/`MANUAL` Watching events signal submission and winner publication.
+Clients keep the authenticated version poll, focus/online recovery and authoritative page refresh
+described above. #47's older SSE wording does not reinstate the transport removed in #172.
+No dispatcher, connection layer, migration, dependency or runtime variable is added.

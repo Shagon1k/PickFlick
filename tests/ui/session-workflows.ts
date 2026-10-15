@@ -88,6 +88,7 @@ export function handleSessionWorkflow(
                 progressVersion: 1,
                 nominations: null,
                 selection: null,
+                selectionOutcome: null,
                 canEdit: true,
                 canCancel: true,
                 topic: input.topic ?? null,

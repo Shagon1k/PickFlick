@@ -268,6 +268,10 @@ the same result rules and cannot advance Nomination with no films.
   App Admins get audited operational access only when required.
 - "Show who nominated", pre-submission nomination visibility, post-close vote visibility, and
   post-close rating visibility are independent Club settings where the plan allows.
+- Post-close Selection projections show the winner to current Club members. Club Admins and
+  Moderators can see aggregate rankings; ordinary members need the current Pro entitlement and
+  the Session's snapshotted vote-result visibility. Free members receive no breakdown even if
+  that snapshot flag is true. Individual ballots and internal winner inputs stay private.
 - Session Ratings use a fixed 1–10 scale with an optional comment.
 
 ### Plans and limits

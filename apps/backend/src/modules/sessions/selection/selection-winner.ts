@@ -1,3 +1,5 @@
+import type { TSelectionReason } from '@pickflick/contracts';
+
 export interface ISelectionInputs {
     scaleMin: number;
     scaleMax: number;
@@ -57,7 +59,7 @@ function buildCandidates(inputs: ISelectionInputs) {
 }
 
 function compareCandidates(a: TCandidate, b: TCandidate) {
-    const steps = [
+    const steps: { reason: TSelectionReason; order: number }[] = [
         { reason: 'TOTAL', order: b.total - a.total },
         { reason: 'MAXIMUM_COUNT', order: b.maximumCount - a.maximumCount },
         { reason: 'SUPPORTER_COUNT', order: b.supporterCount - a.supporterCount },

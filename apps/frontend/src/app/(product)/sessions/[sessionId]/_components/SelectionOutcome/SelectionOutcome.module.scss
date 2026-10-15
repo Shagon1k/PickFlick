@@ -1,0 +1,72 @@
+.outcome {
+    min-width: 0;
+}
+
+.outcome h2 {
+    font: 400 var(--fs-app-section)/var(--lh-title) var(--font-display);
+}
+
+.outcome p {
+    color: var(--fg-secondary);
+}
+
+.winner {
+    padding: var(--gap-lg);
+    overflow-wrap: anywhere;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+}
+
+.winner h3 {
+    font: 400 var(--fs-card-title)/var(--lh-title) var(--font-display);
+}
+
+.winner .eyebrow {
+    font-family: var(--font-mono);
+    color: var(--ivory);
+}
+
+.ranking {
+    display: grid;
+    gap: var(--gap-sm);
+    padding-left: var(--gap-lg);
+}
+
+.ranking li {
+    padding: var(--gap-md);
+    overflow-wrap: anywhere;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.ranking dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap-sm);
+    margin-bottom: 0;
+}
+
+.ranking dt {
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+}
+
+.ranking dd {
+    margin: var(--gap-xs) 0 0;
+    font-family: var(--font-mono);
+}
+
+@media (width >= 1024px) {
+    .ranking li {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--gap-md);
+        align-items: center;
+    }
+
+    .ranking dl {
+        margin: 0;
+    }
+}
