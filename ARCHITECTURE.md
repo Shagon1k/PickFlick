@@ -504,5 +504,6 @@ policy-filtered authors, accepted/submitted counts and the caller's own submitte
 never includes another participant's scores or totals. The existing authenticated progress poll
 revalidates authoritative detail and roster projections. Departed participants' ballots remain
 stored; progress counts only accepted participants. Migration 24 backfills the eligible films
-for existing Selection Sessions using their currently accepted participants. Winner resolution
+for existing Selection Sessions using their currently accepted participants. It takes an `EXCLUSIVE`
+Session table lock before Nomination DDL so in-flight phase writers finish first. Winner resolution
 and post-close result projections remain Proposed under #46 and #47.

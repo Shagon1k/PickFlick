@@ -1,7 +1,7 @@
 BEGIN;
 
--- Phase writers lock Session before Nomination; take the same order for the DDL.
-LOCK TABLE "Session" IN SHARE ROW EXCLUSIVE MODE;
+-- Wait for SELECT FOR UPDATE writers before taking the Nomination DDL lock.
+LOCK TABLE "Session" IN EXCLUSIVE MODE;
 
 ALTER TABLE "Nomination" ADD COLUMN "isInSelection" BOOLEAN NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX "Nomination_id_sessionId_key" ON "Nomination"("id", "sessionId");

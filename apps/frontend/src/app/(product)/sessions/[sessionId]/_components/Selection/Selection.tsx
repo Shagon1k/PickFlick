@@ -3,7 +3,7 @@
 import { useForm } from '@mantine/form';
 import { submitSelectionSchema, type TSelection } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
@@ -13,6 +13,7 @@ import { refreshSelectionAction, submitSelectionAction } from '../../selection-a
 import styles from './Selection.module.scss';
 
 export default function Selection({ sessionId, data }: { sessionId: string; data: TSelection }) {
+    const headingRef = useRef<HTMLHeadingElement>(null);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
     const form = useForm<{ scores: { nominationId: string; score: number | undefined }[] }>({
@@ -25,35 +26,35 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                 : { scores: 'Choose a score for every nomination.' },
     });
     const scoredCount = form.values.scores.filter((row) => row.score !== undefined).length;
-    const handleSubmit = form.onSubmit(
-        (values, event) => {
-            const heading = event?.currentTarget
-                .closest('section')
-                ?.querySelector<HTMLHeadingElement>('h2');
-            const offline = getOfflineMessage();
-            if (offline) {
-                setMessage(offline);
-                return;
-            }
-            setMessage('Saving your ballot…');
-            startTransition(async () => {
-                const result = await submitSelectionAction(sessionId, values).catch(() => ({
-                    ok: false as const,
-                    message: 'We could not reach PickFlick. Your scores are still here; try again.',
-                }));
-                setMessage(result.ok ? 'Ballot submitted.' : result.message);
-                if (result.ok) heading?.focus();
-            });
-        },
-        (_errors, _values, event) => {
-            setMessage('Choose a score for every nomination.');
-            const firstMissing = form.values.scores.findIndex((row) => row.score === undefined);
-            event?.currentTarget
-                .querySelectorAll('[role="radiogroup"]')
-                [firstMissing]?.querySelector<HTMLButtonElement>('[tabindex="0"]')
-                ?.focus();
-        },
-    );
+    function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+        form.onSubmit(
+            (values) => {
+                const offline = getOfflineMessage();
+                if (offline) {
+                    setMessage(offline);
+                    return;
+                }
+                setMessage('Saving your ballot…');
+                startTransition(async () => {
+                    const result = await submitSelectionAction(sessionId, values).catch(() => ({
+                        ok: false as const,
+                        message:
+                            'We could not reach PickFlick. Your scores are still here; try again.',
+                    }));
+                    setMessage(result.ok ? 'Ballot submitted.' : result.message);
+                    if (result.ok) headingRef.current?.focus();
+                });
+            },
+            (_errors, _values, event) => {
+                setMessage('Choose a score for every nomination.');
+                const firstMissing = form.values.scores.findIndex((row) => row.score === undefined);
+                event?.currentTarget
+                    .querySelectorAll('[role="radiogroup"]')
+                    [firstMissing]?.querySelector<HTMLButtonElement>('[tabindex="0"]')
+                    ?.focus();
+            },
+        )(event);
+    }
     function handleRefresh() {
         const offline = getOfflineMessage();
         if (offline) {
@@ -85,7 +86,7 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                     Refresh Selection
                 </Button>
             </div>
-            <h2 id="selection-heading" tabIndex={-1}>
+            <h2 id="selection-heading" ref={headingRef} tabIndex={-1}>
                 Movie Selection
             </h2>
             <p>

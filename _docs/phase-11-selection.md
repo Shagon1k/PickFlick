@@ -26,10 +26,15 @@ trigger also covers older API/worker writers during deployment, without a runtim
 dependency, environment variable, notification delivery, winner calculation or result breakdown is
 included in #45. Selection remains open after the final ballot until #46 adds closure.
 
+Before touching Nomination, migration 24 takes an `EXCLUSIVE` table lock on Session so in-flight
+`SELECT FOR UPDATE` writers can finish their nomination and Session updates before the DDL runs.
+
 ## Verification
 
 - Every supported scale, completeness, duplicate IDs, foreign nominations and invalid scores.
 - Real database uniqueness, composite foreign keys and concurrent submission.
+- Migration concurrency with an in-flight Nomination writer, including its phase/progress update
+  and the eligible nomination backfill.
 - Current Membership, accepted participation, archived Club and closed phase enforcement.
 - Keyboard, touch, incomplete submission, errors/offline, locked state and responsive accessibility.
 - Repository quality gate and real API browser journey.
@@ -59,3 +64,19 @@ playwright.ui.config.ts --grep '@smoke|selection.spec' --grep-invert @visual`). 
 Hosted exact-head preview, owner visual acknowledgment and new-head CI remain unverified.
 #46 and #47 retain winner closure and result projection work. This evidence does not complete
 Phase 11 or mark #45 accepted.
+
+## Review fix round 1 — 2026-10-15
+
+The migration concurrency regression reproduces PostgreSQL deadlock `40P01` with the original
+`SHARE ROW EXCLUSIVE` lock and passes with `EXCLUSIVE`. The writer completes its phase/progress
+update, and the migration backfills its committed nomination. The corrected migration applies
+successfully to a fresh loopback test database; all 162 integration tests across 19 files pass.
+
+Selection now focuses its own heading ref after successful submission, following Nomination's
+pattern. Error and offline paths retain their scores. `pnpm verify` passes, including all 306 unit
+tests and the production build.
+
+The PR smoke selection plus all Selection checks pass 45 tests (`playwright test --config
+playwright.ui.config.ts --grep '@smoke|selection.spec' --grep-invert @visual`), including successful
+submission focus, score retention on recoverable errors/offline, touch, keyboard and accessibility.
+Hosted exact-head preview, owner visual acknowledgment and new-head CI remain unverified.
