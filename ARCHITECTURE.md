@@ -505,5 +505,30 @@ never includes another participant's scores or totals. The existing authenticate
 revalidates authoritative detail and roster projections. Departed participants' ballots remain
 stored; progress counts only accepted participants. Migration 24 backfills the eligible films
 for existing Selection Sessions using their currently accepted participants. It takes an `EXCLUSIVE`
-Session table lock before Nomination DDL so in-flight phase writers finish first. Winner resolution
-and post-close result projections remain Proposed under #46 and #47.
+Session table lock before Nomination DDL so in-flight phase writers finish first.
+
+### Selection winner resolution
+
+Active automatic completion evaluates positive N/N accepted participants after ballot submission,
+Session/Club departures, removal, invitation responses and Club reactivation. It uses the existing
+Club → Session locks and progress outbox. Archived Clubs pause automatic completion. All received
+ballots count in the winner calculation, including ballots retained after departure; eligible films
+remain fixed. Zero accepted participants do not trigger automatic closure.
+
+`POST /sessions/:sessionId/selection/close` accepts `phaseVersion` and `CLOSE`. The existing
+Admin/Moderator management rule applies, including Club lifecycle and access restrictions. An
+operator may close with zero ballots; an empty eligible nomination set returns `NO_NOMINATIONS`.
+Stale open-phase requests return `SELECTION_CHANGED`. Authorized retries after a saved result
+succeed without another transition, audit event or outbox event. Manual closure records
+`SESSION_SELECTION_CLOSED`; automatic closure uses the actor-free `AUTOMATIC` outbox event.
+
+The pure resolver follows the Roadmap tie-break order. One transaction writes Watching, the selected
+Movie, phase/details versions, progress event and Session `selectionResult` JSON. The snapshot stores
+scale, accepted participant IDs, eligible nominations and their provider mappings, received ballots
+and scores, ordered candidate metrics, winning nomination, decisive tie-break, closure kind/actor
+and timestamp. Migration 25 adds the column, audit action and a trigger that rejects changes to a
+saved snapshot or its selected Movie. It leaves historical Sessions untouched. Apply it before the
+updated API; existing Selection Sessions are checked on their next workflow mutation.
+
+This internal snapshot is never included in Session detail responses. Policy-filtered result
+projections, operator UI controls and richer live result presentation remain Proposed under #47.

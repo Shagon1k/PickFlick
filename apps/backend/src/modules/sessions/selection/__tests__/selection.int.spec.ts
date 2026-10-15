@@ -315,7 +315,14 @@ describe('Selection ballots', () => {
                 })
             ).status,
         ).toBe(204);
-        expect(await read()).toMatchObject({ acceptedCount: 1, submittedCount: 1 });
-        expect((await read()).nominations.map((row) => row.id)).toEqual(nominationIds);
+        const saved = await api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
+        expect(saved.phase).toBe('WATCHING');
+        expect(saved.selectionResult).toMatchObject({
+            inputs: {
+                nominations: nominationIds
+                    .toSorted((a, b) => a.localeCompare(b))
+                    .map((id) => ({ id })),
+            },
+        });
     });
 });

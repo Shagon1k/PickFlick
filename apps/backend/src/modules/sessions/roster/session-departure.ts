@@ -2,7 +2,7 @@ import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { recordAudit } from '../../clubs/access/club-access.js';
-import { completeNomination } from '../nominations/nomination-completion.js';
+import { completeSessionPhase } from '../session-completion.js';
 import { lockSession } from '../session-lock.js';
 import { revokePendingInvites } from './session-invites.js';
 
@@ -34,6 +34,6 @@ export async function departSessions(
             subjectMembershipId: membershipId,
             action: status === 'LEFT' ? 'SESSION_PARTICIPANT_LEFT' : 'SESSION_PARTICIPANT_REMOVED',
         });
-        await completeNomination(tx, participant.sessionId);
+        await completeSessionPhase(tx, participant.sessionId);
     }
 }

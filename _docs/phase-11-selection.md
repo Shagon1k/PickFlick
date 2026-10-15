@@ -24,7 +24,7 @@ Migration 24 adds ballot/score tables, uniqueness and same-Session foreign keys,
 eligibility marker. Existing Selection Sessions inherit currently accepted nominations. The phase
 trigger also covers older API/worker writers during deployment, without a runtime fallback. No new
 dependency, environment variable, notification delivery, winner calculation or result breakdown is
-included in #45. Selection remains open after the final ballot until #46 adds closure.
+included in #45. Winner closure is implemented separately in #46.
 
 Before touching Nomination, migration 24 takes an `EXCLUSIVE` table lock on Session so in-flight
 `SELECT FOR UPDATE` writers can finish their nomination and Session updates before the DDL runs.
@@ -62,6 +62,7 @@ playwright.ui.config.ts --grep '@smoke|selection.spec' --grep-invert @visual`). 
   Captures are retained under `test-results/selection-review/` for local inspection.
 
 Hosted exact-head preview, owner visual acknowledgment and new-head CI remain unverified.
+
 #46 and #47 retain winner closure and result projection work. This evidence does not complete
 Phase 11 or mark #45 accepted.
 
@@ -80,3 +81,48 @@ The PR smoke selection plus all Selection checks pass 45 tests (`playwright test
 playwright.ui.config.ts --grep '@smoke|selection.spec' --grep-invert @visual`), including successful
 submission focus, score retention on recoverable errors/offline, touch, keyboard and accessibility.
 Hosted exact-head preview, owner visual acknowledgment and new-head CI remain unverified.
+
+## Winner resolution — #46
+
+Run `r_72a1c96e16284ba4d904` reuses immutable ballots, the eligible nomination marker,
+Club → Session locks and the progress outbox. Automatic positive N/N completion runs after
+submission and roster/lifecycle changes. Operator closure accepts `CLOSE` and `phaseVersion`;
+retries reuse the saved result without advancing or publishing again. No result UI or projection
+is added here; #47 owns those surfaces.
+
+All received ballots count, including ballots retained after departure. With no ballots, totals
+are zero and the nomination/provider/nomination-ID tie-breaks select one nomination. Positive
+scores count as support. Provider mappings use a stable source/ID order, numeric comparison for
+numeric IDs and missing mappings last; the Roadmap records the exact rule.
+
+Migration 25 adds the Session result snapshot and manual audit action. The snapshot freezes the
+scale, accepted roster, nominations, provider mappings, ballots, ranking metrics, winning
+nomination, decisive tie-break and closure provenance. PostgreSQL rejects changes to a saved
+snapshot or selected Movie. Existing history is not backfilled; an existing open Selection is
+evaluated on its next workflow mutation. No new dependency, environment variable or service is
+required. Apply migration 25 before the API.
+
+Verification covers each tie-break, no ballots, repeated Movies, stored 1-based scales, received
+ballots after departure, zero accepted participants, Session/Club departure, removal, archive and
+reactivation, concurrent/manual/automatic closure, retries, outbox rollback, authorization and
+snapshot immutability. The real API browser journey checks the final ballot transitions both
+participants to Watching with the selected Movie.
+
+### Local evidence — 2026-10-15
+
+Node 24.15.0 and pnpm 11.25.0; all 25 migrations apply to a fresh isolated loopback
+`pickflick_test` database with the synthetic seed.
+
+- `pnpm verify` passes, including 320 unit tests across 45 files and the production build.
+  The 14 resolver tests cover all tie-break steps and the documented edge rules.
+- `pnpm test:integration`: 179 tests pass across 20 files. Seventeen closure tests cover
+  automatic/manual/concurrent completion, retries, roster changes, archived Clubs, outbox rollback,
+  authorization, immutable snapshots and private API responses.
+- `pnpm test:journeys`: both real-API browser journeys pass, including the final-ballot transition
+  to Watching and the selected Movie link on both clients.
+- `pnpm test:ui:smoke`: all 37 PR checks pass, including Selection keyboard submission,
+  Session roster/workflows, accessibility, security headers and horizontal overflow.
+
+The production dependency audit passes the high/critical gate and reports one moderate advisory.
+The isolated PostgreSQL test container and its data were removed. No deployment was performed;
+remote CI and owner review remain unverified. Phase 11 completion and #47 UI review remain separate.

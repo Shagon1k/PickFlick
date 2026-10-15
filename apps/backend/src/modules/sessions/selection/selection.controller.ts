@@ -1,5 +1,10 @@
 import { Body, Controller, Header, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { submitSelectionSchema, type TSubmitSelection } from '@pickflick/contracts';
+import {
+    closeSelectionSchema,
+    submitSelectionSchema,
+    type TCloseSelection,
+    type TSubmitSelection,
+} from '@pickflick/contracts';
 
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
 import type { IAuthUser } from '../../auth/auth.types.js';
@@ -18,5 +23,15 @@ export class SelectionController {
         @Body(new ZodValidationPipe(submitSelectionSchema)) input: TSubmitSelection,
     ) {
         return this.selection.submit(user.id, id, input);
+    }
+
+    @Post('close')
+    @Header('Cache-Control', 'private, no-store')
+    close(
+        @CurrentUser() user: IAuthUser,
+        @Param('sessionId', new ParseUUIDPipe({ version: '4' })) id: string,
+        @Body(new ZodValidationPipe(closeSelectionSchema)) input: TCloseSelection,
+    ) {
+        return this.selection.close(user.id, id, input);
     }
 }

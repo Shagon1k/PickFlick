@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
@@ -9,7 +9,22 @@ import {
     snapshotSessionSettings,
 } from '../../packages/database/src/index.ts';
 
-test('participants nominate through the real API, submit complete ballots and keep immutable scores', async ({
+async function submitScores(page: Page, sessionId: string, score: number) {
+    await page.goto(`/sessions/${sessionId}`);
+    await expect(page.getByRole('heading', { name: 'Movie Selection' })).toBeVisible({
+        timeout: 20000,
+    });
+    const groups = page.getByRole('radiogroup');
+    await expect(groups).toHaveCount(2);
+    await groups
+        .first()
+        .getByRole('radio', { name: `${score} of 10`, exact: true })
+        .click();
+    await groups.nth(1).getByRole('radio', { name: '10 of 10' }).click();
+    await page.getByRole('button', { name: 'Submit scores' }).click();
+}
+
+test('participants nominate through the real API, submit immutable ballots and select a winner', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
@@ -76,29 +91,24 @@ test('participants nominate through the real API, submit complete ballots and ke
             expect(response.status()).toBe(201);
             pages.push(await context.newPage());
         }
-        for (const [index, page] of pages.entries()) {
-            await page.goto(`/sessions/${session.id}`);
-            await expect(page.getByRole('heading', { name: 'Movie Selection' })).toBeVisible({
+        const firstPage = pages[0]!;
+        await submitScores(firstPage, session.id, 0);
+        await expect(
+            firstPage.getByText('Your ballot is saved. Your scores are locked.'),
+        ).toBeVisible();
+        await firstPage.reload();
+        await expect(firstPage.getByRole('radio')).toHaveCount(0);
+        await expect(firstPage.getByText('0 of 10', { exact: true })).toBeVisible();
+        await submitScores(pages[1]!, session.id, 1);
+        for (const page of pages) {
+            await expect(page.getByText('watching', { exact: true })).toBeVisible({
                 timeout: 20000,
             });
-            const groups = page.getByRole('radiogroup');
-            await expect(groups).toHaveCount(2);
-            await groups
-                .first()
-                .getByRole('radio', { name: `${index} of 10`, exact: true })
-                .click();
-            await groups.nth(1).getByRole('radio', { name: '10 of 10' }).click();
-            await page.getByRole('button', { name: 'Submit scores' }).click();
-            await expect(
-                page.getByText('Your ballot is saved. Your scores are locked.'),
-            ).toBeVisible();
-            await page.reload();
-            await expect(page.getByRole('radio')).toHaveCount(0);
-            await expect(page.getByText(`${index} of 10`, { exact: true })).toBeVisible();
+            await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
+                'href',
+                `/movies/${movies[1]!.id}`,
+            );
         }
-        await expect(
-            pages[0]!.getByText('Selection in progress — 2 of 2 participants have submitted.'),
-        ).toBeVisible({ timeout: 20000 });
     } finally {
         for (const context of contexts) await context.close();
         await prisma.selectionScore.deleteMany({ where: { ballot: { session: { clubId } } } });

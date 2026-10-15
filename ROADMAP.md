@@ -257,6 +257,13 @@ the same result rules and cannot advance Nomination with no films.
   progress without changing the films in a submitted ballot.
 - The winner has the highest total. Ties break by, in order: more maximum scores, more distinct
   supporting voters, earlier nomination, lower movie-provider ID, then lower nomination ID.
+- Supporting voters give a score above zero. All received ballots count, including departed
+  participants' ballots; only accepted participants count toward automatic positive N/N closure.
+  With no ballots, operator closure treats every total as zero and applies the remaining tie-breaks.
+- Provider IDs use the lowest stored `(source, externalId)` mapping: source names sort by code
+  point, numeric IDs compare numerically, text IDs by code point, and missing mappings sort last.
+  Repeated Movies remain separate nominations. Closure freezes inputs, ranking and the decisive
+  tie-break; later roster or catalog changes cannot recalculate history.
 - Free Clubs hide vote results from ordinary members; Pro Club Admins choose post-close visibility.
   App Admins get audited operational access only when required.
 - "Show who nominated", pre-submission nomination visibility, post-close vote visibility, and

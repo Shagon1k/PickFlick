@@ -10,8 +10,8 @@ import type { Prisma } from '@pickflick/database';
 import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { lockClub, recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
-import { completeNomination } from '../nominations/nomination-completion.js';
 import { assertManager, assertOpen } from '../session-access.js';
+import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
 import { readRoster } from './session-roster-projection.js';
@@ -239,11 +239,11 @@ export class SessionRosterService {
     }
 }
 
-/** Records a roster event, then re-checks whether Nomination is complete. */
+/** Records a roster event, then re-checks whether the current phase is complete. */
 async function recordRosterChange(
     tx: Prisma.TransactionClient,
     event: TAuditEvent & { sessionId: string },
 ) {
     await recordAudit(tx, event);
-    await completeNomination(tx, event.sessionId);
+    await completeSessionPhase(tx, event.sessionId);
 }

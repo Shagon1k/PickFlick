@@ -12,6 +12,12 @@ export const submitSelectionSchema = z.strictObject({
 });
 export type TSubmitSelection = z.infer<typeof submitSelectionSchema>;
 
+export const closeSelectionSchema = z.strictObject({
+    phaseVersion: z.int().positive(),
+    confirmation: z.literal('CLOSE'),
+});
+export type TCloseSelection = z.infer<typeof closeSelectionSchema>;
+
 export const selectionSchema = z.strictObject({
     scaleMin: z.union([z.literal(0), z.literal(1)]),
     scaleMax: z.int().min(1).max(CLUB_SELECTION_SCALE_CEILING),

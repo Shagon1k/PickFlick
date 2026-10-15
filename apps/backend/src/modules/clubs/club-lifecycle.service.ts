@@ -3,8 +3,8 @@ import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { completeNomination } from '../sessions/nominations/nomination-completion.js';
 import { departSessions } from '../sessions/roster/session-departure.js';
+import { completeSessionPhase } from '../sessions/session-completion.js';
 import { lockSession } from '../sessions/session-lock.js';
 import { StorageService } from '../storage/storage.service.js';
 import {
@@ -168,7 +168,7 @@ export class ClubLifecycleService {
             });
             for (const session of sessions) {
                 await lockSession(transaction, session.id);
-                await completeNomination(transaction, session.id);
+                await completeSessionPhase(transaction, session.id);
             }
             await recordAudit(transaction, {
                 clubId,
