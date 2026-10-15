@@ -37,6 +37,11 @@ export class SessionsService {
                 const canManageSession = await canManage(transaction, membership);
                 return {
                     ...toSession(session, membership.club.name, canManageSession),
+                    selectionOutcome: await this.selection.loadOutcome(
+                        transaction,
+                        session,
+                        membership,
+                    ),
                     selection:
                         session.phase === 'SELECTION'
                             ? await this.selection.loadSelection(transaction, session, membership)
@@ -207,7 +212,7 @@ function toSession(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
     canManageSession: boolean,
-): Omit<TSession, 'nominations' | 'selection'> {
+): Omit<TSession, 'nominations' | 'selection' | 'selectionOutcome'> {
     const isOpen = isOpenSessionPhase(session.phase);
     return {
         id: session.id,

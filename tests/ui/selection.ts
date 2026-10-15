@@ -1,4 +1,10 @@
-import type { ISessionRoster, TSelection, TSession, TSubmitSelection } from '@pickflick/contracts';
+import type {
+    ISessionRoster,
+    TSelection,
+    TSelectionOutcome,
+    TSession,
+    TSubmitSelection,
+} from '@pickflick/contracts';
 
 import {
     readJson,
@@ -9,6 +15,7 @@ import {
 } from './mock-http.ts';
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000045';
+const closed = new Set<string>();
 const states = new Map<string, TSubmitSelection | null>();
 
 function buildSelection(token: string, ballot: TSubmitSelection | null): TSelection {
@@ -46,7 +53,9 @@ export function handleSelection(
     if (!token?.startsWith('valid-selection') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
         return false;
     const ballot = states.get(token) ?? null;
-    const version = ballot ? 2 : 1;
+    const isClosed = closed.has(token) || token.includes('outcome');
+    const ballotVersion = ballot ? 2 : 1;
+    const version = isClosed ? 3 : ballotVersion;
     if (pathname.endsWith('/progress')) {
         sendJson(response, 200, { version });
         return true;
@@ -62,6 +71,17 @@ export function handleSelection(
             eligibleMembers: [],
         };
         sendJson(response, 200, roster);
+        return true;
+    }
+    if (pathname.endsWith('/selection/close')) {
+        readJson(request, () => {
+            if (token.includes('failure'))
+                sendError(response, 503, 'SERVICE_UNAVAILABLE', 'close-failure');
+            else {
+                closed.add(token);
+                sendJson(response, 201, null);
+            }
+        });
         return true;
     }
     if (pathname.endsWith('/selection')) {
@@ -84,21 +104,48 @@ export function handleSelection(
         clubId: '10000000-0000-4000-8000-000000000031',
         clubName: 'Midnight Society',
         type: 'FULL_CYCLE',
-        phase: 'SELECTION',
+        phase: isClosed ? 'WATCHING' : 'SELECTION',
         topic: 'Noir night',
         notes: 'A night at the cinema.',
         scheduledAt: '2026-12-01T20:00:00.000Z',
         location: 'Room A',
         deadlineAt: null,
-        movieId: null,
+        movieId: isClosed ? '20000000-0000-4000-8000-000000000000' : null,
         version: 1,
         phaseVersion: 2,
         progressVersion: version,
         nominations: null,
-        selection: buildSelection(token, ballot),
-        canEdit: false,
+        selection: isClosed ? null : buildSelection(token, ballot),
+        selectionOutcome: isClosed ? buildOutcome(token) : null,
+        canEdit: token.includes('operator'),
         canCancel: false,
     };
     sendJson(response, 200, detail);
     return true;
+}
+
+function buildOutcome(token: string): TSelectionOutcome {
+    const nominations = buildSelection(token, null).nominations;
+    return {
+        winner: nominations[0]!.movie,
+        author: nominations[0]!.author,
+        closedAt: '2026-10-15T12:00:00.000Z',
+        closure: 'MANUAL',
+        breakdown: token.includes('hidden')
+            ? null
+            : {
+                  scaleMin: 0,
+                  scaleMax: 3,
+                  ballotCount: 0,
+                  reason: 'NOMINATION_TIME',
+                  ranking: nominations.map((row) => ({
+                      id: row.id,
+                      movie: row.movie,
+                      author: row.author,
+                      total: 0,
+                      maximumCount: 0,
+                      supporterCount: 0,
+                  })),
+              },
+    };
 }

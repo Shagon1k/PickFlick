@@ -17,6 +17,8 @@ import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
 import Selection from '../Selection/Selection';
+import SelectionClose from '../SelectionClose/SelectionClose';
+import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
 import SessionRoster from '../SessionRoster/SessionRoster';
 
 export default function SessionDetails({
@@ -56,8 +58,18 @@ export default function SessionDetails({
                 />
             ) : null}
             {session.selection ? (
-                <Selection sessionId={session.id} data={session.selection} />
+                <>
+                    <Selection sessionId={session.id} data={session.selection} />
+                    <SelectionClose
+                        sessionId={session.id}
+                        phaseVersion={session.phaseVersion}
+                        submittedCount={session.selection.submittedCount}
+                        acceptedCount={session.selection.acceptedCount}
+                        canClose={session.canEdit && session.selection.nominations.length > 0}
+                    />
+                </>
             ) : null}
+            {session.selectionOutcome ? <SelectionOutcome data={session.selectionOutcome} /> : null}
             <section className={styles.card} aria-label="Session details">
                 <dl className={styles.facts}>
                     <div>

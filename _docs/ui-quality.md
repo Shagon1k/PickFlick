@@ -5,7 +5,8 @@ The UI scripts build the web app, start it on loopback against a mock API
 the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
 live Session creation/edit/cancellation, member-only Session invitation responses and roster
-management, Nomination submissions and personal suggestions, immutable Selection ballots, and the seven `/shell-preview/*` shells.
+management, Nomination submissions and personal suggestions, immutable Selection ballots,
+policy-filtered Selection results and early-close confirmations, and the seven `/shell-preview/*` shells.
 
 ## Run it
 

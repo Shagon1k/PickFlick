@@ -126,3 +126,52 @@ Node 24.15.0 and pnpm 11.25.0; all 25 migrations apply to a fresh isolated loopb
 The production dependency audit passes the high/critical gate and reports one moderate advisory.
 The isolated PostgreSQL test container and its data were removed. No deployment was performed;
 remote CI and owner review remain unverified. Phase 11 completion and #47 UI review remain separate.
+
+## Policy-filtered results — #47
+
+Run `r_e7c12f46281d389f677a` uses the existing saved winner snapshot, Session settings,
+Club entitlement adapter, progress outbox and shared confirmation dialog. The result DTO gives
+current members the winner and closure information; Admins/Moderators receive aggregate rankings,
+while ordinary members need Pro plus the Session visibility snapshot. Nominator visibility is
+independent. Rankings and tie-break metrics remain frozen; display metadata stays current.
+No raw ballots, roster IDs, provider mappings or internal snapshot are returned.
+
+The later #172 owner decision and current Architecture retain authenticated progress polling.
+The issue's earlier SSE wording is superseded; this run does not restore per-connection database
+polling or introduce a new event transport. Existing progress and closure events remain atomic
+with the ballot and winner; clients re-read the permitted projection on version change/reconnect.
+
+The UI adds a winner card, allowed rankings, zero-ballot and hidden-result feedback, and operator
+early closure with typed `CLOSE`, focus handling and retained input on offline/API failures.
+Watching/Rating workflows, notification delivery and Paddle transport remain outside this task.
+
+Verification covers Free/Pro/visibility/role authorization, current access after departure,
+snapshot stability on retry/source changes, multi-client reconnect and browser result/confirmation
+states at 390, 768, 1024 and 1440 pixels. All 25 existing migrations applied to an isolated
+loopback test database.
+Hosted exact-head preview and owner visual acknowledgment remain required; local captures and
+a Draft PR do not complete #47 or Phase 11.
+
+### Local evidence — 2026-10-15
+
+Node 24.15.0 and pnpm 11.25.0; no dependency or migration was added.
+
+- `pnpm lint`, `pnpm knip`, `pnpm format:check`, `pnpm typecheck` and `pnpm security:audit`
+  pass. The production audit reports one moderate advisory and no high/critical advisories.
+- `pnpm test:unit`: all 320 tests across 45 files pass.
+- `pnpm test:integration`: all 186 tests across 21 files pass after applying the documented
+  synthetic seed. Seven result-projection tests cover the authorization matrix, hidden names,
+  frozen metrics, retries, tier/role changes, Session settings snapshots and access revocation.
+- The PR smoke selection plus both Selection specs pass all 59 checks (`playwright test --config
+playwright.ui.config.ts --grep '@smoke|selection.*spec' --grep-invert @visual`). The fourteen
+  new result/confirmation checks cover keyboard and focus return, retained confirmation after
+  offline/API failures, hidden/visible results, axe and overflow at all four canonical widths.
+  Captures under `test-results/ui-artifacts/selection-outcome-*` were inspected at mobile and
+  desktop sizes. Existing visual baselines were not changed.
+- `pnpm test:journeys`: both real-API browser journeys pass. Selection verifies live submission
+  progress in a second client, winner recovery after offline/reconnect, Free-member privacy,
+  Admin aggregate visibility, reload and an idempotent closure retry. The journey setup builds
+  every shared package, the backend and the production frontend.
+
+These commands exercise every static-gate step individually; `pnpm verify` was not run as a
+single wrapper command. Remote CI and hosted preview/owner review remain unverified.
