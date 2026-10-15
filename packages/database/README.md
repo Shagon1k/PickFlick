@@ -23,3 +23,7 @@ responses arrive with the Session workflows; these helpers are internal persiste
 
 `src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
 coexistence, settings snapshots, roster serialization/rollback, and member-only invite storage.
+
+Migration 25 adds Session `selectionResult` JSON and `SESSION_SELECTION_CLOSED`. Closure stores
+the inputs, ranking and explanation with the selected Movie in one transaction. A PostgreSQL
+trigger freezes the saved snapshot and selected Movie; existing history is not backfilled.

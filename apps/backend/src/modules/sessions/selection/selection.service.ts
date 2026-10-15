@@ -1,12 +1,13 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TSelection, TSubmitSelection } from '@pickflick/contracts';
+import type { TCloseSelection, TSelection, TSubmitSelection } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../../database/prisma.service.js';
-import type { findMembership } from '../../clubs/access/club-access.js';
+import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
+import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
-import { publishProgress } from '../session-progress.js';
+import { advanceSelection, completeSelection } from './selection-completion.js';
 
 @Injectable()
 export class SelectionService {
@@ -107,7 +108,26 @@ export class SelectionService {
             await tx.selectionScore.createMany({
                 data: input.scores.map((row) => ({ ...row, sessionId: id, ballotId: ballot.id })),
             });
-            await publishProgress(tx, id, 'PROGRESS');
+            await completeSelection(tx, id);
+        });
+    }
+
+    async close(userId: string, id: string, input: TCloseSelection): Promise<void> {
+        await this.prisma.$transaction(async (tx) => {
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
+            await assertManager(tx, membership);
+            if (session.selectionResult !== null) return;
+            if (session.phase !== 'SELECTION' || session.phaseVersion !== input.phaseVersion)
+                throw new ConflictException({ reason: 'SELECTION_CHANGED' });
+            await advanceSelection(tx, session, { kind: 'MANUAL', membershipId: membership.id });
+            await recordAudit(tx, {
+                clubId: session.clubId,
+                sessionId: id,
+                actorUserId: userId,
+                subjectUserId: userId,
+                subjectMembershipId: membership.id,
+                action: 'SESSION_SELECTION_CLOSED',
+            });
         });
     }
 }
