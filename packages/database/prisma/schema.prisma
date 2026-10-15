@@ -258,6 +258,7 @@ model Session {
   club                        Club                         @relation(fields: [clubId], references: [id], onDelete: Restrict)
   participants                SessionParticipant[]
   nominations                 Nomination[]
+  selectionBallots            SelectionBallot[]
 
   // PostgreSQL migration owns the partial unique index for one blocking Session per Club.
   @@unique([id, clubId])
@@ -266,18 +267,19 @@ model Session {
 }
 
 model SessionParticipant {
-  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionId    String                   @db.Uuid
-  membershipId String                   @db.Uuid
-  clubId       String                   @db.Uuid
-  status       SessionParticipantStatus @default(INVITED)
-  attended     Boolean?
-  createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime                 @updatedAt @db.Timestamptz(3)
-  session      Session                  @relation(fields: [sessionId, clubId], references: [id, clubId], onDelete: Restrict)
-  membership   Membership               @relation(fields: [membershipId, clubId], references: [id, clubId], onDelete: Restrict)
-  invitations  SessionInvite[]
-  nomination   Nomination?
+  id              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId       String                   @db.Uuid
+  membershipId    String                   @db.Uuid
+  clubId          String                   @db.Uuid
+  status          SessionParticipantStatus @default(INVITED)
+  attended        Boolean?
+  createdAt       DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @db.Timestamptz(3)
+  session         Session                  @relation(fields: [sessionId, clubId], references: [id, clubId], onDelete: Restrict)
+  membership      Membership               @relation(fields: [membershipId, clubId], references: [id, clubId], onDelete: Restrict)
+  invitations     SessionInvite[]
+  nomination      Nomination?
+  selectionBallot SelectionBallot?
 
   @@unique([sessionId, membershipId])
   @@unique([id, sessionId])
@@ -361,17 +363,45 @@ model MovieSearchCache {
 }
 
 model Nomination {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId       String             @db.Uuid
+  participantId   String             @db.Uuid
+  movieId         String             @db.Uuid
+  submittedAt     DateTime           @default(now()) @db.Timestamptz(3)
+  session         Session            @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  participant     SessionParticipant @relation(fields: [participantId, sessionId], references: [id, sessionId], onDelete: Restrict)
+  movie           Movie              @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  isInSelection   Boolean            @default(false)
+  selectionScores SelectionScore[]
+
+  @@unique([id, sessionId])
+  @@unique([participantId, sessionId])
+  @@index([sessionId, submittedAt])
+}
+
+model SelectionBallot {
   id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sessionId     String             @db.Uuid
   participantId String             @db.Uuid
-  movieId       String             @db.Uuid
   submittedAt   DateTime           @default(now()) @db.Timestamptz(3)
   session       Session            @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   participant   SessionParticipant @relation(fields: [participantId, sessionId], references: [id, sessionId], onDelete: Restrict)
-  movie         Movie              @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  scores        SelectionScore[]
 
   @@unique([participantId, sessionId])
-  @@index([sessionId, submittedAt])
+  @@unique([id, sessionId])
+  @@index([sessionId])
+}
+
+model SelectionScore {
+  ballotId     String          @db.Uuid
+  nominationId String          @db.Uuid
+  sessionId    String          @db.Uuid
+  score        Int
+  ballot       SelectionBallot @relation(fields: [ballotId, sessionId], references: [id, sessionId], onDelete: Restrict)
+  nomination   Nomination      @relation(fields: [nominationId, sessionId], references: [id, sessionId], onDelete: Restrict)
+
+  @@id([ballotId, nominationId])
 }
 
 enum NominationDeadlineOutcome {

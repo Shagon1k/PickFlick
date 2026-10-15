@@ -124,13 +124,15 @@ to the backend. [Add a feature end to end](_docs/adding-a-feature.md) walks thro
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images               |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                  |
 
-The schema (`packages/database/prisma/schema.prisma`, sixteen migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, twenty-four migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`, `SelectionBallot`, `SelectionScore`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
 - one Nomination per participant with same-Session linkage;
+- one SelectionBallot per participant and one SelectionScore per ballot/nomination, with
+  same-Session foreign keys and integer scores bounded by 0–10;
 - Club score scale bounds and lifecycle consistency.
 - unique invitation token digests, expiry order, and consistent response attribution.
 
@@ -484,3 +486,24 @@ when either page read fails transiently; without a rendered version, an unchange
 retries the page. A failed poll shows feedback; losing access reloads once and stops polling.
 Manual refresh remains available. The client owns no film/progress projection copy. No dependencies, runtime variables or topology changes
 are required. Apply migration 19 before releasing the API and worker images.
+
+### Selection ballots
+
+Active ballot submission uses `POST /sessions/:sessionId/selection` with one integer score per
+eligible Nomination ID. A PostgreSQL phase trigger marks accepted participants' nominations as
+`isInSelection` when a Session enters Selection, including writes from an earlier API or worker
+during rollout. This set stays fixed through Selection even when a participant departs. The
+Session's inclusive scale snapshot supplies the bounds. The API locks Club → Session, checks
+current Membership, accepted participation, phase and Club lifecycle, validates completeness,
+and inserts the ballot, scores and progress version/event in one transaction. Database unique
+keys prevent duplicate ballots and scores; composite foreign keys prevent cross-Session scores.
+There is no ballot update endpoint. Duplicate requests return `ALREADY_SUBMITTED`.
+
+`GET /sessions/:sessionId` includes a Selection projection only during Selection: eligible films,
+policy-filtered authors, accepted/submitted counts and the caller's own submitted scores. It
+never includes another participant's scores or totals. The existing authenticated progress poll
+revalidates authoritative detail and roster projections. Departed participants' ballots remain
+stored; progress counts only accepted participants. Migration 24 backfills the eligible films
+for existing Selection Sessions using their currently accepted participants. It takes an `EXCLUSIVE`
+Session table lock before Nomination DDL so in-flight phase writers finish first. Winner resolution
+and post-close result projections remain Proposed under #46 and #47.

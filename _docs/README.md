@@ -71,3 +71,4 @@ canonical documents above; where they disagree, the canonical documents win.
 | [Phase 8 — Movie catalog](phase-8-movie-catalog.md)                                | Catalog sources, canonical UUIDs, the catalog cache, refresh decision, and acceptance evidence. |
 | [Phase 9 — Session creation and participant roster](phase-9-session-foundation.md) | Session persistence, settings snapshots, roster serialization, and workflow handoffs.           |
 | [Phase 10 — Nomination](phase-10-nomination.md)                                    | Submission uniqueness, visibility, personal suggestions, progress and early closure.            |
+| [Phase 11 — Selection](phase-11-selection.md)                                      | Immutable ballots, generated controls, winner resolution and result visibility boundaries.      |

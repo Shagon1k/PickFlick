@@ -19,7 +19,7 @@ Before finishing, remove unnecessary indirection, redundant checks, and speculat
 These guidelines do not override repository-specific approval requirements, architecture constraints, or verification gates.
 
 > Operating instructions for agents in this repository. Phases 1–5 and 7–10 (foundations through
-> Sessions and Nomination) are built and await their verification gates; Phase 11 is next.
+> Sessions and Nomination) are built and await their verification gates; Phase 11 is in progress.
 
 ## Core contract
 
@@ -62,7 +62,7 @@ These guidelines do not override repository-specific approval requirements, arch
   no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
   audit events, the movie catalog cache, and Sessions with participants, invitations, and
-  Nominations across twenty-three migrations.
+  Nominations and Selection ballots across twenty-four migrations.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.

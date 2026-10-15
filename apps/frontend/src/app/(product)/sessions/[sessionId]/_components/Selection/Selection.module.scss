@@ -1,0 +1,110 @@
+.selection {
+    min-width: 0;
+}
+
+.selection h2 {
+    font: 400 var(--fs-app-section)/var(--lh-title) var(--font-display);
+}
+
+.selection > p {
+    color: var(--fg-secondary);
+}
+
+.progress {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-sm);
+    align-items: center;
+    padding: var(--gap-sm) var(--gap-md);
+    color: var(--ivory);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+}
+
+.progress p {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+.progress progress {
+    width: 100%;
+    max-width: 100%;
+    accent-color: var(--gold);
+}
+
+.movies {
+    display: grid;
+    gap: var(--gap-sm);
+    padding: 0;
+    list-style: none;
+}
+
+.movie {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--gap-md);
+    align-items: center;
+    min-width: 0;
+    padding: var(--gap-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.poster {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    aspect-ratio: 2 / 3;
+    font-family: var(--font-mono);
+    color: var(--fg-secondary);
+    background: var(--bg);
+    border-radius: var(--radius);
+}
+
+.info h3 {
+    margin: 0 0 var(--gap-xs);
+    font: 400 var(--fs-card-title)/var(--lh-title) var(--font-display);
+    overflow-wrap: anywhere;
+}
+
+.info p {
+    margin: 0;
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+}
+
+.control {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding-top: var(--gap-sm);
+    border-top: 1px solid var(--border);
+}
+
+.submit {
+    display: grid;
+    justify-items: center;
+    min-height: 140px;
+    text-align: center;
+}
+
+@media (width >= 1024px) {
+    .progress {
+        grid-template-columns: minmax(0, 1fr) 160px auto;
+    }
+
+    .progress p {
+        grid-column: auto;
+    }
+
+    .movie {
+        grid-template-columns: auto minmax(0, 1fr) minmax(0, 55%);
+    }
+
+    .control {
+        grid-column: auto;
+        padding-top: 0;
+        border-top: 0;
+    }
+}

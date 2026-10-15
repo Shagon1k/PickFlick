@@ -24,6 +24,7 @@ import { handleMovieDetails } from './movie-details.ts';
 import { handleMovieSearch } from './movie-search.ts';
 import { handleNominations } from './nominations.ts';
 import { handlePendingInvitation } from './pending-invites.ts';
+import { handleSelection } from './selection.ts';
 import { handleSessionRoster } from './session-roster.ts';
 import { handleSessionWorkflow, sessionHub } from './session-workflows.ts';
 
@@ -413,11 +414,17 @@ function unavailableInvitationState(
 
 const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
-    if (handleMovieDetails(request, response, pathname, sessionToken(request))) return;
-    if (handleMovieSearch(request, response, pathname, sessionToken(request))) return;
-    if (handleNominations(request, response, pathname, sessionToken(request))) return;
-    if (handleSessionRoster(request, response, pathname, sessionToken(request))) return;
-    if (handleSessionWorkflow(request, response, pathname, sessionToken(request))) return;
+    if (
+        [
+            handleMovieDetails,
+            handleMovieSearch,
+            handleSelection,
+            handleNominations,
+            handleSessionRoster,
+            handleSessionWorkflow,
+        ].some((handler) => handler(request, response, pathname, sessionToken(request)))
+    )
+        return;
     const clubMatch = /^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u.exec(pathname);
     if (
         handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>

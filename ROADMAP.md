@@ -253,6 +253,8 @@ the same result rules and cannot advance Nomination with no films.
 - Each Club sets the upper bound N (at most 10) of an inclusive `0..N` scale. The data model and API
   still accept a stored `1` start, which existing Clubs keep; the UI no longer offers it.
 - Every participant scores every nomination before submitting.
+- Selection fixes its eligible nominations when it opens. Later departures change participation
+  progress without changing the films in a submitted ballot.
 - The winner has the highest total. Ties break by, in order: more maximum scores, more distinct
   supporting voters, earlier nomination, lower movie-provider ID, then lower nomination ID.
 - Free Clubs hide vote results from ordinary members; Pro Club Admins choose post-close visibility.
@@ -463,7 +465,7 @@ its own.
 
 **Where the build stands:** Phases 1–5 and 7–10 are built. They stay In progress until their
 verification gate records the evidence: Phase 6 for 1–5 (running now) and Phase 12 for 7–11.
-Phase 11 Selection is the next delivery phase.
+Phase 11 Selection is active; its verification and preview acceptance remain open.
 
 ### Phase 0 — Guidance Baseline · Done
 
@@ -864,7 +866,7 @@ live progress (version polling since #172)
 
 **Out of scope:** Selection scoring and notification inbox and email delivery.
 
-### Phase 11 — Selection & Winner Resolution · Not started
+### Phase 11 — Selection & Winner Resolution · In progress
 
 **Goal:** Immutable scored ballots and one deterministic winner, whether closure is automatic or
 manual.

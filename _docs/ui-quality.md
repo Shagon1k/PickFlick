@@ -5,7 +5,7 @@ The UI scripts build the web app, start it on loopback against a mock API
 the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
 live Session creation/edit/cancellation, member-only Session invitation responses and roster
-management, Nomination submissions and personal suggestions, and the seven `/shell-preview/*` shells.
+management, Nomination submissions and personal suggestions, immutable Selection ballots, and the seven `/shell-preview/*` shells.
 
 ## Run it
 
@@ -21,7 +21,7 @@ pnpm test:ui:visual
 `test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
 continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search and read-only Movie Details at 390, 768, 1024 and 1440px, and overflow
 at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session invitation
-privacy and sign-in continuation, accepted-roster leave, operator invitation/removal focus, and personal-suggestion nomination with privacy and submission locking. Screenshot comparisons use the `@visual` tag;
+privacy and sign-in continuation, accepted-roster leave, operator invitation/removal focus, and personal-suggestion nomination with privacy and submission locking, plus Selection completeness, keyboard scoring and immutable submission. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
 reduced motion, and other behavior assertions.
