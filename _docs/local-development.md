@@ -117,6 +117,13 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
   `.env.example`.
 - **Sign-in fails locally.** Google needs a real OAuth client in `.env` whose redirect URI is
   `http://127.0.0.1:3000/api/auth/callback/google`. Apple stays off (`APPLE_SIGN_IN_ENABLED=false`).
+- **The catalog cannot search.** Set `CATALOG_ENABLED=true` and provide credentials for the selected
+  `CATALOG_PROVIDER` in `.env`. PoiskKino + TheTVDB needs both `POISKKINO_API_KEY` and
+  `THETVDB_READ_TOKEN`. TheTVDB expects the bearer token returned as `data.token` by its
+  `/v4/login` API; an API key must be exchanged there first, rather than copied into the token field.
+- **Contact succeeds but no email arrives locally.** Local email delivery is disabled by default;
+  the backend logs that delivery was skipped and stores no message body. Verify real delivery only
+  with an explicitly configured live sender and approved recipient.
 - **Seed or reset refuses to run.** Check `APP_ENV` and the database name in `DATABASE_URL`.
 - **`/ui-preview` or `/shell-preview` answers 404.** They are hidden only when
   `APP_ENV=production`.
