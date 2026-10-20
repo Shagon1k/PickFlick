@@ -160,6 +160,29 @@ describe('Session participation', () => {
         expect(afterJoin.selectionResult).toEqual(saved.selectionResult);
     });
 
+    it('should offer an unanswered Session again after the user rejoins the Club with a new Membership', async () => {
+        expect((await participate(member, 'decline')).status).toBe(200);
+        expect(await pending()).toEqual([]);
+        await api.prisma.membership.update({
+            where: { id: membershipId },
+            data: { status: 'LEFT', leftAt: new Date() },
+        });
+        const newMembershipId = await addMember(api.prisma, clubId, member);
+        expect((await pending()).map((row) => row.id)).toEqual([sessionId]);
+        expect((await roster()).canJoin).toBe(true);
+        expect((await participate()).status).toBe(200);
+        expect(
+            await api.prisma.sessionParticipant.findUnique({
+                where: { sessionId_membershipId: { sessionId, membershipId } },
+            }),
+        ).toMatchObject({ status: 'DECLINED' });
+        expect(
+            await api.prisma.sessionParticipant.findUnique({
+                where: { sessionId_membershipId: { sessionId, membershipId: newMembershipId } },
+            }),
+        ).toMatchObject({ status: 'ACCEPTED' });
+    });
+
     it('should record decline, allow reconsideration and require typed leave after acceptance', async () => {
         expect((await participate(member, 'decline')).status).toBe(200);
         expect(await pending()).toEqual([]);

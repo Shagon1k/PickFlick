@@ -213,7 +213,7 @@ export class SessionRosterService {
                 },
                 participants: {
                     none: {
-                        membership: { userId },
+                        membership: { userId, status: 'ACTIVE' },
                         status: { in: ['ACCEPTED', 'DECLINED', 'LEFT', 'REMOVED'] },
                     },
                 },
