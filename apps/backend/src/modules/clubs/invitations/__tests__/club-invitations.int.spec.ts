@@ -166,8 +166,18 @@ describe('Club invitations', () => {
     });
 
     it('should return every pending invitation even when there are more than twenty', async () => {
-        const created = [];
-        for (let index = 0; index < 21; index++) created.push(await create());
+        const created = await Promise.all(
+            Array.from({ length: 21 }, () =>
+                api.prisma.clubInvite.create({
+                    data: {
+                        clubId,
+                        inviterId: admin,
+                        tokenDigest: randomUUID().replaceAll('-', '').repeat(2),
+                        expiresAt: new Date(Date.now() + 86_400_000),
+                    },
+                }),
+            ),
+        );
 
         const response = await api.request(`/clubs/${clubId}/invitations`, { userId: admin });
         expect(response.status).toBe(200);
@@ -175,11 +185,46 @@ describe('Club invitations', () => {
             expect.arrayContaining(
                 created.map((invite) => ({
                     id: invite.id,
-                    expiresAt: invite.expiresAt,
+                    expiresAt: invite.expiresAt.toISOString(),
                     state: 'pending',
                 })),
             ),
         );
+    });
+
+    it('should serialize the active-link limit and allow creation after revocation', async () => {
+        const invitations = [];
+        for (let index = 0; index < 7; index++) invitations.push(await create());
+        const responses = await Promise.all(
+            Array.from({ length: 2 }, () =>
+                api.request(`/clubs/${clubId}/invitations`, {
+                    userId: admin,
+                    method: 'POST',
+                    json: {},
+                }),
+            ),
+        );
+        expect(responses.map((response) => response.status).toSorted((a, b) => a - b)).toEqual([
+            201, 409,
+        ]);
+        const denied = responses.find((response) => response.status === 409)!;
+        expect(await denied.json()).toMatchObject({
+            error: { reason: 'INVITATION_LIMIT_REACHED' },
+        });
+        expect(
+            (
+                await api.request(`/clubs/${clubId}/invitations/${invitations[0]!.id}/revoke`, {
+                    userId: admin,
+                    method: 'POST',
+                })
+            ).status,
+        ).toBe(204);
+        await create();
+        expect(
+            await api.prisma.clubInvite.count({
+                where: { clubId, revokedAt: null, respondedAt: null },
+            }),
+        ).toBe(8);
     });
 
     it('should create exactly one Membership and audit under concurrent acceptance', async () => {

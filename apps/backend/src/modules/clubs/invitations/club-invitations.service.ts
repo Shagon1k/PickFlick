@@ -74,6 +74,16 @@ export class ClubInvitationsService {
                 throw new ConflictException({ reason: 'INVITATION_TARGET_UNAVAILABLE' });
             }
             if (access.adminless) throw new ConflictException({ reason: 'CLUB_ADMIN_UNAVAILABLE' });
+            const pendingCount = await transaction.clubInvite.count({
+                where: {
+                    clubId,
+                    revokedAt: null,
+                    respondedAt: null,
+                    expiresAt: { gt: new Date() },
+                },
+            });
+            if (pendingCount >= getClubEntitlements(clubId).memberLimit)
+                throw new ConflictException({ reason: 'INVITATION_LIMIT_REACHED' });
             const { token, tokenDigest, expiresAt } = createInviteToken();
             const invitation = await transaction.clubInvite.create({
                 data: {

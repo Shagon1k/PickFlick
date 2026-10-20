@@ -47,7 +47,11 @@ const settingsProjection = (token: TToken) =>
     );
 
 function hubClubs(token: TToken): IClubSummary[] {
-    if (['session-workflow', 'settings', 'members'].some((scenario) => token?.includes(scenario)))
+    if (
+        ['session-workflow', 'settings', 'members', 'invitation'].some((scenario) =>
+            token?.includes(scenario),
+        )
+    )
         return clubsBySession.get(token) ?? [settingsProjection(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
@@ -196,6 +200,7 @@ function removeAvatar(request: TMockRequest, response: TMockResponse, token: str
 
 const managedInvites = new Map<string, IManagedInvitation[]>();
 const failedInvitationRefreshes = new Set<string>();
+const failedHubLoads = new Set<string>();
 function manageInvitation(request: TMockRequest, response: TMockResponse, session: string): void {
     readJson(request, () => {
         const id = '60000000-0000-4000-8000-000000000034';
@@ -277,6 +282,11 @@ const clubRoutes: TClubRoute[] = [
         'GET',
         /^\/hub$/u,
         (_request, response, token, clubId) => {
+            if (token?.includes('hub-transient') && !failedHubLoads.has(token)) {
+                failedHubLoads.add(token);
+                sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-hub-transient');
+                return;
+            }
             const projection = hubProjection(token, clubId);
             if (projection) {
                 sendJson(response, 200, projection);

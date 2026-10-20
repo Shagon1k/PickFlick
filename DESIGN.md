@@ -274,6 +274,8 @@ Long Club names use a single-line ellipsis in the invitation preview while keepi
 text accessible. Accepting or declining a maximum-length name keeps the card dimensions stable.
 Manage Club keeps a newly created link visible and revocable when list refresh fails, with a warning
 that directs the manager to reload Recent invitations. Older live pending links remain in that list.
+Each row shows a short invitation ID, status and expiry; the most recently created link is marked.
+Active links are capped at the Club plan's member limit, with explicit recovery by revoking a link.
 Active Admins and Moderators can inspect and revoke existing links when an excess-member or adminless
 restriction pauses creation. Members and archived Clubs keep the invitation controls hidden.
 

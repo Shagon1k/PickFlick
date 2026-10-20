@@ -9,6 +9,8 @@ import { toIsoDate } from '#lib/format';
 import { loadInvitationsAction, manageInvitationsAction } from '../../invitation-actions';
 import styles from '../../page.module.scss';
 
+const INVITATION_ID_LENGTH = 8;
+
 export default function InvitationCard({ projection }: { projection: IClubSettings }) {
     const [invitations, setInvitations] = useState<IManagedInvitation[]>([]);
     const [link, setLink] = useState('');
@@ -16,6 +18,9 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [isPending, setIsPending] = useState(false);
     const [message, setMessage] = useState('');
     const isAllowed = projection.permissions.manageMembers;
+    const hasReachedLinkLimit =
+        invitations.filter((invite) => invite.state === 'pending').length >=
+        projection.entitlements.memberLimit;
 
     async function run(kind: 'create' | 'load', inviteId?: string) {
         setIsPending(true);
@@ -76,6 +81,10 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         <section aria-labelledby="club-invitations-title" className={styles.card}>
             <h2 id="club-invitations-title">Invite to this Club</h2>
             <p>Each link can be accepted or declined once. Only registered users can join.</p>
+            <p>
+                Up to {projection.entitlements.memberLimit} links can be active at once. Revoke a
+                link you no longer need before creating another.
+            </p>
             {projection.members.length >= projection.entitlements.memberLimit ? (
                 <p>
                     The member limit is reached. A seat must become available before creating
@@ -97,6 +106,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                             <Button
                                 disabled={
                                     isPending ||
+                                    hasReachedLinkLimit ||
                                     projection.members.length >= projection.entitlements.memberLimit
                                 }
                                 onClick={() => run('create')}
@@ -125,7 +135,12 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         {invitations.map((invite) => (
                             <li key={invite.id}>
                                 <span>
+                                    <strong title={invite.id}>
+                                        Invitation {invite.id.slice(0, INVITATION_ID_LENGTH)}
+                                    </strong>
+                                    {' · '}
                                     {invite.state} · expires {toIsoDate(invite.expiresAt)}
+                                    {invite.id === createdId ? ' · latest link' : ''}
                                 </span>
                                 {invite.state === 'pending' ? (
                                     <Button

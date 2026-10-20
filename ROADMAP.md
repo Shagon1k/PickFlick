@@ -200,7 +200,10 @@ launch-critical risk.
 Club membership invitation links expire after seven days and are single-use. An Admin or Moderator
 creates a shareable link or targets a registered User. Only an eligible registered User sees a minimal
 preview; accepting creates one active Membership and declining consumes the link without joining.
-Seats are checked when the response commits, so a link never reserves capacity. The pending-invite
+Seats are checked when the response commits, so a link never reserves capacity. A Club may have
+at most its plan's member limit in live pending links (8 Free, 16 Pro). Creation and revocation
+serialize on the Club row. Manager lists identify each invitation by a short record ID and keep
+older links accessible even if they exceed the creation limit. The pending-invite
 ticket lists only eligible invitations targeted to the signed-in User; shareable links stay in their
 link flow. Invalid, expired,
 revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
