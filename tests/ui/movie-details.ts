@@ -66,7 +66,13 @@ function movieData(id: string, isMissing: boolean, isRelated: boolean): TPublicD
         originalLanguage: 'en',
         posterUrl: isMissing ? null : `/api/movies/images/${'a'.repeat(64)}`,
         backdropUrl: null,
-        ratings: isMissing ? [] : [{ source: 'tmdb', value: 7, scale: 10, voteCount: 10 }],
+        ratings: isMissing
+            ? []
+            : [
+                  { source: 'tmdb', value: 7, scale: 10, voteCount: 10 },
+                  { source: 'kinopoisk', value: 7.519, scale: 10, voteCount: 109356 },
+                  { source: 'imdb', value: 7.55, scale: 10, voteCount: 431000 },
+              ],
         runtime: isMissing ? null : 120,
         genres: isMissing ? null : ['Drama'],
         directors: isMissing ? null : [{ name: '<Synthetic Director>' }],

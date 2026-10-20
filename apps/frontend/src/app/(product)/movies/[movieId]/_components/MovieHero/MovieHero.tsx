@@ -4,6 +4,11 @@ import styles from '../../page.module.scss';
 import MovieCredits from '../MovieCredits/MovieCredits';
 import MoviePoster from '../MoviePoster/MoviePoster';
 
+const ratingFormat = new Intl.NumberFormat('en', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+});
+
 interface IMovieHeroProps {
     movie: TMovieDetails;
     title: string;
@@ -28,7 +33,7 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                         <li key={rating.source}>
                             {rating.source.toUpperCase()}{' '}
                             <strong>
-                                {rating.value} / {rating.scale}
+                                {ratingFormat.format(rating.value)} / {rating.scale}
                             </strong>
                             {rating.voteCount !== null ? ` (${rating.voteCount} ratings)` : ''}
                         </li>

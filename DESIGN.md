@@ -324,7 +324,8 @@ acknowledgement remain required before #37 is complete.
 ## Read-only Movie Details
 
 The canonical UUID route renders title, year, language, runtime, genres, source-labelled ratings,
-poster, directors, cast, synopsis and outbound trailers. Desktop places poster/trailer above
+poster, directors, cast, synopsis and outbound trailers. Provider rating values display one
+decimal place; their stored/API precision stays unchanged. Desktop places poster/trailer above
 credits/synopsis in one flat grid. Mobile centers the title, pairs poster with credits, then places
 synopsis and trailer beneath. Long provider text wraps; no fixture posters or stills are bundled.
 Missing or failed media, absent English synopsis, provider outage/rate limits, unconfigured

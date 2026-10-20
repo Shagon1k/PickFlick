@@ -33,6 +33,17 @@ for (const width of [390, 768, 1024, 1440]) {
             await expect(page.getByRole('heading', { level: 1 })).toHaveText(
                 '<script>alert(1)</script> & Film',
             );
+            const ratings = page.getByRole('list', { name: 'Provider ratings' });
+            await expect(
+                ratings.getByRole('listitem').filter({ hasText: 'KINOPOISK' }),
+            ).toContainText('7.5 / 10');
+            await expect(ratings.getByRole('listitem').filter({ hasText: 'TMDB' })).toContainText(
+                '7.0 / 10',
+            );
+            await expect(ratings).not.toContainText('7.519');
+            await expect(ratings.getByRole('listitem').filter({ hasText: 'IMDB' })).toContainText(
+                '7.6 / 10',
+            );
             await expect(page.getByRole('link', { name: 'IMDb' })).toHaveAttribute(
                 'href',
                 'https://www.imdb.com/title/tt1234567/',
