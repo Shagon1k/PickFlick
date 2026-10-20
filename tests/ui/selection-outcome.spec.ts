@@ -111,6 +111,7 @@ for (const viewport of canonicalViewports) {
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
         await trigger.click();
         await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.getByRole('dialog')).toHaveCSS('opacity', '1');
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         await page.keyboard.press('Tab');
         await expect(page.getByRole('dialog').locator(':focus')).toHaveCount(1);
