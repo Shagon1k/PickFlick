@@ -97,6 +97,32 @@ test('archived Hub stays readable without a Session action', async ({ context, p
     await expect(page.getByRole('link', { name: /create session/iu })).toHaveCount(0);
 });
 
+test('Club sections keep the switcher and Call Sheet above the active panel', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'valid-hub-tabs');
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    for (const section of ['Members', 'Manage Club', 'Overview']) {
+        await page
+            .getByRole('navigation', { name: 'Club sections' })
+            .getByRole('link', { name: section, exact: true })
+            .click();
+        await expect(
+            page.getByRole('heading', { level: 1, name: 'Midnight Society' }),
+        ).toBeVisible();
+        await expect(page.getByText('Screening Call Sheet', { exact: true })).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: 'Open Second Screening Room' }),
+        ).toBeVisible();
+        await expect(
+            page
+                .getByRole('navigation', { name: 'Club sections' })
+                .getByRole('link', { name: section, exact: true }),
+        ).toHaveAttribute('aria-current', 'page');
+    }
+});
+
 test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true });
     try {

@@ -1,13 +1,10 @@
 'use client';
 
 import type { IClubMember, IClubSettings } from '@pickflick/contracts';
-import Link from 'next/link';
 import { useRef, useState } from 'react';
 
 import { initialClubActionState } from '#app/(product)/clubs/[clubId]/settings/action-state';
 import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/settings/actions';
-import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
-import { buildClubNavigation } from '#components/shells/shell-navigation';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
@@ -53,27 +50,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
         MEMBER: 'You can view the roster and leave from Manage Club.',
     }[club.membershipRole];
     return (
-        <main className={styles.layout}>
-            <header className={styles.hero}>
-                <p className={styles.eyebrow}>Club Hub</p>
-                <h1>{club.name}</h1>
-                <p>
-                    {members.length} of {projection.entitlements.memberLimit} members · You are{' '}
-                    {club.membershipRole.toLowerCase()}
-                </p>
-            </header>
-            <nav aria-label="Club sections" className={styles.tabs}>
-                {buildClubNavigation(club.id, 'members').map((item) => (
-                    <Link
-                        aria-current={item.current ? 'page' : undefined}
-                        href={item.href}
-                        key={item.label}
-                    >
-                        {item.label}
-                    </Link>
-                ))}
-            </nav>
-            <ClubStatus access={projection.access} />
+        <section className={styles.layout} aria-label="Club members">
             <div className={styles.sectionHeading}>
                 <h2 ref={headingRef} tabIndex={-1}>
                     Members
@@ -145,6 +122,6 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     Session history remains.
                 </p>
             </ConfirmDialog>
-        </main>
+        </section>
     );
 }

@@ -47,7 +47,8 @@ const settingsProjection = (token: TToken) =>
     );
 
 function hubClubs(token: TToken): IClubSummary[] {
-    if (token?.includes('session-workflow')) return [settingsProjection(token).club];
+    if (['session-workflow', 'settings', 'members'].some((scenario) => token?.includes(scenario)))
+        return clubsBySession.get(token) ?? [settingsProjection(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
     }
@@ -302,9 +303,13 @@ const clubRoutes: TClubRoute[] = [
     ],
     [
         'POST',
-        /^\/(?:archive|reactivate|leave|delete)$/u,
-        (_request, response) => sendNoContent(response),
+        /^\/(?:leave|delete)$/u,
+        (_request, response, token) => {
+            clubsBySession.set(token, []);
+            sendNoContent(response);
+        },
     ],
+    ['POST', /^\/(?:archive|reactivate)$/u, (_request, response) => sendNoContent(response)],
     ['PUT', /^\/avatar$/u, uploadAvatar],
     ['DELETE', /^\/avatar$/u, removeAvatar],
 ];

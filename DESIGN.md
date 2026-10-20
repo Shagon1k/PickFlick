@@ -279,6 +279,9 @@ restriction pauses creation. Members and archived Clubs keep the invitation cont
 
 ### Hub membership states
 
+Overview, Members and Manage Club share the Club switcher and Screening Call Sheet above the
+active lower panel. Their links preserve scroll position and identify the active section.
+
 Members shows the live roster and joined dates; the Session skeleton has no per-member attendance
 counters yet. Admins remove Members or Moderators; Moderators remove Members; Members review the
 roster and leave through Manage Club. Removal requires `REMOVE`, preserves shared history, and returns

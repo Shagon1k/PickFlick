@@ -7,12 +7,12 @@ import { Suspense } from 'react';
 import { getClubHub, listClubs } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
-import { buildClubNavigation } from '#components/shells/shell-navigation';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
+import ClubHubFrame from './_components/ClubHubFrame/ClubHubFrame';
 import HubOverview from './_components/HubOverview/HubOverview';
 import styles from './page.module.scss';
 
@@ -80,9 +80,9 @@ async function HubContent({ params }: { params: Promise<{ clubId: string }> }) {
         );
     }
     return (
-        <ProductFrame clubItems={buildClubNavigation(clubId, 'overview')}>
-            <HubOverview clubs={clubs} hub={hub} />
-        </ProductFrame>
+        <ClubHubFrame clubs={clubs} hub={hub} current="overview">
+            <HubOverview hub={hub} />
+        </ClubHubFrame>
     );
 }
 
