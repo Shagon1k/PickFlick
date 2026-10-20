@@ -21,7 +21,8 @@ const ISO_DATE_LENGTH = 10;
 
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
-const image = z.object({ url: movieImageUrlSchema.nullish() }).nullish();
+// Unsupported optional media uses a placeholder without rejecting the Movie itself.
+const image = z.object({ url: movieImageUrlSchema.nullish().catch(null) }).nullish();
 const related = z.object({ id: z.number().int().positive() });
 const wire = z.object({
     id: z.number().int().positive(),
@@ -170,7 +171,7 @@ export class PoiskkinoClient {
                 title: movie.enName || null,
                 // alternativeName and description have no guaranteed English locale.
                 releaseDate: movie.premiere?.world?.slice(0, ISO_DATE_LENGTH) ?? null,
-                releaseYear: movie.year ?? null,
+                releaseYear: movie.year || null,
                 runtime: movie.movieLength || null,
                 posterUrl: movie.poster?.url ?? null,
                 backdropUrl: movie.backdrop?.url ?? null,

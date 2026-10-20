@@ -192,6 +192,8 @@ serves stored bytes through the existing frontend API rewrite. CSP limits images
 and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
 Provider text is escaped by React. Provider records are validated once, when the backend ingests
 them; the web app trusts the API's contract types and does not re-validate its responses.
+Unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
+existing placeholder is shown without rejecting the Movie. The media host allowlist is unchanged.
 
 Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
 identifiers; details responses expose no external identifiers.

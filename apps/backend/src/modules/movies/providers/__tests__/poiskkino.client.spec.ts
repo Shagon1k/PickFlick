@@ -60,7 +60,7 @@ describe('PoiskkinoClient', () => {
         expect(result.data.trailers?.[0]?.name).toBeNull();
     });
     it('should preserve unknown dates, ratings, language and content flags', async () => {
-        request.mockResolvedValue(Response.json({ id: 100, type: 'movie' }));
+        request.mockResolvedValue(Response.json({ id: 100, type: 'movie', year: 0 }));
         const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
         expect(result.data).toMatchObject({
             releaseDate: null,
@@ -87,16 +87,41 @@ describe('PoiskkinoClient', () => {
             (await client().search({ query: 'film', page: 1, locale: 'en-US' })).movies,
         ).toHaveLength(2);
     });
-    it('should reject unsafe image URLs and unexpected movie IDs', async () => {
+    it('should keep search results when optional media uses an unsupported CDN', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                docs: [
+                    wire(),
+                    {
+                        ...wire(),
+                        id: 101,
+                        poster: {
+                            url: 'https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/poster.jpg',
+                        },
+                        backdrop: { url: 'http://127.0.0.1/private.jpg' },
+                    },
+                ],
+                page: 1,
+                pages: 1,
+                total: 2,
+            }),
+        );
+        const result = await client().search({ query: 'bat', page: 1, locale: 'en-US' });
+        expect(result.movies).toHaveLength(2);
+        expect(result.movies[0]?.data.posterUrl).toBe(wire().poster.url);
+        expect(result.movies[1]?.data).toMatchObject({ posterUrl: null, backdropUrl: null });
+    });
+    it('should omit unsafe image URLs from details', async () => {
         request.mockResolvedValueOnce(
             Response.json({
                 ...wire(),
                 poster: { url: 'https://image.openmoviedb.com.evil.invalid/a.jpg' },
             }),
         );
-        await expect(
-            client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]),
-        ).rejects.toMatchObject({ reason: 'INVALID_RESPONSE' });
+        const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
+        expect(result.data.posterUrl).toBeNull();
+    });
+    it('should reject unexpected movie IDs', async () => {
         request.mockResolvedValueOnce(Response.json({ ...wire(), id: 101 }));
         await expect(
             client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]),
