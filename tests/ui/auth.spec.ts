@@ -118,6 +118,49 @@ test('Google sign-in sends only an allowlisted return target and stores no token
     expect(storage).toEqual({ local: [], session: [] });
 });
 
+test('Login explains social sign-in rate limits and keeps retry available', async ({ page }) => {
+    await page.route('**/api/auth/sign-in/social', (route) =>
+        route.fulfill({
+            status: 429,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                code: 'TOO_MANY_REQUESTS',
+                message: 'internal provider detail',
+            }),
+        }),
+    );
+    await openLogin(page);
+    await page.getByRole('button', { name: 'Continue with Google' }).click();
+    await expect(page.getByRole('status')).toHaveText(
+        'Too many sign-in attempts. Wait a minute, then try again.',
+    );
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled();
+    await expect(page.getByText('internal provider detail')).toHaveCount(0);
+});
+
+test('Login can recheck the current account after a session service failure', async ({
+    context,
+    page,
+}) => {
+    await context.addCookies([
+        {
+            name: 'pickflick.session_token',
+            value: 'session-api-unavailable',
+            url: 'http://127.0.0.1:41730',
+        },
+    ]);
+    await openLogin(page);
+    await expect(
+        page.getByRole('alert').filter({ hasText: 'We could not check your session' }),
+    ).toBeVisible();
+    await context.clearCookies();
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await expect(page.getByText('We could not check your session', { exact: false })).toHaveCount(
+        0,
+    );
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled();
+});
+
 test('Login preserves a supported invitation and never reflects raw provider errors', async ({
     page,
 }) => {

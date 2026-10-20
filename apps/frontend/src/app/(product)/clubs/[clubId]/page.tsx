@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import { getClubHub, listClubs } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
 import { ApiError } from '#lib/api.server';
@@ -41,6 +42,7 @@ function SafeFailure({ unavailable }: { unavailable: boolean }) {
                             ? 'Try again in a moment. No Club information was changed.'
                             : 'This Club requires an active Membership.'}
                     </p>
+                    {unavailable ? <RetryButton /> : null}
                     <ButtonLink href="/app" variant="primary">
                         Back to your Clubs
                     </ButtonLink>

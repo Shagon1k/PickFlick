@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { IApiErrorEnvelope } from '@pickflick/contracts';
+import { HTTP_STATUS, type IApiErrorEnvelope } from '@pickflick/contracts';
 import { headers } from 'next/headers';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -78,6 +78,14 @@ export async function requestApi<TResponse = void>(
         signal: AbortSignal.timeout(init.timeoutMs ?? DEFAULT_TIMEOUT_MS),
     });
     if (!response.ok) {
+        if (
+            response.status === HTTP_STATUS.TOO_MANY_REQUESTS ||
+            response.status >= HTTP_STATUS.INTERNAL_SERVER_ERROR
+        )
+            console.error('Backend request unavailable.', {
+                status: response.status,
+                requestId: response.headers.get('x-request-id'),
+            });
         const envelope = (await response.json().catch(() => undefined)) as
             | IApiErrorEnvelope
             | undefined;

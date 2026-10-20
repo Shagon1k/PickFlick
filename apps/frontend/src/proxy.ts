@@ -41,7 +41,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         response.headers.set('Cache-Control', 'private, no-store');
     }
     const clubId = CLUB_PATH.exec(request.nextUrl.pathname)?.[1];
-    if (clubId) {
+    if (
+        clubId &&
+        request.method === 'GET' &&
+        request.cookies.get('pickflick.last_club')?.value !== clubId
+    ) {
         try {
             await getClubHub(clubId, request.headers);
         } catch (error) {

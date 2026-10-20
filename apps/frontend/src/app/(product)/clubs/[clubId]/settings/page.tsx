@@ -6,6 +6,7 @@ import { connection } from 'next/server';
 import { getClubHub, getClubSettings, listClubs } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 
@@ -37,6 +38,7 @@ function SafeFailure({ forbidden = false }: { forbidden?: boolean }) {
                             : 'Nothing was changed. Return to your Clubs or retry this page.'}
                     </p>
                     <div className={styles.formFooter}>
+                        {!forbidden ? <RetryButton /> : null}
                         <ButtonLink href="/app" variant="primary">
                             Back to your Clubs
                         </ButtonLink>

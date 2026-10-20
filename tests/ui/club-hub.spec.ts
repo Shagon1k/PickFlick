@@ -88,6 +88,23 @@ test(
     },
 );
 
+test('Hub retries a transient backend failure without signing the member out', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, `valid-hub-transient-${crypto.randomUUID()}`);
+    await context.addCookies([
+        { name: 'pickflick.last_club', value: FIRST_CLUB_ID, url: 'http://127.0.0.1:41730' },
+    ]);
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    await expect(
+        page.getByRole('heading', { name: 'The Club Hub is temporarily unavailable' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Midnight Society' })).toBeVisible();
+    await expect(page.getByText('Screening Call Sheet', { exact: true })).toBeVisible();
+});
+
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
     await authenticate(context, 'valid-hub-archived');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
