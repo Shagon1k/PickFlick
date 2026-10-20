@@ -72,8 +72,8 @@ function CallSheet({
     club: IClubSummary;
     activeSession?: IClubHubSession;
 }) {
-    return (
-        <section aria-labelledby="hub-title" className={styles.callSheet}>
+    const content = (
+        <>
             <div className={styles.callSheetHeader}>
                 <span>Screening Call Sheet</span>
                 <span>{formatCallSheetPhase(activeSession)}</span>
@@ -136,6 +136,21 @@ function CallSheet({
                     <span>PF</span>
                 </div>
             </div>
+        </>
+    );
+    return (
+        <section aria-labelledby="hub-title" className={styles.callSheet}>
+            {activeSession ? (
+                <Link
+                    aria-label={`Open Session: ${formatSessionName(activeSession)}`}
+                    className={styles.callSheetLink}
+                    href={`/sessions/${activeSession.id}`}
+                >
+                    {content}
+                </Link>
+            ) : (
+                content
+            )}
         </section>
     );
 }

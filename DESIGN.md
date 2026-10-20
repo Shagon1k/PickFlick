@@ -165,6 +165,10 @@ every breakpoint and gap width.
 
 ### Prototype clarifications
 
+The Club Hub Call Sheet links to its current Session from every Club section, including for
+members who already participate. It is keyboard- and touch-accessible; without a current Session,
+the Call Sheet remains a static empty state.
+
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Personal suggestions beside Nomination search.                                                                                      | Suggest only the current user's own past nominations in this Club that did not win. Derive them from history; selecting a card uses the normal nomination flow. There is no separate shared saved-film list or manual add/remove UI.                                                                                                                                                                    |

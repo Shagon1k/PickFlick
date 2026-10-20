@@ -147,6 +147,22 @@
     border-bottom: 1px solid var(--gold-border);
 }
 
+.callSheetLink {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-radius: inherit;
+}
+
+.callSheetLink:hover {
+    background: var(--surface-lit);
+}
+
+.callSheetLink:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -3px;
+}
+
 .callSheetBody {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(180px, 0.75fr);

@@ -130,6 +130,12 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
         ).toBeVisible();
         await expect(page.getByText('Screening Call Sheet', { exact: true })).toBeVisible();
         await expect(
+            page.getByRole('link', {
+                name: 'Open Session: Midnight private screening',
+                exact: true,
+            }),
+        ).toHaveAttribute('href', '/sessions/30000000-0000-4000-8000-000000000031');
+        await expect(
             page.getByRole('button', { name: 'Open Second Screening Room' }),
         ).toBeVisible();
         await expect(
@@ -162,6 +168,10 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         expect((await next.boundingBox())?.height).toBeGreaterThanOrEqual(44);
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
+        await page
+            .getByRole('link', { name: 'Open Session: Second Club private screening', exact: true })
+            .tap();
+        await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
     } finally {
         await context.close();
     }

@@ -25,6 +25,7 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-full');
         await page.goto(`/clubs/${CLUB_ID}`);
+        await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
@@ -38,7 +39,8 @@ test(
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
             0,
         );
-        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
+        await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
+        await page.keyboard.press('Enter');
         await expect(page.getByRole('heading', { name: 'Noir night', exact: true })).toBeVisible();
         await page.getByRole('button', { name: 'Edit Session' }).click();
         await page.keyboard.press('Escape');
