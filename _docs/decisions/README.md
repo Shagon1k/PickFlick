@@ -1323,6 +1323,15 @@ detail result is at most one refresh old, and Movie summaries track the newest p
 - [TheTVDB v4 OpenAPI](https://thetvdb.github.io/v4-api/)
 - [TMDB movie details](https://developer.themoviedb.org/reference/movie-details)
 
+### Amendment — Display titles, 2026-10-20
+
+Owner verification found real PoiskKino search results with empty `enName` but usable
+`alternativeName` or `name`. The display title now prefers these fields in that order after
+`enName`; it is not a guarantee of English language. TheTVDB English titles still take precedence
+in details, and descriptions remain English-only. Unknown title stays null only when all source
+names are empty. This supersedes the English-title missing-data restriction above without using
+title/year for Movie identity or adding per-result enrichment requests.
+
 ## ADR-018 — Persist Nomination deadline jobs in PostgreSQL
 
 - **Status:** Accepted; implemented for #43

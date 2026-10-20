@@ -311,6 +311,8 @@ loading, no-results, cached-results, provider failure, rate-limit, unconfigured 
 feedback. Query changes remove obsolete results immediately. Arrow keys select results while focus
 stays in the combobox; Enter opens the selected canonical Movie UUID route. Results also support
 Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits the viewport.
+Results use an available source title when an English title is absent; “Untitled film” is reserved
+for records without any title.
 
 Search uses neutral PF poster placeholders. Catalog
 credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie

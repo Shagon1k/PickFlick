@@ -271,6 +271,8 @@ every authentication session.
   DTOs. `MOVIE_PROVIDER` selects TMDB or one composite PoiskKino + TheTVDB adapter. The composite
   fetches and merges both sources; the service owns the single freshness rule.
   `CATALOG_ENABLED` and `CATALOG_TIMEOUT_MS` apply to every source in the selected adapter.
+  Display titles prefer English, then the available source alternative/local title; missing English
+  descriptions remain null. Search never enriches every result through additional provider calls.
   The module keeps service and persistence in its root; `providers/` contains the shared
   contract, composite, three API clients and their common HTTP transport. Source clients return
   normalized snapshots directly; only the selected adapter builds the unified provider result.

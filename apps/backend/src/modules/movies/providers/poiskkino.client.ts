@@ -168,8 +168,8 @@ export class PoiskkinoClient {
                     : null,
             data: {
                 ...createEmptyMetadata(),
-                title: movie.enName || null,
-                // alternativeName and description have no guaranteed English locale.
+                title: movie.enName || movie.alternativeName || movie.name || null,
+                // Descriptions have no guaranteed English locale.
                 releaseDate: movie.premiere?.world?.slice(0, ISO_DATE_LENGTH) ?? null,
                 releaseYear: movie.year || null,
                 runtime: movie.movieLength || null,

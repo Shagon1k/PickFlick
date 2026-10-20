@@ -18,11 +18,11 @@ describe('PoiskkinoClient', () => {
         poster: { url: 'https://image.openmoviedb.com/posters/synthetic.jpg' },
     });
     beforeEach(() => request.mockReset());
-    it('should search through the documented endpoint and never assign Russian text to English fields', async () => {
+    it('should search through the documented endpoint and preserve a source title without inventing English metadata', async () => {
         request.mockResolvedValue(Response.json({ docs: [wire()], page: 1, pages: 1, total: 1 }));
         const result = await client().search({ query: 'film', page: 1, locale: 'en-US' });
         expect(result.movies[0]?.data).toMatchObject({
-            title: null,
+            title: 'Непроверенный язык',
             originalTitle: null,
             overview: null,
             originalLanguage: null,
@@ -38,6 +38,27 @@ describe('PoiskkinoClient', () => {
             headers: { 'X-API-KEY': 'synthetic-only' },
         });
     });
+    it.each([
+        {
+            enName: 'English title',
+            alternativeName: 'Original title',
+            name: 'Название',
+            expected: 'English title',
+        },
+        { enName: '', alternativeName: 'Bat*21', name: 'Позывной Бэт-21', expected: 'Bat*21' },
+        { enName: null, alternativeName: '', name: 'Название', expected: 'Название' },
+        { enName: '', alternativeName: '', name: '', expected: null },
+    ])(
+        'should choose the first available display title: $expected',
+        async ({ expected, ...names }) => {
+            request.mockResolvedValue(
+                Response.json({ docs: [{ ...wire(), ...names }], page: 1, pages: 1, total: 1 }),
+            );
+            const result = await client().search({ query: 'bat', page: 1, locale: 'en-US' });
+            expect(result.movies[0]?.data.title).toBe(expected);
+            expect(result.movies[0]?.data.overview).toBeNull();
+        },
+    );
     it('should preserve ratings with their source and scale and resolve similar external IDs', async () => {
         request.mockResolvedValue(
             Response.json({
