@@ -279,6 +279,8 @@ every authentication session.
   Verified external-ID mappings
   deduplicate concurrent ingestion; title/year never establishes identity. Movie UUIDs survive
   source changes. Public links and future Session/Library relationships use those UUIDs.
+  Search omits records with conflicting external IDs and logs the skipped count, preserving
+  valid results and existing mappings. A page with only conflicts remains unavailable.
   [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources)
   defines matching, section precedence and missing English metadata behavior. The merged details
   projection is the only details cache; search cannot renew details. Projection/search keys hash
