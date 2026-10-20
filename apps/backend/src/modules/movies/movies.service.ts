@@ -102,6 +102,13 @@ export class MoviesService {
         };
     }
 
+    async getCachedPoster(movieId: string): Promise<string | null> {
+        return this.repository.findCachedPoster(
+            movieId,
+            this.environment.catalog.provider === 'tmdb' ? 'tmdb' : 'poiskkino',
+        );
+    }
+
     async getDetails(
         movieId: string,
         options: { allowStale?: boolean; forceRefresh?: boolean } = {},

@@ -99,9 +99,29 @@ describe('CompositeMovieProvider', () => {
                 source: 'thetvdb',
                 fetchedAt: now.toISOString(),
                 reason: null,
-                sections: ['metadata'],
+                sections: ['metadata', 'media'],
             },
         ]);
+    });
+    it('should prefer the TVDB poster and retain the primary poster when TVDB has none', async () => {
+        const english = record('thetvdb');
+        english.data.posterUrl = 'https://artworks.thetvdb.com/banners/movies/100/poster.jpg';
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            english.data.posterUrl,
+        );
+        english.data.posterUrl = null;
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            record('poiskkino').data.posterUrl,
+        );
+        primary.fetchDetails.mockResolvedValue({
+            ...record('poiskkino'),
+            data: { ...record('poiskkino').data, posterUrl: null },
+        });
+        english.data.posterUrl = 'https://artworks.thetvdb.com/banners/movies/100/poster.jpg';
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            english.data.posterUrl,
+        );
     });
     it('should keep a missing English description null', async () => {
         enrichment.fetchDetails.mockResolvedValue(record('thetvdb'));

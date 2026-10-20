@@ -314,8 +314,9 @@ Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits
 Results use an available source title when an English title is absent; “Untitled film” is reserved
 for records without any title.
 
-Search uses neutral PF poster placeholders. Catalog
-credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
+Search shows available posters through authenticated same-origin lazy image URLs; metadata
+responses do not wait for image downloads. Missing or failed images retain a neutral PF placeholder
+without removing the film row. Catalog credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
 route checks the session and now renders the read-only details described below. Local search keyboard, touch,
 axe and overflow checks passed at 390, 768, 1024 and 1440px on 2026-10-10. Personal Ratings, Watchlist,
 metadata and related films remain outside this change. Exact-SHA hosted preview and owner visual

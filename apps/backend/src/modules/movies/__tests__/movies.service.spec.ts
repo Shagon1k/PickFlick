@@ -28,6 +28,7 @@ describe('MoviesService', () => {
         saveSearch: vi.fn<MoviesRepository['saveSearch']>(),
         saveDetails: vi.fn<MoviesRepository['saveDetails']>(),
         findExternalIds: vi.fn<MoviesRepository['findExternalIds']>(),
+        findCachedPoster: vi.fn<MoviesRepository['findCachedPoster']>(),
     };
     const database = { movie: { findMany: vi.fn() } };
     const environment = {
@@ -70,6 +71,14 @@ describe('MoviesService', () => {
     });
 
     afterEach(() => vi.useRealTimers());
+
+    it('should resolve a poster from caches without calling catalog providers', async () => {
+        repository.findCachedPoster.mockResolvedValue('https://image.tmdb.org/poster.jpg');
+        expect(await service.getCachedPoster(MOVIE_ID)).toBe('https://image.tmdb.org/poster.jpg');
+        expect(repository.findCachedPoster).toHaveBeenCalledWith(MOVIE_ID, 'tmdb');
+        expect(provider.search).not.toHaveBeenCalled();
+        expect(provider.fetchDetails).not.toHaveBeenCalled();
+    });
 
     it('should read nomination summaries from Movie rows without calling a provider', async () => {
         database.movie.findMany.mockResolvedValue([

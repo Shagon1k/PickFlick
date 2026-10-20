@@ -10,6 +10,7 @@ import {
     type TMovieExternalId,
     type TMovieMetadata,
     type TMovieSearchResults,
+    type TMovieSource,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -67,6 +68,22 @@ export class MoviesRepository {
         const row = await this.prisma.movieSearchCache.findUnique({ where: { key } });
         const parsed = row ? movieSearchResultsSchema.safeParse(row.data) : null;
         return row && parsed?.success ? { data: parsed.data, fetchedAt: row.fetchedAt } : null;
+    }
+
+    async findCachedPoster(movieId: string, source: TMovieSource): Promise<string | null> {
+        const row = await this.prisma.movieSearchCache.findFirst({
+            where: {
+                data: {
+                    path: ['movies'],
+                    array_contains: [{ id: movieId, provenance: [{ source }] }],
+                },
+            },
+            orderBy: { fetchedAt: 'desc' },
+        });
+        const parsed = row ? movieSearchResultsSchema.safeParse(row.data) : null;
+        return parsed?.success
+            ? (parsed.data.movies.find((movie) => movie.id === movieId)?.posterUrl ?? null)
+            : null;
     }
 
     async saveSearch(

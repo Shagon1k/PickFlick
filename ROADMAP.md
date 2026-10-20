@@ -439,16 +439,16 @@ hidden from normal history unless product copy exposes it.
 | Jobs       | Separate backend worker reads due Sessions from PostgreSQL; no job table or queue library.                  | ADR-018           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                  | ADR-007, 008      |
 
-| Provider              | Purpose                                                                                    | Status                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Google OAuth          | Registered identity.                                                                       | Built; owner sandbox/UAT evidence pending                                                |
-| Apple Sign in         | Registered identity after approved activation.                                             | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
-| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
-| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                        | Planned                                                                                  |
-| Resend                | Transactional and opted-in email.                                                          | Contact delivery built; notifications planned                                            |
-| S3-compatible storage | Avatars, catalog images and expiring exports.                                              | Club avatars and catalog images built; User avatars and exports planned                  |
-| Sentry                | Error and performance visibility with privacy-safe context.                                | Planned                                                                                  |
-| IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.   | Active read-only surface                                                                 |
+| Provider              | Purpose                                                                                            | Status                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Google OAuth          | Registered identity.                                                                               | Built; owner sandbox/UAT evidence pending                                                |
+| Apple Sign in         | Registered identity after approved activation.                                                     | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
+| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
+| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
+| Resend                | Transactional and opted-in email.                                                                  | Contact delivery built; notifications planned                                            |
+| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club avatars and catalog images built; User avatars and exports planned                  |
+| Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
+| IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
 
 ## 8. Phase plan
 

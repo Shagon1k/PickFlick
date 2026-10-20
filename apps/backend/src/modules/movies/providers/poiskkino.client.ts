@@ -21,8 +21,18 @@ const ISO_DATE_LENGTH = 10;
 
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
-// Unsupported optional media uses a placeholder without rejecting the Movie itself.
-const image = z.object({ url: movieImageUrlSchema.nullish().catch(null) }).nullish();
+// Yandex's mirror serves the same paths as its canonical, already allowlisted image host.
+const imageUrl = z.preprocess(
+    (value) =>
+        typeof value === 'string'
+            ? value.replace(
+                  /^https:\/\/[a-z0-9]+\.svc\.cdn\.yandex\.net(?=\/get-kinopoisk-image\/)/u,
+                  'https://avatars.mds.yandex.net',
+              )
+            : value,
+    movieImageUrlSchema.nullish().catch(null),
+);
+const image = z.object({ url: imageUrl }).nullish();
 const related = z.object({ id: z.number().int().positive() });
 const wire = z.object({
     id: z.number().int().positive(),

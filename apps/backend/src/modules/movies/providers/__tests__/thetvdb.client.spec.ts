@@ -9,6 +9,7 @@ describe('ThetvdbClient', () => {
         id: 10,
         remoteIds: [{ sourceName: 'IMDB', id: 'tt0000100' }],
         name: 'Русское название',
+        image: 'https://artworks.thetvdb.com/banners/movies/10/poster.jpg',
         translations: {
             nameTranslations: [{ language: 'eng', name: 'English title' }],
             overviewTranslations: [{ language: 'rus', overview: 'Русское описание' }],
@@ -22,13 +23,28 @@ describe('ThetvdbClient', () => {
         request.mockResolvedValueOnce(Response.json({ status: 'success', data: movie() }));
         const result = await client().fetchDetails([...ids]);
         expect(result.externalIds).toContainEqual({ source: 'thetvdb', externalId: '10' });
-        expect(result.data).toMatchObject({ title: 'English title', overview: null });
+        expect(result.data).toMatchObject({
+            title: 'English title',
+            overview: null,
+            posterUrl: movie().image,
+        });
         expect(request.mock.calls[0]?.[0]).toEqual(
             new URL('https://api4.thetvdb.com/v4/search/remoteid/tt0000100'),
         );
         expect(request.mock.calls[1]?.[0]).toEqual(
             new URL('https://api4.thetvdb.com/v4/movies/10/extended?meta=translations'),
         );
+    });
+    it('should preserve metadata when an optional poster URL is unsafe', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                status: 'success',
+                data: { ...movie(), image: 'http://127.0.0.1/private.jpg' },
+            }),
+        );
+        const result = await client().fetchDetails([{ source: 'thetvdb', externalId: '10' }]);
+        expect(result.data.title).toBe('English title');
+        expect(result.data.posterUrl).toBeNull();
     });
     it('should reject IMDb mismatch even when the title and year match', async () => {
         request.mockResolvedValueOnce(

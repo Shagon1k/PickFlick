@@ -18,7 +18,7 @@ interface ILoaded {
     error: MovieProviderError | null;
 }
 
-/** PoiskKino supplies search, media, ratings and related titles; TheTVDB adds English text. */
+/** PoiskKino supplies search/ratings/related titles; TheTVDB adds English text and posters. */
 export class CompositeMovieProvider implements IMovieProvider {
     constructor(
         private poiskkino: Pick<PoiskkinoClient, 'search' | 'fetchDetails'>,
@@ -55,7 +55,7 @@ export class CompositeMovieProvider implements IMovieProvider {
                     source: 'thetvdb',
                     fetchedAt: enrichment.record?.fetchedAt ?? null,
                     reason: enrichment.error?.reason ?? null,
-                    sections: ['metadata'],
+                    sections: ['metadata', 'media'],
                 },
             ],
         });
@@ -80,13 +80,14 @@ async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoa
     }
 }
 
-/** English text comes from TheTVDB; media, ratings and year stay with PoiskKino. */
+/** Prefer the English metadata/poster; keep available PoiskKino media and ratings. */
 function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
     const base = primary?.data ?? createEmptyMetadata();
     const english = enrichment?.data;
     return {
         ...base,
         title: english?.title ?? base.title,
+        posterUrl: english?.posterUrl ?? base.posterUrl,
         overview: english?.overview ?? null,
         originalTitle: english?.originalTitle ?? base.originalTitle,
         releaseDate: english?.releaseDate ?? base.releaseDate,

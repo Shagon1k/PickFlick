@@ -282,7 +282,8 @@ every authentication session.
   [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources)
   defines matching, section precedence and missing English metadata behavior. The merged details
   projection is the only details cache; search cannot renew details. Projection/search keys hash
-  the configured provider and locale. `Movie.title`/`releaseYear` hold nomination summaries.
+  a merge-policy version, the configured provider and locale; source-normalization changes refetch
+  caches without changing Movie UUIDs. `Movie.title`/`releaseYear` hold nomination summaries.
   — Active internal service
 - **Provider fallback:** callers receive `fresh`, `partial`, `stale` or `unavailable`. Cached data
   younger than `CATALOG_REFRESH_HOURS` is served as is, including `partial` details. Source
@@ -291,10 +292,14 @@ every authentication session.
   error; invalid payloads, authentication, disabled configuration and NOT_FOUND never reuse it.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
   Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
-  Displayed detail posters are copied on API reads to private `movie-images/<sha256-of-source-url>` objects.
-  Source cache data retain provider URLs; detail posters use an authenticated
-  `/api/movies/images/:key` path through the existing frontend rewrite. Search returns null poster
-  and backdrop fields without image I/O; details return null backdrops and cast portraits. Image
+  Detail posters prefer TheTVDB's image, then the available PoiskKino image. Verified Yandex
+  mirror paths normalize to the already allowlisted canonical host. Displayed posters are copied
+  to private `movie-images/<sha256-of-source-url>` objects. Source URLs stay in internal caches;
+  detail responses use authenticated `/api/movies/images/:key` paths. Search returns lazy
+  `/api/movies/:movieId/poster` paths without image I/O. That authenticated endpoint resolves the
+  latest validated search poster for the active source, ingests it through the same bounded image
+  service and redirects only to the same-origin stored-image path. It makes no catalog API calls.
+  Backdrops and cast portraits remain null. Image
   downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
   downloads return missing media; storage failures propagate. Existing objects are reused.
   Details expose `links.imdb`, built on the backend, without external identifiers. The frontend

@@ -16,6 +16,7 @@ const response = <TData extends z.ZodType>(data: TData) =>
     z.object({ status: z.literal('success'), data });
 const extended = z.object({
     id,
+    image: movieImageUrlSchema.nullish().catch(null),
     originalLanguage: z.string().max(10).nullish(),
     runtime: z.number().int().nonnegative().nullish(),
     remoteIds: z.array(z.object({ sourceName: z.string(), id: z.string() })).max(100),
@@ -94,6 +95,7 @@ export class ThetvdbClient {
             similarExternalIds: null,
             data: {
                 ...createEmptyMetadata(),
+                posterUrl: movie.image ?? null,
                 title:
                     movie.translations?.nameTranslations?.find((text) => text.language === 'eng')
                         ?.name || null,

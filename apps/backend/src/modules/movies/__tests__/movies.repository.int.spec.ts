@@ -79,6 +79,36 @@ describe('MoviesRepository', () => {
         );
         expect((await repository.findCachedDetails(id, detailKey))?.data.id).toBe(id);
     });
+    it('should resolve the newest validated search poster from the active source', async () => {
+        const record = fixture(time, 'poiskkino');
+        const id = await ingest(record);
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBe(record.data.posterUrl);
+        expect(await repository.findCachedPoster(id, 'tmdb')).toBeNull();
+        const posterUrl = 'https://avatars.mds.yandex.net/get-kinopoisk-image/100/poster/orig';
+        const searchKey = key();
+        await repository.saveSearch(
+            searchKey,
+            search([{ ...record, data: { ...record.data, posterUrl } }]),
+            later,
+        );
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBe(posterUrl);
+        await prisma.movieSearchCache.update({
+            where: { key: searchKey },
+            data: {
+                data: {
+                    movies: [
+                        {
+                            id,
+                            posterUrl: 'http://127.0.0.1/private.jpg',
+                            provenance: [{ source: 'poiskkino' }],
+                        },
+                    ],
+                },
+            },
+        });
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBeNull();
+    });
+
     it('should retain UUID when provider configuration and external identities change', async () => {
         const original = fixture();
         const id = await ingest(original);

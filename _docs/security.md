@@ -187,16 +187,21 @@ provider log messages and error arguments are omitted to keep that path out of l
 
 ## Catalog media and outbound links
 
-The backend downloads displayed detail posters from the five validated provider hosts into private
+The backend downloads displayed posters from the five validated provider hosts into private
 S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
 only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
-contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search media, detail
-backdrops and cast portraits are returned as null without image I/O. The authenticated image endpoint
+contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search returns lazy
+`/api/movies/:movieId/poster` URLs, resolving only validated private search caches for the active
+source and redirecting to an ingested same-origin image. Search JSON never waits for downloads;
+its image endpoint makes no provider metadata requests. Detail backdrops and cast portraits remain
+null. The authenticated image endpoint
 serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
 and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
 Provider text is escaped by React. Provider records are validated once, when the backend ingests
 them; the web app trusts the API's contract types and does not re-validate its responses.
-Unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
+Yandex mirror URLs under `/get-kinopoisk-image/` normalize to the existing canonical
+`avatars.mds.yandex.net` host before the full image URL validation. No new host is allowlisted.
+Other unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
 existing placeholder is shown without rejecting the Movie. The media host allowlist is unchanged.
 
 Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb

@@ -142,6 +142,32 @@ describe('PoiskkinoClient', () => {
         const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
         expect(result.data.posterUrl).toBeNull();
     });
+    it('should use the canonical Yandex host for verified mirror paths without accepting unsafe URL variants', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                ...wire(),
+                poster: {
+                    url: 'https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1704946/poster/600x900',
+                },
+            }),
+        );
+        expect(
+            (await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }])).data
+                .posterUrl,
+        ).toBe('https://avatars.mds.yandex.net/get-kinopoisk-image/1704946/poster/600x900');
+        request.mockResolvedValueOnce(
+            Response.json({
+                ...wire(),
+                poster: {
+                    url: 'https://mirror.svc.cdn.yandex.net/get-kinopoisk-image/%2e%2e/private.jpg',
+                },
+            }),
+        );
+        expect(
+            (await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }])).data
+                .posterUrl,
+        ).toBeNull();
+    });
     it('should reject unexpected movie IDs', async () => {
         request.mockResolvedValueOnce(Response.json({ ...wire(), id: 101 }));
         await expect(
