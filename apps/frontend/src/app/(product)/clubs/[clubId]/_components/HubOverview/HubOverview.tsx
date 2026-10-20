@@ -50,25 +50,24 @@ export default function HubOverview({ hub }: IHubOverviewProps) {
                     <p>{hub.memberCount} members in this Club</p>
                     <p className={styles.quiet}>Your role: {club.membershipRole.toLowerCase()}</p>
                 </section>
-                <section className={styles.card}>
-                    <h2>Active Session</h2>
-                    {activeSession ? (
-                        <>
-                            <p>
-                                <Link href={`/sessions/${activeSession.id}`}>
-                                    {formatSessionName(activeSession)}
-                                </Link>
-                            </p>
-                            <p className={styles.quiet}>
-                                Phase: {activeSession.phase.toLowerCase()}
-                            </p>
-                        </>
-                    ) : (
+                {activeSession ? (
+                    <Link
+                        aria-label={`Open active Session: ${formatSessionName(activeSession)}`}
+                        className={`${styles.card} ${styles.cardLink}`}
+                        href={`/sessions/${activeSession.id}`}
+                    >
+                        <h2>Active Session</h2>
+                        <p>{formatSessionName(activeSession)}</p>
+                        <p className={styles.quiet}>Phase: {activeSession.phase.toLowerCase()}</p>
+                    </Link>
+                ) : (
+                    <section className={styles.card}>
+                        <h2>Active Session</h2>
                         <p className={styles.quiet}>
                             No active Session. Your next screening will appear here.
                         </p>
-                    )}
-                </section>
+                    </section>
+                )}
             </div>
             <SessionRows
                 title="Active Ratings"

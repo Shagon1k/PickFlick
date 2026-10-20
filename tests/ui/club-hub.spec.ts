@@ -169,7 +169,11 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
         await page
-            .getByRole('link', { name: 'Open Session: Second Club private screening', exact: true })
+            .getByRole('link', {
+                name: 'Open active Session: Second Club private screening',
+                exact: true,
+            })
+            .getByText('Phase: rating', { exact: true })
             .tap();
         await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
     } finally {

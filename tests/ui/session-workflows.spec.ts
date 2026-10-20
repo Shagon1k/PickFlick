@@ -26,6 +26,7 @@ test(
         await authenticate(context, 'valid-session-workflow-full');
         await page.goto(`/clubs/${CLUB_ID}`);
         await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
+        await expect(page.getByRole('link', { name: /^Open active Session:/u })).toHaveCount(0);
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
@@ -53,7 +54,10 @@ test(
         await page.goBack();
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
         await expect(page.getByText('Room A', { exact: true })).toHaveCount(0);
-        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
+        await page
+            .getByRole('link', { name: 'Open active Session: Noir night', exact: true })
+            .getByRole('heading', { name: 'Active Session', exact: true })
+            .click();
         await page.getByRole('button', { name: 'Cancel Session', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
         await page.getByLabel('Type CANCEL to confirm').fill('CANCEL');
@@ -94,6 +98,12 @@ test(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
         );
+        await page.getByRole('link', { name: '← Midnight Society' }).click();
+        const activeSession = page.getByRole('link', { name: /^Open active Session:/u });
+        await expect(activeSession).toContainText('Phase: watching');
+        await activeSession.focus();
+        await page.keyboard.press('Enter');
+        await expect(page.getByText('watching', { exact: true })).toBeVisible();
     },
 );
 

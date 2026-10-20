@@ -154,11 +154,13 @@
     border-radius: inherit;
 }
 
-.callSheetLink:hover {
+.callSheetLink:hover,
+.cardLink:hover {
     background: var(--surface-lit);
 }
 
-.callSheetLink:focus-visible {
+.callSheetLink:focus-visible,
+.cardLink:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: -3px;
 }
@@ -300,6 +302,12 @@
 .card h2 {
     margin: 0 0 var(--gap-sm);
     font: 600 var(--fs-card-title)/var(--lh-title) var(--font-display);
+}
+
+.cardLink {
+    display: block;
+    color: inherit;
+    text-decoration: none;
 }
 
 .card p {

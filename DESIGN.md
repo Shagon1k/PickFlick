@@ -168,6 +168,8 @@ every breakpoint and gap width.
 The Club Hub Call Sheet links to its current Session from every Club section, including for
 members who already participate. It is keyboard- and touch-accessible; without a current Session,
 the Call Sheet remains a static empty state.
+The Overview's entire Active Session card also opens that Session, including its heading and
+phase label. Its empty state has no link.
 
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
