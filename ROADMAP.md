@@ -209,16 +209,23 @@ link flow. Invalid, expired,
 revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
 a separate member-only flow.
 
-Session invitations target one active Membership and expire after seven days. Admins and Moderators
-create or revoke them; a replacement link revokes the previous pending link. Only the target member
-in an active Club and open Session sees the preview or responds. All unavailable links and ineligible
-viewers receive the same denial with no Club or Session fields. Acceptance changes the existing
-SessionParticipant, never Membership. Pending Session rows share the product invitation ticket.
-Accepted participants may leave with `LEAVE`; operators remove another participant with `REMOVE`.
-Leaving or removal preserves history, updates the denominator, and revokes pending links. Club departure
-propagates to invited/accepted participants in open Sessions; completed Session history stays intact.
-Archived Clubs allow Session leave but prohibit new invitations, acceptance, revocation and removal.
-Adminless/over-limit Clubs prohibit new invites while preserving existing participation and roster recovery.
+Every active Club member can open a Session and join without a personal invitation. Creation and
+Session detail expose the same shareable `/sessions/:sessionId` link. Joining and declining update
+only the caller's SessionParticipant, never Club Membership, and serialize on Club → Session locks.
+Pending Session invitations are derived from open Sessions for Club members who have not responded;
+they do not need a stored personal token. Declining, leaving or removal removes the pending row.
+A declined or departed participant may explicitly rejoin; an operator-removed participant cannot
+restore their own participation. Accepted participants leave with typed `LEAVE`; operators remove
+another participant with `REMOVE`.
+
+Joining remains available in Nomination, Selection, Watching and Rating, while the Club is active.
+Late Selection participants score the already frozen films. Joining later never reopens Nomination,
+changes a submitted ballot or recalculates a saved winner. Completed and Cancelled Sessions stop
+accepting participation changes and leave the pending list. Existing personalized token links keep
+their seven-day expiry and exact-recipient checks; the shared Session URL does not expire separately
+from the Session's participation window. Club departure propagates to participants in open Sessions;
+completed history stays intact. Archived Clubs allow Session leave but prohibit joining and operator
+roster changes. Adminless/over-limit Clubs preserve existing participation and roster recovery.
 
 Club Admins may remove Members and Moderators; Moderators may remove Members. Neither route can
 remove the Admin or the caller. Removal ends access while keeping the departed Membership and shared

@@ -66,7 +66,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await expect(member.getByRole('heading', { name: 'Welcome to the Club' })).toBeVisible();
     });
 
-    await test.step('the Admin invites the member to a new Session, which an outsider cannot see', async () => {
+    await test.step('the member joins the shared Session link, which an outsider cannot use', async () => {
         await admin.goto(clubPath);
         await admin.getByRole('link', { name: 'Create Session', exact: true }).click();
         await admin.getByLabel('Date').fill(upcomingDate());
@@ -75,21 +75,24 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await admin.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(admin.getByText('Session created. Nomination is open.')).toBeVisible();
         await admin.getByRole('link', { name: 'Open Session' }).click();
-        await admin.getByRole('combobox', { name: 'Invite a Club member' }).click();
-        await admin.getByRole('option', { name: 'Jordan Member' }).click();
-        await admin.getByRole('button', { name: 'Create Session invitation' }).click();
-        const link = await admin.getByLabel('Session invitation link').inputValue();
+        await expect(admin).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+        const link = admin.url();
         await outsider.goto(link);
-        await expect(outsider.getByText(/You must already belong to the Club/u)).toBeVisible();
         await expect(outsider.getByText(clubName)).toHaveCount(0);
-        await expect(outsider.getByRole('button', { name: 'Accept invitation' })).toHaveCount(0);
+        await expect(
+            outsider.getByRole('button', { name: 'Join Session', exact: true }),
+        ).toHaveCount(0);
+        const denied = await outsider.request.post(
+            `${new URL(link).origin}/api${new URL(link).pathname}/participation`,
+            { data: { decision: 'accept' } },
+        );
+        expect(denied.status()).toBe(404);
         await member.goto(link);
-        await member.getByRole('button', { name: 'Accept invitation' }).click();
-        await expect(member.getByText('Your participation is confirmed.')).toBeVisible();
+        await member.getByRole('button', { name: 'Join Session', exact: true }).click();
+        await expect(member.getByText('1 accepted', { exact: true })).toBeVisible();
     });
 
     await test.step('the sole participant nomination selects the Movie for Watching', async () => {
-        await member.getByRole('link', { name: 'Open Session' }).click();
         await member.getByRole('combobox', { name: 'Select a Movie' }).fill(query);
         await member.getByRole('option', { name: /The Night of the Hunter/u }).click();
         await member.getByRole('button', { name: 'Nominate This' }).click();

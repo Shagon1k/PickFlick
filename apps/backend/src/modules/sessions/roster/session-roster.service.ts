@@ -1,9 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type {
-    ICreatedInvitation,
-    IPendingSessionInvitation,
-    ISessionRoster,
-    TSessionInvitationPreview,
+import {
+    type ICreatedInvitation,
+    type IPendingSessionInvitation,
+    type ISessionRoster,
+    OPEN_SESSION_PHASES,
+    type TSessionInvitationPreview,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -23,6 +24,51 @@ export class SessionRosterService {
     async get(userId: string, sessionId: string): Promise<ISessionRoster> {
         return this.prisma.$transaction((tx) => readRoster(tx, userId, sessionId), {
             isolationLevel: 'RepeatableRead',
+        });
+    }
+
+    async participate(
+        userId: string,
+        sessionId: string,
+        decision: 'accept' | 'decline',
+    ): Promise<TSessionInvitationPreview> {
+        return this.prisma.$transaction(async (tx) => {
+            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
+            assertOpen(session.phase);
+            if (membership.club.lifecycle !== 'ACTIVE')
+                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+            const existing = await tx.sessionParticipant.findUnique({
+                where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
+            });
+            if (existing?.status === 'REMOVED')
+                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
+            if (existing?.status === 'ACCEPTED')
+                return { state: 'accepted', sessionId, clubId: session.clubId };
+            const status = decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
+            if (existing?.status !== status) {
+                const participant = await tx.sessionParticipant.upsert({
+                    where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
+                    create: {
+                        sessionId,
+                        clubId: session.clubId,
+                        membershipId: membership.id,
+                        status,
+                    },
+                    update: { status },
+                });
+                await revokePendingInvites(tx, participant.id);
+                await recordRosterChange(tx, {
+                    actorUserId: userId,
+                    subjectUserId: userId,
+                    subjectMembershipId: membership.id,
+                    clubId: session.clubId,
+                    sessionId,
+                    action: 'SESSION_INVITE_RESPONDED',
+                });
+            }
+            return decision === 'accept'
+                ? { state: 'accepted', sessionId, clubId: session.clubId }
+                : { state: 'declined' };
         });
     }
 
@@ -157,35 +203,30 @@ export class SessionRosterService {
     }
 
     async listPending(userId: string): Promise<IPendingSessionInvitation[]> {
-        return this.prisma.$transaction(
-            async (tx) => {
-                const invites = await tx.sessionInvite.findMany({
-                    where: {
-                        participant: { membership: { userId } },
-                        respondedAt: null,
-                        revokedAt: null,
-                        expiresAt: { gt: new Date() },
+        const sessions = await this.prisma.session.findMany({
+            where: {
+                phase: { in: [...OPEN_SESSION_PHASES] },
+                club: {
+                    deletedAt: null,
+                    lifecycle: 'ACTIVE',
+                    memberships: { some: { userId, status: 'ACTIVE', user: { status: 'ACTIVE' } } },
+                },
+                participants: {
+                    none: {
+                        membership: { userId },
+                        status: { in: ['ACCEPTED', 'DECLINED', 'LEFT', 'REMOVED'] },
                     },
-                    include: inviteInclude,
-                    orderBy: { createdAt: 'desc' },
-                });
-                return invites.flatMap((invite) => {
-                    const view = toInvitationPreview(invite, userId);
-                    return view.state === 'valid'
-                        ? [
-                              {
-                                  id: invite.id,
-                                  clubName: view.clubName,
-                                  topic: view.topic,
-                                  inviterName: view.inviterName,
-                                  expiresAt: view.expiresAt,
-                              },
-                          ]
-                        : [];
-                });
+                },
             },
-            { isolationLevel: 'RepeatableRead' },
-        );
+            include: { club: true },
+            orderBy: { createdAt: 'desc' },
+        });
+        return sessions.map((session) => ({
+            id: session.id,
+            clubName: session.club.name,
+            topic: session.topic,
+            expiresAt: null,
+        }));
     }
 
     async respond(

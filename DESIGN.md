@@ -369,17 +369,19 @@ Hosted exact-head preview and owner visual acknowledgement remain required for #
 
 ## Member-only Session invitations and roster
 
-Session invitation pages reuse the focused invitation scene and UI kit. Signed-out visitors see
-sign-in continuation; ineligible viewers see one generic denial with a hint to join the Club first,
-without a Club name, Session topic, date, location, or participant list. Eligible recipients see the
-screening context and Accept/Decline. Loading, failure and offline feedback preserve their response
-controls. Acceptance confirms participation and links to Session detail; declining returns to Clubs.
+Creation and Session details expose one reusable Session link. Any current Club member can open
+it and join directly, without an operator selecting a recipient. Joining remains available in
+Nomination, Selection, Watching and Rating; Completed and Cancelled close participation changes.
+The shared pending ticket lists unanswered open Sessions for the current Club member, with Accept
+and Decline and no independent link expiry. A declined or departed participant can rejoin explicitly;
+operator removal prevents self-join. Late Selection participants score the existing frozen films.
 
-Session detail shows the accepted count and participant states. Operators select an existing Club
-member and create a link that expires in seven days; the returned link stays visible until the operator leaves the page. Pending links can be revoked. Leave/removal dialogs require typed `LEAVE`/`REMOVE`, preserve
-history, trap focus, and show explicit failure/offline feedback. Archived/terminal/role restrictions
-remove unavailable controls. Responsive and owner visual review evidence is tracked in the active
-Phase 9 document; exact-head hosted preview and owner acknowledgement remain required for #41.
+Session detail shows the accepted count, participant states, shared-link copying, Join and typed
+Leave. Operators can remove participants with typed `REMOVE`; legacy pending personal links can
+still be revoked. Confirmations preserve history, trap focus, and retain failure/offline feedback.
+Archived and terminal restrictions remove unavailable controls. Existing personal invitation URLs
+retain their original recipient checks, seven-day expiry and focused invitation scene. Signed-out
+visitors receive sign-in continuation; non-members see no private screening context.
 
 ## Nomination submissions and personal suggestions
 

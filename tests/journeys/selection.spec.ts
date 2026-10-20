@@ -25,7 +25,7 @@ async function submitScores(page: Page, sessionId: string, score: number) {
     await page.getByRole('button', { name: 'Submit scores' }).click();
 }
 
-test('participants nominate through the real API, submit immutable ballots and select a winner', async ({
+test('Club members join by the shared link, nominate, submit immutable ballots and select a winner', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
@@ -46,16 +46,12 @@ test('participants nominate through the real API, submit immutable ballots and s
                 selectionScaleMax: 10,
             },
         });
-        const adminMembership = (
-            await prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId: adminId, role: 'ADMIN' },
-            })
-        ).id;
-        const memberMembership = (
-            await prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId: memberId, role: 'MEMBER' },
-            })
-        ).id;
+        await prisma.membership.create({
+            data: { id: randomUUID(), clubId, userId: adminId, role: 'ADMIN' },
+        });
+        await prisma.membership.create({
+            data: { id: randomUUID(), clubId, userId: memberId, role: 'MEMBER' },
+        });
         const session = await prisma.session.create({
             data: {
                 id: randomUUID(),
@@ -66,10 +62,6 @@ test('participants nominate through the real API, submit immutable ballots and s
                 topic: 'Selection journey',
             },
         });
-        for (const membershipId of [adminMembership, memberMembership])
-            await prisma.sessionParticipant.create({
-                data: { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' },
-            });
         const query = `selection-journey-${randomUUID()}`;
         const movies = [
             { id: randomUUID(), title: 'Journey Movie One', releaseYear: 2020 },
@@ -86,11 +78,17 @@ test('participants nominate through the real API, submit immutable ballots and s
             });
             contexts.push(context);
             await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
+            const page = await context.newPage();
+            pages.push(page);
+            await page.goto(`/sessions/${session.id}`);
+            await page.getByRole('button', { name: 'Join Session', exact: true }).click();
+            await expect(page.getByText(`${index + 1} accepted`, { exact: true })).toBeVisible();
+        }
+        for (const [index, context] of contexts.entries()) {
             const response = await context.request.post(`/api/sessions/${session.id}/nominations`, {
                 data: { movieId: movies[index]!.id },
             });
             expect(response.status()).toBe(201);
-            pages.push(await context.newPage());
         }
         const firstPage = pages[0]!;
         await pages[1]!.goto(`/sessions/${session.id}`);
@@ -146,6 +144,7 @@ test('participants nominate through the real API, submit immutable ballots and s
         await expect(pages[1]!.getByRole('list', { name: 'Selection ranking' })).toHaveCount(0);
     } finally {
         for (const context of contexts) await context.close();
+        await prisma.clubAuditEvent.deleteMany({ where: { clubId } });
         await prisma.selectionScore.deleteMany({ where: { ballot: { session: { clubId } } } });
         await prisma.selectionBallot.deleteMany({ where: { session: { clubId } } });
         await prisma.nomination.deleteMany({ where: { session: { clubId } } });

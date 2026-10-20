@@ -59,6 +59,7 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
     return {
         progressVersion: 1,
         acceptedCount: state.status === 'ACCEPTED' ? 1 : 0,
+        canJoin: state.status === 'INVITED',
         canInvite: isManager && token.includes('session-roster'),
         canManage: isManager,
         canLeave: state.status === 'ACCEPTED',
@@ -111,7 +112,7 @@ function mutate(
             sendError(response, 503, 'SERVICE_UNAVAILABLE', 'roster-failure');
             return;
         }
-        if (pathname.endsWith('/respond')) {
+        if (pathname.endsWith('/respond') || pathname.endsWith('/participation')) {
             if (token.includes('outsider')) {
                 sendPreview(response, { state: 'unavailable' });
                 return;
@@ -152,9 +153,10 @@ export function handleSessionRoster(
     token: string | undefined,
 ): boolean {
     const isInvitationRoute = pathname.startsWith('/session-invitations/');
-    const isRosterRoute = /^\/sessions\/[^/]+\/(?:roster|invitations|participants|leave)/u.test(
-        pathname,
-    );
+    const isRosterRoute =
+        /^\/sessions\/[^/]+\/(?:roster|invitations|participants|participation|leave)/u.test(
+            pathname,
+        );
     const isDetailRoute =
         pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
     if (!isInvitationRoute && !isRosterRoute && !isDetailRoute) return false;
@@ -175,11 +177,10 @@ export function handleSessionRoster(
         const invitations: IPendingSessionInvitation[] = isPending
             ? [
                   {
-                      id: INVITE_ID,
+                      id: SESSION_ID,
                       clubName: session.clubName,
                       topic: session.topic,
-                      inviterName: 'Avery Admin',
-                      expiresAt: EXPIRES_AT,
+                      expiresAt: null,
                   },
               ]
             : [];

@@ -3,10 +3,9 @@
 import type { ISessionRoster } from '@pickflick/contracts';
 import { useRef, useState, useTransition } from 'react';
 
+import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
-import Select from '#components/ui/Select/Select';
-import TextInput from '#components/ui/TextInput/TextInput';
 import { getOfflineMessage } from '#lib/offline';
 
 import { changeRosterAction } from '../../roster-actions';
@@ -22,8 +21,6 @@ export default function SessionRoster({
     const roster = initial;
     const headingRef = useRef<HTMLHeadingElement>(null);
     const restoreFocusRef = useRef(false);
-    const [memberId, setMemberId] = useState<string | null>(null);
-    const [link, setLink] = useState('');
     const [message, setMessage] = useState('');
     const [dialog, setDialog] = useState<{
         action: 'leave' | 'remove';
@@ -42,10 +39,6 @@ export default function SessionRoster({
                 const result = await changeRosterAction(sessionId, input);
                 setMessage(result.message);
                 if (result.ok) {
-                    if (result.invitation)
-                        setLink(
-                            `${window.location.origin}/invite/session/${result.invitation.token}`,
-                        );
                     if (dialog) restoreFocusRef.current = true;
                     setDialog(null);
                 }
@@ -117,41 +110,11 @@ export default function SessionRoster({
                     ))}
                 </ul>
             )}
-            {roster.canInvite ? (
-                <div className={styles.invite}>
-                    <Select
-                        id="session-invite-member"
-                        label="Invite a Club member"
-                        placeholder="Choose a member"
-                        value={memberId}
-                        onChange={setMemberId}
-                        disabled={isPending}
-                        data={roster.eligibleMembers.map((member) => ({
-                            value: member.id,
-                            label: member.displayName,
-                        }))}
-                    />
-                    <Button
-                        disabled={!memberId || isPending}
-                        onClick={() => run({ action: 'invite', membershipId: memberId })}
-                    >
-                        Create Session invitation
-                    </Button>
-                    <p>
-                        A new link expires after seven days and replaces any pending link for this
-                        member.
-                    </p>
-                </div>
-            ) : null}
-            {link ? (
-                <TextInput
-                    id="session-invite-link"
-                    label="Session invitation link"
-                    hint="This link works only for the selected Club member. Copy it before leaving this page."
-                    value={link}
-                    readOnly
-                    onFocus={(event) => event.currentTarget.select()}
-                />
+            <SessionLink sessionId={sessionId} />
+            {roster.canJoin ? (
+                <Button disabled={isPending} onClick={() => run({ action: 'join' })}>
+                    Join Session
+                </Button>
             ) : null}
             {roster.canLeave ? (
                 <Button

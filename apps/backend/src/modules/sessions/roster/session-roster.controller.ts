@@ -37,6 +37,17 @@ export class SessionRosterController {
         return this.roster.get(user.id, id);
     }
 
+    @Post('sessions/:sessionId/participation')
+    @Header('Cache-Control', 'private, no-store')
+    @HttpCode(HttpStatus.OK)
+    participate(
+        @CurrentUser() user: IAuthUser,
+        @Param('sessionId', uuid) id: string,
+        @Body(new ZodValidationPipe(invitationDecisionSchema)) input: TInvitationDecision,
+    ) {
+        return this.roster.participate(user.id, id, input.decision);
+    }
+
     @Post('sessions/:sessionId/invitations')
     @Header('Cache-Control', 'private, no-store')
     create(

@@ -26,8 +26,7 @@ export interface IPendingSessionInvitation {
     id: string;
     clubName: string;
     topic: string | null;
-    inviterName: string;
-    expiresAt: string;
+    expiresAt: string | null;
 }
 export interface ISessionRoster {
     progressVersion: number;
@@ -35,6 +34,7 @@ export interface ISessionRoster {
     canInvite: boolean;
     canManage: boolean;
     canLeave: boolean;
+    canJoin: boolean;
     participants: {
         id: string;
         membershipId: string;

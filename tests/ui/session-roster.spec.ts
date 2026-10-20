@@ -60,31 +60,16 @@ test(
 );
 
 test(
-    'Operators create, revoke and remove targeted invitations with keyboard and focus return',
+    'Operators share the Session link and manage existing participants with keyboard and focus return',
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'admin');
         await page.goto(`/sessions/${SESSION_ID}`);
-        const memberSelect = page.getByRole('combobox', { name: 'Invite a Club member' });
-        const listbox = page.getByRole('listbox');
-        // A click before hydration opens nothing; retry until the dropdown is really open.
-        await expect(async () => {
-            await memberSelect.click();
-            await expect(listbox).toBeVisible({ timeout: 250 });
-        }).toPass({ timeout: 5_000 });
-        // Mantine seeds its keyboard position shortly after opening; arrow until the member is highlighted.
-        await expect(async () => {
-            await page.keyboard.press('ArrowDown');
-            await expect(listbox.locator('[data-combobox-selected]')).toHaveText('Jordan Member', {
-                timeout: 250,
-            });
-        }).toPass({ timeout: 5_000 });
-        await page.keyboard.press('Enter');
-        await expect(memberSelect).toHaveValue('Jordan Member');
-        await page.getByRole('button', { name: 'Create Session invitation' }).click();
-        await expect(page.getByLabel('Session invitation link')).toHaveValue(
-            new RegExp(`/invite/session/${'s'.repeat(43)}$`),
-        );
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.getByRole('button', { name: 'Copy Session link' }).click();
+        await expect
+            .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+            .toBe(`http://127.0.0.1:41730/sessions/${SESSION_ID}`);
         await page.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
         await expect(page.getByText('invited · invitation revoked')).toBeVisible();
         await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
@@ -102,6 +87,18 @@ test(
         ).toBeFocused();
     },
 );
+
+test('a Club member joins directly from the shared Session link', async ({ context, page }) => {
+    await authenticate(context, 'member-direct');
+    await page.goto(`/sessions/${SESSION_ID}`);
+    await expect(page.getByText('0 accepted', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Join Session', exact: true }).click();
+    await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Join Session', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Leave Session', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
+});
 
 test('Pending Session row opens its accepted Session', async ({ context, page }) => {
     await authenticate(context, 'pending-member');

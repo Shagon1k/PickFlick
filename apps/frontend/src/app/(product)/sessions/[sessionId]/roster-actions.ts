@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import {
     createSessionInvitation,
+    joinSession,
     leaveSession,
     removeSessionParticipant,
     revokeSessionInvitation,
@@ -23,6 +24,7 @@ import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];
 
 const commandSchema = z.discriminatedUnion('action', [
+    z.strictObject({ action: z.literal('join') }),
     createSessionInvitationSchema.extend({ action: z.literal('invite') }),
     leaveSessionSchema.extend({ action: z.literal('leave') }),
     removeSessionParticipantSchema.extend({
@@ -38,6 +40,7 @@ export async function changeRosterAction(id: string, input: unknown) {
         const session = await getSession(id);
         const command = parsed.data;
         let invitation;
+        if (command.action === 'join') await joinSession(id);
         if (command.action === 'invite')
             invitation = await createSessionInvitation(id, command.membershipId);
         if (command.action === 'leave') await leaveSession(id);
@@ -46,13 +49,14 @@ export async function changeRosterAction(id: string, input: unknown) {
         revalidatePath(`/sessions/${id}`);
         revalidatePath(`/clubs/${session.clubId}`);
         revalidatePath('/app');
+        let message = 'Roster updated.';
+        if (command.action === 'invite')
+            message = 'Invitation created. Share this link with the selected member.';
+        if (command.action === 'join') message = 'You joined this Session.';
         return {
             ok: true,
             invitation,
-            message:
-                command.action === 'invite'
-                    ? 'Invitation created. Share this link with the selected member.'
-                    : 'Roster updated.',
+            message,
         };
     } catch (error) {
         const message = getFailureMessage(error, {

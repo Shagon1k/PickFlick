@@ -15,6 +15,11 @@ import { apiPath, requestApi } from '#lib/api.server';
 
 export const getSessionRoster = (id: string): Promise<ISessionRoster> =>
     requestApi(apiPath`/sessions/${id}/roster`);
+export const joinSession = (id: string): Promise<TSessionInvitationPreview> =>
+    requestApi(apiPath`/sessions/${id}/participation`, {
+        method: 'POST',
+        json: { decision: 'accept' },
+    });
 export const createSessionInvitation = (
     id: string,
     membershipId: string,
@@ -48,4 +53,4 @@ export const respondPendingSessionInvitation = (
     id: string,
     input: TInvitationDecision,
 ): Promise<TSessionInvitationPreview> =>
-    requestApi(apiPath`/session-invitations/${id}/respond`, { method: 'POST', json: input });
+    requestApi(apiPath`/sessions/${id}/participation`, { method: 'POST', json: input });

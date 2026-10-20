@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Switch from '#components/ui/Switch/Switch';
@@ -237,6 +238,7 @@ function SessionResult({ session }: { session: TSession }) {
     return (
         <div className={styles.result}>
             <p role="status">Session created. {phaseMessage}</p>
+            <SessionLink sessionId={session.id} />
             <ButtonLink href={`/sessions/${session.id}`} variant="primary">
                 Open Session
             </ButtonLink>

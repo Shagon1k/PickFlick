@@ -140,12 +140,15 @@ export default function PendingInvites() {
                             </small>
                             <h3>{invitation.clubName}</h3>
                             <p>
-                                Invited by {invitation.inviterName} ·{' '}
                                 {invitation.kind === 'club'
-                                    ? `${invitation.memberCount} members`
+                                    ? `Invited by ${invitation.inviterName} · ${invitation.memberCount} members`
                                     : (invitation.topic ?? 'Untitled Session')}
                             </p>
-                            <p>Expires {formatUtcDate(invitation.expiresAt)}</p>
+                            <p>
+                                {invitation.expiresAt
+                                    ? `Expires ${formatUtcDate(invitation.expiresAt)}`
+                                    : 'Available while the Session is open.'}
+                            </p>
                             <div className={styles.actions}>
                                 <Button
                                     disabled={isPending}

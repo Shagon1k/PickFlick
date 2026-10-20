@@ -80,6 +80,7 @@ function handleRoster(
     const roster: ISessionRoster = {
         progressVersion: version,
         acceptedCount: hasDeparted ? 2 : 3,
+        canJoin: false,
         canInvite: false,
         canManage: false,
         canLeave: false,
