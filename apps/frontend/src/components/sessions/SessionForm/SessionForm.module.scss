@@ -4,13 +4,19 @@
 }
 
 .modes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    padding: var(--gap-xs);
-    margin: 0;
-    background: var(--bg);
+    min-width: 0;
+    padding: 0;
+    margin: 0 0 var(--gap-md);
     border: 0;
+}
+
+.modeOptions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 3px;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: var(--radius-pill);
 }
 

@@ -1,3 +1,4 @@
+import type { TMovieDetails } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { getMovieDetails } from '#api/movies.server';
@@ -8,15 +9,17 @@ import MoviePoster from '../MoviePoster/MoviePoster';
 
 interface IRelatedMoviesProps {
     ids: string[];
+    primaryMovie: TMovieDetails;
 }
 
-export default async function RelatedMovies({ ids }: IRelatedMoviesProps) {
+export default async function RelatedMovies({ ids, primaryMovie }: IRelatedMoviesProps) {
     const movies = await Promise.all(
         ids.map(async (id) => ({ id, ...(await getMovieDetails(id)) })),
     );
-    const available = movies.flatMap(({ result }) =>
-        result.state === 'unavailable' ? [] : [result.data],
-    );
+    const available = [
+        primaryMovie,
+        ...movies.flatMap(({ result }) => (result.state === 'unavailable' ? [] : [result.data])),
+    ];
     return (
         <>
             <div className={styles.relatedGrid}>
@@ -52,9 +55,7 @@ export default async function RelatedMovies({ ids }: IRelatedMoviesProps) {
                     );
                 })}
             </div>
-            {available.length ? (
-                <SearchCredits movies={available} label="Related catalog credits" />
-            ) : null}
+            <SearchCredits movies={available} label="Movie catalog credits" />
         </>
     );
 }

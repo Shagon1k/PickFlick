@@ -77,6 +77,8 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             await page.screenshot({ path: `test-results/movie-${width}.png`, fullPage: true });
+            await expect(page.getByRole('heading', { name: 'You may also like' })).toBeVisible();
+            await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(1);
             await page.getByRole('link', { name: 'Back to Hub', exact: true }).focus();
             await expect(
                 page.getByRole('link', { name: 'Back to Hub', exact: true }),

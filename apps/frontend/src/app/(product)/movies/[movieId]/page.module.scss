@@ -234,16 +234,6 @@
     border-radius: var(--radius);
 }
 
-.catalogCredits {
-    font-size: var(--fs-meta);
-}
-
-.catalogCredits a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
-}
-
 .related {
     display: grid;
     gap: var(--gap-md);
@@ -354,4 +344,27 @@
 
 .titleCopy > p {
     font-size: var(--fs-body-sm);
+}
+
+.credits dt {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+}
+
+.credits dt svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+.credits dd {
+    align-self: center;
+    text-align: right;
+}
+
+.related h2 {
+    font: 600 var(--fs-section)/var(--lh-title) var(--font-display);
 }

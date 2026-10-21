@@ -1,5 +1,7 @@
 import type { TMovieDetails } from '@pickflick/contracts';
 
+import Icon from '#components/ui/Icon/Icon';
+
 import styles from '../../page.module.scss';
 
 interface IMovieCreditsProps {
@@ -9,10 +11,15 @@ interface IMovieCreditsProps {
 export default function MovieCredits({ movie }: IMovieCreditsProps) {
     return (
         <section className={styles.credits} aria-labelledby="credits-title">
-            <h2 id="credits-title">Credits</h2>
+            <h2 id="credits-title" className="visually-hidden">
+                Credits
+            </h2>
             <dl>
                 <div>
-                    <dt>Director</dt>
+                    <dt>
+                        <Icon name="profile" />
+                        Director
+                    </dt>
                     <dd>
                         {movie.directors?.length
                             ? movie.directors.map(({ name }) => name).join(', ')
@@ -20,7 +27,10 @@ export default function MovieCredits({ movie }: IMovieCreditsProps) {
                     </dd>
                 </div>
                 <div>
-                    <dt>Cast</dt>
+                    <dt>
+                        <Icon name="members" />
+                        Cast
+                    </dt>
                     <dd>
                         {movie.cast?.length ? (
                             <ul>

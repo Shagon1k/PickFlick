@@ -64,19 +64,17 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 ) : null}
                 <MovieHero movie={movie} title={title} />
                 <MovieLinks imdb={imdb} title={movie.title} />
-                <section className={styles.catalogCredits} aria-labelledby="catalog-credits-title">
-                    <h2 id="catalog-credits-title">Catalog credits</h2>
-                    <SearchCredits movies={[movie]} label="Movie catalog credits" />
-                </section>
                 <section className={styles.related} aria-labelledby="related-title">
-                    <h2 id="related-title">Related titles</h2>
-                    <p>Similar films supplied by the catalog provider.</p>
+                    <h2 id="related-title">You may also like</h2>
                     {relatedIds.length ? (
                         <Suspense fallback={<p role="status">Loading related titles…</p>}>
-                            <RelatedMovies ids={relatedIds} />
+                            <RelatedMovies ids={relatedIds} primaryMovie={movie} />
                         </Suspense>
                     ) : (
-                        <p>No related titles are available.</p>
+                        <>
+                            <p>No related titles are available.</p>
+                            <SearchCredits movies={[movie]} label="Movie catalog credits" />
+                        </>
                     )}
                 </section>
             </main>

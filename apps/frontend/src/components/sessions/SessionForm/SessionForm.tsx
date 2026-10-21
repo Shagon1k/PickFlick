@@ -205,18 +205,20 @@ function SessionTypeField({
     return (
         <fieldset className={styles.modes} disabled={disabled}>
             <legend>Session type</legend>
-            {SESSION_TYPES.map(({ type, label }) => (
-                <label key={type}>
-                    <input
-                        checked={value === type}
-                        name="session-type"
-                        type="radio"
-                        value={type}
-                        onChange={() => onChange(type)}
-                    />
-                    {label}
-                </label>
-            ))}
+            <div className={styles.modeOptions}>
+                {SESSION_TYPES.map(({ type, label }) => (
+                    <label key={type}>
+                        <input
+                            checked={value === type}
+                            name="session-type"
+                            type="radio"
+                            value={type}
+                            onChange={() => onChange(type)}
+                        />
+                        {label}
+                    </label>
+                ))}
+            </div>
         </fieldset>
     );
 }
