@@ -342,45 +342,11 @@ foundation components; feature-specific wrappers are checked in their built scre
 Update this document when a design source changes, visible behavior is clarified, a screen or
 component is added, or build or QA status changes. A correct-looking prototype is not passed QA.
 
-Prototype alignment was re-audited after owner feedback on 2026-10-21. All 26 HTML files were
-inspected, including responsive, component and asset references; built surfaces were compared at
-390 and 1440px, with Hub and Session composition also checked at 768 and 1024px. The follow-up
-corrected the persistent Hub tabs, real Call Sheet data, overview tiles, member rows, invitation
-widget, Session actions, focused Contact scene, mobile Login gutters and Session type selector.
-Shared header/footer gutters now align with the prototype's 1120px outer container. Movie credits
-use icon-labelled rows, and one attribution region covers the film and its related results.
-The full UI contract passed 200 checks; subsequent targeted runs passed 76 and 18 checks. The
-Nomination/Selection menu and focus pass covered 36 checks. The static verify gate passed with
-333 unit tests and the production build. Hub/catalog integration passed 19 checks, and the
-12-hour Club invitation change passed its 11 invitation integration checks.
-Linux screenshot review covered 49 changed PNGs. All 84 visual comparisons passed again without
-updating snapshots. The production JavaScript bundle was built on
-macOS and rendered with Linux dependencies in the CI-pinned Playwright image using Node 24.15.0.
-Updated baselines prove regression stability, not owner acceptance of visual fidelity; a fresh CI
-run, hosted exact-revision preview and owner review are still pending. Watching-to-Rating, Rating,
-completion and other later-phase functionality were not added.
-
-A second owner-requested pass on 2026-10-21 drove a throwaway local Club through Nomination,
-Selection, Watching, Rating and Completed and compared the Session page, Call Sheet, pending-invite
-popover, gear menu and dialogs with the prototypes. The shared dialog, film-strip menu, score
-control, Active Session film strip, reel separator and invite ticket now follow the prototype; the
-live captures after the change were compared again. The full UI contract passed 200 checks, and
-16 changed Linux PNGs were reviewed before all 84 visual comparisons passed in the CI-pinned image.
-The follow-up Session pass rebuilt the phase banner, hero, Nomination search and cards, Selection
-rows, facts companion, Kick dialog and Watching film header from the live captures; the UI contract
-passed 200 checks, 35 reviewed Linux PNGs changed (mostly the 73px header and the viewport-edge ticket),
-and all 84 visual comparisons passed. Movie Details was confirmed unchanged apart from the header.
-The Hub pass aligned card padding and headings, the Call Sheet location slot, the Club caption's
-Session count, Schedule a Session, the account film strip and Movie Details; the UI contract passed
-200 checks and the changed Linux PNGs were reviewed before all 84 visual comparisons passed.
-A mobile and edge-case pass at 390, 768, 844×390 and 1440 compared the live app with the
-prototypes as Admin, participant and non-participant. It fixed reduced-motion focus for the search,
-bottom-bar strips and account menus (instant visibility instead of a 0.01ms transition), long Club
-names and topics, the landscape gear menu (compact rows, scrolled clear of the bottom bar, above the
-ticket, tab under the gear), the Watching header and movie link when film details are unavailable,
-result and date copy, and stacked credit alignment. The UI contract, both journeys and all 84 visual
-comparisons passed after the changed Linux PNGs were reviewed. Owner-confirmed: the public footer
-stays on every product page, including phones.
+Phase 12 compared every prototype file with the live app on 2026-10-21 at 390, 768, 844×390,
+1024 and 1440px as Admin, participant and non-participant, across Nomination, Selection, Watching,
+Rating and Completed. Its outcomes are recorded in the screen rules above; run evidence lives in
+[Phase 12](ROADMAP.md#phase-12--human-verification--bug-fixing-ii--in-progress). Linux baselines
+prove regression stability, not owner acceptance; hosted exact-revision review is still pending.
 The remaining Hub views and Rating/Completed content remain open Phase 12 and Phase 13 work.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
@@ -553,7 +519,7 @@ participants cannot submit. The server filters nominator names independently. Cu
 
 After closure, a restrained warm winner card replaces the ballot. It links to the selected Movie,
 shows the permitted nominator and records automatic or operator closure. When allowed, a neutral
-ordered list shows frozen totals, maximum scores and supporting voters, with the decisive
+ordered list shows frozen totals, top-score votes and supporters, with the decisive
 tie-break explained in plain text. Mobile stacks each Movie above its metrics. Hidden results
 show the winner and a visibility explanation without rankings or numeric breakdowns. Missing
 Movie metadata uses the existing title placeholder; zero-ballot closure explains the tie-break.

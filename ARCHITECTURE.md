@@ -345,7 +345,8 @@ every authentication session.
   the cookie. — Active for Overview. Members and Manage Club use the repeatable-read settings
   projection with the same access contract. The Hub also returns Club establishment date, roster
   participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
-  within each Club, including cancelled Sessions; no rows are renumbered after cancellation.
+  within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
+  Club's Session count excludes cancelled Sessions.
   Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
   Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
@@ -460,9 +461,9 @@ updates phase/details versions and records `SESSION_NOMINATION_CLOSED` atomicall
 confirmation. Responses are private and uncached. The server filters hidden films and author names
 using the Session snapshot, exposes aggregate accepted/nominated counts, and derives up to twelve
 personal suggestions from earlier same-Club losing nominations with a resolved winner. Movie titles
-and years come from `Movie.title` and `Movie.releaseYear` through `MoviesService.findSummaries`.
-Catalog ingestion maintains these summary columns; Session reads do not scan JSON caches or call
-providers. Missing summaries have an explicit placeholder.
+and years come from `Movie.title` and `Movie.releaseYear` through `MoviesService.findSummaries`;
+genres come from already cached, validated Movie details. Session reads never call providers.
+Missing summaries have an explicit placeholder and missing genres an empty list.
 Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
 page, which fetches the authoritative Session detail once; the client keeps no projection copy.
 No saved-film entity or provider request on submission is added. Completion on submission and live

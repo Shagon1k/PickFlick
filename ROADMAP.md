@@ -1006,19 +1006,19 @@ in UAT
 
 **Out of scope:** New features unrelated to verification findings.
 
-**Current evidence (2026-10-21):** owner-started branch `PF-test-club-to-winner-verification`,
-issue #48 In progress. The code checkpoint is `6474a82`; documentation consolidation follows it
-without application changes. `pnpm verify` passed, including 333 unit tests and builds. Hub/catalog
-integration passed 19 checks and the 12-hour Club invitation change passed 11 invitation checks.
-The full UI contract passed 200 checks; later targeted passes covered 76 audit checks, 36 phase-menu
-checks and 18 Hub/Manage Club checks. All 26 HTML files were audited; 49 changed Linux PNGs were
-reviewed and all 84 visual comparisons passed again without update mode. See
-[Design QA](DESIGN.md#8-design-qa) for the capture method and hosted-review limits.
+**Current evidence (2026-10-22):** owner-started branch `PF-test-club-to-winner-verification`,
+issue #48 In progress, draft [PR #180](https://github.com/Shagon1k/PickFlick/pull/180) with green
+CI. Owner-requested design passes on 2026-10-21 audited all 26 prototype files and aligned the shared
+dialogs, film-strip menus, score control, invite ticket, the Session page in every delivered phase,
+the Club Hub, Schedule a Session, Movie Details and mobile behavior. They also fixed reduced-motion
+focus in shell overlays, the Watching header without film details, long names and the landscape gear
+menu. Local evidence: `pnpm verify` gates, 333 unit tests, 160 Club/Session/Movie integration checks,
+the full UI contract (200), both real-API journeys, and all 84 visual comparisons in the CI-pinned
+Linux image after every changed PNG was reviewed.
 
-The owner is still performing the manual Club-to-winner walkthrough. Fresh branch CI, hosted
-exact-revision review and a complete current UAT multi-user/deadline run are not recorded by this
-local pass. Phase 12 remains open. The owner requested separate commits in the existing branch,
-no new issues or findings register, and no Phase 13 functionality.
+The owner is still performing the manual Club-to-winner walkthrough. Hosted exact-revision review and
+a complete UAT multi-user/deadline run are not recorded. Phase 12 remains open; the owner asked for
+separate commits on this branch, no new issues or findings register, and no Phase 13 functionality.
 
 ### Phase 13 — Watching, Rating & Completion · Not started
 
@@ -1522,6 +1522,7 @@ the MVP
 | Which service-worker approach and browser and device matrix will be maintained?                                                            | Developer                        | Phase 22      | Confirm framework support and finalize before PWA work.                                              |
 | Who is the release owner and rollback authority, and what evidence is required around cutover?                                             | Product owner + release owner    | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal.                       |
 | What are the backup destination, restore target, and regional or account-loss strategy?                                                    | Product owner + infrastructure   | Phase 23      | Approve the operations ADR, then drill restore and disaster recovery.                                |
+| May a live (non-past) Session be scheduled for a date that has already passed?                                                             | Product owner                    | Phase 14      | Decide before past Sessions arrive; forms and the API accept any date today.                         |
 | Which proxy configuration gives trustworthy client identity, abuse limits, and graceful drain?                                             | Infrastructure owner + developer | Phase 23      | Decide with the final topology and verify in the UAT drill.                                          |
 
 ### Deferred decisions and tech debt
