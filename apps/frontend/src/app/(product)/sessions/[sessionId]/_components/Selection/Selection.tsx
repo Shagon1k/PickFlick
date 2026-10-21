@@ -3,8 +3,9 @@
 import { useForm } from '@mantine/form';
 import { submitSelectionSchema, type TSelection } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState, useTransition } from 'react';
 
+import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { getOfflineMessage } from '#lib/offline';
@@ -12,7 +13,15 @@ import { getOfflineMessage } from '#lib/offline';
 import { refreshSelectionAction, submitSelectionAction } from '../../selection-actions';
 import styles from './Selection.module.scss';
 
-export default function Selection({ sessionId, data }: { sessionId: string; data: TSelection }) {
+export default function Selection({
+    sessionId,
+    data,
+    header,
+}: {
+    sessionId: string;
+    data: TSelection;
+    header: ReactNode;
+}) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
@@ -86,8 +95,9 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                     Refresh Selection
                 </Button>
             </div>
-            <h2 id="selection-heading" ref={headingRef} tabIndex={-1}>
-                Movie Selection
+            {header}
+            <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
+                Score nominated films
             </h2>
             <p>
                 Score every nominated film from {data.scaleMin} to {data.scaleMax}. Submit once;
@@ -100,9 +110,10 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                     <ul className={styles.movies} aria-label="Nominated films">
                         {data.nominations.map((row, index) => (
                             <li key={row.id} className={styles.movie}>
-                                <div className={styles.poster} aria-hidden="true">
-                                    PF
-                                </div>
+                                <SearchPoster
+                                    className={styles.poster}
+                                    url={`/api/movies/${row.movie.id}/poster`}
+                                />
                                 <div className={styles.info}>
                                     <h3>
                                         <Link href={`/movies/${row.movie.id}`}>

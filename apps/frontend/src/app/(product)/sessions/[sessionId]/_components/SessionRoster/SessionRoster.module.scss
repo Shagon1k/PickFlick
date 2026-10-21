@@ -2,7 +2,8 @@
     padding: var(--gap-lg);
     margin-block: var(--gap-lg);
     overflow-wrap: anywhere;
-    background: var(--surface);
+    scroll-margin-top: var(--gap-2xl);
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
@@ -19,7 +20,7 @@
 
 .header h2 {
     margin: 0;
-    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-display);
+    font: 500 var(--fs-card-title)/var(--lh-title) var(--font-body);
 }
 
 .roster p {
@@ -41,6 +42,7 @@
     gap: var(--gap-sm);
     max-width: 32rem;
     margin-block: var(--gap-lg);
+    scroll-margin-top: var(--gap-2xl);
 }
 
 @media (width <= 575px) {

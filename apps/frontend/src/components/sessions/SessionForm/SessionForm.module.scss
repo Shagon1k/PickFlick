@@ -1,15 +1,17 @@
 .form {
     display: grid;
-    gap: var(--gap-md);
+    gap: 0;
 }
 
 .modes {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--gap-xs);
-    padding: 0;
+    gap: 0;
+    padding: var(--gap-xs);
     margin: 0;
+    background: var(--bg);
     border: 0;
+    border-radius: var(--radius-pill);
 }
 
 .modes legend {
@@ -28,12 +30,13 @@
     padding: var(--gap-xs);
     font-size: var(--fs-body-sm);
     text-align: center;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
 }
 
 .modes label:has(input:checked) {
-    font-weight: 700;
+    font-weight: 500;
+    background: var(--surface);
     border-color: var(--border-lit);
 }
 
@@ -55,7 +58,7 @@
 }
 
 .submit p {
-    min-height: var(--hit);
+    min-height: var(--gap-md);
     margin-bottom: 0;
     color: var(--fg-secondary);
     overflow-wrap: anywhere;

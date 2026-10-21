@@ -7,7 +7,8 @@ interface IProductFrameProps {
     admin?: boolean;
     children: ReactNode;
     clubItems?: readonly IShellNavigationItem[];
-    currentArea?: 'hub' | 'recovery';
+    currentArea?: 'hub' | 'recovery' | 'session';
+    sessionBackHref?: string;
     routes?: IShellRouteMap;
 }
 
@@ -17,6 +18,7 @@ export default function ProductFrame({
     clubItems = [],
     currentArea = 'hub',
     routes,
+    sessionBackHref,
 }: IProductFrameProps) {
     return (
         <ProductChrome
@@ -24,6 +26,7 @@ export default function ProductFrame({
             clubItems={clubItems}
             currentArea={currentArea}
             routes={routes}
+            sessionBackHref={sessionBackHref}
         >
             {children}
         </ProductChrome>

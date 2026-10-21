@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { settle } from './settle';
-import { canonicalViewports } from './viewports';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/sessions/new`;
@@ -42,11 +42,17 @@ test(
         );
         await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByRole('heading', { name: 'Noir night', exact: true })).toBeVisible();
-        await page.getByRole('button', { name: 'Edit Session' }).click();
+        await expect(
+            page.getByRole('heading', { name: 'Movie Nomination', exact: true }),
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
         await page.keyboard.press('Escape');
-        await expect(page.getByRole('button', { name: 'Edit Session' })).toBeFocused();
-        await page.getByRole('button', { name: 'Edit Session' }).click();
+        await expect(
+            page.getByRole('button', { name: 'Session settings', exact: true }),
+        ).toBeFocused();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
         await page.getByRole('dialog').getByLabel('Location').fill('Room B');
         await page.getByRole('button', { name: 'Save changes' }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -58,7 +64,8 @@ test(
             .getByRole('link', { name: 'Open active Session: Noir night', exact: true })
             .getByRole('heading', { name: 'Active Session', exact: true })
             .click();
-        await page.getByRole('button', { name: 'Cancel Session', exact: true }).click();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
         await page.getByLabel('Type CANCEL to confirm').fill('CANCEL');
         await page.getByRole('button', { name: 'Confirm cancellation' }).click();
@@ -176,3 +183,22 @@ test('Members and archived Clubs have no create form', async ({ context, page })
         page.getByText('You cannot create a Session in this Club right now.'),
     ).toBeVisible();
 });
+
+for (const viewport of screenshotViewports) {
+    test(
+        `Create Session matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, 'valid-session-workflow-visual');
+            await page.setViewportSize(viewport);
+            await page.goto(ROUTE, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`create-session-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
+}

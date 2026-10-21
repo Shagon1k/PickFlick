@@ -52,7 +52,11 @@ export default function SessionRoster({
         setDialog({ action, name, participantId });
     }
     return (
-        <section className={styles.roster} aria-label="Session participants">
+        <section
+            id="session-participants"
+            className={styles.roster}
+            aria-label="Session participants"
+        >
             <header className={styles.header}>
                 <h2 ref={headingRef} tabIndex={-1}>
                     Participants

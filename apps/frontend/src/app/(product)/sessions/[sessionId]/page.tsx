@@ -38,7 +38,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
         );
     }
     return (
-        <ProductFrame>
+        <ProductFrame currentArea="session" sessionBackHref={`/clubs/${session.clubId}`}>
             <SessionProgress
                 sessionId={session.id}
                 version={Math.min(session.progressVersion, roster.progressVersion)}

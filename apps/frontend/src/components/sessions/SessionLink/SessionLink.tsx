@@ -4,7 +4,15 @@ import { useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
 
-export default function SessionLink({ sessionId }: { sessionId: string }) {
+import styles from './SessionLink.module.scss';
+
+export default function SessionLink({
+    sessionId,
+    compact = false,
+}: {
+    sessionId: string;
+    compact?: boolean;
+}) {
     const [message, setMessage] = useState('');
     async function handleCopy() {
         try {
@@ -15,15 +23,19 @@ export default function SessionLink({ sessionId }: { sessionId: string }) {
         }
     }
     return (
-        <div>
+        <div className={compact ? styles.compact : undefined}>
             <Button onClick={handleCopy} variant="secondary">
-                Copy Session link
+                {compact ? 'Invite' : 'Copy Session link'}
             </Button>
-            <p>
-                Any Club member can use this link. Joining stays open until the Session is completed
-                or cancelled.
+            {!compact ? (
+                <p>
+                    Any Club member can use this link. Joining stays open until the Session is
+                    completed or cancelled.
+                </p>
+            ) : null}
+            <p className={compact ? styles.feedback : undefined} role="status">
+                {message}
             </p>
-            <p role="status">{message}</p>
         </div>
     );
 }

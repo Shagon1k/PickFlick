@@ -4,6 +4,7 @@ import { Menu as MantineMenu } from '@mantine/core';
 import { type FocusEvent, useEffect, useRef, useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
+import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 
 import styles from './FilmStripMenu.module.scss';
 
@@ -21,9 +22,15 @@ export interface IFilmStripMenuProps {
     triggerLabel: string;
     menuLabel: string;
     items: TFilmStripMenuItem[];
+    triggerIcon?: TIconName;
 }
 
-export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmStripMenuProps) {
+export default function FilmStripMenu({
+    items,
+    menuLabel,
+    triggerLabel,
+    triggerIcon,
+}: IFilmStripMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const itemsRef = useRef<Array<HTMLElement | null>>([]);
 
@@ -57,7 +64,18 @@ export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmS
                 withinPortal={false}
             >
                 <MantineMenu.Target>
-                    <Button variant="secondary">{triggerLabel}</Button>
+                    <Button variant="secondary" aria-label={triggerIcon ? triggerLabel : undefined}>
+                        {triggerIcon ? (
+                            <Icon
+                                className={styles['menu__trigger-icon']}
+                                name={triggerIcon}
+                                width={MENU_ICON_SIZE}
+                                height={MENU_ICON_SIZE}
+                            />
+                        ) : (
+                            triggerLabel
+                        )}
+                    </Button>
                 </MantineMenu.Target>
                 <MantineMenu.Dropdown aria-label={menuLabel} className={styles.menu__dropdown}>
                     {items.map((item, index) => {
@@ -95,3 +113,5 @@ export default function FilmStripMenu({ items, menuLabel, triggerLabel }: IFilmS
         </div>
     );
 }
+
+const MENU_ICON_SIZE = 18;

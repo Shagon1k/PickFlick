@@ -2,8 +2,9 @@
 
 import type { TNominationMovie, TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState, useTransition } from 'react';
 
+import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
@@ -20,10 +21,12 @@ export default function Nomination({
     sessionId,
     data,
     phaseVersion,
+    header,
 }: {
     sessionId: string;
     data: TNominations;
     phaseVersion: number;
+    header: ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [selected, setSelected] = useState<string | null>(null);
@@ -75,6 +78,7 @@ export default function Nomination({
                     Refresh nominations
                 </Button>
             </div>
+            {header}
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
                     <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
@@ -126,9 +130,10 @@ export default function Nomination({
                                                     setSuggestion(movie);
                                                 }}
                                             >
-                                                <span className={styles.poster} aria-hidden="true">
-                                                    PF
-                                                </span>
+                                                <SearchPoster
+                                                    className={styles.suggestionPoster}
+                                                    url={`/api/movies/${movie.id}/poster`}
+                                                />
                                                 <strong>{formatMovieLabel(movie)}</strong>
                                             </button>
                                         </li>
@@ -210,9 +215,10 @@ function NominationList({ data }: { data: TNominations }) {
             {data.nominations.map((row, index) => (
                 // eslint-disable-next-line @eslint-react/no-array-index-key -- several participants may nominate the same Movie; rows are only appended
                 <li key={`${row.movie.id}-${index}`}>
-                    <span className={styles.poster} aria-hidden="true">
-                        PF
-                    </span>
+                    <SearchPoster
+                        className={styles.poster}
+                        url={`/api/movies/${row.movie.id}/poster`}
+                    />
                     <div>
                         <Link href={`/movies/${row.movie.id}`}>{formatMovieLabel(row.movie)}</Link>
                         {row.author !== null ? <p>by {row.author}</p> : null}
