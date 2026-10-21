@@ -189,6 +189,12 @@ endpoint and retain an explicit fallback when no image is available.
 Session creation keeps the setup scene and uses one vertical field rhythm and a connected pill
 selector for the Session type. Watching-to-Rating, Rating and completion remain Phase 13 work.
 
+Read-only Movie Details uses the prototype's title/rating header, genre chips, poster/trailer grid
+and bordered credit rows. Below 1024px the poster sits beside credits, followed by synopsis and
+trailer; the small-screen poster is 132px wide. Provider metadata determines available credit
+rows and images. Trailer links remain external; this alignment adds no embedded player or
+personal-rating/Watchlist controls.
+
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Personal suggestions beside Nomination search.                                                                                      | Suggest only the current user's own past nominations in this Club that did not win. Derive them from history; selecting a card uses the normal nomination flow. There is no separate shared saved-film list or manual add/remove UI.                                                                                                                                                                    |

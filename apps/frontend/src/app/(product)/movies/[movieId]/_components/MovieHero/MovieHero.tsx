@@ -18,24 +18,32 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
     return (
         <section className={styles.hero} aria-labelledby="movie-title">
             <header className={styles.titleBlock}>
-                <h1 id="movie-title">{title}</h1>
-                {movie.originalTitle && movie.originalTitle !== title ? (
-                    <p>{movie.originalTitle}</p>
-                ) : null}
-                <p>
-                    {movie.releaseYear ?? 'Year unavailable'} ·{' '}
-                    {movie.runtime ? `${movie.runtime} min` : 'Runtime unavailable'} ·{' '}
-                    {movie.originalLanguage ?? 'Language unavailable'}
-                </p>
-                <p>{movie.genres?.length ? movie.genres.join(' · ') : 'Genres unavailable'}</p>
+                <div className={styles.titleCopy}>
+                    <h1 id="movie-title">{title}</h1>
+                    {movie.originalTitle && movie.originalTitle !== title ? (
+                        <p>{movie.originalTitle}</p>
+                    ) : null}
+                    <p>
+                        {movie.releaseYear ?? 'Year unavailable'} ·{' '}
+                        {movie.runtime ? `${movie.runtime} min` : 'Runtime unavailable'} ·{' '}
+                        {movie.originalLanguage ?? 'Language unavailable'}
+                    </p>
+                    <div className={styles.genres}>
+                        {movie.genres?.length
+                            ? movie.genres.map((genre) => <span key={genre}>{genre}</span>)
+                            : 'Genres unavailable'}
+                    </div>
+                </div>
                 <ul className={styles.ratings} aria-label="Provider ratings">
                     {movie.ratings.map((rating) => (
                         <li key={rating.source}>
-                            {rating.source.toUpperCase()}{' '}
+                            <span>{rating.source.toUpperCase()}</span>{' '}
                             <strong>
                                 {ratingFormat.format(rating.value)} / {rating.scale}
                             </strong>
-                            {rating.voteCount !== null ? ` (${rating.voteCount} ratings)` : ''}
+                            {rating.voteCount !== null ? (
+                                <small>{rating.voteCount.toLocaleString('en')} ratings</small>
+                            ) : null}
                         </li>
                     ))}
                 </ul>

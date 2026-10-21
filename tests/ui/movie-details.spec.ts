@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { settle } from './settle';
+import { screenshotViewports } from './viewports';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
 
@@ -190,3 +191,28 @@ test('desktop credits and synopsis share the row equally below the media', async
     expect(credits?.y).toBeGreaterThan(trailer!.y + trailer!.height);
     expect(trailer!.width / trailer!.height).toBeCloseTo(16 / 9, 1);
 });
+
+for (const viewport of screenshotViewports) {
+    test(
+        `Movie Details matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await context.addCookies([
+                {
+                    name: 'pickflick.session_token',
+                    value: 'valid-movie',
+                    url: 'http://127.0.0.1:41730',
+                },
+            ]);
+            await page.setViewportSize(viewport);
+            await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`movie-details-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
+}
