@@ -87,7 +87,10 @@ describe('Club invitations', () => {
         expect(stored.tokenDigest).toMatch(/^[0-9a-f]{64}$/u);
         expect(JSON.stringify(stored)).not.toContain(invitation.token);
         expect(stored.expiresAt.getTime() - stored.createdAt.getTime()).toBeGreaterThan(
-            6 * 24 * 60 * 60 * 1000,
+            12 * 60 * 60 * 1000 - 1000,
+        );
+        expect(stored.expiresAt.getTime() - stored.createdAt.getTime()).toBeLessThanOrEqual(
+            12 * 60 * 60 * 1000,
         );
         expect(await preview(invitation.token)).toMatchObject({
             state: 'valid',

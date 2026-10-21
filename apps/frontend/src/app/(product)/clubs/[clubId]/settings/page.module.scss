@@ -599,3 +599,15 @@
     align-items: center;
     justify-content: space-between;
 }
+
+.invitationManagement {
+    margin-top: var(--gap-md);
+}
+
+.invitationManagement summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--hit);
+    color: var(--fg-secondary);
+    cursor: pointer;
+}

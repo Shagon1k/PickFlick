@@ -245,12 +245,13 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
         'Invitation created. Share this link',
     );
     await expect(page.getByRole('status').last()).toContainText('could not be refreshed');
-    await expect(page.getByRole('button', { name: 'Revoke invitation' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Revoke current link' })).toBeVisible();
     const original = await link.inputValue();
+    await page.getByText('Manage links', { exact: true }).click();
     await page.getByRole('button', { name: 'Recent invitations' }).click();
     await expect(page.getByRole('status').last()).toHaveText('Recent invitations loaded.');
     await expect(link).toHaveValue(original);
-    await page.getByRole('button', { name: 'Revoke invitation' }).click();
+    await page.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(link).toHaveCount(0);
 });
 
@@ -266,7 +267,7 @@ test('Club Admin creates, copies, and revokes a link through Manage Club', async
     );
     await page.getByRole('button', { name: 'Copy link' }).click();
     await expect(page.getByRole('status').last()).toHaveText(/copied|Copy is unavailable/);
-    await page.getByRole('button', { name: 'Revoke invitation' }).click();
+    await page.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveCount(0);
     await expect(page.getByRole('status').last()).toHaveText('Invitation revoked.');
 });

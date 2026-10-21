@@ -481,3 +481,7 @@ Cancel returns focus to the trigger; a successful phase change focuses the Sessi
 The existing progress poll refreshes other clients and recovers on reconnect. Watching and Rating
 workflows remain later work. Exact-head hosted preview and owner visual acknowledgment remain
 required before #47 acceptance.
+
+Club invitation creation shows one single-use link with a 12-hour expiry, Copy and Revoke actions.
+Older link management stays collapsed under Manage links, and remains available when new-work
+restrictions pause creation. Existing links retain their stored expiration.

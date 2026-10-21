@@ -172,7 +172,8 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 
 ## Club invitation links
 
-Invitation tokens contain 32 random bytes and expire after seven days. The API stores only a
+Club invitation tokens contain 32 random bytes; new links expire after 12 hours. Existing links
+retain their stored expiry, and legacy personalized Session tokens keep their seven-day lifetime. The API stores only a
 SHA-256 digest; it returns the token once to the authorized Admin or Moderator creating the link.
 Preview and response require authentication, validate the optional recipient, and reveal no Club
 data for unsafe states. Accept, decline, and revoke serialize on the Club row; acceptance checks

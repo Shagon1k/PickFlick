@@ -60,7 +60,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         setCreatedId(created.id);
         setMessage(
             [
-                'Invitation created. Share this link with one person; it expires in seven days.',
+                'Invitation created. Share this link with one person; it expires in 12 hours.',
                 refreshError,
             ]
                 .filter(Boolean)
@@ -80,11 +80,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     return (
         <section aria-labelledby="club-invitations-title" className={styles.card}>
             <h2 id="club-invitations-title">Invite to this Club</h2>
-            <p>Each link can be accepted or declined once. Only registered users can join.</p>
-            <p>
-                Up to {projection.entitlements.memberLimit} links can be active at once. Revoke a
-                link you no longer need before creating another.
-            </p>
+            <p>Generate a single-use join link, valid for 12 hours.</p>
             {projection.members.length >= projection.entitlements.memberLimit ? (
                 <p>
                     The member limit is reached. A seat must become available before creating
@@ -114,13 +110,6 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                                 Create invitation
                             </Button>
                         ) : null}
-                        <Button
-                            disabled={isPending}
-                            onClick={() => run('load')}
-                            variant="secondary"
-                        >
-                            Recent invitations
-                        </Button>
                     </div>
                     {link ? (
                         <div className={styles.invitationLink}>
@@ -129,31 +118,51 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                             <Button disabled={isPending} onClick={handleCopy} variant="secondary">
                                 Copy link
                             </Button>
+                            <Button
+                                disabled={isPending}
+                                onClick={() => run('create', createdId)}
+                                variant="secondary-danger"
+                            >
+                                Revoke current link
+                            </Button>
                         </div>
                     ) : null}
-                    <ul className={styles.invitationList}>
-                        {invitations.map((invite) => (
-                            <li key={invite.id}>
-                                <span>
-                                    <strong title={invite.id}>
-                                        Invitation {invite.id.slice(0, INVITATION_ID_LENGTH)}
-                                    </strong>
-                                    {' · '}
-                                    {invite.state} · expires {toIsoDate(invite.expiresAt)}
-                                    {invite.id === createdId ? ' · latest link' : ''}
-                                </span>
-                                {invite.state === 'pending' ? (
-                                    <Button
-                                        disabled={isPending}
-                                        onClick={() => run('create', invite.id)}
-                                        variant="secondary-danger"
-                                    >
-                                        Revoke invitation
-                                    </Button>
-                                ) : null}
-                            </li>
-                        ))}
-                    </ul>
+                    <details
+                        className={styles.invitationManagement}
+                        open={!projection.permissions.createInvitations}
+                    >
+                        <summary>Manage links</summary>
+                        <Button
+                            disabled={isPending}
+                            onClick={() => run('load')}
+                            variant="secondary"
+                        >
+                            Recent invitations
+                        </Button>
+                        <ul className={styles.invitationList}>
+                            {invitations.map((invite) => (
+                                <li key={invite.id}>
+                                    <span>
+                                        <strong title={invite.id}>
+                                            Invitation {invite.id.slice(0, INVITATION_ID_LENGTH)}
+                                        </strong>
+                                        {' · '}
+                                        {invite.state} · expires {toIsoDate(invite.expiresAt)}
+                                        {invite.id === createdId ? ' · latest link' : ''}
+                                    </span>
+                                    {invite.state === 'pending' && invite.id !== createdId ? (
+                                        <Button
+                                            disabled={isPending}
+                                            onClick={() => run('create', invite.id)}
+                                            variant="secondary-danger"
+                                        >
+                                            Revoke invitation
+                                        </Button>
+                                    ) : null}
+                                </li>
+                            ))}
+                        </ul>
+                    </details>
                 </>
             )}
             <p role="status">{message}</p>
