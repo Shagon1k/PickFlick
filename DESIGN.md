@@ -195,6 +195,9 @@ trailer; the small-screen poster is 132px wide. Provider metadata determines ava
 rows and images. Trailer links remain external; this alignment adds no embedded player or
 personal-rating/Watchlist controls.
 
+Login keeps the prototype's 392px desktop card width and existing mobile scene. Enabled identity
+providers determine the button stack; dormant Apple sign-in stays hidden.
+
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Personal suggestions beside Nomination search.                                                                                      | Suggest only the current user's own past nominations in this Club that did not win. Derive them from history; selecting a card uses the normal nomination flow. There is no separate shared saved-film list or manual add/remove UI.                                                                                                                                                                    |
