@@ -63,25 +63,19 @@ function MovieCredits({ movie }: { movie: TMovieDetails }) {
                 <div>
                     <dt>
                         <Icon name="members" />
-                        Cast
+                        Actors
                     </dt>
                     <dd>
-                        {movie.cast?.length ? (
-                            <ul>
-                                {movie.cast.map((person, index) => (
-                                    // eslint-disable-next-line @eslint-react/no-array-index-key -- provider credits can repeat a person and never reorder
-                                    <li key={`${person.name}-${index}`}>
-                                        {person.name}
-                                        {person.character ? ` — ${person.character}` : ''}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            'Unavailable'
-                        )}
+                        {movie.cast?.length
+                            ? [...new Set(movie.cast.map(({ name }) => name))]
+                                  .slice(0, MAX_CAST)
+                                  .join(', ')
+                            : 'Unavailable'}
                     </dd>
                 </div>
             </dl>
         </section>
     );
 }
+
+const MAX_CAST = 5;

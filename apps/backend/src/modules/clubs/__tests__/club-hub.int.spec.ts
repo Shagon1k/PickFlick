@@ -182,7 +182,8 @@ describe('Club Hub projection', () => {
                 await api.request(`/clubs/${clubId}/hub`, { userId: member })
             ).json()) as IClubHub;
             expect(ownerHub).toMatchObject({
-                sessionCount: 2,
+                // The caption counts held Sessions; the cancelled one keeps only its number.
+                sessionCount: 1,
                 activeSession: {
                     ordinal: 2,
                     acceptedCount: 1,

@@ -1,7 +1,14 @@
 import type { TIconName } from '#components/ui/Icon/Icon';
 
 /** Product areas that mark the matching mobile tab and navigation group as current. */
-export type TShellArea = 'admin' | 'hub' | 'library' | 'recovery' | 'session' | 'settings';
+export type TShellArea =
+    | 'admin'
+    | 'hub'
+    | 'library'
+    | 'movie'
+    | 'recovery'
+    | 'session'
+    | 'settings';
 
 export interface IShellNavigationItem {
     readonly href: string;
@@ -106,6 +113,8 @@ export function buildAccountNavigation(
         ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
         { href: routes.settings, label: 'Settings' },
         { href: routes.privacy, label: 'Privacy & data' },
+        { href: routes.pricing, label: 'Pricing' },
+        { href: routes.contact, label: 'Contact Us' },
         signOutItem,
     ];
 }

@@ -1,6 +1,6 @@
 .card {
     min-width: 0;
-    padding: var(--gap-md);
+    padding: 24px;
     background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -8,7 +8,7 @@
 
 .card h2 {
     margin: 0 0 16px;
-    font: 500 var(--fs-card-title)/var(--lh-title) var(--font-body);
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
 }
 
 .card p {
@@ -20,7 +20,13 @@
 
 .stack {
     display: grid;
-    gap: var(--gap-sm);
+    gap: 24px;
+}
+
+/* The prototype gives the film strip room below its phase line. */
+.details {
+    display: grid;
+    gap: var(--gap-lg);
 }
 
 .phase {
@@ -38,13 +44,17 @@
 
 .cardLink {
     display: grid;
-    gap: var(--gap-sm);
+    gap: 0;
     color: inherit;
     text-decoration: none;
 }
 
 .cardLink h2 {
-    margin: 0;
+    margin: 0 0 16px;
+}
+
+.cardLink > span {
+    margin-top: 24px;
 }
 
 .cardLink::after {
@@ -67,4 +77,9 @@
     position: relative;
     z-index: 1;
     margin-top: var(--gap-sm);
+}
+
+.card[data-compact] h2 {
+    font-size: 15px;
+    font-weight: 700;
 }

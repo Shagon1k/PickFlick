@@ -162,6 +162,16 @@
     font-size: var(--fs-caption);
 }
 
+/* Related stills rest in black and white and regain colour on hover or focus, as in the prototype. */
+.relatedCard .relatedPoster img {
+    filter: grayscale(1) contrast(1.05);
+}
+
+.relatedCard:hover .relatedPoster img,
+.relatedCard:focus-visible .relatedPoster img {
+    filter: none;
+}
+
 @media (width < 1024px) {
     .titleBlock {
         flex-direction: column;

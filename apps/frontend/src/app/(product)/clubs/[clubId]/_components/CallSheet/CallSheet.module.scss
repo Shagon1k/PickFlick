@@ -33,6 +33,18 @@
     border-bottom: 1px solid var(--border-lit);
 }
 
+/* A place name shares the narrow Call time column, so it stays on one line. */
+.location dd {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.head > span,
+.headMeta {
+    white-space: nowrap;
+}
+
 .headMeta {
     display: flex;
     gap: 18px;

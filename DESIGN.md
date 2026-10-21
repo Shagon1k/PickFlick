@@ -172,16 +172,18 @@ the Call Sheet remains a static empty state.
 The Overview's entire Active Session card also opens that Session, including its heading and
 phase label. Its empty state has no link.
 
-The delivered Club carousel ends with Create new club. Its caption shows member count, Session
-count and establishment month/year; description, plan, role and Selection scale stay in their owning
+The delivered Club carousel ends with Create new club. Its caption shows member count, the count
+of Sessions that were not cancelled and establishment month/year; description, plan, role and Selection scale stay in their owning
 panels. Neutral chevrons reveal hover and keyboard focus states.
-The Call Sheet uses a zero-padded Club-local Session number, scheduled weekday/unit and phase stamp.
-Watching shows the selected film, call time, date without year, runtime and genre; Nomination and
+The Call Sheet uses a zero-padded Club-local Session number ("Call sheet 004"), scheduled
+weekday/unit and phase stamp. Sessions store only a date, so the call-time slot shows the location
+(one line) until a real time exists rather than a fabricated midnight.
+Watching shows the selected film, call time or location, date without year, runtime and genre; Nomination and
 Selection show their own topic and progress in the same ledger. The still uses real cached Movie
 artwork or an explicit missing-image state, never fixture film data.
 
 Overview has seven monochrome statistics with the prototype SVG icons, member pills and the active
-Session's film-strip progress. Missing values show `—`; unbuilt Session ratings remain unavailable.
+Session's film-strip progress. Hub cards use 24px padding; Overview headings are 24px semibold and Manage Club card headings, Active Session included, are 15px bold. Missing values show `—`; unbuilt Session ratings remain unavailable.
 Join me! joins an eligible Club member through the existing roster command. A participant opens the
 Session from the entire Active Session card. Manage Club also shows Active Session and Active Ratings.
 Members shows role, accepted Session participation count and a compact remove control; + Invite opens
@@ -224,7 +226,11 @@ Read-only Movie Details uses the prototype's title/rating header, genre chips, p
 and bordered credit rows. Below 1024px the poster sits beside credits, followed by synopsis and
 trailer; the small-screen poster is 132px wide. Provider metadata determines available credit
 rows and images. Trailer links remain external; this alignment adds no embedded player or
-personal-rating/Watchlist controls.
+personal-rating/Watchlist controls. The page has no in-content Back button and marks no header
+destination as current; runtime reads as hours and minutes, the language by name, actors as one
+comma-separated row, and related posters rest in grayscale until hover or focus.
+The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
+Panel first for App Admins.
 
 Login keeps the prototype's 392px desktop card width and existing mobile scene. Enabled identity
 providers determine the button stack; dormant Apple sign-in stays hidden.
@@ -357,7 +363,10 @@ The follow-up Session pass rebuilt the phase banner, hero, Nomination search and
 rows, facts companion, Kick dialog and Watching film header from the live captures; the UI contract
 passed 200 checks, 35 reviewed Linux PNGs changed (mostly the 73px header and the viewport-edge ticket),
 and all 84 visual comparisons passed. Movie Details was confirmed unchanged apart from the header.
-Hub panels and Rating/Completed content remain open Phase 12 and Phase 13 work.
+The Hub pass aligned card padding and headings, the Call Sheet location slot, the Club caption's
+Session count, Schedule a Session, the account film strip and Movie Details; the UI contract passed
+200 checks and the changed Linux PNGs were reviewed before all 84 visual comparisons passed.
+The remaining Hub views and Rating/Completed content remain open Phase 12 and Phase 13 work.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
 stable recovery actions. Its heading says "You are invited" because invitation links do not reserve

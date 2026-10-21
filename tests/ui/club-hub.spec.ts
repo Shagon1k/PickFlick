@@ -103,7 +103,7 @@ test('Hub retries a transient backend failure without signing the member out', a
     ).toBeVisible();
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Midnight Society' })).toBeVisible();
-    await expect(page.getByText('Call sheet: 001', { exact: true })).toBeVisible();
+    await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
 });
 
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
@@ -137,7 +137,7 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
         await expect(
             page.getByRole('heading', { level: 1, name: 'Midnight Society' }),
         ).toBeVisible();
-        await expect(page.getByText('Call sheet: 001', { exact: true })).toBeVisible();
+        await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
         await expect(
             page.getByRole('link', {
                 name: 'Open Session: Midnight private screening',
@@ -217,7 +217,7 @@ test('Watching Call Sheet uses the Session ordinal, weekday and actual selected 
     await authenticate(context, 'valid-hub-watching');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     const sheet = page.getByRole('link', { name: 'Open Session: Selected film', exact: true });
-    await expect(sheet).toContainText('Call sheet: 047');
+    await expect(sheet).toContainText('Call sheet 047');
     await expect(sheet).toContainText('Friday unit');
     await expect(sheet).toContainText('Oct 16');
     await expect(sheet).toContainText('2h 46m');

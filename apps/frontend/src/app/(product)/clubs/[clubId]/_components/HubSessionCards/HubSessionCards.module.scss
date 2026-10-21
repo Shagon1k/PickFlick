@@ -6,7 +6,7 @@
 
 .card {
     min-width: 0;
-    padding: var(--gap-md);
+    padding: 24px;
     background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -14,7 +14,7 @@
 
 .card h2 {
     margin: 0 0 16px;
-    font: 500 var(--fs-card-title)/var(--lh-title) var(--font-body);
+    font: 700 15px/var(--lh-title) var(--font-body);
 }
 
 .card p {

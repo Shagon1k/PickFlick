@@ -7,7 +7,7 @@ interface IProductFrameProps {
     admin?: boolean;
     children: ReactNode;
     clubItems?: readonly IShellNavigationItem[];
-    currentArea?: 'hub' | 'recovery' | 'session';
+    currentArea?: 'hub' | 'movie' | 'recovery' | 'session';
     sessionBackHref?: string;
     routes?: IShellRouteMap;
 }

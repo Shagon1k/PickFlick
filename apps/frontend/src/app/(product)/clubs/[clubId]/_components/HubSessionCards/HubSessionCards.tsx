@@ -7,7 +7,7 @@ import styles from './HubSessionCards.module.scss';
 export default function HubSessionCards({ hub }: { hub: IClubHub }) {
     return (
         <div className={styles.grid}>
-            <ActiveSessionCard hub={hub} />
+            <ActiveSessionCard hub={hub} compact />
             <section className={styles.card}>
                 <h2>Active Ratings</h2>
                 {hub.ratingSessions.length ? (

@@ -130,6 +130,7 @@ export default function SessionForm({
                 label="Topic"
                 labelHint="optional"
                 maxLength={SESSION_TOPIC_MAX_LENGTH}
+                placeholder="e.g. Best of 2020s cinema"
             />
             <Textarea
                 {...form.getInputProps('notes')}
@@ -138,6 +139,7 @@ export default function SessionForm({
                 label="Notes"
                 labelHint="optional"
                 maxLength={SESSION_NOTES_MAX_LENGTH}
+                placeholder="Anything members should know before the session?"
                 size="compact"
             />
             {!session ? (

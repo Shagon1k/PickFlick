@@ -28,9 +28,11 @@ export default function CallSheet({
               scheduled,
           )
         : '—';
-    const time = scheduled
+    // Sessions store a date at midnight UTC; only a real time earns the Call time slot.
+    const hasTime = scheduled !== null && scheduled.getUTCHours() + scheduled.getUTCMinutes() > 0;
+    const time = hasTime
         ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(scheduled)
-        : '—';
+        : null;
     const hasSelectedFilm = ['WATCHING', 'RATING', 'COMPLETED'].includes(session.phase);
     const title = hasSelectedFilm
         ? (session.movie?.title ?? session.topic ?? 'Film unavailable')
@@ -44,7 +46,7 @@ export default function CallSheet({
             aria-label={`Open Session: ${title}`}
         >
             <header className={styles.head}>
-                <span>Call sheet: {String(session.ordinal).padStart(CALL_SHEET_DIGITS, '0')}</span>
+                <span>Call sheet {String(session.ordinal).padStart(CALL_SHEET_DIGITS, '0')}</span>
                 <div className={styles.headMeta}>
                     <span className={styles.unit}>{unit} unit</span>
                     <span className={styles.phase}>
@@ -60,10 +62,17 @@ export default function CallSheet({
                         <dt>{hasSelectedFilm ? 'Picture' : 'Session'}</dt>
                         <dd>{title}</dd>
                     </div>
-                    <div>
-                        <dt>Call time</dt>
-                        <dd title="Scheduled time in UTC">{time}</dd>
-                    </div>
+                    {time ? (
+                        <div>
+                            <dt>Call time</dt>
+                            <dd title="Scheduled time in UTC">{time}</dd>
+                        </div>
+                    ) : (
+                        <div className={styles.location}>
+                            <dt>Location</dt>
+                            <dd title={session.location ?? undefined}>{session.location ?? '—'}</dd>
+                        </div>
+                    )}
                     <div>
                         <dt>Date</dt>
                         <dd>{date}</dd>

@@ -46,11 +46,8 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
         .filter((id) => id !== movieId)
         .slice(0, MAX_RELATED_MOVIES);
     return (
-        <ProductFrame>
+        <ProductFrame currentArea="movie">
             <main className={styles.movieMain}>
-                <ButtonLink href="/app" size="small">
-                    Back to Hub
-                </ButtonLink>
                 {result.state === 'stale' ? (
                     <Alert tone="warning">
                         Showing cached details while the provider is unavailable. Last updated{' '}

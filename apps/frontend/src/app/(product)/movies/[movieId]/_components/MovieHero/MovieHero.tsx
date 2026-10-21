@@ -25,8 +25,10 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                     ) : null}
                     <p>
                         {movie.releaseYear ?? 'Year unavailable'} ·{' '}
-                        {movie.runtime ? `${movie.runtime} min` : 'Runtime unavailable'} ·{' '}
-                        {movie.originalLanguage ?? 'Language unavailable'}
+                        {movie.runtime ? formatRuntime(movie.runtime) : 'Runtime unavailable'} ·{' '}
+                        {movie.originalLanguage
+                            ? formatLanguage(movie.originalLanguage)
+                            : 'Language unavailable'}
                     </p>
                     <div className={styles.genres}>
                         {movie.genres?.length
@@ -51,4 +53,21 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
             <MovieMedia movie={movie} title={title} />
         </section>
     );
+}
+
+const MINUTES_PER_HOUR = 60;
+const languageNames = new Intl.DisplayNames('en', { type: 'language' });
+
+function formatRuntime(minutes: number) {
+    const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+    return hours ? `${hours}h ${minutes % MINUTES_PER_HOUR}m` : `${minutes}m`;
+}
+
+/** Providers send ISO language codes such as `eng`; readers get the language name. */
+function formatLanguage(code: string) {
+    try {
+        return languageNames.of(code) ?? code;
+    } catch {
+        return code;
+    }
 }

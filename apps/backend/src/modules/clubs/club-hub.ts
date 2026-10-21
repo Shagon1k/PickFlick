@@ -43,7 +43,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         members,
     ] = await Promise.all([
         loadClubAccess(tx, membership.club),
-        tx.session.count({ where: { clubId } }),
+        tx.session.count({ where: { clubId, phase: { not: 'CANCELLED' } } }),
         tx.session.findFirst({
             where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
             orderBy: { createdAt: 'desc' },

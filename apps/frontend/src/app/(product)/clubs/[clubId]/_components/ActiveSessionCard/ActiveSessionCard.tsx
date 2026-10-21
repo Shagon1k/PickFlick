@@ -13,7 +13,14 @@ import { getOfflineMessage } from '#lib/offline';
 
 import styles from './ActiveSessionCard.module.scss';
 
-export default function ActiveSessionCard({ hub }: { hub: IClubHub }) {
+/** Overview shows the large card; Manage Club lists it among its compact 15px panels. */
+export default function ActiveSessionCard({
+    hub,
+    compact = false,
+}: {
+    hub: IClubHub;
+    compact?: boolean;
+}) {
     const { activeSession: session, memberCount } = hub;
     const canCreate = hub.permissions.manageSessions && !isBlockingSessionPhase(session?.phase);
     const [isPending, startTransition] = useTransition();
@@ -36,7 +43,7 @@ export default function ActiveSessionCard({ hub }: { hub: IClubHub }) {
         });
     }
     const details = session ? (
-        <div className={styles.stack}>
+        <div className={styles.details}>
             <p>
                 Current phase:{' '}
                 <strong className={styles.phase}>{formatPhase(session.phase)}</strong> —{' '}
@@ -50,7 +57,11 @@ export default function ActiveSessionCard({ hub }: { hub: IClubHub }) {
         </div>
     ) : null;
     return (
-        <section className={styles.card} aria-label="Active Session">
+        <section
+            className={styles.card}
+            aria-label="Active Session"
+            data-compact={compact || undefined}
+        >
             {session && !session.canJoin ? (
                 <Link
                     className={styles.cardLink}
