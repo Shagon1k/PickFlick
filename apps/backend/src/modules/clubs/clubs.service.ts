@@ -46,15 +46,18 @@ export class ClubsService {
     }
 
     async getHub(userId: string, clubId: string): Promise<IClubHub> {
-        const { hub, completed } = await this.prisma.$transaction(
+        const { hub: snapshot, completed } = await this.prisma.$transaction(
             (tx) => readClubHub(tx, userId, clubId),
             { isolationLevel: 'RepeatableRead' },
         );
         const completedIds = completed.flatMap((row) => (row.movieId ? [row.movieId] : []));
-        hub.statistics = buildClubStatistics(
-            completed,
-            await this.movies.getCachedMetadata(completedIds),
-        );
+        const hub: IClubHub = {
+            ...snapshot,
+            statistics: buildClubStatistics(
+                completed,
+                await this.movies.getCachedMetadata(completedIds),
+            ),
+        };
         const selected = hub.activeSession?.movie;
         if (selected) {
             const details = await this.movies.getDetails(selected.id, { allowStale: true });

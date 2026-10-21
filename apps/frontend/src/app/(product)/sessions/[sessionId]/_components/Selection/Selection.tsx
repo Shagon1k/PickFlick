@@ -7,11 +7,11 @@ import { type ReactNode, useRef, useState, useTransition } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Button from '#components/ui/Button/Button';
-import Icon from '#components/ui/Icon/Icon';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { getOfflineMessage } from '#lib/offline';
 
 import { refreshSelectionAction, submitSelectionAction } from '../../selection-actions';
+import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Selection.module.scss';
 
 export default function Selection({
@@ -82,27 +82,17 @@ export default function Selection({
     }
     return (
         <section className={styles.selection} aria-labelledby="selection-heading">
-            <div className={styles.progress}>
-                <Icon name="info" />
-                <p role="status">
-                    Selection in progress — {data.submittedCount} of {data.acceptedCount}{' '}
-                    participants have submitted.
-                </p>
-                <progress
-                    aria-label="Selection progress"
-                    value={data.submittedCount}
-                    max={Math.max(data.acceptedCount, 1)}
-                />
-                <button
-                    className={styles.refresh}
-                    type="button"
-                    aria-label="Refresh Selection"
-                    disabled={isPending}
-                    onClick={handleRefresh}
-                >
-                    <Icon name="refresh" />
-                </button>
-            </div>
+            <PhaseProgress
+                label="Selection progress"
+                value={data.submittedCount}
+                max={data.acceptedCount}
+                refreshLabel="Refresh Selection"
+                disabled={isPending}
+                onRefresh={handleRefresh}
+            >
+                Selection in progress — {data.submittedCount} of {data.acceptedCount} participants
+                have submitted.
+            </PhaseProgress>
             {header}
             <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
                 Score nominated films

@@ -129,7 +129,8 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
               }
             : null,
     });
-    const hub: IClubHub = {
+    // Statistics need cached Movie metadata, which the caller reads outside this transaction.
+    const hub: Omit<IClubHub, 'statistics'> = {
         club: toClubSummary(membership.club, membership.role),
         access,
         permissions: getClubPermissions(membership.role, membership.club.lifecycle, access),
@@ -145,7 +146,6 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         })),
         sessionCount,
         completedSessionCount: completed.length,
-        statistics: buildClubStatistics(completed, new Map()),
         ...(active ? { activeSession: project(active) } : {}),
         recentSessions: recent.map(project),
         ratingSessions: ratings.map(project),

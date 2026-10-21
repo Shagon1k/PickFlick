@@ -8,7 +8,6 @@ import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
-import Icon from '#components/ui/Icon/Icon';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { getOfflineMessage } from '#lib/offline';
 
@@ -17,6 +16,7 @@ import {
     nominateAction,
     refreshNominationsAction,
 } from '../../nomination-actions';
+import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
 
 export default function Nomination({
@@ -67,26 +67,16 @@ export default function Nomination({
     }
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
-            <div className={styles.progress}>
-                <Icon name="info" />
-                <p role="status">
-                    {data.nominatedCount} of {data.acceptedCount} participants have nominated.
-                </p>
-                <progress
-                    aria-label="Nomination progress"
-                    value={data.nominatedCount}
-                    max={Math.max(data.acceptedCount, 1)}
-                />
-                <button
-                    className={styles.refresh}
-                    type="button"
-                    aria-label="Refresh nominations"
-                    disabled={isPending}
-                    onClick={() => run('refresh')}
-                >
-                    <Icon name="refresh" />
-                </button>
-            </div>
+            <PhaseProgress
+                label="Nomination progress"
+                value={data.nominatedCount}
+                max={data.acceptedCount}
+                refreshLabel="Refresh nominations"
+                disabled={isPending}
+                onRefresh={() => run('refresh')}
+            >
+                {data.nominatedCount} of {data.acceptedCount} participants have nominated.
+            </PhaseProgress>
             {header(data.canClose ? () => setIsDialogOpen(true) : undefined)}
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
@@ -117,11 +107,7 @@ export default function Nomination({
                                 />
                             )}
                             {selected ? (
-                                <Button
-                                    disabled={!selected}
-                                    loading={isPending}
-                                    onClick={() => run('submit')}
-                                >
+                                <Button loading={isPending} onClick={() => run('submit')}>
                                     Nominate This
                                 </Button>
                             ) : null}

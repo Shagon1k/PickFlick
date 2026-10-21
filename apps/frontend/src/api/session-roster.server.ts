@@ -1,7 +1,6 @@
 import 'server-only';
 
 import {
-    type ICreatedInvitation,
     type IPendingClubInvitation,
     type IPendingSessionInvitation,
     type ISessionRoster,
@@ -20,11 +19,6 @@ export const joinSession = (id: string): Promise<TSessionInvitationPreview> =>
         method: 'POST',
         json: { decision: 'accept' },
     });
-export const createSessionInvitation = (
-    id: string,
-    membershipId: string,
-): Promise<ICreatedInvitation> =>
-    requestApi(apiPath`/sessions/${id}/invitations`, { method: 'POST', json: { membershipId } });
 export const revokeSessionInvitation = (id: string, inviteId: string): Promise<void> =>
     requestApi(apiPath`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
 export const leaveSession = (id: string): Promise<void> =>

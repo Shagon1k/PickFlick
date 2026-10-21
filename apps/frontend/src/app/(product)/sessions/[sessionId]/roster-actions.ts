@@ -1,7 +1,6 @@
 'use server';
 
 import {
-    createSessionInvitationSchema,
     HTTP_STATUS,
     leaveSessionSchema,
     removeSessionParticipantSchema,
@@ -10,7 +9,6 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import {
-    createSessionInvitation,
     joinSession,
     leaveSession,
     removeSessionParticipant,
@@ -25,7 +23,6 @@ const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];
 
 const commandSchema = z.discriminatedUnion('action', [
     z.strictObject({ action: z.literal('join') }),
-    createSessionInvitationSchema.extend({ action: z.literal('invite') }),
     leaveSessionSchema.extend({ action: z.literal('leave') }),
     removeSessionParticipantSchema.extend({
         action: z.literal('remove'),
@@ -39,24 +36,16 @@ export async function changeRosterAction(id: string, input: unknown) {
     try {
         const session = await getSession(id);
         const command = parsed.data;
-        let invitation;
         if (command.action === 'join') await joinSession(id);
-        if (command.action === 'invite')
-            invitation = await createSessionInvitation(id, command.membershipId);
         if (command.action === 'leave') await leaveSession(id);
         if (command.action === 'remove') await removeSessionParticipant(id, command.participantId);
         if (command.action === 'revoke') await revokeSessionInvitation(id, command.inviteId);
         revalidatePath(`/sessions/${id}`);
         revalidatePath(`/clubs/${session.clubId}`, 'layout');
         revalidatePath('/app');
-        let message = 'Roster updated.';
-        if (command.action === 'invite')
-            message = 'Invitation created. Share this link with the selected member.';
-        if (command.action === 'join') message = 'You joined this Session.';
         return {
             ok: true,
-            invitation,
-            message,
+            message: command.action === 'join' ? 'You joined this Session.' : 'Roster updated.',
         };
     } catch (error) {
         const message = getFailureMessage(error, {
