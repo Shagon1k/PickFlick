@@ -2,6 +2,7 @@
 
 import type { ISessionRoster, TMovieDetails, TSession } from '@pickflick/contracts';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
@@ -80,23 +81,7 @@ export default function SessionDetails({
                                     joined the screening.
                                 </PhaseProgress>
                                 {header(participation, onKick)}
-                                {movie ? (
-                                    <div className={styles.film}>
-                                        <MovieMedia
-                                            movie={movie}
-                                            title={
-                                                movie.title ??
-                                                movie.originalTitle ??
-                                                'Untitled film'
-                                            }
-                                        />
-                                    </div>
-                                ) : (
-                                    <Alert tone="warning">
-                                        Film details are unavailable right now. The Session itself
-                                        is unaffected.
-                                    </Alert>
-                                )}
+                                <ScreeningFilm movie={movie} movieId={session.movieId} />
                             </>
                         ) : null}
                         {!isFilmPhase(session.phase) && !session.nominations && !session.selection
@@ -196,6 +181,30 @@ export default function SessionDetails({
                 </p>
             </ConfirmDialog>
         </main>
+    );
+}
+
+function ScreeningFilm({
+    movie,
+    movieId,
+}: {
+    movie: TMovieDetails | null;
+    movieId: string | null;
+}) {
+    if (movie)
+        return (
+            <div className={styles.film}>
+                <MovieMedia
+                    movie={movie}
+                    title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                />
+            </div>
+        );
+    return (
+        <Alert tone="warning">
+            Film details are unavailable right now. The Session itself is unaffected.{' '}
+            {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
+        </Alert>
     );
 }
 

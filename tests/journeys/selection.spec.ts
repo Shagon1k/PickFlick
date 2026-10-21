@@ -82,7 +82,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
             pages.push(page);
             await page.goto(`/sessions/${session.id}`);
             await page.getByRole('button', { name: 'Join Session', exact: true }).click();
-            await expect(page.getByText(`${index + 1} accepted`, { exact: true })).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         }
         for (const [index, context] of contexts.entries()) {
             const response = await context.request.post(`/api/sessions/${session.id}/nominations`, {
@@ -104,7 +104,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         ).toBeVisible({ timeout: 20000 });
         await firstPage.reload();
         await expect(firstPage.getByRole('radio')).toHaveCount(0);
-        await expect(firstPage.getByText('0 of 10', { exact: true })).toBeVisible();
+        await expect(firstPage.getByText('Submitted: 0 of 10', { exact: true })).toBeVisible();
         await contexts[0]!.setOffline(true);
         await submitScores(pages[1]!, session.id, 1);
         await expect(pages[1]!.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();

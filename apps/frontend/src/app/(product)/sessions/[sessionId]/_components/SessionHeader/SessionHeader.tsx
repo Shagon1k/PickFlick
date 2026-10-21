@@ -57,7 +57,7 @@ export default function SessionHeader({
                 <p className="visually-hidden">
                     Session · {SESSION_TYPES[session.type]} · {session.phase.toLowerCase()}
                 </p>
-                {movie ? <FilmMeta movie={movie} phase={session.phase} /> : null}
+                {isDecisionPhase ? null : <FilmMeta movie={movie} phase={session.phase} />}
                 {session.topic && isDecisionPhase ? (
                     <p className={styles.metaLine}>
                         <Icon name="bulb" />
@@ -140,13 +140,14 @@ const SESSION_TYPES = {
     PAST: 'Past screening',
 } as const;
 
-function FilmMeta({ movie, phase }: { movie: TMovieDetails; phase: TSession['phase'] }) {
-    const facts = [movie.releaseYear, formatRuntime(movie.runtime)].filter(Boolean);
+/** The phase stamp stays when film details are unavailable. */
+function FilmMeta({ movie, phase }: { movie: TMovieDetails | null; phase: TSession['phase'] }) {
+    const facts = movie ? [movie.releaseYear, formatRuntime(movie.runtime)].filter(Boolean) : [];
     return (
         <>
             {facts.length ? <p>{facts.join(' · ')}</p> : null}
             <div className={styles.filmChips}>
-                {movie.genres?.slice(0, MAX_GENRES).map((genre) => (
+                {movie?.genres?.slice(0, MAX_GENRES).map((genre) => (
                     <span className={styles.genreChip} key={genre}>
                         {genre}
                     </span>
