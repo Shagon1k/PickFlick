@@ -18,8 +18,9 @@ Before finishing, remove unnecessary indirection, redundant checks, and speculat
 
 These guidelines do not override repository-specific approval requirements, architecture constraints, or verification gates.
 
-> Operating instructions for agents in this repository. Phases 1–5 and 7–10 (foundations through
-> Sessions and Nomination) are built and await their verification gates; Phase 11 is in progress.
+> Operating instructions for agents in this repository. The Club-to-winner journey is built;
+> Phase 12 verification is in progress. Scheduled Movie refresh still needs ADR-016 approval.
+> Watching/Rating/completion remain Phase 13 work; see ROADMAP.md for acceptance and evidence.
 
 ## Core contract
 
@@ -55,8 +56,8 @@ These guidelines do not override repository-specific approval requirements, arch
 ## Repository state
 
 - A pnpm workspace with `apps/frontend` (Next.js) and `apps/backend` (NestJS), plus
-  `packages/contracts` (zod schemas), `packages/database` (Prisma), and `packages/config`
-  (environment schema, TypeScript and ESLint presets). The backend package includes a Nomination
+  `packages/contracts` (zod schemas), `packages/database` (Prisma), `packages/config`
+  (environment schema and TypeScript presets), and the dev-only `packages/eslint-config`. The backend package includes a Nomination
   deadline worker that reads due deadlines from the Session rows
   ([ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql));
   no Redis or queue library is used.

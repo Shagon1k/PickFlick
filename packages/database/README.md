@@ -18,8 +18,8 @@ caches and fails on contradictory legacy IMDb mappings. Session/Library referenc
 Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside
 its creation transaction; it locks the Club before reading. A database trigger keeps a Session
 participant bound to its Session, Membership, and Club. Session participants and
-invites use composite foreign keys to stay within one Club. Request authorization and invitation
-responses arrive with the Session workflows; these helpers are internal persistence operations.
+invites use composite foreign keys to stay within one Club. Current API workflows enforce authorization, participation and invite responses; these internal
+persistence helpers do not replace those checks.
 
 `src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
 coexistence, settings snapshots, roster serialization/rollback, and member-only invite storage.

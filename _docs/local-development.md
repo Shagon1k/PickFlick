@@ -51,6 +51,20 @@ corepack enable
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
 the worker; it applies overdue Nomination deadlines every five seconds.
 
+## Enable the movie catalog
+
+The example environment disables external catalog calls. In the ignored root `.env`, set
+`CATALOG_ENABLED=true`. For the default `poiskkino-thetvdb` adapter, supply `POISKKINO_API_KEY`
+and `THETVDB_READ_TOKEN`; the alternative `tmdb` adapter uses `TMDB_READ_TOKEN`.
+Keep credentials on the backend; do not add them to `NEXT_PUBLIC_*`, source files or logs.
+You can use approved UAT catalog credentials locally, but keep local database/storage destinations
+and OAuth origin settings. Synthetic Google values in `.env.example` do not enable live sign-in;
+configure a client whose callback matches local `AUTH_BASE_URL`.
+
+Search and details populate the cache on demand. `CATALOG_REFRESH_HOURS` controls read freshness;
+it does not start a scheduled refresh worker. Missing/failed posters have a placeholder and must
+not be replaced with prototype film images. See the [environment reference](environment.md).
+
 ## Local services
 
 | Service    | Host port                           | Check                 |

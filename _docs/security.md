@@ -168,7 +168,10 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 - Error telemetry and alerts on security-relevant failures.
 - Data export and account deletion that anonymizes shared history.
 - HSTS `includeSubDomains` and `preload`.
-- Apple Sign In, which stays off until the owner approves it.
+- Apple Sign In activation; its gated adapter exists and stays off until the owner approves it.
+- Periodic abandoned-object cleanup, owned by release retention work in #87.
+- Owner confirmation of repository-level Dependabot security-update enablement before release readiness;
+  the committed weekly-update configuration does not prove that account setting.
 
 ## Club invitation links
 
@@ -192,8 +195,8 @@ The backend downloads displayed posters from the five validated provider hosts i
 S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
 only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
 contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search returns lazy
-`/api/movies/:movieId/poster` URLs, resolving only validated private search caches for the active
-source and redirecting to an ingested same-origin image. Search JSON never waits for downloads;
+`/api/movies/:movieId/poster` URLs, resolving the configured validated details cache first, then validated private search caches
+for the active source and redirecting to an ingested same-origin image. Search JSON never waits for downloads;
 its image endpoint makes no provider metadata requests. Detail backdrops and cast portraits remain
 null. The authenticated image endpoint
 serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
