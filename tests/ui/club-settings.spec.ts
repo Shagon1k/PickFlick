@@ -267,6 +267,8 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
                     .getByRole('textbox', { name: 'Type Midnight Society to confirm' }),
             ).toBeVisible();
             await page.getByRole('button', { name: 'Cancel' }).click();
+            // The pointer would otherwise rest on the Call Sheet and capture its hover state.
+            await page.mouse.move(0, 0);
             await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
             await settle(page);
             await expect(page).toHaveScreenshot(`club-settings-archived-${viewport.name}.png`, {

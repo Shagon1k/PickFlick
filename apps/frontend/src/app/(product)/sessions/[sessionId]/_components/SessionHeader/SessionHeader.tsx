@@ -30,10 +30,16 @@ export default function SessionHeader({
 }) {
     const items: IFilmStripMenuProps['items'] = [];
     if (onClosePhase)
-        items.push({ id: 'next-phase', label: closePhaseLabel, onSelect: onClosePhase });
-    if (session.canEdit) items.push({ id: 'edit', label: 'Edit Session', onSelect: onEdit });
+        items.push({
+            id: 'next-phase',
+            label: closePhaseLabel,
+            icon: 'chevron-right',
+            onSelect: onClosePhase,
+        });
+    if (session.canEdit)
+        items.push({ id: 'edit', label: 'Edit Session', icon: 'edit', onSelect: onEdit });
     if (session.canCancel)
-        items.push({ id: 'cancel', label: 'Cancel Session', danger: true, onSelect: onCancel });
+        items.push({ id: 'cancel', label: 'Cancel Session', icon: 'cancel', onSelect: onCancel });
     const isDecisionPhase = session.phase === 'NOMINATION' || session.phase === 'SELECTION';
     return (
         <header className={styles.header}>

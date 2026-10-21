@@ -6,10 +6,12 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
 import nominationPanda from '#brand/panda-collection.webp';
-import selectionPanda from '#brand/panda-poll-master.webp';
+import watchingPanda from '#brand/panda-rating.webp';
+import selectionPanda from '#brand/panda-rating-2.webp';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '#components/ui/Modal/Modal';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { getOfflineMessage } from '#lib/offline';
 
 import { cancelSessionAction } from '../../actions';
@@ -92,13 +94,8 @@ export default function SessionDetails({
                             <SelectionOutcome data={session.selectionOutcome} />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">
-                            <Image
-                                src={
-                                    session.phase === 'SELECTION' ? selectionPanda : nominationPanda
-                                }
-                                alt=""
-                                width={REEL_IMAGE_WIDTH}
-                            />
+                            <SprocketDivider variant="section" />
+                            <Image src={getPhaseMascot(session.phase)} alt="" />
                         </div>
                         <h2 className={styles.detailsTitle}>Session Details</h2>
                         <SessionFacts session={session} roster={roster} />
@@ -113,6 +110,7 @@ export default function SessionDetails({
                     <SessionForm
                         clubId={session.clubId}
                         session={session}
+                        onCancel={() => setDialog(null)}
                         onSaved={() => setDialog(null)}
                     />
                 ) : null}
@@ -162,4 +160,8 @@ export default function SessionDetails({
     );
 }
 
-const REEL_IMAGE_WIDTH = 210;
+function getPhaseMascot(phase: TSession['phase']) {
+    if (phase === 'NOMINATION') return nominationPanda;
+    if (phase === 'SELECTION') return selectionPanda;
+    return watchingPanda;
+}

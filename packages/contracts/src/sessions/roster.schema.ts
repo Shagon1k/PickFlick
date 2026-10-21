@@ -26,7 +26,7 @@ export interface IPendingSessionInvitation {
     id: string;
     clubName: string;
     topic: string | null;
-    expiresAt: string | null;
+    scheduledAt: string | null;
 }
 export interface ISessionRoster {
     progressVersion: number;

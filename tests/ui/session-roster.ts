@@ -180,7 +180,7 @@ export function handleSessionRoster(
                       id: SESSION_ID,
                       clubName: session.clubName,
                       topic: session.topic,
-                      expiresAt: null,
+                      scheduledAt: '2026-12-01T00:00:00.000Z',
                   },
               ]
             : [];

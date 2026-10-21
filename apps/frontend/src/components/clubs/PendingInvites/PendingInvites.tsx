@@ -5,7 +5,6 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Button from '#components/ui/Button/Button';
-import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
 import { formatUtcDate } from '#lib/format';
 
@@ -125,13 +124,8 @@ export default function PendingInvites() {
                         <h2>Pending invites</h2>
                         <span>{isLoaded ? countLabel : 'Checking invitations…'}</span>
                     </div>
-                    <button
-                        type="button"
-                        className={styles.close}
-                        aria-label="Close"
-                        onClick={() => closeOverlay()}
-                    >
-                        <Icon name="close" />
+                    <button type="button" className={styles.close} onClick={() => closeOverlay()}>
+                        Close
                     </button>
                 </div>
                 <p className={styles.feedback} aria-live="polite" role="status">
@@ -151,21 +145,14 @@ export default function PendingInvites() {
                     {invitations.map((invitation) => (
                         <li className={styles.row} key={invitation.id}>
                             <small className={styles.type}>
-                                {invitation.kind === 'club'
-                                    ? 'Club invitation'
-                                    : 'Session invitation'}
+                                {invitation.kind === 'club' ? 'Club invite' : 'Session invite'}
                             </small>
-                            <h3>{invitation.clubName}</h3>
-                            <p>
+                            <h3>
                                 {invitation.kind === 'club'
-                                    ? `Invited by ${invitation.inviterName} · ${invitation.memberCount} members`
+                                    ? invitation.clubName
                                     : (invitation.topic ?? 'Untitled Session')}
-                            </p>
-                            <p>
-                                {invitation.expiresAt
-                                    ? `Expires ${formatUtcDate(invitation.expiresAt)}`
-                                    : 'Available while the Session is open.'}
-                            </p>
+                            </h3>
+                            <p>{describeInvitation(invitation)}</p>
                             <div className={styles.actions}>
                                 <Button
                                     disabled={isPending}
@@ -193,4 +180,17 @@ export default function PendingInvites() {
             </Popover>
         </div>
     );
+}
+
+function describeInvitation(invitation: TPendingInvitation): string {
+    if (invitation.kind === 'club')
+        return `Invited by ${invitation.inviterName} · ${invitation.memberCount} members · Expires ${formatUtcDate(invitation.expiresAt)}`;
+    return invitation.scheduledAt
+        ? `${invitation.clubName} · ${new Intl.DateTimeFormat('en', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              timeZone: 'UTC',
+          }).format(new Date(invitation.scheduledAt))}`
+        : invitation.clubName;
 }

@@ -188,15 +188,24 @@ Members shows role, accepted Session participation count and a compact remove co
 Manage Club. Removal retains its typed confirmation and focus return.
 The pending-invite ticket uses the prototype silhouette, gradient, perforation and stub typography.
 Its 184px body partly hides the stub; hover, focus and opening reveal it. The 344px popover separates
-its heading, count, invite type, metadata and actions. Reduced motion removes the slide.
+its heading, count, text Close action, invite type, metadata and actions. Club rows show the inviter,
+member count and expiry; Session rows show the topic, Club and screening date. Reduced motion removes
+the slide.
 
 Delivered Nomination and Selection use the Session header variant, a neutral progress banner,
 phase heading with icon-labelled Session context, and the shared reel separator and facts metric.
 Invite copies the existing Club-member Session link. Join/Leave sits beside the header actions;
-Early phase closure, Edit and Cancel live in the gear film-strip menu. Existing confirmation and focus return stay intact.
+Early phase closure, Edit and Cancel live in the gear film-strip menu: a 174px strip with a tail tab
+and an icon above each label, like the account menu. Invite confirms the copy in its label. Dialogs
+use the prototype's 440px card with a 20px display title, compact body and right-aligned actions, and
+no close icon; Escape, the overlay and the dialog's own Cancel or Close action dismiss it. Existing
+typed confirmation and focus return stay intact.
 Nomination shows its submit action after choosing a film; suggestions and results retain real data.
 Selection uses compact score rows with accessible radio names, live feedback and 44px controls; long
-scales scroll within the row. The two Nomination columns stack below 1024px.
+scales scroll within the row. A score marks only the chosen option; hover stays neutral. The two
+Nomination columns stack below 1024px. The reel separator is a thin sprocket rule with the phase
+mascot in grayscale: collection for Nomination, rating-2 for Selection, rating for later phases.
+The Active Session film strip uses the prototype's ivory perforations and warm exposed frames.
 Session creation keeps the setup scene and uses one vertical field rhythm and a connected pill
 selector for the Session type. Watching-to-Rating, Rating and completion remain Phase 13 work.
 
@@ -326,6 +335,14 @@ macOS and rendered with Linux dependencies in the CI-pinned Playwright image usi
 Updated baselines prove regression stability, not owner acceptance of visual fidelity; a fresh CI
 run, hosted exact-revision preview and owner review are still pending. Watching-to-Rating, Rating,
 completion and other later-phase functionality were not added.
+
+A second owner-requested pass on 2026-10-21 drove a throwaway local Club through Nomination,
+Selection, Watching, Rating and Completed and compared the Session page, Call Sheet, pending-invite
+popover, gear menu and dialogs with the prototypes. The shared dialog, film-strip menu, score
+control, Active Session film strip, reel separator and invite ticket now follow the prototype; the
+live captures after the change were compared again. The full UI contract passed 200 checks, and
+16 changed Linux PNGs were reviewed before all 84 visual comparisons passed in the CI-pinned image.
+Session-page composition, Hub panels and the Watching hero remain open Phase 12 findings.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
 stable recovery actions. Its heading says "You are invited" because invitation links do not reserve
@@ -487,8 +504,8 @@ rail; mobile stacks the rail below each film. Wide ranges scroll inside the cont
 retains a 44px target and supports arrows, Home/End and touch. Missing scores focus the first
 unscored nomination and produce live feedback. Recoverable and offline errors preserve input.
 
-The form explains that submission is final. A saved ballot replaces controls with the caller's
-scores and a locked message; refresh keeps that state. Aggregate accepted/submitted progress
+The form explains that submission is final. A saved ballot keeps the score rails as dimmed, locked
+options with the caller's choice marked, plus a locked message; refresh keeps that state. Aggregate accepted/submitted progress
 uses the shared neutral banner; selected scores use the controlled gold accent. Archived Clubs and ineligible
 participants cannot submit. The server filters nominator names independently. Current-branch hosted review remains with Phase 12.
 

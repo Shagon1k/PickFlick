@@ -63,6 +63,23 @@
     border-top: 1px solid var(--border);
 }
 
+.edit p {
+    min-height: var(--gap-md);
+    margin-bottom: 0;
+    color: var(--fg-secondary);
+}
+
+.editActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    justify-content: flex-end;
+}
+
+.editActions > * {
+    min-width: 90px;
+}
+
 .submit p {
     min-height: var(--gap-md);
     margin-bottom: 0;

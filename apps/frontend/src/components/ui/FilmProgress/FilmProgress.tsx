@@ -1,6 +1,7 @@
 import styles from './FilmProgress.module.scss';
 
-const FRAME_COUNT = 20;
+// Matches the stylesheet's frame grid: about 30px per frame, as in the prototype strip.
+const FRAME_COUNT = 15;
 const FULL_PROGRESS = 100;
 
 export default function FilmProgress({
@@ -17,6 +18,7 @@ export default function FilmProgress({
         Math.max(0, (value / Math.max(1, max)) * FULL_PROGRESS),
     );
     const filled = Math.round((percentage / FULL_PROGRESS) * FRAME_COUNT);
+    const isRunning = percentage > 0 && percentage < FULL_PROGRESS;
     return (
         <div
             className={styles.film}
@@ -27,7 +29,12 @@ export default function FilmProgress({
             aria-valuenow={percentage}
         >
             {Array.from({ length: FRAME_COUNT }, (_, index) => (
-                <i key={index} aria-hidden="true" data-active={index < filled || undefined} />
+                <i
+                    key={index}
+                    aria-hidden="true"
+                    data-active={index < filled || undefined}
+                    data-current={(isRunning && index === filled - 1) || undefined}
+                />
             ))}
         </div>
     );

@@ -77,7 +77,14 @@ export default function Nomination({
             >
                 {data.nominatedCount} of {data.acceptedCount} participants have nominated.
             </PhaseProgress>
-            {header(data.canClose ? () => setIsDialogOpen(true) : undefined)}
+            {header(
+                data.canClose
+                    ? () => {
+                          setMessage('');
+                          setIsDialogOpen(true);
+                      }
+                    : undefined,
+            )}
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
                     <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>

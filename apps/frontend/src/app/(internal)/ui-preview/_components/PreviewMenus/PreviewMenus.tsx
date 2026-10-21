@@ -14,13 +14,19 @@ export default function PreviewMenus() {
             <div className={styles.menuRow}>
                 <FilmStripMenu
                     items={[
-                        { id: 'overview', label: 'Overview', href: '#navigation', current: true },
-                        { id: 'settings', label: 'Settings', href: '#forms' },
+                        {
+                            id: 'overview',
+                            label: 'Overview',
+                            icon: 'overview',
+                            href: '#navigation',
+                            current: true,
+                        },
+                        { id: 'settings', label: 'Settings', icon: 'settings', href: '#forms' },
                         {
                             id: 'leave',
                             label: 'Leave Club',
+                            icon: 'sign-out',
                             onSelect: () => setSelectedAction('Leave Club selected'),
-                            danger: true,
                         },
                     ]}
                     menuLabel="Club menu"
@@ -28,12 +34,12 @@ export default function PreviewMenus() {
                 />
                 <FilmStripMenu
                     items={[
-                        { id: 'profile', label: 'Profile', href: '#forms' },
+                        { id: 'profile', label: 'Profile', icon: 'profile', href: '#forms' },
                         {
                             id: 'sign-out',
                             label: 'Sign out',
+                            icon: 'sign-out',
                             onSelect: () => setSelectedAction('Sign out selected'),
-                            danger: true,
                         },
                     ]}
                     menuLabel="Account menu"

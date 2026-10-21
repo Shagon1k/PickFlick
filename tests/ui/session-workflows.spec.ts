@@ -54,7 +54,7 @@ test(
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
         await page.getByRole('dialog').getByLabel('Location').fill('Room B');
-        await page.getByRole('button', { name: 'Save changes' }).click();
+        await page.getByRole('button', { name: 'Save', exact: true }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
         await page.goBack();

@@ -225,7 +225,7 @@ export class SessionRosterService {
             id: session.id,
             clubName: session.club.name,
             topic: session.topic,
-            expiresAt: null,
+            scheduledAt: session.scheduledAt?.toISOString() ?? null,
         }));
     }
 

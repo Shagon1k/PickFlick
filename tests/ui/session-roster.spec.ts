@@ -74,7 +74,7 @@ test(
         await expect(page.getByText('invited · invitation revoked')).toBeVisible();
         await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
         const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
-        await expect(removalDialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
+        await expect(removalDialog.getByLabel('Type REMOVE to confirm')).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(removalDialog).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Remove Jordan Member' })).toBeFocused();
@@ -107,7 +107,7 @@ test('Pending Session row opens its accepted Session', async ({ context, page })
     const row = page
         .getByRole('dialog', { name: 'Pending invites' })
         .getByRole('listitem')
-        .filter({ hasText: 'Session invitation' });
+        .filter({ hasText: 'Session invite' });
     await expect(row.getByText('Private noir night', { exact: false })).toBeVisible();
     await row.getByRole('button', { name: 'Accept', exact: true }).click();
     await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();

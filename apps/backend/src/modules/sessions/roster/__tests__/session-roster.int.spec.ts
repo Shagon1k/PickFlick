@@ -164,7 +164,7 @@ describe('Session roster', () => {
         const invitation = await createInvite();
         const rows = await pending();
         expect(rows).toEqual([
-            expect.objectContaining({ id: sessionId, topic: 'Protected title', expiresAt: null }),
+            expect.objectContaining({ id: sessionId, topic: 'Protected title', scheduledAt: null }),
         ]);
         expect(JSON.stringify(rows)).not.toContain(invitation.token);
         expect(JSON.stringify(rows)).not.toContain('tokenDigest');

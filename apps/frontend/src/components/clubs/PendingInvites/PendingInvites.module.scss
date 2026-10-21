@@ -92,15 +92,6 @@
     border-left: 1px dashed var(--gold-border);
 }
 
-.stub::after {
-    position: absolute;
-    inset: 8px 1px;
-    z-index: -1;
-    content: '';
-    background: var(--gold-soft);
-    border-radius: var(--radius);
-}
-
 .stub strong {
     font: 700 21px/1 var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -138,28 +129,22 @@
 }
 
 .close {
-    display: grid;
-    flex: 0 0 var(--hit);
-    place-items: center;
-    width: var(--hit);
-    height: var(--hit);
+    flex: 0 0 auto;
+    min-height: var(--hit);
+    padding: 0 9px;
+    font-size: var(--fs-micro);
     color: var(--fg-secondary);
     cursor: pointer;
     background: transparent;
     border: 0;
-    border-radius: var(--radius);
+    border-radius: 8px;
 }
 
-.close:hover {
+.close:hover,
+.close:focus-visible {
     color: var(--fg);
+    outline: 1px solid var(--focus);
     background: var(--accent-soft);
-}
-
-.close svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 1.6;
 }
 
 .feedback {

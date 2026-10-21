@@ -66,7 +66,16 @@ function ManageModerators({ projection }: { projection: IClubSettings }) {
             <Button onClick={() => setIsOpen(true)} size="small" variant="secondary">
                 Manage Moderators
             </Button>
-            <Modal onClose={() => setIsOpen(false)} open={isOpen} title="Manage Moderators">
+            <Modal
+                actions={
+                    <Button onClick={() => setIsOpen(false)} variant="secondary">
+                        Close
+                    </Button>
+                }
+                onClose={() => setIsOpen(false)}
+                open={isOpen}
+                title="Manage Moderators"
+            >
                 <p className={styles.explanation}>
                     Moderators run Sessions with you. {projection.members.length} of{' '}
                     {projection.entitlements.memberLimit} member places are in use.

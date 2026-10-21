@@ -18,6 +18,7 @@ import Switch from '#components/ui/Switch/Switch';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '#lib/form-errors';
+import { formatUtcDateTime } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 
 import { saveSessionAction } from './actions';
@@ -37,12 +38,14 @@ interface ISessionFormProps {
     clubId: string;
     session?: TSession;
     onSaved?: () => void;
+    onCancel?: () => void;
     creationRestriction?: 'blocking' | 'permission';
 }
 export default function SessionForm({
     clubId,
     session,
     onSaved,
+    onCancel,
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
@@ -161,7 +164,7 @@ export default function SessionForm({
                     placeholder="hh:mm"
                     hint={
                         session?.deadlineAt
-                            ? `Current deadline: ${session.deadlineAt}. Leave blank to keep it.`
+                            ? `Current deadline: ${formatUtcDateTime(session.deadlineAt)}. Leave blank to keep it.`
                             : 'hh:mm from now. Leave blank for no deadline.'
                     }
                 />
@@ -181,15 +184,47 @@ export default function SessionForm({
                     onChange={(movieId) => form.setFieldValue('movieId', movieId)}
                 />
             ) : null}
-            <div className={styles.submit}>
-                <Button fullWidth loading={isPending} type="submit">
-                    {session ? 'Save changes' : 'Create Session'}
-                </Button>
-                <p aria-atomic="true" aria-live="polite" role="status">
-                    {message}
-                </p>
-            </div>
+            <SessionFormActions
+                isEditing={Boolean(session)}
+                isPending={isPending}
+                message={message}
+                onCancel={onCancel}
+            />
         </form>
+    );
+}
+
+function SessionFormActions({
+    isEditing,
+    isPending,
+    message,
+    onCancel,
+}: {
+    isEditing: boolean;
+    isPending: boolean;
+    message: string;
+    onCancel?: () => void;
+}) {
+    return (
+        <div className={isEditing ? styles.edit : styles.submit}>
+            {isEditing ? (
+                <div className={styles.editActions}>
+                    <Button disabled={isPending} onClick={onCancel} variant="secondary">
+                        Cancel
+                    </Button>
+                    <Button loading={isPending} type="submit">
+                        Save
+                    </Button>
+                </div>
+            ) : (
+                <Button fullWidth loading={isPending} type="submit">
+                    Create Session
+                </Button>
+            )}
+            <p aria-atomic="true" aria-live="polite" role="status">
+                {message}
+            </p>
+        </div>
     );
 }
 

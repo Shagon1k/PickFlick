@@ -86,6 +86,9 @@ export default function ScaleControl({
         setIsConstraintInvalid(false);
     }
 
+    // Rating stars fill up to the value; a score marks only the chosen option.
+    const isFilled = (scaleValue: number, target: number | undefined) =>
+        presentation === 'rating' && target !== undefined && scaleValue <= target;
     const selectionLabel =
         selectedValue === undefined ? 'Not selected' : `${selectedValue} of ${max}`;
     const scaleStatus = isConstraintInvalid ? `Select a ${presentation}.` : selectionLabel;
@@ -98,10 +101,23 @@ export default function ScaleControl({
                 data-submitted="true"
             >
                 <legend>{label}</legend>
-                <div className={styles.scale__submitted}>
-                    <span>Submitted</span>
-                    <strong>{selectionLabel}</strong>
+                <div
+                    aria-hidden="true"
+                    className={styles.scale__rail}
+                    data-presentation={presentation}
+                >
+                    {values.map((scaleValue) => (
+                        <span
+                            className={styles.scale__option}
+                            data-active={isFilled(scaleValue, selectedValue) || undefined}
+                            data-selected={scaleValue === selectedValue || undefined}
+                            key={scaleValue}
+                        >
+                            {presentation === 'rating' ? '★' : scaleValue}
+                        </span>
+                    ))}
                 </div>
+                <p className="visually-hidden">Submitted: {selectionLabel}</p>
             </fieldset>
         );
     }
@@ -148,7 +164,7 @@ export default function ScaleControl({
             >
                 {values.map((scaleValue) => {
                     const isSelected = scaleValue === selectedValue;
-                    const isActive = activeValue !== undefined && scaleValue <= activeValue;
+                    const isActive = isFilled(scaleValue, activeValue);
                     return (
                         <button
                             aria-checked={isSelected}

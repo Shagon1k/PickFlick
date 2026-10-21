@@ -66,7 +66,7 @@ describe('Session participation', () => {
 
     it('should offer every member an open Session and join once under concurrent requests', async () => {
         expect(await pending()).toEqual([
-            expect.objectContaining({ id: sessionId, expiresAt: null }),
+            expect.objectContaining({ id: sessionId, scheduledAt: null }),
         ]);
         expect(await pending(outsider)).toEqual([]);
         expect((await roster()).canJoin).toBe(true);

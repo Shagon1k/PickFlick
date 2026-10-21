@@ -60,30 +60,33 @@
     position: relative;
     display: grid;
     place-items: center;
-    min-height: 140px;
-    margin-block: var(--gap-xl) var(--gap-md);
+    min-height: 132px;
+    margin-block: var(--gap-xl) 30px;
+    isolation: isolate;
 }
 
 .reelBreak::before {
     position: absolute;
-    inset-inline: 0;
-    top: 50%;
-    height: 14px;
+    z-index: -1;
+    width: 230px;
+    height: 110px;
     content: '';
-    background:
-        repeating-linear-gradient(to right, var(--border) 0 10px, transparent 10px 20px) top / 100%
-            4px no-repeat,
-        repeating-linear-gradient(to right, var(--border) 0 10px, transparent 10px 20px) bottom /
-            100% 4px no-repeat;
+    background: radial-gradient(ellipse, var(--accent-soft), transparent 70%);
+    border-radius: 50%;
 }
 
 .reelBreak img {
-    position: relative;
-    width: 180px;
-    height: 120px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(164px, 40vw);
+    height: auto;
+    max-height: 116px;
     object-fit: contain;
-    background: var(--bg);
-    mask-image: radial-gradient(ellipse at center, black 48%, transparent 74%);
+    opacity: 0.82;
+    filter: grayscale(1) contrast(1.05);
+    mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    transform: translate(-50%, -50%);
 }
 
 .detailsTitle {
