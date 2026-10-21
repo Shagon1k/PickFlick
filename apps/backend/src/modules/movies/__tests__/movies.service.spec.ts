@@ -30,8 +30,9 @@ describe('MoviesService', () => {
         saveDetails: vi.fn<MoviesRepository['saveDetails']>(),
         findExternalIds: vi.fn<MoviesRepository['findExternalIds']>(),
         findCachedPoster: vi.fn<MoviesRepository['findCachedPoster']>(),
+        findCachedMetadata: vi.fn<MoviesRepository['findCachedMetadata']>(),
     };
-    const database = { movie: { findMany: vi.fn() }, movieDetailsCache: { findMany: vi.fn() } };
+    const database = { movie: { findMany: vi.fn() } };
     const environment = {
         catalog: { provider: 'tmdb', locale: 'en-US', refreshHours: 24, staleHours: 168 },
     };
@@ -89,9 +90,9 @@ describe('MoviesService', () => {
         database.movie.findMany.mockResolvedValue([
             { id: MOVIE_ID, title: 'Stored title', releaseYear: 2026 },
         ]);
-        database.movieDetailsCache.findMany.mockResolvedValue([
-            { movieId: MOVIE_ID, data: { ...buildCanonicalDetails(), genres: ['Drama'] } },
-        ]);
+        repository.findCachedMetadata.mockResolvedValue(
+            new Map([[MOVIE_ID, { ...buildCanonicalDetails(), genres: ['Drama'] }]]),
+        );
         const summaries = await service.findSummaries(database as unknown as PrismaService, [
             MOVIE_ID,
             'missing',
@@ -100,6 +101,10 @@ describe('MoviesService', () => {
             { id: MOVIE_ID, title: 'Stored title', year: 2026, genres: ['Drama'] },
             { id: 'missing', title: null, year: null, genres: [] },
         ]);
+        expect(repository.findCachedMetadata).toHaveBeenCalledWith(
+            [MOVIE_ID, 'missing'],
+            buildDetailsCacheKey('tmdb', 'en-US'),
+        );
         expect(provider.fetchDetails).not.toHaveBeenCalled();
         expect(provider.search).not.toHaveBeenCalled();
     });

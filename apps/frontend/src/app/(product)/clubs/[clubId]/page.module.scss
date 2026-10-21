@@ -290,8 +290,7 @@
     padding-bottom: var(--gap-md);
 }
 
-.failure,
-.loading {
+.failure {
     display: grid;
     align-items: center;
     width: min(var(--container), calc(100% - 2 * var(--gutter)));

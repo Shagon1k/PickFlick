@@ -1,4 +1,5 @@
 const ISO_DATE_LENGTH = 10;
+const MINUTES_PER_HOUR = 60;
 
 /** The `YYYY-MM-DD` part of an ISO timestamp, as date inputs and compact labels show it. */
 export function toIsoDate(value: string): string {
@@ -18,6 +19,13 @@ export function formatUtcDateTime(value: string): string {
         timeZone: 'UTC',
     });
     return `${formatted} UTC`;
+}
+
+/** A runtime such as `2h 46m`, or null when the provider sent none. */
+export function formatRuntime(minutes: number | null): string | null {
+    if (!minutes) return null;
+    const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+    return hours ? `${hours}h ${minutes % MINUTES_PER_HOUR}m` : `${minutes}m`;
 }
 
 /** The two-letter placeholder shown where a Club or member has no image. */

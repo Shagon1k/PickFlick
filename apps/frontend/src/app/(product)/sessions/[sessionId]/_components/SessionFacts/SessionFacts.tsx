@@ -1,4 +1,4 @@
-import type { ISessionRoster, TSession } from '@pickflick/contracts';
+import { type ISessionRoster, isFilmSessionPhase, type TSession } from '@pickflick/contracts';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
@@ -24,7 +24,7 @@ export default function SessionFacts({
                     <div>
                         <dt>
                             <Icon name="calendar" />
-                            {isFilmPhase(session.phase) ? 'Watched' : 'Date'}
+                            {isFilmSessionPhase(session.phase) ? 'Watched' : 'Date'}
                         </dt>
                         <dd>
                             {session.scheduledAt
@@ -116,8 +116,4 @@ function getCompanion(session: TSession, roster: ISessionRoster): ReactNode {
             </div>
         );
     return null;
-}
-
-function isFilmPhase(phase: TSession['phase']) {
-    return phase === 'WATCHING' || phase === 'RATING' || phase === 'COMPLETED';
 }

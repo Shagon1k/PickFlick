@@ -1,6 +1,11 @@
 'use client';
 
-import type { ISessionRoster, TMovieDetails, TSession } from '@pickflick/contracts';
+import {
+    type ISessionRoster,
+    isFilmSessionPhase,
+    type TMovieDetails,
+    type TSession,
+} from '@pickflick/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -68,52 +73,56 @@ export default function SessionDetails({
             }}
         />
     );
+    // The server sends Nomination or Selection data only in its own phase.
+    function renderPhase(participation: ReactNode, onKick?: () => void) {
+        if (isFilmSessionPhase(session.phase))
+            return (
+                <>
+                    <PhaseProgress>
+                        {roster.acceptedCount}{' '}
+                        {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined the
+                        screening.
+                    </PhaseProgress>
+                    {header(participation, onKick)}
+                    <ScreeningFilm movie={movie} movieId={session.movieId} />
+                </>
+            );
+        if (session.nominations)
+            return (
+                <Nomination
+                    header={(onClose) => header(participation, onKick, onClose)}
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    data={session.nominations}
+                />
+            );
+        const selection = session.selection;
+        if (selection)
+            return (
+                <SelectionClose
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    submittedCount={selection.submittedCount}
+                    acceptedCount={selection.acceptedCount}
+                    canClose={session.canEdit && selection.nominations.length > 0}
+                >
+                    {(onClose) => (
+                        <Selection
+                            header={header(participation, onKick, onClose)}
+                            sessionId={session.id}
+                            data={selection}
+                        />
+                    )}
+                </SelectionClose>
+            );
+        return header(participation, onKick);
+    }
     return (
         <main className={styles.main}>
-            <SessionRoster sessionId={session.id} initial={roster}>
+            <SessionRoster sessionId={session.id} roster={roster}>
                 {(participation, onKick) => (
                     <>
-                        {isFilmPhase(session.phase) ? (
-                            <>
-                                <PhaseProgress>
-                                    {roster.acceptedCount}{' '}
-                                    {roster.acceptedCount === 1 ? 'member has' : 'members have'}{' '}
-                                    joined the screening.
-                                </PhaseProgress>
-                                {header(participation, onKick)}
-                                <ScreeningFilm movie={movie} movieId={session.movieId} />
-                            </>
-                        ) : null}
-                        {!isFilmPhase(session.phase) && !session.nominations && !session.selection
-                            ? header(participation, onKick)
-                            : null}
-                        {session.nominations ? (
-                            <Nomination
-                                header={(onClose) => header(participation, onKick, onClose)}
-                                sessionId={session.id}
-                                phaseVersion={session.phaseVersion}
-                                data={session.nominations}
-                            />
-                        ) : null}
-                        {session.selection ? (
-                            <SelectionClose
-                                sessionId={session.id}
-                                phaseVersion={session.phaseVersion}
-                                submittedCount={session.selection.submittedCount}
-                                acceptedCount={session.selection.acceptedCount}
-                                canClose={
-                                    session.canEdit && session.selection.nominations.length > 0
-                                }
-                            >
-                                {(onClose) => (
-                                    <Selection
-                                        header={header(participation, onKick, onClose)}
-                                        sessionId={session.id}
-                                        data={session.selection!}
-                                    />
-                                )}
-                            </SelectionClose>
-                        ) : null}
+                        {renderPhase(participation, onKick)}
                         {session.selectionOutcome ? (
                             <SelectionOutcome data={session.selectionOutcome} />
                         ) : null}
@@ -206,10 +215,6 @@ function ScreeningFilm({
             {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
         </Alert>
     );
-}
-
-function isFilmPhase(phase: TSession['phase']) {
-    return phase === 'WATCHING' || phase === 'RATING' || phase === 'COMPLETED';
 }
 
 function getPhaseMascot(phase: TSession['phase']) {

@@ -14,6 +14,11 @@ export function isBlockingSessionPhase(phase: string | undefined): boolean {
 export function isOpenSessionPhase(phase: string): boolean {
     return OPEN_SESSION_PHASES.some((open) => open === phase);
 }
+/** Phases after the film is chosen: the Session is about one Movie from Watching on. */
+export const FILM_SESSION_PHASES = ['WATCHING', 'RATING', 'COMPLETED'] as const;
+export function isFilmSessionPhase(phase: string): boolean {
+    return FILM_SESSION_PHASES.some((film) => film === phase);
+}
 
 export const SESSION_LOCATION_MAX_LENGTH = 200;
 export const SESSION_TOPIC_MAX_LENGTH = 200;

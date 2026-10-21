@@ -1,4 +1,4 @@
-import { HTTP_STATUS, type TSession } from '@pickflick/contracts';
+import { HTTP_STATUS, isFilmSessionPhase, type TSession } from '@pickflick/contracts';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
@@ -55,11 +55,9 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     );
 }
 
-const FILM_PHASES = new Set<TSession['phase']>(['WATCHING', 'RATING', 'COMPLETED']);
-
 /** Details for the screening's film; the Session stays usable and says so when they are missing. */
 async function loadFilm(session: TSession) {
-    if (!session.movieId || !FILM_PHASES.has(session.phase)) return null;
+    if (!session.movieId || !isFilmSessionPhase(session.phase)) return null;
     try {
         const { result } = await getMovieDetails(session.movieId);
         return result.state === 'unavailable' ? null : result.data;

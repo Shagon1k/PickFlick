@@ -1,9 +1,10 @@
-import type { IClubHubSession } from '@pickflick/contracts';
+import { type IClubHubSession, isFilmSessionPhase } from '@pickflick/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import choosingPanda from '#brand/panda-choosing.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import { formatRuntime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
 
@@ -35,7 +36,7 @@ export default function CallSheet({
     const time = hasTime
         ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(scheduled)
         : null;
-    const hasSelectedFilm = ['WATCHING', 'RATING', 'COMPLETED'].includes(session.phase);
+    const hasSelectedFilm = isFilmSessionPhase(session.phase);
     const title = hasSelectedFilm
         ? (session.movie?.title ?? session.topic ?? 'Film unavailable')
         : (session.topic ?? 'Untitled Session');
@@ -115,7 +116,7 @@ export default function CallSheet({
 function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
     if (hasSelectedFilm)
         return [
-            { label: 'Runtime', value: formatRuntime(session.movie?.runtime ?? null) },
+            { label: 'Runtime', value: formatRuntime(session.movie?.runtime ?? null) ?? '—' },
             { label: 'Genre', value: session.movie?.genres[0] ?? '—' },
         ];
     return [
@@ -132,12 +133,4 @@ function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
     ];
 }
 
-function formatRuntime(minutes: number | null) {
-    if (!minutes) return '—';
-    const hours = Math.floor(minutes / MINUTES_PER_HOUR);
-    const remainder = minutes % MINUTES_PER_HOUR;
-    return hours ? `${hours}h ${remainder}m` : `${minutes}m`;
-}
-
 const CALL_SHEET_DIGITS = 3;
-const MINUTES_PER_HOUR = 60;

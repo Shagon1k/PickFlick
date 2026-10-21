@@ -7,6 +7,7 @@ import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
 import Icon from '#components/ui/Icon/Icon';
+import { formatRuntime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
@@ -160,11 +161,4 @@ function FilmMeta({ movie, phase }: { movie: TMovieDetails | null; phase: TSessi
     );
 }
 
-function formatRuntime(minutes: number | null) {
-    if (!minutes) return null;
-    const hours = Math.floor(minutes / MINUTES_PER_HOUR);
-    return hours ? `${hours}h ${minutes % MINUTES_PER_HOUR}m` : `${minutes}m`;
-}
-
 const MAX_GENRES = 3;
-const MINUTES_PER_HOUR = 60;

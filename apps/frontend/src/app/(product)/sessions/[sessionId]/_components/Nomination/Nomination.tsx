@@ -55,11 +55,8 @@ export default function Nomination({
                 ok: false as const,
                 message: 'We could not reach PickFlick. Try again.',
             }));
-            if (!result.ok) {
-                setMessage(result.message);
-                return;
-            }
             setMessage(result.message);
+            if (!result.ok) return;
             if (action === 'close') setIsDialogOpen(false);
             if (action === 'submit') headingRef.current?.focus();
         });
@@ -133,6 +130,7 @@ export default function Nomination({
         </section>
     );
 }
+
 function formatMovieLabel(movie: TNominationMovie) {
     const year = movie.year ? ` (${movie.year})` : '';
     return `${movie.title ?? 'Movie title unavailable'}${year}`;
@@ -148,6 +146,7 @@ function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
         </p>
     );
 }
+
 function NominationList({ data }: { data: TNominations }) {
     if (data.hidden) return <p>Nominations are hidden until you submit your own Movie.</p>;
     if (!data.nominations.length) return <p>No nominations yet.</p>;

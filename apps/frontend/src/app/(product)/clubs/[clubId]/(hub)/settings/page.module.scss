@@ -30,24 +30,6 @@
     text-wrap: balance;
 }
 
-.meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    color: var(--fg-secondary);
-}
-
-.sep {
-    padding-inline: 4px;
-    color: var(--accent-dim);
-}
-
-.archived {
-    color: var(--warn);
-}
-
 .tabs {
     display: none;
     justify-content: center;

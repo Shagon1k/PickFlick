@@ -15,14 +15,13 @@ import styles from './SessionRoster.module.scss';
 /** Join/Leave for the header and, for operators, the gear menu's Kick dialog. */
 export default function SessionRoster({
     sessionId,
-    initial,
+    roster,
     children,
 }: {
     sessionId: string;
-    initial: ISessionRoster;
+    roster: ISessionRoster;
     children: (participation: ReactNode, onKick?: () => void) => ReactNode;
 }) {
-    const roster = initial;
     const closeRef = useRef<HTMLButtonElement>(null);
     const restoreFocusRef = useRef(false);
     const [message, setMessage] = useState('');
