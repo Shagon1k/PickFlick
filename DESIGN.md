@@ -283,7 +283,7 @@ foundation components; feature-specific wrappers are checked in their built scre
 
 | Check              | Target                                                                                                           | Evidence                                                                                                                                                                                                                                                                                      | Status      |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Source parity      | Every screen and shared component compared with its source.                                                      | 76 baselines at 390 and 1440 (gallery, seven shells, public pages, Login, Club onboarding, invitation states, Hub overview, members and settings, recovery states); Hub preview needs exact-SHA owner review.                                                                                 | In progress |
+| Source parity      | Every screen and shared component compared with its source.                                                      | 84 baselines at 390 and 1440 (gallery, seven shells, public pages, Login, Club onboarding, invitations, Hub, members/settings, recovery, Movie Details, Session creation, Nomination and Selection). Exact-SHA hosted owner review remains pending.                                           | In progress |
 | Responsive         | Continuous widths plus 390, 768, 1024, 1440; orientation where it matters.                                       | Established screens: overflow at 390, 640, 768, 900, 1024, 1200, 1440. Session creation/detail: 390, 768, 1024, 1440.                                                                                                                                                                         | In progress |
 | Keyboard and focus | Auth, Club creation, Sessions, search, menus, dialogs, rating and score controls, settings, admin confirmations. | Automated for shared and shell controls, Pricing FAQ, Contact and Create Club validation focus, Club switch, member removal, pending invites, Club settings dialogs, Session validation, Movie selection, edit/cancel dialogs, and the unavailable checkout. Remaining feature flows pending. | In progress |
 | Accessibility      | Structure, names, focus, contrast, live regions, targets, reduced motion.                                        | Axe at 390 and 1440 on every built screen; automated focus, live-region, 44px target, local-scroll, and reduced-motion checks. Manual review pending.                                                                                                                                         | In progress |
@@ -293,6 +293,15 @@ foundation components; feature-specific wrappers are checked in their built scre
 
 Update this document when a design source changes, visible behavior is clarified, a screen or
 component is added, or build or QA status changes. A correct-looking prototype is not passed QA.
+
+Local prototype alignment reviewed on 2026-10-21: delivered screens were compared with the
+canonical HTML and responsive references at 390, 768, 1024 and 1440px. The full UI contract run
+passed 196 checks; a focused run passed four Nomination viewport checks and the new header Invite
+copy check. All 84 visual comparisons passed after reviewing 39 new or changed Linux captures.
+The production JavaScript bundle was built on macOS and rendered with Linux dependencies in the
+CI-pinned Playwright image using Node 24.15.0; an in-container rebuild exceeded Docker memory.
+This evidence does not replace a fresh CI run or owner review of the exact hosted revision.
+Watching, Rating, completion, and other later-phase functionality were not added.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
 stable recovery actions. Its heading says "You are invited" because invitation links do not reserve

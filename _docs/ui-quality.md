@@ -35,10 +35,13 @@ The suite checks:
 - 44px touch targets and locally scrolling dense regions;
 - no horizontal page overflow at every breakpoint and gap width (390, 640, 768, 900, 1024, 1200,
   1440);
-- exact screenshot matches at 390 and 1440 pixels (76 baselines, visual selection);
+- exact screenshot matches at 390 and 1440 pixels (84 baselines, visual selection);
 - collapsed motion when reduced motion is requested.
 
-Viewports are defined once in `tests/ui/viewports.ts`.
+Viewports are defined once in `tests/ui/viewports.ts`. Visual captures include read-only Movie
+Details, Session creation, Nomination and Selection alongside the existing screen/state coverage.
+The Nomination viewport checks also assert the Session header variant and the two-column to
+single-column layout change at 1024px.
 
 ## Review a failure
 
