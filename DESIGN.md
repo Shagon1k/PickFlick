@@ -4,9 +4,9 @@
 > implemented in `apps/frontend/src/styles/tokens.scss`; the canonical design package under
 > `_docs/design/prototypes` stays their source.
 
-| Owner         | Last reviewed                                                           |
-| ------------- | ----------------------------------------------------------------------- |
-| Product owner | 2026-10-21 (documentation consolidation; current hosted review pending) |
+| Owner         | Last reviewed                                                  |
+| ------------- | -------------------------------------------------------------- |
+| Product owner | 2026-10-22 (screen rules rewrite; hosted review still pending) |
 
 ## 1. Authority and sources
 
@@ -100,14 +100,14 @@ The shells live in `apps/frontend/src/components/shells`, one folder per shell o
 product, Session, Settings, Library, and App Admin compositions without feature data; the shells
 default to the product routes and the preview supplies its own route map.
 
-| Context              | Shell                                                                                                                                                                                                                                                                                                             | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                              | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks. Contact uses a focused form scene with Back and omits the full marketing header/footer.                                                                                                                                          | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
-| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                              | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
-| Product              | The brand links to the public home and Hub links to `/app`; the public footer is shared. Round 34px search, notifications, and avatar controls with 44px targets; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
-| Session detail       | Back to Hub, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                              | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
-| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                          | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
-| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                             | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
+| Context              | Shell                                                                                                                                                                                                                                                                                                                         | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                                          | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks. Contact uses a focused form scene with Back and omits the full marketing header/footer.                                                                                                                                          | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
+| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                                          | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
+| Product              | The brand links to the public home and Hub links to `/app`; the public footer appears on every page. Round 34px search, notifications, and avatar controls with 44px targets; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
+| Session detail       | The product shell, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                                    | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
+| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                                      | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
+| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                                         | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
 
 ### Key flows
 
@@ -164,83 +164,160 @@ All canonical screens are MVP and approved as direction.
 "Passed locally" means the Playwright suite passes at 390 and 1440 pixels plus overflow checks at
 every breakpoint and gap width.
 
-### Prototype clarifications
+### Screen rules
 
-The Club Hub Call Sheet links to its current Session from every Club section, including for
-members who already participate. It is keyboard- and touch-accessible; without a current Session,
-the Call Sheet remains a static empty state.
-The Overview's entire Active Session card also opens that Session, including its heading and
-phase label. Its empty state has no link.
+The prototypes show composition and appearance. These rules add the behavior they cannot show and
+record where production deliberately differs. Pixel values live in the prototypes and tokens, not
+here.
 
-The delivered Club carousel ends with Create new club. Its caption shows member count, the count
-of Sessions that were not cancelled and establishment month/year; description, plan, role and Selection scale stay in their owning
-panels. Neutral chevrons reveal hover and keyboard focus states. Club names keep whole words and
-stop at three lines. Phones show the prototype's 8px position dots under the caption; the 44px
-arrows switch Clubs and wider screens hide the dots.
-The Call Sheet uses a zero-padded Club-local Session number ("Call sheet 004"), scheduled
-weekday/unit and phase stamp. Sessions store only a date, so the call-time slot shows the location
-(smaller type, at most two lines) until a real time exists rather than a fabricated midnight.
-Watching shows the selected film, call time or location, date without year, runtime and genre; Nomination and
-Selection show their own topic and progress in the same ledger. The still uses real cached Movie
-artwork or an explicit missing-image state, never fixture film data. Before a film is selected the
-still shows the choosing panda instead of a nominated poster, because nominations stay behind the
-Club's visibility settings. Long topics stop at two lines.
+#### Product shell
 
-Overview has seven monochrome statistics with the prototype SVG icons, member pills and the active
-Session's film-strip progress. Hub cards use 24px padding; Overview headings are 24px semibold and Manage Club card headings, Active Session included, are 15px bold. Missing values show `—`; unbuilt Session ratings remain unavailable.
-Join me! joins an eligible Club member through the existing roster command. A participant opens the
-Session from the entire Active Session card. Manage Club also shows Active Session and Active Ratings.
-Members shows role, accepted Session participation count and a compact remove control; + Invite opens
-Manage Club. Removal retains its typed confirmation and focus return. Below 768px the Club
-section tabs give way to the bottom bar's Hub strip, as in the prototype. Session history is a quiet
-disclosure row with a chevron.
-The pending-invite ticket uses the prototype silhouette, gradient, perforation and stub typography.
-Its 184px body partly hides the stub; hover, focus and opening reveal it. The 344px popover separates
-its heading, count, text Close action, invite type, metadata and actions. Club rows show the inviter,
-member count and expiry; Session rows show the topic, Club and screening date. Reduced motion removes
-the slide. Below 768px an empty ticket is hidden so it never covers content; with invites showing,
-the page gains room to scroll the footer links clear of it.
+- The public footer stays on every product page, phones included, because it carries the legal and
+  contact links. A visible invite ticket adds bottom room so the footer can scroll clear of it.
+- The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
+  Panel first for App Admins. Movie Details marks no header destination as current.
+- Search, notifications and film-strip menus move focus inside when they open, also under reduced
+  motion, and return it to the trigger when they close.
 
-Delivered Nomination and Selection use the Session header variant, a centred monochrome status
-banner with manual refresh at its edge, a phase heading with icon-labelled topic and notes, a relative
-Nomination deadline ("closes in 4h 32m") anchored to the request time, and the shared reel separator,
-facts rows and gold facts metric. Participants appear only in the facts row; operators remove them
-through Kick in the gear menu, a dialog of removable participants that keeps typed `REMOVE`.
-Watching, Rating and Completed reuse the Movie Details media grid under a film header: linked title,
-year and runtime, genre chips and a phase stamp whose dot pulses only while Watching. The facts
-companion is the coming-soon chat while Watching and an empty Club score until Phase 13 ratings.
-The 73px desktop product header matches the Hub prototype.
-Invite copies the existing Club-member Session link. Join/Leave sits beside the header actions;
-Early phase closure, Edit and Cancel live in the gear film-strip menu: a 174px strip with a tail tab
-and an icon above each label, like the account menu. Invite confirms the copy in its label. Dialogs
-use the prototype's 440px card with a 20px display title, compact body and right-aligned actions, and
-no close icon; Escape, the overlay and the dialog's own Cancel or Close action dismiss it. Existing
-typed confirmation and focus return stay intact.
-Nomination searches through a dropdown over the card with poster thumbnails; a chosen film becomes
-a bordered row with a compact Nominate This action. Suggestions and current nominations show
-posters, bold titles and cached genres; feedback stays inside the nomination card.
-Selection rows show a 64×96 poster, a 16px title and one year · genres · nominator line, stacking
-the film above its scores on phones; the summary uses mono caps above a 250px submit button.
-Selection uses compact score rows with accessible radio names, live feedback and 44px controls; long
-scales scroll within the row. A score marks only the chosen option; hover stays neutral. The two
-Nomination columns stack below 1024px. The reel separator is a thin sprocket rule with the phase
-mascot in grayscale: collection for Nomination, rating-2 for Selection, rating for later phases.
-The Active Session film strip uses the prototype's ivory perforations and warm exposed frames.
-Session creation keeps the setup scene and uses one vertical field rhythm and a connected pill
-selector for the Session type. Watching-to-Rating, Rating and completion remain Phase 13 work.
+#### Club Hub
 
-Read-only Movie Details uses the prototype's title/rating header, genre chips, poster/trailer grid
-and bordered credit rows. Below 1024px the poster sits beside credits, followed by synopsis and
-trailer; the small-screen poster is 132px wide. Provider metadata determines available credit
-rows and images. Trailer links remain external; this alignment adds no embedded player or
-personal-rating/Watchlist controls. The page has no in-content Back button and marks no header
-destination as current; runtime reads as hours and minutes, the language by name, actors as one
-comma-separated row, and related posters rest in grayscale until hover or focus.
-The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
-Panel first for App Admins.
+- Overview, Members and Manage Club share one mounted frame with the Club switcher and Call Sheet.
+  Each panel rechecks authorization and refreshes the frame's snapshot; its links keep the scroll
+  position. Below 768px the section tabs give way to the bottom bar's Hub strip.
+- The carousel ends with Create new club. The caption shows member count, the count of Sessions that
+  were not cancelled, and the founding month and year; description, plan, role and scale stay in
+  their own panels. Names wrap by whole words and stop at three lines. Phones show position dots; the
+  arrows switch Clubs and wider screens hide the dots.
+- The Call Sheet opens the current Session from every section, for participants too, and stays a
+  static empty state without one. Its number is the Club-local creation order, cancelled Sessions
+  included. Sessions store only a date, so the call-time slot shows the location (two lines at most)
+  until a real time exists, never a fabricated midnight. Topics stop at two lines.
+- The Call Sheet still uses cached Movie artwork or an explicit missing-image state, never fixture
+  film data. Before a film is selected it shows the choosing panda rather than a nominated poster,
+  because nominations stay behind the Club's visibility settings.
+- Overview shows seven statistics with `—` for missing values; Session ratings stay unavailable until
+  Phase 13. A participant opens the Session from the whole Active Session card; an eligible member
+  joins with Join me!. Session history is a quiet disclosure row.
+- Members shows each role and the accepted participations, excluding cancelled Sessions. Admins
+  remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
+  Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Role changes
+  happen in the Manage Moderators dialog; + Invite opens Manage Club.
+- All three views show the same adminless, archived and excess-member notices. Adminless Clubs
+  explain the missing owner actions; excess-member Clubs keep history and participation but pause new
+  Sessions and invites while roster recovery stays available.
+- Manage Club creates one single-use invitation link with a 12-hour expiry, Copy and Revoke. Older
+  links stay collapsed under Manage links, each with a short ID, status and expiry, the newest marked.
+  A new link stays visible and revocable if the list fails to refresh. Active links are capped at the
+  plan's member limit; managers can still inspect and revoke when creation is paused. Members and
+  archived Clubs see no invitation controls.
 
-Login keeps the prototype's 392px desktop card width and existing mobile scene. Enabled identity
-providers determine the button stack; dormant Apple sign-in stays hidden.
+#### Pending invites
+
+- Club rows list recipient-targeted links with inviter, member count and expiry; shareable Club links
+  stay in their own flow. Session rows are the caller's unanswered open Sessions with topic, Club and
+  date, and have no token expiry. Accepting a Session invite opens the Session.
+- Responding moves focus to Close before the row's controls change, so the trap and Escape keep
+  working after the last answer. Loading, empty, retry and stale-invitation feedback are explicit.
+- On phones the ticket sits above the bottom bar and stays hidden while there has been nothing to
+  show; once invites appear it remains, even after the last answer, so focus can return to it.
+
+#### Invitation pages
+
+- Club invitations use one setup scene. The heading says "You are invited" because links reserve no
+  capacity. The preview shows only Club name, member count and inviter; signed-out and unsafe states
+  omit Club details. Long names use a one-line ellipsis with the full name still accessible.
+- Accept and Decline wait for hydration, show pending and retry feedback and keep the card's size.
+  Success and already-member states open the Hub.
+- Legacy personal Session invitation URLs keep their recipient check, seven-day expiry and focused
+  scene. Signed-out visitors continue through sign-in; non-members see no screening context.
+
+#### Global search and Movie Details
+
+- Header search reuses the product overlay. A 300ms debounce updates a bounded, locally scrolling
+  panel with loading, empty, cached, provider failure, rate-limit, unconfigured and expired-session
+  feedback; a new query clears obsolete results at once. Arrow keys move through results while focus
+  stays in the combobox, Enter opens the canonical Movie route, and Tab and touch work too.
+- Results fall back to an available source title; "Untitled film" means no title at all. Posters load
+  lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
+- Movie Details shows title, year, language name, runtime in hours and minutes, genres,
+  source-labelled ratings to one decimal, poster, directors, up to five actors in one row, synopsis
+  and outbound trailers. There is no in-content Back. Stacked credit values read from the left.
+- Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
+  and stale details each have explicit feedback. Related titles load separately: up to six
+  provider-supplied links, grayscale until hover or focus, with no personalization claim.
+- IMDb links are built by the backend from verified identifiers; Wikipedia is labelled a title
+  search. Trailers open YouTube in a new tab and say so. One credit region covers the film and its
+  related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
+  the Library.
+
+#### Create Session
+
+- The setup scene has a Back link, required date and location, optional topic and notes, the two live
+  modes and an optional `hh:mm` Nomination duration. Date-only entries are stored at midnight UTC.
+  Pre-selected mode replaces the deadline with catalog search and a removable selected Movie.
+- Validation focuses the first invalid field; saving, offline and API failures keep the entries. A
+  blocking Session or a Club or role restriction replaces the form with a recovery link.
+- Success links to the new Session and the Hub. Creating or editing a Session refreshes the Hub and
+  Session pages, so browser Back shows current data.
+
+#### Session page
+
+- Every phase is one page: the status banner (with manual refresh while Nomination or Selection is
+  open), the heading with topic, notes and a relative Nomination deadline anchored to the request
+  time, then the phase content, the reel separator with the phase mascot, and the facts.
+- Invite copies the member-only Session link and confirms in its own label. Join and Leave sit beside
+  it. The gear menu holds early closure, Edit, Kick and Cancel; on short screens its rows compact and
+  it scrolls clear of the bottom bar.
+- Dialogs have no close icon: Escape, the overlay and their own Cancel or Close dismiss them. Edit is
+  a focus-trapped form; Cancel, Kick and early closure keep typed `CANCEL`, `REMOVE` and `CLOSE`.
+  Terminal Sessions have no edit or cancel controls. A phase change focuses the Session heading.
+- Participants appear only in the facts. Any current member may join from Nomination through Rating;
+  a declined or departed participant can rejoin, but operator removal blocks self-join. Late
+  Selection participants score the frozen films. Kick lists removable participants and can still
+  revoke legacy personal links. Archived Clubs and terminal Sessions drop the controls they cannot use.
+- The facts companion is the progress metric while Nomination or Selection is open, a coming-soon chat
+  while Watching, and an empty Club score until Phase 13 ratings.
+
+#### Nomination
+
+- Search opens a dropdown over the card; a chosen film becomes a row with Change and Nominate This.
+  Suggestions are the caller's own past losing nominations in this Club and use the same flow.
+- Current Nominations show posters, titles, cached genres and the nominator when the Club allows it.
+  Feedback stays inside the nomination card; a successful submission focuses its heading.
+- Empty history, hidden nominations, missing metadata, non-participant and read-only access, pending
+  saves, failures, offline recovery and locked submission each have explicit copy.
+- Early closure cannot close with no films; one film moves to Watching, several open Selection, and
+  automatic `N/N` completion does the same. Other clients poll a progress version, re-read the page
+  when it moves (also on reconnect and focus), keep polling after a failed check with a visible
+  notice, and recover through a transient "Session unavailable" page.
+
+#### Selection
+
+- Every eligible nomination gets a score row on the Club's scale (`0..N`, or a legacy `1..N`) with one
+  year · genres · nominator line. Rows stack on phones and wide scales scroll inside the row. Scores
+  keep 44px targets and support arrows, Home, End and touch; a score marks only the chosen option.
+- Missing scores focus the first unscored film with live feedback; errors keep the input.
+  Submission is final: a saved ballot shows locked rails with the choices marked. Archived Clubs and
+  ineligible participants cannot submit, and the server filters nominator names.
+- After closure a warm winner card links the Movie, names the permitted nominator and records how
+  and when Selection closed. When allowed, the ranking shows totals, top-score votes, supporters and
+  the deciding tie-break; hidden results show only the winner and why. Zero ballots are explained.
+- Early closure confirms with `CLOSE`, states the received and pending ballots and returns focus to
+  its trigger on cancel.
+
+#### Watching
+
+- A film header (linked title, year · runtime, genre chips, a phase stamp whose dot pulses only while
+  Watching) sits above the Movie Details media grid. When film details are unavailable the phase
+  stamp stays and the warning links to the selected Movie. Moving to Rating is Phase 13.
+
+#### Public, Login and Contact
+
+- Login shows the enabled identity providers only; dormant Apple sign-in stays hidden.
+- Contact uses the focused task scene with Back and requires JavaScript through `@mantine/form`;
+  revisit no-JavaScript submission only if it becomes a requirement.
+
+### Prototype fixtures and superseded content
 
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -257,10 +334,6 @@ providers determine the button stack; dormant Apple sign-in stays hidden.
 | Navigation controls resting at `--muted` (header links and icons, tabs, film-strip frames, mobile bar, footer links, search close). | Interactive navigation rests at `--fg-secondary` with `--border-lit` icon circles; `--muted` reads as disabled. Header links and icons turn ivory on hover, focus, or open, with a gold underline or gold-border circle. Tabs and menu frames brighten to `--fg`. The current destination is ivory (tabs: `--fg` with an underline). `--muted` is only for metadata, placeholders, and disabled states. |
 | The `settings.html` Privacy panel repeating policy prose under "Privacy".                                                           | Policy text lives only in the public Privacy Notice (`/legal/privacy`). The in-app section is "Privacy & data": a summary, rights actions, and a link to the Notice. Login and legal links call it "Privacy Notice".                                                                                                                                                                                    |
 | [`settings-subscription.html`](_docs/design/prototypes/settings-subscription.html).                                                 | Superseded study; the Subscription panel in `settings.html` is canonical.                                                                                                                                                                                                                                                                                                                               |
-
-Contact uses the focused task scene with Back. It requires JavaScript through `@mantine/form`;
-no-JavaScript submission is not implemented. Revisit progressive enhancement only if it becomes
-an explicit product requirement.
 
 ### States every data surface needs
 
@@ -348,190 +421,3 @@ Rating and Completed. Its outcomes are recorded in the screen rules above; run e
 [Phase 12](ROADMAP.md#phase-12--human-verification--bug-fixing-ii--in-progress). Linux baselines
 prove regression stability, not owner acceptance; hosted exact-revision review is still pending.
 The remaining Hub views and Rating/Completed content remain open Phase 12 and Phase 13 work.
-
-Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
-stable recovery actions. Its heading says "You are invited" because invitation links do not reserve
-capacity. Signed-out and unsafe states omit Club details. The usable preview shows
-only Club name, member count, and inviter; Session totals are omitted. Accept and Decline have visible
-pending and retry feedback; both wait for hydration before enabling their decision handlers.
-Success and already-member states open the authorized Hub. Manage Club
-lets Admins and Moderators create, copy, inspect, and revoke links. The shared pending-invite ticket
-and popover are active for recipient-targeted Club invitations. Owner review of the exact hosted head
-SHA remains required.
-Long Club names use a single-line ellipsis in the invitation preview while keeping the full heading
-text accessible. Accepting or declining a maximum-length name keeps the card dimensions stable.
-Manage Club keeps a newly created link visible and revocable when list refresh fails, with a warning
-that directs the manager to expand Manage links and reload Recent invitations. Older live pending links remain in that list.
-Each row shows a short invitation ID, status and expiry; the most recently created link is marked.
-Active links are capped at the Club plan's member limit, with explicit recovery by revoking a link.
-Active Admins and Moderators can inspect and revoke existing links when an excess-member or adminless
-restriction pauses creation. Members and archived Clubs keep the invitation controls hidden.
-
-### Hub membership states
-
-Overview, Members and Manage Club share the Club switcher and Screening Call Sheet above the
-active lower panel. Their links preserve scroll position and identify the active section. A shared Next.js layout keeps
-the upper frame mounted while the lower panel changes; each panel rechecks authorization and publishes
-its fresh Hub snapshot. The tab underline and hover state use the neutral foreground accent.
-
-Members shows the live roster and the number of accepted Session participations, excluding cancelled
-Sessions. Admins remove Members or Moderators; Moderators remove Members; Members review the
-roster and leave through Manage Club. Removal requires `REMOVE`, preserves shared history, and returns
-focus to the Members heading when the removed row disappears. Role changes remain in the Manage
-Moderators dialog in Manage Club.
-
-Overview, Members, and Manage Club show the same adminless, archived, and excess-member notices.
-Adminless Clubs explain missing owner actions and paused new work. Excess-member Clubs preserve
-history and existing participation while disabling new Sessions and invites; roster recovery remains
-available. Account deletion, administration recovery, and billing delivery remain in their owning phases.
-
-The shared product shell displays the pending-invite ticket and an anchored dialog with trapped and
-returned focus. Responding moves focus to Close before invitation controls are disabled or removed,
-preserving the focus trap and Escape dismissal even after the final invitation is declined.
-It supports loading, empty, retry, acceptance, decline, and stale-invitation feedback.
-Club rows list only eligible recipient-targeted links; shareable Club links stay in their link
-flow. Session rows derive from unanswered open Sessions in the caller's Clubs, show Club/topic
-context and have no independent token expiry. Acceptance opens Session detail. The ticket and popover use shared UI components and
-tokens, with a mobile position above the fixed navigation.
-
-## Global Movie search
-
-The authenticated header search reuses the product overlay and its mutual-exclusion, dismissal,
-focus-return and reduced-motion behavior. A 300ms debounce updates a bounded result panel with
-loading, no-results, cached-results, provider failure, rate-limit, unconfigured and expired-session
-feedback. Query changes remove obsolete results immediately. Arrow keys select results while focus
-stays in the combobox; Enter opens the selected canonical Movie UUID route. Results also support
-Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits the viewport.
-Results use an available source title when an English title is absent; “Untitled film” is reserved
-for records without any title.
-
-Search shows available posters through authenticated same-origin lazy image URLs; metadata
-responses do not wait for image downloads. Missing or failed images retain a neutral PF placeholder
-without removing the film row. Catalog credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
-route checks the session and now renders the read-only details described below. Local search keyboard, touch,
-axe and overflow checks passed at 390, 768, 1024 and 1440px on 2026-10-10. Personal Ratings and Watchlist
-changes remain later Library work. Search and read-only metadata/related titles are delivered;
-Phase 12 tracks the current branch's remaining hosted review.
-
-## Read-only Movie Details
-
-The canonical UUID route renders title, year, language, runtime, genres, source-labelled ratings,
-poster, directors, cast, synopsis and outbound trailers. Provider rating values display one
-decimal place; their stored/API precision stays unchanged. Desktop places poster/trailer above
-credits/synopsis in one flat grid. Mobile centers the title, pairs poster with credits, then places
-synopsis and trailer beneath. Long provider text wraps; no fixture posters or stills are bundled.
-Missing or failed media, absent English synopsis, provider outage/rate limits, unconfigured
-catalog, partial details and bounded stale details have explicit feedback. Loading related titles
-is independent of the main detail page. Unknown Movies use the existing not-found surface.
-
-Catalog credits reuse the approved TMDB logo and notice, plus attribution for contributing
-PoiskKino/TheTVDB sources. Related titles are provider-supplied, with up to six canonical links;
-they make no personalization claim. IMDb links arrive as backend-built URLs from verified stored identifiers.
-Catalog images are served from private storage through authenticated same-origin paths; failed
-ingestion uses the existing missing-media presentation. Wikipedia is
-labelled as a title search because no verified article correspondence is available. Trailer links
-open YouTube in a new tab and announce that behavior. Personal Ratings and Watchlist controls
-remain later Library work. One provider-credit region covers the Movie and its related results.
-
-Local verification on 2026-10-10 passed Movie Details axe and overflow checks at 390, 768,
-1024 and 1440px, desktop equal-width credits/synopsis and 16:9 trailer geometry, missing-media
-and provider-failure checks. Mobile and desktop screenshots were inspected. Existing visual
-baselines were not changed in that delivery run. Current captures and review limits are recorded
-in Design QA above.
-
-## Session creation and management foundations
-
-The standalone Create Session screen uses the canonical panda, centered card, required date and
-location, optional topic/notes, two live modes, and an optional `hh:mm` nomination duration.
-Date-only entries are stored at midnight UTC. Pre-selected mode replaces the deadline with
-catalog search, keyboard selection and a removable selected Movie. Search reports loading, empty,
-provider failure and cached results; provider text stays escaped.
-
-Validation focuses the first invalid field. Saving, offline and API-failure feedback preserves
-entries. Success links to the created Session and Club Hub; Invite copies the shared
-member-only Session URL. Blocking Sessions and Club/role restrictions replace the form with a recovery link.
-The phase-labelled detail foundation shows date, location, participants, topic and notes; the film
-header links the selected Movie.
-Operators edit details in a focus-trapped dialog and cancel with typed `CANCEL`; terminal Sessions
-have no edit or cancellation controls. Club Hub links current, Rating and history rows to detail.
-Successful creation and edits invalidate the Hub and detail pages so browser Back shows current data.
-Nomination, Selection and winner outcomes are delivered below; full Watching/Rating content remains Phase 13.
-
-Chromium checks cover both creation modes, edit/cancel and Hub updates, validation focus, dialog
-focus return, keyboard Movie selection, and retained entries after offline/API failures. Creation
-and detail pass axe and page-overflow checks at 390, 768, 1024 and 1440. Local captures were
-inspected; the four changed Hub and overlaid-invitation baselines were regenerated in the pinned Linux browser.
-
-Current-branch hosted preview and owner review remain part of the open Phase 12 gate.
-
-## Member-only Session invitations and roster
-
-Creation and Session details expose one reusable Session link. Any current Club member can open
-it and join directly, without an operator selecting a recipient. Joining remains available in
-Nomination, Selection, Watching and Rating; Completed and Cancelled close participation changes.
-The shared pending ticket lists unanswered open Sessions for the current Club member, with Accept
-and Decline and no independent link expiry. A declined or departed participant can rejoin explicitly;
-operator removal prevents self-join. Late Selection participants score the existing frozen films.
-
-Session detail shows accepted participants in its facts, shared-link copying, Join and typed
-Leave. Operators remove participants from the gear menu's Kick dialog with typed `REMOVE`; legacy
-pending personal links can still be revoked there. Confirmations preserve history, trap focus, and retain failure/offline feedback.
-Archived and terminal restrictions remove unavailable controls. Existing personal invitation URLs
-retain their original recipient checks, seven-day expiry and focused invitation scene. Signed-out
-visitors receive sign-in continuation; non-members see no private screening context.
-
-## Nomination submissions and personal suggestions
-
-Session detail places nomination progress above the search/suggestions and Current Nominations
-cards. Desktop uses the canonical unequal two-column composition; mobile stacks the primary search
-before nominations. Suggestions scroll within their carousel and select a Movie for the same
-confirmation action as catalog search. Empty history, hidden nominations, unavailable metadata,
-nonparticipant/read-only access, pending saves, failures, offline recovery and locked submission
-have explicit feedback. Available cached posters use the private poster endpoint; missing images retain a neutral PF fallback.
-
-Operators keep the existing edit, cancel, invite and roster controls and can confirm early closure
-in a focus-trapped dialog. A phase change moves focus to the Session heading when the original
-trigger disappears. Zero films cannot close; one moves to Watching and multiple nominations
-open Selection. Automatic N/N completion follows the same outcomes. Other clients poll a
-progress version and re-read the authoritative page when it moves, also on reconnect and window
-focus. A failed check shows “Could not check for updates. Retrying shortly.” and keeps polling. Recovery continues through a transient
-“Session unavailable” page and refreshes when either the rendered detail or roster is stale.
-Manual refresh remains available.
-The current branch's hosted preview and owner visual acknowledgement remain part of Phase 12.
-
-Successful Nomination submission focuses the stable “Find & Nominate a Movie” heading after the
-submit control is replaced by the locked confirmation.
-
-### Selection ballots
-
-The Selection view reuses `ScoreControl` for every eligible nomination and generates the
-Session's inclusive 0..N or legacy 1..N range. Desktop rows align Movie metadata with the score
-rail; mobile stacks the rail below each film. Wide ranges scroll inside the control. Every score
-retains a 44px target and supports arrows, Home/End and touch. Missing scores focus the first
-unscored nomination and produce live feedback. Recoverable and offline errors preserve input.
-
-The form explains that submission is final. A saved ballot keeps the score rails as dimmed, locked
-options with the caller's choice marked, plus a locked message; refresh keeps that state. Aggregate accepted/submitted progress
-uses the shared neutral banner; selected scores use the controlled gold accent. Archived Clubs and ineligible
-participants cannot submit. The server filters nominator names independently. Current-branch hosted review remains with Phase 12.
-
-### Selection results and early closure
-
-After closure, a restrained warm winner card replaces the ballot. It links to the selected Movie,
-shows the permitted nominator and records automatic or operator closure. When allowed, a neutral
-ordered list shows frozen totals, top-score votes and supporters, with the decisive
-tie-break explained in plain text. Mobile stacks each Movie above its metrics. Hidden results
-show the winner and a visibility explanation without rankings or numeric breakdowns. Missing
-Movie metadata uses the existing title placeholder; zero-ballot closure explains the tie-break.
-
-Operators can close Selection through the shared focus-trapped confirmation dialog by typing
-`CLOSE`. The dialog shows accepted/submitted progress, explains that all received ballots count
-and that remaining participants cannot submit, and retains confirmation after offline/API errors.
-Cancel returns focus to the trigger; a successful phase change focuses the Session heading.
-The existing progress poll refreshes other clients and recovers on reconnect. Watching and Rating
-workflows remain later work. Current-branch hosted preview and owner visual acknowledgment remain
-part of Phase 12.
-
-Club invitation creation shows one single-use link with a 12-hour expiry, Copy and Revoke actions.
-Older link management stays collapsed under Manage links, and remains available when new-work
-restrictions pause creation. Existing links retain their stored expiration.

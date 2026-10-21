@@ -40,7 +40,7 @@ walks through every layer.
 ```text
 apps/frontend      Next.js app and UI kit
 apps/backend       NestJS API
-packages/          contracts (zod schemas), database (Prisma), config
+packages/          contracts (zod schemas), database (Prisma), config, eslint-config
 tests/             Playwright suites
 _docs/             guides, decisions, design prototypes
 ```

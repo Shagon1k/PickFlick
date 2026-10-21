@@ -782,7 +782,7 @@ adminless, and read-only states
 **Recorded evidence:** #33–#35 delivery was accepted; the last issue closed on
 2026-10-09. Local delivery records cover Club isolation, invitation races, membership recovery,
 keyboard focus, restricted states and Linux captures. Current behavior is described in
-[Architecture](ARCHITECTURE.md#3-data) and [Design](DESIGN.md#hub-membership-states); Phase 12
+[Architecture](ARCHITECTURE.md#3-data) and [Design](DESIGN.md#club-hub); Phase 12
 adds the persistent tab frame, real Call Sheet fields and 12-hour Club links. Current branch
 verification and remaining owner review are recorded under Phase 12 below.
 

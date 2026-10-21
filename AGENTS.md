@@ -18,9 +18,8 @@ Before finishing, remove unnecessary indirection, redundant checks, and speculat
 
 These guidelines do not override repository-specific approval requirements, architecture constraints, or verification gates.
 
-> Operating instructions for agents in this repository. The Club-to-winner journey is built;
-> Phase 12 verification is in progress. Scheduled Movie refresh still needs ADR-016 approval.
-> Watching/Rating/completion remain Phase 13 work; see ROADMAP.md for acceptance and evidence.
+> Operating instructions for agents in this repository. Phase status, acceptance and evidence live
+> in [ROADMAP.md](ROADMAP.md#11-progress); scheduled Movie refresh still needs ADR-016 approval.
 
 ## Core contract
 
@@ -30,7 +29,6 @@ These guidelines do not override repository-specific approval requirements, arch
   or file change without evidence.
 - When quality, truth, security, privacy, billing, design fidelity, or maintainability is at risk,
   name the risk and the smallest safer alternative.
-- Keep one objective per iteration; do not mix unrelated refactors into feature work.
 - Use the domain names `Club`, `Session`, `Selection`, `SessionRating`, and `PersonalMovieRating`.
   Never revive "Group" or "Vote phase".
 
@@ -63,7 +61,7 @@ These guidelines do not override repository-specific approval requirements, arch
   no Redis or queue library is used.
 - The schema holds Users, auth sessions and provider accounts, Clubs, Memberships, Club invitations and
   audit events, the movie catalog cache, and Sessions with participants, invitations, and
-  Nominations, Selection ballots and frozen winner snapshots across twenty-five migrations.
+  Nominations, Selection ballots and frozen winner snapshots.
 - UAT deploys automatically after CI on `main`. Production promotion exists but is guarded off
   (`PRODUCTION_DEPLOY_ENABLED` is false); production provisioning, deployment, and traffic are not
   authorized.
@@ -127,7 +125,6 @@ safeguards.
 Write code that looks like the code around it and like TailorTales: obvious, short, and built on
 well-known libraries. `pnpm lint` enforces what it can; the rule files hold the details.
 
-- No speculative code: no feature, option, lock, or retry without a current caller or a real risk.
 - Validate input with zod schemas from `@pickflick/contracts`; throw Nest exceptions from services.
 - Interfaces are `IName`, type aliases `TName`; no `Readonly<>`; optional fields are `field?: T`.
 - UI components are `components/ui/<Name>/<Name>.tsx` with `<Name>.module.scss`, a default export,
@@ -156,7 +153,6 @@ well-known libraries. `pnpm lint` enforces what it can; the rule files hold the 
 understand -> read the source of truth -> choose the smallest useful move -> edit -> verify -> update docs -> report evidence
 ```
 
-- Prefer direct, readable code over early abstraction.
 - Add a dependency only with developer approval and a concrete need; prefer what already exists.
 - When evidence is inconclusive, run one stronger check before concluding.
 - Verify the layer you changed: focused tests for logic, integration tests for boundaries, visual and
