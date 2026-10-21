@@ -230,6 +230,14 @@ test('Watching Call Sheet uses the Session ordinal, weekday and actual selected 
         .click();
     await expect(page.getByRole('heading', { name: 'Active Session', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Active Ratings', exact: true })).toBeVisible();
+    const sheetBounds = await sheet.boundingBox();
+    const panelBounds = await page
+        .getByRole('region', { name: 'Manage Club', exact: true })
+        .boundingBox();
+    expect(sheetBounds).not.toBeNull();
+    expect(panelBounds).not.toBeNull();
+    expect(panelBounds?.x).toBe(sheetBounds?.x);
+    expect(panelBounds?.width).toBe(sheetBounds?.width);
 });
 
 test('Club member joins the active Session directly from Overview', async ({ context, page }) => {

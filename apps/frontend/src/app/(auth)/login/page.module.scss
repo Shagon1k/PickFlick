@@ -184,7 +184,7 @@
 
 @media (width <= 575px) {
     .page {
-        padding-inline: 16px;
+        padding-inline: var(--gutter);
     }
 
     .backLink {
@@ -194,7 +194,7 @@
 
     .mascot {
         width: 140px;
-        margin-bottom: -25px;
+        margin-bottom: -35px;
     }
 
     .card {

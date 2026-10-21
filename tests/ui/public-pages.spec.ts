@@ -375,11 +375,11 @@ test('contact validates fields, focuses the first error, and reports its message
 test('contact accepts a submission through one stable feedback region', async ({ page }) => {
     await openPage(page, '/contact', canonicalViewports[3]);
 
-    await expect(
-        page
-            .getByRole('navigation', { name: 'Footer navigation' })
-            .getByRole('link', { name: 'Contact' }),
-    ).toHaveAttribute('href', '/contact');
+    await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+        'href',
+        '/',
+    );
+    await expect(page.getByRole('navigation', { name: 'Public navigation' })).toHaveCount(0);
     await page.getByRole('textbox', { name: 'Message — required' }).fill('A concise note');
     await page.getByRole('textbox', { name: 'Your email' }).fill('jane@example.com');
     await page.getByRole('button', { name: 'Send message' }).click();

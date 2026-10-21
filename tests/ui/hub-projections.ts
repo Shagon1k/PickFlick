@@ -48,12 +48,14 @@ export function buildHubProjection(
         updatedAt: '2026-09-29T12:00:00.000Z',
     };
     applySessionScenario(session, token);
+    let sessionCount = isSecondClub ? 7 : 1;
+    if (token?.includes('hub-watching')) sessionCount = 47;
     return {
         club,
         access: projection.access,
         permissions: projection.permissions,
         memberCount: isSecondClub ? 4 : 2,
-        sessionCount: isSecondClub ? 7 : 1,
+        sessionCount,
         completedSessionCount: isSecondClub ? 3 : 0,
         memberLimit: 8,
         members: projection.members,
