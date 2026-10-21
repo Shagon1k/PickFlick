@@ -2,7 +2,6 @@ import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { selectClubAction } from '#app/(product)/app/actions';
-import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -16,11 +15,7 @@ function ClubChoice({ club, current }: { club: IClubSummary; current: boolean })
                 className={styles.clubButton}
                 type="submit"
             >
-                <span aria-hidden="true" className={styles.clubMonogram}>
-                    {getMonogram(club.name)}
-                </span>
-                <span className={styles.clubName}>{club.name}</span>
-                <span className={styles.clubRole}>{club.membershipRole.toLowerCase()}</span>
+                <span className="visually-hidden">{club.name}</span>
             </button>
         </form>
     );
@@ -55,9 +50,13 @@ function ClubArrow({
 export default function ClubSwitcher({
     clubs,
     current,
+    memberCount,
+    sessionCount,
 }: {
     clubs: IClubSummary[];
     current: IClubSummary;
+    memberCount: number;
+    sessionCount: number;
 }) {
     const choices = listClubChoices(clubs, current);
     const club = current;
@@ -68,20 +67,42 @@ export default function ClubSwitcher({
             : undefined;
     const next = choices.length > 1 ? choices[(currentIndex + 1) % choices.length] : undefined;
     return (
-        <nav aria-label="Switch Club" className={styles.switcher}>
+        <div className={styles.switcher}>
             <div className={styles.switcherHeader}>
                 <p className={styles.eyebrow}>Your Clubs</p>
                 <Link href="/clubs/new">Create a Club</Link>
             </div>
             <div className={styles.carousel}>
                 <ClubArrow club={previous} label="Previous Club" direction="←" />
-                <div className={styles.clubChoices}>
-                    {choices.map((choice) => (
-                        <ClubChoice club={choice} current={choice.id === club.id} key={choice.id} />
-                    ))}
+                <div className={styles.clubHeading}>
+                    <h1 id="hub-title">{club.name}</h1>
+                    <p>
+                        {memberCount} members · {sessionCount} Sessions ·{' '}
+                        {club.tier === 'FREE' ? 'Free Club' : 'Pro Club'}
+                    </p>
+                    {club.description ? (
+                        <p className={styles.description}>{club.description}</p>
+                    ) : null}
+                    <p>
+                        Selection scale {club.selectionScaleMin}–{club.selectionScaleMax} ·{' '}
+                        <span>
+                            {club.membershipRole === 'ADMIN'
+                                ? 'Admin'
+                                : club.membershipRole.toLowerCase()}
+                        </span>
+                    </p>
+                    <div className={styles.clubChoices}>
+                        {choices.map((choice) => (
+                            <ClubChoice
+                                club={choice}
+                                current={choice.id === club.id}
+                                key={choice.id}
+                            />
+                        ))}
+                    </div>
                 </div>
                 <ClubArrow club={next} label="Next Club" direction="→" />
             </div>
-        </nav>
+        </div>
     );
 }

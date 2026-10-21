@@ -64,9 +64,9 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--gap-md);
-    background: var(--surface);
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
 }
 
 .identity {
@@ -88,7 +88,7 @@
     place-items: center;
     height: 44px;
     background: var(--surface-lit);
-    border-radius: var(--radius);
+    border-radius: 50%;
 }
 
 @media (width < 576px) {

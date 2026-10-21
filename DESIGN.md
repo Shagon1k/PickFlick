@@ -38,10 +38,11 @@ When sources conflict:
 Build: `Not started`, `Partial`, `Done` (the documented contract is implemented). QA: `Not checked`,
 `Passed`, `Issues` (`Passed` needs a recorded comparison and baseline evidence).
 
-The design package is approved as direction. Tokens, brand assets, the UI kit, shells, public pages,
-Login, Club onboarding, and Club settings are built; other screens are not started. A good-looking
-prototype is not production QA, and owner review of the hosted preview is still pending for every
-built screen.
+The design package is approved as direction. Foundations, shells, public pages, Login, Club
+onboarding and settings, delivered Hub views, read-only Movie Details, Session creation,
+Nomination and Selection are implemented. Remaining Hub views and later-phase screens are still
+unbuilt. A good-looking prototype is not production QA; owner review of the exact hosted revision
+remains pending for delivered screens.
 
 ## 2. Experience direction
 
@@ -170,6 +171,14 @@ members who already participate. It is keyboard- and touch-accessible; without a
 the Call Sheet remains a static empty state.
 The Overview's entire Active Session card also opens that Session, including its heading and
 phase label. Its empty state has no link.
+
+The delivered Hub uses the prototype's centered Club heading, carousel dots and flat Call Sheet.
+Session facts form a ledger beside the neutral waiting illustration; small screens stack the
+ledger and illustration. Overview statistics stay monochrome, and Members uses outlined rows
+with circular avatars. Fields absent from the current Hub response are not replaced with fixture
+Movie metadata or future statistics.
+The pending-invite ticket has a fixed 184px width and a partially hidden stub. Hover, keyboard
+focus and the open state reveal it; reduced motion removes the slide.
 
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

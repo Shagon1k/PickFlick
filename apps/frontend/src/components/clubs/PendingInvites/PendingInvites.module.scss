@@ -1,23 +1,28 @@
 .widget {
     position: fixed;
-    right: var(--gap-md);
+    right: 0;
     bottom: var(--gap-lg);
     z-index: 35;
+    width: 184px;
+    overflow: clip;
 }
 
 .ticket {
     position: relative;
     display: flex;
     align-items: center;
+    width: 184px;
     min-width: 184px;
     min-height: 64px;
-    padding: var(--gap-sm) var(--gap-md);
+    padding: 9px 14px;
     color: var(--fg);
     cursor: pointer;
     background: none;
     border: 0;
     border-radius: var(--radius);
     isolation: isolate;
+    transform: translateX(70px);
+    transition: transform var(--motion-emphasis) var(--ease-menu);
 }
 
 .ticket small,
@@ -26,21 +31,45 @@
 }
 
 .ticket small {
-    font-size: var(--fs-caption);
+    font-size: 10px;
 }
 
 .ticket strong {
-    font-size: var(--fs-card-title);
+    margin-top: 4px;
+    font-size: 15px;
 }
 
 .ticket:hover {
     color: var(--bg);
 }
 
+.ticket:hover,
+.ticket:focus-visible,
+.ticket[aria-expanded='true'] {
+    transform: translateX(0);
+}
+
+.ticket:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.ticket > span:first-of-type {
+    width: 110px;
+    text-align: left;
+}
+
+.ticket small:first-child {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
 .stub {
-    min-width: 48px;
-    padding-left: var(--gap-md);
-    margin-left: var(--gap-md);
+    flex: 0 0 46px;
+    min-width: 0;
+    padding-left: var(--gap-xs);
+    margin-left: 0;
     border-left: 1px dashed currentColor;
 }
 
@@ -100,4 +129,10 @@
 .ticket:hover .shape {
     fill: var(--gold);
     stroke: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ticket {
+        transition-duration: 0.01ms;
+    }
 }

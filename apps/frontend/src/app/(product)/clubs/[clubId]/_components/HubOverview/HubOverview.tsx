@@ -2,6 +2,7 @@ import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pi
 import Link from 'next/link';
 
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
 
@@ -32,14 +33,17 @@ export default function HubOverview({ hub }: IHubOverviewProps) {
             ) : null}
             <section aria-label="Club statistics" className={styles.stats}>
                 <div>
+                    <Icon name="members" />
                     <strong>{hub.memberCount}</strong>
                     <span>Members</span>
                 </div>
                 <div>
+                    <Icon name="sessions" />
                     <strong>{hub.sessionCount}</strong>
                     <span>Sessions</span>
                 </div>
                 <div>
+                    <Icon name="library" />
                     <strong>{hub.completedSessionCount}</strong>
                     <span>Completed Sessions</span>
                 </div>

@@ -1,7 +1,9 @@
 import type { IClubHub, IClubHubSession, IClubSummary } from '@pickflick/contracts';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import waitingPanda from '#brand/panda-chill.webp';
 import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import { buildClubNavigation } from '#components/shells/shell-navigation';
@@ -25,7 +27,12 @@ export default function ClubHubFrame({
         <ProductFrame clubItems={navigation}>
             <main className={styles.hub}>
                 <div className={styles.stage}>
-                    <ClubSwitcher clubs={clubs} current={hub.club} />
+                    <ClubSwitcher
+                        clubs={clubs}
+                        current={hub.club}
+                        memberCount={hub.memberCount}
+                        sessionCount={hub.sessionCount}
+                    />
                     <CallSheet activeSession={hub.activeSession} club={hub.club} />
                 </div>
                 <ClubStatus access={hub.access} />
@@ -83,22 +90,6 @@ function CallSheet({
                     <p className={styles.eyebrow}>
                         {club.lifecycle === 'ARCHIVED' ? 'Archived Club' : 'Now showing'}
                     </p>
-                    <h1 id="hub-title">{club.name}</h1>
-                    <p className={styles.description}>
-                        {club.description ?? 'Your private screening room.'}
-                    </p>
-                    <p className={styles.clubMeta}>
-                        <span>{club.tier === 'FREE' ? 'Free Club' : 'Pro Club'}</span>
-                        <span>
-                            Selection scale{' '}
-                            <b>
-                                {club.selectionScaleMin}–{club.selectionScaleMax}
-                            </b>
-                        </span>
-                        <span>
-                            {club.membershipRole === 'ADMIN' ? 'Admin' : club.membershipRole}
-                        </span>
-                    </p>
                     {activeSession ? (
                         <dl className={styles.callFacts}>
                             <div>
@@ -133,7 +124,7 @@ function CallSheet({
                     )}
                 </div>
                 <div aria-hidden="true" className={styles.callArt}>
-                    <span>PF</span>
+                    <Image src={waitingPanda} alt="" sizes="(max-width: 767px) 220px, 280px" />
                 </div>
             </div>
         </>
