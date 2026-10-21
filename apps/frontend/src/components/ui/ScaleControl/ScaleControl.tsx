@@ -7,6 +7,7 @@ import styles from './ScaleControl.module.scss';
 
 export interface IScaleControlProps {
     label: string;
+    compact?: boolean;
     name: string;
     min?: 0 | 1;
     max: number;
@@ -47,6 +48,7 @@ function getKeyboardScaleValue(
 }
 
 export default function ScaleControl({
+    compact = false,
     defaultValue,
     disabled = false,
     label,
@@ -90,7 +92,11 @@ export default function ScaleControl({
 
     if (submitted) {
         return (
-            <fieldset className={styles.scale} data-submitted="true">
+            <fieldset
+                className={styles.scale}
+                data-compact={compact || undefined}
+                data-submitted="true"
+            >
                 <legend>{label}</legend>
                 <div className={styles.scale__submitted}>
                     <span>Submitted</span>
@@ -121,7 +127,7 @@ export default function ScaleControl({
     }
 
     return (
-        <fieldset className={styles.scale} disabled={disabled}>
+        <fieldset className={styles.scale} data-compact={compact || undefined} disabled={disabled}>
             <legend>{label}</legend>
             {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
             <div

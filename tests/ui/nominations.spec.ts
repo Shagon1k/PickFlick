@@ -74,12 +74,14 @@ test('Operator early close traps and returns focus and requires confirmation', a
 }) => {
     await authenticate(context, 'operator');
     await page.goto(PATH);
-    const close = page.getByRole('button', { name: 'Close nominations early' });
+    const close = page.getByRole('button', { name: 'Session settings', exact: true });
     await close.click();
+    await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(close).toBeFocused();
     await close.click();
+    await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
     await page.getByRole('button', { name: 'Confirm close' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -143,7 +145,10 @@ test(
             await actorPage.getByRole('button', { name: 'Nominate This' }).click();
             await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible();
             await viewer.setOffline(true);
-            await actorPage.getByRole('button', { name: 'Close nominations early' }).click();
+            await actorPage.getByRole('button', { name: 'Session settings', exact: true }).click();
+            await actorPage
+                .getByRole('menuitem', { name: 'Close nominations early', exact: true })
+                .click();
             await actorPage.getByLabel('Type CLOSE to confirm').fill('CLOSE');
             await actorPage.getByRole('button', { name: 'Confirm close' }).click();
             await expect(actorPage.getByText('selection', { exact: true })).toBeVisible();

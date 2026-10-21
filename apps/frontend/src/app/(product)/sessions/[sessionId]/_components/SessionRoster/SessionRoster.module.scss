@@ -58,3 +58,34 @@
         width: 100%;
     }
 }
+
+.list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: var(--gap-sm);
+}
+
+.row {
+    align-content: start;
+    align-items: center;
+    padding: var(--gap-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.row strong {
+    font-size: var(--fs-body-sm);
+}
+
+.row p {
+    margin: 4px 0 0;
+    font-size: var(--fs-caption);
+}
+
+.roster > p {
+    font-size: var(--fs-caption);
+}
+
+.roster > p:empty {
+    display: none;
+}

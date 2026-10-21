@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { type ReactNode, useState, useTransition } from 'react';
 
-import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import { getOfflineMessage } from '#lib/offline';
 
@@ -14,6 +13,7 @@ interface ISelectionCloseProps {
     submittedCount: number;
     acceptedCount: number;
     canClose: boolean;
+    children: (onClose?: () => void) => ReactNode;
 }
 
 export default function SelectionClose({
@@ -22,6 +22,7 @@ export default function SelectionClose({
     submittedCount,
     acceptedCount,
     canClose,
+    children,
 }: ISelectionCloseProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -41,18 +42,16 @@ export default function SelectionClose({
             else setMessage(result.message);
         });
     }
-    if (!canClose) return null;
     return (
         <>
-            <Button
-                variant="secondary"
-                onClick={() => {
-                    setMessage('');
-                    setIsOpen(true);
-                }}
-            >
-                Close Selection early
-            </Button>
+            {children(
+                canClose
+                    ? () => {
+                          setMessage('');
+                          setIsOpen(true);
+                      }
+                    : undefined,
+            )}
             <ConfirmDialog
                 open={isOpen}
                 onClose={() => setIsOpen(false)}

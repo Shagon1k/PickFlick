@@ -66,7 +66,7 @@ test(
         await authenticate(context, 'admin');
         await page.goto(`/sessions/${SESSION_ID}`);
         await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-        await page.getByRole('button', { name: 'Copy Session link' }).click();
+        await page.getByRole('button', { name: 'Invite', exact: true }).click();
         await expect
             .poll(() => page.evaluate(() => navigator.clipboard.readText()))
             .toBe(`http://127.0.0.1:41730/sessions/${SESSION_ID}`);

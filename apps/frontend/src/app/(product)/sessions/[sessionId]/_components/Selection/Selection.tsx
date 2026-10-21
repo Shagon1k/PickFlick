@@ -7,6 +7,7 @@ import { type ReactNode, useRef, useState, useTransition } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Button from '#components/ui/Button/Button';
+import Icon from '#components/ui/Icon/Icon';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { getOfflineMessage } from '#lib/offline';
 
@@ -82,6 +83,7 @@ export default function Selection({
     return (
         <section className={styles.selection} aria-labelledby="selection-heading">
             <div className={styles.progress}>
+                <Icon name="info" />
                 <p role="status">
                     Selection in progress — {data.submittedCount} of {data.acceptedCount}{' '}
                     participants have submitted.
@@ -91,9 +93,15 @@ export default function Selection({
                     value={data.submittedCount}
                     max={Math.max(data.acceptedCount, 1)}
                 />
-                <Button variant="ghost" disabled={isPending} onClick={handleRefresh}>
-                    Refresh Selection
-                </Button>
+                <button
+                    className={styles.refresh}
+                    type="button"
+                    aria-label="Refresh Selection"
+                    disabled={isPending}
+                    onClick={handleRefresh}
+                >
+                    <Icon name="refresh" />
+                </button>
             </div>
             {header}
             <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
@@ -125,6 +133,7 @@ export default function Selection({
                                 </div>
                                 <div className={styles.control}>
                                     <ScoreControl
+                                        compact
                                         label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
                                         name={`score-${row.id}`}
                                         min={data.scaleMin}

@@ -133,3 +133,33 @@
         transform: scale(1);
     }
 }
+
+.scale[data-compact] {
+    margin: 0;
+}
+
+.scale[data-compact] legend,
+.scale[data-compact] .scale__value {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+.scale[data-compact] .scale__option {
+    flex: 0 0 var(--hit);
+}
+
+.scale[data-compact] .scale__rail {
+    justify-content: flex-end;
+}
+
+@media (width < 1024px) {
+    .scale[data-compact] .scale__rail {
+        justify-content: flex-start;
+    }
+}

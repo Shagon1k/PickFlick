@@ -39,3 +39,8 @@
 .results span {
     color: var(--fg-secondary);
 }
+
+.picker p:empty,
+.results:empty {
+    display: none;
+}

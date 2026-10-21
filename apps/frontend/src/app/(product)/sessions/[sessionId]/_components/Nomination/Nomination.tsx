@@ -8,6 +8,8 @@ import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import Icon from '#components/ui/Icon/Icon';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { getOfflineMessage } from '#lib/offline';
 
 import {
@@ -26,7 +28,7 @@ export default function Nomination({
     sessionId: string;
     data: TNominations;
     phaseVersion: number;
-    header: ReactNode;
+    header: (onClose?: () => void) => ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [selected, setSelected] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export default function Nomination({
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
             <div className={styles.progress}>
+                <Icon name="info" />
                 <p role="status">
                     {data.nominatedCount} of {data.acceptedCount} participants have nominated.
                 </p>
@@ -74,11 +77,17 @@ export default function Nomination({
                     value={data.nominatedCount}
                     max={Math.max(data.acceptedCount, 1)}
                 />
-                <Button variant="ghost" disabled={isPending} onClick={() => run('refresh')}>
-                    Refresh nominations
-                </Button>
+                <button
+                    className={styles.refresh}
+                    type="button"
+                    aria-label="Refresh nominations"
+                    disabled={isPending}
+                    onClick={() => run('refresh')}
+                >
+                    <Icon name="refresh" />
+                </button>
             </div>
-            {header}
+            {header(data.canClose ? () => setIsDialogOpen(true) : undefined)}
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
                     <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
@@ -107,13 +116,16 @@ export default function Nomination({
                                     onChange={setSelected}
                                 />
                             )}
-                            <Button
-                                disabled={!selected}
-                                loading={isPending}
-                                onClick={() => run('submit')}
-                            >
-                                Nominate This
-                            </Button>
+                            {selected ? (
+                                <Button
+                                    disabled={!selected}
+                                    loading={isPending}
+                                    onClick={() => run('submit')}
+                                >
+                                    Nominate This
+                                </Button>
+                            ) : null}
+                            <SprocketDivider variant="section" />
                             <h3>Suggestions from your past nominations that did not win</h3>
                             {data.suggestions.length ? (
                                 <ul
@@ -153,18 +165,9 @@ export default function Nomination({
                 <section className={styles.card} aria-labelledby="nominations-heading">
                     <h2 id="nominations-heading">Current Nominations</h2>
                     <NominationList data={data} />
-                    {data.canClose ? (
-                        <Button
-                            variant="secondary"
-                            disabled={isPending}
-                            onClick={() => setIsDialogOpen(true)}
-                        >
-                            Close nominations early
-                        </Button>
-                    ) : null}
                 </section>
             </div>
-            <p aria-atomic="true" aria-live="polite" role="status">
+            <p className={styles.feedback} aria-atomic="true" aria-live="polite" role="status">
                 {message}
             </p>
             <ConfirmDialog

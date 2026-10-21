@@ -3,7 +3,7 @@
 import type { ISessionRoster, TSession } from '@pickflick/contracts';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
 import nominationPanda from '#brand/panda-collection.webp';
 import selectionPanda from '#brand/panda-poll-master.webp';
@@ -39,9 +39,14 @@ export default function SessionDetails({
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
-    const header = (
+    const header = (participation: ReactNode, onClosePhase?: () => void) => (
         <SessionHeader
             session={session}
+            participation={participation}
+            onClosePhase={onClosePhase}
+            closePhaseLabel={
+                session.phase === 'NOMINATION' ? 'Close nominations early' : 'Close Selection early'
+            }
             headingRef={headingRef}
             onEdit={() => setDialog('edit')}
             onCancel={() => {
@@ -52,38 +57,54 @@ export default function SessionDetails({
     );
     return (
         <main className={styles.main}>
-            {!session.nominations && !session.selection ? header : null}
-            {session.nominations ? (
-                <Nomination
-                    header={header}
-                    sessionId={session.id}
-                    phaseVersion={session.phaseVersion}
-                    data={session.nominations}
-                />
-            ) : null}
-            {session.selection ? (
-                <>
-                    <Selection header={header} sessionId={session.id} data={session.selection} />
-                    <SelectionClose
-                        sessionId={session.id}
-                        phaseVersion={session.phaseVersion}
-                        submittedCount={session.selection.submittedCount}
-                        acceptedCount={session.selection.acceptedCount}
-                        canClose={session.canEdit && session.selection.nominations.length > 0}
-                    />
-                </>
-            ) : null}
-            {session.selectionOutcome ? <SelectionOutcome data={session.selectionOutcome} /> : null}
-            <div className={styles.reelBreak} aria-hidden="true">
-                <Image
-                    src={session.phase === 'SELECTION' ? selectionPanda : nominationPanda}
-                    alt=""
-                    width={REEL_IMAGE_WIDTH}
-                />
-            </div>
-            <h2 className={styles.detailsTitle}>Session Details</h2>
-            <SessionFacts session={session} roster={roster} />
-            <SessionRoster sessionId={session.id} initial={roster} />
+            <SessionRoster sessionId={session.id} initial={roster}>
+                {(participation) => (
+                    <>
+                        {!session.nominations && !session.selection ? header(participation) : null}
+                        {session.nominations ? (
+                            <Nomination
+                                header={(onClose) => header(participation, onClose)}
+                                sessionId={session.id}
+                                phaseVersion={session.phaseVersion}
+                                data={session.nominations}
+                            />
+                        ) : null}
+                        {session.selection ? (
+                            <SelectionClose
+                                sessionId={session.id}
+                                phaseVersion={session.phaseVersion}
+                                submittedCount={session.selection.submittedCount}
+                                acceptedCount={session.selection.acceptedCount}
+                                canClose={
+                                    session.canEdit && session.selection.nominations.length > 0
+                                }
+                            >
+                                {(onClose) => (
+                                    <Selection
+                                        header={header(participation, onClose)}
+                                        sessionId={session.id}
+                                        data={session.selection!}
+                                    />
+                                )}
+                            </SelectionClose>
+                        ) : null}
+                        {session.selectionOutcome ? (
+                            <SelectionOutcome data={session.selectionOutcome} />
+                        ) : null}
+                        <div className={styles.reelBreak} aria-hidden="true">
+                            <Image
+                                src={
+                                    session.phase === 'SELECTION' ? selectionPanda : nominationPanda
+                                }
+                                alt=""
+                                width={REEL_IMAGE_WIDTH}
+                            />
+                        </div>
+                        <h2 className={styles.detailsTitle}>Session Details</h2>
+                        <SessionFacts session={session} roster={roster} />
+                    </>
+                )}
+            </SessionRoster>
             <p aria-live="polite" role="status">
                 {message}
             </p>

@@ -5,16 +5,29 @@
 
 .progress {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--gap-sm);
     align-items: center;
-    justify-content: center;
-    padding: var(--gap-xs) var(--gap-md);
-    margin-bottom: var(--gap-md);
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    min-height: 46px;
+    padding: 0 var(--gap-xs) 0 16px;
+    margin-bottom: 28px;
+    font: var(--fs-caption)/1.45 var(--font-mono);
     color: var(--fg-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+}
+
+.progress > svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--ivory-muted);
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.progress p {
+    flex: 1;
+    margin: 0;
 }
 
 .progress progress {
@@ -22,9 +35,46 @@
     accent-color: var(--gold);
 }
 
+.refresh {
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: var(--gap-sm);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius);
+}
+
+.refresh:hover {
+    color: var(--fg);
+    background: var(--accent-soft);
+}
+
+.refresh svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+@media (width < 576px) {
+    .progress {
+        gap: var(--gap-xs);
+    }
+
+    .progress progress {
+        flex: 0 0 var(--hit);
+        width: var(--hit);
+    }
+}
+
 .columns {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
     gap: var(--gap-lg);
     align-items: start;
 }
@@ -143,4 +193,28 @@
     .card {
         padding: var(--gap-md);
     }
+}
+
+.card h3 {
+    margin-block: var(--gap-md) var(--gap-sm);
+    font-size: var(--fs-caption);
+    font-weight: 400;
+}
+
+.feedback:empty {
+    display: none;
+}
+
+.suggestions button:hover .suggestionPoster {
+    border-color: var(--border-lit);
+}
+
+.selected {
+    padding: var(--gap-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.card > div[aria-hidden='true'] {
+    margin-block: var(--gap-md);
 }

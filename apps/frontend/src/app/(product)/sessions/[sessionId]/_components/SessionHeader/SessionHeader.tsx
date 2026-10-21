@@ -1,27 +1,36 @@
 import type { TSession } from '@pickflick/contracts';
 import Link from 'next/link';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
+import Icon from '#components/ui/Icon/Icon';
 import { formatUtcDateTime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
 export default function SessionHeader({
     session,
+    participation,
+    onClosePhase,
+    closePhaseLabel,
     headingRef,
     onEdit,
     onCancel,
 }: {
     session: TSession;
+    participation: ReactNode;
+    onClosePhase?: () => void;
+    closePhaseLabel: string;
     headingRef: RefObject<HTMLHeadingElement | null>;
     onEdit: () => void;
     onCancel: () => void;
 }) {
     const items: IFilmStripMenuProps['items'] = [];
+    if (onClosePhase)
+        items.push({ id: 'next-phase', label: closePhaseLabel, onSelect: onClosePhase });
     if (session.canEdit) items.push({ id: 'edit', label: 'Edit Session', onSelect: onEdit });
     if (session.canCancel)
         items.push({ id: 'cancel', label: 'Cancel Session', danger: true, onSelect: onCancel });
@@ -32,14 +41,27 @@ export default function SessionHeader({
                 <h1 ref={headingRef} tabIndex={-1}>
                     {getHeading(session)}
                 </h1>
-                <p className={styles.eyebrow}>
+                <p className={isDecisionPhase ? 'visually-hidden' : styles.eyebrow}>
                     Session · {SESSION_TYPES[session.type]} ·{' '}
                     <span className={styles.phase}>{session.phase.toLowerCase()}</span>
                 </p>
-                {session.topic && isDecisionPhase ? <p>{session.topic}</p> : null}
-                {session.notes ? <p className={styles.notes}>{session.notes}</p> : null}
+                {session.topic && isDecisionPhase ? (
+                    <p className={styles.metaLine}>
+                        <Icon name="bulb" />
+                        {session.topic}
+                    </p>
+                ) : null}
+                {session.notes ? (
+                    <p className={styles.metaLine}>
+                        <Icon name="document" />
+                        <span className={styles.notes}>{session.notes}</span>
+                    </p>
+                ) : null}
                 {session.deadlineAt ? (
-                    <p>Nomination closes {formatUtcDateTime(session.deadlineAt)}</p>
+                    <p className={styles.metaLine}>
+                        <Icon name="clock" />
+                        Nomination closes {formatUtcDateTime(session.deadlineAt)}
+                    </p>
                 ) : null}
                 <Link className={styles.clubContext} href={`/clubs/${session.clubId}`}>
                     ← {session.clubName}
@@ -55,6 +77,7 @@ export default function SessionHeader({
                         items={items}
                     />
                 ) : null}
+                {participation}
             </div>
         </header>
     );

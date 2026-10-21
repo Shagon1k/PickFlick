@@ -2,7 +2,7 @@ import type { ISessionRoster, TSession } from '@pickflick/contracts';
 
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
-import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import { formatUtcDateTime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -20,16 +20,23 @@ export default function SessionFacts({
                 <dl className={styles.facts}>
                     <div>
                         <dt>
-                            <Icon name="clock" />
+                            <Icon name="calendar" />
                             Date
                         </dt>
                         <dd>
-                            {session.scheduledAt ? toIsoDate(session.scheduledAt) : 'Not scheduled'}
+                            {session.scheduledAt
+                                ? new Intl.DateTimeFormat('en', {
+                                      month: 'long',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                      timeZone: 'UTC',
+                                  }).format(new Date(session.scheduledAt))
+                                : 'Not scheduled'}
                         </dd>
                     </div>
                     <div>
                         <dt>
-                            <Icon name="club-building" />
+                            <Icon name="pin" />
                             Location
                         </dt>
                         <dd>{session.location ?? 'Not set'}</dd>
@@ -48,7 +55,7 @@ export default function SessionFacts({
                     </div>
                     <div>
                         <dt>
-                            <Icon name="question" />
+                            <Icon name="bulb" />
                             Topic
                         </dt>
                         <dd>{session.topic ?? 'Not set'}</dd>
@@ -56,7 +63,7 @@ export default function SessionFacts({
                     {session.notes ? (
                         <div>
                             <dt>
-                                <Icon name="book" />
+                                <Icon name="document" />
                                 Notes
                             </dt>
                             <dd className={styles.notes}>{session.notes}</dd>

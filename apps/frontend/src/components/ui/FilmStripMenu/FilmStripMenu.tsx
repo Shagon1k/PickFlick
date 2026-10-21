@@ -31,6 +31,7 @@ export default function FilmStripMenu({
     triggerLabel,
     triggerIcon,
 }: IFilmStripMenuProps) {
+    const triggerRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const itemsRef = useRef<Array<HTMLElement | null>>([]);
 
@@ -64,7 +65,12 @@ export default function FilmStripMenu({
                 withinPortal={false}
             >
                 <MantineMenu.Target>
-                    <Button variant="secondary" aria-label={triggerIcon ? triggerLabel : undefined}>
+                    <Button
+                        ref={triggerRef}
+                        size={triggerIcon ? 'icon' : 'default'}
+                        variant="secondary"
+                        aria-label={triggerIcon ? triggerLabel : undefined}
+                    >
                         {triggerIcon ? (
                             <Icon
                                 className={styles['menu__trigger-icon']}
@@ -88,7 +94,11 @@ export default function FilmStripMenu({
                                 component="button"
                                 data-danger={item.danger || undefined}
                                 key={item.id}
-                                onClick={item.onSelect}
+                                onClick={() => {
+                                    // A dialog must return focus to the persistent trigger, not a removed menu item.
+                                    triggerRef.current?.focus({ preventScroll: true });
+                                    item.onSelect();
+                                }}
                                 ref={ref}
                                 type="button"
                             >
