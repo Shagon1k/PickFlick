@@ -1,6 +1,22 @@
 import type { ReactNode, SVGAttributes } from 'react';
 
+import { metadataGlyphs } from './metadata-glyphs';
+import { statGlyphs } from './stat-glyphs';
+
 export type TIconName =
+    | 'bulb'
+    | 'document'
+    | 'calendar'
+    | 'pin'
+    | 'info'
+    | 'refresh'
+    | 'film-reel'
+    | 'clapperboard'
+    | 'star-circle'
+    | 'stopwatch'
+    | 'genre'
+    | 'director'
+    | 'actor'
     | 'achievements'
     | 'admin'
     | 'apple'
@@ -41,6 +57,8 @@ export interface IIconProps extends Omit<SVGAttributes<SVGSVGElement>, 'children
 }
 
 const glyphs: Record<TIconName, ReactNode> = {
+    ...metadataGlyphs,
+    ...statGlyphs,
     achievements: (
         <>
             <circle cx="12" cy="8" r="7" />

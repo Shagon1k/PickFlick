@@ -47,7 +47,7 @@ export async function changeRosterAction(id: string, input: unknown) {
         if (command.action === 'remove') await removeSessionParticipant(id, command.participantId);
         if (command.action === 'revoke') await revokeSessionInvitation(id, command.inviteId);
         revalidatePath(`/sessions/${id}`);
-        revalidatePath(`/clubs/${session.clubId}`);
+        revalidatePath(`/clubs/${session.clubId}`, 'layout');
         revalidatePath('/app');
         let message = 'Roster updated.';
         if (command.action === 'invite')

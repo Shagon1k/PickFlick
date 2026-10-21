@@ -340,6 +340,10 @@ every authentication session.
   Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
   Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
+  Overview, Members and Manage Club share a persistent route-group layout. Each panel performs a
+  fresh authorization read and updates the frame's client snapshot, including clearing it on denial
+  or service failure. React request memoization deduplicates layout/panel Hub reads within one render;
+  it adds no cross-request cache.
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact, 600/min for

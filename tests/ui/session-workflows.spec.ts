@@ -62,7 +62,6 @@ test(
         await expect(page.getByText('Room A', { exact: true })).toHaveCount(0);
         await page
             .getByRole('link', { name: 'Open active Session: Noir night', exact: true })
-            .getByRole('heading', { name: 'Active Session', exact: true })
             .click();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).click();
@@ -73,7 +72,7 @@ test(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
         await page.getByRole('link', { name: '← Midnight Society' }).click();
-        await expect(page.getByRole('heading', { name: 'Session history' })).toBeVisible();
+        await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
     },
@@ -107,7 +106,9 @@ test(
         );
         await page.getByRole('link', { name: '← Midnight Society' }).click();
         const activeSession = page.getByRole('link', { name: /^Open active Session:/u });
-        await expect(activeSession).toContainText('Phase: watching');
+        await expect(
+            page.getByRole('region', { name: 'Active Session', exact: true }),
+        ).toContainText('Watching');
         await activeSession.focus();
         await page.keyboard.press('Enter');
         await expect(page.getByText('watching', { exact: true })).toBeVisible();

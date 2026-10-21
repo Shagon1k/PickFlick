@@ -54,7 +54,7 @@ test('Member and restricted Club views explain unavailable actions without losin
     await authenticate(context, 'valid-members-adminless');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
-    await expect(page.getByRole('link', { name: 'Invite members' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '+ Invite' })).toHaveCount(0);
     await page.goto(`/clubs/${CLUB_ID}/settings`);
     await expect(page.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);

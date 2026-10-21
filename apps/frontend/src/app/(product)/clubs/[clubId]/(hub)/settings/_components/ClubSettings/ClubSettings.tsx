@@ -1,6 +1,8 @@
 'use client';
 
-import { type IClubSettings } from '@pickflick/contracts';
+import { type IClubHub, type IClubSettings } from '@pickflick/contracts';
+
+import HubSessionCards from '#app/(product)/clubs/[clubId]/_components/HubSessionCards/HubSessionCards';
 
 import styles from '../../page.module.scss';
 import AvatarCard from './AvatarCard';
@@ -9,7 +11,13 @@ import ClubInfoCard from './ClubInfoCard';
 import InvitationCard from './InvitationCard';
 import VisibilityCard from './VisibilityCard';
 
-export default function ClubSettings({ projection }: { projection: IClubSettings }) {
+export default function ClubSettings({
+    projection,
+    hub,
+}: {
+    projection: IClubSettings;
+    hub: IClubHub;
+}) {
     const role = projection.club.membershipRole;
     return (
         <section className={styles.layout} aria-label="Manage Club">
@@ -19,6 +27,7 @@ export default function ClubSettings({ projection }: { projection: IClubSettings
                 </p>
             ) : null}
 
+            <HubSessionCards hub={hub} />
             <div className={styles.grid}>
                 <ClubInfoCard projection={projection} />
                 <VisibilityCard projection={projection} />

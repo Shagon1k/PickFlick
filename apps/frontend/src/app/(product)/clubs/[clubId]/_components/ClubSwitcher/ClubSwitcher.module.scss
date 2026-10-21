@@ -1,0 +1,182 @@
+.switcher {
+    margin: var(--gap-sm) auto var(--gap-sm);
+}
+
+.row {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    width: min(100%, 760px);
+    margin: auto;
+}
+
+.stage {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+.heading h1 {
+    max-width: 680px;
+    margin: 0 auto var(--gap-sm);
+    font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);
+    letter-spacing: var(--tracking-tight);
+    overflow-wrap: anywhere;
+}
+
+.heading p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+}
+
+.heading p span {
+    margin-inline: 4px;
+    opacity: 0.5;
+}
+
+.arrow {
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+}
+
+.arrow > span {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    opacity: 0.42;
+    transition:
+        opacity var(--motion-local),
+        color var(--motion-local),
+        border-color var(--motion-local),
+        transform var(--motion-press);
+}
+
+.arrow svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.switcher:hover .arrow > span,
+.switcher:focus-within .arrow > span {
+    opacity: 0.9;
+}
+
+.arrow:hover > span,
+.arrow:focus-visible > span {
+    color: var(--fg);
+    border-color: var(--border-lit);
+    opacity: 1;
+}
+
+.arrow:active > span {
+    transform: scale(0.95);
+}
+
+.dots {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--gap-xs);
+}
+
+.dot {
+    display: grid;
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+}
+
+.dot span {
+    width: 8px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 50%;
+    transition: background var(--motion-local);
+}
+
+.dot[aria-current] span {
+    background: var(--gold);
+}
+
+.dot:hover span,
+.dot:focus-visible span {
+    background: var(--fg);
+}
+
+.create {
+    display: grid;
+    gap: var(--gap-sm);
+    justify-items: center;
+    padding-block: var(--gap-md);
+    color: var(--fg-secondary);
+    text-decoration: none;
+}
+
+.create h1 {
+    margin: 0;
+    font: 400 var(--fs-body-sm)/var(--lh-body) var(--font-body);
+}
+
+.createCircle {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    font: 300 36px/1 var(--font-body);
+    border: 1px dashed var(--border);
+    border-radius: 50%;
+    transition:
+        border-color var(--motion-local),
+        background var(--motion-local);
+}
+
+.create:hover .createCircle,
+.create:focus-visible .createCircle {
+    color: var(--fg);
+    background: var(--accent-soft);
+    border-color: var(--fg);
+}
+
+@media (width < 768px) {
+    .row {
+        gap: 0;
+    }
+
+    .heading h1 {
+        font-size: clamp(38px, 10vw, 52px);
+    }
+
+    .heading p {
+        font-size: var(--fs-meta);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .arrow > span,
+    .dot span,
+    .createCircle {
+        transition: none;
+    }
+}

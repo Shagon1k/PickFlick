@@ -3,12 +3,12 @@
 import type { IClubMember, IClubSettings } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
-import { initialClubActionState } from '#app/(product)/clubs/[clubId]/settings/action-state';
-import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/settings/actions';
-import Button from '#components/ui/Button/Button';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/settings/action-state';
+import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/settings/actions';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
-import { formatUtcDate, getMonogram } from '#lib/format';
+import Icon from '#components/ui/Icon/Icon';
+import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -56,11 +56,11 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     Members
                 </h2>
                 <ButtonLink href={`/clubs/${club.id}/settings`}>
-                    {permissions.createInvitations ? 'Invite members' : 'Club settings'}
+                    {permissions.createInvitations ? '+ Invite' : 'Club settings'}
                 </ButtonLink>
             </div>
             <p className={styles.explanation}>{roleExplanation}</p>
-            <p aria-live="polite" role="status">
+            <p className={styles.feedback} aria-live="polite" role="status">
                 {selected ? '' : message}
             </p>
             <ul className={styles.memberList}>
@@ -75,24 +75,27 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                                     {member.displayName}
                                     {member.id === currentMembershipId ? ' (you)' : ''}
                                 </strong>
-                                <small>
-                                    {member.role.toLowerCase()} · Joined{' '}
-                                    {formatUtcDate(member.joinedAt)}
-                                </small>
+                                <small>{member.role.toLowerCase()}</small>
                             </div>
                         </div>
-                        {member.canRemove ? (
-                            <Button
-                                aria-label={`Remove ${member.displayName}`}
-                                onClick={() => {
-                                    setMessage('');
-                                    setSelected(member);
-                                }}
-                                variant="secondary-danger"
-                            >
-                                Remove
-                            </Button>
-                        ) : null}
+                        <div className={styles.memberActions}>
+                            <span className={styles.sessionCount}>
+                                {member.sessionCount} sessions
+                            </span>
+                            {member.canRemove ? (
+                                <button
+                                    type="button"
+                                    className={styles.remove}
+                                    aria-label={`Remove ${member.displayName}`}
+                                    onClick={() => {
+                                        setMessage('');
+                                        setSelected(member);
+                                    }}
+                                >
+                                    <Icon name="close" />
+                                </button>
+                            ) : null}
+                        </div>
                     </li>
                 ))}
             </ul>

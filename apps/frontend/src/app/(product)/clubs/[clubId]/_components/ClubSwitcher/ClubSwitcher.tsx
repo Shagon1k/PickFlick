@@ -1,108 +1,124 @@
+'use client';
+
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
+import { useState, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
 
-import styles from '../../page.module.scss';
-
-function ClubChoice({ club, current }: { club: IClubSummary; current: boolean }) {
-    return (
-        <form action={selectClubAction} className={styles.clubChoice}>
-            <input name="clubId" type="hidden" value={club.id} />
-            <button
-                aria-current={current ? 'page' : undefined}
-                aria-label={`Open ${club.name}`}
-                className={styles.clubButton}
-                type="submit"
-            >
-                <span className="visually-hidden">{club.name}</span>
-            </button>
-        </form>
-    );
-}
-
-function listClubChoices(clubs: IClubSummary[], current: IClubSummary): IClubSummary[] {
-    return clubs.some(({ id }) => id === current.id)
-        ? clubs.map((club) => (club.id === current.id ? current : club))
-        : [current, ...clubs];
-}
-
-function ClubArrow({
-    club,
-    label,
-    direction,
-}: {
-    club?: IClubSummary;
-    label: string;
-    direction: string;
-}) {
-    if (!club) return null;
-    return (
-        <form action={selectClubAction}>
-            <input name="clubId" type="hidden" value={club.id} />
-            <button aria-label={label} className={styles.arrow} type="submit">
-                {direction}
-            </button>
-        </form>
-    );
-}
+import styles from './ClubSwitcher.module.scss';
 
 export default function ClubSwitcher({
     clubs,
     current,
     memberCount,
     sessionCount,
+    onCreateChange,
 }: {
     clubs: IClubSummary[];
     current: IClubSummary;
     memberCount: number;
     sessionCount: number;
+    onCreateChange: (isCreating: boolean) => void;
 }) {
-    const choices = listClubChoices(clubs, current);
-    const club = current;
-    const currentIndex = choices.findIndex(({ id }) => id === club.id);
-    const previous =
-        choices.length > 1
-            ? choices[(currentIndex - 1 + choices.length) % choices.length]
-            : undefined;
-    const next = choices.length > 1 ? choices[(currentIndex + 1) % choices.length] : undefined;
+    const [isCreating, setIsCreating] = useState(false);
+    const [isPending, startTransition] = useTransition();
+    const choices = clubs.some(({ id }) => id === current.id) ? clubs : [current, ...clubs];
+    const currentIndex = choices.findIndex(({ id }) => id === current.id);
+    const index = isCreating ? choices.length : currentIndex;
+    function select(nextIndex: number) {
+        const isCreate = nextIndex === choices.length;
+        setIsCreating(isCreate);
+        onCreateChange(isCreate);
+        const club = choices[nextIndex];
+        if (!club || club.id === current.id) return;
+        const form = new FormData();
+        form.set('clubId', club.id);
+        startTransition(() => selectClubAction(form));
+    }
+    const established = new Intl.DateTimeFormat('en', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(current.createdAt));
     return (
-        <div className={styles.switcher}>
-            <div className={styles.switcherHeader}>
-                <p className={styles.eyebrow}>Your Clubs</p>
-                <Link href="/clubs/new">Create a Club</Link>
-            </div>
-            <div className={styles.carousel}>
-                <ClubArrow club={previous} label="Previous Club" direction="←" />
-                <div className={styles.clubHeading}>
-                    <h1 id="hub-title">{club.name}</h1>
-                    <p>
-                        {memberCount} members · {sessionCount} Sessions ·{' '}
-                        {club.tier === 'FREE' ? 'Free Club' : 'Pro Club'}
-                    </p>
-                    {club.description ? (
-                        <p className={styles.description}>{club.description}</p>
-                    ) : null}
-                    <p>
-                        Selection scale {club.selectionScaleMin}–{club.selectionScaleMax} ·{' '}
-                        <span>
-                            {club.membershipRole === 'ADMIN'
-                                ? 'Admin'
-                                : club.membershipRole.toLowerCase()}
-                        </span>
-                    </p>
-                    <div className={styles.clubChoices}>
-                        {choices.map((choice) => (
-                            <ClubChoice
-                                club={choice}
-                                current={choice.id === club.id}
-                                key={choice.id}
-                            />
-                        ))}
-                    </div>
+        <section
+            className={styles.switcher}
+            aria-label="Switch Club"
+            aria-busy={isPending || undefined}
+        >
+            <div className={styles.row}>
+                <button
+                    className={styles.arrow}
+                    aria-label="Previous Club"
+                    disabled={isPending}
+                    onClick={() => select((index + choices.length) % (choices.length + 1))}
+                    type="button"
+                >
+                    <span>
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </span>
+                </button>
+                <div className={styles.stage}>
+                    {isCreating ? (
+                        <Link className={styles.create} href="/clubs/new">
+                            <span className={styles.createCircle} aria-hidden="true">
+                                +
+                            </span>
+                            <h1>Create new club</h1>
+                        </Link>
+                    ) : (
+                        <div className={styles.heading}>
+                            <h1 id="hub-title">{current.name}</h1>
+                            <p>
+                                {memberCount} members <span>·</span> {sessionCount}{' '}
+                                {sessionCount === 1 ? 'session' : 'sessions'} <span>·</span> Est.{' '}
+                                {established}
+                            </p>
+                        </div>
+                    )}
                 </div>
-                <ClubArrow club={next} label="Next Club" direction="→" />
+                <button
+                    className={styles.arrow}
+                    aria-label="Next Club"
+                    disabled={isPending}
+                    onClick={() => select((index + 1) % (choices.length + 1))}
+                    type="button"
+                >
+                    <span>
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                    </span>
+                </button>
             </div>
-        </div>
+            <div className={styles.dots}>
+                {choices.map((club, i) => (
+                    <button
+                        className={styles.dot}
+                        key={club.id}
+                        type="button"
+                        aria-label={`Open ${club.name}`}
+                        aria-current={!isCreating && i === index ? 'true' : undefined}
+                        disabled={isPending}
+                        onClick={() => select(i)}
+                    >
+                        <span />
+                    </button>
+                ))}
+                <button
+                    className={styles.dot}
+                    type="button"
+                    aria-label="Show Create new club"
+                    aria-current={isCreating ? 'true' : undefined}
+                    disabled={isPending}
+                    onClick={() => select(choices.length)}
+                >
+                    <span />
+                </button>
+            </div>
+        </section>
     );
 }

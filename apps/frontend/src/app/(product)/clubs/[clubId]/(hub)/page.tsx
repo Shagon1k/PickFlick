@@ -1,23 +1,19 @@
-import { HTTP_STATUS, type IClubHub, type IClubSummary } from '@pickflick/contracts';
+import { HTTP_STATUS, type IClubHub } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { Suspense } from 'react';
 
-import { getClubHub, listClubs } from '#api/clubs.server';
+import { getClubHub } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import LoadingState from '#components/ui/LoadingState/LoadingState';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
-import ClubHubFrame from './_components/ClubHubFrame/ClubHubFrame';
-import HubOverview from './_components/HubOverview/HubOverview';
-import styles from './page.module.scss';
-
-const HUB_LOADING_LINES = 6;
+import HubOverview from '../_components/HubOverview/HubOverview';
+import HubPanel from '../_components/HubPanel/HubPanel';
+import styles from '../page.module.scss';
 
 export const metadata: Metadata = {
     title: 'Club Hub — PickFlick',
@@ -52,46 +48,33 @@ function SafeFailure({ unavailable }: { unavailable: boolean }) {
     );
 }
 
-function HubLoading() {
-    return (
-        <ProductFrame>
-            <main className={styles.loading}>
-                <LoadingState label="Loading Club Hub" lines={HUB_LOADING_LINES} />
-            </main>
-        </ProductFrame>
-    );
-}
-
 async function HubContent({ params }: { params: Promise<{ clubId: string }> }) {
     await connection();
     const { clubId } = await params;
     let hub: IClubHub;
-    let clubs: IClubSummary[];
     try {
-        [hub, clubs] = await Promise.all([getClubHub(clubId), listClubs()]);
+        hub = await getClubHub(clubId);
     } catch (error) {
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
             redirect(buildLoginPath(`/clubs/${clubId}`));
         }
         return (
-            <SafeFailure
-                unavailable={
-                    !(error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status))
-                }
-            />
+            <HubPanel hub={null}>
+                <SafeFailure
+                    unavailable={
+                        !(error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status))
+                    }
+                />
+            </HubPanel>
         );
     }
     return (
-        <ClubHubFrame clubs={clubs} hub={hub} current="overview">
+        <HubPanel hub={hub}>
             <HubOverview hub={hub} />
-        </ClubHubFrame>
+        </HubPanel>
     );
 }
 
-export default function ClubHubPage({ params }: { params: Promise<{ clubId: string }> }) {
-    return (
-        <Suspense fallback={<HubLoading />}>
-            <HubContent params={params} />
-        </Suspense>
-    );
+export default async function ClubHubPage({ params }: { params: Promise<{ clubId: string }> }) {
+    return <HubContent params={params} />;
 }

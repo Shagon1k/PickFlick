@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getClubHub, getClubSettings, listClubs } from '#api/clubs.server';
+import { getClubHub, getClubSettings } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 
-import ClubHubFrame from '../_components/ClubHubFrame/ClubHubFrame';
+import HubPanel from '../../_components/HubPanel/HubPanel';
 import ClubSettings from './_components/ClubSettings/ClubSettings';
 import styles from './page.module.scss';
 
@@ -58,27 +58,24 @@ export default async function ClubSettingsPage({
     const { clubId } = await params;
     let settings: IClubSettings;
     let hub;
-    let clubs;
     try {
-        [settings, hub, clubs] = await Promise.all([
-            getClubSettings(clubId),
-            getClubHub(clubId),
-            listClubs(),
-        ]);
+        [settings, hub] = await Promise.all([getClubSettings(clubId), getClubHub(clubId)]);
     } catch (error) {
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
             redirect(buildLoginPath(`/clubs/${clubId}/settings`));
         }
         // A Club the visitor cannot see answers 404, so nothing about it is disclosed.
         return (
-            <SafeFailure
-                forbidden={error instanceof ApiError && error.status === HTTP_STATUS.NOT_FOUND}
-            />
+            <HubPanel hub={null}>
+                <SafeFailure
+                    forbidden={error instanceof ApiError && error.status === HTTP_STATUS.NOT_FOUND}
+                />
+            </HubPanel>
         );
     }
     return (
-        <ClubHubFrame clubs={clubs} hub={hub} current="manage">
-            <ClubSettings projection={settings} />
-        </ClubHubFrame>
+        <HubPanel hub={hub}>
+            <ClubSettings projection={settings} hub={hub} />
+        </HubPanel>
     );
 }

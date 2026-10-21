@@ -76,7 +76,7 @@ export async function updateClubSettingsAction(
         () => updateClubSettings(clubId, parsed.data),
         'Club settings saved.',
     );
-    revalidatePath(`/clubs/${clubId}/settings`);
+    revalidatePath(`/clubs/${clubId}`, 'layout');
     revalidatePath('/app');
     return result;
 }

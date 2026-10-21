@@ -40,7 +40,7 @@ test(
         ).toBeVisible();
         await expect(page.getByText('Second Club private screening').first()).toBeVisible();
         await expect(page.getByText('Midnight private screening')).toHaveCount(0);
-        await expect(page.getByText('Room B')).toBeVisible();
+        await expect(page.getByText('Current phase', { exact: true })).toBeVisible();
         await expect(page.getByText('Room A')).toHaveCount(0);
 
         await page.goto('/app');
@@ -102,7 +102,7 @@ test('Hub retries a transient backend failure without signing the member out', a
     ).toBeVisible();
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Midnight Society' })).toBeVisible();
-    await expect(page.getByText('Screening Call Sheet', { exact: true })).toBeVisible();
+    await expect(page.getByText('Call sheet: 001', { exact: true })).toBeVisible();
 });
 
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
@@ -120,6 +120,14 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
 }) => {
     await authenticate(context, 'valid-hub-tabs');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    await page
+        .locator('#hub-context')
+        .evaluate((element) => element.setAttribute('data-persisted', 'true'));
+    const navigations: string[] = [];
+    page.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+            navigations.push(request.url());
+    });
     for (const section of ['Members', 'Manage Club', 'Overview']) {
         await page
             .getByRole('navigation', { name: 'Club sections' })
@@ -128,7 +136,7 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
         await expect(
             page.getByRole('heading', { level: 1, name: 'Midnight Society' }),
         ).toBeVisible();
-        await expect(page.getByText('Screening Call Sheet', { exact: true })).toBeVisible();
+        await expect(page.getByText('Call sheet: 001', { exact: true })).toBeVisible();
         await expect(
             page.getByRole('link', {
                 name: 'Open Session: Midnight private screening',
@@ -143,7 +151,9 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
                 .getByRole('navigation', { name: 'Club sections' })
                 .getByRole('link', { name: section, exact: true }),
         ).toHaveAttribute('aria-current', 'page');
+        await expect(page.locator('#hub-context')).toHaveAttribute('data-persisted', 'true');
     }
+    expect(navigations).toEqual([]);
 });
 
 test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ browser }) => {
@@ -173,12 +183,61 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
                 name: 'Open active Session: Second Club private screening',
                 exact: true,
             })
-            .getByText('Phase: rating', { exact: true })
             .tap();
         await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
     } finally {
         await context.close();
     }
+});
+
+test('Club carousel ends with creation and shows only the prototype caption', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'valid-hub-carousel');
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    await expect(page.getByText('2 members · 1 session · Est. January 2025')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Create a Club', exact: true })).toHaveCount(0);
+    await expect(page.getByText('Noir, classics, and arguments.')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Previous Club' }).click();
+    await expect(page.getByRole('link', { name: 'Create new club' })).toHaveAttribute(
+        'href',
+        '/clubs/new',
+    );
+    await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Next Club' }).click();
+    await expect(page.getByRole('heading', { name: 'Midnight Society' })).toBeVisible();
+});
+
+test('Watching Call Sheet uses the Session ordinal, weekday and actual selected film metadata', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'valid-hub-watching');
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    const sheet = page.getByRole('link', { name: 'Open Session: Selected film', exact: true });
+    await expect(sheet).toContainText('Call sheet: 047');
+    await expect(sheet).toContainText('Friday unit');
+    await expect(sheet).toContainText('Oct 16');
+    await expect(sheet).toContainText('2h 46m');
+    await expect(sheet).toContainText('Sci-Fi');
+    await expect(sheet).not.toContainText('2026');
+    const statistics = page.getByRole('region', { name: 'Club statistics' });
+    await expect(statistics.locator('strong')).toHaveText(Array(7).fill('—'));
+    await page
+        .getByRole('navigation', { name: 'Club sections' })
+        .getByRole('link', { name: 'Manage Club' })
+        .click();
+    await expect(page.getByRole('heading', { name: 'Active Session', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Active Ratings', exact: true })).toBeVisible();
+});
+
+test('Club member joins the active Session directly from Overview', async ({ context, page }) => {
+    await authenticate(context, `valid-session-roster-member-direct-hub-${crypto.randomUUID()}`);
+    await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+    await page.getByRole('button', { name: 'Join me!' }).click();
+    await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000041$/u);
+    await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
 });
 
 for (const viewport of screenshotViewports) {

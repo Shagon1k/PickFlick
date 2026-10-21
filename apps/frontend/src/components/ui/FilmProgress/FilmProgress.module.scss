@@ -1,0 +1,51 @@
+.film {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    height: 44px;
+    padding: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-lit);
+    border-radius: 4px;
+}
+
+.film::before,
+.film::after {
+    position: absolute;
+    right: 5px;
+    left: 5px;
+    height: 4px;
+    content: '';
+    background: repeating-linear-gradient(90deg, var(--ivory-muted) 0 5px, transparent 5px 10px);
+}
+
+.film::before {
+    top: 2px;
+}
+
+.film::after {
+    bottom: 2px;
+}
+
+.film i {
+    min-width: 0;
+    background: var(--surface-lit);
+    border: 1px solid var(--border-lit);
+    border-radius: 2px;
+    transition:
+        background var(--motion-emphasis),
+        border-color var(--motion-emphasis);
+}
+
+.film i[data-active] {
+    background: var(--gold-soft);
+    border-color: var(--gold-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .film i {
+        transition: none;
+    }
+}

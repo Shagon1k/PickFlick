@@ -1,140 +1,113 @@
-import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pickflick/contracts';
+import type { IClubHub } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import ButtonLink from '#components/ui/Button/ButtonLink';
-import Icon from '#components/ui/Icon/Icon';
+import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
+import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 
-interface IHubOverviewProps {
-    hub: IClubHub;
-}
-
-function formatSessionName(session: IClubHubSession): string {
-    return session.topic ?? 'Untitled Session';
-}
-
-function formatSessionDate(value: string): string {
-    return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(
-        new Date(value),
-    );
-}
-
-export default function HubOverview({ hub }: IHubOverviewProps) {
-    const { club, activeSession } = hub;
-    const canCreate =
-        hub.permissions.manageSessions && !isBlockingSessionPhase(activeSession?.phase);
+export default function HubOverview({ hub }: { hub: IClubHub }) {
+    const stats = hub.statistics;
+    const tiles: {
+        label: string;
+        value: string | number | null;
+        icon: TIconName;
+        small?: boolean;
+    }[] = [
+        { label: 'Sessions watched', value: stats.sessionsWatched, icon: 'film-reel' },
+        { label: 'Sessions this year', value: stats.sessionsThisYear, icon: 'clapperboard' },
+        { label: 'Avg club rating', value: formatNumber(stats.averageRating), icon: 'star-circle' },
+        {
+            label: 'Total watch time, h',
+            value: formatNumber(stats.totalWatchHours),
+            icon: 'stopwatch',
+        },
+        { label: 'Most watched genre', value: stats.topGenre, icon: 'genre' },
+        { label: 'Top director', value: stats.topDirector, icon: 'director', small: true },
+        { label: 'Top actor', value: stats.topActor, icon: 'actor', small: true },
+    ];
     return (
         <div className={styles.overview}>
-            {canCreate ? (
-                <ButtonLink href={`/clubs/${club.id}/sessions/new`} variant="primary">
-                    Create Session
-                </ButtonLink>
-            ) : null}
-            <section aria-label="Club statistics" className={styles.stats}>
-                <div>
-                    <Icon name="members" />
-                    <strong>{hub.memberCount}</strong>
-                    <span>Members</span>
-                </div>
-                <div>
-                    <Icon name="sessions" />
-                    <strong>{hub.sessionCount}</strong>
-                    <span>Sessions</span>
-                </div>
-                <div>
-                    <Icon name="library" />
-                    <strong>{hub.completedSessionCount}</strong>
-                    <span>Completed Sessions</span>
-                </div>
+            <section aria-label="Club statistics" className={styles.statistics}>
+                {tiles.map((tile) => (
+                    <div className={styles.stat} key={tile.label}>
+                        <Icon name={tile.icon} />
+                        <div>
+                            <strong data-small={tile.small || undefined}>
+                                {tile.value ?? '—'}
+                            </strong>
+                            <span>{tile.label}</span>
+                        </div>
+                    </div>
+                ))}
             </section>
             <div className={styles.cards}>
                 <section className={styles.card}>
-                    <h2>Members</h2>
-                    <p>{hub.memberCount} members in this Club</p>
-                    <p className={styles.quiet}>Your role: {club.membershipRole.toLowerCase()}</p>
+                    <div className={styles.cardHeading}>
+                        <h2>Members</h2>
+                        <span>
+                            {hub.memberCount} / {hub.memberLimit}
+                        </span>
+                    </div>
+                    <ul className={styles.memberPills}>
+                        {hub.members.map((member) => (
+                            <li key={member.id} data-admin={member.role === 'ADMIN' || undefined}>
+                                <span aria-hidden="true">{getMonogram(member.displayName)}</span>
+                                {member.displayName}
+                                {member.role === 'ADMIN' ? ' (admin)' : ''}
+                            </li>
+                        ))}
+                    </ul>
                 </section>
-                {activeSession ? (
-                    <Link
-                        aria-label={`Open active Session: ${formatSessionName(activeSession)}`}
-                        className={`${styles.card} ${styles.cardLink}`}
-                        href={`/sessions/${activeSession.id}`}
-                    >
-                        <h2>Active Session</h2>
-                        <p>{formatSessionName(activeSession)}</p>
-                        <p className={styles.quiet}>Phase: {activeSession.phase.toLowerCase()}</p>
-                    </Link>
-                ) : (
-                    <section className={styles.card}>
-                        <h2>Active Session</h2>
-                        <p className={styles.quiet}>
-                            No active Session. Your next screening will appear here.
-                        </p>
-                    </section>
-                )}
+                <ActiveSessionCard hub={hub} />
             </div>
-            <SessionRows
-                title="Active Ratings"
-                sessions={hub.ratingSessions}
-                empty="No Sessions awaiting ratings."
-            />
-            <SessionRows
-                title="Session history"
-                sessions={hub.historySessions}
-                empty="No completed or cancelled Sessions yet."
-            />
+            <SprocketDivider variant="section" />
             <section className={styles.card}>
                 <h2>Recent Activity</h2>
-                {hub.recentSessions.length > 0 ? (
+                {hub.recentSessions.length ? (
                     <ul className={styles.activity}>
                         {hub.recentSessions.map((session) => (
                             <li key={session.id}>
-                                <span>
-                                    <Link href={`/sessions/${session.id}`}>
-                                        {formatSessionName(session)}
-                                    </Link>{' '}
-                                    · {session.phase.toLowerCase()}
-                                </span>
+                                <Link href={`/sessions/${session.id}`} prefetch={false}>
+                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
+                                </Link>{' '}
+                                · {session.phase.toLowerCase()} ·{' '}
                                 <time dateTime={session.updatedAt}>
-                                    {formatSessionDate(session.updatedAt)}
+                                    {new Intl.DateTimeFormat('en', {
+                                        dateStyle: 'medium',
+                                        timeZone: 'UTC',
+                                    }).format(new Date(session.updatedAt))}
                                 </time>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p className={styles.quiet}>No Session activity yet.</p>
+                    <p>No Session activity yet.</p>
                 )}
             </section>
+            {hub.historySessions.length ? (
+                <details className={styles.history}>
+                    <summary>Session history</summary>
+                    <ul className={styles.activity}>
+                        {hub.historySessions.map((session) => (
+                            <li key={session.id}>
+                                <Link href={`/sessions/${session.id}`}>
+                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
+                                </Link>{' '}
+                                · {session.phase.toLowerCase()}
+                            </li>
+                        ))}
+                    </ul>
+                </details>
+            ) : null}
         </div>
     );
 }
 
-function SessionRows({
-    title,
-    sessions,
-    empty,
-}: {
-    title: string;
-    sessions: IClubHubSession[];
-    empty: string;
-}) {
-    return (
-        <section className={styles.card}>
-            <h2>{title}</h2>
-            {sessions.length ? (
-                <ul className={styles.activity}>
-                    {sessions.map((session) => (
-                        <li key={session.id}>
-                            <Link href={`/sessions/${session.id}`}>
-                                {formatSessionName(session)}
-                            </Link>
-                            <span>{session.phase.toLowerCase()}</span>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className={styles.quiet}>{empty}</p>
-            )}
-        </section>
-    );
+function formatNumber(value: number | null) {
+    return value === null
+        ? null
+        : new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
 }
