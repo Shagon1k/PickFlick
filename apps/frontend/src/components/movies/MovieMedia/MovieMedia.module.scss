@@ -1,0 +1,170 @@
+.heroGrid {
+    display: grid;
+    grid-template-columns: 260px repeat(3, minmax(0, 1fr));
+    gap: var(--gap-lg);
+    align-items: start;
+}
+
+.posterRegion {
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.credits {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    width: calc((100% - var(--gap-lg)) / 2);
+    min-width: 0;
+}
+
+.credits dl {
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--fs-body-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.credits dl > div {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: var(--gap-sm);
+    min-height: 56px;
+    padding: var(--gap-sm) var(--gap-md);
+    border-bottom: 1px solid var(--border);
+}
+
+.credits dl > div:last-child {
+    border-bottom: 0;
+}
+
+.credits dt {
+    color: var(--fg-secondary);
+}
+
+.credits dd {
+    margin: 0;
+}
+
+.credits ul,
+.trailer ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.credits li + li {
+    margin-top: var(--gap-xs);
+}
+
+.synopsis {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: calc((100% - var(--gap-lg)) / 2);
+}
+
+.synopsis p {
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    white-space: pre-line;
+}
+
+.trailer {
+    display: grid;
+    grid-row: 1;
+    grid-column: 2 / -1;
+    align-content: center;
+    aspect-ratio: 16 / 9;
+    padding: var(--gap-md);
+    text-align: center;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.trailer a {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-height: var(--hit);
+    color: var(--fg);
+}
+
+/* Scoped under the grid so a host page's own heading rules cannot win on load order. */
+.heroGrid .credits h2,
+.heroGrid .synopsis h2 {
+    font: 400 var(--fs-meta)/var(--lh-caption) var(--font-body);
+    color: var(--fg-secondary);
+}
+
+.credits dt {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+}
+
+.credits dt svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+.credits dd {
+    align-self: center;
+    text-align: right;
+}
+
+/* Outside Movie Details the headings and paragraphs carry no page-level reset. */
+.heroGrid p {
+    margin: 0;
+}
+
+.heroGrid .trailer h2 {
+    margin: 0 0 var(--gap-sm);
+    font-family: var(--font-display);
+    font-size: var(--fs-card-title);
+    font-weight: 400;
+}
+
+@media (width < 1024px) {
+    .heroGrid {
+        grid-template-columns: 200px minmax(0, 1fr);
+        gap: var(--gap-md);
+    }
+
+    .credits {
+        grid-row: 1;
+        grid-column: 2;
+        width: 100%;
+    }
+
+    .synopsis {
+        grid-row: 2;
+        grid-column: 1 / -1;
+        width: 100%;
+        text-align: center;
+    }
+
+    .credits dl > div {
+        grid-template-columns: 1fr;
+        padding: var(--gap-xs);
+    }
+
+    .heroGrid .credits h2 {
+        font-size: var(--fs-body-sm);
+    }
+
+    .trailer {
+        grid-row: 3;
+        grid-column: 1 / -1;
+    }
+}
+
+@media (width < 576px) {
+    .heroGrid {
+        grid-template-columns: 132px minmax(0, 1fr);
+    }
+}

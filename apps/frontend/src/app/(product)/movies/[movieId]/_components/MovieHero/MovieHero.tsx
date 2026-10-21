@@ -1,8 +1,8 @@
 import type { TMovieDetails } from '@pickflick/contracts';
 
+import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+
 import styles from '../../page.module.scss';
-import MovieCredits from '../MovieCredits/MovieCredits';
-import MoviePoster from '../MoviePoster/MoviePoster';
 
 const ratingFormat = new Intl.NumberFormat('en', {
     minimumFractionDigits: 1,
@@ -48,37 +48,7 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                     ))}
                 </ul>
             </header>
-            <div className={styles.heroGrid}>
-                <div className={styles.posterRegion}>
-                    <MoviePoster url={movie.posterUrl} title={title} />
-                </div>
-                <MovieCredits movie={movie} />
-                <section className={styles.synopsis} aria-labelledby="synopsis-title">
-                    <h2 id="synopsis-title">Synopsis</h2>
-                    <p>{movie.overview ?? 'No synopsis is available in English.'}</p>
-                </section>
-                <section className={styles.trailer} aria-labelledby="trailer-title">
-                    <h2 id="trailer-title">Trailer</h2>
-                    {movie.trailers?.length ? (
-                        <ul>
-                            {movie.trailers.map((trailer, index) => (
-                                // eslint-disable-next-line @eslint-react/no-array-index-key -- provider trailers can repeat a URL and never reorder
-                                <li key={`${trailer.url}-${index}`}>
-                                    <a href={trailer.url} target="_blank" rel="noopener noreferrer">
-                                        {trailer.name ?? 'Watch trailer'} ↗
-                                        <span className="visually-hidden">
-                                            {' '}
-                                            (YouTube, opens in a new tab)
-                                        </span>
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>No trailer is available.</p>
-                    )}
-                </section>
-            </div>
+            <MovieMedia movie={movie} title={title} />
         </section>
     );
 }

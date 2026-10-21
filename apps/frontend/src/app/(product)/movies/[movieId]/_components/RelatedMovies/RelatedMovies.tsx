@@ -2,10 +2,10 @@ import type { TMovieDetails } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { getMovieDetails } from '#api/movies.server';
+import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 
 import styles from '../../page.module.scss';
-import MoviePoster from '../MoviePoster/MoviePoster';
 
 interface IRelatedMoviesProps {
     ids: string[];
@@ -38,6 +38,7 @@ export default async function RelatedMovies({ ids, primaryMovie }: IRelatedMovie
                             prefetch={false}
                         >
                             <MoviePoster
+                                className={styles.relatedPoster}
                                 url={result.state === 'unavailable' ? null : result.data.posterUrl}
                                 title={
                                     result.state === 'unavailable'
