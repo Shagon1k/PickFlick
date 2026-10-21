@@ -41,7 +41,11 @@ The suite checks:
 Viewports are defined once in `tests/ui/viewports.ts`. Visual captures include read-only Movie
 Details, Session creation, Nomination and Selection alongside the existing screen/state coverage.
 The Nomination viewport checks also assert the Session header variant and the two-column to
-single-column layout change at 1024px.
+single-column layout change at 1024px. Hub checks verify that tab navigation keeps the upper frame
+mounted without document navigation, the creation slide is last, Watching uses real film metadata,
+and Manage Club aligns with the shared Call Sheet. Archived settings captures return to the top
+after checking dialog cancellation, so sticky chrome does not move into the middle of a full-page
+capture.
 
 ## Review a failure
 
