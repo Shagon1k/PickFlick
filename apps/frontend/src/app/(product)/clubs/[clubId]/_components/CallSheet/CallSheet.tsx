@@ -1,6 +1,8 @@
 import type { IClubHubSession } from '@pickflick/contracts';
+import Image from 'next/image';
 import Link from 'next/link';
 
+import choosingPanda from '#brand/panda-choosing.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 
 import styles from './CallSheet.module.scss';
@@ -87,9 +89,19 @@ export default function CallSheet({
                 <figure className={styles.still}>
                     <div className={styles.frameMeta}>
                         <span>{hasSelectedFilm ? 'Selected film' : 'Film selection'}</span>
-                        <span>{session.nominatedCount} nominations</span>
+                        <span>
+                            {session.nominatedCount}{' '}
+                            {session.nominatedCount === 1 ? 'nomination' : 'nominations'}
+                        </span>
                     </div>
-                    <SearchPoster className={styles.image} url={session.movie?.posterUrl ?? null} />
+                    {session.movie ? (
+                        <SearchPoster className={styles.image} url={session.movie.posterUrl} />
+                    ) : (
+                        // The picture is still being chosen; nominations stay behind Club visibility rules.
+                        <span className={styles.image} aria-hidden="true">
+                            <Image className={styles.mascot} src={choosingPanda} alt="" />
+                        </span>
+                    )}
                     <figcaption className={styles.frameMeta}>
                         <span>{session.acceptedCount} confirmed</span>
                         <span>{Math.max(0, memberCount - session.acceptedCount)} not joined</span>

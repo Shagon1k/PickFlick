@@ -43,7 +43,8 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                 <>
                     <h3>Selection results</h3>
                     <p>
-                        {data.breakdown.ballotCount} ballots received · Scale{' '}
+                        {data.breakdown.ballotCount}{' '}
+                        {data.breakdown.ballotCount === 1 ? 'ballot' : 'ballots'} received · Scale{' '}
                         {data.breakdown.scaleMin}–{data.breakdown.scaleMax}.
                     </p>
                     <p>{REASONS[data.breakdown.reason]}.</p>
@@ -68,11 +69,11 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                                         <dd>{row.total}</dd>
                                     </div>
                                     <div>
-                                        <dt>Maximum scores</dt>
+                                        <dt>Top-score votes</dt>
                                         <dd>{row.maximumCount}</dd>
                                     </div>
                                     <div>
-                                        <dt>Supporting voters</dt>
+                                        <dt>Supporters</dt>
                                         <dd>{row.supporterCount}</dd>
                                     </div>
                                 </dl>

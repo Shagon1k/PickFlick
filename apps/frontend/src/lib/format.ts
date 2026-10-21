@@ -12,7 +12,12 @@ export function formatUtcDate(value: string): string {
 
 /** A date and time in UTC with the zone written out. */
 export function formatUtcDateTime(value: string): string {
-    return `${new Date(value).toLocaleString('en', { timeZone: 'UTC' })} UTC`;
+    const formatted = new Date(value).toLocaleString('en', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'UTC',
+    });
+    return `${formatted} UTC`;
 }
 
 /** The two-letter placeholder shown where a Club or member has no image. */

@@ -34,10 +34,15 @@ export default function FilmStripMenu({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const itemsRef = useRef<Array<HTMLElement | null>>([]);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isOpen) {
-            requestAnimationFrame(() => itemsRef.current[0]?.focus());
+            requestAnimationFrame(() => {
+                // Short screens scroll the whole strip clear of the fixed bottom bar.
+                dropdownRef.current?.scrollIntoView({ block: 'nearest' });
+                itemsRef.current[0]?.focus({ preventScroll: true });
+            });
         }
     }, [isOpen]);
 
@@ -84,7 +89,12 @@ export default function FilmStripMenu({
                         )}
                     </Button>
                 </MantineMenu.Target>
-                <MantineMenu.Dropdown aria-label={menuLabel} className={styles.menu__dropdown}>
+                <MantineMenu.Dropdown
+                    aria-label={menuLabel}
+                    className={styles.menu__dropdown}
+                    data-icon-trigger={triggerIcon ? true : undefined}
+                    ref={dropdownRef}
+                >
                     <span aria-hidden="true" className={styles.menu__tail} />
                     <div className={styles.menu__strip}>
                         {items.map((item, index) => {

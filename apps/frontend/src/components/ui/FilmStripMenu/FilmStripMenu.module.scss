@@ -7,6 +7,7 @@
     position: absolute;
     z-index: 20;
     width: 174px;
+    scroll-margin-block: 80px;
     animation: menu-reveal var(--motion-menu) var(--ease-menu);
 }
 
@@ -22,6 +23,13 @@
     border-bottom: 0;
     border-radius: 10px 10px 0 0;
     transform: translateX(-50%);
+}
+
+/* The strip aligns to the trigger's end, so a 44px icon trigger centres the tab 22px in. */
+.menu__dropdown[data-icon-trigger] .menu__tail {
+    right: 1px;
+    left: auto;
+    transform: none;
 }
 
 .menu__strip {
@@ -125,6 +133,22 @@
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* A landscape phone cannot fit stacked frames between the header and the bottom bar. */
+@media (height < 480px) {
+    .menu__item {
+        flex-direction: row;
+        gap: var(--gap-sm);
+        justify-content: flex-start;
+        min-height: var(--hit);
+        padding: 8px 4px;
+        text-align: left;
+    }
+
+    .menu__dropdown {
+        width: 210px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

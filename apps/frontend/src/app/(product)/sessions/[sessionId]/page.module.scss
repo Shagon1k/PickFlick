@@ -19,6 +19,11 @@
     border-bottom: 1px solid var(--border);
 }
 
+/* An open gear menu rises above the fixed invite ticket. */
+.header:has([aria-expanded='true']) {
+    z-index: 40;
+}
+
 /* The one restrained amber wash behind the focal Session scene. */
 .header::before {
     position: absolute;

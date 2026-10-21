@@ -333,6 +333,19 @@
     padding-bottom: 78px;
 }
 
+@media (width < 1024px) {
+    /* Room to scroll the footer links clear of the fixed invite ticket above the bottom bar. */
+    .productShell:has([data-invite-ticket]) {
+        padding-bottom: 168px;
+    }
+}
+
+@media (width < 768px) {
+    .productShell:has([data-invite-ticket][data-empty]) {
+        padding-bottom: 78px;
+    }
+}
+
 .productHeader .headerInner {
     grid-template-columns: auto 1fr auto;
 

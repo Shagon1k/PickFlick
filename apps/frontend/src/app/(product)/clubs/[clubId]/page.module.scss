@@ -243,12 +243,51 @@
     white-space: nowrap;
 }
 
+/* A quiet disclosure row: archived Sessions stay one tap away without a heavy card. */
+.history {
+    padding-inline: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
 .history summary {
     display: flex;
+    gap: var(--gap-sm);
     align-items: center;
-    min-height: var(--hit);
+    justify-content: space-between;
+    min-height: 56px;
+    font: 600 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
     color: var(--fg-secondary);
     cursor: pointer;
+    list-style: none;
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+.history summary::-webkit-details-marker {
+    display: none;
+}
+
+.history summary::after {
+    width: 8px;
+    height: 8px;
+    content: '';
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform var(--motion-local) var(--ease-standard);
+}
+
+.history[open] summary::after {
+    transform: translateY(2px) rotate(-135deg);
+}
+
+.history summary:hover,
+.history summary:focus-visible {
+    color: var(--fg);
+}
+
+.history[open] {
+    padding-bottom: var(--gap-md);
 }
 
 .failure,
@@ -304,16 +343,13 @@
 }
 
 @media (width < 768px) {
+    /* Phones switch Club views from the bottom bar's Hub strip, as in the prototype. */
     .tabs {
-        margin-top: 24px;
+        display: none;
     }
 
-    .tabsInner {
-        padding-inline: 4px;
-    }
-
-    .tabs a {
-        padding-inline: 16px;
+    .tabs + * {
+        margin-top: 32px;
     }
 
     .stat {

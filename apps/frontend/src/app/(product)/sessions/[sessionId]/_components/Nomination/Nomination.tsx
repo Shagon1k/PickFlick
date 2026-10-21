@@ -140,11 +140,7 @@ function formatMovieLabel(movie: TNominationMovie) {
 
 function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
     if (!movie)
-        return (
-            <p>
-                Only accepted participants can nominate while Nomination is open in an active Club.
-            </p>
-        );
+        return <p>Only Session participants can nominate. Join the Session to add your film.</p>;
     return (
         <p role="status">
             Your nomination: <Link href={`/movies/${movie.id}`}>{formatMovieLabel(movie)}</Link>.

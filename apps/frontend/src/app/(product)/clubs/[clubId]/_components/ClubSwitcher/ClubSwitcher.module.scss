@@ -17,11 +17,16 @@
 }
 
 .heading h1 {
+    display: -webkit-box;
     max-width: 680px;
     margin: 0 auto var(--gap-sm);
+    overflow: hidden;
+    -webkit-line-clamp: 3;
     font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);
     letter-spacing: var(--tracking-tight);
-    overflow-wrap: anywhere;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    -webkit-box-orient: vertical;
 }
 
 .heading p {
@@ -92,23 +97,12 @@
 
 .dots {
     display: flex;
+    gap: 8px;
     justify-content: center;
-    margin-top: var(--gap-xs);
+    margin-top: var(--gap-sm);
 }
 
 .dot {
-    display: grid;
-    place-items: center;
-    width: var(--hit);
-    height: var(--hit);
-    padding: 0;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: 50%;
-}
-
-.dot span {
     width: 8px;
     height: 8px;
     background: var(--border);
@@ -116,13 +110,19 @@
     transition: background var(--motion-local);
 }
 
-.dot[aria-current] span {
+.dot[data-current] {
     background: var(--gold);
 }
 
-.dot:hover span,
-.dot:focus-visible span {
-    background: var(--fg);
+/* The prototype shows the pager on phones only; wider screens keep the arrows. */
+@media (width >= 768px) {
+    .switcher {
+        margin-bottom: var(--gap-xl);
+    }
+
+    .dots {
+        display: none;
+    }
 }
 
 .create {
@@ -175,7 +175,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .arrow > span,
-    .dot span,
+    .dot,
     .createCircle {
         transition: none;
     }

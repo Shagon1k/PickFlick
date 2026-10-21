@@ -94,30 +94,15 @@ export default function ClubSwitcher({
                     </span>
                 </button>
             </div>
-            <div className={styles.dots}>
-                {choices.map((club, i) => (
-                    <button
+            {/* A position indicator only: the 44px arrows switch Clubs, as in the prototype. */}
+            <div className={styles.dots} aria-hidden="true">
+                {[...choices.map((club) => club.id), 'create'].map((key, i) => (
+                    <span
                         className={styles.dot}
-                        key={club.id}
-                        type="button"
-                        aria-label={`Open ${club.name}`}
-                        aria-current={!isCreating && i === index ? 'true' : undefined}
-                        disabled={isPending}
-                        onClick={() => select(i)}
-                    >
-                        <span />
-                    </button>
+                        data-current={index === i || undefined}
+                        key={key}
+                    />
                 ))}
-                <button
-                    className={styles.dot}
-                    type="button"
-                    aria-label="Show Create new club"
-                    aria-current={isCreating ? 'true' : undefined}
-                    disabled={isPending}
-                    onClick={() => select(choices.length)}
-                >
-                    <span />
-                </button>
             </div>
         </section>
     );

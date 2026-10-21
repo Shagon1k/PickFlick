@@ -19,6 +19,8 @@ export default function PendingInvites() {
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
     const [isLoaded, setIsLoaded] = useState(false);
+    // Once invites appeared, the ticket stays so focus can return to it after the last response.
+    const [hasHadInvites, setHasHadInvites] = useState(false);
     const [isPending, startTransition] = useTransition();
     const id = useId();
     async function load() {
@@ -26,6 +28,7 @@ export default function PendingInvites() {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
+                if (result.invitations.length) setHasHadInvites(true);
                 setIsLoaded(true);
                 setMessage('');
             } else {
@@ -70,7 +73,11 @@ export default function PendingInvites() {
     }
     const countLabel = `${invitations.length} invitation${invitations.length === 1 ? '' : 's'}`;
     return (
-        <div className={styles.widget}>
+        <div
+            className={styles.widget}
+            data-empty={(isLoaded && !hasHadInvites) || undefined}
+            data-invite-ticket
+        >
             <Popover
                 id={id}
                 variant="invites"

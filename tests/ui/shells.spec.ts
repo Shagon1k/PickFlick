@@ -256,9 +256,12 @@ test('shell motion collapses under reduced motion', async ({ page }) => {
     expect(
         await page.locator('[data-anchored-menu=hub]').evaluate(longestTransition),
     ).toBeLessThanOrEqual(0.001);
+    // A stretched visibility switch once left opened overlays unfocusable.
+    await expect(page.locator('[data-anchored-menu=hub] :focus')).toHaveCount(1);
 
     await page.getByRole('button', { name: 'Search films' }).click();
     expect(await page.locator('#shell-search').evaluate(longestTransition)).toBeLessThanOrEqual(
         0.001,
     );
+    await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
 });

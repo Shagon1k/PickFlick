@@ -32,7 +32,7 @@ test(
             page.getByRole('heading', { level: 1, name: 'Midnight Society' }),
         ).toBeVisible();
         await expect(page.getByText('Midnight private screening').first()).toBeVisible();
-        await page.getByRole('button', { name: 'Open Second Screening Room' }).focus();
+        await page.getByRole('button', { name: 'Next Club' }).focus();
         await page.keyboard.press('Enter');
 
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
@@ -144,9 +144,7 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
                 exact: true,
             }),
         ).toHaveAttribute('href', '/sessions/30000000-0000-4000-8000-000000000031');
-        await expect(
-            page.getByRole('button', { name: 'Open Second Screening Room' }),
-        ).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Next Club' })).toBeVisible();
         await expect(
             page
                 .getByRole('navigation', { name: 'Club sections' })
@@ -175,7 +173,7 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
             expect(widths.document).toBeLessThanOrEqual(widths.client);
         }
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        const next = page.getByRole('button', { name: 'Open Second Screening Room' });
+        const next = page.getByRole('button', { name: 'Next Club' });
         expect((await next.boundingBox())?.height).toBeGreaterThanOrEqual(44);
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));

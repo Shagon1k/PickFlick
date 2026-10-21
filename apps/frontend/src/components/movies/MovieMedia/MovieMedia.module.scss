@@ -153,6 +153,11 @@
         padding: var(--gap-xs);
     }
 
+    /* Stacked under its label, a value reads from the left as in the prototype. */
+    .credits dd {
+        text-align: left;
+    }
+
     .heroGrid .credits h2 {
         font-size: var(--fs-body-sm);
     }

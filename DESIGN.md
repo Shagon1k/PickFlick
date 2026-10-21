@@ -174,25 +174,32 @@ phase label. Its empty state has no link.
 
 The delivered Club carousel ends with Create new club. Its caption shows member count, the count
 of Sessions that were not cancelled and establishment month/year; description, plan, role and Selection scale stay in their owning
-panels. Neutral chevrons reveal hover and keyboard focus states.
+panels. Neutral chevrons reveal hover and keyboard focus states. Club names keep whole words and
+stop at three lines. Phones show the prototype's 8px position dots under the caption; the 44px
+arrows switch Clubs and wider screens hide the dots.
 The Call Sheet uses a zero-padded Club-local Session number ("Call sheet 004"), scheduled
 weekday/unit and phase stamp. Sessions store only a date, so the call-time slot shows the location
-(one line) until a real time exists rather than a fabricated midnight.
+(smaller type, at most two lines) until a real time exists rather than a fabricated midnight.
 Watching shows the selected film, call time or location, date without year, runtime and genre; Nomination and
 Selection show their own topic and progress in the same ledger. The still uses real cached Movie
-artwork or an explicit missing-image state, never fixture film data.
+artwork or an explicit missing-image state, never fixture film data. Before a film is selected the
+still shows the choosing panda instead of a nominated poster, because nominations stay behind the
+Club's visibility settings. Long topics stop at two lines.
 
 Overview has seven monochrome statistics with the prototype SVG icons, member pills and the active
 Session's film-strip progress. Hub cards use 24px padding; Overview headings are 24px semibold and Manage Club card headings, Active Session included, are 15px bold. Missing values show `—`; unbuilt Session ratings remain unavailable.
 Join me! joins an eligible Club member through the existing roster command. A participant opens the
 Session from the entire Active Session card. Manage Club also shows Active Session and Active Ratings.
 Members shows role, accepted Session participation count and a compact remove control; + Invite opens
-Manage Club. Removal retains its typed confirmation and focus return.
+Manage Club. Removal retains its typed confirmation and focus return. Below 768px the Club
+section tabs give way to the bottom bar's Hub strip, as in the prototype. Session history is a quiet
+disclosure row with a chevron.
 The pending-invite ticket uses the prototype silhouette, gradient, perforation and stub typography.
 Its 184px body partly hides the stub; hover, focus and opening reveal it. The 344px popover separates
 its heading, count, text Close action, invite type, metadata and actions. Club rows show the inviter,
 member count and expiry; Session rows show the topic, Club and screening date. Reduced motion removes
-the slide.
+the slide. Below 768px an empty ticket is hidden so it never covers content; with invites showing,
+the page gains room to scroll the footer links clear of it.
 
 Delivered Nomination and Selection use the Session header variant, a centred monochrome status
 banner with manual refresh at its edge, a phase heading with icon-labelled topic and notes, a relative
@@ -366,6 +373,14 @@ and all 84 visual comparisons passed. Movie Details was confirmed unchanged apar
 The Hub pass aligned card padding and headings, the Call Sheet location slot, the Club caption's
 Session count, Schedule a Session, the account film strip and Movie Details; the UI contract passed
 200 checks and the changed Linux PNGs were reviewed before all 84 visual comparisons passed.
+A mobile and edge-case pass at 390, 768, 844×390 and 1440 compared the live app with the
+prototypes as Admin, participant and non-participant. It fixed reduced-motion focus for the search,
+bottom-bar strips and account menus (instant visibility instead of a 0.01ms transition), long Club
+names and topics, the landscape gear menu (compact rows, scrolled clear of the bottom bar, above the
+ticket, tab under the gear), the Watching header and movie link when film details are unavailable,
+result and date copy, and stacked credit alignment. The UI contract, both journeys and all 84 visual
+comparisons passed after the changed Linux PNGs were reviewed. Owner-confirmed: the public footer
+stays on every product page, including phones.
 The remaining Hub views and Rating/Completed content remain open Phase 12 and Phase 13 work.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
