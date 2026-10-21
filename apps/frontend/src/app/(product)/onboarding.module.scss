@@ -3,7 +3,7 @@
     display: grid;
     align-items: center;
     width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
-    min-height: calc(100svh - 69px - 78px);
+    min-height: calc(100svh - 73px - 78px);
     padding-block: clamp(48px, 7vw, 84px);
     margin-inline: auto;
     overflow: hidden;
@@ -365,6 +365,6 @@
 @media (width >= 1024px) {
     .noClubsMain,
     .readyMain {
-        min-height: calc(100svh - 69px);
+        min-height: calc(100svh - 73px);
     }
 }

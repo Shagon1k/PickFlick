@@ -71,7 +71,7 @@ test(
         await expect(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
-        await page.getByRole('link', { name: '← Midnight Society' }).click();
+        await page.getByRole('link', { name: 'Back to Hub' }).click();
         await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
@@ -100,11 +100,11 @@ test(
         ).toBeVisible();
         await page.getByRole('link', { name: 'Open Session' }).click();
         await expect(page.getByText('watching', { exact: true })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
+        await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
         );
-        await page.getByRole('link', { name: '← Midnight Society' }).click();
+        await page.getByRole('link', { name: 'Back to Hub' }).click();
         const activeSession = page.getByRole('link', { name: /^Open active Session:/u });
         await expect(
             page.getByRole('region', { name: 'Active Session', exact: true }),

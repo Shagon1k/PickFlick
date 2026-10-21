@@ -1,91 +1,44 @@
-.roster {
-    padding: var(--gap-lg);
-    margin-block: var(--gap-lg);
-    overflow-wrap: anywhere;
-    scroll-margin-top: var(--gap-2xl);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-
-.header,
-.row,
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    align-items: center;
-    justify-content: space-between;
-}
-
-.header h2 {
-    margin: 0;
-    font: 500 var(--fs-card-title)/var(--lh-title) var(--font-body);
-}
-
-.roster p {
-    color: var(--fg-secondary);
-}
-
 .list {
     padding: 0;
+    margin: 0;
     list-style: none;
 }
 
 .row {
-    padding-block: var(--gap-md);
-    border-bottom: 1px solid var(--border);
-}
-
-.invite {
-    display: grid;
+    display: flex;
     gap: var(--gap-sm);
-    max-width: 32rem;
-    margin-block: var(--gap-lg);
-    scroll-margin-top: var(--gap-2xl);
-}
-
-@media (width <= 575px) {
-    .roster {
-        padding: var(--gap-md);
-    }
-
-    .row {
-        align-items: flex-start;
-    }
-
-    .actions {
-        width: 100%;
-    }
-}
-
-.list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-    gap: var(--gap-sm);
-}
-
-.row {
-    align-content: start;
     align-items: center;
-    padding: var(--gap-sm);
+    min-height: 52px;
+    padding-block: var(--gap-xs);
+    overflow-wrap: anywhere;
+}
+
+.row + .row {
+    border-top: 1px solid var(--border);
+}
+
+.avatar {
+    display: grid;
+    flex: 0 0 28px;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font: 600 var(--fs-micro)/1 var(--font-body);
+    color: var(--fg-secondary);
+    background: var(--surface-lit);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 50%;
 }
 
-.row strong {
+.name {
+    display: grid;
+    flex: 1;
+    min-width: 0;
     font-size: var(--fs-body-sm);
+    color: var(--fg);
 }
 
-.row p {
-    margin: 4px 0 0;
+.name small {
     font-size: var(--fs-caption);
-}
-
-.roster > p {
-    font-size: var(--fs-caption);
-}
-
-.roster > p:empty {
-    display: none;
+    color: var(--fg-secondary);
 }

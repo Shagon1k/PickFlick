@@ -110,10 +110,10 @@ for (const viewport of canonicalViewports) {
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
-        const progressBounds = await page
-            .getByRole('progressbar', { name: 'Selection progress' })
+        const refreshBounds = await page
+            .getByRole('button', { name: 'Refresh Selection' })
             .boundingBox();
-        expect(progressBounds?.width).toBeGreaterThanOrEqual(44);
+        expect(refreshBounds?.width).toBeGreaterThanOrEqual(44);
         const target = page.getByRole('radio', { name: '10 of 10' }).first();
         const bounds = await target.boundingBox();
         expect(bounds?.width).toBeGreaterThanOrEqual(44);

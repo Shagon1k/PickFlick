@@ -1,9 +1,11 @@
+/* The clip edge is the viewport edge, so the resting stub slides out of view as in the prototype. */
 .widget {
     position: fixed;
-    right: 18px;
+    right: 0;
     bottom: var(--gap-lg);
     z-index: 35;
-    width: 184px;
+    width: calc(184px + 18px);
+    padding-right: 18px;
     overflow: clip;
 }
 

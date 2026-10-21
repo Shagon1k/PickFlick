@@ -32,6 +32,7 @@ const movie: TNominationMovie = {
     id: '20000000-0000-4000-8000-000000000001',
     title: 'Past losing nomination',
     year: 2020,
+    genres: ['Drama', 'Mystery'],
 };
 function stateFor(token: string | undefined): INominationState {
     const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };

@@ -40,7 +40,7 @@ test(
         await page.getByLabel('Type CLOSE to confirm').press('Enter');
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Noir night' })).toBeFocused();
+        await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
         await expect(page.getByRole('list', { name: 'Selection ranking' })).toBeVisible();
         await expect(page.getByText('No ballots were received.', { exact: false })).toBeVisible();
         await page.reload();

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
+    movieDetailsSchema,
     type TMovieDetails,
     type TMovieDetailsResponse,
     type TMovieResult,
@@ -58,15 +59,39 @@ export class MoviesService {
         tx: Prisma.TransactionClient,
         ids: string[],
     ): Promise<Map<string, TNominationMovie>> {
-        const movies = await tx.movie.findMany({
-            where: { id: { in: ids } },
-            select: { id: true, title: true, releaseYear: true },
-        });
+        const [movies, details] = await Promise.all([
+            tx.movie.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, title: true, releaseYear: true },
+            }),
+            // Genres come only from already cached details; listing films never calls a provider.
+            tx.movieDetailsCache.findMany({
+                where: {
+                    movieId: { in: ids },
+                    key: buildDetailsCacheKey(
+                        this.environment.catalog.provider,
+                        this.environment.catalog.locale,
+                    ),
+                },
+                select: { movieId: true, data: true },
+            }),
+        ]);
         const byId = new Map(movies.map((movie) => [movie.id, movie]));
+        const genresById = new Map(
+            details.map((row) => [
+                row.movieId,
+                movieDetailsSchema.safeParse(row.data).data?.genres ?? [],
+            ]),
+        );
         return new Map(
             ids.map((id) => [
                 id,
-                { id, title: byId.get(id)?.title ?? null, year: byId.get(id)?.releaseYear ?? null },
+                {
+                    id,
+                    title: byId.get(id)?.title ?? null,
+                    year: byId.get(id)?.releaseYear ?? null,
+                    genres: genresById.get(id) ?? [],
+                },
             ]),
         );
     }

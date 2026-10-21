@@ -1,8 +1,8 @@
 import type { ISessionRoster, TSession } from '@pickflick/contracts';
+import clsx from 'clsx';
+import type { ReactNode } from 'react';
 
-import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
-import { formatUtcDateTime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -13,15 +13,18 @@ export default function SessionFacts({
     session: TSession;
     roster: ISessionRoster;
 }) {
-    const submitted = session.nominations?.nominatedCount ?? session.selection?.submittedCount;
+    const panel = getCompanion(session, roster);
     return (
-        <section className={styles.detailsGrid} aria-label="Session details">
+        <section
+            className={clsx(styles.detailsGrid, !panel && styles.detailsSingle)}
+            aria-label="Session details"
+        >
             <div className={styles.card}>
                 <dl className={styles.facts}>
                     <div>
                         <dt>
                             <Icon name="calendar" />
-                            Date
+                            {isFilmPhase(session.phase) ? 'Watched' : 'Date'}
                         </dt>
                         <dd>
                             {session.scheduledAt
@@ -50,7 +53,7 @@ export default function SessionFacts({
                             {roster.participants
                                 .filter((participant) => participant.status === 'ACCEPTED')
                                 .map((participant) => participant.displayName)
-                                .join(' · ') || 'No accepted participants'}
+                                .join(' • ') || 'No accepted participants'}
                         </dd>
                     </div>
                     <div>
@@ -69,31 +72,52 @@ export default function SessionFacts({
                             <dd className={styles.notes}>{session.notes}</dd>
                         </div>
                     ) : null}
-                    {session.deadlineAt ? (
-                        <div>
-                            <dt>
-                                <Icon name="clock" />
-                                Nomination deadline
-                            </dt>
-                            <dd>{formatUtcDateTime(session.deadlineAt)}</dd>
-                        </div>
-                    ) : null}
                 </dl>
-                {session.movieId ? (
-                    <ButtonLink href={`/movies/${session.movieId}`}>View selected Movie</ButtonLink>
-                ) : null}
                 {session.phase === 'CANCELLED' ? (
                     <p role="status">This Session was cancelled. Its history is preserved.</p>
                 ) : null}
             </div>
-            {submitted !== undefined ? (
-                <div className={styles.metric}>
-                    <strong>
-                        {submitted}/{roster.acceptedCount}
-                    </strong>
-                    <span>{session.phase === 'NOMINATION' ? 'Nominated' : 'Selected'}</span>
-                </div>
-            ) : null}
+            {panel}
         </section>
     );
+}
+
+/** The companion beside the facts: phase progress, the coming chat, or the club score. */
+function getCompanion(session: TSession, roster: ISessionRoster): ReactNode {
+    const submitted = session.nominations?.nominatedCount ?? session.selection?.submittedCount;
+    if (submitted !== undefined)
+        return (
+            <div className={styles.metric}>
+                <strong>
+                    {submitted}/{roster.acceptedCount}
+                </strong>
+                <span>{session.phase === 'NOMINATION' ? 'Nominated' : 'Selected'}</span>
+            </div>
+        );
+    if (session.phase === 'WATCHING')
+        return (
+            <div className={styles.chatStub}>
+                <span aria-hidden="true">
+                    <Icon name="chat" />
+                </span>
+                <h3>Chat with your club in real time</h3>
+                <p>
+                    Discuss the film while watching. Reactions, theories, and live commentary — all
+                    in one place.
+                </p>
+                <small>Coming soon</small>
+            </div>
+        );
+    if (session.phase === 'RATING' || session.phase === 'COMPLETED')
+        return (
+            <div className={styles.metric}>
+                <strong>—</strong>
+                <span>Club score</span>
+            </div>
+        );
+    return null;
+}
+
+function isFilmPhase(phase: TSession['phase']) {
+    return phase === 'WATCHING' || phase === 'RATING' || phase === 'COMPLETED';
 }

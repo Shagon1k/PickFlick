@@ -161,3 +161,9 @@
         justify-content: flex-start;
     }
 }
+
+@media (width < 768px) {
+    .scale[data-compact] .scale__rail {
+        justify-content: center;
+    }
+}

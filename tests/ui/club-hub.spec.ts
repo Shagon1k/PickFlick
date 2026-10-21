@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -245,7 +246,7 @@ test('Club member joins the active Session directly from Overview', async ({ con
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     await page.getByRole('button', { name: 'Join me!' }).click();
     await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000041$/u);
-    await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
+    await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
 });
 
 for (const viewport of screenshotViewports) {

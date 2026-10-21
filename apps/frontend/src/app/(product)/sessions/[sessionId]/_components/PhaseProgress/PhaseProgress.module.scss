@@ -1,12 +1,16 @@
+/* The prototype status banner: one centred mono message, with manual refresh kept at the edge. */
 .progress {
+    position: relative;
     display: flex;
-    gap: var(--gap-sm);
+    gap: 11px;
     align-items: center;
+    justify-content: center;
     min-height: 46px;
-    padding: 0 var(--gap-xs) 0 16px;
+    padding: 12px calc(var(--hit) + var(--gap-xs));
     margin-bottom: 28px;
     font: var(--fs-caption)/1.45 var(--font-mono);
     color: var(--fg-secondary);
+    letter-spacing: 0.01em;
     border: 1px solid var(--border);
     border-radius: var(--radius);
 }
@@ -21,18 +25,14 @@
 }
 
 .progress p {
-    flex: 1;
     margin: 0;
 }
 
-.progress progress {
-    width: 90px;
-    accent-color: var(--gold);
-}
-
 .refresh {
+    position: absolute;
+    top: 50%;
+    right: 1px;
     display: grid;
-    flex: 0 0 var(--hit);
     place-items: center;
     width: var(--hit);
     height: var(--hit);
@@ -42,6 +42,7 @@
     background: transparent;
     border: 0;
     border-radius: var(--radius);
+    transform: translateY(-50%);
 }
 
 .refresh:hover {
@@ -58,11 +59,9 @@
 
 @media (width < 576px) {
     .progress {
-        gap: var(--gap-xs);
-    }
-
-    .progress progress {
-        flex: 0 0 var(--hit);
-        width: var(--hit);
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-left: 16px;
+        font-size: var(--fs-micro);
     }
 }

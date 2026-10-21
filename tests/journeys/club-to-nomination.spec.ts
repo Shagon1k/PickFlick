@@ -6,6 +6,7 @@ import {
     connectJourneyBackend,
     type IJourneyBackend,
 } from '../../apps/backend/src/testing/journeys.ts';
+import { acceptedParticipants } from '../ui/session-facts';
 
 let backend: IJourneyBackend;
 
@@ -89,7 +90,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         expect(denied.status()).toBe(404);
         await member.goto(link);
         await member.getByRole('button', { name: 'Join Session', exact: true }).click();
-        await expect(member.getByText('1 accepted', { exact: true })).toBeVisible();
+        await expect(acceptedParticipants(member)).toHaveText('Jordan Member');
     });
 
     await test.step('the sole participant nomination selects the Movie for Watching', async () => {

@@ -1,7 +1,11 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import { submitSelectionSchema, type TSelection } from '@pickflick/contracts';
+import {
+    submitSelectionSchema,
+    type TNominationMovie,
+    type TSelection,
+} from '@pickflick/contracts';
 import Link from 'next/link';
 import { type ReactNode, useRef, useState, useTransition } from 'react';
 
@@ -83,9 +87,6 @@ export default function Selection({
     return (
         <section className={styles.selection} aria-labelledby="selection-heading">
             <PhaseProgress
-                label="Selection progress"
-                value={data.submittedCount}
-                max={data.acceptedCount}
                 refreshLabel="Refresh Selection"
                 disabled={isPending}
                 onRefresh={handleRefresh}
@@ -118,8 +119,7 @@ export default function Selection({
                                             {row.movie.title ?? 'Movie title unavailable'}
                                         </Link>
                                     </h3>
-                                    {row.movie.year ? <p>{row.movie.year}</p> : null}
-                                    {row.author !== null ? <p>Nominated by {row.author}</p> : null}
+                                    <p>{describeNomination(row.movie, row.author)}</p>
                                 </div>
                                 <div className={styles.control}>
                                     <ScoreControl
@@ -151,7 +151,7 @@ export default function Selection({
                         ) : null}
                         {data.canSubmit && !data.submittedAt ? (
                             <>
-                                <p role="status">
+                                <p className={styles.summary} role="status">
                                     {scoredCount} of {data.nominations.length} films scored ·{' '}
                                     {scoredCount === data.nominations.length
                                         ? 'Ready to submit'
@@ -177,3 +177,15 @@ export default function Selection({
         </section>
     );
 }
+
+function describeNomination(movie: TNominationMovie, author: string | null) {
+    return [
+        movie.year,
+        movie.genres.slice(0, MAX_GENRES).join(', '),
+        author === null ? null : `nominated by ${author}`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+}
+
+const MAX_GENRES = 2;

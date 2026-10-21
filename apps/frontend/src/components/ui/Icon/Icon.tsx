@@ -1,5 +1,6 @@
 import type { ReactNode, SVGAttributes } from 'react';
 
+import { actionGlyphs } from './action-glyphs';
 import { metadataGlyphs } from './metadata-glyphs';
 import { statGlyphs } from './stat-glyphs';
 
@@ -26,6 +27,7 @@ export type TIconName =
     | 'cancel'
     | 'catalog'
     | 'chart'
+    | 'chat'
     | 'chevron-right'
     | 'circle'
     | 'clock'
@@ -53,6 +55,7 @@ export type TIconName =
     | 'settings'
     | 'sign-out'
     | 'user-plus'
+    | 'user-x'
     | 'watchlist';
 
 export interface IIconProps extends Omit<SVGAttributes<SVGSVGElement>, 'children'> {
@@ -60,6 +63,7 @@ export interface IIconProps extends Omit<SVGAttributes<SVGSVGElement>, 'children
 }
 
 const glyphs: Record<TIconName, ReactNode> = {
+    ...actionGlyphs,
     ...metadataGlyphs,
     ...statGlyphs,
     achievements: (
@@ -99,12 +103,6 @@ const glyphs: Record<TIconName, ReactNode> = {
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
         </>
     ),
-    cancel: (
-        <>
-            <circle cx="12" cy="12" r="10" />
-            <path d="m15 9-6 6M9 9l6 6" />
-        </>
-    ),
     catalog: (
         <>
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM8 7h8M8 10h6" />
@@ -113,11 +111,6 @@ const glyphs: Record<TIconName, ReactNode> = {
     chart: (
         <>
             <path d="M6 20v-4M12 20V10M18 20V4" />
-        </>
-    ),
-    'chevron-right': (
-        <>
-            <path d="m9 18 6-6-6-6" />
         </>
     ),
     circle: (
@@ -163,12 +156,6 @@ const glyphs: Record<TIconName, ReactNode> = {
         <>
             <rect height="20" rx="3" width="14" x="5" y="2" />
             <path d="M10 18h4" />
-        </>
-    ),
-    edit: (
-        <>
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
         </>
     ),
     google: (

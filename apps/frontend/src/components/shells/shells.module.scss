@@ -335,6 +335,9 @@
 
 .productHeader .headerInner {
     grid-template-columns: auto 1fr auto;
+
+    /* With the border this is the prototype's 73px app header. */
+    min-height: 72px;
 }
 
 .productHeaderControls {

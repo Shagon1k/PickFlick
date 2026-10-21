@@ -180,6 +180,7 @@ export default function SessionForm({
                 <MoviePicker
                     disabled={isPending}
                     error={form.errors.movieId}
+                    placeholder="Search films by title…"
                     value={form.values.movieId}
                     onChange={(movieId) => form.setFieldValue('movieId', movieId)}
                 />

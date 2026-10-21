@@ -19,8 +19,9 @@
 }
 
 .card h2 {
-    margin-top: 0;
-    font-size: var(--fs-body);
+    margin: 0 0 var(--gap-sm);
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .card h3,
@@ -69,12 +70,13 @@
     flex: 0 0 48px;
     place-items: center;
     width: 48px;
-    aspect-ratio: 2 / 3;
+    height: 72px;
     overflow: hidden;
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--fg-secondary);
     background: var(--surface-lit);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 6px;
 }
 
 .suggestionPoster {
@@ -90,30 +92,87 @@
     border-radius: var(--radius);
 }
 
-.suggestions strong {
-    font-size: var(--fs-caption);
-    font-weight: 500;
+.suggestions button {
+    gap: 0;
     text-align: left;
 }
 
-.movies li {
-    display: flex;
+.suggestionPoster {
+    margin-bottom: var(--gap-xs);
+}
+
+.suggestions strong {
+    font-size: var(--fs-meta);
+    font-weight: 600;
+}
+
+.suggestions span:last-child:not(.suggestionPoster) {
+    margin-top: 2px;
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+}
+
+.movies {
+    display: grid;
     gap: var(--gap-sm);
+    margin: 0;
+}
+
+.movies > li {
+    display: flex;
+    gap: var(--gap-md);
     align-items: center;
-    padding: var(--gap-sm);
-    margin-bottom: var(--gap-sm);
+    padding: 16px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
-.movies a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
+.movies > li:hover {
+    background: var(--accent-soft);
+    border-color: var(--border-lit);
 }
 
-.selected {
-    margin-bottom: var(--gap-sm);
+.movieInfo {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.movieInfo a {
+    font-size: var(--fs-body);
+    font-weight: 600;
+    line-height: var(--lh-ui);
+    text-decoration: none;
+}
+
+.movieInfo a:hover {
+    text-decoration: underline;
+}
+
+.movieInfo p {
+    margin: 0;
+    font-size: var(--fs-meta);
+}
+
+.genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 0;
+    margin: 2px 0 0;
+    list-style: none;
+}
+
+.genres li {
+    padding: 4px 8px;
+    font-size: var(--fs-caption);
+    line-height: 1;
+    color: var(--ivory-muted);
+    border: 1px solid color-mix(in sRGB, var(--ivory) 32%, transparent);
+    border-radius: var(--radius-pill);
 }
 
 @media (width < 1024px) {
@@ -141,9 +200,36 @@
 }
 
 .selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
     padding: var(--gap-sm);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+}
+
+.selected p {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: baseline;
+    margin: 0;
+    color: var(--fg);
+}
+
+.selected p span:last-child {
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+}
+
+.selectedActions {
+    display: flex;
+    gap: var(--gap-xs);
+}
+
+.feedback {
+    margin-bottom: 0;
 }
 
 .card > div[aria-hidden='true'] {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ISessionRoster, TSession } from '@pickflick/contracts';
+import type { ISessionRoster, TMovieDetails, TSession } from '@pickflick/contracts';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
@@ -8,7 +8,9 @@ import { type ReactNode, useEffect, useRef, useState, useTransition } from 'reac
 import nominationPanda from '#brand/panda-collection.webp';
 import watchingPanda from '#brand/panda-rating.webp';
 import selectionPanda from '#brand/panda-rating-2.webp';
+import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
+import Alert from '#components/ui/Alert/Alert';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
@@ -17,6 +19,7 @@ import { getOfflineMessage } from '#lib/offline';
 import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
+import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Selection from '../Selection/Selection';
 import SelectionClose from '../SelectionClose/SelectionClose';
 import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
@@ -27,9 +30,13 @@ import SessionRoster from '../SessionRoster/SessionRoster';
 export default function SessionDetails({
     session,
     roster,
+    movie,
+    renderedAt,
 }: {
     session: TSession;
     roster: ISessionRoster;
+    movie: TMovieDetails | null;
+    renderedAt: number;
 }) {
     const router = useRouter();
     const headingRef = useRef<HTMLHeadingElement>(null);
@@ -41,10 +48,13 @@ export default function SessionDetails({
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
-    const header = (participation: ReactNode, onClosePhase?: () => void) => (
+    const header = (participation: ReactNode, onKick?: () => void, onClosePhase?: () => void) => (
         <SessionHeader
             session={session}
+            movie={movie}
             participation={participation}
+            renderedAt={renderedAt}
+            onKick={onKick}
             onClosePhase={onClosePhase}
             closePhaseLabel={
                 session.phase === 'NOMINATION' ? 'Close nominations early' : 'Close Selection early'
@@ -60,12 +70,41 @@ export default function SessionDetails({
     return (
         <main className={styles.main}>
             <SessionRoster sessionId={session.id} initial={roster}>
-                {(participation) => (
+                {(participation, onKick) => (
                     <>
-                        {!session.nominations && !session.selection ? header(participation) : null}
+                        {isFilmPhase(session.phase) ? (
+                            <>
+                                <PhaseProgress>
+                                    {roster.acceptedCount}{' '}
+                                    {roster.acceptedCount === 1 ? 'member has' : 'members have'}{' '}
+                                    joined the screening.
+                                </PhaseProgress>
+                                {header(participation, onKick)}
+                                {movie ? (
+                                    <div className={styles.film}>
+                                        <MovieMedia
+                                            movie={movie}
+                                            title={
+                                                movie.title ??
+                                                movie.originalTitle ??
+                                                'Untitled film'
+                                            }
+                                        />
+                                    </div>
+                                ) : (
+                                    <Alert tone="warning">
+                                        Film details are unavailable right now. The Session itself
+                                        is unaffected.
+                                    </Alert>
+                                )}
+                            </>
+                        ) : null}
+                        {!isFilmPhase(session.phase) && !session.nominations && !session.selection
+                            ? header(participation, onKick)
+                            : null}
                         {session.nominations ? (
                             <Nomination
-                                header={(onClose) => header(participation, onClose)}
+                                header={(onClose) => header(participation, onKick, onClose)}
                                 sessionId={session.id}
                                 phaseVersion={session.phaseVersion}
                                 data={session.nominations}
@@ -83,7 +122,7 @@ export default function SessionDetails({
                             >
                                 {(onClose) => (
                                     <Selection
-                                        header={header(participation, onClose)}
+                                        header={header(participation, onKick, onClose)}
                                         sessionId={session.id}
                                         data={session.selection!}
                                     />
@@ -158,6 +197,10 @@ export default function SessionDetails({
             </ConfirmDialog>
         </main>
     );
+}
+
+function isFilmPhase(phase: TSession['phase']) {
+    return phase === 'WATCHING' || phase === 'RATING' || phase === 'COMPLETED';
 }
 
 function getPhaseMascot(phase: TSession['phase']) {

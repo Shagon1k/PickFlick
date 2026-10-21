@@ -152,7 +152,7 @@ All canonical screens are MVP and approved as direction.
 | `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Not started                                                                                          | Not checked                                                                      |
 | Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                        | Responsive and accessibility checks passed locally; hosted owner review pending  |
 | Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                               | Responsive and accessibility checks passed locally; hosted owner review pending  |
-| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Not started                                                                                          | Not checked                                                                      |
+| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Partial — film header, media grid and chat preview; moving to Rating is Phase 13                     | Checked live 2026-10-21; hosted owner review pending                             |
 | Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                                          | Not checked                                                                      |
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                                          | Not checked                                                                      |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                                          | Not checked                                                                      |
@@ -192,15 +192,26 @@ its heading, count, text Close action, invite type, metadata and actions. Club r
 member count and expiry; Session rows show the topic, Club and screening date. Reduced motion removes
 the slide.
 
-Delivered Nomination and Selection use the Session header variant, a neutral progress banner,
-phase heading with icon-labelled Session context, and the shared reel separator and facts metric.
+Delivered Nomination and Selection use the Session header variant, a centred monochrome status
+banner with manual refresh at its edge, a phase heading with icon-labelled topic and notes, a relative
+Nomination deadline ("closes in 4h 32m") anchored to the request time, and the shared reel separator,
+facts rows and gold facts metric. Participants appear only in the facts row; operators remove them
+through Kick in the gear menu, a dialog of removable participants that keeps typed `REMOVE`.
+Watching, Rating and Completed reuse the Movie Details media grid under a film header: linked title,
+year and runtime, genre chips and a phase stamp whose dot pulses only while Watching. The facts
+companion is the coming-soon chat while Watching and an empty Club score until Phase 13 ratings.
+The 73px desktop product header matches the Hub prototype.
 Invite copies the existing Club-member Session link. Join/Leave sits beside the header actions;
 Early phase closure, Edit and Cancel live in the gear film-strip menu: a 174px strip with a tail tab
 and an icon above each label, like the account menu. Invite confirms the copy in its label. Dialogs
 use the prototype's 440px card with a 20px display title, compact body and right-aligned actions, and
 no close icon; Escape, the overlay and the dialog's own Cancel or Close action dismiss it. Existing
 typed confirmation and focus return stay intact.
-Nomination shows its submit action after choosing a film; suggestions and results retain real data.
+Nomination searches through a dropdown over the card with poster thumbnails; a chosen film becomes
+a bordered row with a compact Nominate This action. Suggestions and current nominations show
+posters, bold titles and cached genres; feedback stays inside the nomination card.
+Selection rows show a 64×96 poster, a 16px title and one year · genres · nominator line, stacking
+the film above its scores on phones; the summary uses mono caps above a 250px submit button.
 Selection uses compact score rows with accessible radio names, live feedback and 44px controls; long
 scales scroll within the row. A score marks only the chosen option; hover stays neutral. The two
 Nomination columns stack below 1024px. The reel separator is a thin sprocket rule with the phase
@@ -342,7 +353,11 @@ popover, gear menu and dialogs with the prototypes. The shared dialog, film-stri
 control, Active Session film strip, reel separator and invite ticket now follow the prototype; the
 live captures after the change were compared again. The full UI contract passed 200 checks, and
 16 changed Linux PNGs were reviewed before all 84 visual comparisons passed in the CI-pinned image.
-Session-page composition, Hub panels and the Watching hero remain open Phase 12 findings.
+The follow-up Session pass rebuilt the phase banner, hero, Nomination search and cards, Selection
+rows, facts companion, Kick dialog and Watching film header from the live captures; the UI contract
+passed 200 checks, 35 reviewed Linux PNGs changed (mostly the 73px header and the viewport-edge ticket),
+and all 84 visual comparisons passed. Movie Details was confirmed unchanged apart from the header.
+Hub panels and Rating/Completed content remain open Phase 12 and Phase 13 work.
 
 Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
 stable recovery actions. Its heading says "You are invited" because invitation links do not reserve
@@ -445,7 +460,8 @@ provider failure and cached results; provider text stays escaped.
 Validation focuses the first invalid field. Saving, offline and API-failure feedback preserves
 entries. Success links to the created Session and Club Hub; Invite copies the shared
 member-only Session URL. Blocking Sessions and Club/role restrictions replace the form with a recovery link.
-The phase-labelled detail foundation shows date/location/notes, deadline and a selected-Movie link.
+The phase-labelled detail foundation shows date, location, participants, topic and notes; the film
+header links the selected Movie.
 Operators edit details in a focus-trapped dialog and cancel with typed `CANCEL`; terminal Sessions
 have no edit or cancellation controls. Club Hub links current, Rating and history rows to detail.
 Successful creation and edits invalidate the Hub and detail pages so browser Back shows current data.
@@ -467,9 +483,9 @@ The shared pending ticket lists unanswered open Sessions for the current Club me
 and Decline and no independent link expiry. A declined or departed participant can rejoin explicitly;
 operator removal prevents self-join. Late Selection participants score the existing frozen films.
 
-Session detail shows the accepted count, participant states, shared-link copying, Join and typed
-Leave. Operators can remove participants with typed `REMOVE`; legacy pending personal links can
-still be revoked. Confirmations preserve history, trap focus, and retain failure/offline feedback.
+Session detail shows accepted participants in its facts, shared-link copying, Join and typed
+Leave. Operators remove participants from the gear menu's Kick dialog with typed `REMOVE`; legacy
+pending personal links can still be revoked there. Confirmations preserve history, trap focus, and retain failure/offline feedback.
 Archived and terminal restrictions remove unavailable controls. Existing personal invitation URLs
 retain their original recipient checks, seven-day expiry and focused invitation scene. Signed-out
 visitors receive sign-in continuation; non-members see no private screening context.

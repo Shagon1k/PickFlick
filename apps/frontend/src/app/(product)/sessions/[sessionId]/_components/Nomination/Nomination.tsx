@@ -31,8 +31,7 @@ export default function Nomination({
     header: (onClose?: () => void) => ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const [selected, setSelected] = useState<string | null>(null);
-    const [suggestion, setSuggestion] = useState<TNominationMovie | null>(null);
+    const [chosen, setChosen] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -45,7 +44,7 @@ export default function Nomination({
         setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');
         startTransition(async () => {
             let request;
-            if (action === 'submit') request = nominateAction(sessionId, { movieId: selected });
+            if (action === 'submit') request = nominateAction(sessionId, { movieId: chosen?.id });
             else if (action === 'close')
                 request = closeNominationsAction(sessionId, {
                     phaseVersion,
@@ -68,14 +67,12 @@ export default function Nomination({
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
             <PhaseProgress
-                label="Nomination progress"
-                value={data.nominatedCount}
-                max={data.acceptedCount}
                 refreshLabel="Refresh nominations"
                 disabled={isPending}
                 onRefresh={() => run('refresh')}
             >
-                {data.nominatedCount} of {data.acceptedCount} participants have nominated.
+                Nomination in progress — {data.nominatedCount} of {data.acceptedCount} participants
+                have nominated.
             </PhaseProgress>
             {header(
                 data.canClose
@@ -91,78 +88,30 @@ export default function Nomination({
                         Find &amp; Nominate a Movie
                     </h2>
                     {data.canSubmit ? (
-                        <>
-                            {suggestion ? (
-                                <div className={styles.selected}>
-                                    <p>Selected: {formatMovieLabel(suggestion)}</p>
-                                    <Button
-                                        disabled={isPending}
-                                        variant="ghost"
-                                        onClick={() => {
-                                            setSuggestion(null);
-                                            setSelected(null);
-                                        }}
-                                    >
-                                        Remove selected Movie
-                                    </Button>
-                                </div>
-                            ) : (
-                                <MoviePicker
-                                    disabled={isPending}
-                                    value={selected}
-                                    onChange={setSelected}
-                                />
-                            )}
-                            {selected ? (
-                                <Button loading={isPending} onClick={() => run('submit')}>
-                                    Nominate This
-                                </Button>
-                            ) : null}
-                            <SprocketDivider variant="section" />
-                            <h3>Suggestions from your past nominations that did not win</h3>
-                            {data.suggestions.length ? (
-                                <ul
-                                    className={styles.suggestions}
-                                    aria-label="Personal nomination suggestions"
-                                >
-                                    {data.suggestions.map((movie) => (
-                                        <li key={movie.id}>
-                                            <button
-                                                type="button"
-                                                disabled={isPending}
-                                                onClick={() => {
-                                                    setSelected(movie.id);
-                                                    setSuggestion(movie);
-                                                }}
-                                            >
-                                                <SearchPoster
-                                                    className={styles.suggestionPoster}
-                                                    url={`/api/movies/${movie.id}/poster`}
-                                                />
-                                                <strong>{formatMovieLabel(movie)}</strong>
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p>
-                                    No past losing nominations in this Club yet. Search for a Movie
-                                    above.
-                                </p>
-                            )}
-                        </>
+                        <NominationPicker
+                            chosen={chosen}
+                            disabled={isPending}
+                            suggestions={data.suggestions}
+                            onChoose={setChosen}
+                            onSubmit={() => run('submit')}
+                        />
                     ) : (
                         <SubmissionState movie={data.ownMovie} />
                     )}
+                    <p
+                        className={styles.feedback}
+                        aria-atomic="true"
+                        aria-live="polite"
+                        role="status"
+                    >
+                        {message}
+                    </p>
                 </section>
                 <section className={styles.card} aria-labelledby="nominations-heading">
                     <h2 id="nominations-heading">Current Nominations</h2>
                     <NominationList data={data} />
                 </section>
             </div>
-            <p className={styles.feedback} aria-atomic="true" aria-live="polite" role="status">
-                {message}
-            </p>
             <ConfirmDialog
                 cancelLabel="Keep nominations open"
                 confirmLabel="Confirm close"
@@ -215,12 +164,112 @@ function NominationList({ data }: { data: TNominations }) {
                         className={styles.poster}
                         url={`/api/movies/${row.movie.id}/poster`}
                     />
-                    <div>
-                        <Link href={`/movies/${row.movie.id}`}>{formatMovieLabel(row.movie)}</Link>
+                    <div className={styles.movieInfo}>
+                        <Link
+                            aria-label={formatMovieLabel(row.movie)}
+                            href={`/movies/${row.movie.id}`}
+                        >
+                            {row.movie.title ?? 'Movie title unavailable'}
+                        </Link>
                         {row.author !== null ? <p>by {row.author}</p> : null}
+                        {row.movie.genres.length ? (
+                            <ul aria-label="Genres" className={styles.genres}>
+                                {row.movie.genres.slice(0, MAX_GENRES).map((genre) => (
+                                    <li key={genre}>{genre}</li>
+                                ))}
+                            </ul>
+                        ) : null}
                     </div>
                 </li>
             ))}
         </ul>
+    );
+}
+
+const MAX_GENRES = 3;
+
+function NominationPicker({
+    chosen,
+    disabled,
+    suggestions,
+    onChoose,
+    onSubmit,
+}: {
+    chosen: TNominationMovie | null;
+    disabled: boolean;
+    suggestions: TNominationMovie[];
+    onChoose: (movie: TNominationMovie | null) => void;
+    onSubmit: () => void;
+}) {
+    return (
+        <>
+            {chosen ? (
+                <div className={styles.selected}>
+                    <p>
+                        <span className="visually-hidden">Selected: </span>
+                        <strong>{chosen.title ?? 'Movie title unavailable'}</strong>
+                        {chosen.year ? <span>{chosen.year}</span> : null}
+                    </p>
+                    <div className={styles.selectedActions}>
+                        <Button
+                            aria-label="Remove selected Movie"
+                            disabled={disabled}
+                            size="small"
+                            variant="ghost"
+                            onClick={() => onChoose(null)}
+                        >
+                            Change
+                        </Button>
+                        <Button loading={disabled} size="small" onClick={onSubmit}>
+                            Nominate This
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <MoviePicker
+                    disabled={disabled}
+                    hideLabel
+                    placeholder="Search films…"
+                    value={null}
+                    onChange={(id, movie) =>
+                        onChoose(
+                            id && movie
+                                ? {
+                                      id,
+                                      title: movie.title ?? movie.originalTitle,
+                                      year: movie.releaseYear,
+                                      genres: [],
+                                  }
+                                : null,
+                        )
+                    }
+                />
+            )}
+            <SprocketDivider variant="section" />
+            <h3>Suggestions from your past nominations that did not win</h3>
+            {suggestions.length ? (
+                <ul className={styles.suggestions} aria-label="Personal nomination suggestions">
+                    {suggestions.map((movie) => (
+                        <li key={movie.id}>
+                            <button
+                                aria-label={formatMovieLabel(movie)}
+                                type="button"
+                                disabled={disabled}
+                                onClick={() => onChoose(movie)}
+                            >
+                                <SearchPoster
+                                    className={styles.suggestionPoster}
+                                    url={`/api/movies/${movie.id}/poster`}
+                                />
+                                <strong>{movie.title ?? 'Movie title unavailable'}</strong>
+                                {movie.year ? <span>{movie.year}</span> : null}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No past losing nominations in this Club yet. Search for a Movie above.</p>
+            )}
+        </>
     );
 }
