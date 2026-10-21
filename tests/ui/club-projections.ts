@@ -36,6 +36,7 @@ export function settingsProjection(
         club: {
             id: SETTINGS_CLUB_ID,
             name: 'Midnight Society',
+            createdAt: '2025-01-01T00:00:00.000Z',
             description: 'Noir, classics, and arguments.',
             hasAvatar: Boolean(avatarVersion),
             ...(avatarVersion ? { avatarVersion } : {}),
@@ -104,12 +105,14 @@ function memberRoster(
             id: '20000000-0000-4000-8000-000000000031',
             displayName: 'Avery Admin',
             role: 'ADMIN',
+            sessionCount: 0,
             joinedAt: '2026-01-01T00:00:00.000Z',
         },
         {
             id: '20000000-0000-4000-8000-000000000032',
             displayName: 'Morgan Member',
             role: 'MEMBER',
+            sessionCount: 0,
             joinedAt: '2026-02-01T00:00:00.000Z',
         },
         ...(role === 'MODERATOR'
@@ -118,6 +121,7 @@ function memberRoster(
                       id: '20000000-0000-4000-8000-000000000033',
                       displayName: 'Taylor Moderator',
                       role: 'MODERATOR' as const,
+                      sessionCount: 0,
                       joinedAt: '2026-02-02T00:00:00.000Z',
                   },
               ]
@@ -127,6 +131,7 @@ function memberRoster(
                   id: `20000000-0000-4000-8000-00000000004${index}`,
                   displayName: `Club member ${index + 1}`,
                   role: 'MEMBER' as const,
+                  sessionCount: 0,
                   joinedAt: '2026-02-02T00:00:00.000Z',
               }))
             : []),

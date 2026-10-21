@@ -2,9 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
 import {
-    BLOCKING_SESSION_PHASES,
     type IClubHub,
-    type IClubHubSession,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
@@ -15,26 +13,28 @@ import type { Prisma } from '@pickflick/database';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { MoviesService } from '../movies/movies.service.js';
 import {
     assertActive,
     assertAdmin,
     findMembership,
     getClubAccess,
-    loadClubAccess,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
 import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
+import { buildClubStatistics, readClubHub } from './club-hub.js';
 
-const RECENT_SESSIONS_LIMIT = 5;
-const HISTORY_SESSIONS_LIMIT = 20;
 const AUDIT_EVENTS_LIMIT = 20;
 
 @Injectable()
 export class ClubsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly movies: MoviesService,
+    ) {}
 
     async list(userId: string): Promise<IClubSummary[]> {
         const memberships = await this.prisma.membership.findMany({
@@ -46,65 +46,28 @@ export class ClubsService {
     }
 
     async getHub(userId: string, clubId: string): Promise<IClubHub> {
-        return this.prisma.$transaction(
-            async (transaction) => {
-                const membership = await findMembership(transaction, userId, clubId);
-                const [
-                    { access, memberCount },
-                    sessionCount,
-                    completedSessionCount,
-                    blockingSession,
-                    recent,
-                    ratings,
-                    history,
-                ] = await Promise.all([
-                    loadClubAccess(transaction, membership.club),
-                    transaction.session.count({
-                        where: { clubId, phase: { not: 'CANCELLED' } },
-                    }),
-                    transaction.session.count({ where: { clubId, phase: 'COMPLETED' } }),
-                    transaction.session.findFirst({
-                        where: {
-                            clubId,
-                            phase: { in: [...BLOCKING_SESSION_PHASES] },
-                        },
-                        orderBy: { createdAt: 'desc' },
-                    }),
-                    transaction.session.findMany({
-                        where: { clubId, phase: { not: 'CANCELLED' } },
-                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                        take: RECENT_SESSIONS_LIMIT,
-                    }),
-                    transaction.session.findMany({
-                        where: { clubId, phase: 'RATING' },
-                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                    }),
-                    transaction.session.findMany({
-                        where: { clubId, phase: { in: ['COMPLETED', 'CANCELLED'] } },
-                        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-                        take: HISTORY_SESSIONS_LIMIT,
-                    }),
-                ]);
-                const activeSession = blockingSession ?? ratings[0];
-                return {
-                    club: toClubSummary(membership.club, membership.role),
-                    memberCount,
-                    access,
-                    permissions: getClubPermissions(
-                        membership.role,
-                        membership.club.lifecycle,
-                        access,
-                    ),
-                    sessionCount,
-                    completedSessionCount,
-                    ...(activeSession ? { activeSession: toHubSession(activeSession) } : {}),
-                    recentSessions: recent.map(toHubSession),
-                    ratingSessions: ratings.map(toHubSession),
-                    historySessions: history.map(toHubSession),
-                };
-            },
+        const { hub, completed } = await this.prisma.$transaction(
+            (tx) => readClubHub(tx, userId, clubId),
             { isolationLevel: 'RepeatableRead' },
         );
+        const completedIds = completed.flatMap((row) => (row.movieId ? [row.movieId] : []));
+        hub.statistics = buildClubStatistics(
+            completed,
+            await this.movies.getCachedMetadata(completedIds),
+        );
+        const selected = hub.activeSession?.movie;
+        if (selected) {
+            const details = await this.movies.getDetails(selected.id, { allowStale: true });
+            if (details.state !== 'unavailable') {
+                selected.title = details.data.title ?? selected.title;
+                selected.runtime = details.data.runtime;
+                selected.genres = details.data.genres ?? [];
+                selected.posterUrl = details.data.posterUrl
+                    ? `/api/movies/${selected.id}/poster`
+                    : null;
+            }
+        }
+        return hub;
     }
 
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
@@ -137,6 +100,16 @@ export class ClubsService {
                             role: true,
                             joinedAt: true,
                             user: { select: { displayName: true } },
+                            _count: {
+                                select: {
+                                    sessionParticipants: {
+                                        where: {
+                                            status: 'ACCEPTED',
+                                            session: { phase: { not: 'CANCELLED' } },
+                                        },
+                                    },
+                                },
+                            },
                         },
                     }),
                     role === 'ADMIN'
@@ -173,6 +146,7 @@ export class ClubsService {
                         displayName: member.user.displayName,
                         role: member.role,
                         joinedAt: member.joinedAt.toISOString(),
+                        sessionCount: member._count.sessionParticipants,
                         canRemove: canRemoveMember(membership, member, club.lifecycle),
                     })),
                     auditEvents: auditEvents.map((event) => ({
@@ -249,24 +223,6 @@ export class ClubsService {
             });
         });
     }
-}
-
-function toHubSession(session: {
-    id: string;
-    phase: IClubHubSession['phase'];
-    topic: string | null;
-    location: string | null;
-    scheduledAt: Date | null;
-    updatedAt: Date;
-}): IClubHubSession {
-    return {
-        id: session.id,
-        phase: session.phase,
-        ...(session.topic ? { topic: session.topic } : {}),
-        ...(session.location ? { location: session.location } : {}),
-        ...(session.scheduledAt ? { scheduledAt: session.scheduledAt.toISOString() } : {}),
-        updatedAt: session.updatedAt.toISOString(),
-    };
 }
 
 /** Free Admins may run one active Club; the lock makes concurrent creations count each other. */

@@ -334,7 +334,12 @@ every authentication session.
   limit. Direct visits and Club switches save the last-Club cookie only after API Hub authorization;
   a switch that loses Membership returns to `/app`. `/app` checks current Memberships before using
   the cookie. — Active for Overview. Members and Manage Club use the repeatable-read settings
-  projection with the same access contract.
+  projection with the same access contract. The Hub also returns Club establishment date, roster
+  participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
+  within each Club, including cancelled Sessions; no rows are renumbered after cancellation.
+  Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
+  Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
+  and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
 - **Validation:** every body, query, file, and provider payload is checked at the boundary; output
   is encoded for its context. — Active for built routes
 - **Rate limits:** `@nestjs/throttler` (120/min globally, 5 per 10 minutes for Contact, 600/min for

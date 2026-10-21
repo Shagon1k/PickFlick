@@ -2,8 +2,6 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
 import type {
-    IClubHub,
-    IClubHubSession,
     IClubSummary,
     ICreatedInvitation,
     IManagedInvitation,
@@ -13,6 +11,7 @@ import type {
 } from '@pickflick/contracts';
 
 import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
+import { buildHubProjection } from './hub-projections.ts';
 import {
     readJson,
     sendError,
@@ -67,49 +66,11 @@ function hubClubs(token: TToken): IClubSummary[] {
     return token.includes('revoked') ? [first] : [first, second];
 }
 
-function hubProjection(token: TToken, clubId: string): IClubHub | null {
+function hubProjection(token: TToken, clubId: string) {
     if (token?.includes('session-workflow') && clubId === SETTINGS_CLUB_ID)
         return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
-    if (!club) {
-        return null;
-    }
-    if (clubId !== SETTINGS_CLUB_ID && clubId !== SECOND_CLUB_ID) {
-        return {
-            club,
-            access: settingsProjection(token).access,
-            permissions: settingsProjection(token).permissions,
-            memberCount: 1,
-            sessionCount: 0,
-            completedSessionCount: 0,
-            recentSessions: [],
-            ratingSessions: [],
-            historySessions: [],
-        };
-    }
-    const isSecondClub = clubId === SECOND_CLUB_ID;
-    const session: IClubHubSession = {
-        id: isSecondClub
-            ? '30000000-0000-4000-8000-000000000032'
-            : '30000000-0000-4000-8000-000000000031',
-        phase: isSecondClub ? 'RATING' : 'NOMINATION',
-        topic: isSecondClub ? 'Second Club private screening' : 'Midnight private screening',
-        scheduledAt: '2026-10-01T20:00:00.000Z',
-        location: isSecondClub ? 'Room B' : 'Room A',
-        updatedAt: '2026-09-29T12:00:00.000Z',
-    };
-    return {
-        club,
-        access: settingsProjection(token).access,
-        permissions: settingsProjection(token).permissions,
-        memberCount: isSecondClub ? 4 : 2,
-        sessionCount: isSecondClub ? 7 : 1,
-        completedSessionCount: isSecondClub ? 3 : 0,
-        activeSession: session,
-        recentSessions: [session],
-        ratingSessions: isSecondClub ? [session] : [],
-        historySessions: [],
-    };
+    return club ? buildHubProjection(token, club, settingsProjection(token)) : null;
 }
 
 function sessionToken(request: TMockRequest): TToken {
@@ -140,6 +101,7 @@ function createClub(request: TMockRequest, response: TMockResponse, token: strin
         const club: IClubSummary = {
             id: '10000000-0000-4000-8000-000000000099',
             name: String(payload.name).trim(),
+            createdAt: '2026-10-20T00:00:00.000Z',
             ...(description ? { description } : {}),
             hasAvatar: false,
             lifecycle: 'ACTIVE',

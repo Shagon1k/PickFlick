@@ -8,6 +8,7 @@ import {
     buildMovieLookup,
     MOVIE_ID,
 } from '../../../testing/movie-fixtures.js';
+import { buildDetailsCacheKey } from '../catalog-cache-key.js';
 import { MoviesRepository } from '../movies.repository.js';
 import { MoviesService } from '../movies.service.js';
 import {
@@ -75,7 +76,11 @@ describe('MoviesService', () => {
     it('should resolve a poster from caches without calling catalog providers', async () => {
         repository.findCachedPoster.mockResolvedValue('https://image.tmdb.org/poster.jpg');
         expect(await service.getCachedPoster(MOVIE_ID)).toBe('https://image.tmdb.org/poster.jpg');
-        expect(repository.findCachedPoster).toHaveBeenCalledWith(MOVIE_ID, 'tmdb');
+        expect(repository.findCachedPoster).toHaveBeenCalledWith(
+            MOVIE_ID,
+            'tmdb',
+            buildDetailsCacheKey('tmdb', 'en-US'),
+        );
         expect(provider.search).not.toHaveBeenCalled();
         expect(provider.fetchDetails).not.toHaveBeenCalled();
     });

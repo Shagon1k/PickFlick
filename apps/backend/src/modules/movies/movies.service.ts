@@ -102,10 +102,22 @@ export class MoviesService {
         };
     }
 
+    async getCachedMetadata(ids: string[]): Promise<Map<string, TMovieDetails>> {
+        const key = buildDetailsCacheKey(
+            this.environment.catalog.provider,
+            this.environment.catalog.locale,
+        );
+        return this.repository.findCachedMetadata(ids, key);
+    }
+
     async getCachedPoster(movieId: string): Promise<string | null> {
         return this.repository.findCachedPoster(
             movieId,
             this.environment.catalog.provider === 'tmdb' ? 'tmdb' : 'poiskkino',
+            buildDetailsCacheKey(
+                this.environment.catalog.provider,
+                this.environment.catalog.locale,
+            ),
         );
     }
 

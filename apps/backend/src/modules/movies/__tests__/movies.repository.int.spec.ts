@@ -79,6 +79,18 @@ describe('MoviesRepository', () => {
         );
         expect((await repository.findCachedDetails(id, detailKey))?.data.id).toBe(id);
     });
+    it('should use the validated detail-cache poster after search cache expiry', async () => {
+        const record = fixture();
+        const id = await ingest(record);
+        const detailKey = key();
+        await repository.saveDetails(id, detailKey, record, time);
+        await prisma.movieSearchCache.deleteMany({ where: { key: { in: searchKeys } } });
+        expect(await repository.findCachedPoster(id, 'tmdb', detailKey)).toBe(
+            record.data.posterUrl,
+        );
+        expect(await repository.findCachedPoster(id, 'tmdb', key())).toBeNull();
+        expect((await repository.findCachedMetadata([id], detailKey)).get(id)?.runtime).toBe(120);
+    });
     it('should resolve the newest validated search poster from the active source', async () => {
         const record = fixture(time, 'poiskkino');
         const id = await ingest(record);

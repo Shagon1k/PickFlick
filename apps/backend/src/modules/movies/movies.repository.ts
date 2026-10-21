@@ -71,7 +71,28 @@ export class MoviesRepository {
         return row && parsed?.success ? { data: parsed.data, fetchedAt: row.fetchedAt } : null;
     }
 
-    async findCachedPoster(movieId: string, source: TMovieSource): Promise<string | null> {
+    async findCachedMetadata(ids: string[], key: string): Promise<Map<string, TMovieDetails>> {
+        if (!ids.length) return new Map();
+        const rows = await this.prisma.movieDetailsCache.findMany({
+            where: { movieId: { in: ids }, key },
+        });
+        const result = new Map<string, TMovieDetails>();
+        for (const row of rows) {
+            const parsed = movieDetailsSchema.safeParse(row.data);
+            if (parsed.success) result.set(row.movieId, parsed.data);
+        }
+        return result;
+    }
+
+    async findCachedPoster(
+        movieId: string,
+        source: TMovieSource,
+        detailsKey?: string,
+    ): Promise<string | null> {
+        if (detailsKey) {
+            const details = await this.findCachedDetails(movieId, detailsKey);
+            if (details?.data.posterUrl) return details.data.posterUrl;
+        }
         const row = await this.prisma.movieSearchCache.findFirst({
             where: {
                 data: {

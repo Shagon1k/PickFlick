@@ -7,6 +7,7 @@ import { getClubEntitlements } from './club-tiers.js';
 const clubColumns = {
     id: true,
     name: true,
+    createdAt: true,
     description: true,
     avatarObjectKey: true,
     lifecycle: true,

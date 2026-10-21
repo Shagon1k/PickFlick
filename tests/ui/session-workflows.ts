@@ -23,6 +23,21 @@ export function sessionHub(token: string | undefined): IClubHub {
     const sessions = [...(sessionsByToken.get(token)?.values() ?? [])];
     const row = (session: TSession): IClubHubSession => ({
         id: session.id,
+        ordinal: sessions.findIndex(({ id }) => id === session.id) + 1,
+        acceptedCount: 1,
+        nominatedCount: 0,
+        progressCount: session.phase === 'NOMINATION' ? 0 : null,
+        canJoin: false,
+        movie: session.movieId
+            ? {
+                  id: session.movieId,
+                  title: 'Selected Movie',
+                  year: 2026,
+                  runtime: 120,
+                  genres: ['Drama'],
+                  posterUrl: null,
+              }
+            : null,
         phase: session.phase,
         ...(session.topic ? { topic: session.topic } : {}),
         ...(session.scheduledAt ? { scheduledAt: session.scheduledAt } : {}),
@@ -36,6 +51,17 @@ export function sessionHub(token: string | undefined): IClubHub {
         memberCount: 3,
         sessionCount: sessions.filter(({ phase }) => phase !== 'CANCELLED').length,
         completedSessionCount: 0,
+        memberLimit: 8,
+        members: settings.members,
+        statistics: {
+            sessionsWatched: null,
+            sessionsThisYear: null,
+            averageRating: null,
+            totalWatchHours: null,
+            topGenre: null,
+            topDirector: null,
+            topActor: null,
+        },
         recentSessions: sessions.map(row),
         ratingSessions: [],
         historySessions: sessions.filter(({ phase }) => phase === 'CANCELLED').map(row),
