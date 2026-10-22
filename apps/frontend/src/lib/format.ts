@@ -8,7 +8,7 @@ export function toIsoDate(value: string): string {
 
 /** A calendar date in UTC, the zone every PickFlick date is shown in. */
 export function formatUtcDate(value: string): string {
-    return new Date(value).toLocaleDateString('en', { timeZone: 'UTC' });
+    return new Date(value).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' });
 }
 
 /** A date and time in UTC with the zone written out. */

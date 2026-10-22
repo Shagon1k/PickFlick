@@ -363,7 +363,8 @@
 
 .member {
     display: flex;
-    gap: var(--gap-md);
+    flex-wrap: wrap;
+    gap: var(--gap-sm) var(--gap-md);
     align-items: center;
     justify-content: space-between;
     min-width: 0;
@@ -377,6 +378,7 @@
 
 .memberIdentity {
     display: flex;
+    flex: 1 1 200px;
     gap: var(--gap-sm);
     align-items: center;
     min-width: 0;
@@ -414,8 +416,10 @@
     color: var(--fg-secondary);
 }
 
+/* A narrow dialog moves the role controls under the name instead of truncating it. */
 .roleForm {
     display: flex;
+    flex: 1 0 auto;
     flex-wrap: wrap;
     gap: var(--gap-xs);
     align-items: center;
@@ -547,11 +551,6 @@
 
     .formFooter > * {
         width: 100%;
-    }
-
-    .member {
-        flex-direction: column;
-        align-items: start;
     }
 
     .roleForm {

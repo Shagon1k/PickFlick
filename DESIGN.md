@@ -215,7 +215,8 @@ here.
   remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
   Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
   counts stay in one column whether or not a row has a remove control. Role changes happen in the
-  Manage Moderators dialog; + Invite opens Manage Club.
+  Manage Moderators dialog, whose role controls wrap under a name rather than truncate it; + Invite
+  opens Manage Club. Dates read as `Oct 21, 2026`.
 - Club Info holds the avatar: clicking it picks an image with a preview, its requirements sit in a
   tip, and Save Changes uploads it with the other fields. A Pro-only setting carries a Pro marker
   and its reason in a tip instead of a bare disabled box.
@@ -241,8 +242,8 @@ here.
 #### Invitation pages
 
 - Club invitations use one setup scene. The heading says "You are invited" because links reserve no
-  capacity. The preview shows only Club name, member count and inviter; signed-out and unsafe states
-  omit Club details. Long names use a one-line ellipsis with the full name still accessible.
+  capacity. The preview shows only Club name, icon-labelled member count and inviter, and Accept
+  carries the prototype's check; signed-out and unsafe states omit Club details. Long names use a one-line ellipsis with the full name still accessible.
 - Accept and Decline wait for hydration, show pending and retry feedback and keep the card's size.
   Success and already-member states open the Hub.
 - Legacy personal Session invitation URLs keep their recipient check, seven-day expiry and focused

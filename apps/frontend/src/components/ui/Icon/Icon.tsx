@@ -25,6 +25,7 @@ export type TIconName =
     | 'bell'
     | 'book'
     | 'cancel'
+    | 'check'
     | 'catalog'
     | 'chart'
     | 'chat'
@@ -280,8 +281,18 @@ const glyphs: Record<TIconName, ReactNode> = {
     ),
 };
 
+const DEFAULT_SIZE_PX = 18;
+const DEFAULT_STROKE_WIDTH = 1.8;
+
 export default function Icon({ name, ...props }: IIconProps) {
+    // Line icons are visible without caller CSS; a caller's class still sets size and stroke.
     const common = {
+        width: DEFAULT_SIZE_PX,
+        height: DEFAULT_SIZE_PX,
+        stroke: 'currentColor',
+        strokeWidth: DEFAULT_STROKE_WIDTH,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
         ...props,
         'aria-hidden': true,
         fill: 'none',

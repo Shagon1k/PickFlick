@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
 
 import { respondInvitationAction } from '../../actions';
@@ -86,9 +87,15 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 {view.state === 'valid' ? (
                     <>
                         <h2>{view.clubName}</h2>
-                        <p>{formatCount(view.memberCount, 'member')}</p>
-                        <p>
-                            Invited by <strong>{view.inviterName}</strong>
+                        <p className={styles.previewMeta}>
+                            <Icon name="members" />
+                            {formatCount(view.memberCount, 'member')}
+                        </p>
+                        <p className={styles.previewMeta}>
+                            <Icon name="profile" />
+                            <span>
+                                Invited by <strong>{view.inviterName}</strong>
+                            </span>
                         </p>
                     </>
                 ) : (
@@ -107,6 +114,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                             size="large"
                             onClick={() => respond('accept')}
                         >
+                            <Icon name="check" />
                             Accept Invitation
                         </Button>
                         <Button
