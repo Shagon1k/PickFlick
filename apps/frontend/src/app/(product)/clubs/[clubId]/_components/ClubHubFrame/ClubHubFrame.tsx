@@ -2,8 +2,8 @@
 
 import type { IClubHub, IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { type ReactNode, useCallback, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
@@ -28,6 +28,14 @@ export default function ClubHubFrame({
     const publish = useCallback((value: IClubHub | null) => setSnapshot(value), []);
     const pathname = usePathname();
     const current = getSection(pathname);
+    const router = useRouter();
+    const clubId = snapshot?.club.id;
+    useEffect(() => {
+        // Phones open sections from a closed bottom-bar strip, which viewport prefetching never sees;
+        // the prefetched loading boundary lets every switch show its skeleton at once.
+        if (clubId)
+            for (const { href } of buildClubNavigation(clubId, 'overview')) router.prefetch(href);
+    }, [clubId, router]);
     if (!snapshot) return <HubSnapshotContext value={publish}>{children}</HubSnapshotContext>;
     const navigation = buildClubNavigation(snapshot.club.id, current);
     return (
@@ -59,7 +67,6 @@ export default function ClubHubFrame({
                                             aria-current={item.current ? 'page' : undefined}
                                             href={item.href}
                                             scroll={false}
-                                            prefetch={false}
                                             key={item.label}
                                         >
                                             {item.label}

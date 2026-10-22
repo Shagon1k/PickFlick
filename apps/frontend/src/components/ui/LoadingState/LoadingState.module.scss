@@ -3,7 +3,8 @@
     gap: var(--gap-sm);
 }
 
-.loadingState__line {
+.loadingState__line,
+.loadingState__title {
     display: block;
     width: 100%;
     height: var(--hit);
@@ -22,8 +23,46 @@
     width: 72%;
 }
 
+/* Quiet stand-ins for a panel's cards: the Hub frame stays put while one panel loads. */
+.loadingState__cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-md);
+}
+
+.loadingState__card {
+    display: grid;
+    gap: var(--gap-sm);
+    align-content: start;
+    min-height: 180px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.loadingState__card .loadingState__title {
+    width: 44%;
+    height: 22px;
+    margin-bottom: var(--gap-xs);
+}
+
+.loadingState__card .loadingState__line {
+    height: 14px;
+}
+
+.loadingState__card .loadingState__line:last-child {
+    width: 64%;
+}
+
+@media (width >= 768px) {
+    .loadingState__cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .loadingState__line {
+    .loadingState__line,
+    .loadingState__title {
         animation-duration: 0.01ms;
         animation-iteration-count: 1;
     }

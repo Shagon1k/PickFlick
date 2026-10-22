@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, test } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
@@ -154,6 +154,77 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
     }
     expect(navigations).toEqual([]);
 });
+
+const sectionSwitches = [
+    {
+        viewport: canonicalViewports[3],
+        open: (page: Page) =>
+            page
+                .getByRole('navigation', { name: 'Club sections' })
+                .getByRole('link', { name: 'Members', exact: true })
+                .click(),
+        current: (page: Page) =>
+            expect(
+                page
+                    .getByRole('navigation', { name: 'Club sections' })
+                    .getByRole('link', { name: 'Members', exact: true }),
+            ).toHaveAttribute('aria-current', 'page'),
+    },
+    {
+        viewport: canonicalViewports[0],
+        open: async (page: Page) => {
+            await page
+                .getByRole('navigation', { name: 'Mobile product navigation' })
+                .getByRole('button', { name: 'Overview' })
+                .click();
+            await page
+                .locator('[data-anchored-menu=hub]')
+                .getByRole('link', { name: 'Members' })
+                .click();
+        },
+        // Phones name the current section on the bottom bar's Hub trigger.
+        current: (page: Page) =>
+            expect(page.getByRole('button', { name: 'Members', exact: true })).toBeVisible(),
+    },
+];
+
+for (const { viewport, open, current } of sectionSwitches) {
+    test(`a Club section switch shows the panel skeleton at once at ${viewport.name}`, async ({
+        context,
+        page,
+    }) => {
+        await page.setViewportSize(viewport);
+        await authenticate(context, 'valid-hub-tabs');
+        const members = `/clubs/${FIRST_CLUB_ID}/members`;
+        const isPrefetch = (headers: Record<string, string>) =>
+            Object.keys(headers).some((name) => name.includes('prefetch'));
+        const prefetched = page.waitForResponse(
+            (response) =>
+                response.url().includes(members) && isPrefetch(response.request().headers()),
+        );
+        await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+        await prefetched;
+        // Hold only the navigation; the prefetched loading boundary must render without it.
+        let release = () => {};
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        await page.route(`**${members}**`, async (route) => {
+            if (!isPrefetch(route.request().headers())) await held;
+            await route.continue();
+        });
+        await open(page);
+
+        const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club section' });
+        await expect(skeleton).toBeVisible();
+        await expect(page.locator('[data-anchored-menu=hub]')).toBeHidden();
+        await current(page);
+        await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
+        release();
+        await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
+        await expect(skeleton).toHaveCount(0);
+    });
+}
 
 test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true });

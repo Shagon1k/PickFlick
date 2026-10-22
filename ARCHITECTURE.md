@@ -350,7 +350,9 @@ every authentication session.
   Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
   Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
-  Overview, Members and Manage Club share a persistent route-group layout. Each panel performs a
+  Overview, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets
+  Next.js prefetch only the loading boundary of these dynamic routes (no data or authorization), and
+  the frame prefetches every section on mount because phone navigation sits in a closed strip. Each panel performs a
   fresh authorization read and updates the frame's client snapshot, including clearing it on denial
   or service failure. React request memoization deduplicates layout/panel Hub reads within one render;
   it adds no cross-request cache.

@@ -183,7 +183,10 @@ here.
 
 - Overview, Members and Manage Club share one mounted frame with the Club switcher and Call Sheet.
   Each panel rechecks authorization and refreshes the frame's snapshot; its links keep the scroll
-  position. Below 768px the section tabs give way to the bottom bar's Hub strip.
+  position. Below 768px the section tabs give way to the bottom bar's Hub strip. A section switch
+  answers at once: the strip closes, the current section moves and a card skeleton holds the panel
+  until the server responds. The same `LoadingState` cards variant suits later panel routes such as
+  the Library.
 - The carousel ends with Create new club. The caption shows member count, the count of Sessions that
   were not cancelled, and the founding month and year; description, plan, role and scale stay in
   their own panels. Names wrap by whole words and stop at three lines. Phones show position dots; the
