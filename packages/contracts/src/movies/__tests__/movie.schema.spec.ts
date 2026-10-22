@@ -85,6 +85,9 @@ describe('movieMetadataSchema', () => {
             runtime: null,
             genres: null,
             directors: null,
+            writers: null,
+            budget: null,
+            revenue: null,
             cast: null,
             trailers: null,
         };

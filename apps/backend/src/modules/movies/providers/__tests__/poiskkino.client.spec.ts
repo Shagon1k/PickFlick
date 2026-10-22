@@ -80,6 +80,39 @@ describe('PoiskkinoClient', () => {
         expect(result.data.trailers).toHaveLength(1);
         expect(result.data.trailers?.[0]?.name).toBeNull();
     });
+    it('should keep English-named credits, dollar amounts and playable trailers from details', async () => {
+        request.mockResolvedValue(
+            Response.json({
+                ...wire(),
+                persons: [
+                    { enName: 'Jane Director', enProfession: 'director' },
+                    { enName: 'Wren Writer', enProfession: 'writer' },
+                    { enName: 'Ann Actor', enProfession: 'actor' },
+                    { enName: 'Ann Actor', enProfession: 'actor' },
+                    { enName: null, enProfession: 'actor' },
+                ],
+                budget: { value: 168_000_000, currency: '$' },
+                fees: { world: { value: 90_000_000, currency: '€' } },
+                videos: {
+                    trailers: [
+                        { url: 'https://www.youtube.com/embed/abc123XYZ-_?autoplay=1' },
+                        { url: 'https://vimeo.com/123456' },
+                    ],
+                },
+            }),
+        );
+        const { data } = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);
+        expect(data).toMatchObject({
+            directors: [{ name: 'Jane Director' }],
+            writers: [{ name: 'Wren Writer' }],
+            cast: [{ name: 'Ann Actor', character: null, profileUrl: null }],
+            budget: 168_000_000,
+            revenue: null,
+            trailers: [
+                { url: 'https://www.youtube.com/embed/abc123XYZ-_', name: null, official: null },
+            ],
+        });
+    });
     it('should preserve unknown dates, ratings, language and content flags', async () => {
         request.mockResolvedValue(Response.json({ id: 100, type: 'movie', year: 0 }));
         const result = await client().fetchDetails([{ source: 'poiskkino', externalId: '100' }]);

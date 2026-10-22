@@ -123,6 +123,26 @@ describe('CompositeMovieProvider', () => {
             english.data.posterUrl,
         );
     });
+    it('should fall back to PoiskKino credits and amounts only where TVDB has none', async () => {
+        const primaryRecord = record('poiskkino');
+        primaryRecord.data = {
+            ...primaryRecord.data,
+            directors: [{ name: 'Primary Director' }],
+            writers: [{ name: 'Primary Writer' }],
+            budget: 100,
+        };
+        primary.fetchDetails.mockResolvedValue(primaryRecord);
+        const english = record('thetvdb');
+        english.data.directors = [{ name: 'English Director' }];
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data).toMatchObject({
+            directors: [{ name: 'English Director' }],
+            writers: [{ name: 'Primary Writer' }],
+            cast: null,
+            budget: 100,
+            revenue: null,
+        });
+    });
     it('should keep a missing English description null', async () => {
         enrichment.fetchDetails.mockResolvedValue(record('thetvdb'));
         const english = record('thetvdb');

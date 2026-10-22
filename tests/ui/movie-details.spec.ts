@@ -122,7 +122,11 @@ test('missing media and identifiers omit unavailable links; broken poster become
     ]);
     await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByText('Poster unavailable')).toBeVisible();
-    await expect(page.getByText('No trailer is available.')).toBeVisible();
+    await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
+        'href',
+        /^https:\/\/www\.youtube\.com\/results\?search_query=/u,
+    );
     await expect(page.getByText('No related titles are available.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'IMDb' })).toHaveCount(0);
     await context.addCookies([

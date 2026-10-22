@@ -35,7 +35,17 @@ export default function MovieMedia({ movie, title }: { movie: TMovieDetails; tit
                         ))}
                     </ul>
                 ) : (
-                    <p>No trailer is available.</p>
+                    <>
+                        <p>Our film sources have no trailer for this Movie.</p>
+                        <a
+                            href={buildTrailerSearch(title, movie.releaseYear)}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
+                            Search YouTube for a trailer ↗
+                            <span className="visually-hidden"> (opens in a new tab)</span>
+                        </a>
+                    </>
                 )}
             </section>
         </div>
@@ -60,6 +70,15 @@ function MovieCredits({ movie }: { movie: TMovieDetails }) {
                             : 'Unavailable'}
                     </dd>
                 </div>
+                {movie.writers?.length ? (
+                    <div>
+                        <dt>
+                            <Icon name="edit" />
+                            Writer
+                        </dt>
+                        <dd>{movie.writers.map(({ name }) => name).join(', ')}</dd>
+                    </div>
+                ) : null}
                 <div>
                     <dt>
                         <Icon name="members" />
@@ -73,9 +92,45 @@ function MovieCredits({ movie }: { movie: TMovieDetails }) {
                             : 'Unavailable'}
                     </dd>
                 </div>
+                {movie.budget ? (
+                    <div>
+                        <dt>
+                            <Icon name="pricing" />
+                            Budget
+                        </dt>
+                        <dd>{formatDollars(movie.budget)}</dd>
+                    </div>
+                ) : null}
+                {movie.revenue ? (
+                    <div>
+                        <dt>
+                            <Icon name="chart" />
+                            Revenue
+                        </dt>
+                        <dd>{formatDollars(movie.revenue)}</dd>
+                    </div>
+                ) : null}
             </dl>
         </section>
     );
 }
 
 const MAX_CAST = 5;
+
+/** A labelled search, not a claimed match: the providers sent no verified trailer. */
+function buildTrailerSearch(title: string, year: number | null) {
+    const query = [title, year, 'trailer'].filter(Boolean).join(' ');
+    return `https://www.youtube.com/results?${new URLSearchParams({ search_query: query }).toString()}`;
+}
+
+const dollars = new Intl.NumberFormat('en', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+});
+
+/** Provider amounts are whole US dollars; the prototype reads them as `$168M`. */
+function formatDollars(amount: number) {
+    return dollars.format(amount);
+}

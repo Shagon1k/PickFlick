@@ -25,6 +25,8 @@ const extended = z.object({
         .array(z.object({ name: z.string().min(1).max(200) }))
         .max(100)
         .nullish(),
+    budget: z.string().max(40).nullish(),
+    boxOffice: z.string().max(40).nullish(),
     characters: z
         .array(
             z.object({
@@ -52,6 +54,35 @@ const extended = z.object({
         })
         .nullish(),
 });
+type TCharacter = NonNullable<z.infer<typeof extended>['characters']>[number];
+
+function namesOf(characters: TCharacter[] | null | undefined, peopleType: string) {
+    const names = characters
+        ?.filter((person) => person.peopleType.toLowerCase() === peopleType && person.personName)
+        .map((person) => person.personName ?? '');
+    return names?.length ? [...new Set(names)].map((name) => ({ name })) : null;
+}
+
+/** Billed actors in order; none means unknown so another source may fill the credits. */
+function castOf(characters: TCharacter[] | null | undefined) {
+    const cast = characters
+        ?.filter((person) => person.peopleType.toLowerCase() === 'actor' && person.personName)
+        .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+        .slice(0, MOVIE_CAST_LIMIT)
+        .map((person) => ({
+            name: person.personName ?? '',
+            character: person.name || null,
+            profileUrl: person.personImgURL || null,
+        }));
+    return cast?.length ? cast : null;
+}
+
+/** TheTVDB sends amounts in US dollars as decimal strings such as `1020000.00`; zero means unknown. */
+function toDollars(value: string | null | undefined) {
+    const amount = value && /^\d{1,15}(?:\.\d{1,2})?$/u.test(value) ? Math.round(Number(value)) : 0;
+    return amount > 0 ? amount : null;
+}
+
 export class ThetvdbClient {
     private http: MovieHttp;
     constructor(
@@ -111,26 +142,11 @@ export class ThetvdbClient {
                         ? movie.first_release.date
                         : null,
                 genres: movie.genres?.map((genre) => genre.name) ?? null,
-                directors:
-                    movie.characters
-                        ?.filter(
-                            (person) =>
-                                person.peopleType.toLowerCase() === 'director' && person.personName,
-                        )
-                        .map((person) => ({ name: person.personName ?? '' })) ?? null,
-                cast:
-                    movie.characters
-                        ?.filter(
-                            (person) =>
-                                person.peopleType.toLowerCase() === 'actor' && person.personName,
-                        )
-                        .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-                        .slice(0, MOVIE_CAST_LIMIT)
-                        .map((person) => ({
-                            name: person.personName ?? '',
-                            character: person.name || null,
-                            profileUrl: person.personImgURL || null,
-                        })) ?? null,
+                directors: namesOf(movie.characters, 'director'),
+                writers: namesOf(movie.characters, 'writer'),
+                budget: toDollars(movie.budget),
+                revenue: toDollars(movie.boxOffice),
+                cast: castOf(movie.characters),
             },
         });
     }

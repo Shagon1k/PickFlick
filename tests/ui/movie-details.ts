@@ -76,6 +76,9 @@ function movieData(id: string, isMissing: boolean, isRelated: boolean): TPublicD
         runtime: isMissing ? null : 120,
         genres: isMissing ? null : ['Drama'],
         directors: isMissing ? null : [{ name: '<Synthetic Director>' }],
+        writers: isMissing ? null : [{ name: 'Synthetic Writer' }],
+        budget: isMissing ? null : 168_000_000,
+        revenue: isMissing ? null : 174_000_000,
         cast: isMissing ? null : [{ name: 'Synthetic Actor', character: 'Lead', profileUrl: null }],
         trailers: isMissing
             ? null

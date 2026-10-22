@@ -80,7 +80,10 @@ async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoa
     }
 }
 
-/** Prefer the English metadata/poster; keep available PoiskKino media and ratings. */
+/**
+ * Prefer TheTVDB's English metadata and poster; keep PoiskKino media and ratings, and fall back to its
+ * English-named credits and dollar amounts where TheTVDB has none.
+ */
 function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
     const base = primary?.data ?? createEmptyMetadata();
     const english = enrichment?.data;
@@ -94,8 +97,11 @@ function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnaps
         originalLanguage: english?.originalLanguage ?? base.originalLanguage,
         runtime: english?.runtime ?? base.runtime,
         genres: english?.genres ?? null,
-        directors: english?.directors ?? null,
-        cast: english?.cast ?? null,
+        directors: english?.directors ?? base.directors,
+        writers: english?.writers ?? base.writers,
+        cast: english?.cast ?? base.cast,
+        budget: english?.budget ?? base.budget,
+        revenue: english?.revenue ?? base.revenue,
     };
 }
 

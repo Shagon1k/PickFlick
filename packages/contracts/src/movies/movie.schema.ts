@@ -127,6 +127,10 @@ export const movieMetadataSchema = z.strictObject({
         .array(z.strictObject({ name: z.string().min(1).max(1000) }))
         .max(100)
         .nullable(),
+    writers: z
+        .array(z.strictObject({ name: z.string().min(1).max(1000) }))
+        .max(100)
+        .nullable(),
     cast: z
         .array(
             z.strictObject({
@@ -147,6 +151,9 @@ export const movieMetadataSchema = z.strictObject({
         )
         .max(100)
         .nullable(),
+    /** Whole US dollars; amounts in other currencies are left out rather than converted. */
+    budget: z.number().int().nonnegative().nullable(),
+    revenue: z.number().int().nonnegative().nullable(),
 });
 export type TMovieMetadata = z.infer<typeof movieMetadataSchema>;
 export const movieSummarySchema = movieMetadataSchema

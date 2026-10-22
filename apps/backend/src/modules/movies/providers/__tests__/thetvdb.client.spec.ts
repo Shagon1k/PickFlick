@@ -46,6 +46,31 @@ describe('ThetvdbClient', () => {
         expect(result.data.title).toBe('English title');
         expect(result.data.posterUrl).toBeNull();
     });
+    it('should read writers and decimal dollar amounts, treating zero as unknown', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                status: 'success',
+                data: {
+                    ...movie(),
+                    budget: '1020000.00',
+                    boxOffice: '0.00',
+                    characters: [
+                        { peopleType: 'Writer', personName: 'Vera Caspary' },
+                        { peopleType: 'Writer', personName: 'Vera Caspary' },
+                        { peopleType: 'Director', personName: 'Otto Preminger' },
+                    ],
+                },
+            }),
+        );
+        const { data } = await client().fetchDetails([{ source: 'thetvdb', externalId: '10' }]);
+        expect(data).toMatchObject({
+            directors: [{ name: 'Otto Preminger' }],
+            writers: [{ name: 'Vera Caspary' }],
+            cast: null,
+            budget: 1_020_000,
+            revenue: null,
+        });
+    });
     it('should reject IMDb mismatch even when the title and year match', async () => {
         request.mockResolvedValueOnce(
             Response.json({ status: 'success', data: [{ movie: { id: 10 } }] }),

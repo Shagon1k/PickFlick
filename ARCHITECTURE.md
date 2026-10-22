@@ -309,7 +309,10 @@ every authentication session.
   validated detail-cache poster for the configured projection, then the newest validated
   search poster for the active source, ingests it through the same bounded image
   service and redirects only to the same-origin stored-image path. It makes no catalog API calls.
-  Backdrops and cast portraits remain null. Image
+  Backdrops and cast portraits remain null. Details carry directors, writers, cast, and budget and
+  worldwide revenue in whole US dollars (other currencies stay null). The composite prefers TheTVDB's
+  credits and amounts and falls back to PoiskKino's, keeping only persons with an English name;
+  PoiskKino YouTube embeds lose player parameters before trailer validation. Image
   downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
   downloads return missing media; storage failures propagate. Existing objects are reused.
   Details expose `links.imdb`, built on the backend, without external identifiers. The frontend
@@ -350,6 +353,8 @@ every authentication session.
   Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
   Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
+  Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
+  Session page's closure, Kick and cancellation dialogs; those actions revalidate every Club Hub view.
   Overview, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets
   Next.js prefetch only the loading boundary of these dynamic routes (no data or authorization), and
   the frame prefetches every section on mount because phone navigation sits in a closed strip. Each panel performs a
