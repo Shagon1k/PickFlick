@@ -25,13 +25,6 @@
     transform: translateX(-50%);
 }
 
-/* The strip aligns to the trigger's end, so a 44px icon trigger centres the tab 22px in. */
-.menu__dropdown[data-icon-trigger] .menu__tail {
-    right: 1px;
-    left: auto;
-    transform: none;
-}
-
 .menu__strip {
     position: relative;
     padding: 10px 22px;

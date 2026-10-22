@@ -43,6 +43,8 @@ export async function closeNominationsAction(id: string, input: unknown) {
     try {
         await closeNominations(id, parsed.data);
         revalidatePath(`/sessions/${id}`);
+        // Manage Club offers the same closure, so every Club Hub view refreshes too.
+        revalidatePath('/clubs/[clubId]', 'layout');
         return { ok: true as const, message: 'Nominations closed.' };
     } catch (error) {
         return { ok: false as const, message: getFailureMessage(error, NOMINATION_FAILURE) };

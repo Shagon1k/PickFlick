@@ -133,8 +133,11 @@ test('avatar replacements refresh the image and removal keeps the latest status'
             mimeType: 'image/png',
             buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
         });
-        await page.getByRole('button', { name: 'Upload' }).click();
-        await expect(page.getByText('Club avatar updated.')).toBeVisible();
+        await page
+            .getByRole('region', { name: 'Club Info' })
+            .getByRole('button', { name: 'Save Changes' })
+            .click();
+        await expect(page.getByText('Club settings and avatar saved.')).toBeVisible();
         return avatarResponse;
     };
 
@@ -178,9 +181,8 @@ for (const state of ['admin-over-limit', 'adminless']) {
             await open(page, viewport);
             const card = page.getByRole('region', { name: 'Invite to this Club' });
             await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
-            const recent = card.getByRole('button', { name: 'Recent invitations' });
-            await recent.focus();
-            await page.keyboard.press('Enter');
+            // Opening Manage links loads the recent invitations.
+            await card.getByText('Manage links', { exact: true }).click();
             await expect(card.getByRole('status')).toHaveText('Recent invitations loaded.');
             await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -200,14 +202,35 @@ for (const state of ['admin-over-limit', 'adminless']) {
     });
 }
 
+test('Manage Club runs the active Session through the gear-menu dialogs', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'valid-settings-nomination-operator');
+    await open(page, canonicalViewports[3]);
+    const card = page.getByRole('region', { name: 'Active Session', exact: true });
+    await card.getByRole('button', { name: 'Start next phase: Watching' }).click();
+    const close = page.getByRole('dialog', { name: 'Close nominations early' });
+    await close.getByRole('textbox').fill('CLOSE');
+    await close.getByRole('button', { name: 'Confirm close' }).click();
+    await expect(close).toBeHidden();
+
+    await card.getByRole('button', { name: 'Cancel Session' }).click();
+    const cancel = page.getByRole('dialog', { name: 'Cancel Session' });
+    await expect(cancel.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(cancel).toBeHidden();
+    await expect(card.getByRole('button', { name: 'Cancel Session' })).toBeFocused();
+});
+
 test('Member sees read-only controls and can confirm leaving', async ({ context, page }) => {
     await authenticate(context, 'valid-settings-member-actions');
     await open(page);
     await expect(page.getByRole('textbox', { name: 'Club name' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Upload' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
+    await expect(page.getByLabel('Club avatar', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Manage links', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Leave Club' }).click();
     const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
     const confirmation = dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' });
@@ -259,7 +282,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await authenticate(context, `valid-settings-archived-${viewport.name}`);
             await open(page, viewport);
             await expect(page.getByRole('button', { name: 'Reactivate Club' })).toBeVisible();
-            await expect(page.getByRole('button', { name: 'Recent invitations' })).toHaveCount(0);
+            await expect(page.getByText('Manage links', { exact: true })).toHaveCount(0);
             await page.getByRole('button', { name: 'Delete Club' }).click();
             await expect(
                 page

@@ -122,7 +122,7 @@ export function buildAccountNavigation(
 /** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
 export function buildClubNavigation(
     clubId: string,
-    current: 'overview' | 'members' | 'manage',
+    current: 'overview' | 'members' | 'manage' | null,
 ): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [
@@ -130,6 +130,23 @@ export function buildClubNavigation(
         { href: `${hub}/members`, label: 'Members', current: current === 'members' },
         { href: `${hub}/settings`, label: 'Manage Club', current: current === 'manage' },
     ];
+}
+
+/** A Club's sections where one is in context; onboarding without a Club; otherwise the Hub itself. */
+function getHubItems(
+    clubItems: readonly IShellNavigationItem[],
+    currentArea: TShellArea,
+    isHubArea: boolean,
+    routes: IShellRouteMap,
+): readonly TShellMenuItem[] {
+    if (clubItems.length > 0)
+        return clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }));
+    if (currentArea === 'hub')
+        return [
+            { href: routes.createClub, label: 'Create a Club' },
+            { href: routes.joinClub, label: 'Join a Club' },
+        ];
+    return [{ href: routes.product, label: 'Club Hub' }];
 }
 
 export function buildMobileNavigation({
@@ -149,13 +166,7 @@ export function buildMobileNavigation({
 }): readonly TMobileNavigationEntry[] {
     const isHubArea = currentArea === 'hub' || currentArea === 'session';
     const currentClubItem = isHubArea ? clubItems.find((item) => item.current) : undefined;
-    const hubItems: readonly TShellMenuItem[] =
-        clubItems.length > 0
-            ? clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }))
-            : [
-                  { href: routes.createClub, label: 'Create a Club' },
-                  { href: routes.joinClub, label: 'Join a Club' },
-              ];
+    const hubItems = getHubItems(clubItems, currentArea, isHubArea, routes);
 
     return [
         {

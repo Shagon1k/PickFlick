@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import { formatCount } from '#lib/format';
 
 import { respondInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -85,7 +86,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 {view.state === 'valid' ? (
                     <>
                         <h2>{view.clubName}</h2>
-                        <p>{view.memberCount} members</p>
+                        <p>{formatCount(view.memberCount, 'member')}</p>
                         <p>
                             Invited by <strong>{view.inviterName}</strong>
                         </p>

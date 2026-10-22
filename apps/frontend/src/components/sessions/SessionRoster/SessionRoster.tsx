@@ -3,13 +3,13 @@
 import type { ISessionRoster } from '@pickflick/contracts';
 import { type ReactNode, type RefObject, useRef, useState, useTransition } from 'react';
 
+import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '#components/ui/Modal/Modal';
 import { getMonogram } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 
-import { changeRosterAction } from '../../roster-actions';
 import styles from './SessionRoster.module.scss';
 
 /** Join/Leave for the header and, for operators, the gear menu's Kick dialog. */

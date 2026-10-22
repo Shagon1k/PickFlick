@@ -14,12 +14,18 @@
     flex: 1;
     min-width: 0;
     text-align: center;
+
+    /* The browser keeps vertical panning; horizontal swipes switch Clubs. */
+    touch-action: pan-y;
 }
 
 .heading h1 {
     display: -webkit-box;
     max-width: 680px;
-    margin: 0 auto var(--gap-sm);
+
+    /* The clamp clips at the line box; padding keeps descenders of the tight display face. */
+    padding-bottom: 0.14em;
+    margin: 0 auto calc(var(--gap-sm) - 0.14em);
     overflow: hidden;
     -webkit-line-clamp: 3;
     font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);

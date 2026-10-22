@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
 
@@ -16,10 +16,24 @@ export interface IInfoTipProps {
  * A quiet "?" trigger that reveals a short explanation on hover, keyboard focus, or tap.
  * The explanation stays in the DOM as the trigger's accessible description.
  */
+const EDGE_GAP_PX = 8;
+
 export default function InfoTip({ children, label }: IInfoTipProps) {
     const tipId = useId();
     const rootRef = useRef<HTMLSpanElement>(null);
+    const bubbleRef = useRef<HTMLSpanElement>(null);
     const [isOpen, setIsOpen] = useState(false);
+
+    // A centred bubble beside a viewport edge slides inward instead of spilling out.
+    useLayoutEffect(() => {
+        const bubble = bubbleRef.current;
+        if (!isOpen || !bubble) return;
+        bubble.style.removeProperty('--tip-shift');
+        const { left, right } = bubble.getBoundingClientRect();
+        const limit = document.documentElement.clientWidth - EDGE_GAP_PX;
+        const shift = Math.max(EDGE_GAP_PX - left, 0) - Math.max(right - limit, 0);
+        bubble.style.setProperty('--tip-shift', `${shift}px`);
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -66,6 +80,7 @@ export default function InfoTip({ children, label }: IInfoTipProps) {
                 className={styles.infoTip__bubble}
                 data-open={isOpen || undefined}
                 id={tipId}
+                ref={bubbleRef}
                 role="tooltip"
             >
                 {children}

@@ -1,11 +1,16 @@
 'use client';
 
-import { type IClubHub, type IClubSettings } from '@pickflick/contracts';
+import {
+    type IClubHub,
+    type IClubSettings,
+    type ISessionRoster,
+    type TSession,
+} from '@pickflick/contracts';
 
+import ActiveSessionActions from '#app/(product)/clubs/[clubId]/_components/ActiveSessionActions/ActiveSessionActions';
 import HubSessionCards from '#app/(product)/clubs/[clubId]/_components/HubSessionCards/HubSessionCards';
 
 import styles from '../../page.module.scss';
-import AvatarCard from './AvatarCard';
 import ClubDangerZone from './ClubDangerZone';
 import ClubInfoCard from './ClubInfoCard';
 import InvitationCard from './InvitationCard';
@@ -14,9 +19,11 @@ import VisibilityCard from './VisibilityCard';
 export default function ClubSettings({
     projection,
     hub,
+    activeSession,
 }: {
     projection: IClubSettings;
     hub: IClubHub;
+    activeSession: { session: TSession; roster: ISessionRoster } | null;
 }) {
     const role = projection.club.membershipRole;
     return (
@@ -27,11 +34,13 @@ export default function ClubSettings({
                 </p>
             ) : null}
 
-            <HubSessionCards hub={hub} />
+            <HubSessionCards
+                hub={hub}
+                actions={activeSession ? <ActiveSessionActions {...activeSession} /> : undefined}
+            />
             <div className={styles.grid}>
                 <ClubInfoCard projection={projection} />
                 <VisibilityCard projection={projection} />
-                <AvatarCard projection={projection} />
                 <InvitationCard projection={projection} />
                 <ClubDangerZone projection={projection} />
             </div>

@@ -1,5 +1,5 @@
 .layout {
-    margin-block: var(--gap-lg) var(--gap-xl);
+    margin-top: var(--gap-lg);
 }
 
 .sectionHeading {
@@ -103,6 +103,10 @@
         color var(--motion-local),
         background-color var(--motion-local),
         border-color var(--motion-local);
+}
+
+span.remove {
+    visibility: hidden;
 }
 
 .remove:hover {

@@ -16,8 +16,10 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [link, setLink] = useState('');
     const [createdId, setCreatedId] = useState('');
     const [isPending, setIsPending] = useState(false);
+    const [hasLoaded, setHasLoaded] = useState(false);
     const [message, setMessage] = useState('');
     const isAllowed = projection.permissions.manageMembers;
+    const isMemberLimitReached = projection.members.length >= projection.entitlements.memberLimit;
     const hasReachedLinkLimit =
         invitations.filter((invite) => invite.state === 'pending').length >=
         projection.entitlements.memberLimit;
@@ -35,6 +37,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 return;
             }
             if (result.invitations) setInvitations(result.invitations);
+            if (kind === 'load') setHasLoaded(true);
             if ('created' in result && result.created) {
                 showCreated(result.created, Boolean(result.invitations), result.refreshError);
             } else {
@@ -59,19 +62,14 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         setLink(`${globalThis.location.origin}/invite/club/${created.token}`);
         setCreatedId(created.id);
         setMessage(
-            [
-                'Invitation created. Share this link with one person; it expires in 12 hours.',
-                refreshError,
-            ]
-                .filter(Boolean)
-                .join(' '),
+            ['Link ready. Share it with one person.', refreshError].filter(Boolean).join(' '),
         );
     }
 
     async function handleCopy() {
         try {
             await globalThis.navigator.clipboard.writeText(link);
-            setMessage('Invitation link copied.');
+            setMessage('Link copied.');
         } catch {
             setMessage('Copy is unavailable. Select and copy the invitation link below.');
         }
@@ -80,65 +78,64 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     return (
         <section aria-labelledby="club-invitations-title" className={styles.card}>
             <h2 id="club-invitations-title">Invite to this Club</h2>
-            <p>Generate a single-use join link, valid for 12 hours.</p>
-            {projection.members.length >= projection.entitlements.memberLimit ? (
-                <p>
-                    The member limit is reached. A seat must become available before creating
-                    another invitation.
-                </p>
+            <p>A single-use join link, valid for 12 hours.</p>
+            {isMemberLimitReached ? (
+                <p>The member limit is reached; a seat must free up before the next invitation.</p>
             ) : null}
             {!isAllowed ? (
                 <p>Invitations require an active Club and an Admin or Moderator.</p>
             ) : (
                 <>
                     {!projection.permissions.createInvitations ? (
-                        <p>
-                            New invitations are paused. You can still inspect and revoke existing
-                            links.
-                        </p>
+                        <p>New invitations are paused. Existing links can still be revoked.</p>
                     ) : null}
-                    <div className={styles.invitationActions}>
-                        {projection.permissions.createInvitations ? (
-                            <Button
-                                disabled={
-                                    isPending ||
-                                    hasReachedLinkLimit ||
-                                    projection.members.length >= projection.entitlements.memberLimit
-                                }
-                                onClick={() => run('create')}
-                            >
-                                Create invitation
-                            </Button>
-                        ) : null}
-                    </div>
                     {link ? (
                         <div className={styles.invitationLink}>
-                            <label htmlFor="invitation-link">Invitation link</label>
-                            <input id="invitation-link" readOnly value={link} />
-                            <Button disabled={isPending} onClick={handleCopy} variant="secondary">
-                                Copy link
-                            </Button>
-                            <Button
-                                disabled={isPending}
-                                onClick={() => run('create', createdId)}
-                                variant="secondary-danger"
-                            >
-                                Revoke current link
-                            </Button>
+                            <label className="visually-hidden" htmlFor="invitation-link">
+                                Invitation link
+                            </label>
+                            <div className={styles.invitationLinkRow}>
+                                <input id="invitation-link" readOnly value={link} />
+                                <Button
+                                    aria-label="Copy link"
+                                    disabled={isPending}
+                                    onClick={handleCopy}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    Copy
+                                </Button>
+                            </div>
+                            <p>
+                                Single use · expires in 12 hours ·{' '}
+                                <button
+                                    aria-label="Revoke current link"
+                                    className={styles.textButton}
+                                    disabled={isPending}
+                                    onClick={() => run('create', createdId)}
+                                    type="button"
+                                >
+                                    Revoke
+                                </button>
+                            </p>
                         </div>
+                    ) : null}
+                    {!link && projection.permissions.createInvitations ? (
+                        <Button
+                            disabled={isPending || hasReachedLinkLimit || isMemberLimitReached}
+                            onClick={() => run('create')}
+                            size="small"
+                        >
+                            Create invitation
+                        </Button>
                     ) : null}
                     <details
                         className={styles.invitationManagement}
-                        open={!projection.permissions.createInvitations}
+                        onToggle={(event) => {
+                            if (event.currentTarget.open && !hasLoaded) void run('load');
+                        }}
                     >
                         <summary>Manage links</summary>
-                        <Button
-                            disabled={isPending}
-                            onClick={() => run('load')}
-                            variant="secondary"
-                        >
-                            Recent invitations
-                        </Button>
                         <ul className={styles.invitationList}>
                             {invitations.map((invite) => (
                                 <li key={invite.id}>
@@ -154,6 +151,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                                         <Button
                                             disabled={isPending}
                                             onClick={() => run('create', invite.id)}
+                                            size="small"
                                             variant="secondary-danger"
                                         >
                                             Revoke invitation

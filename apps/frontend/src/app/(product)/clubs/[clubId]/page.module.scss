@@ -342,6 +342,11 @@
 }
 
 @media (width < 768px) {
+    /* Phones end the page above the footer without the desktop's long tail. */
+    .hub {
+        padding-bottom: var(--gap-lg);
+    }
+
     /* Phones switch Club views from the bottom bar's Hub strip, as in the prototype. */
     .tabs {
         display: none;

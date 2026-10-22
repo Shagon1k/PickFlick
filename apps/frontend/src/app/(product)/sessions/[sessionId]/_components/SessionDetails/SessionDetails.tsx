@@ -8,30 +8,28 @@ import {
 } from '@pickflick/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import nominationPanda from '#brand/panda-collection.webp';
 import watchingPanda from '#brand/panda-rating.webp';
 import selectionPanda from '#brand/panda-rating-2.webp';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
+import NominationClose from '#components/sessions/NominationClose/NominationClose';
+import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
+import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
-import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getOfflineMessage } from '#lib/offline';
 
-import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Selection from '../Selection/Selection';
-import SelectionClose from '../SelectionClose/SelectionClose';
 import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
 import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
-import SessionRoster from '../SessionRoster/SessionRoster';
 
 export default function SessionDetails({
     session,
@@ -44,7 +42,6 @@ export default function SessionDetails({
     movie: TMovieDetails | null;
     renderedAt: number;
 }) {
-    const router = useRouter();
     const headingRef = useRef<HTMLHeadingElement>(null);
     const phaseRef = useRef(session.phase);
     useEffect(() => {
@@ -52,8 +49,6 @@ export default function SessionDetails({
         phaseRef.current = session.phase;
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
     const header = (participation: ReactNode, onKick?: () => void, onClosePhase?: () => void) => (
         <SessionHeader
             session={session}
@@ -67,10 +62,7 @@ export default function SessionDetails({
             }
             headingRef={headingRef}
             onEdit={() => setDialog('edit')}
-            onCancel={() => {
-                setMessage('');
-                setDialog('cancel');
-            }}
+            onCancel={() => setDialog('cancel')}
         />
     );
     // The server sends Nomination or Selection data only in its own phase.
@@ -87,14 +79,22 @@ export default function SessionDetails({
                     <ScreeningFilm movie={movie} movieId={session.movieId} />
                 </>
             );
-        if (session.nominations)
+        const nominations = session.nominations;
+        if (nominations)
             return (
-                <Nomination
-                    header={(onClose) => header(participation, onKick, onClose)}
+                <NominationClose
                     sessionId={session.id}
                     phaseVersion={session.phaseVersion}
-                    data={session.nominations}
-                />
+                    canClose={nominations.canClose}
+                >
+                    {(onClose) => (
+                        <Nomination
+                            header={header(participation, onKick, onClose)}
+                            sessionId={session.id}
+                            data={nominations}
+                        />
+                    )}
+                </NominationClose>
             );
         const selection = session.selection;
         if (selection)
@@ -135,9 +135,6 @@ export default function SessionDetails({
                     </>
                 )}
             </SessionRoster>
-            <p aria-live="polite" role="status">
-                {message}
-            </p>
             <Modal open={dialog === 'edit'} title="Edit Session" onClose={() => setDialog(null)}>
                 {dialog === 'edit' ? (
                     <SessionForm
@@ -148,47 +145,11 @@ export default function SessionDetails({
                     />
                 ) : null}
             </Modal>
-            <ConfirmDialog
-                confirmLabel="Confirm cancellation"
-                cancelLabel="Keep Session"
-                inputId="cancel-confirmation"
+            <CancelSessionDialog
                 onClose={() => setDialog(null)}
-                onConfirm={(confirmation) => {
-                    const offlineMessage = getOfflineMessage();
-                    if (offlineMessage) {
-                        setMessage(offlineMessage);
-                        return;
-                    }
-                    startTransition(async () => {
-                        const result = await cancelSessionAction(session.id, {
-                            version: session.version,
-                            confirmation,
-                        }).catch(() => ({
-                            ok: false,
-                            message: 'We could not reach PickFlick. Try again.',
-                        }));
-                        setMessage(result.message);
-                        if (result.ok) {
-                            setDialog(null);
-                            router.refresh();
-                        }
-                    });
-                }}
                 open={dialog === 'cancel'}
-                pending={isPending}
-                status={
-                    <p aria-live="polite" role="status">
-                        {message}
-                    </p>
-                }
-                title="Cancel Session"
-                word="CANCEL"
-            >
-                <p>
-                    Cancel “{session.topic ?? 'Untitled Session'}”? Participation ends and this Club
-                    can schedule another Session. Existing history stays.
-                </p>
-            </ConfirmDialog>
+                session={session}
+            />
         </main>
     );
 }

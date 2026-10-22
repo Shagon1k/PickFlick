@@ -1,7 +1,10 @@
 'use client';
 
 import { type IClubSettings } from '@pickflick/contracts';
-import { useActionState } from 'react';
+import { useActionState, useId } from 'react';
+
+import InfoTip from '#components/ui/InfoTip/InfoTip';
+import Pill from '#components/ui/Pill/Pill';
 
 import { initialClubActionState } from '../../action-state';
 import { updateClubSettingsAction } from '../../actions';
@@ -23,23 +26,18 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                 <fieldset className={styles.checks} disabled={!canEdit}>
                     <legend className="visually-hidden">Visibility and presentation</legend>
                     {visibilityOptions.map(({ label, name }) => {
-                        const isLocked = name === 'showVoteResults' && areResultsLocked;
+                        if (name === 'showVoteResults' && areResultsLocked)
+                            return <LockedResultsOption key={name} label={label} />;
                         return (
                             <div key={name}>
                                 <label className={styles.check}>
                                     <span>{label}</span>
                                     <input
                                         defaultChecked={projection.visibility[name]}
-                                        disabled={isLocked}
                                         name={name}
                                         type="checkbox"
                                     />
                                 </label>
-                                {isLocked ? (
-                                    <p className={styles.checkNote}>
-                                        Free Clubs keep individual Selection results hidden.
-                                    </p>
-                                ) : null}
                             </div>
                         );
                     })}
@@ -49,5 +47,23 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                 ) : null}
             </form>
         </section>
+    );
+}
+
+/** A Pro capability reads as one, with the reason one tap away instead of a bare disabled box. */
+function LockedResultsOption({ label }: { label: string }) {
+    const labelId = useId();
+    return (
+        <div className={styles.check}>
+            <span className={styles.lockedLabel}>
+                <span id={labelId}>{label}</span>
+                <Pill tone="warm">Pro</Pill>
+                <InfoTip label="About Selection result visibility">
+                    Free Clubs keep individual Selection results hidden. On Pro, the Club Admin
+                    chooses whether members see them after Selection closes.
+                </InfoTip>
+            </span>
+            <input aria-labelledby={labelId} disabled type="checkbox" />
+        </div>
     );
 }

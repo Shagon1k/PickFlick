@@ -102,11 +102,14 @@
     border-radius: var(--radius-pill);
 }
 
+/* As in the prototype the stamp anchors to the header's bottom-right corner on wide screens. */
 .phaseStamp {
+    position: absolute;
+    right: 0;
+    bottom: 12px;
     display: inline-flex;
     gap: var(--gap-xs);
     align-items: center;
-    margin-left: var(--gap-sm);
     font: 600 var(--fs-caption)/1 var(--font-mono);
     color: var(--fg-secondary);
     text-transform: uppercase;
@@ -120,6 +123,9 @@
     content: '';
     background: var(--gold);
     border-radius: 50%;
+
+    /* Capitals sit above the line box's centre; the dot follows them, not the box. */
+    transform: translateY(-1px);
     animation: live-pulse 1.8s ease-in-out infinite;
 }
 
@@ -326,6 +332,19 @@
     color: var(--ivory-muted);
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);
+}
+
+@media (width < 768px) {
+    /* Phones end the page above the footer without the desktop's long tail. */
+    .main {
+        padding-bottom: var(--gap-lg);
+    }
+
+    .phaseStamp {
+        position: static;
+        flex-basis: 100%;
+        justify-content: center;
+    }
 }
 
 @media (width < 768px) {

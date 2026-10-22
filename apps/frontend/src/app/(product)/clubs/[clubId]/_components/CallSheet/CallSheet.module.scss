@@ -39,6 +39,7 @@
 /* A place name shares the narrow Call time column: smaller type and at most two lines. */
 .fields .location dd {
     display: -webkit-box;
+    padding-bottom: 0.12em;
     overflow: hidden;
     -webkit-line-clamp: 2;
     font-size: clamp(19px, 1.6vw, 24px);
@@ -145,6 +146,7 @@
 /* Topics run to 200 characters; the sheet keeps two lines and the Session page shows the rest. */
 .picture dd {
     display: -webkit-box;
+    padding-bottom: 0.12em;
     overflow: hidden;
     -webkit-line-clamp: 2;
     font-size: clamp(25px, 2.35vw, 36px);
@@ -211,11 +213,42 @@
     border-color: color-mix(in sRGB, var(--ivory-muted) 34%, transparent);
 }
 
-.empty {
-    padding: var(--gap-lg);
+.sheet[data-empty]:hover,
+.sheet[data-empty]:hover .head,
+.sheet[data-empty]:hover .still {
+    border-color: var(--border-lit);
+}
+
+.waiting {
+    display: grid;
+    gap: var(--gap-sm);
+    align-content: center;
+    justify-items: start;
+    padding: 28px 26px;
+}
+
+.waiting h2 {
+    margin: 0;
+    font: 600 clamp(25px, 2.35vw, 36px)/1.05 var(--font-display);
+    color: var(--fg);
+}
+
+.waiting p {
+    max-width: 44ch;
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
     color: var(--fg-secondary);
-    border: 1px solid var(--border-lit);
-    border-radius: 5px;
+}
+
+.waiting .waitingKicker {
+    font: 600 10px/var(--lh-caption) var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+}
+
+.waiting a {
+    margin-top: var(--gap-xs);
 }
 
 @media (width < 1400px) and (width >= 1024px) {

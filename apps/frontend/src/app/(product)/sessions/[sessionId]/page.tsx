@@ -7,6 +7,7 @@ import { buildLoginPath } from '#api/session.server';
 import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import { buildClubNavigation } from '#components/shells/shell-navigation';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
@@ -40,7 +41,11 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     }
     const [movie, renderedAt] = await Promise.all([loadFilm(session), getRequestTime()]);
     return (
-        <ProductFrame currentArea="session" sessionBackHref={`/clubs/${session.clubId}`}>
+        <ProductFrame
+            clubItems={buildClubNavigation(session.clubId, null)}
+            currentArea="session"
+            sessionBackHref={`/clubs/${session.clubId}`}
+        >
             <SessionProgress
                 sessionId={session.id}
                 version={Math.min(session.progressVersion, roster.progressVersion)}

@@ -18,6 +18,8 @@ import {
 } from '#components/shells/shell-navigation';
 import styles from '#components/shells/shells.module.scss';
 import SiteFooter from '#components/shells/SiteFooter/SiteFooter';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import Icon from '#components/ui/Icon/Icon';
 
 interface IProductChromeProps {
     admin?: boolean;
@@ -69,12 +71,12 @@ export default function ProductChrome({
                         </nav>
                         <div className={styles.productHeaderControls}>
                             {sessionBackHref ? (
-                                <Link
-                                    className={`${styles.secondaryAction} ${styles.sessionHeaderBack}`}
-                                    href={sessionBackHref}
-                                >
-                                    ← Back to Hub
-                                </Link>
+                                <span className={styles.sessionHeaderBack}>
+                                    <ButtonLink href={sessionBackHref} size="small">
+                                        <Icon name="arrow-left" />
+                                        Back to Hub
+                                    </ButtonLink>
+                                </span>
                             ) : null}
                             <ProductHeaderActions
                                 accountItems={buildAccountNavigation(routes, admin)}

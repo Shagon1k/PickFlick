@@ -1012,9 +1012,12 @@ CI. Owner-requested design passes on 2026-10-21 audited all 26 prototype files a
 dialogs, film-strip menus, score control, invite ticket, the Session page in every delivered phase,
 the Club Hub, Schedule a Session, Movie Details and mobile behavior. They also fixed reduced-motion
 focus in shell overlays, the Watching header without film details, long names and the landscape gear
-menu. Local evidence: `pnpm verify` gates, 333 unit tests, 160 Club/Session/Movie integration checks,
-the full UI contract (200), both real-API journeys, and all 84 visual comparisons in the CI-pinned
-Linux image after every changed PNG was reviewed.
+menu. A later owner review on 2026-10-22 added the Hub section skeleton, the empty Call Sheet, Manage
+Club's Session controls, the merged avatar and simpler invitations, swipe between Clubs, a pinned
+footer, and catalog writers, budget and revenue with a trailer search fallback. Local evidence:
+`pnpm verify` gates, 338 unit tests, 160 Club/Session/Movie integration checks, the full UI contract
+(204), both real-API journeys, and all 84 visual comparisons in the CI-pinned Linux image after every
+changed PNG was reviewed.
 
 The owner is still performing the manual Club-to-winner walkthrough. Hosted exact-revision review and
 a complete UAT multi-user/deadline run are not recorded. Phase 12 remains open; the owner asked for

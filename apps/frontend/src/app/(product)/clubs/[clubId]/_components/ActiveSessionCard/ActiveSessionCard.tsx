@@ -1,12 +1,11 @@
 'use client';
 
 import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pickflick/contracts';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { type ReactNode, useState, useTransition } from 'react';
 
 import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
-import Button, { getButtonClassName } from '#components/ui/Button/Button';
+import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
 import { getOfflineMessage } from '#lib/offline';
@@ -17,9 +16,12 @@ import styles from './ActiveSessionCard.module.scss';
 export default function ActiveSessionCard({
     hub,
     compact = false,
+    actions,
 }: {
     hub: IClubHub;
     compact?: boolean;
+    /** Operator controls that replace the open or join button in Manage Club. */
+    actions?: ReactNode;
 }) {
     const { activeSession: session, memberCount } = hub;
     const canCreate = hub.permissions.manageSessions && !isBlockingSessionPhase(session?.phase);
@@ -56,38 +58,30 @@ export default function ActiveSessionCard({
             />
         </div>
     ) : null;
+    const sessionAction = session?.canJoin ? (
+        <Button fullWidth loading={isPending} onClick={handleJoin}>
+            Join me!
+        </Button>
+    ) : (
+        <ButtonLink fullWidth href={`/sessions/${session?.id}`} variant="primary">
+            Open Session
+        </ButtonLink>
+    );
     return (
         <section
             className={styles.card}
             aria-label="Active Session"
             data-compact={compact || undefined}
         >
-            {session && !session.canJoin ? (
-                <Link
-                    className={styles.cardLink}
-                    href={`/sessions/${session.id}`}
-                    prefetch={false}
-                    aria-label={`Open active Session: ${session.topic ?? 'Untitled Session'}`}
-                >
-                    <h2>Active Session</h2>
+            <h2>Active Session</h2>
+            {session ? (
+                <div className={styles.stack}>
                     {details}
-                    <span className={getButtonClassName('primary', 'default')}>Open Session</span>
-                </Link>
+                    {actions ?? sessionAction}
+                    <p role="status">{message}</p>
+                </div>
             ) : (
-                <>
-                    <h2>Active Session</h2>
-                    {session ? (
-                        <div className={styles.stack}>
-                            {details}
-                            <Button fullWidth loading={isPending} onClick={handleJoin}>
-                                Join me!
-                            </Button>
-                            <p role="status">{message}</p>
-                        </div>
-                    ) : (
-                        <p>No active Session. Your next screening will appear here.</p>
-                    )}
-                </>
+                <p>No active Session. Your next screening will appear here.</p>
             )}
             {canCreate ? (
                 <div className={styles.create}>

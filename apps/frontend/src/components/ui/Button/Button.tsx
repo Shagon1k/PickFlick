@@ -49,6 +49,7 @@ export default function Button({
                 aria-busy={loading || undefined}
                 classNames={{
                     root: getButtonClassName(variant, size),
+                    inner: styles.button__inner,
                     label: styles.button__label,
                 }}
                 data-state={getButtonState(success, loading)}

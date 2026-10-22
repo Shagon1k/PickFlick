@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { formatCount } from '#lib/format';
+
 import { searchMoviesAction } from './actions';
 
 export type TMovieSearchResponse = Awaited<ReturnType<typeof searchMoviesAction>>;
@@ -55,7 +57,7 @@ export function getSearchMessage(term: string, result: TMovieSearchResponse | nu
 }
 
 function formatFilmCount(count: number): string {
-    return `${count} ${count === 1 ? 'film' : 'films'} found.`;
+    return `${formatCount(count, 'film')} found.`;
 }
 
 /** Moves a listbox's active option for ArrowDown/ArrowUp, wrapping at both ends. */

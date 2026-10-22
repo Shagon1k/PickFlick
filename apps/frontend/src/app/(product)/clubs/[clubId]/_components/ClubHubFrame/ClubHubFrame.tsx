@@ -54,6 +54,11 @@ export default function ClubHubFrame({
                             <CallSheet
                                 session={snapshot.activeSession}
                                 memberCount={snapshot.memberCount}
+                                scheduleHref={
+                                    snapshot.permissions.manageSessions
+                                        ? `/clubs/${snapshot.club.id}/sessions/new`
+                                        : undefined
+                                }
                             />
                         ) : null}
                     </div>

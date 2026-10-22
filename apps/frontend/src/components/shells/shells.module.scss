@@ -329,20 +329,22 @@
     letter-spacing: var(--tracking-caps);
 }
 
+/* The footer stays at the bottom of short pages instead of floating up under thin content. */
 .productShell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
     padding-bottom: 78px;
 }
 
-@media (width < 1024px) {
-    /* Room to scroll the footer links clear of the fixed invite ticket above the bottom bar. */
-    .productShell:has([data-invite-ticket]) {
-        padding-bottom: 168px;
-    }
+.productShell > footer {
+    margin-top: auto;
 }
 
-@media (width < 768px) {
-    .productShell:has([data-invite-ticket][data-empty]) {
-        padding-bottom: 78px;
+/* Below 1024px the invite ticket floats above the bottom bar; the footer's links end above it. */
+@media (width < 1024px) {
+    .productShell .publicFooterInner {
+        padding-bottom: 96px;
     }
 }
 

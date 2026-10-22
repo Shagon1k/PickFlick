@@ -7,35 +7,27 @@ import { type ReactNode, useRef, useState, useTransition } from 'react';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
-import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { getOfflineMessage } from '#lib/offline';
 
-import {
-    closeNominationsAction,
-    nominateAction,
-    refreshNominationsAction,
-} from '../../nomination-actions';
+import { nominateAction, refreshNominationsAction } from '../../nomination-actions';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
 
 export default function Nomination({
     sessionId,
     data,
-    phaseVersion,
     header,
 }: {
     sessionId: string;
     data: TNominations;
-    phaseVersion: number;
-    header: (onClose?: () => void) => ReactNode;
+    header: ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
     const [message, setMessage] = useState('');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
-    function run(action: 'submit' | 'refresh' | 'close', confirmation = '') {
+    function run(action: 'submit' | 'refresh') {
         const offlineMessage = getOfflineMessage();
         if (offlineMessage) {
             setMessage(offlineMessage);
@@ -43,21 +35,16 @@ export default function Nomination({
         }
         setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');
         startTransition(async () => {
-            let request;
-            if (action === 'submit') request = nominateAction(sessionId, { movieId: chosen?.id });
-            else if (action === 'close')
-                request = closeNominationsAction(sessionId, {
-                    phaseVersion,
-                    confirmation,
-                });
-            else request = refreshNominationsAction(sessionId);
+            const request =
+                action === 'submit'
+                    ? nominateAction(sessionId, { movieId: chosen?.id })
+                    : refreshNominationsAction(sessionId);
             const result = await request.catch(() => ({
                 ok: false as const,
                 message: 'We could not reach PickFlick. Try again.',
             }));
             setMessage(result.message);
             if (!result.ok) return;
-            if (action === 'close') setIsDialogOpen(false);
             if (action === 'submit') headingRef.current?.focus();
         });
     }
@@ -71,14 +58,7 @@ export default function Nomination({
                 Nomination in progress — {data.nominatedCount} of {data.acceptedCount} participants
                 have nominated.
             </PhaseProgress>
-            {header(
-                data.canClose
-                    ? () => {
-                          setMessage('');
-                          setIsDialogOpen(true);
-                      }
-                    : undefined,
-            )}
+            {header}
             <div className={styles.columns}>
                 <section className={styles.card} aria-labelledby="nominate-heading">
                     <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
@@ -109,24 +89,6 @@ export default function Nomination({
                     <NominationList data={data} />
                 </section>
             </div>
-            <ConfirmDialog
-                cancelLabel="Keep nominations open"
-                confirmLabel="Confirm close"
-                inputId="close-nomination-confirmation"
-                onClose={() => setIsDialogOpen(false)}
-                onConfirm={(confirmation) => run('close', confirmation)}
-                open={isDialogOpen}
-                pending={isPending}
-                status={<p role="status">{message}</p>}
-                title="Close nominations early"
-                tone="neutral"
-                word="CLOSE"
-            >
-                <p>
-                    End Nomination now? One nomination selects that Movie for Watching. Two or more
-                    open Selection. Remaining participants cannot nominate.
-                </p>
-            </ConfirmDialog>
         </section>
     );
 }

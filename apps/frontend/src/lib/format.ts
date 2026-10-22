@@ -28,6 +28,11 @@ export function formatRuntime(minutes: number | null): string | null {
     return hours ? `${hours}h ${minutes % MINUTES_PER_HOUR}m` : `${minutes}m`;
 }
 
+/** A count with its noun in the right number: `1 session`, `3 sessions`. */
+export function formatCount(count: number, singular: string, plural = `${singular}s`): string {
+    return `${count} ${count === 1 ? singular : plural}`;
+}
+
 /** The two-letter placeholder shown where a Club or member has no image. */
 export function getMonogram(name: string): string {
     return name.slice(0, 2).toUpperCase();

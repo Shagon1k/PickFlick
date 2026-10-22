@@ -1,0 +1,15 @@
+.actions {
+    display: grid;
+    gap: var(--gap-sm);
+}
+
+/* The prototype pairs the two destructive actions under the phase move. */
+.danger {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--gap-sm);
+}
+
+.danger:empty {
+    display: none;
+}

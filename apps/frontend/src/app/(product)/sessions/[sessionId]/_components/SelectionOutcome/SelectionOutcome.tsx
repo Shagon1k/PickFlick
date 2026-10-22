@@ -1,7 +1,7 @@
 import type { TSelectionOutcome, TSelectionReason } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import { formatUtcDateTime } from '#lib/format';
+import { formatCount, formatUtcDateTime } from '#lib/format';
 
 import styles from './SelectionOutcome.module.scss';
 
@@ -43,8 +43,7 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                 <>
                     <h3>Selection results</h3>
                     <p>
-                        {data.breakdown.ballotCount}{' '}
-                        {data.breakdown.ballotCount === 1 ? 'ballot' : 'ballots'} received · Scale{' '}
+                        {formatCount(data.breakdown.ballotCount, 'ballot')} received · Scale{' '}
                         {data.breakdown.scaleMin}–{data.breakdown.scaleMax}.
                     </p>
                     <p>{REASONS[data.breakdown.reason]}.</p>

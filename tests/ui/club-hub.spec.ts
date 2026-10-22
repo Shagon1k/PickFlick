@@ -226,6 +226,38 @@ for (const { viewport, open, current } of sectionSwitches) {
     });
 }
 
+test('a sideways swipe over the Club name switches Clubs on phones', async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: true, isMobile: true });
+    try {
+        await authenticate(context, 'valid-hub-swipe');
+        const page = await context.newPage();
+        await page.setViewportSize(canonicalViewports[0]);
+        await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+        const title = page.getByRole('heading', { level: 1, name: 'Midnight Society' });
+        await expect(title).toBeVisible();
+        await title.evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            const touch = (clientX: number) =>
+                new Touch({ identifier: 1, target: element, clientX, clientY: box.top + 10 });
+            const start = touch(box.right - 20);
+            const end = touch(box.left + 20);
+            element.dispatchEvent(
+                new TouchEvent('touchstart', {
+                    bubbles: true,
+                    touches: [start],
+                    changedTouches: [start],
+                }),
+            );
+            element.dispatchEvent(
+                new TouchEvent('touchend', { bubbles: true, touches: [], changedTouches: [end] }),
+            );
+        });
+        await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
+    } finally {
+        await context.close();
+    }
+});
+
 test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true });
     try {
@@ -249,10 +281,8 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
         await page
-            .getByRole('link', {
-                name: 'Open active Session: Second Club private screening',
-                exact: true,
-            })
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Open Session', exact: true })
             .tap();
         await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
     } finally {

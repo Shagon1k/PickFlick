@@ -173,7 +173,12 @@ here.
 #### Product shell
 
 - The public footer stays on every product page, phones included, because it carries the legal and
-  contact links. A visible invite ticket adds bottom room so the footer can scroll clear of it.
+  contact links. It sits at the bottom of short pages, and below 1024px its links end above the
+  floating invite ticket.
+- The bottom bar's Hub strip lists the Club's sections wherever a Club is in context, the Session page
+  included; without one it offers Create and Join on the onboarding Hub and a Club Hub link elsewhere.
+  Choosing a strip link closes the strip.
+- Back to Hub and other in-header actions use the shared small button, with its hover and focus.
 - The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
   Panel first for App Admins. Movie Details marks no header destination as current.
 - Search, notifications and film-strip menus move focus inside when they open, also under reduced
@@ -189,27 +194,37 @@ here.
   the Library.
 - The carousel ends with Create new club. The caption shows member count, the count of Sessions that
   were not cancelled, and the founding month and year; description, plan, role and scale stay in
-  their own panels. Names wrap by whole words and stop at three lines. Phones show position dots; the
-  arrows switch Clubs and wider screens hide the dots.
-- The Call Sheet opens the current Session from every section, for participants too, and stays a
-  static empty state without one. Its number is the Club-local creation order, cancelled Sessions
+  their own panels. Names wrap by whole words and stop at three lines. Phones show position dots and
+  switch Clubs with a clearly sideways swipe over the name as well as the arrows; wider screens hide
+  the dots.
+- The Call Sheet opens the current Session from every section, for participants too. Without one it
+  keeps the sheet's frame: "No screening scheduled", the projectionist panda in the still and, for
+  Admins and Moderators, Schedule a Session. Its number is the Club-local creation order, cancelled Sessions
   included. Sessions store only a date, so the call-time slot shows the location (two lines at most)
   until a real time exists, never a fabricated midnight. Topics stop at two lines.
 - The Call Sheet still uses cached Movie artwork or an explicit missing-image state, never fixture
   film data. Before a film is selected it shows the choosing panda rather than a nominated poster,
   because nominations stay behind the Club's visibility settings.
 - Overview shows seven statistics with `—` for missing values; Session ratings stay unavailable until
-  Phase 13. A participant opens the Session from the whole Active Session card; an eligible member
-  joins with Join me!. Session history is a quiet disclosure row.
+  Phase 13. In the Active Session card only its button acts: Open Session for participants, Join me!
+  for an eligible member. Session history is a quiet disclosure row.
+- Manage Club's Active Session gives Admins and Moderators the gear menu's controls: Start next phase
+  (Selection, or Watching for a single nomination or after Selection), Kick participant and Cancel
+  Session, with the same typed confirmations. Moving Watching to Rating arrives in Phase 13.
 - Members shows each role and the accepted participations, excluding cancelled Sessions. Admins
   remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
-  Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Role changes
-  happen in the Manage Moderators dialog; + Invite opens Manage Club.
+  Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
+  counts stay in one column whether or not a row has a remove control. Role changes happen in the
+  Manage Moderators dialog; + Invite opens Manage Club.
+- Club Info holds the avatar: clicking it picks an image with a preview, its requirements sit in a
+  tip, and Save Changes uploads it with the other fields. A Pro-only setting carries a Pro marker
+  and its reason in a tip instead of a bare disabled box.
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
   Sessions and invites while roster recovery stays available.
-- Manage Club creates one single-use invitation link with a 12-hour expiry, Copy and Revoke. Older
-  links stay collapsed under Manage links, each with a short ID, status and expiry, the newest marked.
+- Manage Club creates one single-use invitation link with a 12-hour expiry: the link field carries
+  Copy, and Revoke is a quiet link beneath it. Older links stay collapsed under Manage links, which
+  loads them when opened, each with a short ID, status and expiry, the newest marked.
   A new link stays visible and revocable if the list fails to refresh. Active links are capped at the
   plan's member limit; managers can still inspect and revoke when creation is paused. Members and
   archived Clubs see no invitation controls.
@@ -221,8 +236,7 @@ here.
   date, and have no token expiry. Accepting a Session invite opens the Session.
 - Responding moves focus to Close before the row's controls change, so the trap and Escape keep
   working after the last answer. Loading, empty, retry and stale-invitation feedback are explicit.
-- On phones the ticket sits above the bottom bar and stays hidden while there has been nothing to
-  show; once invites appear it remains, even after the last answer, so focus can return to it.
+- The ticket is always present, as in the prototype; on phones it floats above the bottom bar.
 
 #### Invitation pages
 
@@ -243,13 +257,16 @@ here.
 - Results fall back to an available source title; "Untitled film" means no title at all. Posters load
   lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
 - Movie Details shows title, year, language name, runtime in hours and minutes, genres,
-  source-labelled ratings to one decimal, poster, directors, up to five actors in one row, synopsis
-  and outbound trailers. There is no in-content Back. Stacked credit values read from the left.
+  source-labelled ratings to one decimal, poster, directors, writers, up to five actors in one row,
+  budget and worldwide revenue in compact US dollars, synopsis and outbound trailers. Rows without data
+  other than directors and actors are left out. There is no in-content Back. Phones place the poster
+  above the credits; each credit keeps its label and value on one row.
 - Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
   and stale details each have explicit feedback. Related titles load separately: up to six
   provider-supplied links, grayscale until hover or focus, with no personalization claim.
 - IMDb links are built by the backend from verified identifiers; Wikipedia is labelled a title
-  search. Trailers open YouTube in a new tab and say so. One credit region covers the film and its
+  search. Trailers open YouTube in a new tab and say so; without a provider trailer the card offers a
+  labelled YouTube search instead. One credit region covers the film and its
   related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
   the Library.
 
@@ -270,7 +287,8 @@ here.
   time, then the phase content, the reel separator with the phase mascot, and the facts.
 - Invite copies the member-only Session link and confirms in its own label. Join and Leave sit beside
   it. The gear menu holds early closure, Edit, Kick and Cancel; on short screens its rows compact and
-  it scrolls clear of the bottom bar.
+  it scrolls clear of the bottom bar. The strip centres under its
+  trigger so its tab always sits mid-strip.
 - Dialogs have no close icon: Escape, the overlay and their own Cancel or Close dismiss them. Edit is
   a focus-trapped form; Cancel, Kick and early closure keep typed `CANCEL`, `REMOVE` and `CLOSE`.
   Terminal Sessions have no edit or cancel controls. A phase change focuses the Session heading.
@@ -311,7 +329,8 @@ here.
 #### Watching
 
 - A film header (linked title, year · runtime, genre chips, a phase stamp whose dot pulses only while
-  Watching) sits above the Movie Details media grid. When film details are unavailable the phase
+  Watching) sits above the Movie Details media grid. The stamp anchors to the header's bottom-right
+  corner and takes its own centred line on phones. When film details are unavailable the phase
   stamp stays and the warning links to the selected Movie. Moving to Rating is Phase 13.
 
 #### Public, Login and Contact

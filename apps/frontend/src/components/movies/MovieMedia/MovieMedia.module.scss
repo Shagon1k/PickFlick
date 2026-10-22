@@ -148,16 +148,6 @@
         text-align: center;
     }
 
-    .credits dl > div {
-        grid-template-columns: 1fr;
-        padding: var(--gap-xs);
-    }
-
-    /* Stacked under its label, a value reads from the left as in the prototype. */
-    .credits dd {
-        text-align: left;
-    }
-
     .heroGrid .credits h2 {
         font-size: var(--fs-body-sm);
     }
@@ -168,8 +158,31 @@
     }
 }
 
+/* Phones give the poster its own row; beside the credits both were too cramped. */
 @media (width < 576px) {
     .heroGrid {
-        grid-template-columns: 132px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .posterRegion {
+        justify-self: center;
+        width: min(220px, 64vw);
+    }
+
+    .credits {
+        grid-row: 2;
+        grid-column: 1;
+    }
+
+    .synopsis {
+        grid-row: 3;
+    }
+
+    .trailer {
+        grid-row: 4;
+    }
+
+    .credits dl > div {
+        grid-template-columns: 96px minmax(0, 1fr);
     }
 }

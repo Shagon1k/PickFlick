@@ -2,11 +2,15 @@
 
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
+import { formatCount } from '#lib/format';
 
 import styles from './ClubSwitcher.module.scss';
+
+const SWIPE_MIN_PX = 48;
+const SWIPE_DOMINANCE = 1.5;
 
 export default function ClubSwitcher({
     clubs,
@@ -36,6 +40,21 @@ export default function ClubSwitcher({
         form.set('clubId', club.id);
         startTransition(() => selectClubAction(form));
     }
+    const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+    const handlePrevious = () => select((index + choices.length) % (choices.length + 1));
+    const handleNext = () => select((index + 1) % (choices.length + 1));
+    // A clearly sideways swipe over the Club name switches Clubs; vertical scrolling stays untouched.
+    function handleSwipeEnd(event: React.TouchEvent) {
+        const start = swipeStartRef.current;
+        const touch = event.changedTouches[0];
+        swipeStartRef.current = null;
+        if (!start || !touch || isPending) return;
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * SWIPE_DOMINANCE) return;
+        if (dx < 0) handleNext();
+        else handlePrevious();
+    }
     const established = new Intl.DateTimeFormat('en', {
         month: 'long',
         year: 'numeric',
@@ -52,7 +71,7 @@ export default function ClubSwitcher({
                     className={styles.arrow}
                     aria-label="Previous Club"
                     disabled={isPending}
-                    onClick={() => select((index + choices.length) % (choices.length + 1))}
+                    onClick={handlePrevious}
                     type="button"
                 >
                     <span>
@@ -61,7 +80,16 @@ export default function ClubSwitcher({
                         </svg>
                     </span>
                 </button>
-                <div className={styles.stage}>
+                <div
+                    className={styles.stage}
+                    onTouchEnd={handleSwipeEnd}
+                    onTouchStart={(event) => {
+                        const touch = event.touches[0];
+                        swipeStartRef.current = touch
+                            ? { x: touch.clientX, y: touch.clientY }
+                            : null;
+                    }}
+                >
                     {isCreating ? (
                         <Link className={styles.create} href="/clubs/new">
                             <span className={styles.createCircle} aria-hidden="true">
@@ -73,8 +101,8 @@ export default function ClubSwitcher({
                         <div className={styles.heading}>
                             <h1 id="hub-title">{current.name}</h1>
                             <p>
-                                {memberCount} members <span>·</span> {sessionCount}{' '}
-                                {sessionCount === 1 ? 'session' : 'sessions'} <span>·</span> Est.{' '}
+                                {formatCount(memberCount, 'member')} <span>·</span>{' '}
+                                {formatCount(sessionCount, 'session')} <span>·</span> Est.{' '}
                                 {established}
                             </p>
                         </div>
@@ -84,7 +112,7 @@ export default function ClubSwitcher({
                     className={styles.arrow}
                     aria-label="Next Club"
                     disabled={isPending}
-                    onClick={() => select((index + 1) % (choices.length + 1))}
+                    onClick={handleNext}
                     type="button"
                 >
                     <span>

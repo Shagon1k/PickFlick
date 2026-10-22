@@ -90,6 +90,8 @@ function applySessionScenario(session: IClubHubSession, token: string | undefine
             posterUrl: null,
         };
     }
+    // Manage Club's Session controls read this Session from the nomination fixture.
+    if (token?.includes('nomination-operator')) session.id = '30000000-0000-4000-8000-000000000042';
     if (token?.includes('session-roster-member-direct')) {
         session.id = '30000000-0000-4000-8000-000000000041';
         session.canJoin = true;

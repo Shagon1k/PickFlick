@@ -38,44 +38,7 @@
     display: none;
 }
 
-.card {
-    position: relative;
-}
-
-.cardLink {
-    display: grid;
-    gap: 0;
-    color: inherit;
-    text-decoration: none;
-}
-
-.cardLink h2 {
-    margin: 0 0 16px;
-}
-
-.cardLink > span {
-    margin-top: 24px;
-}
-
-.cardLink::after {
-    position: absolute;
-    inset: 0;
-    content: '';
-    border-radius: var(--radius-lg);
-}
-
-.cardLink:hover::after {
-    box-shadow: inset 0 0 0 1px var(--border-lit);
-}
-
-.cardLink:focus-visible::after {
-    outline: 2px solid var(--focus);
-    outline-offset: 3px;
-}
-
 .create {
-    position: relative;
-    z-index: 1;
     margin-top: var(--gap-sm);
 }
 

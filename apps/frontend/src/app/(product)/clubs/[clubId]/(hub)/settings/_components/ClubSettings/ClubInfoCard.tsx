@@ -13,23 +13,34 @@ import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
 import { initialClubActionState } from '../../action-state';
-import { updateClubSettingsAction } from '../../actions';
+import { removeClubAvatarAction, saveClubInfoAction } from '../../actions';
 import styles from '../../page.module.scss';
 import { isWritable } from './club-settings';
+import ClubAvatarField from './ClubAvatarField';
 import SaveRow from './SaveRow';
 import StoredVisibility from './StoredVisibility';
 
 const DESCRIPTION_ROWS = 3;
 
 export default function ClubInfoCard({ projection }: { projection: IClubSettings }) {
-    const action = updateClubSettingsAction.bind(null, projection.club.id);
-    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
+    const save = saveClubInfoAction.bind(null, projection.club.id);
+    const remove = removeClubAvatarAction.bind(null, projection.club.id);
+    const [saveState, formAction, isSaving] = useActionState(save, initialClubActionState);
+    const [removeState, removeAction, isRemoving] = useActionState(remove, initialClubActionState);
     const canEdit = isWritable(projection);
     return (
         <section aria-labelledby="club-info-title" className={styles.card}>
             <h2 id="club-info-title">Club Info</h2>
             <form action={formAction} className={styles.cardForm}>
                 <StoredVisibility projection={projection} />
+                <ClubAvatarField
+                    // A saved or removed avatar clears the local preview.
+                    key={`${saveState.revision}-${removeState.revision}`}
+                    disabled={!canEdit || isSaving || isRemoving}
+                    projection={projection}
+                    removeAction={removeAction}
+                    removeState={removeState}
+                />
                 <TextInput
                     defaultValue={projection.club.name}
                     disabled={!canEdit}
@@ -56,7 +67,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     min={projection.club.selectionScaleMin}
                 />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
+                    <SaveRow disabled={!canEdit} pending={isSaving} state={saveState} />
                 ) : null}
             </form>
         </section>

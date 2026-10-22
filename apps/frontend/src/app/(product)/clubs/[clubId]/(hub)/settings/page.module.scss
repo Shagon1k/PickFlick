@@ -132,11 +132,6 @@
     font: 600 15px/var(--lh-title) var(--font-body);
 }
 
-.stack {
-    display: grid;
-    gap: var(--gap-sm);
-}
-
 .saveRow {
     display: grid;
     gap: 6px;
@@ -234,10 +229,11 @@
     cursor: not-allowed;
 }
 
-.checkNote {
-    margin: -4px 0 6px;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
+.lockedLabel {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--gap-xs);
+    align-items: center;
 }
 
 .explanation {
@@ -254,14 +250,15 @@
     min-height: 44px;
 }
 
-.avatarLayout {
+.avatarField {
     display: grid;
     grid-template-columns: 88px minmax(0, 1fr);
     gap: var(--gap-md);
-    align-items: start;
+    align-items: center;
 }
 
 .avatar {
+    position: relative;
     display: grid;
     place-items: center;
     width: 88px;
@@ -272,12 +269,65 @@
     background: var(--surface-lit);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius-lg);
+    transition: border-color var(--motion-local) var(--ease-standard);
 }
 
 .avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.avatar[data-editable] {
+    cursor: pointer;
+}
+
+/* "Change" surfaces on hover and keyboard focus so the picture itself reads as the control. */
+.avatarHint {
+    position: absolute;
+    inset: auto 0 0;
+    padding: 4px 0;
+    font: 600 var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--fg);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    background: color-mix(in sRGB, var(--bg) 78%, transparent);
+    opacity: 0;
+    transition: opacity var(--motion-local) var(--ease-standard);
+}
+
+.avatar[data-editable]:hover,
+.avatar[data-editable]:focus-within {
+    border-color: var(--fg-secondary);
+}
+
+.avatar[data-editable]:hover .avatarHint,
+.avatar[data-editable]:has(input:focus-visible) .avatarHint {
+    opacity: 1;
+}
+
+.avatar:has(input:focus-visible) {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.avatarMeta {
+    display: grid;
+    gap: var(--gap-xs);
+    justify-items: start;
+    font-size: var(--fs-body-sm);
+}
+
+.avatarMeta small {
+    color: var(--fg-secondary);
+}
+
+.avatarTitle {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    color: var(--fg-secondary);
 }
 
 .inlineForm {
@@ -287,44 +337,21 @@
     align-items: center;
 }
 
-.fileLabel {
-    display: grid;
-    flex: 1 1 220px;
-    min-width: 0;
-}
-
-.fileLabel input {
-    width: 100%;
+.textButton {
     min-height: var(--hit);
-    padding: 5px;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.fileLabel input::file-selector-button {
-    min-height: 32px;
-    padding: 6px 14px;
-    margin-right: var(--gap-sm);
-    font: 500 var(--fs-meta)/1 var(--font-body);
-    color: var(--fg);
+    padding: 0;
+    font: inherit;
+    color: var(--danger-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
     cursor: pointer;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) - 4px);
-    transition: border-color var(--motion-local) var(--ease-standard);
+    background: none;
+    border: 0;
 }
 
-.fileLabel input:hover:not(:disabled)::file-selector-button {
-    border-color: var(--fg);
-}
-
-.fileLabel input:focus-visible {
-    outline: none;
-    border-color: var(--gold-border);
-    box-shadow: 0 0 0 3px var(--gold-soft);
+.textButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
 }
 
 .memberList {
@@ -505,8 +532,8 @@
         padding: var(--gap-md);
     }
 
-    .avatarLayout {
-        grid-template-columns: 1fr;
+    .avatarField {
+        grid-template-columns: 72px minmax(0, 1fr);
     }
 
     .avatar {
@@ -545,20 +572,28 @@
     }
 }
 
-.invitationActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-}
-
 .invitationLink {
     display: grid;
     gap: var(--gap-xs);
-    margin-block: var(--gap-md);
+    margin-block: var(--gap-sm) 0;
+}
+
+.invitationLinkRow {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+}
+
+.invitationLink p {
+    margin: 0;
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
 }
 
 .invitationLink input {
+    flex: 1 1 auto;
     width: 100%;
+    min-width: 0;
     min-height: var(--hit);
     padding: var(--gap-sm);
     color: var(--fg);

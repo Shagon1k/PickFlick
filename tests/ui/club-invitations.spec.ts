@@ -242,13 +242,13 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
     await expect(page.getByRole('status').last()).toContainText(
-        'Invitation created. Share this link',
+        'Link ready. Share it with one person.',
     );
     await expect(page.getByRole('status').last()).toContainText('could not be refreshed');
     await expect(page.getByRole('button', { name: 'Revoke current link' })).toBeVisible();
     const original = await link.inputValue();
+    // Opening Manage links loads the recent invitations.
     await page.getByText('Manage links', { exact: true }).click();
-    await page.getByRole('button', { name: 'Recent invitations' }).click();
     await expect(page.getByRole('status').last()).toHaveText('Recent invitations loaded.');
     await expect(link).toHaveValue(original);
     await page.getByRole('button', { name: 'Revoke current link' }).click();

@@ -118,6 +118,20 @@
     border-color: var(--success-border);
 }
 
+/* Icons centre on the button, not on the text baseline. */
+.button__inner {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: center;
+}
+
+.button__label {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+}
+
 .button[data-state='loading'] .button__label {
     opacity: 0;
 }

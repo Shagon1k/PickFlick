@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Button from '#components/ui/Button/Button';
 import Popover from '#components/ui/Popover/Popover';
-import { formatUtcDate } from '#lib/format';
+import { formatCount, formatUtcDate } from '#lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';
@@ -19,8 +19,6 @@ export default function PendingInvites() {
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
     const [isLoaded, setIsLoaded] = useState(false);
-    // Once invites appeared, the ticket stays so focus can return to it after the last response.
-    const [hasHadInvites, setHasHadInvites] = useState(false);
     const [isPending, startTransition] = useTransition();
     const id = useId();
     async function load() {
@@ -28,7 +26,6 @@ export default function PendingInvites() {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
-                if (result.invitations.length) setHasHadInvites(true);
                 setIsLoaded(true);
                 setMessage('');
             } else {
@@ -71,13 +68,9 @@ export default function PendingInvites() {
             }
         });
     }
-    const countLabel = `${invitations.length} invitation${invitations.length === 1 ? '' : 's'}`;
+    const countLabel = formatCount(invitations.length, 'invitation');
     return (
-        <div
-            className={styles.widget}
-            data-empty={(isLoaded && !hasHadInvites) || undefined}
-            data-invite-ticket
-        >
+        <div className={styles.widget}>
             <Popover
                 id={id}
                 variant="invites"
@@ -191,7 +184,7 @@ export default function PendingInvites() {
 
 function describeInvitation(invitation: TPendingInvitation): string {
     if (invitation.kind === 'club')
-        return `Invited by ${invitation.inviterName} · ${invitation.memberCount} members · Expires ${formatUtcDate(invitation.expiresAt)}`;
+        return `Invited by ${invitation.inviterName} · ${formatCount(invitation.memberCount, 'member')} · Expires ${formatUtcDate(invitation.expiresAt)}`;
     return invitation.scheduledAt
         ? `${invitation.clubName} · ${new Intl.DateTimeFormat('en', {
               weekday: 'short',

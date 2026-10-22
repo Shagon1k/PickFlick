@@ -120,27 +120,33 @@ export async function changeClubLifecycleAction(
     return result;
 }
 
-export async function uploadClubAvatarAction(
+/** Club Info saves its fields and, when one was chosen, the new avatar in one submission. */
+export async function saveClubInfoAction(
     clubId: string,
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
     const file = formData.get('avatar');
-    if (
-        !(file instanceof File) ||
-        file.size === 0 ||
-        file.size > CLUB_AVATAR_MAX_BYTES ||
-        !(CLUB_AVATAR_MEDIA_TYPES as readonly string[]).includes(file.type)
-    ) {
+    const avatar = file instanceof File && file.size > 0 ? file : null;
+    if (avatar && !isValidAvatar(avatar)) {
         return next(previous, 'error', 'Choose a PNG, JPEG, or WebP image no larger than 512 KiB.');
     }
+    const saved = await updateClubSettingsAction(clubId, previous, formData);
+    if (!avatar || saved.status !== 'success') return saved;
     const result = await run(
-        previous,
-        () => replaceClubAvatar(clubId, file),
-        'Club avatar updated.',
+        saved,
+        () => replaceClubAvatar(clubId, avatar),
+        'Club settings and avatar saved.',
     );
     revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
+}
+
+function isValidAvatar(file: File): boolean {
+    return (
+        file.size <= CLUB_AVATAR_MAX_BYTES &&
+        (CLUB_AVATAR_MEDIA_TYPES as readonly string[]).includes(file.type)
+    );
 }
 
 export async function removeClubAvatarAction(

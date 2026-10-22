@@ -8,7 +8,7 @@ import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/sett
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
-import { getMonogram } from '#lib/format';
+import { formatCount, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -19,6 +19,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
     const headingRef = useRef<HTMLHeadingElement>(null);
     const returnToHeadingRef = useRef(false);
     const { club, permissions, members, currentMembershipId } = projection;
+    const hasRemovals = members.some((member) => member.canRemove);
     async function remove(confirmation: string) {
         if (!selected) return;
         const formData = new FormData();
@@ -55,7 +56,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 <h2 ref={headingRef} tabIndex={-1}>
                     Members
                 </h2>
-                <ButtonLink href={`/clubs/${club.id}/settings`}>
+                <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
                     {permissions.createInvitations ? '+ Invite' : 'Club settings'}
                 </ButtonLink>
             </div>
@@ -80,7 +81,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                         </div>
                         <div className={styles.memberActions}>
                             <span className={styles.sessionCount}>
-                                {member.sessionCount} sessions
+                                {formatCount(member.sessionCount, 'session')}
                             </span>
                             {member.canRemove ? (
                                 <button
@@ -94,7 +95,10 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                                 >
                                     <Icon name="close" />
                                 </button>
-                            ) : null}
+                            ) : (
+                                // Keeps the session counts in one column when other rows can be removed.
+                                hasRemovals && <span aria-hidden="true" className={styles.remove} />
+                            )}
                         </div>
                     </li>
                 ))}

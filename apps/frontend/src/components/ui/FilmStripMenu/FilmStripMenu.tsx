@@ -62,7 +62,7 @@ export default function FilmStripMenu({
                 onChange={setIsOpen}
                 opened={isOpen}
                 offset={MENU_OFFSET}
-                position="bottom-end"
+                position="bottom"
                 returnFocus
                 trapFocus={false}
                 transitionProps={{ duration: 0 }}
@@ -92,7 +92,6 @@ export default function FilmStripMenu({
                 <MantineMenu.Dropdown
                     aria-label={menuLabel}
                     className={styles.menu__dropdown}
-                    data-icon-trigger={triggerIcon ? true : undefined}
                     ref={dropdownRef}
                 >
                     <span aria-hidden="true" className={styles.menu__tail} />

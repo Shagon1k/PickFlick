@@ -26,7 +26,11 @@ test(
         await authenticate(context, 'valid-session-workflow-full');
         await page.goto(`/clubs/${CLUB_ID}`);
         await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
-        await expect(page.getByRole('link', { name: /^Open active Session:/u })).toHaveCount(0);
+        await expect(
+            page
+                .getByRole('region', { name: 'Active Session', exact: true })
+                .getByRole('link', { name: 'Open Session', exact: true }),
+        ).toHaveCount(0);
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
@@ -61,7 +65,8 @@ test(
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
         await expect(page.getByText('Room A', { exact: true })).toHaveCount(0);
         await page
-            .getByRole('link', { name: 'Open active Session: Noir night', exact: true })
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Open Session', exact: true })
             .click();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).click();
@@ -105,7 +110,9 @@ test(
             '/movies/10000000-0000-4000-8000-000000000037',
         );
         await page.getByRole('link', { name: 'Back to Hub' }).click();
-        const activeSession = page.getByRole('link', { name: /^Open active Session:/u });
+        const activeSession = page
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Open Session', exact: true });
         await expect(
             page.getByRole('region', { name: 'Active Session', exact: true }),
         ).toContainText('Watching');

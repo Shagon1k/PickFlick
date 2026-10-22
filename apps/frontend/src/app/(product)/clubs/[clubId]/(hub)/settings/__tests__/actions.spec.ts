@@ -4,8 +4,8 @@ import {
     changeClubLifecycleAction,
     changeClubMemberRoleAction,
     removeClubAvatarAction,
+    saveClubInfoAction,
     updateClubSettingsAction,
-    uploadClubAvatarAction,
 } from '../actions';
 
 const api = vi.hoisted(() => ({
@@ -52,10 +52,14 @@ const settingsForm = () =>
         showVoteResults: 'on',
     });
 
-const avatarForm = () =>
-    formData({
-        avatar: new File([new Uint8Array([137, 80, 78, 71])], 'avatar.png', { type: 'image/png' }),
-    });
+const avatarForm = () => {
+    const form = settingsForm();
+    form.set(
+        'avatar',
+        new File([new Uint8Array([137, 80, 78, 71])], 'avatar.png', { type: 'image/png' }),
+    );
+    return form;
+};
 
 describe('Club settings actions', () => {
     beforeEach(() => {
@@ -93,6 +97,27 @@ describe('Club settings actions', () => {
         expect(api.updateClubSettings).not.toHaveBeenCalled();
     });
 
+    it('should save Club Info first and then upload a chosen avatar', async () => {
+        await expect(saveClubInfoAction(CLUB_ID, previous, avatarForm())).resolves.toEqual({
+            message: 'Club settings and avatar saved.',
+            revision: 4,
+            status: 'success',
+        });
+        expect(api.updateClubSettings).toHaveBeenCalledOnce();
+        expect(api.replaceClubAvatar).toHaveBeenCalledWith(CLUB_ID, expect.any(File));
+    });
+
+    it('should refuse an unsupported avatar before saving anything', async () => {
+        const form = avatarForm();
+        form.set('avatar', new File(['gif'], 'avatar.gif', { type: 'image/gif' }));
+
+        await expect(saveClubInfoAction(CLUB_ID, previous, form)).resolves.toMatchObject({
+            status: 'error',
+        });
+        expect(api.updateClubSettings).not.toHaveBeenCalled();
+        expect(api.replaceClubAvatar).not.toHaveBeenCalled();
+    });
+
     it('should send the chosen member role', async () => {
         await changeClubMemberRoleAction(
             CLUB_ID,
@@ -120,7 +145,7 @@ describe('Club settings actions', () => {
                 formData({ role: 'MEMBER' }),
             ),
             changeClubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
-            uploadClubAvatarAction(CLUB_ID, previous, avatarForm()),
+            saveClubInfoAction(CLUB_ID, previous, avatarForm()),
             removeClubAvatarAction(CLUB_ID, previous),
         ]);
 

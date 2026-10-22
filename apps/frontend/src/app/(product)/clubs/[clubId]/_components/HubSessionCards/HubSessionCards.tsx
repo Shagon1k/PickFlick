@@ -1,13 +1,14 @@
 import type { IClubHub } from '@pickflick/contracts';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessionCards.module.scss';
 
-export default function HubSessionCards({ hub }: { hub: IClubHub }) {
+export default function HubSessionCards({ hub, actions }: { hub: IClubHub; actions?: ReactNode }) {
     return (
         <div className={styles.grid}>
-            <ActiveSessionCard hub={hub} compact />
+            <ActiveSessionCard actions={actions} compact hub={hub} />
             <section className={styles.card}>
                 <h2>Active Ratings</h2>
                 {hub.ratingSessions.length ? (

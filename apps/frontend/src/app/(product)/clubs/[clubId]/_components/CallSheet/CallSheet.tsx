@@ -3,25 +3,24 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import choosingPanda from '#brand/panda-choosing.webp';
+import projectionistPanda from '#brand/panda-projectionist.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import { formatRuntime } from '#lib/format';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+import { formatCount, formatRuntime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
 
 export default function CallSheet({
     session,
     memberCount,
+    scheduleHref,
 }: {
     session?: IClubHubSession;
     memberCount: number;
+    /** Present when the viewer may schedule the next Session. */
+    scheduleHref?: string;
 }) {
-    if (!session)
-        return (
-            <section className={styles.empty} aria-label="Screening Call Sheet">
-                <p>Awaiting a Session</p>
-                <span>No active Session is on the Call Sheet yet.</span>
-            </section>
-        );
+    if (!session) return <EmptyCallSheet scheduleHref={scheduleHref} />;
     const scheduled = session.scheduledAt ? new Date(session.scheduledAt) : null;
     const unit = scheduled
         ? new Intl.DateTimeFormat('en', { weekday: 'long', timeZone: 'UTC' }).format(scheduled)
@@ -90,10 +89,7 @@ export default function CallSheet({
                 <figure className={styles.still}>
                     <div className={styles.frameMeta}>
                         <span>{hasSelectedFilm ? 'Selected film' : 'Film selection'}</span>
-                        <span>
-                            {session.nominatedCount}{' '}
-                            {session.nominatedCount === 1 ? 'nomination' : 'nominations'}
-                        </span>
+                        <span>{formatCount(session.nominatedCount, 'nomination')}</span>
                     </div>
                     {session.movie ? (
                         <SearchPoster className={styles.image} url={session.movie.posterUrl} />
@@ -110,6 +106,53 @@ export default function CallSheet({
                 </figure>
             </div>
         </Link>
+    );
+}
+
+/** The same sheet waits for the next screening instead of collapsing into a note. */
+function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
+    return (
+        <section className={styles.sheet} aria-label="Screening Call Sheet" data-empty>
+            <header className={styles.head}>
+                <span>Call sheet —</span>
+                <div className={styles.headMeta}>
+                    <span className={styles.phase}>
+                        <span>Current phase</span>
+                        <i>/</i>
+                        <b>none</b>
+                    </span>
+                </div>
+            </header>
+            <div className={styles.layout}>
+                <div className={styles.waiting}>
+                    <p className={styles.waitingKicker}>Next screening</p>
+                    <h2>No screening scheduled</h2>
+                    <p>
+                        {scheduleHref
+                            ? 'Pick a date and a place; the call sheet fills in as the Session moves.'
+                            : 'When your Club schedules a Session, its call time, place and film appear here.'}
+                    </p>
+                    {scheduleHref ? (
+                        <ButtonLink href={scheduleHref} size="small" variant="primary">
+                            Schedule a Session
+                        </ButtonLink>
+                    ) : null}
+                </div>
+                <figure className={styles.still} aria-hidden="true">
+                    <div className={styles.frameMeta}>
+                        <span>Projector</span>
+                        <span>Standing by</span>
+                    </div>
+                    <span className={styles.image}>
+                        <Image className={styles.mascot} src={projectionistPanda} alt="" />
+                    </span>
+                    <figcaption className={styles.frameMeta}>
+                        <span>Reel 00</span>
+                        <span>Lights down soon</span>
+                    </figcaption>
+                </figure>
+            </div>
+        </section>
     );
 }
 

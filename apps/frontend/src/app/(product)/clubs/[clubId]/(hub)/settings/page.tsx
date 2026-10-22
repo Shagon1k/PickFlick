@@ -1,10 +1,12 @@
-import { HTTP_STATUS, type IClubSettings } from '@pickflick/contracts';
+import { HTTP_STATUS, type IClubHub, type IClubSettings } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getClubHub, getClubSettings } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
+import { getSessionRoster } from '#api/session-roster.server';
+import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
@@ -75,7 +77,24 @@ export default async function ClubSettingsPage({
     }
     return (
         <HubPanel hub={hub}>
-            <ClubSettings projection={settings} hub={hub} />
+            <ClubSettings
+                projection={settings}
+                hub={hub}
+                activeSession={await loadActiveSession(hub)}
+            />
         </HubPanel>
     );
+}
+
+/** The active Session's controls need its versions and roster; without them the card stays read-only. */
+async function loadActiveSession(hub: IClubHub) {
+    const id = hub.activeSession?.id;
+    if (!id || !hub.permissions.manageSessions) return null;
+    try {
+        const [session, roster] = await Promise.all([getSession(id), getSessionRoster(id)]);
+        return { session, roster };
+    } catch (error) {
+        console.error('Manage Club Session controls unavailable.', { sessionId: id, error });
+        return null;
+    }
 }

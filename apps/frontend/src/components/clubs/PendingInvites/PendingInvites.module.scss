@@ -208,13 +208,6 @@
     }
 }
 
-/* On a phone an empty ticket would only cover content; it returns with the first invite. */
-@media (width < 768px) {
-    .widget[data-empty] {
-        display: none;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .ticket {
         transition-duration: 0.01ms;
