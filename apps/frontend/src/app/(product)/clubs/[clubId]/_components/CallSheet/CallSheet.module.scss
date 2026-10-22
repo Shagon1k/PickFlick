@@ -7,11 +7,13 @@
     border: 1px solid var(--border-lit);
     border-radius: 5px;
     box-shadow: var(--shadow-popover);
-    transition: border-color var(--motion-panel);
+    transition: border-color var(--motion-panel) ease;
 }
 
-.sheet:hover {
-    border-color: var(--ivory-muted);
+/* The prototype's sequence: the frame, then the inner rules a beat later, then the still's colour. */
+.sheet:hover,
+.sheet:focus-visible {
+    border-color: color-mix(in sRGB, var(--ivory-muted) 58%, transparent);
 }
 
 .sheet:focus-visible {
@@ -31,6 +33,7 @@
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);
     border-bottom: 1px solid var(--border-lit);
+    transition: border-color var(--motion-panel) ease 40ms;
 }
 
 /* A place name shares the narrow Call time column: smaller type and at most two lines. */
@@ -107,7 +110,7 @@
     padding: 15px 22px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    transition: border-color var(--motion-panel);
+    transition: border-color var(--motion-panel) ease 40ms;
 }
 
 .fields .picture {
@@ -156,6 +159,7 @@
     margin: 10px 10px 10px 0;
     background: var(--bg-deep);
     border: 1px solid var(--border);
+    transition: border-color var(--motion-panel) ease 40ms;
 }
 
 .frameMeta {
@@ -183,7 +187,7 @@
 .image img {
     object-position: 50% 28%;
     filter: grayscale(1) brightness(0.62) contrast(1.16);
-    transition: filter var(--motion-menu) var(--ease-menu);
+    transition: filter 420ms var(--ease-menu) 90ms;
 }
 
 .image .mascot {
@@ -200,8 +204,11 @@
 
 .sheet:hover .fields > div,
 .sheet:hover .still,
-.sheet:hover .head {
-    border-color: var(--ivory-muted);
+.sheet:hover .head,
+.sheet:focus-visible .fields > div,
+.sheet:focus-visible .still,
+.sheet:focus-visible .head {
+    border-color: color-mix(in sRGB, var(--ivory-muted) 34%, transparent);
 }
 
 .empty {
@@ -311,7 +318,9 @@
 
 @media (prefers-reduced-motion: reduce) {
     .sheet,
+    .head,
     .fields > div,
+    .still,
     .image img {
         transition: none;
     }
