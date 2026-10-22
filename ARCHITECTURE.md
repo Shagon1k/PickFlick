@@ -311,8 +311,9 @@ every authentication session.
   service and redirects only to the same-origin stored-image path. It makes no catalog API calls.
   Backdrops and cast portraits remain null. Details carry directors, writers, cast, and budget and
   worldwide revenue in whole US dollars (other currencies stay null). The composite prefers TheTVDB's
-  credits and amounts and falls back to PoiskKino's, keeping only persons with an English name;
-  PoiskKino YouTube embeds lose player parameters before trailer validation. Image
+  credits, amounts and English YouTube trailers and falls back to PoiskKino's, keeping only persons
+  with an English name; PoiskKino YouTube embeds lose player parameters before trailer validation.
+  PoiskKino's RuTube trailers stay out because the trailer contract is YouTube only. Image
   downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
   downloads return missing media; storage failures propagate. Existing objects are reused.
   Details expose `links.imdb`, built on the backend, without external identifiers. The frontend

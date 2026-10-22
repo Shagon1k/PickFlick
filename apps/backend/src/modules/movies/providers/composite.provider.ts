@@ -81,8 +81,8 @@ async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoa
 }
 
 /**
- * Prefer TheTVDB's English metadata and poster; keep PoiskKino media and ratings, and fall back to its
- * English-named credits and dollar amounts where TheTVDB has none.
+ * Prefer TheTVDB's English metadata, poster and English trailers; keep PoiskKino ratings, and fall back
+ * to its English-named credits, dollar amounts and trailers where TheTVDB has none.
  */
 function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
     const base = primary?.data ?? createEmptyMetadata();
@@ -100,6 +100,7 @@ function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnaps
         directors: english?.directors ?? base.directors,
         writers: english?.writers ?? base.writers,
         cast: english?.cast ?? base.cast,
+        trailers: english?.trailers ?? base.trailers,
         budget: english?.budget ?? base.budget,
         revenue: english?.revenue ?? base.revenue,
     };

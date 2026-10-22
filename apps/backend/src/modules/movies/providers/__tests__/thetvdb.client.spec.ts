@@ -46,13 +46,22 @@ describe('ThetvdbClient', () => {
         expect(result.data.title).toBe('English title');
         expect(result.data.posterUrl).toBeNull();
     });
-    it('should read writers and decimal dollar amounts, treating zero as unknown', async () => {
+    it('should read writers, English trailers and decimal dollar amounts, treating zero as unknown', async () => {
         request.mockResolvedValueOnce(
             Response.json({
                 status: 'success',
                 data: {
                     ...movie(),
                     budget: '1020000.00',
+                    trailers: [
+                        {
+                            url: 'https://www.youtube.com/watch?v=2LqzF5WauAw',
+                            name: 'Trailer',
+                            language: 'eng',
+                        },
+                        { url: 'https://www.youtube.com/watch?v=VaOijhK3CRU', language: 'fra' },
+                        { url: 'https://vimeo.com/123456', language: 'eng' },
+                    ],
                     boxOffice: '0.00',
                     characters: [
                         { peopleType: 'Writer', personName: 'Vera Caspary' },
@@ -69,6 +78,13 @@ describe('ThetvdbClient', () => {
             cast: null,
             budget: 1_020_000,
             revenue: null,
+            trailers: [
+                {
+                    url: 'https://www.youtube.com/watch?v=2LqzF5WauAw',
+                    name: 'Trailer',
+                    official: null,
+                },
+            ],
         });
     });
     it('should reject IMDb mismatch even when the title and year match', async () => {

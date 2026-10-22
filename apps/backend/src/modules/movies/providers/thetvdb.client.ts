@@ -1,4 +1,9 @@
-import { MOVIE_CAST_LIMIT, movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
+import {
+    MOVIE_CAST_LIMIT,
+    movieImageUrlSchema,
+    movieTrailerUrlSchema,
+    type TMovieExternalId,
+} from '@pickflick/contracts';
 import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
@@ -24,6 +29,16 @@ const extended = z.object({
     genres: z
         .array(z.object({ name: z.string().min(1).max(200) }))
         .max(100)
+        .nullish(),
+    trailers: z
+        .array(
+            z.object({
+                url: z.string().max(2048).nullish(),
+                name: z.string().max(1000).nullish(),
+                language: z.string().max(10).nullish(),
+            }),
+        )
+        .max(200)
         .nullish(),
     budget: z.string().max(40).nullish(),
     boxOffice: z.string().max(40).nullish(),
@@ -75,6 +90,18 @@ function castOf(characters: TCharacter[] | null | undefined) {
             profileUrl: person.personImgURL || null,
         }));
     return cast?.length ? cast : null;
+}
+
+/** English YouTube trailers only; other languages would surprise an English catalog. */
+function englishTrailers(trailers: z.infer<typeof extended>['trailers']) {
+    const english = (trailers ?? []).flatMap((trailer) =>
+        trailer.language === 'eng' &&
+        trailer.url &&
+        movieTrailerUrlSchema.safeParse(trailer.url).success
+            ? [{ url: trailer.url, name: trailer.name || null, official: null }]
+            : [],
+    );
+    return english.length ? english : null;
 }
 
 /** TheTVDB sends amounts in US dollars as decimal strings such as `1020000.00`; zero means unknown. */
@@ -144,6 +171,7 @@ export class ThetvdbClient {
                 genres: movie.genres?.map((genre) => genre.name) ?? null,
                 directors: namesOf(movie.characters, 'director'),
                 writers: namesOf(movie.characters, 'writer'),
+                trailers: englishTrailers(movie.trailers),
                 budget: toDollars(movie.budget),
                 revenue: toDollars(movie.boxOffice),
                 cast: castOf(movie.characters),

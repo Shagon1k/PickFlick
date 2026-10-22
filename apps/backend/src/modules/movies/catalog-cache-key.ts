@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { TMovieSearch } from '@pickflick/contracts';
 
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 /** New normalization policies refetch projections while keeping the canonical Movie identities. */
 function buildCatalogCacheKey(provider: string, ...values: unknown[]): string {

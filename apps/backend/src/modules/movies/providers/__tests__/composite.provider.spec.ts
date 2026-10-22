@@ -130,14 +130,27 @@ describe('CompositeMovieProvider', () => {
             directors: [{ name: 'Primary Director' }],
             writers: [{ name: 'Primary Writer' }],
             budget: 100,
+            trailers: [
+                { url: 'https://www.youtube.com/embed/primary123', name: null, official: null },
+            ],
         };
         primary.fetchDetails.mockResolvedValue(primaryRecord);
         const english = record('thetvdb');
         english.data.directors = [{ name: 'English Director' }];
+        english.data.trailers = [
+            { url: 'https://www.youtube.com/watch?v=english123', name: 'Trailer', official: null },
+        ];
         enrichment.fetchDetails.mockResolvedValue(english);
         expect((await provider.fetchDetails(buildMovieLookup())).data).toMatchObject({
             directors: [{ name: 'English Director' }],
             writers: [{ name: 'Primary Writer' }],
+            trailers: [
+                {
+                    url: 'https://www.youtube.com/watch?v=english123',
+                    name: 'Trailer',
+                    official: null,
+                },
+            ],
             cast: null,
             budget: 100,
             revenue: null,
