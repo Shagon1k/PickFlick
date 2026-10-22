@@ -51,6 +51,8 @@ test(
         ).toBeVisible();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
+        // Escape belongs to the dialog only once it has opened and taken focus.
+        await expect(page.getByRole('dialog', { name: 'Edit Session' })).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(
             page.getByRole('button', { name: 'Session settings', exact: true }),
