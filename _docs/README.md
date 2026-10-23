@@ -61,8 +61,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 
 ## Current verification
 
-Phase 12 closed under [#48](https://github.com/Shagon1k/PickFlick/issues/48); no phase is active
-until Phase 13 starts. [Roadmap phase evidence](../ROADMAP.md#11-progress) and
+Phase 12 closed under [#48](https://github.com/Shagon1k/PickFlick/issues/48).
+[Phase 13 — Watching, Rating and completion](phase-13-watching-rating-completion.md) is active. [Roadmap phase evidence](../ROADMAP.md#11-progress) and
 [Design QA](../DESIGN.md#8-design-qa) hold the recorded checks and carried-forward limits. The temporary Phase 6–11 documents
-were consolidated into the canonical references above and removed. This verification uses the
-existing branch and issue, without a separate findings register or new phase document.
+were consolidated into the canonical references above and removed. Phase 12 verification used its
+existing branch and issue without a separate findings register.

@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
 import NominationClose from '#components/sessions/NominationClose/NominationClose';
+import OpenRating from '#components/sessions/OpenRating/OpenRating';
 import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Button from '#components/ui/Button/Button';
@@ -48,6 +49,15 @@ export default function ActiveSessionActions({
                 >
                     {nextPhase('Watching')}
                 </SelectionClose>
+            ) : null}
+            {session.phase === 'WATCHING' ? (
+                <OpenRating
+                    canOpen={session.canEdit}
+                    phaseVersion={session.phaseVersion}
+                    sessionId={session.id}
+                >
+                    {nextPhase('Rating')}
+                </OpenRating>
             ) : null}
             <div className={styles.danger}>
                 <SessionRoster roster={roster} sessionId={session.id}>

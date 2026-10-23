@@ -26,6 +26,10 @@ test(
         await page.goto(PATH);
         const trigger = page.getByRole('button', { name: 'Session settings', exact: true });
         await trigger.click();
+        await expect(
+            page.getByRole('menuitem', { name: 'Close Selection early', exact: true }),
+        ).toBeFocused();
+        await settle(page);
         await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
         const dialog = page.getByRole('dialog', { name: 'Close Selection early' });
         await expect(dialog.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
@@ -33,8 +37,13 @@ test(
             dialog.getByText('1 of 3 accepted participants', { exact: false }),
         ).toBeVisible();
         await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
         await expect(trigger).toBeFocused();
         await trigger.click();
+        await expect(
+            page.getByRole('menuitem', { name: 'Close Selection early', exact: true }),
+        ).toBeFocused();
+        await settle(page);
         await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
         await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
         await page.getByLabel('Type CLOSE to confirm').press('Enter');

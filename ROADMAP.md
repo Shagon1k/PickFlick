@@ -1030,7 +1030,7 @@ Carried forward, not Phase 12 blockers: attribution for PoiskKino and TheTVDB be
 (#89), the final browser and device matrix including Safari (Phase 24), and scheduled Movie refresh
 (Phase 8, ADR-016).
 
-### Phase 13 — Watching, Rating & Completion · Not started
+### Phase 13 — Watching, Rating & Completion · In progress
 
 **Goal:** Complete the Session lifecycle while unfinished ratings stay non-blocking.
 
@@ -1583,7 +1583,8 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 10 — Nomination & Deadline Automation                  | Done        | Nomination delivery accepted; Session-row deadlines, transitions, outbox intent and version polling are active.    |
 | 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
 | 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
-| 13–17                                                  | Not started | Watching/Rating/completion, history, Library, statistics and notification delivery remain later work.              |
+| 13 — Watching, Rating & Completion                     | In progress | Manual Watching → Rating delivery is active; Rating submission/completion and phase acceptance remain open.        |
+| 14–17                                                  | Not started | History, Library, statistics and notification delivery remain later work.                                          |
 | 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
 | 19–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |

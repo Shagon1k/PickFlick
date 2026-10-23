@@ -148,5 +148,12 @@ both clients. Disconnect a client before the final change, then reconnect and co
 matches a fresh page load. Verify recovery after the progress request fails and access loss after Club departure. The progress
 response carries a version only; the page enforces nomination visibility.
 
+For Watching, open the same Session as an Admin or Moderator and as a Member. Confirm that
+loading, reloading, joining and waiting for progress polls leave it in Watching. Members and
+read-only Clubs have no Open Rating action. In a writable Club, open Settings → Open Rating,
+cancel once, then confirm with `OPEN` after the screening. Verify both clients reach Rating,
+the Movie and participants remain, and Manage Club allows a new blocking Session alongside
+the Rating Session. Manage Club's Start next phase: Rating uses the same confirmation dialog.
+
 Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
 owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.

@@ -152,7 +152,7 @@ All canonical screens are MVP and approved as direction.
 | `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Not started                                                                                              | Not checked                                                           |
 | Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                            | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
 | Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                                   | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
-| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Partial — film header, media grid and chat preview; moving to Rating is Phase 13                         | Checked live; owner accepted 2026-10-23                               |
+| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Active — film, context, joined roster and operator-confirmed Rating opening; owner review pending        | Base accepted 2026-10-23; new action awaits preview review            |
 | Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                                              | Not checked                                                           |
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                                              | Not checked                                                           |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                                              | Not checked                                                           |
@@ -215,7 +215,7 @@ here.
   for an eligible member. Session history is a quiet disclosure row.
 - Manage Club's Active Session gives Admins and Moderators the gear menu's controls: Start next phase
   (Selection, or Watching for a single nomination or after Selection), Kick participant and Cancel
-  Session, with the same typed confirmations. Moving Watching to Rating arrives in Phase 13.
+  Session, with the same typed confirmations. Watching offers Start next phase: Rating through the shared Open Rating dialog.
 - Members shows each role and the accepted participations, excluding cancelled Sessions. Admins
   remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
   Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
@@ -361,8 +361,15 @@ here.
   poster links to Movie Details, mostly grey at rest (softer than the prototype's full grey);
   colour, a slight zoom and its caption arrive together on hover. When the meta line cannot fit, the
   genres take a second line, both lines centre and the hairline goes. When film details are
-  unavailable the phase stamp stays and the warning links to the selected Movie. Moving to Rating is
-  Phase 13.
+  unavailable the phase stamp stays and the warning links to the selected Movie.
+- Admins and Moderators in writable Clubs open Rating from Settings → Open Rating, or the same
+  dialog in Manage Club. Typed `OPEN` confirms that the screening is finished and frees the Club
+  for another Session. Cancel or Escape keeps Watching and returns focus; success focuses the
+  Session heading. Pending, offline, stale-phase, lost-access and API failure feedback stays in
+  the dialog. Members and read-only Clubs have no Rating-opening control.
+- The accepted roster supplies the joined-screening count and participant names. Page activity,
+  joining, polling and elapsed scheduled time never open Rating. Rating submission and completion
+  remain later Phase 13 work.
 
 #### Public, Login and Contact
 
