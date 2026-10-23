@@ -317,7 +317,8 @@ every authentication session.
   PoiskKino's RuTube trailers stay out because the trailer contract is YouTube only. Image
   downloads reject redirects and enforce five-second, 5 MiB and raster-signature limits. Failed
   downloads return missing media; storage failures propagate. Existing objects are reused.
-  Details expose `links.imdb`, built on the backend, without external identifiers. The frontend
+  Details expose `links.imdb`, `links.kinopoisk` and `links.letterboxd`, built on the backend, without
+  external identifiers. The frontend
   detail transport allows 100 seconds for three provider requests (each configured up to 30 seconds),
   a five-second poster download and response overhead; other API calls retain ten seconds.
   Authenticated `POST /movies/search` validates the shared search schema and opts into bounded

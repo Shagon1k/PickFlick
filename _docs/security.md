@@ -214,8 +214,11 @@ Yandex mirror URLs under `/get-kinopoisk-image/` normalize to the existing canon
 Other unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
 existing placeholder is shown without rejecting the Movie. The media host allowlist is unchanged.
 
-Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
-identifiers; details responses expose no external identifiers.
-Wikipedia links explicitly search an encoded title on the fixed English Wikipedia origin;
-they do not assert a verified article correspondence. External detail links use
-`noopener noreferrer`. Third-party scripts, frames and API connections remain disallowed.
+Trailers play in YouTube's privacy-enhanced player: the page loads
+`https://www.youtube-nocookie.com/embed/<id>` only after the viewer presses Play, from a video ID the
+trailer contract has already validated, and the CSP allows that one frame origin. The backend
+builds `links.imdb`, `links.kinopoisk` (a PoiskKino ID is the Kinopoisk film ID) and
+`links.letterboxd` (from the IMDb, else the TMDB, ID) from stored validated identifiers; details
+responses expose no external identifiers. Wikipedia links explicitly search an encoded title on the
+fixed English Wikipedia origin; they do not assert a verified article correspondence. External detail
+links use `noopener noreferrer`. Third-party scripts and API connections remain disallowed.

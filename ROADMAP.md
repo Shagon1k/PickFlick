@@ -1006,22 +1006,25 @@ in UAT
 
 **Out of scope:** New features unrelated to verification findings.
 
-**Current evidence (2026-10-22):** owner-started branch `PF-test-club-to-winner-verification`,
-issue #48 In progress, draft [PR #180](https://github.com/Shagon1k/PickFlick/pull/180) with green
-CI. Owner-requested design passes on 2026-10-21 audited all 26 prototype files and aligned the shared
-dialogs, film-strip menus, score control, invite ticket, the Session page in every delivered phase,
-the Club Hub, Schedule a Session, Movie Details and mobile behavior. They also fixed reduced-motion
-focus in shell overlays, the Watching header without film details, long names and the landscape gear
-menu. A later owner review on 2026-10-22 added the Hub section skeleton, the empty Call Sheet, Manage
-Club's Session controls, the merged avatar and simpler invitations, swipe between Clubs, a pinned
-footer, and catalog writers, budget and revenue with a trailer search fallback. Local evidence:
-`pnpm verify` gates, 338 unit tests, 160 Club/Session/Movie integration checks, the full UI contract
-(204), both real-API journeys, and all 84 visual comparisons in the CI-pinned Linux image after every
-changed PNG was reviewed.
+**Current evidence (2026-10-23):** owner-started branch `PF-test-club-to-winner-verification`,
+issue #48 In progress, draft [PR #180](https://github.com/Shagon1k/PickFlick/pull/180). Owner-requested
+design passes on 2026-10-21 audited all 26 prototype files and aligned the shared dialogs,
+film-strip menus, score control, invite ticket, the Session page in every delivered phase, the Club
+Hub, Schedule a Session, Movie Details and mobile behavior. Owner reviews on 2026-10-22 and
+2026-10-23 added the Hub section skeleton, the empty Call Sheet, Manage Club's compact rows and
+invitation dialog, swipe between Clubs, a pinned footer, the film ticket shared by Session and Movie
+Details headers, an in-place trailer player, outbound IMDb, Kinopoisk, Letterboxd and Wikipedia
+links, Rate and Watchlist placeholders for Phase 15, one header height and a header that hides on
+scroll down. These owner-requested improvements go beyond verification findings and are recorded in
+`DESIGN.md`. `next` moved to 16.4.2 for critical advisories. Local evidence on `548c887`: lint,
+typecheck, knip, 339 unit tests, 198 integration checks, the full UI contract (206), both real-API
+journeys, and all 84 visual comparisons in the CI-pinned Linux image after every changed PNG was
+reviewed.
 
-The owner is still performing the manual Club-to-winner walkthrough. Hosted exact-revision review and
-a complete UAT multi-user/deadline run are not recorded. Phase 12 remains open; the owner asked for
-separate commits on this branch, no new issues or findings register, and no Phase 13 functionality.
+The owner is still performing the manual Club-to-winner walkthrough. Hosted exact-revision review, a
+complete UAT multi-user/deadline run, the concurrency and restart checks, and a Safari/WebKit pass
+are not recorded. Phase 12 remains open; the owner asked for separate commits on this branch, no new
+issues or findings register, and no Phase 13 functionality.
 
 ### Phase 13 — Watching, Rating & Completion · Not started
 
