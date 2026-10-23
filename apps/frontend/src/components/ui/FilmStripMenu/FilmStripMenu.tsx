@@ -23,6 +23,8 @@ export interface IFilmStripMenuProps {
     menuLabel: string;
     items: TFilmStripMenuItem[];
     triggerIcon?: TIconName;
+    /** A visible label under the icon turns the trigger into an action-rail cell. */
+    triggerText?: string;
 }
 
 export default function FilmStripMenu({
@@ -30,6 +32,7 @@ export default function FilmStripMenu({
     menuLabel,
     triggerLabel,
     triggerIcon,
+    triggerText,
 }: IFilmStripMenuProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +56,11 @@ export default function FilmStripMenu({
     }
 
     return (
-        <div className={styles.menu} onBlur={handleMenuBlur}>
+        <div
+            className={styles.menu}
+            data-cell={triggerText ? true : undefined}
+            onBlur={handleMenuBlur}
+        >
             <MantineMenu
                 closeOnClickOutside
                 closeOnEscape
@@ -73,8 +80,8 @@ export default function FilmStripMenu({
                 <MantineMenu.Target>
                     <Button
                         ref={triggerRef}
-                        size={triggerIcon ? 'icon' : 'default'}
-                        variant="secondary"
+                        size={triggerIcon && !triggerText ? 'icon' : 'default'}
+                        variant={triggerText ? 'cell' : 'secondary'}
                         aria-label={triggerIcon ? triggerLabel : undefined}
                     >
                         {triggerIcon ? (
@@ -87,6 +94,7 @@ export default function FilmStripMenu({
                         ) : (
                             triggerLabel
                         )}
+                        {triggerText}
                     </Button>
                 </MantineMenu.Target>
                 <MantineMenu.Dropdown

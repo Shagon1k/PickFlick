@@ -28,6 +28,11 @@ export const actionGlyphs = {
             <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
         </>
     ),
+    plus: (
+        <>
+            <path d="M12 5v14M5 12h14" />
+        </>
+    ),
     'user-x': (
         <>
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

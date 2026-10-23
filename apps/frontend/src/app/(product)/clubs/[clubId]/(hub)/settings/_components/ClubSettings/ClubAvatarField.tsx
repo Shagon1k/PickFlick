@@ -1,7 +1,7 @@
 'use client';
 
 import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import { getMonogram } from '#lib/format';
@@ -16,11 +16,14 @@ export default function ClubAvatarField({
     disabled,
     removeAction,
     removeState,
+    children,
 }: {
     projection: IClubSettings;
     disabled: boolean;
     removeAction: (formData: FormData) => void;
     removeState: IClubActionState;
+    /** The Club name field that shares the avatar's row. */
+    children: ReactNode;
 }) {
     const { club, permissions } = projection;
     const [preview, setPreview] = useState<string | null>(null);
@@ -32,52 +35,57 @@ export default function ClubAvatarField({
     // eslint-disable-next-line @next/next/no-img-element -- see above
     const picture = image ? <img alt={`${club.name} avatar`} src={image} /> : null;
     const monogram = <span aria-hidden="true">{getMonogram(club.name)}</span>;
+    const tile = permissions.manageSettings ? (
+        <label className={styles.avatar} data-editable={!disabled || undefined}>
+            {picture ?? monogram}
+            <input
+                aria-label="Club avatar"
+                accept={CLUB_AVATAR_MEDIA_TYPES.join(',')}
+                className="visually-hidden"
+                disabled={disabled}
+                name="avatar"
+                onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    setPreview(file ? URL.createObjectURL(file) : null);
+                }}
+                type="file"
+            />
+            <span aria-hidden="true" className={styles.avatarHint}>
+                Change
+            </span>
+        </label>
+    ) : (
+        <div className={styles.avatar}>{picture ?? monogram}</div>
+    );
     return (
-        <div className={styles.avatarField}>
-            {permissions.manageSettings ? (
-                <label className={styles.avatar} data-editable={!disabled || undefined}>
-                    {picture ?? monogram}
-                    <input
-                        aria-label="Club avatar"
-                        accept={CLUB_AVATAR_MEDIA_TYPES.join(',')}
-                        className="visually-hidden"
-                        disabled={disabled}
-                        name="avatar"
-                        onChange={(event) => {
-                            const file = event.currentTarget.files?.[0];
-                            setPreview(file ? URL.createObjectURL(file) : null);
-                        }}
-                        type="file"
-                    />
-                    <span aria-hidden="true" className={styles.avatarHint}>
-                        Change
-                    </span>
-                </label>
-            ) : (
-                <div className={styles.avatar}>{picture ?? monogram}</div>
-            )}
+        <>
+            <div className={styles.identityRow}>
+                {tile}
+                <div className={styles.identityField}>{children}</div>
+            </div>
             <div className={styles.avatarMeta}>
                 <span className={styles.avatarTitle}>
-                    Club avatar
+                    Avatar
                     <InfoTip label="About the Club avatar">
-                        PNG, JPEG or WebP up to 512 KiB, stored privately. Choose the image, then
-                        Save Changes uploads it.
+                        PNG, JPEG or WebP up to 512 KiB, stored privately. Click the image to choose
+                        one; Save Changes uploads it.
                     </InfoTip>
                 </span>
                 {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
                 {permissions.manageSettings && club.hasAvatar && !preview ? (
                     <button
+                        aria-label="Remove avatar"
                         className={styles.textButton}
                         disabled={disabled}
                         formAction={removeAction}
                         formNoValidate
                         type="submit"
                     >
-                        Remove avatar
+                        Remove
                     </button>
                 ) : null}
                 <ActionStatus state={removeState} />
             </div>
-        </div>
+        </>
     );
 }

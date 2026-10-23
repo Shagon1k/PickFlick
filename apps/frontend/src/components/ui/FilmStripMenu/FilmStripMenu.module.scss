@@ -3,6 +3,10 @@
     display: inline-flex;
 }
 
+.menu[data-cell] {
+    display: flex;
+}
+
 .menu__dropdown {
     position: absolute;
     z-index: 20;

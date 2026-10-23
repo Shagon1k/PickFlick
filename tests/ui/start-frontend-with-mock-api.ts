@@ -209,7 +209,12 @@ const clubRoutes: TClubRoute[] = [
         'GET',
         /^\/invitations$/u,
         (_request, response, session) => {
-            if (session.includes('refresh-failure') && !failedInvitationRefreshes.has(session)) {
+            // Only the refresh after a new link fails; opening the dialog still loads the list.
+            if (
+                session.includes('refresh-failure') &&
+                managedInvites.has(session) &&
+                !failedInvitationRefreshes.has(session)
+            ) {
                 failedInvitationRefreshes.add(session);
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-refresh');
                 return;

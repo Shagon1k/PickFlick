@@ -343,7 +343,7 @@
 
 /* Below 1024px the invite ticket floats above the bottom bar; the footer's links end above it. */
 @media (width < 1024px) {
-    .productShell .publicFooterInner {
+    .productShell:has([data-invite-ticket]:not([hidden])) .publicFooterInner {
         padding-bottom: 96px;
     }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from './SessionLink.module.scss';
 
@@ -11,10 +12,11 @@ const COPIED_LABEL_MS = 1500;
 
 export default function SessionLink({
     sessionId,
-    compact = false,
+    cell = false,
 }: {
     sessionId: string;
-    compact?: boolean;
+    /** The Session header's action-rail cell; its feedback floats under the cell. */
+    cell?: boolean;
 }) {
     const [message, setMessage] = useState('');
     const [isCopied, setIsCopied] = useState(false);
@@ -35,10 +37,11 @@ export default function SessionLink({
             setMessage(`Copy is unavailable. Open /sessions/${sessionId} and copy its address.`);
         }
     }
-    if (compact)
+    if (cell)
         return (
-            <div className={styles.compact}>
-                <Button onClick={handleCopy} variant="secondary">
+            <div className={styles.cell}>
+                <Button onClick={handleCopy} variant="cell">
+                    <Icon name="user-plus" />
                     {isCopied ? 'Copied!' : 'Invite'}
                 </Button>
                 <span className={isCopied ? 'visually-hidden' : styles.feedback} role="status">

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
+import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
 
 import styles from './ClubSwitcher.module.scss';
@@ -93,7 +94,7 @@ export default function ClubSwitcher({
                     {isCreating ? (
                         <Link className={styles.create} href="/clubs/new">
                             <span className={styles.createCircle} aria-hidden="true">
-                                +
+                                <Icon name="plus" />
                             </span>
                             <h1>Create new club</h1>
                         </Link>

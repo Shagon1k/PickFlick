@@ -6,7 +6,14 @@ import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Button.module.scss';
 
-export type TButtonVariant = 'primary' | 'secondary' | 'ghost' | 'secondary-danger' | 'danger';
+export type TButtonVariant =
+    | 'primary'
+    | 'secondary'
+    | 'ghost'
+    | 'secondary-danger'
+    | 'danger'
+    | 'cell'
+    | 'cell-danger';
 export type TButtonSize = 'default' | 'small' | 'large' | 'icon';
 
 export interface IButtonProps

@@ -1,5 +1,6 @@
-.compact {
+.cell {
     position: relative;
+    display: flex;
 }
 
 .feedback:not(:empty) {

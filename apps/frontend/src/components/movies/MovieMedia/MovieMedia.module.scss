@@ -71,6 +71,7 @@
 }
 
 .trailer {
+    position: relative;
     display: grid;
     grid-row: 1;
     grid-column: 2 / -1;
@@ -89,6 +90,51 @@
     align-items: center;
     min-height: var(--hit);
     color: var(--fg);
+}
+
+/* A quiet corner link, so the search never costs the card its own row. */
+.trailer .trailerSearch {
+    position: absolute;
+    top: 2px;
+    right: var(--gap-sm);
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.trailer .trailerSearch:hover {
+    color: var(--fg);
+}
+
+.posterLink {
+    position: relative;
+    display: block;
+    color: var(--fg);
+    text-decoration: none;
+    border-radius: var(--radius);
+}
+
+.posterLink:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+/* The caption names the poster's destination on touch screens, where nothing hovers. */
+.posterCaption {
+    position: absolute;
+    inset: auto 1px 1px;
+    padding: var(--gap-xl) var(--gap-sm) var(--gap-sm);
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    background: linear-gradient(transparent, color-mix(in sRGB, var(--bg-deep) 92%, transparent));
+    border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.posterLink:hover .posterCaption {
+    color: var(--gold);
 }
 
 /* Scoped under the grid so a host page's own heading rules cannot win on load order. */
@@ -167,6 +213,10 @@
     .posterRegion {
         justify-self: center;
         width: min(220px, 64vw);
+    }
+
+    .posterRegion[data-phone-hidden] {
+        display: none;
     }
 
     .credits {

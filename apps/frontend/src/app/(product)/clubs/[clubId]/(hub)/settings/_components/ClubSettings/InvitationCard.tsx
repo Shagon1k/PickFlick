@@ -4,14 +4,19 @@ import type { IClubSettings, ICreatedInvitation, IManagedInvitation } from '@pic
 import { useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
+import Modal from '#components/ui/Modal/Modal';
 import { toIsoDate } from '#lib/format';
 
 import { loadInvitationsAction, manageInvitationsAction } from '../../invitation-actions';
 import styles from '../../page.module.scss';
+import ManageModerators from './ManageModerators';
 
 const INVITATION_ID_LENGTH = 8;
 
+/** The Members card: invitation links live in a dialog so the card stays one row of actions. */
 export default function InvitationCard({ projection }: { projection: IClubSettings }) {
+    const [isOpen, setIsOpen] = useState(false);
     const [invitations, setInvitations] = useState<IManagedInvitation[]>([]);
     const [link, setLink] = useState('');
     const [createdId, setCreatedId] = useState('');
@@ -19,6 +24,8 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const [hasLoaded, setHasLoaded] = useState(false);
     const [message, setMessage] = useState('');
     const isAllowed = projection.permissions.manageMembers;
+    const canManageRoles =
+        projection.club.membershipRole === 'ADMIN' && projection.club.lifecycle === 'ACTIVE';
     const isMemberLimitReached = projection.members.length >= projection.entitlements.memberLimit;
     const hasReachedLinkLimit =
         invitations.filter((invite) => invite.state === 'pending').length >=
@@ -66,6 +73,11 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         );
     }
 
+    function handleOpen() {
+        setIsOpen(true);
+        if (!hasLoaded) void run('load');
+    }
+
     async function handleCopy() {
         try {
             await globalThis.navigator.clipboard.writeText(link);
@@ -76,94 +88,139 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     }
 
     return (
-        <section aria-labelledby="club-invitations-title" className={styles.card}>
-            <h2 id="club-invitations-title">Invite to this Club</h2>
-            <p>A single-use join link, valid for 12 hours.</p>
-            {isMemberLimitReached ? (
-                <p>The member limit is reached; a seat must free up before the next invitation.</p>
-            ) : null}
-            {!isAllowed ? (
-                <p>Invitations require an active Club and an Admin or Moderator.</p>
-            ) : (
-                <>
-                    {!projection.permissions.createInvitations ? (
-                        <p>New invitations are paused. Existing links can still be revoked.</p>
-                    ) : null}
-                    {link ? (
-                        <div className={styles.invitationLink}>
-                            <label className="visually-hidden" htmlFor="invitation-link">
-                                Invitation link
-                            </label>
-                            <div className={styles.invitationLinkRow}>
-                                <input id="invitation-link" readOnly value={link} />
-                                <Button
-                                    aria-label="Copy link"
-                                    disabled={isPending}
-                                    onClick={handleCopy}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    Copy
-                                </Button>
-                            </div>
-                            <p>
-                                Single use · expires in 12 hours ·{' '}
-                                <button
-                                    aria-label="Revoke current link"
-                                    className={styles.textButton}
-                                    disabled={isPending}
-                                    onClick={() => run('create', createdId)}
-                                    type="button"
-                                >
-                                    Revoke
-                                </button>
-                            </p>
-                        </div>
-                    ) : null}
-                    {!link && projection.permissions.createInvitations ? (
-                        <Button
-                            disabled={isPending || hasReachedLinkLimit || isMemberLimitReached}
-                            onClick={() => run('create')}
-                            size="small"
-                        >
-                            Create invitation
+        <section aria-labelledby="club-members-title" className={styles.card}>
+            <div className={styles.cardTitle}>
+                <h2 id="club-members-title">Members</h2>
+                <InfoTip label="About invitations">
+                    Each invitation link admits one person and expires after 12 hours.
+                </InfoTip>
+            </div>
+            <p className={styles.cardLead}>
+                {projection.members.length} of {projection.entitlements.memberLimit} member places
+                in use.
+                {isAllowed ? null : ' Invitations need an active Club and an Admin or Moderator.'}
+            </p>
+            {isAllowed || canManageRoles ? (
+                <div className={styles.cardActions}>
+                    {isAllowed ? (
+                        <Button onClick={handleOpen} size="small">
+                            Invite members
                         </Button>
                     ) : null}
-                    <details
-                        className={styles.invitationManagement}
-                        onToggle={(event) => {
-                            if (event.currentTarget.open && !hasLoaded) void run('load');
-                        }}
+                    {canManageRoles ? <ManageModerators projection={projection} /> : null}
+                </div>
+            ) : null}
+            <Modal
+                actions={
+                    <Button onClick={() => setIsOpen(false)} variant="secondary">
+                        Close
+                    </Button>
+                }
+                onClose={() => setIsOpen(false)}
+                open={isOpen}
+                title="Invite to this Club"
+            >
+                <p className={styles.explanation}>A single-use join link, valid for 12 hours.</p>
+                {isMemberLimitReached ? (
+                    <p>
+                        The member limit is reached; a seat must free up before the next invitation.
+                    </p>
+                ) : null}
+                {projection.permissions.createInvitations ? null : (
+                    <p>New invitations are paused. Existing links can still be revoked.</p>
+                )}
+                {link ? (
+                    <div className={styles.invitationLink}>
+                        <label className="visually-hidden" htmlFor="invitation-link">
+                            Invitation link
+                        </label>
+                        <div className={styles.invitationLinkRow}>
+                            <input id="invitation-link" readOnly value={link} />
+                            <Button
+                                aria-label="Copy link"
+                                disabled={isPending}
+                                onClick={handleCopy}
+                                variant="secondary"
+                            >
+                                Copy
+                            </Button>
+                        </div>
+                        <p>
+                            Single use · expires in 12 hours ·{' '}
+                            <button
+                                aria-label="Revoke current link"
+                                className={styles.textButton}
+                                disabled={isPending}
+                                onClick={() => run('create', createdId)}
+                                type="button"
+                            >
+                                Revoke
+                            </button>
+                        </p>
+                    </div>
+                ) : null}
+                {!link && projection.permissions.createInvitations ? (
+                    <Button
+                        disabled={isPending || hasReachedLinkLimit || isMemberLimitReached}
+                        onClick={() => run('create')}
                     >
-                        <summary>Manage links</summary>
-                        <ul className={styles.invitationList}>
-                            {invitations.map((invite) => (
-                                <li key={invite.id}>
-                                    <span>
-                                        <strong title={invite.id}>
-                                            Invitation {invite.id.slice(0, INVITATION_ID_LENGTH)}
-                                        </strong>
-                                        {' · '}
-                                        {invite.state} · expires {toIsoDate(invite.expiresAt)}
-                                        {invite.id === createdId ? ' · latest link' : ''}
-                                    </span>
-                                    {invite.state === 'pending' && invite.id !== createdId ? (
-                                        <Button
-                                            disabled={isPending}
-                                            onClick={() => run('create', invite.id)}
-                                            size="small"
-                                            variant="secondary-danger"
-                                        >
-                                            Revoke invitation
-                                        </Button>
-                                    ) : null}
-                                </li>
-                            ))}
-                        </ul>
-                    </details>
-                </>
-            )}
-            <p role="status">{message}</p>
+                        Create invitation
+                    </Button>
+                ) : null}
+                <InvitationList
+                    createdId={createdId}
+                    disabled={isPending}
+                    invitations={invitations}
+                    onRevoke={(inviteId) => run('create', inviteId)}
+                />
+                <p className={styles.invitationStatus} role="status">
+                    {message}
+                </p>
+            </Modal>
         </section>
+    );
+}
+
+function InvitationList({
+    invitations,
+    createdId,
+    disabled,
+    onRevoke,
+}: {
+    invitations: IManagedInvitation[];
+    createdId: string;
+    disabled: boolean;
+    onRevoke: (inviteId: string) => void;
+}) {
+    if (!invitations.length) return null;
+    return (
+        <>
+            <h3 className={styles.invitationListTitle}>Recent links</h3>
+            <ul className={styles.invitationList}>
+                {invitations.map((invite) => (
+                    <li key={invite.id}>
+                        <span>
+                            <strong title={invite.id}>
+                                Invitation {invite.id.slice(0, INVITATION_ID_LENGTH)}
+                            </strong>
+                            {' · '}
+                            {invite.state} · expires {toIsoDate(invite.expiresAt)}
+                            {invite.id === createdId ? ' · latest link' : ''}
+                        </span>
+                        {invite.state === 'pending' && invite.id !== createdId ? (
+                            <button
+                                aria-label="Revoke invitation"
+                                className={styles.textButton}
+                                disabled={disabled}
+                                onClick={() => onRevoke(invite.id)}
+                                type="button"
+                            >
+                                Revoke
+                            </button>
+                        ) : null}
+                    </li>
+                ))}
+            </ul>
+        </>
     );
 }

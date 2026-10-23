@@ -179,12 +179,14 @@ for (const state of ['admin-over-limit', 'adminless']) {
                 `valid-settings-${state}-restricted-invitations-${viewport.name}`,
             );
             await open(page, viewport);
-            const card = page.getByRole('region', { name: 'Invite to this Club' });
+            await page.getByRole('button', { name: 'Invite members' }).click();
+            const card = page.getByRole('dialog', { name: 'Invite to this Club' });
             await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
-            // Opening Manage links loads the recent invitations.
-            await card.getByText('Manage links', { exact: true }).click();
+            // Opening the dialog loads the recent invitations.
             await expect(card.getByRole('status')).toHaveText('Recent invitations loaded.');
             await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
+            // Mantine fades dialogs in; axe would measure contrast through the partial opacity.
+            await expect(card).toHaveCSS('opacity', '1');
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const widths = await page.evaluate(() => ({
                 body: globalThis.document.body.scrollWidth,
@@ -198,6 +200,7 @@ for (const state of ['admin-over-limit', 'adminless']) {
             await expect(card.getByRole('status')).toHaveText('Invitation revoked.');
             await expect(card.getByText('revoked · expires 2026-10-10')).toBeVisible();
             await expect(card.getByRole('button', { name: 'Revoke invitation' })).toHaveCount(0);
+            await page.keyboard.press('Escape');
         }
     });
 }
@@ -230,7 +233,7 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
     await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
     await expect(page.getByLabel('Club avatar', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('Manage links', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Invite members' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Leave Club' }).click();
     const dialog = page.getByRole('dialog', { name: 'Leave this Club?' });
     const confirmation = dialog.getByRole('textbox', { name: 'Type LEAVE to confirm' });
@@ -282,7 +285,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await authenticate(context, `valid-settings-archived-${viewport.name}`);
             await open(page, viewport);
             await expect(page.getByRole('button', { name: 'Reactivate Club' })).toBeVisible();
-            await expect(page.getByText('Manage links', { exact: true })).toHaveCount(0);
+            await expect(page.getByRole('button', { name: 'Invite members' })).toHaveCount(0);
             await page.getByRole('button', { name: 'Delete Club' }).click();
             await expect(
                 page

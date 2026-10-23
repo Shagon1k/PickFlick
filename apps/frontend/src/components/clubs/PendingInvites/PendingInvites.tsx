@@ -19,6 +19,9 @@ export default function PendingInvites() {
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
     const [message, setMessage] = useState('Loading pending invites…');
     const [isLoaded, setIsLoaded] = useState(false);
+    // The ticket appears with the first invite and then stays, so focus can return to it after the
+    // last response; a failed load shows it too, so Retry stays reachable.
+    const [isShown, setIsShown] = useState(false);
     const [isPending, startTransition] = useTransition();
     const id = useId();
     async function load() {
@@ -26,14 +29,17 @@ export default function PendingInvites() {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
+                if (result.invitations.length) setIsShown(true);
                 setIsLoaded(true);
                 setMessage('');
             } else {
                 setIsLoaded(false);
+                setIsShown(true);
                 setMessage(result.message ?? 'Pending invites are unavailable.');
             }
         } catch {
             setIsLoaded(false);
+            setIsShown(true);
             setMessage('Pending invites could not be loaded. Check your connection and retry.');
         }
     }
@@ -70,7 +76,7 @@ export default function PendingInvites() {
     }
     const countLabel = formatCount(invitations.length, 'invitation');
     return (
-        <div className={styles.widget}>
+        <div className={styles.widget} data-invite-ticket hidden={!isShown}>
             <Popover
                 id={id}
                 variant="invites"

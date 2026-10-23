@@ -6,6 +6,7 @@ import { type ReactNode, type RefObject, useRef, useState, useTransition } from 
 import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import Icon from '#components/ui/Icon/Icon';
 import Modal from '#components/ui/Modal/Modal';
 import { getMonogram } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
@@ -263,18 +264,24 @@ function Participation({
     return (
         <>
             {roster.canJoin ? (
-                <Button disabled={disabled} onClick={onJoin}>
-                    Join Session
+                <Button
+                    aria-label="Join Session"
+                    disabled={disabled}
+                    onClick={onJoin}
+                    variant="cell"
+                >
+                    <Icon name="check" />
+                    Join
                 </Button>
             ) : null}
             {roster.canLeave ? (
                 <Button
-                    disabled={disabled}
-                    variant="secondary-danger"
-                    size="small"
                     aria-label="Leave Session"
+                    disabled={disabled}
                     onClick={onLeave}
+                    variant="cell-danger"
                 >
+                    <Icon name="sign-out" />
                     Leave
                 </Button>
             ) : null}

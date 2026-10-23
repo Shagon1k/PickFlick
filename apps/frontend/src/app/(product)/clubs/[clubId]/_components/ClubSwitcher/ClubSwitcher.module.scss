@@ -150,12 +150,17 @@
     place-items: center;
     width: 56px;
     height: 56px;
-    font: 300 36px/1 var(--font-body);
     border: 1px dashed var(--border);
     border-radius: 50%;
     transition:
         border-color var(--motion-local),
         background var(--motion-local);
+}
+
+.createCircle svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 1.4;
 }
 
 .create:hover .createCircle,

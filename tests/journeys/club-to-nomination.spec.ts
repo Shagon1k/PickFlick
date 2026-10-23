@@ -60,6 +60,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
 
     await test.step('a User joins through a Club invitation link', async () => {
         await admin.goto(`${clubPath}/settings`);
+        await admin.getByRole('button', { name: 'Invite members' }).click();
         await admin.getByRole('button', { name: 'Create invitation' }).click();
         const link = await admin.getByLabel('Invitation link').inputValue();
         await member.goto(link);

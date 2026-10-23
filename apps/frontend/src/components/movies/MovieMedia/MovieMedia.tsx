@@ -1,16 +1,45 @@
 import type { TMovieDetails } from '@pickflick/contracts';
+import Link from 'next/link';
 
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import Icon from '#components/ui/Icon/Icon';
 
 import styles from './MovieMedia.module.scss';
 
-/** Poster, trailer, credits and synopsis in one grid; Movie Details and the Session film share it. */
-export default function MovieMedia({ movie, title }: { movie: TMovieDetails; title: string }) {
+/**
+ * Poster, trailer, credits and synopsis in one grid; Movie Details and the Session film share it.
+ * Outside Movie Details, `filmHref` turns the poster into the way to the Movie page.
+ */
+export default function MovieMedia({
+    movie,
+    title,
+    filmHref,
+    hidePhonePoster = false,
+}: {
+    movie: TMovieDetails;
+    title: string;
+    filmHref?: string;
+    /** The Session header already shows the poster on phones. */
+    hidePhonePoster?: boolean;
+}) {
+    const poster = <MoviePoster url={movie.posterUrl} title={title} />;
     return (
         <div className={styles.heroGrid}>
-            <div className={styles.posterRegion}>
-                <MoviePoster url={movie.posterUrl} title={title} />
+            <div className={styles.posterRegion} data-phone-hidden={hidePhonePoster || undefined}>
+                {filmHref ? (
+                    <Link
+                        aria-label={`${title}: film details`}
+                        className={styles.posterLink}
+                        href={filmHref}
+                    >
+                        {poster}
+                        <span aria-hidden="true" className={styles.posterCaption}>
+                            Film details →
+                        </span>
+                    </Link>
+                ) : (
+                    poster
+                )}
             </div>
             <MovieCredits movie={movie} />
             <section className={styles.synopsis} aria-labelledby="synopsis-title">
@@ -35,18 +64,18 @@ export default function MovieMedia({ movie, title }: { movie: TMovieDetails; tit
                         ))}
                     </ul>
                 ) : (
-                    <>
-                        <p>Our film sources have no trailer for this Movie.</p>
-                        <a
-                            href={buildTrailerSearch(title, movie.releaseYear)}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            Search YouTube for a trailer ↗
-                            <span className="visually-hidden"> (opens in a new tab)</span>
-                        </a>
-                    </>
+                    <p>Our film sources have no trailer for this Movie.</p>
                 )}
+                {/* Always offered: provider trailers can be teasers or the wrong cut. */}
+                <a
+                    aria-label="Search YouTube for a trailer (opens in a new tab)"
+                    className={styles.trailerSearch}
+                    href={buildTrailerSearch(title, movie.releaseYear)}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    Search YouTube ↗
+                </a>
             </section>
         </div>
     );

@@ -2,6 +2,7 @@ import type { TMovieDetails, TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 import type { ReactNode, RefObject } from 'react';
 
+import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
@@ -43,13 +44,27 @@ export default function SessionHeader({
         onCancel,
     });
     const isDecisionPhase = session.phase === 'NOMINATION' || session.phase === 'SELECTION';
+    const title = movie?.title ?? movie?.originalTitle ?? 'Untitled film';
+    const filmHref = movie && session.movieId ? `/movies/${session.movieId}` : null;
     return (
-        <header className={styles.header}>
+        <header className={styles.header} data-film={filmHref ? true : undefined}>
+            {/* Phones show the poster as the header's ticket; the title link stays the named way in. */}
+            {filmHref ? (
+                <Link
+                    aria-hidden="true"
+                    className={styles.ticketPoster}
+                    href={filmHref}
+                    tabIndex={-1}
+                >
+                    <MoviePoster url={movie?.posterUrl ?? null} title={title} />
+                    <span className={styles.infoMark}>i</span>
+                </Link>
+            ) : null}
             <div className={styles.headingCopy}>
                 <h1 ref={headingRef} tabIndex={-1}>
-                    {movie && session.movieId ? (
-                        <Link className={styles.filmLink} href={`/movies/${session.movieId}`}>
-                            {movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                    {filmHref ? (
+                        <Link className={styles.filmLink} href={filmHref}>
+                            {title}
                         </Link>
                     ) : (
                         getHeading(session)
@@ -58,42 +73,68 @@ export default function SessionHeader({
                 <p className="visually-hidden">
                     Session · {SESSION_TYPES[session.type]} · {session.phase.toLowerCase()}
                 </p>
-                {isDecisionPhase ? null : <FilmMeta movie={movie} phase={session.phase} />}
-                {session.topic && isDecisionPhase ? (
-                    <p className={styles.metaLine}>
-                        <Icon name="bulb" />
-                        {session.topic}
-                    </p>
-                ) : null}
-                {session.notes && !movie ? (
-                    <p className={styles.metaLine}>
-                        <Icon name="document" />
-                        <span className={styles.notes}>{session.notes}</span>
-                    </p>
-                ) : null}
-                {session.deadlineAt && session.phase === 'NOMINATION' ? (
-                    <p className={styles.deadline}>
-                        <Icon name="clock" />
-                        <NominationDeadline
-                            deadlineAt={session.deadlineAt}
-                            renderedAt={renderedAt}
-                        />
-                    </p>
-                ) : null}
+                {movie && !isDecisionPhase ? <FilmMeta movie={movie} /> : null}
+                <SessionLines session={session} hasMovie={movie !== null} renderedAt={renderedAt} />
             </div>
-            <div className={styles.headerActions}>
-                <SessionLink sessionId={session.id} compact />
+            {/* The phase stamp stays when film details are unavailable. */}
+            {isDecisionPhase ? null : (
+                <span
+                    className={styles.phaseStamp}
+                    data-live={session.phase === 'WATCHING' || undefined}
+                >
+                    {session.phase.toLowerCase()}
+                </span>
+            )}
+            {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
+            <div className={styles.actionRail}>
+                <SessionLink sessionId={session.id} cell />
                 {items.length ? (
                     <FilmStripMenu
                         triggerLabel="Session settings"
                         triggerIcon="settings"
+                        triggerText="Settings"
                         menuLabel="Session actions"
                         items={items}
                     />
                 ) : null}
-                {participation}
+                <div className={styles.railCell}>{participation}</div>
             </div>
         </header>
+    );
+}
+
+/** Topic, notes and the Nomination deadline under the heading. */
+function SessionLines({
+    session,
+    hasMovie,
+    renderedAt,
+}: {
+    session: TSession;
+    hasMovie: boolean;
+    renderedAt: number;
+}) {
+    const isDecisionPhase = session.phase === 'NOMINATION' || session.phase === 'SELECTION';
+    return (
+        <>
+            {session.topic && isDecisionPhase ? (
+                <p className={styles.metaLine}>
+                    <Icon name="bulb" />
+                    {session.topic}
+                </p>
+            ) : null}
+            {session.notes && !hasMovie ? (
+                <p className={styles.metaLine}>
+                    <Icon name="document" />
+                    <span className={styles.notes}>{session.notes}</span>
+                </p>
+            ) : null}
+            {session.deadlineAt && session.phase === 'NOMINATION' ? (
+                <p className={styles.deadline}>
+                    <Icon name="clock" />
+                    <NominationDeadline deadlineAt={session.deadlineAt} renderedAt={renderedAt} />
+                </p>
+            ) : null}
+        </>
     );
 }
 
@@ -141,23 +182,20 @@ const SESSION_TYPES = {
     PAST: 'Past screening',
 } as const;
 
-/** The phase stamp stays when film details are unavailable. */
-function FilmMeta({ movie, phase }: { movie: TMovieDetails | null; phase: TSession['phase'] }) {
-    const facts = movie ? [movie.releaseYear, formatRuntime(movie.runtime)].filter(Boolean) : [];
+/** Year and runtime read plainly; the genres follow a hairline in the display italic. */
+function FilmMeta({ movie }: { movie: TMovieDetails }) {
+    const facts = [movie.releaseYear, formatRuntime(movie.runtime)].filter(Boolean);
+    const genres = movie.genres?.slice(0, MAX_GENRES) ?? [];
     return (
-        <>
-            {facts.length ? <p>{facts.join(' · ')}</p> : null}
-            <div className={styles.filmChips}>
-                {movie?.genres?.slice(0, MAX_GENRES).map((genre) => (
-                    <span className={styles.genreChip} key={genre}>
-                        {genre}
-                    </span>
-                ))}
-                <span className={styles.phaseStamp} data-live={phase === 'WATCHING' || undefined}>
-                    {phase.toLowerCase()}
-                </span>
-            </div>
-        </>
+        <p className={styles.filmMeta}>
+            {facts.map((fact) => (
+                <span key={fact}>{fact}</span>
+            ))}
+            {facts.length > 0 && genres.length > 0 ? (
+                <span aria-hidden="true" className={styles.metaRule} />
+            ) : null}
+            {genres.length ? <span className={styles.genres}>{genres.join(', ')}</span> : null}
+        </p>
     );
 }
 

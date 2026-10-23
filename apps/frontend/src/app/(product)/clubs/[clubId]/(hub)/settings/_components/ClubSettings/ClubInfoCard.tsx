@@ -40,17 +40,18 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     projection={projection}
                     removeAction={removeAction}
                     removeState={removeState}
-                />
-                <TextInput
-                    defaultValue={projection.club.name}
-                    disabled={!canEdit}
-                    id="club-name"
-                    label="Club name"
-                    maxLength={CLUB_NAME_MAX_LENGTH}
-                    minLength={CLUB_NAME_MIN_LENGTH}
-                    name="name"
-                    required
-                />
+                >
+                    <TextInput
+                        defaultValue={projection.club.name}
+                        disabled={!canEdit}
+                        id="club-name"
+                        label="Club name"
+                        maxLength={CLUB_NAME_MAX_LENGTH}
+                        minLength={CLUB_NAME_MIN_LENGTH}
+                        name="name"
+                        required
+                    />
+                </ClubAvatarField>
                 <Textarea
                     defaultValue={projection.club.description ?? ''}
                     disabled={!canEdit}

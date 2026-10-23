@@ -98,6 +98,35 @@
     border-color: var(--danger-hover);
 }
 
+/* One cell of an action rail: an icon over a short label, filling its share of the rail. */
+.button.m-cell,
+.button.m-cell-danger {
+    flex: 1;
+    width: calc(100% - 8px);
+    min-height: 54px;
+    padding: 6px 4px;
+    margin: 4px;
+    font-size: var(--fs-caption);
+    color: var(--fg);
+    letter-spacing: 0;
+    background: transparent;
+}
+
+.button.m-cell-danger {
+    color: var(--danger-text);
+}
+
+.button.m-cell:hover,
+.button.m-cell-danger:hover {
+    background: var(--accent-soft);
+}
+
+.button.m-cell .button__label,
+.button.m-cell-danger .button__label {
+    flex-direction: column;
+    gap: 5px;
+}
+
 .button.m-small {
     min-height: 36px;
     padding: 6px 14px;

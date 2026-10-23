@@ -168,7 +168,7 @@
     display: grid;
     flex: 1;
     gap: var(--gap-xs);
-    align-content: space-between;
+    align-content: start;
     padding: 0;
     margin: 0;
     border: 0;
@@ -250,18 +250,23 @@
     min-height: 44px;
 }
 
-.avatarField {
+/* The tile spans the name field's label and input; the field's message line hangs below both. */
+.identityRow {
     display: grid;
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: 70px minmax(0, 1fr);
     gap: var(--gap-md);
-    align-items: center;
+    align-items: start;
+}
+
+.identityField {
+    min-width: 0;
 }
 
 .avatar {
     position: relative;
     display: grid;
     place-items: center;
-    width: 88px;
+    width: 70px;
     aspect-ratio: 1;
     overflow: hidden;
     font: 600 28px/1 var(--font-display);
@@ -313,10 +318,12 @@
 }
 
 .avatarMeta {
-    display: grid;
-    gap: var(--gap-xs);
-    justify-items: start;
-    font-size: var(--fs-body-sm);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--gap-sm);
+    align-items: center;
+    margin-top: calc(var(--gap-md) * -1);
+    font-size: var(--fs-caption);
 }
 
 .avatarMeta small {
@@ -496,14 +503,22 @@
     color: var(--danger-text);
 }
 
-.dangerActions {
+.cardLead {
+    margin: 0 0 var(--gap-md);
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+/* Members and Danger Zone share one compact row: a lead line, then actions pinned to the base. */
+.cardActions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--gap-sm);
     align-items: center;
+    margin-top: auto;
 }
 
-.dangerActions .inlineForm {
+.cardActions .inlineForm {
     gap: var(--gap-xs);
 }
 
@@ -536,14 +551,6 @@
         padding: var(--gap-md);
     }
 
-    .avatarField {
-        grid-template-columns: 72px minmax(0, 1fr);
-    }
-
-    .avatar {
-        width: 72px;
-    }
-
     .formFooter {
         flex-direction: column;
         align-items: stretch;
@@ -562,11 +569,11 @@
         text-align: left;
     }
 
-    .dangerActions > * {
+    .cardActions > * {
         flex: 1 1 100%;
     }
 
-    .dangerActions button {
+    .cardActions button {
         width: 100%;
     }
 }
@@ -605,25 +612,32 @@
     display: grid;
     gap: var(--gap-sm);
     padding: 0;
+    margin: 0;
+    font-size: var(--fs-body-sm);
     list-style: none;
 }
 
 .invitationList li {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
+    gap: var(--gap-md);
     align-items: center;
     justify-content: space-between;
 }
 
-.invitationManagement {
-    margin-top: var(--gap-md);
+.invitationListTitle {
+    margin: var(--gap-md) 0 var(--gap-xs);
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
 }
 
-.invitationManagement summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--hit);
+.invitationStatus {
+    margin: var(--gap-sm) 0 0;
+    font-size: var(--fs-meta);
     color: var(--fg-secondary);
-    cursor: pointer;
+}
+
+.invitationStatus:empty {
+    display: none;
 }

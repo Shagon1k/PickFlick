@@ -45,6 +45,7 @@ export type TIconName =
     | 'library'
     | 'members'
     | 'overview'
+    | 'plus'
     | 'pricing'
     | 'privacy'
     | 'profile'

@@ -174,7 +174,7 @@ here.
 
 - The public footer stays on every product page, phones included, because it carries the legal and
   contact links. It sits at the bottom of short pages, and below 1024px its links end above the
-  floating invite ticket.
+  floating invite ticket while the ticket shows.
 - The bottom bar's Hub strip lists the Club's sections wherever a Club is in context, the Session page
   included; without one it offers Create and Join on the onboarding Hub and a Club Hub link elsewhere.
   Choosing a strip link closes the strip.
@@ -217,15 +217,20 @@ here.
   counts stay in one column whether or not a row has a remove control. Role changes happen in the
   Manage Moderators dialog, whose role controls wrap under a name rather than truncate it; + Invite
   opens Manage Club. Dates read as `Oct 21, 2026`.
-- Club Info holds the avatar: clicking it picks an image with a preview, its requirements sit in a
-  tip, and Save Changes uploads it with the other fields. A Pro-only setting carries a Pro marker
-  and its reason in a tip instead of a bare disabled box.
+- Club Info holds the avatar beside the Club name: clicking it picks an image with a preview, its
+  requirements sit in a tip, and Save Changes uploads it with the other fields. Settings lists its
+  checkboxes at a fixed spacing with Save Changes at the card's base. A Pro-only setting carries a
+  Pro marker and its reason in a tip instead of a bare disabled box.
+- The last row pairs two compact cards of equal height: Members (places in use, Invite members, and
+  Manage Moderators for the Admin) and the Danger Zone (one line, then Archive or Reactivate and
+  Delete, or Leave).
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
   Sessions and invites while roster recovery stays available.
-- Manage Club creates one single-use invitation link with a 12-hour expiry: the link field carries
-  Copy, and Revoke is a quiet link beneath it. Older links stay collapsed under Manage links, which
-  loads them when opened, each with a short ID, status and expiry, the newest marked.
+- Invite members opens the invitation dialog, which loads recent links once. It creates one
+  single-use link with a 12-hour expiry: the link field carries Copy, and Revoke is a quiet link
+  beneath it. Recent links list a short ID, status, expiry and a quiet Revoke, the newest marked;
+  the link survives closing and reopening the dialog.
   A new link stays visible and revocable if the list fails to refresh. Active links are capped at the
   plan's member limit; managers can still inspect and revoke when creation is paused. Members and
   archived Clubs see no invitation controls.
@@ -237,7 +242,9 @@ here.
   date, and have no token expiry. Accepting a Session invite opens the Session.
 - Responding moves focus to Close before the row's controls change, so the trap and Escape keep
   working after the last answer. Loading, empty, retry and stale-invitation feedback are explicit.
-- The ticket is always present, as in the prototype; on phones it floats above the bottom bar.
+- The ticket appears once an invitation or a loading failure exists, and then stays, so focus can
+  return to it after the last answer; with nothing pending it never covers content. On phones it
+  floats above the bottom bar.
 
 #### Invitation pages
 
@@ -266,8 +273,8 @@ here.
   and stale details each have explicit feedback. Related titles load separately: up to six
   provider-supplied links, grayscale until hover or focus, with no personalization claim.
 - IMDb links are built by the backend from verified identifiers; Wikipedia is labelled a title
-  search. Trailers open YouTube in a new tab and say so; without a provider trailer the card offers a
-  labelled YouTube search instead. One credit region covers the film and its
+  search. Trailers open YouTube in a new tab and say so; the card's corner always offers a labelled
+  YouTube search, because provider trailers can be teasers or missing. One credit region covers the film and its
   related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
   the Library.
 
@@ -286,10 +293,10 @@ here.
 - Every phase is one page: the status banner (with manual refresh while Nomination or Selection is
   open), the heading with topic, notes and a relative Nomination deadline anchored to the request
   time, then the phase content, the reel separator with the phase mascot, and the facts.
-- Invite copies the member-only Session link and confirms in its own label. Join and Leave sit beside
-  it. The gear menu holds early closure, Edit, Kick and Cancel; on short screens its rows compact and
-  it scrolls clear of the bottom bar. The strip centres under its
-  trigger so its tab always sits mid-strip.
+- Invite copies the member-only Session link and confirms in its own label. Invite, the Settings
+  gear menu and Join or Leave share one action rail of icon-and-label cells. The gear menu holds
+  early closure, Edit, Kick and Cancel; on short screens its rows compact and it scrolls clear of
+  the bottom bar. The strip centres under its trigger so its tab always sits mid-strip.
 - Dialogs have no close icon: Escape, the overlay and their own Cancel or Close dismiss them. Edit is
   a focus-trapped form; Cancel, Kick and early closure keep typed `CANCEL`, `REMOVE` and `CLOSE`.
   Terminal Sessions have no edit or cancel controls. A phase change focuses the Session heading.
@@ -329,10 +336,14 @@ here.
 
 #### Watching
 
-- A film header (linked title, year · runtime, genre chips, a phase stamp whose dot pulses only while
-  Watching) sits above the Movie Details media grid. The stamp anchors to the header's bottom-right
-  corner and takes its own centred line on phones. When film details are unavailable the phase
-  stamp stays and the warning links to the selected Movie. Moving to Rating is Phase 13.
+- A film header (linked title; year and runtime, then the genres in the display italic after a
+  hairline; a phase stamp whose dot pulses only while Watching) sits above the Movie Details media
+  grid. From 576px the stamp sits above an action rail on the right; below it the header becomes a
+  ticket: the poster carries title, meta, an info mark and the stamp, and the rail is its stub,
+  joined by a perforation with outlined notches. The rail shows only the viewer's actions: Invite,
+  Settings for Session managers, and Join or Leave. The poster links to Movie Details. When film
+  details are unavailable the phase stamp stays and the warning links to the selected Movie. Moving
+  to Rating is Phase 13.
 
 #### Public, Login and Contact
 

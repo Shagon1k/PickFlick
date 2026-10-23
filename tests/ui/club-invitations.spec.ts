@@ -238,20 +238,22 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
 }) => {
     await signIn(context, 'refresh-failure');
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
-    await page.getByRole('button', { name: 'Create invitation' }).click();
+    await page.getByRole('button', { name: 'Invite members' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
+    // Opening the dialog loads the recent invitations once.
+    await expect(dialog.getByRole('status')).toHaveText('Recent invitations loaded.');
+    await dialog.getByRole('button', { name: 'Create invitation' }).click();
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
-    await expect(page.getByRole('status').last()).toContainText(
-        'Link ready. Share it with one person.',
-    );
-    await expect(page.getByRole('status').last()).toContainText('could not be refreshed');
-    await expect(page.getByRole('button', { name: 'Revoke current link' })).toBeVisible();
+    await expect(dialog.getByRole('status')).toContainText('Link ready. Share it with one person.');
+    await expect(dialog.getByRole('status')).toContainText('could not be refreshed');
+    await expect(dialog.getByText(/latest link/u)).toBeVisible();
+    // Closing and reopening keeps the created link.
     const original = await link.inputValue();
-    // Opening Manage links loads the recent invitations.
-    await page.getByText('Manage links', { exact: true }).click();
-    await expect(page.getByRole('status').last()).toHaveText('Recent invitations loaded.');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Invite members' }).click();
     await expect(link).toHaveValue(original);
-    await page.getByRole('button', { name: 'Revoke current link' }).click();
+    await dialog.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(link).toHaveCount(0);
 });
 
@@ -261,6 +263,7 @@ test('Club Admin creates, copies, and revokes a link through Manage Club', async
 }) => {
     await signIn(context, 'manager');
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
+    await page.getByRole('button', { name: 'Invite members' }).click();
     await page.getByRole('button', { name: 'Create invitation' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveValue(
         /\/invite\/club\/[A-Za-z0-9_-]{43}$/,
