@@ -25,12 +25,15 @@ export function handleMovieDetails(
     if (id.endsWith('038') && token === 'valid-movie-related-unavailable') {
         sendDetails(response, {
             result: { state: 'unavailable', reason: 'UNAVAILABLE' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         return true;
     }
     if (reason) {
-        sendDetails(response, { result: { state: 'unavailable', reason }, links: { imdb: null } });
+        sendDetails(response, {
+            result: { state: 'unavailable', reason },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
+        });
         return true;
     }
     const isMissing = token === 'valid-movie-missing';
@@ -43,7 +46,11 @@ export function handleMovieDetails(
     if (token === 'valid-movie-partial') result = { state: 'partial', fetchedAt, data };
     sendDetails(response, {
         result,
-        links: { imdb: isMissing ? null : 'https://www.imdb.com/title/tt1234567/' },
+        links: {
+            imdb: isMissing ? null : 'https://www.imdb.com/title/tt1234567/',
+            kinopoisk: isMissing ? null : 'https://www.kinopoisk.ru/film/258687/',
+            letterboxd: isMissing ? null : 'https://letterboxd.com/imdb/tt1234567/',
+        },
     });
     return true;
 }

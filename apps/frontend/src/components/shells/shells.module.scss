@@ -18,6 +18,13 @@
     background: var(--header-glass);
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(18px);
+    transition: transform var(--motion-panel) var(--ease-standard);
+}
+
+/* AutoHideHeader slides the header away on scroll down; the bottom bar on phones stays. */
+.publicHeader[data-hidden],
+.productHeader[data-hidden] {
+    transform: translateY(-100%);
 }
 
 .headerInner,
@@ -35,7 +42,9 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--gap-md);
     align-items: center;
-    min-height: 68px;
+
+    /* With the border every header is the prototype's 73px; 63px below 1024px (see below). */
+    min-height: 72px;
 }
 
 .brand {
@@ -350,9 +359,6 @@
 
 .productHeader .headerInner {
     grid-template-columns: auto 1fr auto;
-
-    /* With the border this is the prototype's 73px app header. */
-    min-height: 72px;
 }
 
 .productHeaderControls {
@@ -568,6 +574,12 @@
 }
 
 @media (width <= 1023px) {
+    /* Public pages match the app header, so moving into the product does not shift the page. */
+    .publicHeader .headerInner,
+    .compactHeader .headerInner {
+        min-height: 62px;
+    }
+
     .productHeader .headerInner {
         display: flex;
         justify-content: center;
@@ -598,6 +610,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .publicHeader,
+    .productHeader {
+        transition: none;
+    }
+
     .publicNav a,
     .publicNav a::after,
     .productDesktopNav a,

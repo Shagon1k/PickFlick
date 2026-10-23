@@ -128,30 +128,8 @@
     }
 }
 
-/* Invite, Settings and Join or Leave share one rail; dashed seams echo a ticket's perforation. */
 .actionRail {
-    display: grid;
     grid-area: rail;
-    grid-auto-flow: column;
-    background: color-mix(in sRGB, var(--surface) 70%, transparent);
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius);
-}
-
-.actionRail > * + * {
-    border-left: 1px dashed color-mix(in sRGB, var(--ivory) 22%, transparent);
-}
-
-.railCell {
-    display: flex;
-}
-
-.railCell:empty {
-    display: none;
-}
-
-.ticketPoster {
-    display: none;
 }
 
 .eyebrow {
@@ -401,14 +379,9 @@
     }
 }
 
-/*
- * Phones turn a film header into a ticket: the poster carries title, meta and phase, and the action
- * rail is its stub. The notches are masked out of the outline layer and the poster, never the
- * header, so the gear menu can still open below it. The breakpoint matches the media grid, which
- * hides its own poster below it.
- */
+/* Phones without a film stack the header; a film header becomes the shared ticket instead. */
 @media (width < 576px) {
-    .header {
+    .header:not([data-film]) {
         grid-template-areas:
             'copy'
             'stamp'
@@ -419,170 +392,5 @@
 
     .phaseStamp {
         justify-self: center;
-    }
-
-    /* Phones share the rail out evenly, each cell an icon over its label. */
-    .actionRail {
-        grid-auto-columns: minmax(0, 1fr);
-        border-radius: var(--radius-lg);
-    }
-
-    .header[data-film] {
-        --notch: 9px;
-        --stub: 62px;
-
-        grid-template-areas:
-            'poster'
-            'rail';
-        gap: 0;
-        padding: 0;
-        border-bottom: 0;
-        isolation: isolate;
-    }
-
-    .header[data-film]::after {
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        content: '';
-        background: var(--surface);
-        border: 1px solid var(--border-lit);
-        border-radius: var(--radius-lg);
-        mask:
-            radial-gradient(
-                    circle at 0 calc(100% - var(--stub)),
-                    transparent var(--notch),
-                    black calc(var(--notch) + 0.5px)
-                )
-                left / 51% 100% no-repeat,
-            radial-gradient(
-                    circle at 100% calc(100% - var(--stub)),
-                    transparent var(--notch),
-                    black calc(var(--notch) + 0.5px)
-                )
-                right / 51% 100% no-repeat;
-    }
-
-    .header[data-film] .ticketPoster {
-        position: relative;
-        display: block;
-        grid-area: poster;
-        margin: 1px 1px 0;
-        overflow: hidden;
-        border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
-        mask:
-            radial-gradient(
-                    circle at -1px 100%,
-                    transparent var(--notch),
-                    black calc(var(--notch) + 0.5px)
-                )
-                left / 51% 100% no-repeat,
-            radial-gradient(
-                    circle at calc(100% + 1px) 100%,
-                    transparent var(--notch),
-                    black calc(var(--notch) + 0.5px)
-                )
-                right / 51% 100% no-repeat;
-    }
-
-    .ticketPoster > * {
-        border: 0;
-        border-radius: 0;
-    }
-
-    /* The lower poster darkens so the title reads over any artwork. */
-    .ticketPoster::after {
-        position: absolute;
-        inset: 40% 0 0;
-        content: '';
-        background: linear-gradient(
-            transparent,
-            color-mix(in sRGB, var(--bg-deep) 70%, transparent) 40%,
-            var(--bg-deep)
-        );
-    }
-
-    .infoMark,
-    .header[data-film] .phaseStamp {
-        background: color-mix(in sRGB, var(--bg-deep) 72%, transparent);
-        border: 1px solid color-mix(in sRGB, var(--ivory) 18%, transparent);
-    }
-
-    .infoMark {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 1;
-        display: grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        font: italic 600 15px/1 var(--font-display);
-        color: var(--fg);
-        border-radius: 50%;
-    }
-
-    .header[data-film] .phaseStamp {
-        z-index: 1;
-        grid-area: poster;
-        place-self: start end;
-        padding: 9px 10px 9px 12px;
-        margin: 12px;
-        color: var(--fg);
-        border-radius: var(--radius-pill);
-    }
-
-    .header[data-film] .headingCopy {
-        z-index: 1;
-        grid-area: poster;
-        align-self: end;
-        padding: 0 var(--gap-md) var(--gap-md);
-        pointer-events: none;
-    }
-
-    .header[data-film] .headingCopy a {
-        pointer-events: auto;
-    }
-
-    .header[data-film] h1 {
-        font-size: 40px;
-    }
-
-    .header[data-film] .actionRail {
-        position: relative;
-        background: transparent;
-        border: 0;
-        border-radius: 0;
-    }
-
-    /* The outline follows each notch's curve, as on the invite ticket. */
-    .header[data-film] .actionRail::before,
-    .header[data-film] .actionRail::after {
-        position: absolute;
-        top: calc(var(--notch) * -1);
-        width: calc(var(--notch) * 2);
-        height: calc(var(--notch) * 2);
-        content: '';
-        border: 1px solid var(--border-lit);
-        border-radius: 50%;
-    }
-
-    .header[data-film] .actionRail::before {
-        left: calc(var(--notch) * -1);
-        clip-path: inset(0 0 0 50%);
-    }
-
-    .header[data-film] .actionRail::after {
-        right: calc(var(--notch) * -1);
-        clip-path: inset(0 50% 0 0);
-    }
-
-    /* The perforation stops short of the notches. */
-    .header[data-film] .ticketPoster::before {
-        position: absolute;
-        inset: auto calc(var(--notch) + 6px) 0;
-        z-index: 1;
-        content: '';
-        border-top: 1px dashed color-mix(in sRGB, var(--ivory) 28%, transparent);
     }
 }

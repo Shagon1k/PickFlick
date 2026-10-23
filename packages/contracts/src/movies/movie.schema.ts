@@ -238,6 +238,16 @@ export const movieDetailsResponseSchema = z.strictObject({
             .string()
             .regex(/^https:\/\/www\.imdb\.com\/title\/tt\d{7,12}\/$/u)
             .nullable(),
+        /** PoiskKino IDs are Kinopoisk film IDs, so the verified ID builds the Kinopoisk page. */
+        kinopoisk: z
+            .string()
+            .regex(/^https:\/\/www\.kinopoisk\.ru\/film\/[1-9]\d{0,15}\/$/u)
+            .nullable(),
+        /** Letterboxd resolves a film from its IMDb or TMDB ID. */
+        letterboxd: z
+            .string()
+            .regex(/^https:\/\/letterboxd\.com\/(?:imdb\/tt\d{7,12}|tmdb\/[1-9]\d{0,15})\/$/u)
+            .nullable(),
     }),
 });
 export type TMovieDetailsResponse = z.infer<typeof movieDetailsResponseSchema>;

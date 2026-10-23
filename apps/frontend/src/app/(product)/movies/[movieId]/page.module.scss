@@ -51,56 +51,26 @@
     color: var(--fg-secondary);
 }
 
-/* One source-labelled rating, as compact as the prototype's score pill. */
-.titleBlock .rating {
-    display: inline-flex;
-    flex: 0 0 auto;
-    gap: var(--gap-sm);
-    align-items: center;
-    padding: var(--gap-xs) var(--gap-md);
-    color: var(--fg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.rating svg {
-    width: 16px;
-    height: 16px;
+/* The rating cell of the header rail: the score in the mono face, its vote count beside it. */
+.rating {
+    margin: 0;
 }
 
 .rating strong {
-    font: 600 var(--fs-card-title)/1 var(--font-mono);
+    font: 600 var(--fs-body)/1 var(--font-mono);
     color: var(--fg);
+}
+
+@media (width >= 576px) {
+    .rating strong {
+        font-size: var(--fs-card-title);
+    }
 }
 
 .rating small {
+    margin-left: 4px;
     font-size: var(--fs-micro);
-    line-height: 1;
-}
-
-.links a {
-    display: inline-flex;
-    gap: var(--gap-xs);
-    align-items: center;
-    min-height: var(--hit);
-    color: var(--fg);
-}
-
-.links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    justify-content: center;
-    padding-block: var(--gap-sm);
-    border-block: 1px solid var(--border);
-}
-
-.links a {
-    padding-inline: var(--gap-sm);
-    font-size: var(--fs-meta);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    color: var(--fg-secondary);
 }
 
 .related {

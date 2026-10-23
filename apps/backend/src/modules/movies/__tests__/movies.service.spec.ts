@@ -109,23 +109,36 @@ describe('MoviesService', () => {
         expect(provider.search).not.toHaveBeenCalled();
     });
 
-    it('should return backend-built IMDb links without exposing identifiers', async () => {
+    it('should return backend-built outbound links without exposing identifiers', async () => {
         repository.findCachedDetails.mockResolvedValue({
             data: buildCanonicalDetails(),
             fetchedAt: now,
         });
         repository.findExternalIds.mockResolvedValue({
-            externalIds: [{ source: 'imdb', externalId: 'tt0000100' }],
+            externalIds: [
+                { source: 'imdb', externalId: 'tt0000100' },
+                { source: 'poiskkino', externalId: '258687' },
+            ],
         });
         expect(await service.getDetailsResponse(MOVIE_ID)).toMatchObject({
             result: { state: 'fresh', data: { id: MOVIE_ID } },
-            links: { imdb: 'https://www.imdb.com/title/tt0000100/' },
+            links: {
+                imdb: 'https://www.imdb.com/title/tt0000100/',
+                kinopoisk: 'https://www.kinopoisk.ru/film/258687/',
+                letterboxd: 'https://letterboxd.com/imdb/tt0000100/',
+            },
+        });
+        repository.findExternalIds.mockResolvedValue({
+            externalIds: [{ source: 'tmdb', externalId: '157336' }],
+        });
+        expect(await service.getDetailsResponse(MOVIE_ID)).toMatchObject({
+            links: { imdb: null, letterboxd: 'https://letterboxd.com/tmdb/157336/' },
         });
         repository.findCachedDetails.mockResolvedValue(null);
         repository.findExternalIds.mockResolvedValue(null);
         expect(await service.getDetailsResponse(MOVIE_ID)).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
     });
 

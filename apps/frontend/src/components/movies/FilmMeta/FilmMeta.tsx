@@ -10,6 +10,7 @@ import styles from './FilmMeta.module.scss';
 
 const MAX_GENRES = 3;
 const RULE_WIDTH_PX = 1;
+const ROUNDING_SLACK_PX = 2;
 
 /**
  * Year, runtime and (on Movie Details) the language read plainly; the genres follow a hairline in
@@ -63,5 +64,6 @@ function isWrapping(node: HTMLElement) {
             total + (item.hasAttribute('data-rule') ? RULE_WIDTH_PX : item.offsetWidth),
         gap * (items.length - 1),
     );
-    return width > node.clientWidth;
+    // Rounded item widths can overshoot a shrink-to-fit line by a pixel or two.
+    return width > node.clientWidth + ROUNDING_SLACK_PX;
 }

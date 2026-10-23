@@ -36,15 +36,33 @@ for (const width of [390, 768, 1024, 1440]) {
             );
             // One rating: IMDb wins over Kinopoisk and TMDB, rounded to one decimal.
             await expect(page.getByTitle('IMDb rating')).toHaveText(
-                'IMDb rating7.6 out of 10431K ratings',
+                'IMDb rating7.6 out of 10 431K ratings',
             );
             await expect(page.getByText('7.519')).toHaveCount(0);
-            await expect(page.getByText('Kinopoisk', { exact: true })).toHaveCount(0);
+            await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
+            // Personal Rating and Watchlist hold their places until the Library ships.
+            await expect(
+                page.getByRole('button', { name: 'Rate this film (coming soon)' }),
+            ).toBeDisabled();
+            // The ribbon sits on the visible poster: the media grid's, or the phone ticket's.
+            await expect(
+                page
+                    .getByRole('button', { name: 'Add to Watchlist (coming soon)' })
+                    .filter({ visible: true }),
+            ).toBeDisabled();
             await expect(page.getByRole('link', { name: 'IMDb' })).toHaveAttribute(
                 'href',
                 'https://www.imdb.com/title/tt1234567/',
             );
-            const wikipedia = page.getByRole('link', { name: 'Search Wikipedia' });
+            await expect(page.getByRole('link', { name: /^Kinopoisk/u })).toHaveAttribute(
+                'href',
+                'https://www.kinopoisk.ru/film/258687/',
+            );
+            await expect(page.getByRole('link', { name: /^Letterboxd/u })).toHaveAttribute(
+                'href',
+                'https://letterboxd.com/imdb/tt1234567/',
+            );
+            const wikipedia = page.getByRole('link', { name: /^Wikipedia search/u });
             await expect(wikipedia).toHaveAttribute(
                 'href',
                 `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: '<script>alert(1)</script> & Film' })}`,
@@ -82,8 +100,8 @@ for (const width of [390, 768, 1024, 1440]) {
             await page.screenshot({ path: `test-results/movie-${width}.png`, fullPage: true });
             await expect(page.getByRole('heading', { name: 'You may also like' })).toBeVisible();
             await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(0);
-            await page.getByRole('link', { name: /Search Wikipedia/u }).focus();
-            await expect(page.getByRole('link', { name: /Search Wikipedia/u })).toBeFocused();
+            await page.getByRole('link', { name: /^Wikipedia search/u }).focus();
+            await expect(page.getByRole('link', { name: /^Wikipedia search/u })).toBeFocused();
         },
     );
 }
@@ -124,7 +142,8 @@ test('missing media and identifiers omit unavailable links; broken poster become
         },
     ]);
     await page.goto(`/movies/${MOVIE_ID}`);
-    await expect(page.getByText('Poster unavailable')).toBeVisible();
+    // The phone ticket keeps its own hidden placeholder; the visible one is the media grid's.
+    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
     await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
     await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
         'href',
@@ -137,7 +156,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
     ]);
     await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.reload();
-    await expect(page.getByText('Poster unavailable').first()).toBeVisible();
+    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
 });
 
 test('unknown or malformed Movie identity uses safe recovery; related failure preserves the main film', async ({

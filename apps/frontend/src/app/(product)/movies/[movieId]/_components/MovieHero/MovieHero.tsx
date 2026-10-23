@@ -1,7 +1,12 @@
 import type { TMovieDetails } from '@pickflick/contracts';
+import clsx from 'clsx';
 
+import ticket from '#components/movies/film-ticket.module.scss';
 import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
+import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
+import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
@@ -28,8 +33,10 @@ interface IMovieHeroProps {
 export default function MovieHero({ movie, title }: IMovieHeroProps) {
     return (
         <section className={styles.hero} aria-labelledby="movie-title">
-            <header className={styles.titleBlock}>
-                <div className={styles.titleCopy}>
+            {/* On phones the header becomes the film ticket, its rating the stub, as in Sessions. */}
+            <header className={clsx(styles.titleBlock, ticket.ticket)} data-film>
+                <TicketPoster corner={<WatchlistBookmark />} title={title} url={movie.posterUrl} />
+                <div className={clsx(styles.titleCopy, ticket.copy)}>
                     <h1 id="movie-title">{title}</h1>
                     {movie.originalTitle && movie.originalTitle !== title ? (
                         <p>{movie.originalTitle}</p>
@@ -42,9 +49,23 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                         movie={movie}
                     />
                 </div>
-                <Rating ratings={movie.ratings} />
+                {/* Rate and the poster's Watchlist ribbon are placeholders until Phase 15. */}
+                <div className={clsx(ticket.rail, ticket.stub)}>
+                    <Rating ratings={movie.ratings} />
+                    <div className={ticket.railCell}>
+                        <Button aria-label="Rate this film (coming soon)" disabled variant="cell">
+                            <Icon name="ratings" />
+                            Rate
+                        </Button>
+                    </div>
+                </div>
             </header>
-            <MovieMedia movie={movie} title={title} />
+            <MovieMedia
+                hidePhonePoster
+                movie={movie}
+                posterCorner={<WatchlistBookmark />}
+                title={title}
+            />
         </section>
     );
 }
@@ -54,21 +75,31 @@ function Rating({ ratings }: { ratings: TMovieDetails['ratings'] }) {
         RATING_PRIORITY.map((source) => ratings.find((item) => item.source === source)).find(
             Boolean,
         ) ?? ratings.at(0);
-    if (!rating) return null;
+    if (!rating)
+        return (
+            <p className={clsx(ticket.railItem, styles.rating)}>
+                <Icon name="globe" />
+                <strong aria-hidden="true">—</strong>
+                <span className="visually-hidden">No ratings yet</span>
+            </p>
+        );
     const label = RATING_LABELS[rating.source] ?? rating.source;
     // The prototype shows a mark, not the source name; readers and the tooltip still get it.
     return (
-        <p className={styles.rating} title={`${label} rating`}>
+        <p className={clsx(ticket.railItem, styles.rating)} title={`${label} rating`}>
             <Icon name="globe" />
             <span className="visually-hidden">{label} rating</span>
-            <strong>{ratingFormat.format(rating.value)}</strong>
-            <span className="visually-hidden"> out of {rating.scale}</span>
-            {rating.voteCount === null ? null : (
-                <small>
-                    {voteFormat.format(rating.voteCount)}
-                    <span className="visually-hidden"> ratings</span>
-                </small>
-            )}
+            <span>
+                <strong>{ratingFormat.format(rating.value)}</strong>
+                <span className="visually-hidden"> out of {rating.scale}</span>
+                {rating.voteCount === null ? null : (
+                    <small>
+                        {' '}
+                        {voteFormat.format(rating.voteCount)}
+                        <span className="visually-hidden"> ratings</span>
+                    </small>
+                )}
+            </span>
         </p>
     );
 }

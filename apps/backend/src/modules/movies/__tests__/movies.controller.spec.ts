@@ -73,13 +73,13 @@ describe('MoviesController', () => {
         expect(getDetailsResponse).not.toHaveBeenCalled();
         getDetailsResponse.mockResolvedValue({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         const response = await fetch(detailsUrl, { headers: { 'x-test-user': 'user' } });
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         expect(getDetailsResponse).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000100');
     });
@@ -113,14 +113,14 @@ describe('MoviesController', () => {
         storeMedia.mockResolvedValue(stored);
         getDetailsResponse.mockResolvedValue({
             result: { state: 'fresh', data, fetchedAt: '2026-10-10T12:00:00.000Z' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         const details = await fetch(url.replace('/search', `/${MOVIE_ID}`), {
             headers: { 'x-test-user': 'user' },
         });
         expect(await details.json()).toMatchObject({
             result: { data: { posterUrl: stored.posterUrl } },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         expect(storeMedia).toHaveBeenCalledWith(data);
     });

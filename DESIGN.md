@@ -172,6 +172,11 @@ here.
 
 #### Product shell
 
+- Public and product headers share one height: 73px, and 63px below 1024px, so moving from the
+  site into the app does not shift the page. Both slide away while the page scrolls down and
+  return on any scroll up; they stay near the top, while focus is inside them and while one of
+  their menus or panels is open. The phone bottom bar never hides; reduced motion drops the slide.
+  Sticky section menus rise with the hidden header instead of leaving its height empty.
 - The public footer stays on every product page, phones included, because it carries the legal and
   contact links. It sits at the bottom of short pages, and below 1024px its links end above the
   floating invite ticket while the ticket shows.
@@ -265,23 +270,29 @@ here.
 - Results fall back to an available source title; "Untitled film" means no title at all. Posters load
   lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
 - Movie Details shows title, then the Session header's meta line (year, runtime, language name and
-  the italic genres), one rating to one decimal (IMDb, else Kinopoisk) with a mark instead of the
-  source name, which readers and the tooltip still get, poster, directors, writers, up to five actors in one row,
-  budget and worldwide revenue in compact US dollars, synopsis and a trailer player. Rows without
-  data other than directors and actors are left out. On wide screens the poster and trailer share
-  one height (3 : 8 columns), and the poster behaves as in Sessions. Provider attribution stays with
-  TMDB in search results only; where PoiskKino and TheTVDB are credited for public launch is
-  decided in #89. Movie Details and Sessions share one loading skeleton of this layout. There is no in-content Back. Phones place the poster
-  above the credits; each credit keeps its label and value on one row.
+  the italic genres), an action rail like the Session's (one rating to one decimal, IMDb else
+  Kinopoisk, with a mark instead of the source name, which readers and the tooltip still get, or a
+  dash; then Rate, a disabled placeholder until Phase 15) and the prototype's Watchlist ribbon on
+  the poster's top-right corner, also a placeholder, poster, directors, writers, up to five actors
+  in one row, budget and worldwide revenue in compact US dollars, synopsis and a trailer player.
+  Rows without data other than directors and actors are left out. On wide screens the poster and
+  trailer share one height (3 : 8 columns), and the poster behaves as in Sessions. Provider
+  attribution stays with TMDB in search results only; where PoiskKino and TheTVDB are credited for
+  public launch is decided in #89. Movie Details and Sessions share one loading skeleton of this
+  layout. On phones the header is the same film ticket as in Sessions, with that rail as its stub.
+  There is no in-content Back. On phones each credit keeps its label and value on one row.
 - Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
   and stale details each have explicit feedback. Related titles load separately: up to six
   provider-supplied links, grayscale until hover or focus, with no personalization claim.
-- IMDb links are built by the backend from verified identifiers; Wikipedia is labelled a title
-  search. The trailer card shows the film still (or the blurred poster) with a Play button; only
-  pressing it loads YouTube's privacy-enhanced player in place, with up to three trailers to choose
-  from. A Search YouTube caption closes the card on the same line as the poster's Film details
-  caption, because provider trailers can be teasers or missing. One credit region covers the film and its related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
-  the Library.
+- IMDb, Kinopoisk and Letterboxd links are built by the backend from verified identifiers (a
+  PoiskKino ID is the Kinopoisk film ID; Letterboxd resolves the IMDb, else the TMDB, ID); Wikipedia
+  is a title search. They are bordered pills with each source's one-colour mark and an outbound
+  arrow, marks only on phones, followed by the dotted sprocket divider. The trailer card shows the
+  film still (or the blurred poster) with a Play button; only pressing it loads YouTube's
+  privacy-enhanced player in place, with up to three trailers to choose from. A Search YouTube
+  caption closes the card on the same line as the poster's Film details caption, because provider
+  trailers can be teasers or missing. One credit region covers the film and its related titles.
+  Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with the Library.
 
 #### Create Session
 
@@ -344,14 +355,14 @@ here.
 - A film header (linked title; year and runtime, then the genres in the display italic after a
   hairline; a phase stamp whose dot pulses only while Watching) sits above the Movie Details media
   grid. From 576px the stamp sits left of a compact action rail (icon and label inline); below it
-  the header becomes a ticket: the poster carries title, meta, an info mark and the stamp, and the
-  rail is its stub, joined by a perforation with outlined notches. The rail shows only the viewer's
-  actions: Invite, Settings for Session managers, and Join or Leave. The media poster links to Movie
-  Details, mostly grey at rest (softer than the prototype's full grey); colour, a slight zoom and
-  its caption arrive together on hover. When the meta line cannot fit, the genres take a second
-  line, both lines centre and the hairline goes. When film
-  details are unavailable the phase stamp stays and the warning links to the selected Movie. Moving
-  to Rating is Phase 13.
+  the header becomes the shared film ticket: the poster carries title, meta, an info mark and the
+  stamp, and the rail is its stub, joined by a perforation with outlined notches. The rail shows
+  only the viewer's actions: Invite, Settings for Session managers, and Join or Leave. The media
+  poster links to Movie Details, mostly grey at rest (softer than the prototype's full grey);
+  colour, a slight zoom and its caption arrive together on hover. When the meta line cannot fit, the
+  genres take a second line, both lines centre and the hairline goes. When film details are
+  unavailable the phase stamp stays and the warning links to the selected Movie. Moving to Rating is
+  Phase 13.
 
 #### Public, Login and Contact
 

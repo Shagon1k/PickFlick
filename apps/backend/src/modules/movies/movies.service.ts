@@ -104,10 +104,18 @@ export class MoviesService {
         const result = await this.getDetails(movieId, { allowStale: true });
         const lookup =
             result.state === 'unavailable' ? null : await this.repository.findExternalIds(movieId);
-        const imdb = lookup?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
+        const idFor = (source: string) =>
+            lookup?.externalIds.find((externalId) => externalId.source === source)?.externalId;
+        const imdb = idFor('imdb');
+        const kinopoisk = idFor('poiskkino');
+        const tmdb = idFor('tmdb');
         return {
             result,
-            links: { imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null },
+            links: {
+                imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null,
+                kinopoisk: kinopoisk ? `https://www.kinopoisk.ru/film/${kinopoisk}/` : null,
+                letterboxd: getLetterboxdLink(imdb, tmdb),
+            },
         };
     }
 
@@ -185,4 +193,10 @@ export class MoviesService {
         const age = Date.now() - cached.fetchedAt.getTime();
         return age >= 0 && age < hours * HOUR_MS;
     }
+}
+
+/** Letterboxd redirects these paths to the film page; IMDb is the more common identifier. */
+function getLetterboxdLink(imdb?: string, tmdb?: string): string | null {
+    if (imdb) return `https://letterboxd.com/imdb/${imdb}/`;
+    return tmdb ? `https://letterboxd.com/tmdb/${tmdb}/` : null;
 }

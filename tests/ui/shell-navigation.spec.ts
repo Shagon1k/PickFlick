@@ -380,3 +380,26 @@ test('section menus share the product overlay state', async ({ page }) => {
     await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'My Library sections' })).toBeVisible();
 });
+
+for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
+    test(`the product header hides on scroll down and returns on scroll up or focus at ${viewport.name}`, async ({
+        page,
+    }) => {
+        await openShell(page, 'product', viewport);
+        // The preview content is short on wide screens; give the page room to scroll.
+        await page.evaluate(() => {
+            document.body.style.paddingBottom = '2000px';
+        });
+        const header = page.getByRole('banner');
+        await expect(header).not.toHaveAttribute('data-hidden');
+        await page.mouse.wheel(0, 600);
+        await expect(header).toHaveAttribute('data-hidden');
+        await page.mouse.wheel(0, -200);
+        await expect(header).not.toHaveAttribute('data-hidden');
+        await page.mouse.wheel(0, 600);
+        await expect(header).toHaveAttribute('data-hidden');
+        // Keyboard focus entering the header brings it back.
+        await header.getByRole('link').first().focus();
+        await expect(header).not.toHaveAttribute('data-hidden');
+    });
+}

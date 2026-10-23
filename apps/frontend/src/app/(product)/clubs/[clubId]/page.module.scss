@@ -16,6 +16,9 @@
     pointer-events: none;
     content: '';
     background: radial-gradient(ellipse at 50% 20%, var(--projector-wash), transparent 70%);
+
+    /* The wash fades in from its top; a hard edge read as a line just under the header. */
+    mask-image: linear-gradient(transparent, black 64px);
 }
 
 .tabs {

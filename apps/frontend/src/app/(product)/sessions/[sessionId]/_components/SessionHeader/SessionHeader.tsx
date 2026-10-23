@@ -1,9 +1,11 @@
 import type { TMovieDetails, TSession } from '@pickflick/contracts';
+import clsx from 'clsx';
 import Link from 'next/link';
 import type { ReactNode, RefObject } from 'react';
 
+import ticket from '#components/movies/film-ticket.module.scss';
 import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
-import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
+import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
@@ -47,20 +49,14 @@ export default function SessionHeader({
     const title = movie?.title ?? movie?.originalTitle ?? 'Untitled film';
     const filmHref = movie && session.movieId ? `/movies/${session.movieId}` : null;
     return (
-        <header className={styles.header} data-film={filmHref ? true : undefined}>
-            {/* Phones show the poster as the header's ticket; the title link stays the named way in. */}
+        <header
+            className={clsx(styles.header, ticket.ticket)}
+            data-film={filmHref ? true : undefined}
+        >
             {filmHref ? (
-                <Link
-                    aria-hidden="true"
-                    className={styles.ticketPoster}
-                    href={filmHref}
-                    tabIndex={-1}
-                >
-                    <MoviePoster url={movie?.posterUrl ?? null} title={title} />
-                    <span className={styles.infoMark}>i</span>
-                </Link>
+                <TicketPoster href={filmHref} title={title} url={movie?.posterUrl ?? null} />
             ) : null}
-            <div className={styles.headingCopy}>
+            <div className={clsx(styles.headingCopy, ticket.copy)}>
                 <h1 ref={headingRef} tabIndex={-1}>
                     {filmHref ? (
                         <Link className={styles.filmLink} href={filmHref}>
@@ -81,14 +77,14 @@ export default function SessionHeader({
             {/* The phase stamp stays when film details are unavailable. */}
             {isDecisionPhase ? null : (
                 <span
-                    className={styles.phaseStamp}
+                    className={clsx(styles.phaseStamp, ticket.corner)}
                     data-live={session.phase === 'WATCHING' || undefined}
                 >
                     {session.phase.toLowerCase()}
                 </span>
             )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
-            <div className={styles.actionRail}>
+            <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
                 <SessionLink sessionId={session.id} cell />
                 {items.length ? (
                     <FilmStripMenu
@@ -99,7 +95,7 @@ export default function SessionHeader({
                         items={items}
                     />
                 ) : null}
-                <div className={styles.railCell}>{participation}</div>
+                <div className={ticket.railCell}>{participation}</div>
             </div>
         </header>
     );

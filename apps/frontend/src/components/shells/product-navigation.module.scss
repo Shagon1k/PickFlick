@@ -657,6 +657,7 @@
         grid-column: 1;
     }
 
+    /* 27px under the 73px header; when AutoHideHeader slides it away, the menu rises with it. */
     .sectionSidebar nav {
         position: sticky;
         top: 100px;
@@ -664,6 +665,11 @@
         overflow: hidden;
         border: 1px solid var(--border);
         border-radius: var(--radius);
+        transition: top var(--motion-panel) var(--ease-standard);
+    }
+
+    [data-shell]:has(> header[data-hidden]) .sectionSidebar nav {
+        top: 27px;
     }
 
     .sectionSidebar a {
@@ -769,4 +775,10 @@
     font-size: var(--fs-caption);
     text-align: left;
     border-bottom: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sectionSidebar nav {
+        transition: none;
+    }
 }

@@ -18,7 +18,10 @@ export const searchMovies = (input: TMovieSearch): Promise<TMovieResult<TMovieSe
     requestApi('/movies/search', { method: 'POST', json: input });
 
 function toUnavailableResponse(reason: TMovieProviderReason): TMovieDetailsResponse {
-    return { result: { state: 'unavailable', reason }, links: { imdb: null } };
+    return {
+        result: { state: 'unavailable', reason },
+        links: { imdb: null, kinopoisk: null, letterboxd: null },
+    };
 }
 
 /** Maps transport and server failures to an unavailable result; client errors such as 401 rethrow. */

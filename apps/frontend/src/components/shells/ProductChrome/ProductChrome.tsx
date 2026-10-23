@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
+import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
 import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
@@ -55,7 +56,7 @@ export default function ProductChrome({
     return (
         <ProductOverlayProvider>
             <div className={`${styles.shell} ${styles.productShell}`} data-shell={currentArea}>
-                <header className={styles.productHeader}>
+                <AutoHideHeader className={styles.productHeader}>
                     <div className={styles.headerInner}>
                         <Brand href={routes.home} />
                         <nav aria-label="Product navigation" className={styles.productDesktopNav}>
@@ -84,7 +85,7 @@ export default function ProductChrome({
                         </div>
                     </div>
                     <ProductSearch />
-                </header>
+                </AutoHideHeader>
                 {children}
                 <SiteFooter routes={routes} />
                 <PendingInvites />

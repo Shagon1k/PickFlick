@@ -1,5 +1,6 @@
 import type { TMovieDetails } from '@pickflick/contracts';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import TrailerPlayer from '#components/movies/TrailerPlayer/TrailerPlayer';
@@ -16,12 +17,15 @@ export default function MovieMedia({
     title,
     filmHref,
     hidePhonePoster = false,
+    posterCorner,
 }: {
     movie: TMovieDetails;
     title: string;
     filmHref?: string;
-    /** The Session header already shows the poster on phones. */
+    /** The film ticket already shows the poster on phones. */
     hidePhonePoster?: boolean;
+    /** A control over the poster's top-right corner, such as the Watchlist ribbon. */
+    posterCorner?: ReactNode;
 }) {
     const poster = <MoviePoster url={movie.posterUrl} title={title} />;
     return (
@@ -41,6 +45,7 @@ export default function MovieMedia({
                 ) : (
                     poster
                 )}
+                {posterCorner}
             </div>
             <MovieCredits movie={movie} />
             <section className={styles.synopsis} aria-labelledby="synopsis-title">

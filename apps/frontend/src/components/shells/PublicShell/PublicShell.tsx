@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import {
     buildPublicNavigation,
@@ -27,7 +28,7 @@ export default function PublicShell({
     return (
         <div className={styles.shell} data-shell="public">
             {variant === 'default' ? (
-                <header className={styles.publicHeader}>
+                <AutoHideHeader className={styles.publicHeader}>
                     <div className={styles.headerInner}>
                         <Brand href={routes.home} />
                         <nav aria-label="Public navigation" className={styles.publicNav}>
@@ -47,7 +48,7 @@ export default function PublicShell({
                             </ButtonLink>
                         </div>
                     </div>
-                </header>
+                </AutoHideHeader>
             ) : null}
             <main>{children}</main>
             {variant === 'default' ? <SiteFooter routes={routes} /> : null}

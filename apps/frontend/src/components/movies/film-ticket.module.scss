@@ -1,0 +1,249 @@
+/*
+ * The film ticket: on phones a film header (Session or Movie Details) becomes a poster that
+ * carries the title, meta and a corner tag, above a stub joined by a perforation with outlined
+ * notches. Hosts add `.ticket` and `data-film` to their header and the part classes to its
+ * children; from 576px the host's own layout applies and the poster hides. The notches are masked
+ * out of the outline layer and the poster, never the header, so a menu in the stub can still open
+ * below it. The breakpoint matches the media grid, which hides its own poster below it.
+ */
+.poster {
+    display: none;
+}
+
+/* The action rail: header actions in one bordered row; dashed seams echo a ticket's perforation. */
+.rail {
+    display: grid;
+    grid-auto-flow: column;
+    background: color-mix(in sRGB, var(--surface) 70%, transparent);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+}
+
+.rail > * + * {
+    border-left: 1px dashed color-mix(in sRGB, var(--ivory) 22%, transparent);
+}
+
+/* Wraps a button cell so the seam runs the rail's full height, outside the button's own radius. */
+.railCell {
+    display: flex;
+}
+
+.railCell:empty {
+    display: none;
+}
+
+/* An unavailable cell reads quieter than the live ones but stays legible. */
+.railCell button:disabled {
+    color: var(--fg-secondary);
+    opacity: 1;
+}
+
+/* A read-only cell (such as a rating) laid out like the Button `cell` variant beside it. */
+.railItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 6px 4px;
+    margin: 4px;
+    font-size: var(--fs-caption);
+    color: var(--fg);
+}
+
+.railItem svg {
+    width: 18px;
+    height: 18px;
+}
+
+@media (width >= 576px) {
+    .railItem {
+        flex-direction: row;
+        gap: 7px;
+        min-height: var(--hit);
+        padding: 0 16px;
+        margin: 0;
+        font-size: var(--fs-meta);
+    }
+
+    .railItem svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (width < 576px) {
+    /* Phones share the rail out evenly, each cell an icon over its label. */
+    .rail {
+        grid-auto-columns: minmax(0, 1fr);
+        border-radius: var(--radius-lg);
+    }
+
+    .ticket[data-film] {
+        --notch: 9px;
+        --stub: 62px;
+
+        position: relative;
+        display: grid;
+        grid-template-areas:
+            'poster'
+            'stub';
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
+        text-align: center;
+        border-bottom: 0;
+        isolation: isolate;
+    }
+
+    .ticket[data-film]::after {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        content: '';
+        background: var(--surface);
+        border: 1px solid var(--border-lit);
+        border-radius: var(--radius-lg);
+        mask:
+            radial-gradient(
+                    circle at 0 calc(100% - var(--stub)),
+                    transparent var(--notch),
+                    black calc(var(--notch) + 0.5px)
+                )
+                left / 51% 100% no-repeat,
+            radial-gradient(
+                    circle at 100% calc(100% - var(--stub)),
+                    transparent var(--notch),
+                    black calc(var(--notch) + 0.5px)
+                )
+                right / 51% 100% no-repeat;
+    }
+
+    .ticket[data-film] .poster {
+        position: relative;
+        display: block;
+        grid-area: poster;
+        margin: 1px 1px 0;
+        overflow: hidden;
+        border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+        mask:
+            radial-gradient(
+                    circle at -1px 100%,
+                    transparent var(--notch),
+                    black calc(var(--notch) + 0.5px)
+                )
+                left / 51% 100% no-repeat,
+            radial-gradient(
+                    circle at calc(100% + 1px) 100%,
+                    transparent var(--notch),
+                    black calc(var(--notch) + 0.5px)
+                )
+                right / 51% 100% no-repeat;
+    }
+
+    .poster > * {
+        border: 0;
+        border-radius: 0;
+    }
+
+    /* The lower poster darkens so the title reads over any artwork. */
+    .poster::after {
+        position: absolute;
+        inset: 40% 0 0;
+        content: '';
+        background: linear-gradient(
+            transparent,
+            color-mix(in sRGB, var(--bg-deep) 70%, transparent) 40%,
+            var(--bg-deep)
+        );
+    }
+
+    /* The perforation stops short of the notches. */
+    .poster::before {
+        position: absolute;
+        inset: auto calc(var(--notch) + 6px) 0;
+        z-index: 1;
+        content: '';
+        border-top: 1px dashed color-mix(in sRGB, var(--ivory) 28%, transparent);
+    }
+
+    .infoMark,
+    .ticket[data-film] .corner {
+        background: color-mix(in sRGB, var(--bg-deep) 72%, transparent);
+        border: 1px solid color-mix(in sRGB, var(--ivory) 18%, transparent);
+    }
+
+    .infoMark {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        font: italic 600 15px/1 var(--font-display);
+        color: var(--fg);
+        border-radius: 50%;
+    }
+
+    .ticket[data-film] .corner {
+        z-index: 1;
+        grid-area: poster;
+        place-self: start end;
+        min-height: 0;
+        padding: 9px 10px 9px 12px;
+        margin: 12px;
+        color: var(--fg);
+        border-radius: var(--radius-pill);
+    }
+
+    .ticket[data-film] .copy {
+        z-index: 1;
+        grid-area: poster;
+        align-self: end;
+        justify-items: center;
+        padding: 0 var(--gap-md) var(--gap-md);
+        pointer-events: none;
+    }
+
+    .ticket[data-film] .copy a {
+        pointer-events: auto;
+    }
+
+    .ticket[data-film] h1 {
+        font-size: 40px;
+    }
+
+    .ticket[data-film] .stub {
+        position: relative;
+        grid-area: stub;
+        min-height: var(--stub);
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+    }
+
+    /* The outline follows each notch's curve, as on the invite ticket. */
+    .ticket[data-film] .stub::before,
+    .ticket[data-film] .stub::after {
+        position: absolute;
+        top: calc(var(--notch) * -1);
+        width: calc(var(--notch) * 2);
+        height: calc(var(--notch) * 2);
+        content: '';
+        border: 1px solid var(--border-lit);
+        border-radius: 50%;
+    }
+
+    .ticket[data-film] .stub::before {
+        left: calc(var(--notch) * -1);
+        clip-path: inset(0 0 0 50%);
+    }
+
+    .ticket[data-film] .stub::after {
+        right: calc(var(--notch) * -1);
+        clip-path: inset(0 50% 0 0);
+    }
+}
