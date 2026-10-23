@@ -142,8 +142,10 @@ test('missing media and identifiers omit unavailable links; broken poster become
         },
     ]);
     await page.goto(`/movies/${MOVIE_ID}`);
-    // The phone ticket keeps its own hidden placeholder; the visible one is the media grid's.
-    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
+    // The film's own poster: related titles stream in with placeholders of their own, and the phone
+    // ticket keeps a hidden one.
+    const hero = page.locator('section[aria-labelledby="movie-title"]');
+    await expect(hero.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
     await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
     await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
         'href',
@@ -156,7 +158,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
     ]);
     await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.reload();
-    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
+    await expect(hero.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
 });
 
 test('unknown or malformed Movie identity uses safe recovery; related failure preserves the main film', async ({
