@@ -107,3 +107,56 @@ permission, dependency or environment change was needed.
 The repository has no hosted-preview workflow. #50 must remain unaccepted until its exact final
 head SHA is hosted and the owner acknowledges the visual review. A Draft PR, local screenshots and
 automated browser evidence do not satisfy that requirement.
+
+## Completed history and Hub projections (#51)
+
+Run `r_ce6048a5cbfb44522fad` reuses saved Selection outcomes, immutable Session Ratings and the
+terminal roster. Completed detail keeps the film and facts before ratings/comments and nomination
+results. Permitted aggregate votes use native disclosures; individual ballots remain private.
+Pre-selected, empty, partial and hidden records have explicit states. No migration, dependency or
+environment variable is added. Past Sessions, Personal Ratings and achievements remain out of scope.
+
+The Hub Sessions route separates the single blocking screening from every open Rating Session and
+the latest twenty closed records. Rating progress uses accepted participants; published history
+averages include all received responses and follow the Session's saved rating visibility and the
+viewer's current role. Overview and Manage Club also expose all open Ratings. Without a blocking
+Session the Call Sheet offers scheduling, even when Ratings remain unfinished.
+
+Verification covers Completed input stability after source vote/Club changes and departure, terminal
+mutation rejection, authorization and independent visibility policies, Hub averages/progress, a real
+multi-session browser journey, and responsive/keyboard/axe checks at all four canonical widths.
+The exact final SHA must still be hosted on a preview and visually acknowledged by the owner on #51
+before acceptance. Local screenshots and a Draft PR do not satisfy that requirement.
+
+Local verification on 2026-10-23 (Node 24.15.0, pnpm 11.25.0):
+
+| Check                                               | Result                                                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Isolated `pickflick_test` setup                     | All 27 existing migrations applied and synthetic seed loaded; no new migration or backfill              |
+| `pnpm test:integration`                             | 24 files, 221 tests passed                                                                              |
+| `pnpm verify`                                       | Passed audit gate, lint, Knip, formatting, type checks, 347 unit tests and workspace builds             |
+| `pnpm test:journeys`                                | All 6 passed, including two Ratings plus one blocking Session and independent completion into history   |
+| Expanded UI smoke and Completed/Rating/Hub contract | All 75 passed: four widths, keyboard/touch, axe, overflow, empty/partial/hidden results and regressions |
+
+Phone and desktop captures were compared with the canonical Completed layout. Existing visual
+baselines were not updated; hosted preview review is still pending. The audit passed the
+high/critical gate with three existing moderate advisories.
+
+The browser setup uses the existing installed Chromium explicitly while Prisma uses a writable
+cache. Earlier overlapping builds invalidated a UI run; the final verification runs frontend builds,
+journeys and UI checks sequentially. Session creation does not auto-join its creator, so the
+multi-session journey verifies the blocking Call Sheet link rather than assuming an Open Session
+button in the participation card.
+
+The phone Completed check scrolls to the results before waiting for lazy rival posters below the
+long synopsis. The existing Session workflow check waits for menu focus and activates by keyboard,
+resolving its observed click/animation race. Both checks passed three consecutive runs each with
+retries disabled, followed by the complete 75-check pass.
+
+The expanded browser selection was:
+
+```bash
+pnpm exec playwright test --config playwright.ui.config.ts \
+    --grep '@smoke|completed-history.spec.ts|rating.spec.ts|club-hub.spec.ts' \
+    --grep-invert @visual --max-failures=1
+```

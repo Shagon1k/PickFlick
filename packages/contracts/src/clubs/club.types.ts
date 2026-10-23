@@ -125,6 +125,7 @@ export interface IClubHubSession {
     acceptedCount: number;
     nominatedCount: number;
     progressCount: number | null;
+    ratingAverage: number | null;
     canJoin: boolean;
     movie: IClubHubMovie | null;
     phase: 'NOMINATION' | 'SELECTION' | 'WATCHING' | 'RATING' | 'COMPLETED' | 'CANCELLED';

@@ -7,7 +7,8 @@ states, Hub membership restrictions and pending invitations, the `/ui-preview` c
 live Session creation/edit/cancellation, member-only Session invitation responses and roster
 management, Nomination submissions and personal suggestions, immutable Selection ballots,
 policy-filtered Selection results and early-close confirmations, historical Session Rating submission,
-partial completion and permitted results, and the seven `/shell-preview/*` shells.
+partial completion and permitted results, Completed facts/ratings/nomination disclosures, Hub
+Sessions with concurrent Ratings and policy-filtered history scores, and the seven `/shell-preview/*` shells.
 
 ## Run it
 
@@ -18,6 +19,10 @@ pnpm test:ui:smoke
 pnpm test:ui:contract
 pnpm test:ui:visual
 ```
+
+Run these commands, journeys and other frontend builds sequentially. They share
+`apps/frontend/.next`; rebuilding while a test server is running invalidates its assets and Server
+Actions.
 
 `pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects PR checks with
 `test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in

@@ -3,6 +3,7 @@ import {
     type ISessionRoster,
     submitRatingSchema,
     type TRating,
+    type TSelectionOutcome,
     type TSession,
     type TSubmitRating,
 } from '@pickflick/contracts';
@@ -78,29 +79,14 @@ export function handleRating(
         };
         sendJson(response, 200, roster);
     } else {
-        const rating = buildRating(token, own, isCompleted, canManage);
-        const session: TSession = {
-            id: SESSION_ID,
-            clubId: '10000000-0000-4000-8000-000000000031',
-            clubName: 'Midnight Society',
-            type: 'PRE_SELECTED',
-            phase: isCompleted ? 'COMPLETED' : 'RATING',
-            movieId: '10000000-0000-4000-8000-000000000037',
-            scheduledAt: '2026-12-01T20:00:00.000Z',
-            location: 'Room A',
-            topic: 'Noir night',
-            notes: 'Bring snacks.',
-            deadlineAt: null,
+        const session = buildRatingSession({
+            token,
+            own,
+            isCompleted,
+            canManageSession,
             version,
-            phaseVersion: isCompleted ? 2 : 1,
-            progressVersion: version,
-            canEdit: canManageSession,
-            canCancel: canManageSession,
-            nominations: null,
-            selection: null,
-            selectionOutcome: null,
-            rating,
-        };
+            canManage,
+        });
         sendJson(response, 200, session);
     }
     return true;
@@ -142,10 +128,90 @@ function buildRating(
         results:
             isCompleted && !token.includes('hidden')
                 ? {
-                      average:
-                          entries.reduce((total, entry) => total + entry.score, 0) / entries.length,
+                      average: entries.length
+                          ? entries.reduce((total, entry) => total + entry.score, 0) /
+                            entries.length
+                          : null,
                       entries,
                   }
                 : null,
+    };
+}
+
+function buildHistoricalSelection(token: string): TSelectionOutcome {
+    const winner = {
+        id: '10000000-0000-4000-8000-000000000037',
+        title: 'Selected film',
+        year: 2026,
+        genres: ['Drama'],
+    };
+    return {
+        winner,
+        author: token.includes('hidden') ? null : 'Jordan',
+        closedAt: '2026-12-01T19:00:00.000Z',
+        closure: 'MANUAL',
+        breakdown: token.includes('hidden')
+            ? null
+            : {
+                  scaleMin: 0,
+                  scaleMax: 10,
+                  ballotCount: 2,
+                  reason: 'TOTAL',
+                  ranking: [
+                      winner,
+                      {
+                          ...winner,
+                          id: '10000000-0000-4000-8000-000000000038',
+                          title: 'The rival nomination',
+                      },
+                  ].map((movie, index) => ({
+                      id: `70000000-0000-4000-8000-00000000005${index}`,
+                      movie,
+                      author: 'Morgan',
+                      total: index === 0 ? 18 : 12,
+                      maximumCount: index === 0 ? 1 : 0,
+                      supporterCount: 2,
+                  })),
+              },
+    };
+}
+
+function buildRatingSession({
+    token,
+    own,
+    isCompleted,
+    canManageSession,
+    version,
+    canManage,
+}: {
+    token: string;
+    own: TSubmitRating | undefined;
+    isCompleted: boolean;
+    canManageSession: boolean;
+    version: number;
+    canManage: boolean;
+}): TSession {
+    const rating = buildRating(token, own, isCompleted, canManage);
+    return {
+        id: SESSION_ID,
+        clubId: '10000000-0000-4000-8000-000000000031',
+        clubName: 'Midnight Society',
+        type: token.includes('history') ? 'FULL_CYCLE' : 'PRE_SELECTED',
+        phase: isCompleted ? 'COMPLETED' : 'RATING',
+        movieId: '10000000-0000-4000-8000-000000000037',
+        scheduledAt: '2026-12-01T20:00:00.000Z',
+        location: 'Room A',
+        topic: 'Noir night',
+        notes: 'Bring snacks.',
+        deadlineAt: null,
+        version,
+        phaseVersion: isCompleted ? 2 : 1,
+        progressVersion: version,
+        canEdit: canManageSession,
+        canCancel: canManageSession,
+        nominations: null,
+        selection: null,
+        selectionOutcome: token.includes('history') ? buildHistoricalSelection(token) : null,
+        rating,
     };
 }

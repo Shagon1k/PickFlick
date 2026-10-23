@@ -41,7 +41,7 @@ test(
         ).toBeVisible();
         await expect(page.getByText('Second Club private screening').first()).toBeVisible();
         await expect(page.getByText('Midnight private screening')).toHaveCount(0);
-        await expect(page.getByText('Current phase', { exact: true })).toBeVisible();
+        await expect(page.getByText('No screening scheduled', { exact: true })).toBeVisible();
         await expect(page.getByText('Room A')).toHaveCount(0);
 
         await page.goto('/app');
@@ -281,8 +281,9 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
         await page
-            .getByRole('region', { name: 'Active Session', exact: true })
-            .getByRole('link', { name: 'Open Session', exact: true })
+            .getByRole('heading', { name: 'Active Ratings' })
+            .locator('..')
+            .getByRole('link', { name: 'Second Club private screening', exact: true })
             .tap();
         await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
     } finally {

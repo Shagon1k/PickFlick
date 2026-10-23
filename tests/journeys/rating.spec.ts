@@ -171,3 +171,63 @@ test('A Moderator completes partial Rating and every client keeps only received 
         await journey.cleanup();
     }
 });
+
+test('Two open Rating Sessions coexist with one blocking screening and move independently into Hub history', async ({
+    browser,
+}) => {
+    const journey = await createRatingJourney(browser);
+    const { session, contexts, pages } = journey;
+    const admin = contexts[0]!;
+    const page = pages[0]!;
+    try {
+        const create = () =>
+            admin.request.post(`/api/clubs/${session.clubId}/sessions`, {
+                data: {
+                    type: 'PRE_SELECTED',
+                    movieId: session.movieId,
+                    scheduledAt: '2026-12-02T00:00:00Z',
+                    location: 'Second screening room',
+                    deadlineAt: null,
+                },
+            });
+        const secondResponse = await create();
+        expect(secondResponse.status()).toBe(201);
+        const second = (await secondResponse.json()) as { id: string; phaseVersion: number };
+        expect(
+            (
+                await admin.request.post(`/api/sessions/${second.id}/rating/open`, {
+                    data: { confirmation: 'OPEN', phaseVersion: second.phaseVersion },
+                })
+            ).status(),
+        ).toBe(201);
+        const blockingResponse = await create();
+        expect(blockingResponse.status()).toBe(201);
+        const blocking = (await blockingResponse.json()) as { id: string };
+        expect((await create()).status()).toBe(409);
+        await page.goto(`/clubs/${session.clubId}/sessions`);
+        const ratings = page.getByRole('region', { name: 'Active Ratings' });
+        await expect(ratings.getByRole('link')).toHaveCount(2);
+        await expect(ratings.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
+        await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveAttribute(
+            'href',
+            `/sessions/${blocking.id}`,
+        );
+        expect(
+            (
+                await admin.request.post(`/api/sessions/${session.id}/rating/close`, {
+                    data: { confirmation: 'CLOSE', phaseVersion: 1 },
+                })
+            ).status(),
+        ).toBe(201);
+        await page.reload();
+        await expect(ratings.getByRole('link')).toHaveCount(1);
+        const history = page.getByRole('region', { name: 'History', exact: true });
+        await expect(history.getByRole('link')).toHaveAttribute('href', `/sessions/${session.id}`);
+        await history.getByRole('link').click();
+        await expect(page.getByText('completed', { exact: true })).toBeVisible();
+        await expect(page.getByText('No ratings were received.')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
+    } finally {
+        await journey.cleanup();
+    }
+});

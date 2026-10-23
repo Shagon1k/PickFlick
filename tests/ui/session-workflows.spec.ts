@@ -50,7 +50,10 @@ test(
             page.getByRole('heading', { name: 'Movie Nomination', exact: true }),
         ).toBeVisible();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
+        await expect(
+            page.getByRole('menuitem', { name: 'Edit Session', exact: true }),
+        ).toBeFocused();
+        await page.keyboard.press('Enter');
         // Escape belongs to the dialog only once it has opened and taken focus.
         await expect(page.getByRole('dialog', { name: 'Edit Session' })).toBeVisible();
         await page.keyboard.press('Escape');
@@ -58,7 +61,10 @@ test(
             page.getByRole('button', { name: 'Session settings', exact: true }),
         ).toBeFocused();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
+        await expect(
+            page.getByRole('menuitem', { name: 'Edit Session', exact: true }),
+        ).toBeFocused();
+        await page.keyboard.press('Enter');
         await page.getByRole('dialog').getByLabel('Location').fill('Room B');
         await page.getByRole('button', { name: 'Save', exact: true }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -71,7 +77,11 @@ test(
             .getByRole('link', { name: 'Open Session', exact: true })
             .click();
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).click();
+        await expect(
+            page.getByRole('menuitem', { name: 'Edit Session', exact: true }),
+        ).toBeFocused();
+        await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).focus();
+        await page.keyboard.press('Enter');
         await expect(page.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
         await page.getByLabel('Type CANCEL to confirm').fill('CANCEL');
         await page.getByRole('button', { name: 'Confirm cancellation' }).click();

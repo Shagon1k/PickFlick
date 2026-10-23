@@ -3,8 +3,12 @@
 import type { TRating } from '@pickflick/contracts';
 import { useRef } from 'react';
 
+import { getMonogram } from '#lib/format';
+
 import styles from './Rating.module.scss';
 import RatingForm from './RatingForm';
+
+const RATING_SCALE_LENGTH = 10;
 
 export default function Rating({
     sessionId,
@@ -32,7 +36,11 @@ export default function Rating({
             </div>
         );
     return (
-        <section className={styles.rating} aria-labelledby="rating-heading">
+        <section
+            className={styles.rating}
+            data-completed={isCompleted || undefined}
+            aria-labelledby="rating-heading"
+        >
             <h2 id="rating-heading" ref={headingRef} tabIndex={-1}>
                 Your rating
             </h2>
@@ -45,7 +53,23 @@ export default function Rating({
                             {data.results.entries.map((rating) => (
                                 <li key={rating.id}>
                                     <div>
+                                        <span className={styles.avatar} aria-hidden="true">
+                                            {getMonogram(rating.author)}
+                                        </span>
                                         <span>{rating.author}</span>
+                                        <span className={styles.bars} aria-hidden="true">
+                                            {Array.from(
+                                                { length: RATING_SCALE_LENGTH },
+                                                (_, index) => (
+                                                    <i
+                                                        key={index}
+                                                        data-filled={
+                                                            index < rating.score || undefined
+                                                        }
+                                                    />
+                                                ),
+                                            )}
+                                        </span>
                                         <strong>{rating.score}/10</strong>
                                     </div>
                                     {rating.comment ? (
