@@ -87,7 +87,8 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
 
     const asyncField = page
         .locator('#async-club-name')
-        .locator("xpath=ancestor::*[contains(@class, '__field')][1]");
+        // The nearest wrapper holding the live regions; generated class names vary by Next.js build.
+        .locator('xpath=ancestor::*[.//*[@data-field-live]][1]');
     const errorAnnouncement = asyncField.locator('[data-field-live="error"]');
     const successAnnouncement = asyncField.locator('[data-field-live="success"]');
     await expect(errorAnnouncement).toBeAttached();
