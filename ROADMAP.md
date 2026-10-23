@@ -487,9 +487,9 @@ flowchart LR
 Hexagons are verification gates. The graph shows the main dependencies; each phase lists all of
 its own.
 
-**Where the build stands:** Phases 1–5 and 7–10 are built. They stay In progress until their
-verification gate records the evidence: Phase 6 for 1–5 (running now) and Phase 12 for 7–11.
-Phase 11 Selection is active; its verification and preview acceptance remain open.
+**Where the build stands:** Phases 0–7 and 9–12 are Done; their gates (Phase 6 for 1–5, Phase 12
+for 7–11) recorded the evidence. Phase 8 stays In progress for scheduled Movie refresh pending
+ADR-016. Phase 13 (Watching, Rating & Completion) is next.
 
 ### Phase 0 — Guidance Baseline · Done
 
@@ -783,8 +783,8 @@ adminless, and read-only states
 2026-10-09. Local delivery records cover Club isolation, invitation races, membership recovery,
 keyboard focus, restricted states and Linux captures. Current behavior is described in
 [Architecture](ARCHITECTURE.md#3-data) and [Design](DESIGN.md#club-hub); Phase 12
-adds the persistent tab frame, real Call Sheet fields and 12-hour Club links. Current branch
-verification and remaining owner review are recorded under Phase 12 below.
+adds the persistent tab frame, real Call Sheet fields and 12-hour Club links. Their verification
+is recorded under Phase 12 below.
 
 ### Phase 8 — Movie Catalog, Sources & Global Search · In progress
 
@@ -973,7 +973,7 @@ tie-break steps, received ballots after departure, zero ballots, concurrent/repe
 Free/Pro/role visibility. Phase 12 changes presentation and recovery within this delivered
 boundary; Watching → Rating and completion remain Phase 13.
 
-### Phase 12 — Human Verification & Bug Fixing II · In progress
+### Phase 12 — Human Verification & Bug Fixing II · Done
 
 **Goal:** Stabilize Club navigation, Movies, Session creation, Nomination, deadlines, and Selection
 before completion and history.
@@ -987,44 +987,48 @@ in UAT
 
 - [x] Record the tested branch, verification evidence and current limits in existing canonical
       documents and #48, following the owner's no-new-register instruction.
-- [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
+- [x] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
-- [ ] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
+- [x] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
       data, provider failures, and permission changes mid-flow.
 - [x] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.
-- [ ] Fix every Blocker and Major and retest the affected domain, job, API, and UI boundaries.
+- [x] Fix every Blocker and Major and retest the affected domain, job, API, and UI boundaries.
 - [x] Consolidate Phases 6–11 into canonical docs, remove their temporary files, and retain
       unfinished work under its existing scope and decision checkpoint.
 
 **Acceptance:**
 
-- [ ] No open Blocker or Major.
-- [ ] The full Club-to-winner journey passes manual and automated multi-user checks.
-- [ ] Deadline, transition, tie, and authorization invariants survive retries and concurrency.
-- [ ] Documentation and issue disposition match verified behavior.
+- [x] No open Blocker or Major.
+- [x] The full Club-to-winner journey passes manual and automated multi-user checks.
+- [x] Deadline, transition, tie, and authorization invariants survive retries and concurrency.
+- [x] Documentation and issue disposition match verified behavior.
 
 **Out of scope:** New features unrelated to verification findings.
 
-**Current evidence (2026-10-23):** owner-started branch `PF-test-club-to-winner-verification`,
-issue #48 In progress, draft [PR #180](https://github.com/Shagon1k/PickFlick/pull/180). Owner-requested
-design passes on 2026-10-21 audited all 26 prototype files and aligned the shared dialogs,
-film-strip menus, score control, invite ticket, the Session page in every delivered phase, the Club
-Hub, Schedule a Session, Movie Details and mobile behavior. Owner reviews on 2026-10-22 and
-2026-10-23 added the Hub section skeleton, the empty Call Sheet, Manage Club's compact rows and
-invitation dialog, swipe between Clubs, a pinned footer, the film ticket shared by Session and Movie
-Details headers, an in-place trailer player, outbound IMDb, Kinopoisk, Letterboxd and Wikipedia
-links, Rate and Watchlist placeholders for Phase 15, one header height and a header that hides on
-scroll down. These owner-requested improvements go beyond verification findings and are recorded in
-`DESIGN.md`. `next` moved to 16.4.2 for critical advisories. Local evidence on `548c887`: lint,
-typecheck, knip, 339 unit tests, 198 integration checks, the full UI contract (206), both real-API
-journeys, and all 84 visual comparisons in the CI-pinned Linux image after every changed PNG was
-reviewed.
-
-The owner is still performing the manual Club-to-winner walkthrough. Hosted exact-revision review, a
-complete UAT multi-user/deadline run, the concurrency and restart checks, and a Safari/WebKit pass
-are not recorded. Phase 12 remains open; the owner asked for separate commits on this branch, no new
+**Recorded evidence (2026-10-23):** branch `PF-test-club-to-winner-verification`, issue #48 and
+[PR #180](https://github.com/Shagon1k/PickFlick/pull/180), squash-merged with green CI. The owner
+walked the Club-to-winner journey in UAT with several users (invites, switcher, Movie search,
+roster, Nomination, deadline, Selection, early closure and ties) and accepted it with no open
+Blocker or Major; that acceptance was recorded on the owner's instruction ahead of the merge. Design
+passes on 2026-10-21 audited all 26 prototype files and aligned the shared dialogs, film-strip
+menus, score control, invite ticket, the Session page in every delivered phase, the Club Hub,
+Schedule a Session, Movie Details and mobile behavior. Owner reviews on 2026-10-22 and 2026-10-23
+added the Hub section skeleton, the empty Call Sheet, Manage Club's compact rows and invitation
+dialog, swipe between Clubs, a pinned footer, the film ticket shared by Session and Movie Details
+headers, an in-place trailer player, outbound IMDb, Kinopoisk, Letterboxd and Wikipedia links, Rate
+and Watchlist placeholders for Phase 15, one header height and a header that hides on scroll down.
+These owner-requested improvements go beyond verification findings and are recorded in `DESIGN.md`.
+`next` moved to 16.4.2 for critical advisories. Automated evidence on `548c887`: lint, typecheck,
+knip, 339 unit tests, 198 integration checks (including concurrent invitations, membership changes
+and final submissions, and deadline decisions across restarts and edits), the full UI contract
+(206), both real-API multi-user journeys, and all 84 visual comparisons in the CI-pinned Linux image
+after every changed PNG was reviewed. The owner asked for separate commits on this branch, no new
 issues or findings register, and no Phase 13 functionality.
+
+Carried forward, not Phase 12 blockers: attribution for PoiskKino and TheTVDB before public launch
+(#89), the final browser and device matrix including Safari (Phase 24), and scheduled Movie refresh
+(Phase 8, ADR-016).
 
 ### Phase 13 — Watching, Rating & Completion · Not started
 
@@ -1578,7 +1582,7 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 9 — Session Creation & Participant Roster              | Done        | Persistence and live roster workflows accepted; shared joining and legacy token rules are canonical.               |
 | 10 — Nomination & Deadline Automation                  | Done        | Nomination delivery accepted; Session-row deadlines, transitions, outbox intent and version polling are active.    |
 | 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
-| 12 — Human Verification & Bug Fixing II                | In progress | #48 remains open; current local evidence and unverified UAT/owner checks are recorded above.                       |
+| 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
 | 13–17                                                  | Not started | Watching/Rating/completion, history, Library, statistics and notification delivery remain later work.              |
 | 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
 | 19–22                                                  | Not started |                                                                                                                    |

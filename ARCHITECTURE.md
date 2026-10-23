@@ -4,9 +4,9 @@
 > UX in [DESIGN.md](DESIGN.md), and decision rationale in the [ADR registry](_docs/decisions/README.md).
 > Code and deployed configuration are the final word on current state.
 
-| Owner     | Last reviewed | Verified against                                                                          |
-| --------- | ------------- | ----------------------------------------------------------------------------------------- |
-| Developer | 2026-10-21    | Current Club-to-winner code, migrations 1–25, ADR-001–ADR-018 and Phase 12 local evidence |
+| Owner     | Last reviewed | Verified against                                                                    |
+| --------- | ------------- | ----------------------------------------------------------------------------------- |
+| Developer | 2026-10-23    | Current Club-to-winner code, migrations 1–25, ADR-001–ADR-018 and Phase 12 evidence |
 
 **States:** `Active` — implemented and verified; `Partial` — some exists, the gap is named;
 `Proposed` — accepted direction, not built. An accepted ADR does not make anything `Active`.
