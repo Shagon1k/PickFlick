@@ -153,8 +153,8 @@ All canonical screens are MVP and approved as direction.
 | Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                            | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
 | Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                                   | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
 | Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Active — film, context, joined roster and operator-confirmed Rating opening; owner review pending        | Base accepted 2026-10-23; new action awaits preview review            |
-| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                                              | Not checked                                                           |
-| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                                              | Not checked                                                           |
+| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Active — form, saved response, progress, partial completion and permitted results; owner review pending  | Four widths, axe, keyboard/touch passed; owner review pending         |
+| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Partial — existing film/context and historical ratings; full composition remains #51                     | Rating results verified locally; full history review pending          |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                                              | Not checked                                                           |
 | `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player and links implemented; Personal Rating and Watchlist placeholders until Phase 15 | Owner accepted 2026-10-23                                             |
 | `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                                              | Not checked                                                           |
@@ -321,7 +321,7 @@ here.
   Selection participants score the frozen films. Kick lists removable participants and can still
   revoke legacy personal links. Archived Clubs and terminal Sessions drop the controls they cannot use.
 - The facts companion is the progress metric while Nomination or Selection is open, a coming-soon chat
-  while Watching, and an empty Club score until Phase 13 ratings.
+  while Watching, and the permitted Session average as Club score after Rating completes.
 
 #### Nomination
 
@@ -368,8 +368,25 @@ here.
   Session heading. Pending, offline, stale-phase, lost-access and API failure feedback stays in
   the dialog. Members and read-only Clubs have no Rating-opening control.
 - The accepted roster supplies the joined-screening count and participant names. Page activity,
-  joining, polling and elapsed scheduled time never open Rating. Rating submission and completion
-  remain later Phase 13 work.
+  joining, polling and elapsed scheduled time never open Rating. Rating submission and completion follow the rules below.
+
+#### Rating and completion
+
+- Rating reuses the film header and media, with accepted-participant progress above the header.
+  Its fixed 1–10 star control supports arrows, Home, End, pointer and touch with 44px targets;
+  wide rails scroll locally on phones. The optional labeled comment is limited to 2000 characters.
+- Submit is final. Pending saves lock the form; validation focuses the rating control, and API or
+  offline errors retain the score and comment. Success replaces the form in place with the saved
+  score and comment and focuses its heading. The existing progress poll refreshes other clients.
+- Positive N/N completion is automatic. Session Settings offers Close Rating early to authorized
+  operators, with received/pending counts and typed `CLOSE`. Cancel or Escape preserves Rating and
+  returns focus. Failure preserves the dialog and confirmation; success focuses the Session heading.
+- Other responses and the Club score remain hidden while Rating is open. Completed results show
+  individual scores, comments and the average only when the server permits them. Hidden results,
+  no received ratings, non-participation and read-only Clubs have explicit text. The caller's own
+  response stays visible. Completion removes further submission and management controls.
+- The full Completed composition and Hub Rating/history views remain #51. Exact-SHA hosted
+  preview review and owner acknowledgment are still required for #50 acceptance.
 
 #### Public, Login and Contact
 
@@ -480,5 +497,5 @@ Phase 12 compared every prototype file with the live app on 2026-10-21 at 390, 7
 Rating and Completed; owner reviews on 2026-10-22 and 2026-10-23 refined the result, and the owner
 accepted it on 2026-10-23. Its outcomes are recorded in the screen rules above; run evidence lives in
 [Phase 12](ROADMAP.md#phase-12--human-verification--bug-fixing-ii--done). Linux baselines prove
-regression stability. The remaining Hub views and Rating/Completed content are Phase 13 and later
-work.
+regression stability. The remaining Hub views and full Completed composition are Phase 13 work. Rating acceptance
+still requires its exact-SHA hosted preview and owner acknowledgment.

@@ -38,6 +38,7 @@ enum MembershipStatus {
 }
 
 enum ClubAuditAction {
+  SESSION_RATING_CLOSED
   SESSION_RATING_OPENED
   SESSION_SELECTION_CLOSED
   SESSION_NOMINATION_CLOSED
@@ -262,6 +263,7 @@ model Session {
   participants                SessionParticipant[]
   nominations                 Nomination[]
   selectionBallots            SelectionBallot[]
+  ratings                     SessionRating[]
 
   // PostgreSQL migration owns the partial unique index for one blocking Session per Club.
   @@unique([id, clubId])
@@ -283,6 +285,7 @@ model SessionParticipant {
   invitations     SessionInvite[]
   nomination      Nomination?
   selectionBallot SelectionBallot?
+  rating          SessionRating?
 
   @@unique([sessionId, membershipId])
   @@unique([id, sessionId])
@@ -452,4 +455,18 @@ model SessionProgressEvent {
   session        Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, version])
+}
+
+model SessionRating {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId     String             @db.Uuid
+  participantId String             @db.Uuid
+  score         Int
+  comment       String?
+  submittedAt   DateTime           @default(now()) @db.Timestamptz(3)
+  session       Session            @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  participant   SessionParticipant @relation(fields: [participantId, sessionId], references: [id, sessionId], onDelete: Restrict)
+
+  @@unique([participantId, sessionId])
+  @@index([sessionId])
 }

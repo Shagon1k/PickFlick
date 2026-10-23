@@ -80,6 +80,7 @@ export function handleWatching(
             nominations: null,
             selection: null,
             selectionOutcome: null,
+            rating: null,
         };
         sendJson(response, 200, session);
     }
