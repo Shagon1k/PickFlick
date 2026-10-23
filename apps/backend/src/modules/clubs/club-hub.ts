@@ -24,6 +24,7 @@ const sessionInclude = {
                 where: { OR: [{ participant: { status: 'ACCEPTED' } }, { isInSelection: true }] },
             },
             selectionBallots: { where: { participant: { status: 'ACCEPTED' } } },
+            ratings: { where: { participant: { status: 'ACCEPTED' } } },
         },
     },
 } satisfies Prisma.SessionInclude;
@@ -35,7 +36,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
     const [
         { access, memberCount },
         sessionCount,
-        blocking,
+        active,
         recent,
         ratings,
         history,
@@ -85,7 +86,6 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
             },
         }),
     ]);
-    const active = blocking ?? ratings[0];
     const rows = [...(active ? [active] : []), ...recent, ...ratings, ...history];
     const ids = [...new Set(rows.map(({ id }) => id))];
     // Cancellation never changes a Session's number. Existing history is never renumbered.
@@ -103,6 +103,19 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         select: { sessionId: true, status: true },
     });
     const statusBySession = new Map(own.map((row) => [row.sessionId, row.status]));
+    const visibleRatingIds = history
+        .filter(
+            (row) =>
+                row.phase === 'COMPLETED' &&
+                (membership.role !== 'MEMBER' || row.showRatingResults),
+        )
+        .map((row) => row.id);
+    const averages = await tx.sessionRating.groupBy({
+        by: ['sessionId'],
+        where: { sessionId: { in: visibleRatingIds } },
+        _avg: { score: true },
+    });
+    const averageById = new Map(averages.map((row) => [row.sessionId, row._avg.score]));
     const project = (row: THubSessionRow): IClubHubSession => ({
         id: row.id,
         ordinal: ordinalById.get(row.id)!,
@@ -114,6 +127,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         acceptedCount: row._count.participants,
         nominatedCount: row._count.nominations,
         progressCount: getProgressCount(row),
+        ratingAverage: averageById.get(row.id) ?? null,
         canJoin:
             membership.club.lifecycle === 'ACTIVE' &&
             isOpenSessionPhase(row.phase) &&
@@ -157,6 +171,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
 function getProgressCount(row: THubSessionRow) {
     if (row.phase === 'NOMINATION') return row._count.nominations;
     if (row.phase === 'SELECTION') return row._count.selectionBallots;
+    if (row.phase === 'RATING') return row._count.ratings;
     return null;
 }
 

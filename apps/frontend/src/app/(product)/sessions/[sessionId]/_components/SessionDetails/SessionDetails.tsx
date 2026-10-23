@@ -24,8 +24,10 @@ import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { formatCount } from '#lib/format';
 
 import styles from '../../page.module.scss';
+import Completed from '../Completed/Completed';
 import Nomination from '../Nomination/Nomination';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Rating from '../Rating/Rating';
@@ -67,6 +69,18 @@ export default function SessionDetails({
         />
     );
     function renderPhase(participation: ReactNode, onKick?: () => void) {
+        if (session.phase === 'COMPLETED')
+            return (
+                <>
+                    <PhaseProgress>
+                        Session complete —{' '}
+                        {formatCount(session.rating?.receivedCount ?? 0, 'rating')} received. This
+                        screening record is closed.
+                    </PhaseProgress>
+                    {header(participation)}
+                    <ScreeningFilm movie={movie} movieId={session.movieId} />
+                </>
+            );
         const rating = session.rating;
         if (rating)
             return (
@@ -78,11 +92,9 @@ export default function SessionDetails({
                     {(onClose) => (
                         <>
                             <PhaseProgress>
-                                {session.phase === 'COMPLETED'
-                                    ? 'Session complete'
-                                    : 'Rating in progress'}{' '}
-                                — {rating.submittedCount} of {rating.acceptedCount} participants
-                                have rated. Rating never blocks the next Session.
+                                Rating in progress — {rating.submittedCount} of{' '}
+                                {rating.acceptedCount} participants have rated. Rating never blocks
+                                the next Session.
                             </PhaseProgress>
                             {header(participation, onKick, onClose)}
                             <ScreeningFilm movie={movie} movieId={session.movieId} />
@@ -90,7 +102,7 @@ export default function SessionDetails({
                                 key={session.phase}
                                 sessionId={session.id}
                                 data={rating}
-                                isCompleted={session.phase === 'COMPLETED'}
+                                isCompleted={false}
                             />
                         </>
                     )}
@@ -160,7 +172,7 @@ export default function SessionDetails({
                 {(participation, onKick) => (
                     <>
                         {renderPhase(participation, onKick)}
-                        {session.selectionOutcome ? (
+                        {session.selectionOutcome && session.phase !== 'COMPLETED' ? (
                             <SelectionOutcome data={session.selectionOutcome} />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">
@@ -169,6 +181,7 @@ export default function SessionDetails({
                         </div>
                         <h2 className={styles.detailsTitle}>Session Details</h2>
                         <SessionFacts session={session} roster={roster} />
+                        {session.phase === 'COMPLETED' ? <Completed session={session} /> : null}
                     </>
                 )}
             </SessionRoster>

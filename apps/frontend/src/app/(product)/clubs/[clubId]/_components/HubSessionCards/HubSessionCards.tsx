@@ -5,10 +5,18 @@ import type { ReactNode } from 'react';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessionCards.module.scss';
 
-export default function HubSessionCards({ hub, actions }: { hub: IClubHub; actions?: ReactNode }) {
+export default function HubSessionCards({
+    hub,
+    actions,
+    ratingsOnly = false,
+}: {
+    hub: IClubHub;
+    actions?: ReactNode;
+    ratingsOnly?: boolean;
+}) {
     return (
-        <div className={styles.grid}>
-            <ActiveSessionCard actions={actions} compact hub={hub} />
+        <div className={styles.grid} data-ratings-only={ratingsOnly || undefined}>
+            {!ratingsOnly ? <ActiveSessionCard actions={actions} compact hub={hub} /> : null}
             <section className={styles.card}>
                 <h2>Active Ratings</h2>
                 {hub.ratingSessions.length ? (
@@ -25,7 +33,7 @@ export default function HubSessionCards({ hub, actions }: { hub: IClubHub; actio
                                               timeZone: 'UTC',
                                           }).format(new Date(session.scheduledAt))
                                         : 'Not scheduled'}{' '}
-                                    · Awaiting ratings
+                                    · {session.progressCount ?? 0} of {session.acceptedCount} rated
                                 </p>
                             </li>
                         ))}

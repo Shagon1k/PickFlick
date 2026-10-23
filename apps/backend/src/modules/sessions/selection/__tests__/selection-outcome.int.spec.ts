@@ -105,6 +105,36 @@ describe('Selection outcome', () => {
         expect(response.status).toBe(201);
     }
 
+    async function complete() {
+        expect(
+            (
+                await api.request(`/sessions/${sessionId}/rating/open`, {
+                    method: 'POST',
+                    userId: users[0],
+                    json: { confirmation: 'OPEN', phaseVersion: 2 },
+                })
+            ).status,
+        ).toBe(201);
+        expect(
+            (
+                await api.request(`/sessions/${sessionId}/rating`, {
+                    method: 'POST',
+                    userId: users[0],
+                    json: { score: 8, comment: 'Historical response' },
+                })
+            ).status,
+        ).toBe(201);
+        expect(
+            (
+                await api.request(`/sessions/${sessionId}/rating/close`, {
+                    method: 'POST',
+                    userId: users[0],
+                    json: { confirmation: 'CLOSE', phaseVersion: 3 },
+                })
+            ).status,
+        ).toBe(201);
+    }
+
     it.each([
         { tier: 'FREE', show: false, hasBreakdown: false },
         { tier: 'FREE', show: true, hasBreakdown: false },
@@ -121,6 +151,7 @@ describe('Selection outcome', () => {
             await submit();
             expect((await read()).selectionOutcome).toBeNull();
             await close();
+            await complete();
             const detail = await read();
             expect(detail.selection).toBeNull();
             expect(detail.selectionOutcome).toMatchObject({
@@ -197,6 +228,68 @@ describe('Selection outcome', () => {
             data: { role: 'MEMBER' },
         });
         expect((await read(users[0])).selectionOutcome?.breakdown).toBeNull();
+    });
+
+    it('should retain Completed inputs after Club changes and departure and reject historical mutations', async () => {
+        await submit();
+        await close();
+        await complete();
+        const before = await read(users[1]);
+        const rosterBefore = await (
+            await api.request(`/sessions/${sessionId}/roster`, { userId: users[1] })
+        ).json();
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: {
+                selectionScaleMax: 10,
+                showVoteResults: false,
+                showNominationAuthors: false,
+                showRatingResults: false,
+            },
+        });
+        await api.prisma.selectionScore.updateMany({ where: { sessionId }, data: { score: 0 } });
+        const leave = await api.request(`/clubs/${clubId}/leave`, {
+            method: 'POST',
+            userId: users[2],
+            json: { confirmation: 'LEAVE' },
+        });
+        expect(leave.status).toBe(204);
+        expect(await read(users[1])).toEqual(before);
+        expect(
+            await (await api.request(`/sessions/${sessionId}/roster`, { userId: users[1] })).json(),
+        ).toEqual(rosterBefore);
+        expect(before).toMatchObject({
+            phase: 'COMPLETED',
+            canEdit: false,
+            canCancel: false,
+            rating: { receivedCount: 1, results: { average: 8 } },
+        });
+        for (const [path, json] of [
+            [
+                '',
+                {
+                    version: before.version,
+                    scheduledAt: '2026-12-01T00:00:00Z',
+                    location: 'Changed',
+                    deadlineAt: null,
+                },
+            ],
+            ['/cancel', { version: before.version, confirmation: 'CANCEL' }],
+            ['/participation', { decision: 'accept' }],
+        ] as const) {
+            expect(
+                (
+                    await api.request(`/sessions/${sessionId}${path}`, {
+                        userId: users[0],
+                        method: path ? 'POST' : 'PATCH',
+                        json,
+                    })
+                ).status,
+            ).toBe(409);
+        }
+        expect((await api.request(`/sessions/${sessionId}`, { userId: users[2] })).status).toBe(
+            404,
+        );
     });
 
     it('should deny unauthenticated, nonmember and departed access to results and progress', async () => {

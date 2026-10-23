@@ -39,6 +39,7 @@ export function buildHubProjection(
         acceptedCount: 2,
         nominatedCount: 1,
         progressCount: 1,
+        ratingAverage: null,
         canJoin: false,
         movie: null,
         phase: isSecondClub ? 'RATING' : 'NOMINATION',
@@ -68,10 +69,10 @@ export function buildHubProjection(
             topDirector: null,
             topActor: null,
         },
-        activeSession: session,
+        activeSession: session.phase === 'RATING' ? undefined : session,
         recentSessions: [session],
-        ratingSessions: isSecondClub ? [session] : [],
-        historySessions: [],
+        ratingSessions: buildRatingSessions(session, token),
+        historySessions: buildHistorySessions(session, token),
     };
 }
 
@@ -98,4 +99,49 @@ function applySessionScenario(session: IClubHubSession, token: string | undefine
         session.acceptedCount = 0;
         session.progressCount = 0;
     }
+}
+
+function buildRatingSessions(
+    session: IClubHubSession,
+    token: string | undefined,
+): IClubHubSession[] {
+    if (!token?.includes('hub-history')) return session.phase === 'RATING' ? [session] : [];
+    return [
+        {
+            ...session,
+            id: '30000000-0000-4000-8000-000000000052',
+            phase: 'RATING',
+            topic: 'First unfinished screening',
+            progressCount: 1,
+        },
+        {
+            ...session,
+            id: '30000000-0000-4000-8000-000000000053',
+            phase: 'RATING',
+            topic: 'Second unfinished screening',
+            progressCount: 0,
+        },
+    ];
+}
+function buildHistorySessions(
+    session: IClubHubSession,
+    token: string | undefined,
+): IClubHubSession[] {
+    if (!token?.includes('hub-history')) return [];
+    return [
+        {
+            ...session,
+            id: '30000000-0000-4000-8000-000000000050',
+            phase: 'COMPLETED',
+            topic: 'A completed screening',
+            ratingAverage: token.includes('hidden') ? null : 8,
+        },
+        {
+            ...session,
+            id: '30000000-0000-4000-8000-000000000054',
+            phase: 'COMPLETED',
+            topic: 'An empty screening',
+            ratingAverage: null,
+        },
+    ];
 }

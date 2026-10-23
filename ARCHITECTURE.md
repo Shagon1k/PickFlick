@@ -256,7 +256,7 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 
 | Interface         | Path                                         | Contract                                                                       | State                                                                             |
 | ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Browser → API     | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                                | Active for Contact, Clubs, catalog and Sessions through Selection outcomes        |
+| Browser → API     | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                                | Active for Contact, Clubs, catalog and Sessions through completion                |
 | Errors            | API → callers                                | `{ error: { code, message, requestId, reason? } }`                             | Active                                                                            |
 | OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                                           |
 | Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                                            |
@@ -354,8 +354,8 @@ every authentication session.
   participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
   within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
   Club's Session count excludes cancelled Sessions.
-  Completed-screening statistics use validated cached Movie metadata. Missing metadata and unbuilt
-  Session ratings stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
+  Completed-screening statistics use validated cached Movie metadata. Missing metadata and Club-wide
+  rating statistics stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
   Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
   Session page's closure, Kick and cancellation dialogs; those actions revalidate every Club Hub view.
@@ -650,3 +650,25 @@ read them; ordinary members require the Session's snapshotted `showRatingResults
 are `null`, including their average and comments. Current Club Membership remains required for
 every read. The existing version poll refreshes other clients; no new transport, dependency,
 notification delivery, runtime variable or deployment topology is introduced.
+
+### Completed detail and Hub history
+
+Completed detail composes the saved Selection outcome, immutable SessionRating rows and terminal
+Session roster with the existing Movie and Session facts. No new snapshot, migration or historical
+backfill is introduced. Later Club settings and source ballot edits cannot change saved Selection
+metrics or Session settings; Club departure leaves terminal attendance intact. Movie summaries and
+account display names remain current as described above. Individual ballots stay private; the UI
+uses only the existing server-filtered aggregate vote breakdown.
+
+`GET /clubs/:clubId/hub` projects `activeSession` only from Nomination, Selection or Watching.
+Every open Rating Session remains in `ratingSessions`, regardless of the recent-activity limit.
+Rating `progressCount` counts received responses from accepted participants. History rows expose
+`ratingAverage` only for Completed Sessions permitted by the viewer's current Club role or the
+Session's `showRatingResults` snapshot. The average includes every received historical response,
+including departed participants. Empty, hidden and open results return `null`; comments and
+individual scores are never added to Hub responses.
+
+`/clubs/[clubId]/sessions` reuses the persistent Hub frame and authorization/error boundaries.
+It displays the blocking Session, all open Ratings and the latest twenty Completed/Cancelled rows.
+Overview and Manage Club also retain the open Ratings collection. This adds no provider adapter,
+notification transport, environment variable or runtime service.

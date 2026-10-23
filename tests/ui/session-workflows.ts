@@ -27,6 +27,7 @@ export function sessionHub(token: string | undefined): IClubHub {
         acceptedCount: 1,
         nominatedCount: 0,
         progressCount: session.phase === 'NOMINATION' ? 0 : null,
+        ratingAverage: null,
         canJoin: false,
         movie: session.movieId
             ? {

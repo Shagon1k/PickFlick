@@ -423,6 +423,7 @@ hidden from normal history unless product copy exposes it.
 | `/app`                              | Authenticated landing: the last Club Hub or the no-Clubs state.                                                                                                  |
 | `/clubs/new`                        | Create a Club and set its Selection scale.                                                                                                                       |
 | `/clubs/[clubId]`                   | Club Hub: Overview, Sessions, Ratings, Members, Achievements, and Manage Club.                                                                                   |
+| `/clubs/[clubId]/sessions`          | Club Sessions: one blocking screening, all open Ratings, and recent closed history with permitted scores.                                                        |
 | `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session.                                                                                                                     |
 | `/clubs/[clubId]/sessions/past/new` | Log a past screening.                                                                                                                                            |
 | `/sessions/[sessionId]`             | Phase-aware Session detail.                                                                                                                                      |
@@ -495,7 +496,7 @@ its own.
 
 **Where the build stands:** Phases 0–7 and 9–12 are Done; their gates (Phase 6 for 1–5, Phase 12
 for 7–11) recorded the evidence. Phase 8 stays In progress for scheduled Movie refresh pending
-ADR-016. Phase 13 (Watching, Rating & Completion) is next.
+ADR-016. Phase 13 (Watching, Rating & Completion) is active.
 
 ### Phase 0 — Guidance Baseline · Done
 

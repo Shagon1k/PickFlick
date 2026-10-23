@@ -162,5 +162,13 @@ Completed. In a second Session, close Rating early as an operator with `CLOSE` a
 only received responses remain and late submissions are rejected. Check member-hidden results
 and the caller's own response against the Session visibility snapshot at phone and desktop widths.
 
+For Completed history, compare the Movie, attendees, notes, received ratings and nomination totals
+before and after changing current Club settings and a member leaving. Open the permitted vote
+disclosures with keyboard and touch; hidden results must remain absent. Check pre-selected,
+empty and partially rated screenings without invented votes or responses. Keep two Rating Sessions
+unfinished, create one new blocking Session, then visit Hub → Sessions and Manage Club. Both
+Ratings must remain available; completing one moves only that screening into history, with its
+permitted score. Inspect 390, 768, 1024 and 1440px layouts without horizontal page scrolling.
+
 Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
 owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.

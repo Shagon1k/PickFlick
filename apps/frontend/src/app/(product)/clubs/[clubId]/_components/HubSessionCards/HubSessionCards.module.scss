@@ -4,6 +4,10 @@
     gap: var(--gap-lg);
 }
 
+.grid[data-ratings-only] {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .card {
     min-width: 0;
     padding: 24px;

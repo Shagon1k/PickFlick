@@ -1,19 +1,10 @@
-import type { TSelectionOutcome, TSelectionReason } from '@pickflick/contracts';
+import type { TSelectionOutcome } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { formatCount, formatUtcDateTime } from '#lib/format';
 
+import { SELECTION_REASONS } from './selection-reasons';
 import styles from './SelectionOutcome.module.scss';
-
-const REASONS: Record<TSelectionReason, string> = {
-    TOTAL: 'Highest total score',
-    MAXIMUM_COUNT: 'Tie resolved by more maximum scores',
-    SUPPORTER_COUNT: 'Tie resolved by more supporting voters',
-    NOMINATION_TIME: 'Tie resolved by earlier nomination',
-    PROVIDER_ID: 'Tie resolved by lower Movie provider ID',
-    NOMINATION_ID: 'Tie resolved by lower nomination ID',
-    ONLY_NOMINATION: 'Only eligible nomination',
-};
 
 interface ISelectionOutcomeProps {
     data: TSelectionOutcome;
@@ -46,7 +37,7 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                         {formatCount(data.breakdown.ballotCount, 'ballot')} received · Scale{' '}
                         {data.breakdown.scaleMin}–{data.breakdown.scaleMax}.
                     </p>
-                    <p>{REASONS[data.breakdown.reason]}.</p>
+                    <p>{SELECTION_REASONS[data.breakdown.reason]}.</p>
                     {data.breakdown.ballotCount === 0 ? (
                         <p>
                             No ballots were received. All totals are zero; the tie-break rules chose

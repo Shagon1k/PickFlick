@@ -8,6 +8,20 @@
     font: var(--fs-app-section)/var(--lh-title) var(--font-display);
 }
 
+.rating[data-completed] {
+    width: 100%;
+    padding: var(--gap-md);
+    margin: 0;
+    text-align: start;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.rating[data-completed] .saved {
+    min-height: 0;
+    text-align: start;
+}
+
 .rating form,
 .saved {
     display: grid;
@@ -62,4 +76,43 @@
     align-items: center;
     justify-content: space-between;
     overflow-wrap: anywhere;
+}
+
+.avatar {
+    display: grid;
+    flex: 0 0 32px;
+    place-items: center;
+    height: 32px;
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory);
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.bars {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 2px;
+    align-items: center;
+    height: 28px;
+    margin-left: auto;
+}
+
+.bars i {
+    width: 4px;
+    height: 100%;
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.bars i[data-filled] {
+    background: var(--ivory);
+}
+
+@media (width < 576px) {
+    .results li > div {
+        flex-wrap: wrap;
+        gap: var(--gap-xs);
+    }
 }
