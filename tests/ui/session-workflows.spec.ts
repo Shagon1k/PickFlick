@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { settle } from './settle';
-import { canonicalViewports } from './viewports';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/sessions/new`;
@@ -25,6 +25,12 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-full');
         await page.goto(`/clubs/${CLUB_ID}`);
+        await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
+        await expect(
+            page
+                .getByRole('region', { name: 'Active Session', exact: true })
+                .getByRole('link', { name: 'Open Session', exact: true }),
+        ).toHaveCount(0);
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
@@ -38,29 +44,42 @@ test(
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
             0,
         );
-        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
-        await expect(page.getByRole('heading', { name: 'Noir night', exact: true })).toBeVisible();
-        await page.getByRole('button', { name: 'Edit Session' }).click();
+        await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
+        await page.keyboard.press('Enter');
+        await expect(
+            page.getByRole('heading', { name: 'Movie Nomination', exact: true }),
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
+        // Escape belongs to the dialog only once it has opened and taken focus.
+        await expect(page.getByRole('dialog', { name: 'Edit Session' })).toBeVisible();
         await page.keyboard.press('Escape');
-        await expect(page.getByRole('button', { name: 'Edit Session' })).toBeFocused();
-        await page.getByRole('button', { name: 'Edit Session' }).click();
+        await expect(
+            page.getByRole('button', { name: 'Session settings', exact: true }),
+        ).toBeFocused();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Edit Session', exact: true }).click();
         await page.getByRole('dialog').getByLabel('Location').fill('Room B');
-        await page.getByRole('button', { name: 'Save changes' }).click();
+        await page.getByRole('button', { name: 'Save', exact: true }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
         await page.goBack();
         await expect(page.getByText('Room B', { exact: true })).toBeVisible();
         await expect(page.getByText('Room A', { exact: true })).toHaveCount(0);
-        await page.getByRole('link', { name: 'Noir night', exact: true }).first().click();
-        await page.getByRole('button', { name: 'Cancel Session', exact: true }).click();
+        await page
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Open Session', exact: true })
+            .click();
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Cancel Session', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Confirm cancellation' })).toBeDisabled();
         await page.getByLabel('Type CANCEL to confirm').fill('CANCEL');
         await page.getByRole('button', { name: 'Confirm cancellation' }).click();
         await expect(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
-        await page.getByRole('link', { name: '← Midnight Society' }).click();
-        await expect(page.getByRole('heading', { name: 'Session history' })).toBeVisible();
+        await page.getByRole('link', { name: 'Back to Hub' }).click();
+        await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
     },
@@ -88,10 +107,20 @@ test(
         ).toBeVisible();
         await page.getByRole('link', { name: 'Open Session' }).click();
         await expect(page.getByText('watching', { exact: true })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
+        await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
         );
+        await page.getByRole('link', { name: 'Back to Hub' }).click();
+        const activeSession = page
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Open Session', exact: true });
+        await expect(
+            page.getByRole('region', { name: 'Active Session', exact: true }),
+        ).toContainText('Watching');
+        await activeSession.focus();
+        await page.keyboard.press('Enter');
+        await expect(page.getByText('watching', { exact: true })).toBeVisible();
     },
 );
 
@@ -164,3 +193,22 @@ test('Members and archived Clubs have no create form', async ({ context, page })
         page.getByText('You cannot create a Session in this Club right now.'),
     ).toBeVisible();
 });
+
+for (const viewport of screenshotViewports) {
+    test(
+        `Create Session matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, 'valid-session-workflow-visual');
+            await page.setViewportSize(viewport);
+            await page.goto(ROUTE, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`create-session-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
+}

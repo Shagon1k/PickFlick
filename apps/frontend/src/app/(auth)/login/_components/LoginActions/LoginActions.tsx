@@ -22,8 +22,13 @@ export default function LoginActions({ appleSignInEnabled, returnTo }: ILoginAct
         setPendingProvider(provider);
         setError('');
         try {
-            if (!(await startSocialSignIn(provider, returnTo))) {
-                setError(`${providerName} sign-in could not be started. Please try again.`);
+            const result = await startSocialSignIn(provider, returnTo);
+            if (result !== 'started') {
+                setError(
+                    result === 'rate-limited'
+                        ? 'Too many sign-in attempts. Wait a minute, then try again.'
+                        : `${providerName} sign-in could not be started. Please try again.`,
+                );
                 setPendingProvider(undefined);
             }
         } catch {

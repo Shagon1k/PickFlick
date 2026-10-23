@@ -1,11 +1,11 @@
 import { HTTP_STATUS, isBlockingSessionPhase } from '@pickflick/contracts';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getClubHub } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
+import BackLink from '#components/navigation/BackLink/BackLink';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';
@@ -46,9 +46,7 @@ export default async function CreateSessionPage({
     else if (isBlocked) restriction = 'blocking';
     return (
         <main className={styles.main}>
-            <Link className={styles.back} href={`/clubs/${clubId}`}>
-                ← Back
-            </Link>
+            <BackLink className={styles.back} fallbackHref={`/clubs/${clubId}`} />
             <section aria-labelledby="create-session-title" className={styles.scene}>
                 <BrandImage
                     alt=""
@@ -62,7 +60,7 @@ export default async function CreateSessionPage({
                     <SessionForm clubId={clubId} creationRestriction={restriction} />
                 </div>
                 <SprocketDivider />
-                <p className={styles.ornament}>{hub.club.name} · Lights, Camera, Action</p>
+                <p className={styles.ornament}>{hub.club.name} · Lights, camera, action</p>
             </section>
         </main>
     );

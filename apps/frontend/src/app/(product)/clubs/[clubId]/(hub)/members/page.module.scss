@@ -1,0 +1,142 @@
+.layout {
+    margin-top: var(--gap-lg);
+}
+
+.sectionHeading {
+    display: flex;
+    gap: var(--gap-md);
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-md);
+}
+
+.sectionHeading h2 {
+    margin: 0;
+    font-size: var(--fs-card-title);
+}
+
+.explanation {
+    margin-bottom: var(--gap-md);
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+}
+
+.feedback:empty {
+    display: none;
+}
+
+.memberList {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.member {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+    min-height: 72px;
+    padding: var(--gap-xs) var(--gap-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.identity {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.identity strong {
+    font-size: var(--fs-body-sm);
+    font-weight: 500;
+}
+
+.identity small {
+    display: block;
+    margin-top: 3px;
+    font-size: var(--fs-micro);
+    color: var(--fg-secondary);
+    text-transform: capitalize;
+}
+
+.monogram {
+    display: grid;
+    flex: 0 0 36px;
+    place-items: center;
+    height: 36px;
+    font-size: var(--fs-caption);
+    background: var(--surface-lit);
+    border-radius: 50%;
+}
+
+.memberActions {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+}
+
+.sessionCount {
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    white-space: nowrap;
+}
+
+.remove {
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: var(--gap-sm);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    transition:
+        color var(--motion-local),
+        background-color var(--motion-local),
+        border-color var(--motion-local);
+}
+
+span.remove {
+    visibility: hidden;
+}
+
+.remove:hover {
+    color: var(--danger-text);
+    background: var(--danger-soft);
+    border-color: var(--danger-border);
+}
+
+.remove svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+@media (width < 576px) {
+    .member {
+        padding-inline: var(--gap-sm);
+    }
+
+    .identity {
+        gap: var(--gap-xs);
+    }
+
+    .memberActions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .sessionCount {
+        font-size: var(--fs-micro);
+    }
+}

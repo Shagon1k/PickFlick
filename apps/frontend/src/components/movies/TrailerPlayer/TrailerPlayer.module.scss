@@ -1,0 +1,168 @@
+/* The card keeps 16:9 so it stands as tall as the poster beside it on wide screens. */
+.player {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    isolation: isolate;
+}
+
+.choices {
+    position: absolute;
+    top: var(--gap-sm);
+    left: var(--gap-sm);
+    z-index: 1;
+    display: flex;
+    gap: var(--gap-xs);
+    max-width: calc(100% - 2 * var(--gap-sm));
+    overflow-x: auto;
+}
+
+.choice {
+    flex: 0 1 auto;
+    max-width: 18ch;
+    min-height: 32px;
+    padding: 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    background: color-mix(in sRGB, var(--bg-deep) 72%, transparent);
+    border: 1px solid color-mix(in sRGB, var(--ivory) 18%, transparent);
+    border-radius: var(--radius-pill);
+}
+
+.choice[aria-pressed='true'] {
+    color: var(--fg);
+    border-color: var(--fg-secondary);
+}
+
+/*
+ * The same strip as the poster's Film details caption in MovieMedia (inset, padding, type and
+ * gradient), so the two captions of the row sit on one line.
+ */
+.search {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 1;
+    padding: var(--gap-xl) var(--gap-sm) var(--gap-sm);
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--fg);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    text-decoration: none;
+    background: linear-gradient(transparent, color-mix(in sRGB, var(--bg-deep) 92%, transparent));
+    transition: color var(--motion-emphasis) var(--ease-standard);
+}
+
+.search:hover,
+.search:focus-visible {
+    color: var(--gold);
+}
+
+.search:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -4px;
+}
+
+.frame,
+.facade {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.facade {
+    display: grid;
+    gap: var(--gap-sm);
+    place-content: center;
+    place-items: center;
+    padding: var(--gap-md);
+    color: var(--fg);
+    cursor: pointer;
+    background: transparent;
+    isolation: isolate;
+}
+
+.facade:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -4px;
+}
+
+.backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(0.3) brightness(0.42);
+    transition: filter var(--motion-emphasis);
+}
+
+.backdrop[data-blur] {
+    filter: grayscale(0.3) brightness(0.36) blur(14px);
+    transform: scale(1.1);
+}
+
+.facade:hover .backdrop:not([data-blur]) {
+    filter: grayscale(0.1) brightness(0.5);
+}
+
+/* A ring with a drawn triangle: the one bright mark on the still. */
+.play {
+    position: relative;
+    display: block;
+    width: 64px;
+    height: 64px;
+    border: 1px solid color-mix(in sRGB, var(--ivory) 70%, transparent);
+    border-radius: 50%;
+    transition:
+        transform var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
+}
+
+.play::after {
+    position: absolute;
+    top: 50%;
+    left: 54%;
+    content: '';
+    border-color: transparent transparent transparent var(--ivory);
+    border-style: solid;
+    border-width: 11px 0 11px 18px;
+    transform: translate(-50%, -50%);
+}
+
+.facade:hover .play {
+    border-color: var(--gold);
+    transform: scale(1.06);
+}
+
+.caption {
+    max-width: 40ch;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.empty {
+    max-width: 40ch;
+    padding: var(--gap-md);
+    margin: 0;
+    text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .play,
+    .backdrop {
+        transition: none;
+    }
+}

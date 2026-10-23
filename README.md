@@ -4,9 +4,9 @@ PickFlick helps private film clubs nominate, select, watch, rate, and remember f
 gives each registered user a personal film library.
 
 Today the frontend (Next.js) and backend (NestJS) run the public site, Contact, sign-in, Clubs
-(Hub, invitations, members, settings), film search and details, and Sessions through Nomination,
-including deadlines. Selection, Watching and Rating, the film library, billing, and the rest are
-later phases; see the [Roadmap](ROADMAP.md#8-phase-plan).
+(Hub, invitations, members, settings), film search and details, and Sessions through immutable Selection ballots and deterministic winner resolution, including
+Nomination deadlines and shared member joining. Phase 12 verification is complete; Phase 13 is next. Watching/Rating
+workflows, the film library, billing and the rest are later phases; see the [Roadmap](ROADMAP.md#8-phase-plan).
 
 ## Run locally
 
@@ -31,7 +31,7 @@ Before you open a pull request, run:
 pnpm verify
 ```
 
-It runs lint, knip, formatting, type-checks, unit tests, and builds. [Develop locally](_docs/local-development.md)
+It runs the production dependency audit, lint, knip, formatting, type-checks, unit tests and builds. [Develop locally](_docs/local-development.md)
 covers the other checks and common problems, and [Add a feature end to end](_docs/adding-a-feature.md)
 walks through every layer.
 
@@ -40,7 +40,7 @@ walks through every layer.
 ```text
 apps/frontend      Next.js app and UI kit
 apps/backend       NestJS API
-packages/          contracts (zod schemas), database (Prisma), config
+packages/          contracts (zod schemas), database (Prisma), config, eslint-config
 tests/             Playwright suites
 _docs/             guides, decisions, design prototypes
 ```

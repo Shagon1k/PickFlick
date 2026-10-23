@@ -12,6 +12,7 @@ import {
     useMovieSearch,
 } from '#components/movies/movie-search';
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
+import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import styles from '#components/shells/product-navigation.module.scss';
 import { useOverlayDismissal, useProductOverlay } from '#components/shells/product-overlay';
 import Icon from '#components/ui/Icon/Icon';
@@ -104,7 +105,11 @@ export default function ProductSearch() {
                     <Icon className={styles.roundIcon} name="close" />
                 </button>
                 <div className={styles.searchResults} hidden={!term}>
-                    <p className={styles.overlayEmpty} role="status">
+                    <p
+                        className={styles.overlayEmpty}
+                        data-count={movies.length > 0 || undefined}
+                        role="status"
+                    >
                         {message}
                         {result?.state === 'signed-out' ? (
                             <>
@@ -125,9 +130,10 @@ export default function ProductSearch() {
                                 prefetch={false}
                                 role="option"
                             >
-                                <span aria-hidden="true" className={styles.searchPoster}>
-                                    PF
-                                </span>
+                                <SearchPoster
+                                    url={movie.posterUrl}
+                                    className={styles.searchPoster}
+                                />
                                 <span className={styles.searchInfo}>
                                     <span className={styles.searchTitle}>
                                         {movie.title ?? movie.originalTitle ?? 'Untitled film'}

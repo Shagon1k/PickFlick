@@ -5,14 +5,15 @@ import { Suspense } from 'react';
 
 import { getMovieDetails } from '#api/movies.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
-import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
 import { formatUtcDate } from '#lib/format';
 
 import MovieHero from './_components/MovieHero/MovieHero';
+import MovieLinks from './_components/MovieLinks/MovieLinks';
 import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
 import styles from './page.module.scss';
 
@@ -41,16 +42,12 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     }
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
-    const imdb = response?.links.imdb;
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
         .filter((id) => id !== movieId)
         .slice(0, MAX_RELATED_MOVIES);
     return (
-        <ProductFrame>
+        <ProductFrame currentArea="movie">
             <main className={styles.movieMain}>
-                <ButtonLink href="/app" size="small">
-                    Back to Hub
-                </ButtonLink>
                 {result.state === 'stale' ? (
                     <Alert tone="warning">
                         Showing cached details while the provider is unavailable. Last updated{' '}
@@ -63,14 +60,15 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                     </Alert>
                 ) : null}
                 <MovieHero movie={movie} title={title} />
-                <MovieLinks imdb={imdb} title={movie.title} />
-                <section className={styles.catalogCredits} aria-labelledby="catalog-credits-title">
-                    <h2 id="catalog-credits-title">Catalog credits</h2>
-                    <SearchCredits movies={[movie]} label="Movie catalog credits" />
-                </section>
+                <MovieLinks
+                    imdb={response?.links.imdb ?? null}
+                    kinopoisk={response?.links.kinopoisk ?? null}
+                    letterboxd={response?.links.letterboxd ?? null}
+                    title={movie.title}
+                />
+                <SprocketDivider variant="section" />
                 <section className={styles.related} aria-labelledby="related-title">
-                    <h2 id="related-title">Related titles</h2>
-                    <p>Similar films supplied by the catalog provider.</p>
+                    <h2 id="related-title">You may also like</h2>
                     {relatedIds.length ? (
                         <Suspense fallback={<p role="status">Loading related titles…</p>}>
                             <RelatedMovies ids={relatedIds} />
@@ -110,26 +108,5 @@ function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: strin
                 </div>
             </main>
         </ProductFrame>
-    );
-}
-
-function MovieLinks({ imdb, title }: { imdb: string | null | undefined; title: string | null }) {
-    return (
-        <nav className={styles.links} aria-label="Movie links">
-            {imdb ? (
-                <a href={imdb} target="_blank" rel="noopener noreferrer">
-                    IMDb ↗<span className="visually-hidden"> (opens in a new tab)</span>
-                </a>
-            ) : null}
-            {title ? (
-                <a
-                    href={`https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: title })}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Search Wikipedia ↗<span className="visually-hidden"> (opens in a new tab)</span>
-                </a>
-            ) : null}
-        </nav>
     );
 }

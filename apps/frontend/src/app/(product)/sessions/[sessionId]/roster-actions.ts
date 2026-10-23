@@ -1,7 +1,6 @@
 'use server';
 
 import {
-    createSessionInvitationSchema,
     HTTP_STATUS,
     leaveSessionSchema,
     removeSessionParticipantSchema,
@@ -10,7 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import {
-    createSessionInvitation,
+    joinSession,
     leaveSession,
     removeSessionParticipant,
     revokeSessionInvitation,
@@ -23,7 +22,7 @@ import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 const STALE_ACTION_STATUSES = [...ACCESS_LOST_STATUSES, HTTP_STATUS.CONFLICT];
 
 const commandSchema = z.discriminatedUnion('action', [
-    createSessionInvitationSchema.extend({ action: z.literal('invite') }),
+    z.strictObject({ action: z.literal('join') }),
     leaveSessionSchema.extend({ action: z.literal('leave') }),
     removeSessionParticipantSchema.extend({
         action: z.literal('remove'),
@@ -37,22 +36,16 @@ export async function changeRosterAction(id: string, input: unknown) {
     try {
         const session = await getSession(id);
         const command = parsed.data;
-        let invitation;
-        if (command.action === 'invite')
-            invitation = await createSessionInvitation(id, command.membershipId);
+        if (command.action === 'join') await joinSession(id);
         if (command.action === 'leave') await leaveSession(id);
         if (command.action === 'remove') await removeSessionParticipant(id, command.participantId);
         if (command.action === 'revoke') await revokeSessionInvitation(id, command.inviteId);
         revalidatePath(`/sessions/${id}`);
-        revalidatePath(`/clubs/${session.clubId}`);
+        revalidatePath(`/clubs/${session.clubId}`, 'layout');
         revalidatePath('/app');
         return {
             ok: true,
-            invitation,
-            message:
-                command.action === 'invite'
-                    ? 'Invitation created. Share this link with the selected member.'
-                    : 'Roster updated.',
+            message: command.action === 'join' ? 'You joined this Session.' : 'Roster updated.',
         };
     } catch (error) {
         const message = getFailureMessage(error, {

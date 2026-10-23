@@ -82,6 +82,21 @@ describe('proxy', () => {
         expect(response.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
     });
 
+    it('should not query the Hub for Server Actions or an unchanged preference', async () => {
+        const action = await proxy(
+            new NextRequest(`https://pick-flick.app/clubs/${CLUB_ID}`, { method: 'POST' }),
+        );
+        const unchanged = await proxy(
+            new NextRequest(`https://pick-flick.app/clubs/${CLUB_ID}/members`, {
+                headers: { cookie: `pickflick.last_club=${CLUB_ID}` },
+            }),
+        );
+        expect(api.getClubHub).not.toHaveBeenCalled();
+        expect(action.cookies.get('pickflick.last_club')).toBeUndefined();
+        expect(unchanged.cookies.get('pickflick.last_club')).toBeUndefined();
+        expect(action.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'none'");
+    });
+
     it('should preserve the preference and report a failed authorization check', async () => {
         api.getClubHub.mockRejectedValueOnce(new TypeError('fetch failed'));
         const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);

@@ -9,7 +9,7 @@ Shapes shared by the API and the web app.
 - **Errors:** `API_ERROR_CODES`, `IApiErrorEnvelope`, and per-domain conflict reasons such as
   `CLUB_CONFLICT_REASONS`.
 
-Folders follow the domain: `auth/`, `clubs/`, `contact/`, and `common/` (errors, health, text
+Folders follow the domain: `auth/`, `clubs/`, `contact/`, `movies/`, `sessions/` and `common/` (errors, health, text
 helpers). Export everything through `src/index.ts`. Tests live in each folder's `__tests__/`.
 
 Movie DTOs use canonical UUIDs, nullable normalized fields, allowlisted HTTPS images, safe YouTube

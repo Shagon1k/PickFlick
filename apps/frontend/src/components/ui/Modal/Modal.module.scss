@@ -1,9 +1,3 @@
-.modal__close:focus-visible {
-    outline: 2px solid var(--gold);
-    outline-offset: 3px;
-    box-shadow: none;
-}
-
 .modal__root {
     position: relative;
     z-index: 200;
@@ -14,7 +8,7 @@
     inset: 0;
     z-index: 200;
     background: var(--scrim);
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
 }
 
 .modal__inner {
@@ -29,8 +23,8 @@
 }
 
 .modal {
-    width: min(560px, calc(100vw - 32px));
-    max-height: calc(100dvh - 32px);
+    width: min(440px, calc(100vw - 32px));
+    max-height: 90dvh;
     overflow: auto;
     color: var(--fg);
     pointer-events: all;
@@ -44,49 +38,30 @@
     border-color: var(--danger-border);
 }
 
-.modal__body {
-    padding: clamp(20px, 5vw, 32px);
-}
-
 .modal__header {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: flex-start;
-    justify-content: space-between;
-    min-height: var(--hit);
-    padding: clamp(20px, 5vw, 32px) clamp(20px, 5vw, 32px) 0;
-    background: var(--surface);
+    padding: var(--gap-lg) var(--gap-lg) 0;
 }
 
 .modal__title {
-    margin: 0;
-    font: var(--fs-section)/var(--lh-title) var(--font-display);
+    margin: 0 0 4px;
+    font: 600 var(--fs-card-title) / var(--lh-title) var(--font-display);
     color: var(--fg);
     letter-spacing: var(--tracking-tight);
 }
 
-.modal__close {
-    display: grid;
-    flex: 0 0 auto;
-    place-items: center;
-    width: var(--hit);
-    height: var(--hit);
-    font-size: 24px;
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.modal__close svg {
-    width: 18px;
-    height: 18px;
+.modal__body {
+    padding: 0 var(--gap-lg) var(--gap-lg);
 }
 
 .modal__content {
+    margin-top: var(--gap-xs);
+    font-size: var(--fs-body-sm);
     line-height: var(--lh-body);
     color: var(--fg-secondary);
+}
+
+.modal__content > p {
+    margin-block: 0 var(--gap-sm);
 }
 
 .modal__actions {
@@ -94,13 +69,15 @@
     flex-wrap: wrap;
     gap: var(--gap-sm);
     justify-content: flex-end;
-    padding-top: var(--gap-md);
-    margin-top: var(--gap-lg);
-    border-top: 1px solid var(--border);
+    margin-top: var(--gap-md);
 }
 
-@media (width <= 575px) {
+.modal__actions > * {
+    min-width: 90px;
+}
+
+@media (width < 576px) {
     .modal__actions > * {
-        width: 100%;
+        flex: 1 1 auto;
     }
 }

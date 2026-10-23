@@ -1,6 +1,6 @@
 'use client';
 
-import { MOVIE_QUERY_MAX_LENGTH } from '@pickflick/contracts';
+import { MOVIE_QUERY_MAX_LENGTH, type TMovieSearchResults } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
 import {
@@ -10,18 +10,31 @@ import {
     useMovieSearch,
 } from '#components/movies/movie-search';
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
+import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Button from '#components/ui/Button/Button';
 import TextInput from '#components/ui/TextInput/TextInput';
 
 import styles from './MoviePicker.module.scss';
 
+type TSearchMovie = TMovieSearchResults['movies'][number];
+
 interface IMoviePickerProps {
     value: string | null;
-    onChange: (id: string | null) => void;
+    onChange: (id: string | null, movie?: TSearchMovie) => void;
     error?: React.ReactNode;
     disabled: boolean;
+    placeholder: string;
+    /** The Nomination card names the task in its heading, so the field label is for assistive tech. */
+    hideLabel?: boolean;
 }
-export default function MoviePicker({ value, onChange, error, disabled }: IMoviePickerProps) {
+export default function MoviePicker({
+    value,
+    onChange,
+    error,
+    disabled,
+    placeholder,
+    hideLabel = false,
+}: IMoviePickerProps) {
     const [query, setQuery] = useState('');
     const [selectedTitle, setSelectedTitle] = useState('');
     const [index, setIndex] = useState(-1);
@@ -30,9 +43,9 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
     const result = useMovieSearch(term, !value);
     const movies = result && 'data' in result ? result.data.movies : [];
     useActiveOptionVisible('session-movie', index);
-    function select(movie: (typeof movies)[number]) {
+    function select(movie: TSearchMovie) {
         setSelectedTitle(movie.title ?? movie.originalTitle ?? 'Untitled film');
-        onChange(movie.id);
+        onChange(movie.id, movie);
         setQuery('');
         inputRef.current?.focus();
     }
@@ -55,27 +68,58 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
     }
     return (
         <div className={styles.picker}>
-            <TextInput
-                ref={inputRef}
-                aria-activedescendant={index >= 0 ? `session-movie-${index}` : undefined}
-                aria-controls="session-movies"
-                aria-expanded={movies.length > 0}
-                aria-autocomplete="list"
-                role="combobox"
-                disabled={disabled || Boolean(value)}
-                error={error}
-                id="session-movie"
-                label="Select a Movie"
-                labelHint="required"
-                required
-                value={value ? selectedTitle : query}
-                maxLength={MOVIE_QUERY_MAX_LENGTH}
-                onChange={(event) => {
-                    setQuery(event.currentTarget.value);
-                    setIndex(-1);
-                }}
-                onKeyDown={handleKeyboard}
-            />
+            <div className={styles.field}>
+                <TextInput
+                    ref={inputRef}
+                    aria-activedescendant={index >= 0 ? `session-movie-${index}` : undefined}
+                    aria-controls="session-movies"
+                    aria-expanded={movies.length > 0}
+                    aria-autocomplete="list"
+                    role="combobox"
+                    disabled={disabled || Boolean(value)}
+                    error={error}
+                    id="session-movie"
+                    label="Select a Movie"
+                    labelHint="required"
+                    labelProps={hideLabel ? { className: 'visually-hidden' } : undefined}
+                    placeholder={placeholder}
+                    required
+                    value={value ? selectedTitle : query}
+                    maxLength={MOVIE_QUERY_MAX_LENGTH}
+                    onChange={(event) => {
+                        setQuery(event.currentTarget.value);
+                        setIndex(-1);
+                    }}
+                    onKeyDown={handleKeyboard}
+                />
+                <div
+                    aria-label="Movie results"
+                    id="session-movies"
+                    role="listbox"
+                    className={styles.results}
+                >
+                    {movies.map((movie, position) => (
+                        <button
+                            aria-selected={position === index}
+                            id={`session-movie-${position}`}
+                            key={movie.id}
+                            role="option"
+                            tabIndex={-1}
+                            type="button"
+                            onClick={() => select(movie)}
+                            disabled={disabled}
+                        >
+                            <SearchPoster className={styles.poster} url={movie.posterUrl} />
+                            <span className={styles.info}>
+                                <strong>
+                                    {movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                                </strong>
+                                <span>{movie.releaseYear ?? 'Year unavailable'}</span>
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
             {value ? (
                 <Button
                     disabled={disabled}
@@ -88,29 +132,10 @@ export default function MoviePicker({ value, onChange, error, disabled }: IMovie
                     Remove selected Movie
                 </Button>
             ) : null}
-            <p role="status">{getSearchMessage(term, result)}</p>
-            <div
-                aria-label="Movie results"
-                id="session-movies"
-                role="listbox"
-                className={styles.results}
-            >
-                {movies.map((movie, position) => (
-                    <button
-                        aria-selected={position === index}
-                        id={`session-movie-${position}`}
-                        key={movie.id}
-                        role="option"
-                        tabIndex={-1}
-                        type="button"
-                        onClick={() => select(movie)}
-                        disabled={disabled}
-                    >
-                        <strong>{movie.title ?? movie.originalTitle ?? 'Untitled film'}</strong>
-                        <span>{movie.releaseYear ?? 'Year unavailable'}</span>
-                    </button>
-                ))}
-            </div>
+            {/* Results speak for themselves on screen; the count stays available to assistive tech. */}
+            <p className={movies.length ? 'visually-hidden' : undefined} role="status">
+                {getSearchMessage(term, result)}
+            </p>
             {result && 'data' in result ? <SearchCredits movies={result.data.movies} /> : null}
         </div>
     );

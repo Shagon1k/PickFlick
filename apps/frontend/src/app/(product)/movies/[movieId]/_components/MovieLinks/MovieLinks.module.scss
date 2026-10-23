@@ -1,0 +1,64 @@
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    justify-content: center;
+}
+
+/* As in the prototype: quiet bordered pills that light up on hover; the arrow says "leaves". */
+.link {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-height: var(--hit);
+    padding: 0 18px;
+    font-size: var(--fs-meta);
+    font-weight: 500;
+    color: var(--fg-secondary);
+    text-decoration: none;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+    transition:
+        color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
+}
+
+.link:hover,
+.link:focus-visible {
+    color: var(--fg);
+    border-color: var(--fg);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.link svg {
+    flex-shrink: 0;
+    width: 17px;
+    height: 17px;
+}
+
+.arrow {
+    font-size: var(--fs-caption);
+}
+
+/* Phones keep 44px marks only; the names stay for screen readers. */
+@media (width < 576px) {
+    .link {
+        justify-content: center;
+        width: var(--hit);
+        padding: 0;
+    }
+
+    .label,
+    .arrow {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        white-space: nowrap;
+        clip-path: inset(50%);
+    }
+}

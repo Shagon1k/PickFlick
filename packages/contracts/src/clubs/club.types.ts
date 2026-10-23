@@ -28,6 +28,7 @@ export interface IClubEntitlements {
 export interface IClubSummary {
     id: string;
     name: string;
+    createdAt: string;
     description?: string;
     hasAvatar: boolean;
     avatarVersion?: string;
@@ -51,6 +52,7 @@ export interface IClubMember {
     displayName: string;
     role: TClubRole;
     joinedAt: string;
+    sessionCount: number;
     /** Whether the viewer may remove this member; the server enforces the same rule. */
     canRemove: boolean;
 }
@@ -106,8 +108,23 @@ export interface IClubSettings {
     auditEvents: IClubAuditEvent[];
 }
 
+export interface IClubHubMovie {
+    id: string;
+    title: string | null;
+    year: number | null;
+    runtime: number | null;
+    genres: string[];
+    posterUrl: string | null;
+}
+
 export interface IClubHubSession {
     id: string;
+    ordinal: number;
+    acceptedCount: number;
+    nominatedCount: number;
+    progressCount: number | null;
+    canJoin: boolean;
+    movie: IClubHubMovie | null;
     phase: 'NOMINATION' | 'SELECTION' | 'WATCHING' | 'RATING' | 'COMPLETED' | 'CANCELLED';
     topic?: string;
     scheduledAt?: string;
@@ -123,6 +140,17 @@ export interface IClubHub {
     memberCount: number;
     sessionCount: number;
     completedSessionCount: number;
+    memberLimit: number;
+    members: IClubMember[];
+    statistics: {
+        sessionsWatched: number | null;
+        sessionsThisYear: number | null;
+        averageRating: number | null;
+        totalWatchHours: number | null;
+        topGenre: string | null;
+        topDirector: string | null;
+        topActor: string | null;
+    };
     activeSession?: IClubHubSession;
     recentSessions: IClubHubSession[];
     ratingSessions: IClubHubSession[];

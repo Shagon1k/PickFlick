@@ -99,9 +99,62 @@ describe('CompositeMovieProvider', () => {
                 source: 'thetvdb',
                 fetchedAt: now.toISOString(),
                 reason: null,
-                sections: ['metadata'],
+                sections: ['metadata', 'media'],
             },
         ]);
+    });
+    it('should prefer the TVDB poster and retain the primary poster when TVDB has none', async () => {
+        const english = record('thetvdb');
+        english.data.posterUrl = 'https://artworks.thetvdb.com/banners/movies/100/poster.jpg';
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            english.data.posterUrl,
+        );
+        english.data.posterUrl = null;
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            record('poiskkino').data.posterUrl,
+        );
+        primary.fetchDetails.mockResolvedValue({
+            ...record('poiskkino'),
+            data: { ...record('poiskkino').data, posterUrl: null },
+        });
+        english.data.posterUrl = 'https://artworks.thetvdb.com/banners/movies/100/poster.jpg';
+        expect((await provider.fetchDetails(buildMovieLookup())).data.posterUrl).toBe(
+            english.data.posterUrl,
+        );
+    });
+    it('should fall back to PoiskKino credits and amounts only where TVDB has none', async () => {
+        const primaryRecord = record('poiskkino');
+        primaryRecord.data = {
+            ...primaryRecord.data,
+            directors: [{ name: 'Primary Director' }],
+            writers: [{ name: 'Primary Writer' }],
+            budget: 100,
+            trailers: [
+                { url: 'https://www.youtube.com/embed/primary123', name: null, official: null },
+            ],
+        };
+        primary.fetchDetails.mockResolvedValue(primaryRecord);
+        const english = record('thetvdb');
+        english.data.directors = [{ name: 'English Director' }];
+        english.data.trailers = [
+            { url: 'https://www.youtube.com/watch?v=english123', name: 'Trailer', official: null },
+        ];
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data).toMatchObject({
+            directors: [{ name: 'English Director' }],
+            writers: [{ name: 'Primary Writer' }],
+            trailers: [
+                {
+                    url: 'https://www.youtube.com/watch?v=english123',
+                    name: 'Trailer',
+                    official: null,
+                },
+            ],
+            cast: null,
+            budget: 100,
+            revenue: null,
+        });
     });
     it('should keep a missing English description null', async () => {
         enrichment.fetchDetails.mockResolvedValue(record('thetvdb'));

@@ -25,12 +25,15 @@ export function handleMovieDetails(
     if (id.endsWith('038') && token === 'valid-movie-related-unavailable') {
         sendDetails(response, {
             result: { state: 'unavailable', reason: 'UNAVAILABLE' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         return true;
     }
     if (reason) {
-        sendDetails(response, { result: { state: 'unavailable', reason }, links: { imdb: null } });
+        sendDetails(response, {
+            result: { state: 'unavailable', reason },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
+        });
         return true;
     }
     const isMissing = token === 'valid-movie-missing';
@@ -43,7 +46,11 @@ export function handleMovieDetails(
     if (token === 'valid-movie-partial') result = { state: 'partial', fetchedAt, data };
     sendDetails(response, {
         result,
-        links: { imdb: isMissing ? null : 'https://www.imdb.com/title/tt1234567/' },
+        links: {
+            imdb: isMissing ? null : 'https://www.imdb.com/title/tt1234567/',
+            kinopoisk: isMissing ? null : 'https://www.kinopoisk.ru/film/258687/',
+            letterboxd: isMissing ? null : 'https://letterboxd.com/imdb/tt1234567/',
+        },
     });
     return true;
 }
@@ -66,10 +73,19 @@ function movieData(id: string, isMissing: boolean, isRelated: boolean): TPublicD
         originalLanguage: 'en',
         posterUrl: isMissing ? null : `/api/movies/images/${'a'.repeat(64)}`,
         backdropUrl: null,
-        ratings: isMissing ? [] : [{ source: 'tmdb', value: 7, scale: 10, voteCount: 10 }],
+        ratings: isMissing
+            ? []
+            : [
+                  { source: 'tmdb', value: 7, scale: 10, voteCount: 10 },
+                  { source: 'kinopoisk', value: 7.519, scale: 10, voteCount: 109356 },
+                  { source: 'imdb', value: 7.55, scale: 10, voteCount: 431000 },
+              ],
         runtime: isMissing ? null : 120,
         genres: isMissing ? null : ['Drama'],
         directors: isMissing ? null : [{ name: '<Synthetic Director>' }],
+        writers: isMissing ? null : [{ name: 'Synthetic Writer' }],
+        budget: isMissing ? null : 168_000_000,
+        revenue: isMissing ? null : 174_000_000,
         cast: isMissing ? null : [{ name: 'Synthetic Actor', character: 'Lead', profileUrl: null }],
         trailers: isMissing
             ? null

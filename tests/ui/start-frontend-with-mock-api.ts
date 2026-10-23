@@ -2,8 +2,6 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 
 import type {
-    IClubHub,
-    IClubHubSession,
     IClubSummary,
     ICreatedInvitation,
     IManagedInvitation,
@@ -13,6 +11,7 @@ import type {
 } from '@pickflick/contracts';
 
 import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
+import { buildHubProjection } from './hub-projections.ts';
 import {
     readJson,
     sendError,
@@ -47,7 +46,12 @@ const settingsProjection = (token: TToken) =>
     );
 
 function hubClubs(token: TToken): IClubSummary[] {
-    if (token?.includes('session-workflow')) return [settingsProjection(token).club];
+    if (
+        ['session-workflow', 'settings', 'members', 'invitation'].some((scenario) =>
+            token?.includes(scenario),
+        )
+    )
+        return clubsBySession.get(token) ?? [settingsProjection(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
     }
@@ -62,49 +66,11 @@ function hubClubs(token: TToken): IClubSummary[] {
     return token.includes('revoked') ? [first] : [first, second];
 }
 
-function hubProjection(token: TToken, clubId: string): IClubHub | null {
+function hubProjection(token: TToken, clubId: string) {
     if (token?.includes('session-workflow') && clubId === SETTINGS_CLUB_ID)
         return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
-    if (!club) {
-        return null;
-    }
-    if (clubId !== SETTINGS_CLUB_ID && clubId !== SECOND_CLUB_ID) {
-        return {
-            club,
-            access: settingsProjection(token).access,
-            permissions: settingsProjection(token).permissions,
-            memberCount: 1,
-            sessionCount: 0,
-            completedSessionCount: 0,
-            recentSessions: [],
-            ratingSessions: [],
-            historySessions: [],
-        };
-    }
-    const isSecondClub = clubId === SECOND_CLUB_ID;
-    const session: IClubHubSession = {
-        id: isSecondClub
-            ? '30000000-0000-4000-8000-000000000032'
-            : '30000000-0000-4000-8000-000000000031',
-        phase: isSecondClub ? 'RATING' : 'NOMINATION',
-        topic: isSecondClub ? 'Second Club private screening' : 'Midnight private screening',
-        scheduledAt: '2026-10-01T20:00:00.000Z',
-        location: isSecondClub ? 'Room B' : 'Room A',
-        updatedAt: '2026-09-29T12:00:00.000Z',
-    };
-    return {
-        club,
-        access: settingsProjection(token).access,
-        permissions: settingsProjection(token).permissions,
-        memberCount: isSecondClub ? 4 : 2,
-        sessionCount: isSecondClub ? 7 : 1,
-        completedSessionCount: isSecondClub ? 3 : 0,
-        activeSession: session,
-        recentSessions: [session],
-        ratingSessions: isSecondClub ? [session] : [],
-        historySessions: [],
-    };
+    return club ? buildHubProjection(token, club, settingsProjection(token)) : null;
 }
 
 function sessionToken(request: TMockRequest): TToken {
@@ -135,6 +101,7 @@ function createClub(request: TMockRequest, response: TMockResponse, token: strin
         const club: IClubSummary = {
             id: '10000000-0000-4000-8000-000000000099',
             name: String(payload.name).trim(),
+            createdAt: '2026-10-20T00:00:00.000Z',
             ...(description ? { description } : {}),
             hasAvatar: false,
             lifecycle: 'ACTIVE',
@@ -195,6 +162,7 @@ function removeAvatar(request: TMockRequest, response: TMockResponse, token: str
 
 const managedInvites = new Map<string, IManagedInvitation[]>();
 const failedInvitationRefreshes = new Set<string>();
+const failedHubLoads = new Set<string>();
 function manageInvitation(request: TMockRequest, response: TMockResponse, session: string): void {
     readJson(request, () => {
         const id = '60000000-0000-4000-8000-000000000034';
@@ -241,7 +209,12 @@ const clubRoutes: TClubRoute[] = [
         'GET',
         /^\/invitations$/u,
         (_request, response, session) => {
-            if (session.includes('refresh-failure') && !failedInvitationRefreshes.has(session)) {
+            // Only the refresh after a new link fails; opening the dialog still loads the list.
+            if (
+                session.includes('refresh-failure') &&
+                managedInvites.has(session) &&
+                !failedInvitationRefreshes.has(session)
+            ) {
                 failedInvitationRefreshes.add(session);
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-invitation-refresh');
                 return;
@@ -276,6 +249,11 @@ const clubRoutes: TClubRoute[] = [
         'GET',
         /^\/hub$/u,
         (_request, response, token, clubId) => {
+            if (token?.includes('hub-transient') && !failedHubLoads.has(token)) {
+                failedHubLoads.add(token);
+                sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-hub-transient');
+                return;
+            }
             const projection = hubProjection(token, clubId);
             if (projection) {
                 sendJson(response, 200, projection);
@@ -302,9 +280,13 @@ const clubRoutes: TClubRoute[] = [
     ],
     [
         'POST',
-        /^\/(?:archive|reactivate|leave|delete)$/u,
-        (_request, response) => sendNoContent(response),
+        /^\/(?:leave|delete)$/u,
+        (_request, response, token) => {
+            clubsBySession.set(token, []);
+            sendNoContent(response);
+        },
     ],
+    ['POST', /^\/(?:archive|reactivate)$/u, (_request, response) => sendNoContent(response)],
     ['PUT', /^\/avatar$/u, uploadAvatar],
     ['DELETE', /^\/avatar$/u, removeAvatar],
 ];

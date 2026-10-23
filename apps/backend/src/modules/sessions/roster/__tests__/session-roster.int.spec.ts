@@ -30,10 +30,10 @@ describe('Session roster', () => {
     let memberId: string;
     beforeAll(async () => {
         api = await startTestApi();
-        users = await Promise.all(Array.from({ length: 4 }, () => createUser(api.prisma)));
-        [admin, moderator, member, outsider] = users as [string, string, string, string];
     });
     beforeEach(async () => {
+        users = await Promise.all(Array.from({ length: 4 }, () => createUser(api.prisma)));
+        [admin, moderator, member, outsider] = users as [string, string, string, string];
         clubId = randomUUID();
         await api.prisma.club.create({ data: { id: clubId, name: 'Private Club' } });
         for (const [userId, role] of [
@@ -52,8 +52,10 @@ describe('Session roster', () => {
         });
         sessionId = session.id;
     });
-    afterAll(async () => {
+    afterEach(async () => {
         await removeUsers(api.prisma, users);
+    });
+    afterAll(async () => {
         await api.close();
     });
     const invite = (userId = admin, membershipId = memberId) =>
@@ -129,7 +131,9 @@ describe('Session roster', () => {
             expect(await (await respond(invitation.token, 'accept', userId)).json()).toEqual(
                 unavailable,
             );
-            expect(await pending(userId)).toEqual([]);
+            expect((await pending(userId)).map((row) => row.id)).toEqual(
+                userId === outsider ? [] : [sessionId],
+            );
         }
         expect(await (await preview('a'.repeat(43))).json()).toEqual(unavailable);
         expect((await preview(invitation.token)).headers.get('Cache-Control')).toBe(
@@ -156,11 +160,11 @@ describe('Session roster', () => {
         expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
         expect(await accepted()).toBe(0);
     });
-    it('should list only eligible targeted rows without token material and decline by ID', async () => {
+    it('should list open Sessions for Club members without token material', async () => {
         const invitation = await createInvite();
         const rows = await pending();
         expect(rows).toEqual([
-            expect.objectContaining({ id: invitation.id, topic: 'Protected title' }),
+            expect.objectContaining({ id: sessionId, topic: 'Protected title', scheduledAt: null }),
         ]);
         expect(JSON.stringify(rows)).not.toContain(invitation.token);
         expect(JSON.stringify(rows)).not.toContain('tokenDigest');
@@ -190,7 +194,7 @@ describe('Session roster', () => {
         const first = await createInvite();
         const second = await createInvite();
         expect(await (await preview(first.token)).json()).toEqual(unavailable);
-        expect((await pending()).map((row) => row.id)).toEqual([second.id]);
+        expect((await pending()).map((row) => row.id)).toEqual([sessionId]);
         await api.prisma.sessionInvite.update({
             where: { id: second.id },
             data: {
@@ -199,7 +203,7 @@ describe('Session roster', () => {
             },
         });
         expect(await (await respond(second.token)).json()).toEqual(unavailable);
-        expect(await pending()).toEqual([]);
+        expect((await pending()).map((row) => row.id)).toEqual([sessionId]);
         const third = await createInvite();
         expect((await revoke(third.id)).status).toBe(204);
         expect((await revoke(third.id)).status).toBe(204);

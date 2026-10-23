@@ -152,3 +152,54 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
     await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
     await context.close();
 });
+
+test('search renders available same-origin posters and preserves film rows when an image fails', async ({
+    context,
+    page,
+}) => {
+    await context.addCookies([
+        {
+            name: 'pickflick.session_token',
+            value: 'valid-search-posters',
+            domain: '127.0.0.1',
+            path: '/',
+        },
+    ]);
+    await page.route('**/api/movies/*/poster', (route) =>
+        route.fulfill({
+            status: 200,
+            contentType: 'image/png',
+            body: Buffer.from(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+                'base64',
+            ),
+        }),
+    );
+    await page.goto('/app');
+    await page
+        .getByRole('button', { name: 'Search films', exact: true })
+        .filter({ visible: true })
+        .click();
+    await page.getByRole('combobox', { name: 'Search films' }).fill('posters');
+    const options = page.getByRole('option');
+    await expect(options).toHaveCount(2);
+    await expect(options.first().locator('img')).toHaveAttribute(
+        'src',
+        /\/api\/movies\/[^/]+\/poster$/u,
+    );
+    await expect
+        .poll(() =>
+            options
+                .first()
+                .locator('img')
+                .evaluate((element: HTMLImageElement) => element.naturalWidth),
+        )
+        .toBeGreaterThan(0);
+    await page.route('**/api/movies/*/poster', (route) => route.abort());
+    await page.getByRole('combobox', { name: 'Search films' }).fill('empty');
+    await expect(options).toHaveCount(0);
+    await page.getByRole('combobox', { name: 'Search films' }).fill('posters-broken');
+    await expect(options).toHaveCount(2);
+    await expect(options.first()).toContainText('PF');
+    await expect(options.first()).toContainText('Film');
+});

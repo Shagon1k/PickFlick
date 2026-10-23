@@ -39,10 +39,8 @@ export default function Modal({
                 content: clsx(styles.modal, tone === 'danger' && styles['m-danger']),
                 header: styles.modal__header,
                 title: styles.modal__title,
-                close: styles.modal__close,
                 body: styles.modal__body,
             }}
-            closeButtonProps={{ 'aria-label': 'Close dialog' }}
             closeOnClickOutside={dismissible}
             closeOnEscape={dismissible}
             onClose={onClose}
@@ -50,12 +48,13 @@ export default function Modal({
             opened={open}
             padding={0}
             returnFocus
-            size="min(560px, calc(100vw - 32px))"
+            size="min(440px, calc(100vw - 32px))"
             title={title}
             transitionProps={{ duration: FADE_DURATION_MS, transition: 'fade-down' }}
             trapFocus
             unstyled
-            withCloseButton={dismissible}
+            // The prototype dialog closes through its own actions, Escape, or the overlay.
+            withCloseButton={false}
         >
             <div className={styles.modal__content}>{children}</div>
             {actions ? <div className={styles.modal__actions}>{actions}</div> : null}

@@ -8,9 +8,12 @@ import {
     createSession,
     createUser,
     type ITestApi,
+    loadIntegrationEnvironment,
     removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
+import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
 
 describe('Club Hub projection', () => {
     let api: ITestApi;
@@ -127,6 +130,95 @@ describe('Club Hub projection', () => {
         expect(secondHub.activeSession).toMatchObject({ id: ratingId, phase: 'RATING' });
         expect(secondHub.recentSessions).toHaveLength(5);
         expect(secondHub.recentSessions.every(({ phase }) => phase === 'COMPLETED')).toBe(true);
+    });
+
+    it('should number Call Sheets without renumbering cancellation and expose only actual film and participation data', async () => {
+        const clubId = randomUUID();
+        const movieId = randomUUID();
+        await api.prisma.club.create({ data: { id: clubId, name: 'Call Sheet Club' } });
+        const ownerId = await addMember(api.prisma, clubId, admin, 'ADMIN');
+        await addMember(api.prisma, clubId, member);
+        await api.prisma.movie.create({
+            data: { id: movieId, title: 'Canonical title', releaseYear: 2026 },
+        });
+        try {
+            await createSession(api.prisma, clubId, {
+                type: 'FULL_CYCLE',
+                phase: 'CANCELLED',
+                createdAt: new Date('2026-01-01Z'),
+            });
+            const session = await createSession(api.prisma, clubId, {
+                type: 'PRE_SELECTED',
+                phase: 'WATCHING',
+                movieId,
+                createdAt: new Date('2026-01-02Z'),
+            });
+            await api.prisma.sessionParticipant.create({
+                data: {
+                    id: randomUUID(),
+                    clubId,
+                    sessionId: session.id,
+                    membershipId: ownerId,
+                    status: 'ACCEPTED',
+                },
+            });
+            const environment = loadIntegrationEnvironment();
+            const key = buildDetailsCacheKey(
+                environment.catalog.provider,
+                environment.catalog.locale,
+            );
+            await api.prisma.movieDetailsCache.create({
+                data: {
+                    movieId,
+                    key,
+                    fetchedAt: new Date(),
+                    data: buildCanonicalDetails(100, new Date().toISOString(), movieId),
+                },
+            });
+            const ownerHub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: admin })
+            ).json()) as IClubHub;
+            const memberHub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: member })
+            ).json()) as IClubHub;
+            expect(ownerHub).toMatchObject({
+                // The caption counts held Sessions; the cancelled one keeps only its number.
+                sessionCount: 1,
+                activeSession: {
+                    ordinal: 2,
+                    acceptedCount: 1,
+                    progressCount: null,
+                    canJoin: false,
+                    movie: {
+                        id: movieId,
+                        title: 'Synthetic Movie',
+                        runtime: 120,
+                        genres: ['Drama'],
+                        posterUrl: `/api/movies/${movieId}/poster`,
+                    },
+                },
+            });
+            expect(memberHub.activeSession?.canJoin).toBe(true);
+            expect(ownerHub.members.find(({ id }) => id === ownerId)?.sessionCount).toBe(1);
+            expect(ownerHub.historySessions[0]?.ordinal).toBe(1);
+            expect(ownerHub.statistics).toEqual({
+                sessionsWatched: null,
+                sessionsThisYear: null,
+                averageRating: null,
+                totalWatchHours: null,
+                topGenre: null,
+                topDirector: null,
+                topActor: null,
+            });
+            expect(JSON.stringify(ownerHub)).not.toContain('image.tmdb.org');
+        } finally {
+            await api.prisma.sessionParticipant.deleteMany({ where: { clubId } });
+            await api.prisma.session.deleteMany({ where: { clubId } });
+            await api.prisma.membership.deleteMany({ where: { clubId } });
+            await api.prisma.club.delete({ where: { id: clubId } });
+            await api.prisma.movieDetailsCache.deleteMany({ where: { movieId } });
+            await api.prisma.movie.delete({ where: { id: movieId } });
+        }
     });
 
     it('should hide a stale Hub after Membership removal', async () => {

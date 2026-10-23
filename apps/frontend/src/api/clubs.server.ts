@@ -8,13 +8,16 @@ import type {
     TCreateClubRequest,
     TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
+import { cache } from 'react';
 
 import { apiPath, requestApi } from '#lib/api.server';
 
 export const listClubs = (): Promise<IClubSummary[]> => requestApi('/clubs');
 
-export const getClubHub = (clubId: string, incomingHeaders?: Headers): Promise<IClubHub> =>
-    requestApi(apiPath`/clubs/${clubId}/hub`, {}, incomingHeaders);
+export const getClubHub = cache(
+    (clubId: string, incomingHeaders?: Headers): Promise<IClubHub> =>
+        requestApi(apiPath`/clubs/${clubId}/hub`, {}, incomingHeaders),
+);
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>
     requestApi('/clubs', { method: 'POST', json: input });

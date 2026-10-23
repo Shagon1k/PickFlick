@@ -1,47 +1,112 @@
+/* The clip edge is the viewport edge, so the resting stub slides out of view as in the prototype. */
 .widget {
     position: fixed;
-    right: var(--gap-md);
+    right: 0;
     bottom: var(--gap-lg);
     z-index: 35;
+    width: calc(184px + 18px);
+    padding-right: 18px;
+    overflow: clip;
 }
 
 .ticket {
     position: relative;
-    display: flex;
-    align-items: center;
-    min-width: 184px;
-    min-height: 64px;
-    padding: var(--gap-sm) var(--gap-md);
+    display: block;
+    width: 184px;
+    height: 64px;
+    padding: 0;
     color: var(--fg);
     cursor: pointer;
     background: none;
     border: 0;
     border-radius: var(--radius);
     isolation: isolate;
+    transform: translateX(70px);
+    transition: transform var(--motion-emphasis) var(--ease-menu);
 }
 
-.ticket small,
-.ticket strong {
-    display: block;
+.ticket:hover,
+.ticket:focus-visible,
+.ticket[aria-expanded='true'] {
+    transform: translateX(0);
 }
 
-.ticket small {
-    font-size: var(--fs-caption);
+.ticket:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--focus);
 }
 
-.ticket strong {
-    font-size: var(--fs-card-title);
+.shape {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 184px;
+    height: 64px;
 }
 
-.ticket:hover {
-    color: var(--bg);
+.main,
+.stub {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: grid;
+    align-content: center;
+}
+
+.main {
+    left: 0;
+    width: 124px;
+    padding: 9px 14px;
+    text-align: left;
+}
+
+.kicker {
+    font: 700 9px/1 var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
+
+.title {
+    margin-top: 4px;
+    font: 700 15px/1 var(--font-body);
+}
+
+.meta {
+    margin-top: 5px;
+    font-size: 10px;
+    line-height: 1.1;
+    color: var(--fg-secondary);
 }
 
 .stub {
-    min-width: 48px;
-    padding-left: var(--gap-md);
-    margin-left: var(--gap-md);
-    border-left: 1px dashed currentColor;
+    right: 0;
+    left: 124px;
+    justify-items: center;
+}
+
+.stub::before {
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 0;
+    content: '';
+    border-left: 1px dashed var(--gold-border);
+}
+
+.stub strong {
+    font: 700 21px/1 var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--gold-light);
+}
+
+.stub small {
+    margin-top: 2px;
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
 }
 
 .header {
@@ -49,36 +114,92 @@
     gap: var(--gap-sm);
     align-items: center;
     justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
 }
 
 .header h2 {
-    font-size: var(--fs-card-title);
+    margin: 0;
+    font: 700 17px/var(--lh-title) var(--font-body);
+}
+
+.header span {
+    display: block;
+    margin-top: 4px;
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+}
+
+.close {
+    flex: 0 0 auto;
+    min-height: var(--hit);
+    padding: 0 9px;
+    font-size: var(--fs-micro);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+}
+
+.close:hover,
+.close:focus-visible {
+    color: var(--fg);
+    outline: 1px solid var(--focus);
+    background: var(--accent-soft);
+}
+
+.feedback {
+    padding: 16px 18px;
+    margin: 0;
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+}
+
+.feedback:empty {
+    display: none;
 }
 
 .list {
+    display: grid;
     padding: 0;
+    margin: 0;
     list-style: none;
 }
 
 .row {
-    padding: var(--gap-md) 0;
+    padding: 16px 18px;
     overflow-wrap: anywhere;
+}
+
+.row + .row {
     border-top: 1px solid var(--border);
 }
 
+.type {
+    font: 10px/var(--lh-caption) var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
+
 .row h3 {
-    margin: var(--gap-sm) 0;
-    font-size: var(--fs-card-title);
+    margin: 6px 0 0;
+    font: 700 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
 }
 
 .row p {
+    margin: 4px 0 0;
+    font-size: var(--fs-micro);
+    line-height: 1.45;
     color: var(--fg-secondary);
 }
 
 .actions {
     display: flex;
-    gap: var(--gap-sm);
+    gap: var(--gap-xs);
     justify-content: flex-end;
+    margin-top: var(--gap-sm);
 }
 
 @media (width < 1024px) {
@@ -87,17 +208,8 @@
     }
 }
 
-.shape {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    width: 100%;
-    height: 100%;
-    fill: var(--surface-lit);
-    stroke: var(--border-lit);
-}
-
-.ticket:hover .shape {
-    fill: var(--gold);
-    stroke: var(--gold);
+@media (prefers-reduced-motion: reduce) {
+    .ticket {
+        transition-duration: 0.01ms;
+    }
 }

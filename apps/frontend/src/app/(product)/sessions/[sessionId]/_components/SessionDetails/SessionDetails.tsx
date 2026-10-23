@@ -1,34 +1,47 @@
 'use client';
 
-import type { ISessionRoster, TSession } from '@pickflick/contracts';
+import {
+    type ISessionRoster,
+    isFilmSessionPhase,
+    type TMovieDetails,
+    type TSession,
+} from '@pickflick/contracts';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
+import nominationPanda from '#brand/panda-collection.webp';
+import watchingPanda from '#brand/panda-rating.webp';
+import selectionPanda from '#brand/panda-rating-2.webp';
+import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
+import NominationClose from '#components/sessions/NominationClose/NominationClose';
+import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
-import Button from '#components/ui/Button/Button';
-import ButtonLink from '#components/ui/Button/ButtonLink';
-import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
+import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
+import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
-import { formatUtcDateTime, toIsoDate } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
-import { cancelSessionAction } from '../../actions';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
+import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Selection from '../Selection/Selection';
-import SelectionClose from '../SelectionClose/SelectionClose';
 import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
-import SessionRoster from '../SessionRoster/SessionRoster';
+import SessionFacts from '../SessionFacts/SessionFacts';
+import SessionHeader from '../SessionHeader/SessionHeader';
 
 export default function SessionDetails({
     session,
     roster,
+    movie,
+    renderedAt,
 }: {
     session: TSession;
     roster: ISessionRoster;
+    movie: TMovieDetails | null;
+    renderedAt: number;
 }) {
-    const router = useRouter();
     const headingRef = useRef<HTMLHeadingElement>(null);
     const phaseRef = useRef(session.phase);
     useEffect(() => {
@@ -36,145 +49,139 @@ export default function SessionDetails({
         phaseRef.current = session.phase;
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
-    return (
-        <main className={styles.main}>
-            <Link href={`/clubs/${session.clubId}`}>← {session.clubName}</Link>
-            <header className={styles.header}>
-                <div>
-                    <p className={styles.eyebrow}>Session · {SESSION_TYPES[session.type]}</p>
-                    <h1 ref={headingRef} tabIndex={-1}>
-                        {session.topic ?? 'Untitled Session'}
-                    </h1>
-                </div>
-                <p className={styles.phase}>{session.phase.toLowerCase()}</p>
-            </header>
-            {session.nominations ? (
-                <Nomination
+    const header = (participation: ReactNode, onKick?: () => void, onClosePhase?: () => void) => (
+        <SessionHeader
+            session={session}
+            movie={movie}
+            participation={participation}
+            renderedAt={renderedAt}
+            onKick={onKick}
+            onClosePhase={onClosePhase}
+            closePhaseLabel={
+                session.phase === 'NOMINATION' ? 'Close nominations early' : 'Close Selection early'
+            }
+            headingRef={headingRef}
+            onEdit={() => setDialog('edit')}
+            onCancel={() => setDialog('cancel')}
+        />
+    );
+    // The server sends Nomination or Selection data only in its own phase.
+    function renderPhase(participation: ReactNode, onKick?: () => void) {
+        if (isFilmSessionPhase(session.phase))
+            return (
+                <>
+                    <PhaseProgress>
+                        {roster.acceptedCount}{' '}
+                        {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined the
+                        screening.
+                    </PhaseProgress>
+                    {header(participation, onKick)}
+                    <ScreeningFilm movie={movie} movieId={session.movieId} />
+                </>
+            );
+        const nominations = session.nominations;
+        if (nominations)
+            return (
+                <NominationClose
                     sessionId={session.id}
                     phaseVersion={session.phaseVersion}
-                    data={session.nominations}
-                />
-            ) : null}
-            {session.selection ? (
-                <>
-                    <Selection sessionId={session.id} data={session.selection} />
-                    <SelectionClose
-                        sessionId={session.id}
-                        phaseVersion={session.phaseVersion}
-                        submittedCount={session.selection.submittedCount}
-                        acceptedCount={session.selection.acceptedCount}
-                        canClose={session.canEdit && session.selection.nominations.length > 0}
-                    />
-                </>
-            ) : null}
-            {session.selectionOutcome ? <SelectionOutcome data={session.selectionOutcome} /> : null}
-            <section className={styles.card} aria-label="Session details">
-                <dl className={styles.facts}>
-                    <div>
-                        <dt>Date</dt>
-                        <dd>
-                            {session.scheduledAt ? toIsoDate(session.scheduledAt) : 'Not scheduled'}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt>Location</dt>
-                        <dd>{session.location ?? 'Not set'}</dd>
-                    </div>
-                    {session.deadlineAt ? (
-                        <div>
-                            <dt>Nomination deadline</dt>
-                            <dd>{formatUtcDateTime(session.deadlineAt)}</dd>
+                    canClose={nominations.canClose}
+                >
+                    {(onClose) => (
+                        <Nomination
+                            header={header(participation, onKick, onClose)}
+                            sessionId={session.id}
+                            data={nominations}
+                        />
+                    )}
+                </NominationClose>
+            );
+        const selection = session.selection;
+        if (selection)
+            return (
+                <SelectionClose
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    submittedCount={selection.submittedCount}
+                    acceptedCount={selection.acceptedCount}
+                    canClose={session.canEdit && selection.nominations.length > 0}
+                >
+                    {(onClose) => (
+                        <Selection
+                            header={header(participation, onKick, onClose)}
+                            sessionId={session.id}
+                            data={selection}
+                        />
+                    )}
+                </SelectionClose>
+            );
+        return header(participation, onKick);
+    }
+    return (
+        <main className={styles.main}>
+            <SessionRoster sessionId={session.id} roster={roster}>
+                {(participation, onKick) => (
+                    <>
+                        {renderPhase(participation, onKick)}
+                        {session.selectionOutcome ? (
+                            <SelectionOutcome data={session.selectionOutcome} />
+                        ) : null}
+                        <div className={styles.reelBreak} aria-hidden="true">
+                            <SprocketDivider variant="section" />
+                            <Image src={getPhaseMascot(session.phase)} alt="" />
                         </div>
-                    ) : null}
-                </dl>
-                {session.notes ? <p className={styles.notes}>{session.notes}</p> : null}
-                {session.movieId ? (
-                    <ButtonLink href={`/movies/${session.movieId}`}>View selected Movie</ButtonLink>
-                ) : null}
-                {session.phase === 'CANCELLED' ? (
-                    <p role="status">This Session was cancelled. Its history is preserved.</p>
-                ) : null}
-                <div className={styles.actions}>
-                    {session.canEdit ? (
-                        <Button onClick={() => setDialog('edit')} variant="secondary">
-                            Edit Session
-                        </Button>
-                    ) : null}
-                    {session.canCancel ? (
-                        <Button
-                            onClick={() => {
-                                setMessage('');
-                                setDialog('cancel');
-                            }}
-                            variant="secondary-danger"
-                        >
-                            Cancel Session
-                        </Button>
-                    ) : null}
-                </div>
-            </section>
-            <SessionRoster sessionId={session.id} initial={roster} />
-            <p aria-live="polite" role="status">
-                {message}
-            </p>
+                        <h2 className={styles.detailsTitle}>Session Details</h2>
+                        <SessionFacts session={session} roster={roster} />
+                    </>
+                )}
+            </SessionRoster>
             <Modal open={dialog === 'edit'} title="Edit Session" onClose={() => setDialog(null)}>
                 {dialog === 'edit' ? (
                     <SessionForm
                         clubId={session.clubId}
                         session={session}
+                        onCancel={() => setDialog(null)}
                         onSaved={() => setDialog(null)}
                     />
                 ) : null}
             </Modal>
-            <ConfirmDialog
-                confirmLabel="Confirm cancellation"
-                cancelLabel="Keep Session"
-                inputId="cancel-confirmation"
+            <CancelSessionDialog
                 onClose={() => setDialog(null)}
-                onConfirm={(confirmation) => {
-                    const offlineMessage = getOfflineMessage();
-                    if (offlineMessage) {
-                        setMessage(offlineMessage);
-                        return;
-                    }
-                    startTransition(async () => {
-                        const result = await cancelSessionAction(session.id, {
-                            version: session.version,
-                            confirmation,
-                        }).catch(() => ({
-                            ok: false,
-                            message: 'We could not reach PickFlick. Try again.',
-                        }));
-                        setMessage(result.message);
-                        if (result.ok) {
-                            setDialog(null);
-                            router.refresh();
-                        }
-                    });
-                }}
                 open={dialog === 'cancel'}
-                pending={isPending}
-                status={
-                    <p aria-live="polite" role="status">
-                        {message}
-                    </p>
-                }
-                title="Cancel Session"
-                word="CANCEL"
-            >
-                <p>
-                    Cancel “{session.topic ?? 'Untitled Session'}”? Participation ends and this Club
-                    can schedule another Session. Existing history stays.
-                </p>
-            </ConfirmDialog>
+                session={session}
+            />
         </main>
     );
 }
 
-const SESSION_TYPES = {
-    FULL_CYCLE: 'Full cycle',
-    PRE_SELECTED: 'Pre-selected Movie',
-    PAST: 'Past screening',
-} as const;
+function ScreeningFilm({
+    movie,
+    movieId,
+}: {
+    movie: TMovieDetails | null;
+    movieId: string | null;
+}) {
+    if (movie)
+        return (
+            <div className={styles.film}>
+                <MovieMedia
+                    filmHref={movieId ? `/movies/${movieId}` : undefined}
+                    hidePhonePoster
+                    movie={movie}
+                    title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                />
+            </div>
+        );
+    return (
+        <Alert tone="warning">
+            Film details are unavailable right now. The Session itself is unaffected.{' '}
+            {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
+        </Alert>
+    );
+}
+
+function getPhaseMascot(phase: TSession['phase']) {
+    if (phase === 'NOMINATION') return nominationPanda;
+    if (phase === 'SELECTION') return selectionPanda;
+    return watchingPanda;
+}

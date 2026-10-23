@@ -18,7 +18,7 @@ interface ILoaded {
     error: MovieProviderError | null;
 }
 
-/** PoiskKino supplies search, media, ratings and related titles; TheTVDB adds English text. */
+/** PoiskKino supplies search/ratings/related titles; TheTVDB adds English text and posters. */
 export class CompositeMovieProvider implements IMovieProvider {
     constructor(
         private poiskkino: Pick<PoiskkinoClient, 'search' | 'fetchDetails'>,
@@ -55,7 +55,7 @@ export class CompositeMovieProvider implements IMovieProvider {
                     source: 'thetvdb',
                     fetchedAt: enrichment.record?.fetchedAt ?? null,
                     reason: enrichment.error?.reason ?? null,
-                    sections: ['metadata'],
+                    sections: ['metadata', 'media'],
                 },
             ],
         });
@@ -80,21 +80,29 @@ async function load(fetchSnapshot: () => Promise<TSourceSnapshot>): Promise<ILoa
     }
 }
 
-/** English text comes from TheTVDB; media, ratings and year stay with PoiskKino. */
+/**
+ * Prefer TheTVDB's English metadata, poster and English trailers; keep PoiskKino ratings, and fall back
+ * to its English-named credits, dollar amounts and trailers where TheTVDB has none.
+ */
 function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnapshot | null) {
     const base = primary?.data ?? createEmptyMetadata();
     const english = enrichment?.data;
     return {
         ...base,
         title: english?.title ?? base.title,
+        posterUrl: english?.posterUrl ?? base.posterUrl,
         overview: english?.overview ?? null,
         originalTitle: english?.originalTitle ?? base.originalTitle,
         releaseDate: english?.releaseDate ?? base.releaseDate,
         originalLanguage: english?.originalLanguage ?? base.originalLanguage,
         runtime: english?.runtime ?? base.runtime,
         genres: english?.genres ?? null,
-        directors: english?.directors ?? null,
-        cast: english?.cast ?? null,
+        directors: english?.directors ?? base.directors,
+        writers: english?.writers ?? base.writers,
+        cast: english?.cast ?? base.cast,
+        trailers: english?.trailers ?? base.trailers,
+        budget: english?.budget ?? base.budget,
+        revenue: english?.revenue ?? base.revenue,
     };
 }
 

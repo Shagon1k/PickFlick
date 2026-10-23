@@ -1,3 +1,4 @@
+import BackLink from '#components/navigation/BackLink/BackLink';
 import PublicShell from '#components/shells/PublicShell/PublicShell';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
@@ -14,8 +15,9 @@ export const metadata = createPublicMetadata({
 
 export default function ContactPage() {
     return (
-        <PublicShell>
+        <PublicShell variant="focused">
             <section aria-labelledby="contact-title" className={styles.scene}>
+                <BackLink className={styles.back} fallbackHref="/" />
                 <div className={styles.sceneInner}>
                     <BrandImage
                         alt=""

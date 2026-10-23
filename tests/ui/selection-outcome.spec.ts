@@ -24,8 +24,9 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'operator');
         await page.goto(PATH);
-        const trigger = page.getByRole('button', { name: 'Close Selection early', exact: true });
+        const trigger = page.getByRole('button', { name: 'Session settings', exact: true });
         await trigger.click();
+        await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
         const dialog = page.getByRole('dialog', { name: 'Close Selection early' });
         await expect(dialog.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
         await expect(
@@ -34,16 +35,17 @@ test(
         await page.keyboard.press('Escape');
         await expect(trigger).toBeFocused();
         await trigger.click();
+        await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
         await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
         await page.getByLabel('Type CLOSE to confirm').press('Enter');
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Noir night' })).toBeFocused();
+        await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
         await expect(page.getByRole('list', { name: 'Selection ranking' })).toBeVisible();
         await expect(page.getByText('No ballots were received.', { exact: false })).toBeVisible();
         await page.reload();
         await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Close Selection early' })).toHaveCount(0);
+        await expect(page.getByRole('menuitem', { name: 'Close Selection early' })).toHaveCount(0);
     },
 );
 
@@ -53,7 +55,8 @@ test('early-close dialog keeps confirmation and reports API and offline failures
 }) => {
     await authenticate(context, 'operator-failure');
     await page.goto(PATH);
-    await page.getByRole('button', { name: 'Close Selection early', exact: true }).click();
+    await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
     await dialog.getByRole('button', { name: 'Confirm close' }).click();
@@ -106,11 +109,13 @@ for (const viewport of canonicalViewports) {
         await page.setViewportSize(viewport);
         await page.goto(PATH, { waitUntil: 'load' });
         await settle(page);
-        const trigger = page.getByRole('button', { name: 'Close Selection early', exact: true });
+        const trigger = page.getByRole('button', { name: 'Session settings', exact: true });
         const bounds = await trigger.boundingBox();
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
         await trigger.click();
+        await page.getByRole('menuitem', { name: 'Close Selection early', exact: true }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.getByRole('dialog')).toHaveCSS('opacity', '1');
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         await page.keyboard.press('Tab');
         await expect(page.getByRole('dialog').locator(':focus')).toHaveCount(1);

@@ -1,18 +1,26 @@
 import { Button as MantineButton, type ButtonProps as IMantineButtonProps } from '@mantine/core';
 import clsx from 'clsx';
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 
 import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Button.module.scss';
 
-export type TButtonVariant = 'primary' | 'secondary' | 'ghost' | 'secondary-danger' | 'danger';
-export type TButtonSize = 'default' | 'small' | 'large';
+export type TButtonVariant =
+    | 'primary'
+    | 'secondary'
+    | 'ghost'
+    | 'secondary-danger'
+    | 'danger'
+    | 'cell'
+    | 'cell-danger';
+export type TButtonSize = 'default' | 'small' | 'large' | 'icon';
 
 export interface IButtonProps
     extends
         TOmitStyling<IMantineButtonProps, 'variant' | 'size' | 'loading'>,
         Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style' | 'color'> {
+    ref?: Ref<HTMLButtonElement>;
     variant?: TButtonVariant;
     size?: TButtonSize;
     loading?: boolean;
@@ -48,6 +56,7 @@ export default function Button({
                 aria-busy={loading || undefined}
                 classNames={{
                     root: getButtonClassName(variant, size),
+                    inner: styles.button__inner,
                     label: styles.button__label,
                 }}
                 data-state={getButtonState(success, loading)}

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
     movieDetailsSchema,
     movieExternalIdSchema,
@@ -10,6 +10,7 @@ import {
     type TMovieExternalId,
     type TMovieMetadata,
     type TMovieSearchResults,
+    type TMovieSource,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -38,6 +39,7 @@ function toSummaryColumns(data: Pick<TMovieMetadata, 'title' | 'originalTitle' |
 
 @Injectable()
 export class MoviesRepository {
+    private readonly logger = new Logger(MoviesRepository.name);
     constructor(private readonly prisma: PrismaService) {}
 
     async findExternalIds(movieId: string): Promise<{ externalIds: TMovieExternalId[] } | null> {
@@ -69,6 +71,43 @@ export class MoviesRepository {
         return row && parsed?.success ? { data: parsed.data, fetchedAt: row.fetchedAt } : null;
     }
 
+    async findCachedMetadata(ids: string[], key: string): Promise<Map<string, TMovieDetails>> {
+        if (!ids.length) return new Map();
+        const rows = await this.prisma.movieDetailsCache.findMany({
+            where: { movieId: { in: ids }, key },
+        });
+        const result = new Map<string, TMovieDetails>();
+        for (const row of rows) {
+            const parsed = movieDetailsSchema.safeParse(row.data);
+            if (parsed.success) result.set(row.movieId, parsed.data);
+        }
+        return result;
+    }
+
+    async findCachedPoster(
+        movieId: string,
+        source: TMovieSource,
+        detailsKey?: string,
+    ): Promise<string | null> {
+        if (detailsKey) {
+            const details = await this.findCachedDetails(movieId, detailsKey);
+            if (details?.data.posterUrl) return details.data.posterUrl;
+        }
+        const row = await this.prisma.movieSearchCache.findFirst({
+            where: {
+                data: {
+                    path: ['movies'],
+                    array_contains: [{ id: movieId, provenance: [{ source }] }],
+                },
+            },
+            orderBy: { fetchedAt: 'desc' },
+        });
+        const parsed = row ? movieSearchResultsSchema.safeParse(row.data) : null;
+        return parsed?.success
+            ? (parsed.data.movies.find((movie) => movie.id === movieId)?.posterUrl ?? null)
+            : null;
+    }
+
     async saveSearch(
         key: string,
         search: TProviderSearch,
@@ -77,14 +116,30 @@ export class MoviesRepository {
         return this.prisma.$transaction(async (transaction) => {
             await this.lock(transaction);
             const movies = new Map<string, TMovieSearchResults['movies'][number]>();
+            let conflicts = 0;
             for (const record of search.movies) {
-                const id = await this.resolveMovie(transaction, record.externalIds, record.data);
+                let id: string;
+                try {
+                    id = await this.resolveMovie(transaction, record.externalIds, record.data);
+                } catch (error) {
+                    if (
+                        !(error instanceof MovieProviderError) ||
+                        error.reason !== 'IDENTITY_CONFLICT'
+                    )
+                        throw error;
+                    conflicts++;
+                    continue;
+                }
                 movies.set(
                     id,
                     movieSummarySchema
                         .strip()
                         .parse({ id, ...record.data, provenance: record.provenance }),
                 );
+            }
+            if (conflicts) {
+                this.logger.warn({ event: 'movies.search.identity_conflict', skipped: conflicts });
+                if (!movies.size) throw new MovieProviderError('IDENTITY_CONFLICT');
             }
             const data = { ...search, movies: [...movies.values()] };
             await transaction.movieSearchCache.upsert({
@@ -149,12 +204,6 @@ export class MoviesRepository {
         if (expectedId) movieIds.add(expectedId);
         if (movieIds.size > 1) throw new MovieProviderError('IDENTITY_CONFLICT');
         const movieId = [...movieIds][0] ?? randomUUID();
-        const columns = summary ? toSummaryColumns(summary) : {};
-        if (movieIds.size) {
-            if (summary) await transaction.movie.update({ where: { id: movieId }, data: columns });
-        } else {
-            await transaction.movie.create({ data: { id: movieId, ...columns } });
-        }
         const existing = await transaction.movieExternalId.findMany({ where: { movieId } });
         for (const id of ids) {
             if (
@@ -164,6 +213,14 @@ export class MoviesRepository {
                 )
             )
                 throw new MovieProviderError('IDENTITY_CONFLICT');
+        }
+        const columns = summary ? toSummaryColumns(summary) : {};
+        if (movieIds.size) {
+            if (summary) await transaction.movie.update({ where: { id: movieId }, data: columns });
+        } else {
+            await transaction.movie.create({ data: { id: movieId, ...columns } });
+        }
+        for (const id of ids) {
             await transaction.movieExternalId.upsert({
                 where: { source_externalId: id },
                 create: { ...id, movieId },

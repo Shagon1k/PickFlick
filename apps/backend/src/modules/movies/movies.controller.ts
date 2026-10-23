@@ -5,6 +5,7 @@ import {
     Header,
     HttpCode,
     HttpStatus,
+    NotFoundException,
     Param,
     Post,
     Res,
@@ -57,6 +58,19 @@ export class MoviesController {
         };
     }
 
+    @Get(':movieId/poster')
+    @Header('Cache-Control', 'private, no-store')
+    async getPoster(
+        @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
+        @Res() response: Response,
+    ): Promise<void> {
+        const posterUrl = await this.movies.getCachedPoster(movieId);
+        if (!posterUrl) throw new NotFoundException();
+        const stored = await this.images.storeMedia({ posterUrl, backdropUrl: null });
+        if (!stored.posterUrl) throw new NotFoundException();
+        response.redirect(stored.posterUrl);
+    }
+
     @Post('search')
     @HttpCode(HttpStatus.OK)
     @Header('Cache-Control', 'private, no-store')
@@ -70,7 +84,7 @@ export class MoviesController {
                 ...result.data,
                 movies: result.data.movies.map((movie) => ({
                     ...movie,
-                    posterUrl: null,
+                    posterUrl: movie.posterUrl ? `/api/movies/${movie.id}/poster` : null,
                     backdropUrl: null,
                 })),
             },

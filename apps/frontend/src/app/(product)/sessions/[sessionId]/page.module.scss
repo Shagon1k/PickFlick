@@ -1,63 +1,291 @@
 .main {
-    width: min(100% - var(--gutter) * 2, var(--container));
-    padding-block: var(--gap-lg);
+    width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - var(--gutter) * 2));
+    padding-block: var(--gap-lg) var(--gap-2xl);
     margin-inline: auto;
     overflow-wrap: anywhere;
 }
 
-.main > a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
-    color: var(--fg-secondary);
+/* One grid serves both layouts: title, stamp and rail in a row from 576px, a poster ticket below. */
+.header {
+    position: relative;
+
+    /* Its own stacking layer keeps the gear menu above the phase content below. */
+    z-index: 2;
+    display: grid;
+    grid-template-areas: 'copy stamp rail';
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--gap-sm) var(--gap-lg);
+    align-items: end;
+    padding-block: 18px 28px;
+    margin-bottom: var(--gap-lg);
+    border-bottom: 1px solid var(--border);
 }
 
-.header {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    justify-content: space-between;
-    margin-block: var(--gap-lg);
+/* An open gear menu rises above the fixed invite ticket. */
+.header:has([aria-expanded='true']) {
+    z-index: 40;
+}
+
+/* The one restrained amber wash behind the focal Session scene. */
+.header::before {
+    position: absolute;
+    inset: -80px 0 auto 34%;
+    z-index: -1;
+    height: 330px;
+    pointer-events: none;
+    content: '';
+    background: radial-gradient(ellipse at center, var(--gold-glow), transparent 68%);
+    opacity: 0.5;
+    filter: blur(12px);
+}
+
+.headingCopy {
+    display: grid;
+    grid-area: copy;
+    gap: 10px;
+    min-width: 0;
 }
 
 .header h1 {
     margin: 0;
-    font: 600 var(--fs-app-title)/var(--lh-title) var(--font-display);
+    font: 700 clamp(34px, 4.6vw, 52px)/var(--lh-tight) var(--font-display);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+}
+
+.headingCopy p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.headingCopy .deadline {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    margin-top: 4px;
+    font-weight: 500;
+    color: var(--fg);
+}
+
+.deadline svg {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.5;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+.filmLink {
+    color: inherit;
+    text-decoration: none;
+}
+
+.filmLink:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+}
+
+.phaseStamp {
+    display: inline-flex;
+    grid-area: stamp;
+    gap: var(--gap-xs);
+    align-items: center;
+
+    /* As tall as the rail (a 44px cell and its border), so the stamp sits on its centre line. */
+    min-height: calc(var(--hit) + 2px);
+    font: 600 var(--fs-caption)/1 var(--font-mono);
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+/* Watching is the scene's one ambient loop: a live dot beside the phase. */
+.phaseStamp[data-live]::after {
+    width: 9px;
+    height: 9px;
+    content: '';
+    background: var(--gold);
+    border-radius: 50%;
+
+    /* Capitals sit above the line box's centre; the dot follows them, not the box. */
+    transform: translateY(-1px);
+    animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .phaseStamp[data-live]::after {
+        opacity: 0.82;
+        animation: none;
+    }
+}
+
+.actionRail {
+    grid-area: rail;
 }
 
 .eyebrow {
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--fg-secondary);
     text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
 }
 
-.phase {
-    padding: var(--gap-xs) var(--gap-sm);
-    border: 1px solid var(--border-lit);
+.reelBreak {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 132px;
+    margin-block: var(--gap-xl) 30px;
+    isolation: isolate;
+}
+
+.reelBreak::before {
+    position: absolute;
+    z-index: -1;
+    width: 230px;
+    height: 110px;
+    content: '';
+    background: radial-gradient(ellipse, var(--accent-soft), transparent 70%);
+    border-radius: 50%;
+}
+
+.reelBreak img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(164px, 40vw);
+    height: auto;
+    max-height: 116px;
+    object-fit: contain;
+    opacity: 0.82;
+    filter: grayscale(1) contrast(1.05);
+    mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    transform: translate(-50%, -50%);
+}
+
+.detailsTitle {
+    margin: 0 0 var(--gap-md);
+    font: 700 clamp(30px, 4vw, 46px)/var(--lh-tight) var(--font-display);
+    text-align: center;
+    letter-spacing: var(--tracking-tight);
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-md);
+    align-items: stretch;
+}
+
+.film {
+    margin-bottom: var(--gap-xl);
+}
+
+.detailsSingle {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.chatStub {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    padding: clamp(20px, 2.4vw, 32px);
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.chatStub > span {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    color: var(--ivory-muted);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.chatStub svg {
+    width: 28px;
+    height: 28px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+.chatStub h3 {
+    margin: 0 0 var(--gap-xs);
+    font: 400 var(--fs-card-title)/var(--lh-title) var(--font-display);
+}
+
+.chatStub p {
+    max-width: 420px;
+    margin: 0 0 18px;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+}
+
+.chatStub small {
+    padding: 4px 14px;
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-border);
     border-radius: var(--radius-pill);
 }
 
-.card {
-    padding: var(--gap-lg);
-    background: var(--surface);
+.card,
+.metric {
+    min-width: 0;
+    overflow: hidden;
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
 
 .facts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-lg);
     margin: 0;
 }
 
-.facts dt {
+.facts > div {
+    display: grid;
+    grid-template-columns: minmax(106px, 0.42fr) minmax(0, 1fr);
+    gap: var(--gap-sm);
+    align-items: center;
+    min-height: 56px;
+    padding: var(--gap-sm) 16px;
     font-size: var(--fs-body-sm);
+    border-bottom: 1px solid var(--border);
+}
+
+.facts > div:last-child {
+    border-bottom: 0;
+}
+
+.facts dt {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    font-size: var(--fs-meta);
     color: var(--fg-secondary);
 }
 
 .facts dd {
-    margin: var(--gap-xs) 0 0;
+    margin: 0;
+    line-height: 1.4;
+    text-align: right;
 }
 
 .notes {
@@ -65,20 +293,104 @@
     white-space: pre-wrap;
 }
 
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    margin-top: var(--gap-lg);
+.metric {
+    display: grid;
+    gap: 10px;
+    align-content: center;
+    justify-items: center;
+    padding: clamp(20px, 2.4vw, 32px);
 }
 
-@media (width <= 575px) {
+.metric strong {
+    font: 650 clamp(54px, 8vw, 86px)/0.95 var(--font-display);
+    font-variant-numeric: lining-nums;
+    color: var(--gold-light);
+    letter-spacing: var(--tracking-tight);
+}
+
+.metric span {
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
+
+@media (width < 768px) {
+    /* Phones end the page above the footer without the desktop's long tail. */
+    .main {
+        padding-bottom: var(--gap-lg);
+    }
+}
+
+@media (width < 768px) {
     .header {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-areas:
+            'copy copy'
+            'stamp rail';
+        grid-template-columns: auto auto;
+        justify-content: center;
+        text-align: center;
     }
 
-    .card {
+    .headingCopy {
+        justify-items: center;
+    }
+
+    .headingCopy .filmMeta {
+        justify-content: center;
+    }
+
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .metric {
         padding: var(--gap-md);
+    }
+}
+
+.facts dt svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+.metaLine {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: flex-start;
+}
+
+.metaLine svg {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    opacity: 0.7;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
+@media (width < 768px) {
+    .metaLine {
+        justify-content: center;
+    }
+}
+
+/* Phones without a film stack the header; a film header becomes the shared ticket instead. */
+@media (width < 576px) {
+    .header:not([data-film]) {
+        grid-template-areas:
+            'copy'
+            'stamp'
+            'rail';
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: stretch;
+    }
+
+    .phaseStamp {
+        justify-self: center;
     }
 }

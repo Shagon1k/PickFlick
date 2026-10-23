@@ -75,7 +75,9 @@ body::after {
     *::before,
     *::after {
         scroll-behavior: auto !important;
-        transition-duration: 0.01ms !important;
+
+        /* Zero, not 0.01ms: a stretched visibility switch keeps opened overlays unfocusable. */
+        transition-duration: 0s !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }

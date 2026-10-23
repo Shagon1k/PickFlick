@@ -21,6 +21,9 @@ function canonicalDetails() {
         runtime: null,
         genres: null,
         directors: null,
+        writers: null,
+        budget: null,
+        revenue: null,
         cast: null,
         trailers: null,
         provenance: [],
@@ -48,7 +51,7 @@ describe('getMovieDetails', () => {
             vi.mocked(requestApi).mockImplementation(original.requestApi);
             const response = {
                 result: { state, data: canonicalDetails(), fetchedAt: '2026-10-10T12:00:00.000Z' },
-                links: { imdb: null },
+                links: { imdb: null, kinopoisk: null, letterboxd: null },
             };
             const deadline = vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
                 const controller = new AbortController();

@@ -37,6 +37,7 @@ function buildSelection(token: string, ballot: TSubmitSelection | null): TSelect
                               ? 'The Night of the Hunter'
                               : 'A very long nominated Movie title that wraps across several lines on mobile',
                       year: 1955 + index,
+                      genres: ['Crime', 'Drama'],
                   },
                   author: token.includes('anonymous') ? null : 'Jordan Member',
                   ownScore: ballot?.scores[index]?.score ?? null,
@@ -64,6 +65,7 @@ export function handleSelection(
         const roster: ISessionRoster = {
             progressVersion: version,
             acceptedCount: 3,
+            canJoin: false,
             canInvite: false,
             canManage: false,
             canLeave: false,

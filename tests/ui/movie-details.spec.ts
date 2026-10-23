@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { settle } from './settle';
+import { screenshotViewports } from './viewports';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
 
@@ -33,42 +34,74 @@ for (const width of [390, 768, 1024, 1440]) {
             await expect(page.getByRole('heading', { level: 1 })).toHaveText(
                 '<script>alert(1)</script> & Film',
             );
+            // One rating: IMDb wins over Kinopoisk and TMDB, rounded to one decimal.
+            await expect(page.getByTitle('IMDb rating')).toHaveText(
+                'IMDb rating7.6 out of 10 431K ratings',
+            );
+            await expect(page.getByText('7.519')).toHaveCount(0);
+            await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
+            // Personal Rating and Watchlist hold their places until the Library ships.
+            await expect(
+                page.getByRole('button', { name: 'Rate this film (coming soon)' }),
+            ).toBeDisabled();
+            // The ribbon sits on the visible poster: the media grid's, or the phone ticket's.
+            await expect(
+                page
+                    .getByRole('button', { name: 'Add to Watchlist (coming soon)' })
+                    .filter({ visible: true }),
+            ).toBeDisabled();
             await expect(page.getByRole('link', { name: 'IMDb' })).toHaveAttribute(
                 'href',
                 'https://www.imdb.com/title/tt1234567/',
             );
-            const wikipedia = page.getByRole('link', { name: 'Search Wikipedia' });
+            await expect(page.getByRole('link', { name: /^Kinopoisk/u })).toHaveAttribute(
+                'href',
+                'https://www.kinopoisk.ru/film/258687/',
+            );
+            await expect(page.getByRole('link', { name: /^Letterboxd/u })).toHaveAttribute(
+                'href',
+                'https://letterboxd.com/imdb/tt1234567/',
+            );
+            const wikipedia = page.getByRole('link', { name: /^Wikipedia search/u });
             await expect(wikipedia).toHaveAttribute(
                 'href',
                 `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: '<script>alert(1)</script> & Film' })}`,
             );
-            await expect(page.getByRole('link', { name: 'Watch trailer' })).toHaveAttribute(
-                'rel',
-                'noopener noreferrer',
+            // Nothing reaches YouTube until Play; then the privacy-enhanced player loads in place.
+            await page.route('https://www.youtube-nocookie.com/**', (route) =>
+                route.fulfill({
+                    body: '<!doctype html><title>Player</title>',
+                    contentType: 'text/html',
+                }),
+            );
+            await expect(page.locator('iframe')).toHaveCount(0);
+            await page.getByRole('button', { name: 'Play Watch trailer' }).click();
+            await expect(page.locator('iframe')).toHaveAttribute(
+                'src',
+                'https://www.youtube-nocookie.com/embed/abc123XYZ-_?autoplay=1&rel=0',
             );
             await expect(page.getByRole('link', { name: 'Related Film 2026' })).toHaveAttribute(
                 'href',
                 '/movies/10000000-0000-4000-8000-000000000038',
             );
+            // Provider attribution lives with search, not on Movie Details (#89 places it for launch).
             await expect(
-                page
-                    .getByText(
-                        'This product uses the TMDB API but is not endorsed or certified by TMDB.',
-                    )
-                    .first(),
-            ).toBeVisible();
+                page.getByRole('complementary', { name: 'Movie catalog credits' }),
+            ).toHaveCount(0);
             await settle(page);
-            expect((await new AxeBuilder({ page }).include('main').analyze()).violations).toEqual(
-                [],
-            );
+            // The YouTube player document is not ours to audit.
+            expect(
+                (await new AxeBuilder({ page }).include('main').exclude('iframe').analyze())
+                    .violations,
+            ).toEqual([]);
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             await page.screenshot({ path: `test-results/movie-${width}.png`, fullPage: true });
-            await page.getByRole('link', { name: 'Back to Hub', exact: true }).focus();
-            await expect(
-                page.getByRole('link', { name: 'Back to Hub', exact: true }),
-            ).toBeFocused();
+            await expect(page.getByRole('heading', { name: 'You may also like' })).toBeVisible();
+            await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(0);
+            await page.getByRole('link', { name: /^Wikipedia search/u }).focus();
+            await expect(page.getByRole('link', { name: /^Wikipedia search/u })).toBeFocused();
         },
     );
 }
@@ -109,8 +142,13 @@ test('missing media and identifiers omit unavailable links; broken poster become
         },
     ]);
     await page.goto(`/movies/${MOVIE_ID}`);
-    await expect(page.getByText('Poster unavailable')).toBeVisible();
-    await expect(page.getByText('No trailer is available.')).toBeVisible();
+    // The phone ticket keeps its own hidden placeholder; the visible one is the media grid's.
+    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
+    await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
+        'href',
+        /^https:\/\/www\.youtube\.com\/results\?search_query=/u,
+    );
     await expect(page.getByText('No related titles are available.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'IMDb' })).toHaveCount(0);
     await context.addCookies([
@@ -118,7 +156,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
     ]);
     await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.reload();
-    await expect(page.getByText('Poster unavailable').first()).toBeVisible();
+    await expect(page.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
 });
 
 test('unknown or malformed Movie identity uses safe recovery; related failure preserves the main film', async ({
@@ -179,3 +217,28 @@ test('desktop credits and synopsis share the row equally below the media', async
     expect(credits?.y).toBeGreaterThan(trailer!.y + trailer!.height);
     expect(trailer!.width / trailer!.height).toBeCloseTo(16 / 9, 1);
 });
+
+for (const viewport of screenshotViewports) {
+    test(
+        `Movie Details matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await context.addCookies([
+                {
+                    name: 'pickflick.session_token',
+                    value: 'valid-movie',
+                    url: 'http://127.0.0.1:41730',
+                },
+            ]);
+            await page.setViewportSize(viewport);
+            await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`movie-details-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
+}

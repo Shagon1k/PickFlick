@@ -235,7 +235,7 @@
     min-width: 0;
     min-height: var(--hit);
     padding: 10px 16px;
-    font: var(--fs-body) / var(--lh-ui) var(--font-display);
+    font: var(--fs-body) / var(--lh-ui) var(--font-body);
     color: var(--fg);
     background: var(--surface);
     border: 1px solid var(--border);
@@ -657,6 +657,7 @@
         grid-column: 1;
     }
 
+    /* 27px under the 73px header; when AutoHideHeader slides it away, the menu rises with it. */
     .sectionSidebar nav {
         position: sticky;
         top: 100px;
@@ -664,6 +665,11 @@
         overflow: hidden;
         border: 1px solid var(--border);
         border-radius: var(--radius);
+        transition: top var(--motion-panel) var(--ease-standard);
+    }
+
+    [data-shell]:has(> header[data-hidden]) .sectionSidebar nav {
+        top: 27px;
     }
 
     .sectionSidebar a {
@@ -761,4 +767,18 @@
 
 .searchResults .overlayEmpty {
     color: var(--fg-secondary);
+}
+
+/* With results the count is a slim caption, so the films start at once. */
+.searchResults .overlayEmpty[data-count] {
+    padding: var(--gap-xs) 16px;
+    font-size: var(--fs-caption);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sectionSidebar nav {
+        transition: none;
+    }
 }

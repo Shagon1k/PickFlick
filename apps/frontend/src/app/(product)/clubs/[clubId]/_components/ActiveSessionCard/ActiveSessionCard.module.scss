@@ -1,0 +1,48 @@
+.card {
+    min-width: 0;
+    padding: 24px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.card h2 {
+    margin: 0 0 16px;
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
+}
+
+.card p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+}
+
+.stack {
+    display: grid;
+    gap: 24px;
+}
+
+/* The prototype gives the film strip room below its phase line. */
+.details {
+    display: grid;
+    gap: var(--gap-lg);
+}
+
+.phase {
+    font-weight: 500;
+    color: var(--ivory);
+}
+
+.card p:empty {
+    display: none;
+}
+
+.create {
+    margin-top: var(--gap-sm);
+}
+
+.card[data-compact] h2 {
+    font-size: 15px;
+    font-weight: 700;
+}

@@ -110,10 +110,17 @@ flowchart LR
   `anonymous`, or `unavailable`. `unavailable` (timeout, rate limit, outage) is never treated as
   signed out: pages show a retry state instead of silently logging the person out.
 - `src/lib/auth-client.ts` holds the Better Auth client and `startSocialSignIn`, which starts sign-in in the browser.
+  Social sign-in rate limits show a one-minute wait message without exposing provider error text.
+  Login and Club recovery pages can retry the current server projection without signing out.
 - Server-side API calls (`src/lib/api.server.ts`) forward only the cookie and the client address
   headers; a `401` from the backend sends the page to `/login` with a return target.
 - The Apple button appears only when `APPLE_SIGN_IN_ENABLED=true`, the same flag that registers
   Apple on the backend.
+
+The proxy updates the last-used Club preference only on a GET navigation to a different Club.
+Server Action POSTs and an unchanged preference do not trigger an extra Hub read; pages and backend
+operations still perform their normal access checks. Transient backend/session errors log only
+their status and request ID, without cookies, provider messages or private URLs.
 
 ## Abuse limits
 

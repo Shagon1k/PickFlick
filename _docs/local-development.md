@@ -51,6 +51,20 @@ corepack enable
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
 the worker; it applies overdue Nomination deadlines every five seconds.
 
+## Enable the movie catalog
+
+The example environment disables external catalog calls. In the ignored root `.env`, set
+`CATALOG_ENABLED=true`. For the default `poiskkino-thetvdb` adapter, supply `POISKKINO_API_KEY`
+and `THETVDB_READ_TOKEN`; the alternative `tmdb` adapter uses `TMDB_READ_TOKEN`.
+Keep credentials on the backend; do not add them to `NEXT_PUBLIC_*`, source files or logs.
+You can use approved UAT catalog credentials locally, but keep local database/storage destinations
+and OAuth origin settings. Synthetic Google values in `.env.example` do not enable live sign-in;
+configure a client whose callback matches local `AUTH_BASE_URL`.
+
+Search and details populate the cache on demand. `CATALOG_REFRESH_HOURS` controls read freshness;
+it does not start a scheduled refresh worker. Missing/failed posters have a placeholder and must
+not be replaced with prototype film images. See the [environment reference](environment.md).
+
 ## Local services
 
 | Service    | Host port                           | Check                 |
@@ -117,6 +131,13 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
   `.env.example`.
 - **Sign-in fails locally.** Google needs a real OAuth client in `.env` whose redirect URI is
   `http://127.0.0.1:3000/api/auth/callback/google`. Apple stays off (`APPLE_SIGN_IN_ENABLED=false`).
+- **The catalog cannot search.** Set `CATALOG_ENABLED=true` and provide credentials for the selected
+  `CATALOG_PROVIDER` in `.env`. PoiskKino + TheTVDB needs both `POISKKINO_API_KEY` and
+  `THETVDB_READ_TOKEN`. TheTVDB expects the bearer token returned as `data.token` by its
+  `/v4/login` API; an API key must be exchanged there first, rather than copied into the token field.
+- **Contact succeeds but no email arrives locally.** Local email delivery is disabled by default;
+  the backend logs that delivery was skipped and stores no message body. Verify real delivery only
+  with an explicitly configured live sender and approved recipient.
 - **Seed or reset refuses to run.** Check `APP_ENV` and the database name in `DATABASE_URL`.
 - **`/ui-preview` or `/shell-preview` answers 404.** They are hidden only when
   `APP_ENV=production`.

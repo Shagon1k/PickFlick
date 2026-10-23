@@ -1,0 +1,26 @@
+.cell {
+    position: relative;
+    display: flex;
+}
+
+.feedback:not(:empty) {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 5;
+    width: min(260px, calc(100vw - 2 * var(--gutter)));
+    padding: var(--gap-sm);
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+}
+
+@media (width < 768px) {
+    .feedback:not(:empty) {
+        right: auto;
+        left: 0;
+    }
+}

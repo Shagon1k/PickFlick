@@ -105,7 +105,7 @@ describe('Nominations', () => {
         expect(await api.prisma.movieDetailsCache.count({ where: { movieId } })).toBe(0);
         expect((await submit(member, movieId)).status).toBe(201);
         const data = nominationData(await (await read()).json());
-        const summary = { id: movieId, title: 'Synthetic Movie', year: 2026 };
+        const summary = { id: movieId, title: 'Synthetic Movie', year: 2026, genres: [] };
         expect(data.ownMovie).toEqual(summary);
         expect(data.nominations).toEqual([expect.objectContaining({ movie: summary })]);
         expect(provider.fetchDetails).not.toHaveBeenCalled();

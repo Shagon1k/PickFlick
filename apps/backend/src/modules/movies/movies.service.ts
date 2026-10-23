@@ -58,15 +58,24 @@ export class MoviesService {
         tx: Prisma.TransactionClient,
         ids: string[],
     ): Promise<Map<string, TNominationMovie>> {
-        const movies = await tx.movie.findMany({
-            where: { id: { in: ids } },
-            select: { id: true, title: true, releaseYear: true },
-        });
+        const [movies, metadata] = await Promise.all([
+            tx.movie.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, title: true, releaseYear: true },
+            }),
+            // Genres come only from already cached details; listing films never calls a provider.
+            this.getCachedMetadata(ids),
+        ]);
         const byId = new Map(movies.map((movie) => [movie.id, movie]));
         return new Map(
             ids.map((id) => [
                 id,
-                { id, title: byId.get(id)?.title ?? null, year: byId.get(id)?.releaseYear ?? null },
+                {
+                    id,
+                    title: byId.get(id)?.title ?? null,
+                    year: byId.get(id)?.releaseYear ?? null,
+                    genres: metadata.get(id)?.genres ?? [],
+                },
             ]),
         );
     }
@@ -95,11 +104,38 @@ export class MoviesService {
         const result = await this.getDetails(movieId, { allowStale: true });
         const lookup =
             result.state === 'unavailable' ? null : await this.repository.findExternalIds(movieId);
-        const imdb = lookup?.externalIds.find(({ source }) => source === 'imdb')?.externalId;
+        const idFor = (source: string) =>
+            lookup?.externalIds.find((externalId) => externalId.source === source)?.externalId;
+        const imdb = idFor('imdb');
+        const kinopoisk = idFor('poiskkino');
+        const tmdb = idFor('tmdb');
         return {
             result,
-            links: { imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null },
+            links: {
+                imdb: imdb ? `https://www.imdb.com/title/${imdb}/` : null,
+                kinopoisk: kinopoisk ? `https://www.kinopoisk.ru/film/${kinopoisk}/` : null,
+                letterboxd: getLetterboxdLink(imdb, tmdb),
+            },
         };
+    }
+
+    async getCachedMetadata(ids: string[]): Promise<Map<string, TMovieDetails>> {
+        const key = buildDetailsCacheKey(
+            this.environment.catalog.provider,
+            this.environment.catalog.locale,
+        );
+        return this.repository.findCachedMetadata(ids, key);
+    }
+
+    async getCachedPoster(movieId: string): Promise<string | null> {
+        return this.repository.findCachedPoster(
+            movieId,
+            this.environment.catalog.provider === 'tmdb' ? 'tmdb' : 'poiskkino',
+            buildDetailsCacheKey(
+                this.environment.catalog.provider,
+                this.environment.catalog.locale,
+            ),
+        );
     }
 
     async getDetails(
@@ -157,4 +193,10 @@ export class MoviesService {
         const age = Date.now() - cached.fetchedAt.getTime();
         return age >= 0 && age < hours * HOUR_MS;
     }
+}
+
+/** Letterboxd redirects these paths to the film page; IMDb is the more common identifier. */
+function getLetterboxdLink(imdb?: string, tmdb?: string): string | null {
+    if (imdb) return `https://letterboxd.com/imdb/${imdb}/`;
+    return tmdb ? `https://letterboxd.com/tmdb/${tmdb}/` : null;
 }

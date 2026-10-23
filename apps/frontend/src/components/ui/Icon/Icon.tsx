@@ -1,14 +1,36 @@
 import type { ReactNode, SVGAttributes } from 'react';
 
+import { actionGlyphs } from './action-glyphs';
+import { metadataGlyphs } from './metadata-glyphs';
+import { statGlyphs } from './stat-glyphs';
+
 export type TIconName =
+    | 'bulb'
+    | 'document'
+    | 'calendar'
+    | 'pin'
+    | 'info'
+    | 'refresh'
+    | 'film-reel'
+    | 'clapperboard'
+    | 'star-circle'
+    | 'stopwatch'
+    | 'genre'
+    | 'globe'
+    | 'director'
+    | 'actor'
     | 'achievements'
     | 'admin'
     | 'apple'
     | 'arrow-left'
     | 'bell'
     | 'book'
+    | 'cancel'
+    | 'check'
     | 'catalog'
     | 'chart'
+    | 'chat'
+    | 'chevron-right'
     | 'circle'
     | 'clock'
     | 'close'
@@ -17,12 +39,14 @@ export type TIconName =
     | 'contact'
     | 'credit-card'
     | 'device'
+    | 'edit'
     | 'google'
     | 'hub'
     | 'import-export'
     | 'library'
     | 'members'
     | 'overview'
+    | 'plus'
     | 'pricing'
     | 'privacy'
     | 'profile'
@@ -34,6 +58,7 @@ export type TIconName =
     | 'settings'
     | 'sign-out'
     | 'user-plus'
+    | 'user-x'
     | 'watchlist';
 
 export interface IIconProps extends Omit<SVGAttributes<SVGSVGElement>, 'children'> {
@@ -41,6 +66,9 @@ export interface IIconProps extends Omit<SVGAttributes<SVGSVGElement>, 'children
 }
 
 const glyphs: Record<TIconName, ReactNode> = {
+    ...actionGlyphs,
+    ...metadataGlyphs,
+    ...statGlyphs,
     achievements: (
         <>
             <circle cx="12" cy="8" r="7" />
@@ -255,8 +283,18 @@ const glyphs: Record<TIconName, ReactNode> = {
     ),
 };
 
+const DEFAULT_SIZE_PX = 18;
+const DEFAULT_STROKE_WIDTH = 1.8;
+
 export default function Icon({ name, ...props }: IIconProps) {
+    // Line icons are visible without caller CSS; a caller's class still sets size and stroke.
     const common = {
+        width: DEFAULT_SIZE_PX,
+        height: DEFAULT_SIZE_PX,
+        stroke: 'currentColor',
+        strokeWidth: DEFAULT_STROKE_WIDTH,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
         ...props,
         'aria-hidden': true,
         fill: 'none',

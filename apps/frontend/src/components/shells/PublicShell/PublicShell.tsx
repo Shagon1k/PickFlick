@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import {
     buildPublicNavigation,
@@ -14,39 +15,43 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 interface IPublicShellProps {
     children: ReactNode;
     currentPage?: 'pricing';
+    variant?: 'default' | 'focused';
     routes?: IShellRouteMap;
 }
 
 export default function PublicShell({
     children,
     currentPage,
+    variant = 'default',
     routes = canonicalRoutes,
 }: IPublicShellProps) {
     return (
         <div className={styles.shell} data-shell="public">
-            <header className={styles.publicHeader}>
-                <div className={styles.headerInner}>
-                    <Brand href={routes.home} />
-                    <nav aria-label="Public navigation" className={styles.publicNav}>
-                        {buildPublicNavigation(routes, currentPage).map((item) => (
-                            <Link
-                                aria-current={item.current ? 'page' : undefined}
-                                href={item.href}
-                                key={item.label}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-                    </nav>
-                    <div className={styles.publicHeaderAction}>
-                        <ButtonLink href={routes.product} size="small">
-                            Go to App
-                        </ButtonLink>
+            {variant === 'default' ? (
+                <AutoHideHeader className={styles.publicHeader}>
+                    <div className={styles.headerInner}>
+                        <Brand href={routes.home} />
+                        <nav aria-label="Public navigation" className={styles.publicNav}>
+                            {buildPublicNavigation(routes, currentPage).map((item) => (
+                                <Link
+                                    aria-current={item.current ? 'page' : undefined}
+                                    href={item.href}
+                                    key={item.label}
+                                >
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </nav>
+                        <div className={styles.publicHeaderAction}>
+                            <ButtonLink href={routes.product} size="small">
+                                Go to App
+                            </ButtonLink>
+                        </div>
                     </div>
-                </div>
-            </header>
+                </AutoHideHeader>
+            ) : null}
             <main>{children}</main>
-            <SiteFooter routes={routes} />
+            {variant === 'default' ? <SiteFooter routes={routes} /> : null}
         </div>
     );
 }

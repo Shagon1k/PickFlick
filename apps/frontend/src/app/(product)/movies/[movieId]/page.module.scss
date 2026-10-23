@@ -1,7 +1,7 @@
 .movieMain {
     display: grid;
     gap: var(--gap-lg);
-    width: min(var(--container), calc(100% - 2 * var(--gutter)));
+    width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
     padding-block: var(--gap-lg) var(--gap-xl);
     margin-inline: auto;
     overflow-wrap: anywhere;
@@ -13,10 +13,8 @@
 
 .movieMain h1 {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--fs-app-title);
-    font-weight: 400;
-    line-height: var(--lh-title);
+    font: 700 clamp(34px, 4.6vw, 52px) / var(--lh-tight) var(--font-display);
+    letter-spacing: var(--tracking-tight);
 }
 
 .movieMain h2 {
@@ -36,148 +34,43 @@
 }
 
 .titleBlock {
-    display: grid;
-    gap: var(--gap-sm);
-}
-
-.titleBlock p {
-    color: var(--fg-secondary);
-}
-
-.ratings {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--gap-md);
-    padding: 0;
-    margin: 0;
-    list-style: none;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.ratings li {
-    font-size: var(--fs-body-sm);
-}
-
-.ratings strong {
-    color: var(--ivory);
-}
-
-.heroGrid {
+.titleCopy {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--gap-lg);
-    align-items: start;
-}
-
-.posterRegion {
-    grid-row: 1;
-    grid-column: 1;
-}
-
-.poster {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 2 / 3;
-    overflow: hidden;
-    color: var(--fg-secondary);
-    text-align: center;
-    background: var(--surface-lit);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.poster img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: grayscale(0.18) saturate(0.72) brightness(0.86);
-    transition: filter var(--motion-default);
-}
-
-.poster:hover img {
-    filter: none;
-}
-
-.credits {
-    grid-row: 2;
-    grid-column: 1 / span 2;
+    gap: var(--gap-xs);
     min-width: 0;
 }
 
-.credits dl {
+.titleBlock p {
     margin: 0;
-    font-size: var(--fs-body-sm);
-}
-
-.credits dt {
-    margin-block: var(--gap-sm) var(--gap-xs);
     color: var(--fg-secondary);
 }
 
-.credits dd {
+/* The rating cell of the header rail: the score in the mono face, its vote count beside it. */
+.rating {
     margin: 0;
 }
 
-.credits ul,
-.trailer ul {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.credits li + li {
-    margin-top: var(--gap-xs);
-}
-
-.synopsis {
-    grid-row: 2;
-    grid-column: 3 / span 2;
-}
-
-.synopsis p {
-    font-size: var(--fs-body-sm);
-    line-height: var(--lh-body);
-    white-space: pre-line;
-}
-
-.trailer {
-    display: grid;
-    grid-row: 1;
-    grid-column: 2 / -1;
-    align-content: center;
-    aspect-ratio: 16 / 9;
-    padding: var(--gap-md);
-    text-align: center;
-    background: var(--bg-deep);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.trailer a,
-.links a {
-    display: inline-flex;
-    gap: var(--gap-xs);
-    align-items: center;
-    min-height: var(--hit);
+.rating strong {
+    font: 600 var(--fs-body)/1 var(--font-mono);
     color: var(--fg);
 }
 
-.links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-md);
-    padding-block: var(--gap-sm);
-    border-block: 1px solid var(--border);
+@media (width >= 576px) {
+    .rating strong {
+        font-size: var(--fs-card-title);
+    }
 }
 
-.catalogCredits {
-    font-size: var(--fs-meta);
-}
-
-.catalogCredits a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
+.rating small {
+    margin-left: 4px;
+    font-size: var(--fs-micro);
+    color: var(--fg-secondary);
 }
 
 .related {
@@ -215,47 +108,40 @@
     color: var(--fg-secondary);
 }
 
-.relatedCard .poster {
+.relatedPoster {
     font-size: var(--fs-caption);
 }
 
-@media (width < 1024px) {
-    .relatedGrid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+/* Related stills rest in black and white and regain colour on hover or focus, as in the prototype. */
+.relatedCard .relatedPoster img {
+    filter: grayscale(1) contrast(1.05);
 }
 
-@media (width < 768px) {
+.relatedCard:hover .relatedPoster img,
+.relatedCard:focus-visible .relatedPoster img {
+    filter: none;
+}
+
+@media (width < 1024px) {
     .titleBlock {
+        flex-direction: column;
+        align-items: center;
         text-align: center;
     }
 
-    .ratings {
+    .filmMeta {
         justify-content: center;
-    }
-
-    .heroGrid {
-        grid-template-columns: 132px minmax(0, 1fr);
-        gap: var(--gap-md);
-    }
-
-    .credits {
-        grid-row: 1;
-        grid-column: 2;
-    }
-
-    .synopsis {
-        grid-row: 2;
-        grid-column: 1 / -1;
-        text-align: center;
-    }
-
-    .trailer {
-        grid-row: 3;
-        grid-column: 1 / -1;
     }
 
     .relatedGrid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+.titleCopy > p {
+    font-size: var(--fs-body-sm);
+}
+
+.related h2 {
+    font: 600 var(--fs-section)/var(--lh-title) var(--font-display);
 }

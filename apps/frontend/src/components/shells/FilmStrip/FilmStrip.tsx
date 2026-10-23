@@ -5,10 +5,13 @@ import { type ReactNode, useState } from 'react';
 
 import NavigationItemIcon from '#components/shells/NavigationItemIcon/NavigationItemIcon';
 import styles from '#components/shells/product-navigation.module.scss';
+import { useProductOverlay } from '#components/shells/product-overlay';
 import type { TShellMenuItem } from '#components/shells/shell-navigation';
 import { authClient } from '#lib/auth-client';
 
 function FilmMenuItem({ item }: { item: TShellMenuItem }) {
+    // Hub sections share a persistent frame, so a route change alone would leave the strip open.
+    const { closeOverlay } = useProductOverlay();
     const content = (
         <>
             <NavigationItemIcon label={item.label} />
@@ -21,6 +24,7 @@ function FilmMenuItem({ item }: { item: TShellMenuItem }) {
             aria-current={item.current ? 'page' : undefined}
             className={styles.filmFrame}
             href={item.href}
+            onClick={() => closeOverlay()}
         >
             {content}
         </Link>

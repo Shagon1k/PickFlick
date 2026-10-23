@@ -1,8 +1,29 @@
 import type { TMovieDetails } from '@pickflick/contracts';
+import clsx from 'clsx';
+
+import ticket from '#components/movies/film-ticket.module.scss';
+import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
+import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
+import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
+import Button from '#components/ui/Button/Button';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
-import MovieCredits from '../MovieCredits/MovieCredits';
-import MoviePoster from '../MoviePoster/MoviePoster';
+
+const ratingFormat = new Intl.NumberFormat('en', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+});
+const voteFormat = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+// One rating keeps the header calm: IMDb first, then Kinopoisk, then whatever the source sent.
+const RATING_PRIORITY = ['imdb', 'kinopoisk'];
+const RATING_LABELS: Record<string, string> = {
+    imdb: 'IMDb',
+    kinopoisk: 'Kinopoisk',
+    tmdb: 'TMDB',
+};
 
 interface IMovieHeroProps {
     movie: TMovieDetails;
@@ -12,60 +33,84 @@ interface IMovieHeroProps {
 export default function MovieHero({ movie, title }: IMovieHeroProps) {
     return (
         <section className={styles.hero} aria-labelledby="movie-title">
-            <header className={styles.titleBlock}>
-                <h1 id="movie-title">{title}</h1>
-                {movie.originalTitle && movie.originalTitle !== title ? (
-                    <p>{movie.originalTitle}</p>
-                ) : null}
-                <p>
-                    {movie.releaseYear ?? 'Year unavailable'} ·{' '}
-                    {movie.runtime ? `${movie.runtime} min` : 'Runtime unavailable'} ·{' '}
-                    {movie.originalLanguage ?? 'Language unavailable'}
-                </p>
-                <p>{movie.genres?.length ? movie.genres.join(' · ') : 'Genres unavailable'}</p>
-                <ul className={styles.ratings} aria-label="Provider ratings">
-                    {movie.ratings.map((rating) => (
-                        <li key={rating.source}>
-                            {rating.source.toUpperCase()}{' '}
-                            <strong>
-                                {rating.value} / {rating.scale}
-                            </strong>
-                            {rating.voteCount !== null ? ` (${rating.voteCount} ratings)` : ''}
-                        </li>
-                    ))}
-                </ul>
-            </header>
-            <div className={styles.heroGrid}>
-                <div className={styles.posterRegion}>
-                    <MoviePoster url={movie.posterUrl} title={title} />
+            {/* On phones the header becomes the film ticket, its rating the stub, as in Sessions. */}
+            <header className={clsx(styles.titleBlock, ticket.ticket)} data-film>
+                <TicketPoster corner={<WatchlistBookmark />} title={title} url={movie.posterUrl} />
+                <div className={clsx(styles.titleCopy, ticket.copy)}>
+                    <h1 id="movie-title">{title}</h1>
+                    {movie.originalTitle && movie.originalTitle !== title ? (
+                        <p>{movie.originalTitle}</p>
+                    ) : null}
+                    <FilmMeta
+                        className={styles.filmMeta}
+                        language={
+                            movie.originalLanguage ? formatLanguage(movie.originalLanguage) : null
+                        }
+                        movie={movie}
+                    />
                 </div>
-                <MovieCredits movie={movie} />
-                <section className={styles.synopsis} aria-labelledby="synopsis-title">
-                    <h2 id="synopsis-title">Synopsis</h2>
-                    <p>{movie.overview ?? 'No synopsis is available in English.'}</p>
-                </section>
-                <section className={styles.trailer} aria-labelledby="trailer-title">
-                    <h2 id="trailer-title">Trailer</h2>
-                    {movie.trailers?.length ? (
-                        <ul>
-                            {movie.trailers.map((trailer, index) => (
-                                // eslint-disable-next-line @eslint-react/no-array-index-key -- provider trailers can repeat a URL and never reorder
-                                <li key={`${trailer.url}-${index}`}>
-                                    <a href={trailer.url} target="_blank" rel="noopener noreferrer">
-                                        {trailer.name ?? 'Watch trailer'} ↗
-                                        <span className="visually-hidden">
-                                            {' '}
-                                            (YouTube, opens in a new tab)
-                                        </span>
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>No trailer is available.</p>
-                    )}
-                </section>
-            </div>
+                {/* Rate and the poster's Watchlist ribbon are placeholders until Phase 15. */}
+                <div className={clsx(ticket.rail, ticket.stub)}>
+                    <Rating ratings={movie.ratings} />
+                    <div className={ticket.railCell}>
+                        <Button aria-label="Rate this film (coming soon)" disabled variant="cell">
+                            <Icon name="ratings" />
+                            Rate
+                        </Button>
+                    </div>
+                </div>
+            </header>
+            <MovieMedia
+                hidePhonePoster
+                movie={movie}
+                posterCorner={<WatchlistBookmark />}
+                title={title}
+            />
         </section>
     );
+}
+
+function Rating({ ratings }: { ratings: TMovieDetails['ratings'] }) {
+    const rating =
+        RATING_PRIORITY.map((source) => ratings.find((item) => item.source === source)).find(
+            Boolean,
+        ) ?? ratings.at(0);
+    if (!rating)
+        return (
+            <p className={clsx(ticket.railItem, styles.rating)}>
+                <Icon name="globe" />
+                <strong aria-hidden="true">—</strong>
+                <span className="visually-hidden">No ratings yet</span>
+            </p>
+        );
+    const label = RATING_LABELS[rating.source] ?? rating.source;
+    // The prototype shows a mark, not the source name; readers and the tooltip still get it.
+    return (
+        <p className={clsx(ticket.railItem, styles.rating)} title={`${label} rating`}>
+            <Icon name="globe" />
+            <span className="visually-hidden">{label} rating</span>
+            <span>
+                <strong>{ratingFormat.format(rating.value)}</strong>
+                <span className="visually-hidden"> out of {rating.scale}</span>
+                {rating.voteCount === null ? null : (
+                    <small>
+                        {' '}
+                        {voteFormat.format(rating.voteCount)}
+                        <span className="visually-hidden"> ratings</span>
+                    </small>
+                )}
+            </span>
+        </p>
+    );
+}
+
+const languageNames = new Intl.DisplayNames('en', { type: 'language' });
+
+/** Providers send ISO language codes such as `eng`; readers get the language name. */
+function formatLanguage(code: string) {
+    try {
+        return languageNames.of(code) ?? code;
+    } catch {
+        return code;
+    }
 }

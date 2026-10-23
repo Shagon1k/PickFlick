@@ -1,0 +1,97 @@
+.film {
+    --film-hole: var(--ivory);
+    --film-frame: color-mix(in sRGB, var(--surface-lit) 88%, var(--fg-secondary));
+    --film-frame-line: color-mix(in sRGB, var(--border-lit) 68%, var(--fg-secondary));
+    --film-progress: color-mix(in sRGB, var(--gold) 26%, var(--surface-lit));
+    --film-progress-line: color-mix(in sRGB, var(--gold) 58%, var(--border-lit));
+
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    height: 52px;
+    padding: 13px 7px;
+    overflow: hidden;
+    border: 1px solid color-mix(in sRGB, var(--ivory) 68%, transparent);
+    border-radius: 4px;
+    isolation: isolate;
+}
+
+.film::before,
+.film::after {
+    position: absolute;
+    right: 7px;
+    left: 7px;
+    z-index: 1;
+    height: 7px;
+    pointer-events: none;
+    content: '';
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0 4px,
+        var(--film-hole) 4px 11px,
+        transparent 11px 17px
+    );
+}
+
+.film::before {
+    top: 3px;
+}
+
+.film::after {
+    bottom: 3px;
+}
+
+.film i {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--film-frame);
+    border: 1px solid var(--film-frame-line);
+    border-radius: 2px;
+    transition:
+        background var(--motion-emphasis),
+        border-color var(--motion-emphasis);
+}
+
+.film i[data-active] {
+    background: var(--film-progress);
+    border-color: var(--film-progress-line);
+}
+
+.film i[data-current] {
+    background: color-mix(in sRGB, var(--gold) 38%, var(--surface-lit));
+    border-color: var(--gold-light);
+}
+
+/* The one ambient loop in the scene: light passing over the frame being exposed. */
+.film i[data-current]::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in sRGB, var(--ivory) 24%, transparent),
+        transparent
+    );
+    transform: translateX(-120%);
+    animation: film-sweep 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .film i {
+        transition: none;
+    }
+
+    .film i[data-current]::after {
+        animation: none;
+    }
+}
+
+@keyframes film-sweep {
+    to {
+        transform: translateX(120%);
+    }
+}

@@ -9,6 +9,7 @@ const AVATAR_VERSION_LENGTH = 16;
 interface IClubRow {
     id: string;
     name: string;
+    createdAt: Date;
     description: string | null;
     avatarObjectKey: string | null;
     lifecycle: IClubSummary['lifecycle'];
@@ -20,6 +21,7 @@ export function toClubSummary(club: IClubRow, role: TClubRole): IClubSummary {
     return {
         id: club.id,
         name: club.name,
+        createdAt: club.createdAt.toISOString(),
         ...(club.description ? { description: club.description } : {}),
         hasAvatar: Boolean(club.avatarObjectKey),
         // Changes with every upload, so browsers refetch the private avatar URL.

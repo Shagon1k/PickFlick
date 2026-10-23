@@ -197,25 +197,36 @@ launch-critical risk.
 | Only a Club without Session history can be deleted, and deletion keeps an audit tombstone.                         | One person cannot erase shared history.                       | `SESSION_HISTORY` conflict; soft deletion.                   |
 | Free Clubs cannot show Selection results to ordinary members.                                                      | A Pro entitlement.                                            | `TIER_SETTING_UNAVAILABLE` conflict.                         |
 
-Club membership invitation links expire after seven days and are single-use. An Admin or Moderator
+New Club membership invitation links expire after 12 hours and are single-use. Existing links keep
+their stored expiry. An Admin or Moderator
 creates a shareable link or targets a registered User. Only an eligible registered User sees a minimal
 preview; accepting creates one active Membership and declining consumes the link without joining.
-Seats are checked when the response commits, so a link never reserves capacity. The pending-invite
+Seats are checked when the response commits, so a link never reserves capacity. A Club may have
+at most its plan's member limit in live pending links (8 Free, 16 Pro). Creation and revocation
+serialize on the Club row. Manager lists identify each invitation by a short record ID and keep
+older links accessible even if they exceed the creation limit. The pending-invite
 ticket lists only eligible invitations targeted to the signed-in User; shareable links stay in their
 link flow. Invalid, expired,
 revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
 a separate member-only flow.
 
-Session invitations target one active Membership and expire after seven days. Admins and Moderators
-create or revoke them; a replacement link revokes the previous pending link. Only the target member
-in an active Club and open Session sees the preview or responds. All unavailable links and ineligible
-viewers receive the same denial with no Club or Session fields. Acceptance changes the existing
-SessionParticipant, never Membership. Pending Session rows share the product invitation ticket.
-Accepted participants may leave with `LEAVE`; operators remove another participant with `REMOVE`.
-Leaving or removal preserves history, updates the denominator, and revokes pending links. Club departure
-propagates to invited/accepted participants in open Sessions; completed Session history stays intact.
-Archived Clubs allow Session leave but prohibit new invitations, acceptance, revocation and removal.
-Adminless/over-limit Clubs prohibit new invites while preserving existing participation and roster recovery.
+Every active Club member can open a Session and join without a personal invitation. Creation and
+Session detail expose the same shareable `/sessions/:sessionId` link. Joining and declining update
+only the caller's SessionParticipant, never Club Membership, and serialize on Club → Session locks.
+Pending Session invitations are derived from open Sessions for Club members who have not responded;
+they do not need a stored personal token. Declining, leaving or removal removes the pending row.
+A declined or departed participant may explicitly rejoin; an operator-removed participant cannot
+restore their own participation. Accepted participants leave with typed `LEAVE`; operators remove
+another participant with `REMOVE`.
+
+Joining remains available in Nomination, Selection, Watching and Rating, while the Club is active.
+Late Selection participants score the already frozen films. Joining later never reopens Nomination,
+changes a submitted ballot or recalculates a saved winner. Completed and Cancelled Sessions stop
+accepting participation changes and leave the pending list. Existing personalized token links keep
+their seven-day expiry and exact-recipient checks; the shared Session URL does not expire separately
+from the Session's participation window. Club departure propagates to participants in open Sessions;
+completed history stays intact. Archived Clubs allow Session leave but prohibit joining and operator
+roster changes. Adminless/over-limit Clubs preserve existing participation and roster recovery.
 
 Club Admins may remove Members and Moderators; Moderators may remove Members. Neither route can
 remove the Admin or the caller. Removal ends access while keeping the departed Membership and shared
@@ -429,16 +440,16 @@ hidden from normal history unless product copy exposes it.
 | Jobs       | Separate backend worker reads due Sessions from PostgreSQL; no job table or queue library.                  | ADR-018           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                  | ADR-007, 008      |
 
-| Provider              | Purpose                                                                                    | Status                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Google OAuth          | Registered identity.                                                                       | Built; owner sandbox/UAT evidence pending                                                |
-| Apple Sign in         | Registered identity after approved activation.                                             | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
-| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
-| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                        | Planned                                                                                  |
-| Resend                | Transactional and opted-in email.                                                          | Contact delivery built; notifications planned                                            |
-| S3-compatible storage | Avatars, catalog images and expiring exports.                                              | Club avatars and catalog images built; User avatars and exports planned                  |
-| Sentry                | Error and performance visibility with privacy-safe context.                                | Planned                                                                                  |
-| IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.   | Active read-only surface                                                                 |
+| Provider              | Purpose                                                                                            | Status                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Google OAuth          | Registered identity.                                                                               | Built; owner sandbox/UAT evidence pending                                                |
+| Apple Sign in         | Registered identity after approved activation.                                                     | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
+| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
+| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
+| Resend                | Transactional and opted-in email.                                                                  | Contact delivery built; notifications planned                                            |
+| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club avatars and catalog images built; User avatars and exports planned                  |
+| Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
+| IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
 
 ## 8. Phase plan
 
@@ -449,7 +460,9 @@ Fixing gate follows every five delivery phases; gates add to, never replace, eac
 
 - Before a phase starts, create or confirm its Project 3 issues, then create
   `_docs/phase-N-short-name.md` with the issue links, implementation decisions, edge cases, and
-  verification commands. Link it from `_docs/README.md` while the phase is active.
+  verification commands. Link it from `_docs/README.md` while the phase is active. For Phase 12,
+  the owner requested evidence in existing canonical documents and #48, without a separate
+  phase document or findings register.
 - Project 3 owns live task status; update this Roadmap only at phase boundaries.
 - Record the evidence each acceptance check names. Do not mark a phase Done with an unchecked
   acceptance item, missing evidence, or undocumented deferral.
@@ -474,9 +487,9 @@ flowchart LR
 Hexagons are verification gates. The graph shows the main dependencies; each phase lists all of
 its own.
 
-**Where the build stands:** Phases 1–5 and 7–10 are built. They stay In progress until their
-verification gate records the evidence: Phase 6 for 1–5 (running now) and Phase 12 for 7–11.
-Phase 11 Selection is active; its verification and preview acceptance remain open.
+**Where the build stands:** Phases 0–7 and 9–12 are Done; their gates (Phase 6 for 1–5, Phase 12
+for 7–11) recorded the evidence. Phase 8 stays In progress for scheduled Movie refresh pending
+ADR-016. Phase 13 (Watching, Rating & Completion) is next.
 
 ### Phase 0 — Guidance Baseline · Done
 
@@ -490,7 +503,7 @@ organized the self-contained prototypes and brand assets; validated paths and ma
 files and 584 local references; JSON validation passed; the brand manifest and dimensions passed for
 24 assets. Retired blueprints are removed. No application code was created.
 
-### Phase 1 — Infrastructure, Repository & Deployment Foundation · In progress
+### Phase 1 — Infrastructure, Repository & Deployment Foundation · Done
 
 **Goal:** A reproducible monorepo and runtime, proven by automatic UAT delivery, plus a disabled
 production-promotion path.
@@ -510,50 +523,50 @@ production-promotion path.
 
 - [x] Record repository topology, auth boundary, database workflow, queue approach, deployment
       baseline, and UI primitive strategy.
-- [ ] Scaffold the frontend, backend, database, contracts, and configuration packages with no unused
-      generated files. (Phase 6 removed the idle worker, Redis, and the separate UI package; see
-      ADR-013 and ADR-014.)
-- [ ] Configure PostgreSQL, object storage, and Resend with typed environment validation.
-- [ ] Set up the Prisma migration workflow, seeds and fixtures, and a safe non-production reset.
-- [ ] Add real commands for install, dev, build, lint, type-check, test, migrate, seed, image build,
+- [x] Scaffold the frontend, backend, database, contracts, and configuration packages with no unused
+      generated files. (Phase 6 removed the idle worker, Redis, and separate UI package; Phase 10 introduced the
+      Nomination deadline worker under ADR-018.)
+- [x] Configure PostgreSQL, object storage, and Resend with typed environment validation.
+- [x] Set up the Prisma migration workflow, seeds and fixtures, and a safe non-production reset.
+- [x] Add real commands for install, dev, build, lint, type-check, test, migrate, seed, image build,
       Compose validation, and E2E smoke, and list them in `AGENTS.md`.
-- [ ] Keep production frontend, backend, and release images; align Compose with managed PostgreSQL,
+- [x] Keep production frontend, backend, and release images; align Compose with managed PostgreSQL,
       ordered release and health gates, revision traceability, private ports, and signal handling.
-- [ ] Provision UAT at `https://uat.pick-flick.app` through Dokploy and Cloudflare with synthetic
+- [x] Provision UAT at `https://uat.pick-flick.app` through Dokploy and Cloudflare with synthetic
       data and sandbox providers.
-- [ ] Prepare the production Dokploy and environment contract for `https://pick-flick.app` with
+- [x] Prepare the production Dokploy and environment contract for `https://pick-flick.app` with
       automatic deployment off and the production guard false. Live production resources belong to
       #94.
-- [ ] Replace placeholder CI with real gates; deploy each green `main` revision to UAT automatically,
+- [x] Replace placeholder CI with real gates; deploy each green `main` revision to UAT automatically,
       wait for that exact revision, and run health and browser smoke checks.
-- [ ] Add a manual SemVer promotion that accepts only current `main` with successful UAT evidence,
+- [x] Add a manual SemVer promotion that accepts only current `main` with successful UAT evidence,
       pins production to its tag, and cannot deploy while the guard is false. Registry digests wait
       until separate build and deployment hosts need them.
-- [ ] Establish the environment inventory, secret boundaries, structured logs, request correlation,
+- [x] Establish the environment inventory, secret boundaries, structured logs, request correlation,
       health endpoints, and a stable API error envelope.
-- [ ] Document deployment, configuration, migration compatibility, UAT smoke, rollback, and
+- [x] Document deployment, configuration, migration compatibility, UAT smoke, rollback, and
       production enablement without secret values.
 
 **Acceptance:**
 
-- [ ] A clean checkout installs, starts services, migrates, seeds, and runs the frontend and backend
+- [x] A clean checkout installs, starts services, migrates, seeds, and runs the frontend and backend
       from documented commands.
-- [ ] Lint, type-check, unit and integration tests, builds, image builds, and Compose validation pass
+- [x] Lint, type-check, unit and integration tests, builds, image builds, and Compose validation pass
       locally and in CI.
-- [ ] A green `main` revision deploys to UAT automatically and passes HTTPS health and browser smoke.
-- [ ] A failed release migration or seed keeps the new revision from becoming active.
-- [ ] Repository validation shows UAT and production use distinct projects, credentials, storage,
+- [x] A green `main` revision deploys to UAT automatically and passes HTTPS health and browser smoke.
+- [x] A failed release migration or seed keeps the new revision from becoming active.
+- [x] Repository validation shows UAT and production use distinct projects, credentials, storage,
       and service aliases with no published application or data port. Live production is verified
       under #94.
-- [ ] A known-good UAT revision can be restored under the schema-compatibility rules.
-- [ ] The production workflow validates without deploying while the guard is false.
-- [ ] Invalid or missing configuration fails safely without exposing secrets.
-- [ ] Architecture and ADR documentation match the repository and runtime.
+- [x] A known-good UAT revision can be restored under the schema-compatibility rules.
+- [x] The production workflow validates without deploying while the guard is false.
+- [x] Invalid or missing configuration fails safely without exposing secrets.
+- [x] Architecture and ADR documentation match the repository and runtime.
 
 **Out of scope:** Production traffic, real users and data, live billing, email, and storage
 providers, the final production restore drill, and end-user features.
 
-### Phase 2 — Production Design System & App Shells · In progress
+### Phase 2 — Production Design System & App Shells · Done
 
 **Goal:** Projector Noir as reusable production foundations and responsive public, private, and
 admin shells.
@@ -566,28 +579,28 @@ visual-regression QA · [#19](https://github.com/Shagon1k/PickFlick/issues/19) r
 
 **Scope:**
 
-- [ ] Implement color, typography, spacing, layout, border, elevation, imagery, and motion tokens.
-- [ ] Build accessible buttons, fields, toggles, tabs, menus, dialogs, progress, banners, tables,
+- [x] Implement color, typography, spacing, layout, border, elevation, imagery, and motion tokens.
+- [x] Build accessible buttons, fields, toggles, tabs, menus, dialogs, progress, banners, tables,
       feedback, and rating and score controls.
-- [ ] Build public, authenticated, Session, Settings/Library, and App Admin shells without feature
+- [x] Build public, authenticated, Session, Settings/Library, and App Admin shells without feature
       data.
-- [ ] Implement S/M/L/XL composition, fixed mobile navigation, bounded table scrolling, and 44px
+- [x] Implement S/M/L/XL composition, fixed mobile navigation, bounded table scrolling, and 44px
       targets.
-- [ ] Add reduced-motion, keyboard and focus, component-state, visual-regression, and accessibility
+- [x] Add reduced-motion, keyboard and focus, component-state, visual-regression, and accessibility
       test harnesses.
-- [ ] Serve brand assets through one reusable asset contract.
+- [x] Serve brand assets through one reusable asset contract.
 
 **Acceptance:**
 
-- [ ] Primitives cover default, hover, focus, pressed, loading, disabled, validation, success, and
+- [x] Primitives cover default, hover, focus, pressed, loading, disabled, validation, success, and
       destructive states where applicable.
-- [ ] Shells work at 390, 768, 1024, and 1440 pixels without horizontal page scrolling.
-- [ ] Keyboard, touch, and automated accessibility checks pass for the shared components.
-- [ ] Source-comparison captures are recorded and Design build and QA status is honest.
+- [x] Shells work at 390, 768, 1024, and 1440 pixels without horizontal page scrolling.
+- [x] Keyboard, touch, and automated accessibility checks pass for the shared components.
+- [x] Source-comparison captures are recorded and Design build and QA status is honest.
 
 **Out of scope:** Complete page content and business mutations.
 
-### Phase 3 — Public Site & System States · In progress
+### Phase 3 — Public Site & System States · Done
 
 **Goal:** The complete public PickFlick story and safe recovery pages.
 
@@ -602,26 +615,26 @@ visual-regression QA · [#19](https://github.com/Shagon1k/PickFlick/issues/19) r
 
 **Scope:**
 
-- [ ] Implement Landing, Pricing, and Contact from the designs.
-- [ ] Implement privacy and terms pages with clearly provisional copy until legal review.
-- [ ] Implement branded not-found and application-error recovery.
-- [ ] Wire the Contact form with validation, rate limiting, stable feedback, and privacy-safe
+- [x] Implement Landing, Pricing, and Contact from the designs.
+- [x] Implement privacy and terms pages with clearly provisional copy until legal review.
+- [x] Implement branded not-found and application-error recovery.
+- [x] Wire the Contact form with validation, rate limiting, stable feedback, and privacy-safe
       delivery.
-- [ ] Add metadata, canonical URLs, social previews, robots, sitemap, and `noindex` for non-public
+- [x] Add metadata, canonical URLs, social previews, robots, sitemap, and `noindex` for non-public
       routes.
-- [ ] Cover loading, provider and network failure, long content, and reduced motion.
+- [x] Cover loading, provider and network failure, long content, and reduced motion.
 
 **Acceptance:**
 
-- [ ] Every public route matches its responsive source and works with keyboard, touch, and assistive
+- [x] Every public route matches its responsive source and works with keyboard, touch, and assistive
       technology.
-- [ ] Contact handles valid, invalid, rate-limited, and delivery-failure cases without losing input.
-- [ ] 404 and 500 recovery reveal no internal details and offer working navigation and retry.
-- [ ] Metadata and indexing rules are correct in a production build.
+- [x] Contact handles valid, invalid, rate-limited, and delivery-failure cases without losing input.
+- [x] 404 and 500 recovery reveal no internal details and offer working navigation and retry.
+- [x] Metadata and indexing rules are correct in a production build.
 
 **Out of scope:** Registration, authenticated pages, live checkout, and final legal approval.
 
-### Phase 4 — Authentication & Account Onboarding · In progress
+### Phase 4 — Authentication & Account Onboarding · Done
 
 **Goal:** A person becomes a registered User through an approved provider and returns to where they
 were going. Apple stays dormant pending owner approval.
@@ -638,28 +651,29 @@ roles at every boundary
 **Scope:**
 
 - [x] Choose the auth and session implementation and the account-linking contract.
-- [ ] Implement Google and Apple OAuth against the API-owned contract.
-- [ ] Implement server-managed sessions, callback validation, sign-out, revocation, and linking
+- [x] Implement Google OAuth and the gated Apple adapter against the API-owned contract;
+      Apple activation remains deferred by the Decision Log.
+- [x] Implement server-managed sessions, callback validation, sign-out, revocation, and linking
       rules (explicit linking is deferred; see the Decision Log).
-- [ ] Implement Login and the initial profile from provider-safe fields.
-- [ ] Validate return-to-intent for the app, Club invitations, and safe fallbacks.
-- [ ] Enforce User and App Admin roles and deny suspended Users at route, API, SSE, and file
+- [x] Implement Login and the initial profile from provider-safe fields.
+- [x] Validate return-to-intent for the app, Club invitations, and safe fallbacks.
+- [x] Enforce User and App Admin roles and deny suspended Users at route, API, progress, and file
       boundaries.
-- [ ] Add auth abuse protection, token-free security logging, and provider-failure recovery.
+- [x] Add auth abuse protection, token-free security logging, and provider-failure recovery.
 
 **Acceptance:**
 
-- [ ] New and returning Users sign in and out through each enabled provider and reach the intended
+- [x] New and returning Users sign in and out through each enabled provider and reach the intended
       destination; dormant providers are unavailable in the UI and API.
-- [ ] Invalid state, nonce, or callback, provider denial, duplicate identity, suspension, expiry, and
+- [x] Invalid state, nonce, or callback, provider denial, duplicate identity, suspension, expiry, and
       revoked sessions fail safely.
-- [ ] Protected routes and APIs reject unauthenticated and forged requests regardless of the UI.
-- [ ] Auth integration, E2E, and security checks pass with no provider tokens in browser storage or
+- [x] Protected routes and APIs reject unauthenticated and forged requests regardless of the UI.
+- [x] Auth integration, E2E, and security checks pass with no provider tokens in browser storage or
       logs.
 
 **Out of scope:** Anonymous use, passwords, Club membership, and full profile settings.
 
-### Phase 5 — Clubs, Membership & Roles · In progress
+### Phase 5 — Clubs, Membership & Roles · Done
 
 **Goal:** The private Club boundary and its role and entitlement invariants.
 
@@ -672,27 +686,27 @@ safeguards
 
 **Scope:**
 
-- [ ] Implement Club, Membership, Admin/Moderator/Member roles, settings, lifecycle, and audited
+- [x] Implement Club, Membership, Admin/Moderator/Member roles, settings, lifecycle, and audited
       role transitions.
-- [ ] Implement the no-Clubs state and Create Club with the `0..N` Selection scale.
-- [ ] Enforce one Admin at most, temporary adminless state, unique Membership, Free defaults, and
+- [x] Implement the no-Clubs state and Create Club with the `0..N` Selection scale.
+- [x] Enforce one Admin at most, temporary adminless state, unique Membership, Free defaults, and
       plan-derived limits.
-- [ ] Implement Club edit, archive/reactivate, leave, and delete with explicit confirmations.
-- [ ] Build server-side policy for Admin, Moderator, Member, App Admin, suspended User, and
+- [x] Implement Club edit, archive/reactivate, leave, and delete with explicit confirmations.
+- [x] Build server-side policy for Admin, Moderator, Member, App Admin, suspended User, and
       non-member.
-- [ ] Use fixture plan entitlements until Billing replaces them in Phase 20.
+- [x] Use fixture plan entitlements until Billing replaces them in Phase 20.
 
 **Acceptance:**
 
-- [ ] The full role, limit, and action matrix passes integration tests, including forged requests
+- [x] The full role, limit, and action matrix passes integration tests, including forged requests
       and adminless Clubs.
-- [ ] Club creation validates names, limits, and score ranges in one transaction.
-- [ ] Destructive and ownership actions are audited and never rely on hidden UI.
-- [ ] No-Clubs, Create Club, and member views match their responsive designs.
+- [x] Club creation validates names, limits, and score ranges in one transaction.
+- [x] Destructive and ownership actions are audited and never rely on hidden UI.
+- [x] No-Clubs, Create Club, and member views match their responsive designs.
 
 **Out of scope:** Invitations, full Club Hub data, Sessions, and live billing.
 
-### Phase 6 — Human Verification & Bug Fixing I · In progress
+### Phase 6 — Human Verification & Bug Fixing I · Done
 
 **Goal:** Stabilize the foundation, design system, public and auth flows, and the Club boundary
 before the core movie-night workflow.
@@ -704,27 +718,35 @@ in UAT
 
 **Scope:**
 
-- [x] Create `_docs/phase-6-human-verification-1.md` with the tested build and a severity-classified
-      register.
-- [ ] Exercise clean setup, public, Contact, and error pages, Google and Apple auth, no-Clubs, Club
+- [x] Record the tested build, findings, fixes and deferrals; consolidate the temporary notes
+      into canonical guidance after acceptance.
+- [x] Exercise clean setup, public, Contact, and error pages, Google auth and the dormant Apple boundary, no-Clubs, Club
       creation, roles, limits, and destructive flows by hand.
-- [ ] Compare every delivered surface at S/M/L/XL and with keyboard, touch, and reduced motion.
-- [ ] Run negative authorization, revocation, validation, configuration, migration, and
+- [x] Compare every delivered surface at S/M/L/XL and with keyboard, touch, and reduced motion.
+- [x] Run negative authorization, revocation, validation, configuration, migration, and
       provider-failure checks.
-- [ ] Fix every Blocker and Major and rerun the affected checks.
-- [ ] Defer remaining Minor issues with an owner and trigger; consolidate durable docs and remove
+- [x] Fix every Blocker and Major and rerun the affected checks.
+- [x] Defer remaining Minor issues with an owner and trigger; consolidate durable docs and remove
       staging docs.
 
 **Acceptance:**
 
-- [ ] No open Blocker or Major.
-- [ ] CI and the E2E, accessibility, and responsive suites pass after fixes.
-- [ ] Manual evidence covers all five phases and the documentation matches verified behavior.
-- [ ] The register records every finding, fix, retest, and approved deferral.
+- [x] No open Blocker or Major.
+- [x] CI and the E2E, accessibility, and responsive suites pass after fixes.
+- [x] Manual evidence covers all five phases and the documentation matches verified behavior.
+- [x] The accepted gate evidence records findings, fixes, retests and approved deferrals.
 
 **Out of scope:** New capability unrelated to verification findings.
 
-### Phase 7 — Club Hub & Club Invitations · In progress
+**Recorded evidence:** #32 was closed on 2026-09-28 with its gate acceptance checked, including CI,
+critical E2E/accessibility/responsive checks and owner preview acknowledgment. The earlier local
+record included 96 UI contracts and 42 reviewed Linux visual comparisons. The Phases 1–5 guidance
+was consolidated in commit `e7fff82`; temporary Phase 6 notes are now retired. Apple activation,
+explicit provider linking, object-retention cleanup and production provisioning remain their
+separate recorded decisions or release scopes. This acceptance is historical, not a claim that
+new Phase 12 changes have passed hosted review.
+
+### Phase 7 — Club Hub & Club Invitations · Done
 
 **Goal:** Clubs you can navigate, understand, and join through the Hub and invitations.
 
@@ -737,25 +759,32 @@ adminless, and read-only states
 
 **Scope:**
 
-- [ ] Implement the Club switcher and post-login routing to the last Club or the no-Clubs state.
-- [ ] Implement Hub Overview, Members, the Manage Club foundation, recent activity, basic counters,
+- [x] Implement the Club switcher and post-login routing to the last Club or the no-Clubs state.
+- [x] Implement Hub Overview, Members, the Manage Club foundation, recent activity, basic counters,
       and empty, loading, and read-only states.
-- [ ] Implement Club invites: hashed tokens, expiry, revocation, a privacy-safe preview, sign-in
+- [x] Implement Club invites: hashed tokens, expiry, revocation, a privacy-safe preview, sign-in
       continuation, accept/decline, and member limits.
-- [ ] Implement the shared pending-invite ticket and popover; Session rows arrive in Phase 9.
-- [ ] Implement moderator management, leave and removal boundaries, and adminless notices in the
+- [x] Implement the shared pending-invite ticket and popover; Session rows arrive in Phase 9.
+- [x] Implement moderator management, leave and removal boundaries, and adminless notices in the
       Hub.
-- [ ] Keep Hub actions ready for Phase 20 downgrade and read-only projections.
+- [x] Keep Hub actions ready for Phase 20 downgrade and read-only projections.
 
 **Acceptance:**
 
-- [ ] A User accepts or declines a valid Club invitation and lands in the right Hub.
-- [ ] Expired, revoked, over-limit, already-member, and wrong-target invitations show only safe
+- [x] A User accepts or declines a valid Club invitation and lands in the right Hub.
+- [x] Expired, revoked, over-limit, already-member, and wrong-target invitations show only safe
       information and recover clearly.
-- [ ] Switching Clubs never leaks cached data or permissions.
-- [ ] Hub and invite pages meet the responsive, keyboard, and touch contracts.
+- [x] Switching Clubs never leaks cached data or permissions.
+- [x] Hub and invite pages meet the responsive, keyboard, and touch contracts.
 
 **Out of scope:** Session creation, advanced statistics, leaderboard, and achievements.
+
+**Recorded evidence:** #33–#35 delivery was accepted; the last issue closed on
+2026-10-09. Local delivery records cover Club isolation, invitation races, membership recovery,
+keyboard focus, restricted states and Linux captures. Current behavior is described in
+[Architecture](ARCHITECTURE.md#3-data) and [Design](DESIGN.md#club-hub); Phase 12
+adds the persistent tab frame, real Call Sheet fields and 12-hour Club links. Their verification
+is recorded under Phase 12 below.
 
 ### Phase 8 — Movie Catalog, Sources & Global Search · In progress
 
@@ -771,23 +800,24 @@ related titles
 
 **Scope:**
 
-- [ ] Implement configurable catalog adapters with server-held credentials, normalized search/details and media
+- [x] Implement configurable catalog adapters with server-held credentials, normalized search/details and media
       mapping, rate-limit handling, and cache freshness.
-- [ ] Preserve canonical Movie UUIDs and resolve separately unique verified external IDs transactionally across sources.
-- [ ] Implement authenticated global search with loading, no-results, stale-safe, provider-error, and
+- [x] Preserve canonical Movie UUIDs and resolve separately unique verified external IDs transactionally across sources.
+- [x] Implement authenticated global search with loading, no-results, stale-safe, provider-error, and
       keyboard behavior.
-- [ ] Implement Movie Details metadata, trailer, credits, trusted outbound links, and related titles.
-- [ ] Add refresh jobs and the refresh-cadence setting for Phase 21. If no earlier phase has, this
-      introduces the worker and queue (ADR-014).
-- [ ] Keep fixture posters out of production data and record each source’s attribution and usage terms.
+- [x] Implement Movie Details metadata, trailer, credits, trusted outbound links, and related titles.
+- [ ] Implement scheduled Movie refresh and the later Admin cadence contract after ADR-016
+      approval. The existing Nomination worker does not refresh the catalog.
+- [x] Keep fixture posters out of production data and record each source’s attribution and usage terms.
 
 **Acceptance:**
 
-- [ ] Search and detail results are deduplicated, safely encoded, cached deliberately, and recover
+- [x] Search and detail results are deduplicated, safely encoded, cached deliberately, and recover
       from provider failure and rate limits.
-- [ ] Global search is authorized, responsive, keyboard-accessible, and routes to stable Movies.
-- [ ] Refresh jobs are idempotent and observable; stale data appears only where explicitly safe.
-- [ ] Movie Details matches the design without implying AI personalization.
+- [x] Global search is authorized, responsive, keyboard-accessible, and routes to stable Movies.
+- [x] On-demand cache freshness and explicitly bounded stale-data fallback are implemented.
+- [ ] Scheduled refresh jobs are idempotent, observable and configurable through the later Admin contract.
+- [x] Movie Details matches the design without implying AI personalization.
 
 **Out of scope:** Personal Rating, Watchlist changes, AI recommendations, and nominations.
 
@@ -795,9 +825,18 @@ The internal catalog structure follows
 [ADR-017](_docs/decisions/README.md#adr-017--keep-movie-identity-independent-of-catalog-sources).
 The default source combination is PoiskKino + TheTVDB. Provider switching retains UUIDs and
 requires filling missing external correspondences; live response completeness remains separate.
-Refresh jobs remain the ADR-016 checkpoint.
+Scheduled refresh remains unimplemented at the ADR-016 checkpoint; closed delivery issues
+do not satisfy that acceptance item.
 
-### Phase 9 — Session Creation & Participant Roster · In progress
+**Recorded evidence:** #36–#38 delivery was accepted by 2026-10-11. Their delivery
+records include canonical-ID concurrency, provider/cache failure handling, authenticated search,
+private media, read-only details, attribution and responsive checks. The final Movie Details
+record passed 379 unit tests, 85 API/database integration checks and 26 browser smoke checks.
+These are dated delivery results, not current suite totals. Scheduled refresh is absent from
+code and ADR-016 remains Proposed, so this phase retains an unchecked refresh acceptance item.
+Provider commercial/media rights remain with existing #89; no licensing approval is implied.
+
+### Phase 9 — Session Creation & Participant Roster · Done
 
 **Goal:** Full-cycle and pre-selected Sessions with a member-only roster and the one-blocking-Session
 guarantee.
@@ -811,30 +850,38 @@ Session invitations and roster
 
 **Scope:**
 
-- [ ] Implement Session, SessionParticipant, SessionInvite, type, phase, date, location, topic,
+- [x] Implement Session, SessionParticipant, SessionInvite, type, phase, date, location, topic,
       notes, and edit and cancel.
-- [ ] Enforce one Nomination, Selection, or Watching Session per Club in PostgreSQL, with unlimited
+- [x] Enforce one Nomination, Selection, or Watching Session per Club in PostgreSQL, with unlimited
       Rating Sessions.
-- [ ] Implement Create Session modes, required fields, the optional deadline, pre-selected Movie
+- [x] Implement Create Session modes, required fields, the optional deadline, pre-selected Movie
       search, and the result state.
-- [ ] Implement member-only Session invites, the accepted roster, leave and removal, expiry, and
+- [x] Implement member-only Session invites, the accepted roster, leave and removal, expiry, and
       generic non-member denial with a join-Club hint.
-- [ ] Add the active, Rating, and history rows the Hub needs.
-- [ ] Snapshot the Club settings and score range and define roster denominator and versioning for
+- [x] Add the active, Rating, and history rows the Hub needs.
+- [x] Snapshot the Club settings and score range and define roster denominator and versioning for
       later automatic transitions.
 
 **Acceptance:**
 
-- [ ] Full-cycle and pre-selected Sessions validate and start in the right phase.
-- [ ] Concurrent requests cannot create two blocking Sessions in one Club; Rating Sessions do not
+- [x] Full-cycle and pre-selected Sessions validate and start in the right phase.
+- [x] Concurrent requests cannot create two blocking Sessions in one Club; Rating Sessions do not
       block creation.
-- [ ] Non-members learn nothing about a Session, and accepting a Session invite never creates
+- [x] Non-members learn nothing about a Session, and accepting a Session invite never creates
       membership.
-- [ ] Roster changes and edits are authorized, audited where sensitive, and shown consistently.
+- [x] Roster changes and edits are authorized, audited where sensitive, and shown consistently.
 
 **Out of scope:** Nominations, ballots, watching and rating, and past Sessions.
 
-### Phase 10 — Nomination & Deadline Automation · In progress
+**Recorded evidence:** #39–#41 delivery was accepted by 2026-10-12. Migration and
+upgrade probes preserved legacy nullable Sessions without invented participants. The final roster
+delivery passed 119 API/database integration checks and 37 selected browser checks, including
+privacy, concurrency, restricted Clubs and focus return. Subsequent simplification and Phase 12
+replace client-chosen create IDs with server IDs and make the shared Session URL the primary join
+flow. The current contract, including legacy token compatibility, lives in
+[Architecture](ARCHITECTURE.md#3-data) and the business rules above.
+
+### Phase 10 — Nomination & Deadline Automation · Done
 
 **Goal:** Every participant nominates one film, and Nomination advances safely when complete or
 expired.
@@ -850,34 +897,42 @@ live progress (version polling since #172)
 
 **Scope:**
 
-- [ ] Implement Nomination with one nomination per participant, catalog selection, and suggestions
+- [x] Implement Nomination with one nomination per participant, catalog selection, and suggestions
       from the user's own past nominations in the current Club that did not win.
       Derive suggestions from Nomination history; selecting one uses the normal nomination flow.
       Do not add a separate saved-film entity or manual add/remove operations.
-- [ ] Implement the Nomination detail state, progress, visibility policies, submission locking, and
+- [x] Implement the Nomination detail state, progress, visibility policies, submission locking, and
       operator controls.
-- [ ] Implement durable deadline automation driven by the Session row, with stale-decision guards
+- [x] Implement durable deadline automation driven by the Session row, with stale-decision guards
       and safe deadline changes and cancellation (simplified from job rows and reconciliation in
       #172).
-- [ ] Implement the automatic `N/N` transition: two or more nominations open Selection; one selects
+- [x] Implement the automatic `N/N` transition: two or more nominations open Selection; one selects
       that Movie and advances to Watching.
-- [ ] Implement deadline outcomes: none stays open and alerts operators; one advances to Watching;
+- [x] Implement deadline outcomes: none stays open and alerts operators; one advances to Watching;
       two or more open Selection.
-- [ ] Write transactional outbox events for progress and later notifications.
+- [x] Write transactional outbox events for progress and later notifications.
 
 **Acceptance:**
 
-- [ ] Duplicate or concurrent nominations cannot break uniqueness or advance the Session twice.
-- [ ] Complete, sole-nomination, zero/one/many at deadline, changed deadline, cancelled, restart,
-      and reconciliation cases pass.
-- [ ] Visibility settings hide nominations and nominators when disabled.
-- [ ] Suggestions contain only the current user's nominations from earlier Sessions in this Club
+- [x] Duplicate or concurrent nominations cannot break uniqueness or advance the Session twice.
+- [x] Complete, sole-nomination, zero/one/many at deadline, changed deadline, cancelled, restart,
+      and overdue-Session polling cases pass.
+- [x] Visibility settings hide nominations and nominators when disabled.
+- [x] Suggestions contain only the current user's nominations from earlier Sessions in this Club
       with a resolved winner, where the nominated Movie was not selected.
-- [ ] The Nomination UI, progress, and controls meet the responsive and accessibility contracts.
+- [x] The Nomination UI, progress, and controls meet the responsive and accessibility contracts.
 
 **Out of scope:** Selection scoring and notification inbox and email delivery.
 
-### Phase 11 — Selection & Winner Resolution · In progress
+**Recorded evidence:** #42–#44 delivery was accepted; the last issue closed on
+2026-10-13. Integration and worker-process checks cover duplicate submissions, hidden films and
+authors, zero/one/many outcomes, departure, deadline edits, concurrent/manual closure, restart,
+rollback and graceful shutdown. Browser checks cover multi-client progress and offline recovery.
+The accepted #172 simplification uses Session-row deadlines and five-second authenticated polling;
+job-table reconciliation and SSE are historical, not current mechanisms. Notification intent is
+stored transactionally; delivery remains Phase 17 work.
+
+### Phase 11 — Selection & Winner Resolution · Done
 
 **Goal:** Immutable scored ballots and one deterministic winner, whether closure is automatic or
 manual.
@@ -891,27 +946,34 @@ results and live updates
 
 **Scope:**
 
-- [ ] Implement SelectionBallot and SelectionScore: one score per nomination, validated against the
+- [x] Implement SelectionBallot and SelectionScore: one score per nomination, validated against the
       Session's scale snapshot.
-- [ ] Implement the Selection detail, generated score controls, completeness checks, immutable
+- [x] Implement the Selection detail, generated score controls, completeness checks, immutable
       submission, progress, and permitted result visibility.
-- [ ] Transition automatically when all `N` ballots arrive.
-- [ ] Implement operator early closure over received ballots with the tie-break order from section 3.
-- [ ] Store an explainable winner and tie-break outcome with the immutable inputs.
-- [ ] Publish progress and winner events through the outbox and live updates.
+- [x] Transition automatically when all `N` ballots arrive.
+- [x] Implement operator early closure over received ballots with the tie-break order from section 3.
+- [x] Store an explainable winner and tie-break outcome with the immutable inputs.
+- [x] Publish progress and winner events through the outbox and live updates.
 
 **Acceptance:**
 
-- [ ] Every supported scale, incomplete ballot, duplicate submit, early closure, no-ballot, and
+- [x] Every supported scale, incomplete ballot, duplicate submit, early closure, no-ballot, and
       roster-change case behaves explicitly.
-- [ ] Ties resolve repeatably through every tie-break step and never change on retry.
-- [ ] Automatic, manual, and concurrent closure advance once and pick the same winner.
-- [ ] Hidden results and nominators stay filtered on the server; the Selection UI is accessible and
+- [x] Ties resolve repeatably through every tie-break step and never change on retry.
+- [x] Automatic, manual, and concurrent closure advance once and pick the same winner.
+- [x] Hidden results and nominators stay filtered on the server; the Selection UI is accessible and
       responsive.
 
 **Out of scope:** Watching, Rating, and notification preferences and delivery.
 
-### Phase 12 — Human Verification & Bug Fixing II · Not started
+**Recorded evidence:** #45–#47 delivery was accepted on 2026-10-15. The final result
+projection record passed 186 API/database integration checks, 59 selected browser checks and both
+real-API journeys. Coverage includes every supported scale, immutable ballots/results, all
+tie-break steps, received ballots after departure, zero ballots, concurrent/repeated closure and
+Free/Pro/role visibility. Phase 12 changes presentation and recovery within this delivered
+boundary; Watching → Rating and completion remain Phase 13.
+
+### Phase 12 — Human Verification & Bug Fixing II · Done
 
 **Goal:** Stabilize Club navigation, Movies, Session creation, Nomination, deadlines, and Selection
 before completion and history.
@@ -923,25 +985,50 @@ in UAT
 
 **Scope:**
 
-- [ ] Create `_docs/phase-12-human-verification-2.md` with the build identity and a
-      severity-classified register.
-- [ ] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
+- [x] Record the tested branch, verification evidence and current limits in existing canonical
+      documents and #48, following the owner's no-new-register instruction.
+- [x] Run multi-user journeys: Club invite, switcher, Movie search, Session roster and invites,
       Nomination, deadline, Selection, early closure, and ties.
-- [ ] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
+- [x] Exercise concurrent tabs and users, process and job restarts, progress polling recovery, stale
       data, provider failures, and permission changes mid-flow.
-- [ ] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
+- [x] Compare delivered screens at S/M/L/XL with keyboard, touch, and reduced motion, and with long,
       empty, error, and read-only content.
-- [ ] Fix every Blocker and Major and retest the affected domain, job, API, and UI boundaries.
-- [ ] Consolidate durable docs, remove staging docs, and schedule accepted lower-severity debt.
+- [x] Fix every Blocker and Major and retest the affected domain, job, API, and UI boundaries.
+- [x] Consolidate Phases 6–11 into canonical docs, remove their temporary files, and retain
+      unfinished work under its existing scope and decision checkpoint.
 
 **Acceptance:**
 
-- [ ] No open Blocker or Major.
-- [ ] The full Club-to-winner journey passes manual and automated multi-user checks.
-- [ ] Deadline, transition, tie, and authorization invariants survive retries and concurrency.
-- [ ] Documentation and issue disposition match verified behavior.
+- [x] No open Blocker or Major.
+- [x] The full Club-to-winner journey passes manual and automated multi-user checks.
+- [x] Deadline, transition, tie, and authorization invariants survive retries and concurrency.
+- [x] Documentation and issue disposition match verified behavior.
 
 **Out of scope:** New features unrelated to verification findings.
+
+**Recorded evidence (2026-10-23):** branch `PF-test-club-to-winner-verification`, issue #48 and
+[PR #180](https://github.com/Shagon1k/PickFlick/pull/180), squash-merged with green CI. The owner
+walked the Club-to-winner journey in UAT with several users (invites, switcher, Movie search,
+roster, Nomination, deadline, Selection, early closure and ties) and accepted it with no open
+Blocker or Major; that acceptance was recorded on the owner's instruction ahead of the merge. Design
+passes on 2026-10-21 audited all 26 prototype files and aligned the shared dialogs, film-strip
+menus, score control, invite ticket, the Session page in every delivered phase, the Club Hub,
+Schedule a Session, Movie Details and mobile behavior. Owner reviews on 2026-10-22 and 2026-10-23
+added the Hub section skeleton, the empty Call Sheet, Manage Club's compact rows and invitation
+dialog, swipe between Clubs, a pinned footer, the film ticket shared by Session and Movie Details
+headers, an in-place trailer player, outbound IMDb, Kinopoisk, Letterboxd and Wikipedia links, Rate
+and Watchlist placeholders for Phase 15, one header height and a header that hides on scroll down.
+These owner-requested improvements go beyond verification findings and are recorded in `DESIGN.md`.
+`next` moved to 16.4.2 for critical advisories. Automated evidence on `548c887`: lint, typecheck,
+knip, 339 unit tests, 198 integration checks (including concurrent invitations, membership changes
+and final submissions, and deadline decisions across restarts and edits), the full UI contract
+(206), both real-API multi-user journeys, and all 84 visual comparisons in the CI-pinned Linux image
+after every changed PNG was reviewed. The owner asked for separate commits on this branch, no new
+issues or findings register, and no Phase 13 functionality.
+
+Carried forward, not Phase 12 blockers: attribution for PoiskKino and TheTVDB before public launch
+(#89), the final browser and device matrix including Safari (Phase 24), and scheduled Movie refresh
+(Phase 8, ADR-016).
 
 ### Phase 13 — Watching, Rating & Completion · Not started
 
@@ -1314,6 +1401,8 @@ drain · [#85](https://github.com/Shagon1k/PickFlick/issues/85) threat model and
       verify `noindex` for authenticated, invite, and admin routes.
 - [ ] Complete logs, metrics, traces, error monitoring, alerts for jobs, deadlines, webhooks, email,
       exports, and deletion, dashboards, and runbook links.
+- [ ] Implement abandoned avatar/catalog-object cleanup under #87's approved retention rules.
+      Failed avatar writes already clean up; a periodic abandoned-object sweep is not implemented.
 - [ ] Finalize production migrations, downtime constraints, backups, restore, rollback, retention
       jobs, and disaster-recovery runbooks.
 - [ ] Assign the release owner and rollback authority; rehearse one release revision through
@@ -1443,6 +1532,7 @@ the MVP
 | Which service-worker approach and browser and device matrix will be maintained?                                                            | Developer                        | Phase 22      | Confirm framework support and finalize before PWA work.                                              |
 | Who is the release owner and rollback authority, and what evidence is required around cutover?                                             | Product owner + release owner    | Phase 23 / 25 | Assign the owner and accept the release runbook before the Phase 23 rehearsal.                       |
 | What are the backup destination, restore target, and regional or account-loss strategy?                                                    | Product owner + infrastructure   | Phase 23      | Approve the operations ADR, then drill restore and disaster recovery.                                |
+| May a live (non-past) Session be scheduled for a date that has already passed?                                                             | Product owner                    | Phase 14      | Decide before past Sessions arrive; forms and the API accept any date today.                         |
 | Which proxy configuration gives trustworthy client identity, abuse limits, and graceful drain?                                             | Infrastructure owner + developer | Phase 23      | Decide with the final topology and verify in the UAT drill.                                          |
 
 ### Deferred decisions and tech debt
@@ -1474,22 +1564,30 @@ the MVP
 
 ## 11. Progress
 
-| Phase                                                  | Status      | Evidence                                                                                                                  |
-| ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 0 — Guidance Baseline                                  | Done        | Guidance, prototype-link, JSON, and 24-asset checks passed on 2026-07-22.                                                 |
-| 1 — Infrastructure, Repository & Deployment Foundation | In progress | Local and CI gates pass; owner-run UAT delivery, failed-release, rollback, and guard evidence pending (Phase 6 register). |
-| 2 — Production Design System & App Shells              | In progress | UI kit and shells verified by `pnpm test:ui` (136 checks, 42 baselines); owner visual acknowledgement pending.            |
-| 3 — Public Site & System States                        | In progress | Public pages, Contact, and recovery states verified locally; live email evidence pending.                                 |
-| 4 — Authentication & Account Onboarding                | In progress | Google sign-in and session integration specs pass; Apple dormant; owner sandbox/UAT evidence pending.                     |
-| 5 — Clubs, Membership & Roles                          | In progress | Club integration specs (role matrix, lifecycle, avatars, `404` privacy) and UI checks pass locally; UAT evidence pending. |
-| 6 — Human Verification & Bug Fixing I                  | In progress | [Phase 6 register](_docs/phase-6-human-verification-1.md).                                                                |
-| 7–11                                                   | Not started |                                                                                                                           |
-| 12 — Human Verification & Bug Fixing II                | Not started | Gate for Phases 7–11.                                                                                                     |
-| 13–17                                                  | Not started |                                                                                                                           |
-| 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                                    |
-| 19–22                                                  | Not started |                                                                                                                           |
-| 23 — Security, SEO, Observability & Release Readiness  | Not started | Produces the release candidate.                                                                                           |
-| 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                                   |
-| 25 — Production Deploy                                 | Not started | Needs the Phase 24 Go.                                                                                                    |
+Consolidated on 2026-10-21 against the current code and existing Project 3 records. Closed delivery
+issues establish their accepted delivery boundary; they do not prove new branch changes or an
+unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explicit.
+
+| Phase                                                  | Status      | Evidence                                                                                                           |
+| ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| 0 — Guidance Baseline                                  | Done        | Guidance, prototype-link, JSON and asset checks recorded on 2026-07-22.                                            |
+| 1 — Infrastructure, Repository & Deployment Foundation | Done        | Foundation accepted by gate #32; production activation remains guarded and provisioning belongs to #94.            |
+| 2 — Production Design System & App Shells              | Done        | Foundation accepted by #32; current alignment evidence is in Phase 12 and Design QA.                               |
+| 3 — Public Site & System States                        | Done        | Public, Contact and recovery delivery accepted by #32; legal copy remains provisional.                             |
+| 4 — Authentication & Account Onboarding                | Done        | Enabled Google/session boundary accepted by #32; Apple activation and explicit linking remain deferred decisions.  |
+| 5 — Clubs, Membership & Roles                          | Done        | Role, lifecycle and private Club boundary accepted by #32.                                                         |
+| 6 — Human Verification & Bug Fixing I                  | Done        | #32 closed 2026-09-28 with checked gate acceptance; durable notes consolidated above.                              |
+| 7 — Club Hub & Club Invitations                        | Done        | Club switching, invitations and membership accepted; current corrections are verified within Phase 12.             |
+| 8 — Movie Catalog, Sources & Global Search             | In progress | #36–#38 delivered; scheduled refresh and its Admin cadence contract remain unimplemented pending ADR-016 approval. |
+| 9 — Session Creation & Participant Roster              | Done        | Persistence and live roster workflows accepted; shared joining and legacy token rules are canonical.               |
+| 10 — Nomination & Deadline Automation                  | Done        | Nomination delivery accepted; Session-row deadlines, transitions, outbox intent and version polling are active.    |
+| 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
+| 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
+| 13–17                                                  | Not started | Watching/Rating/completion, history, Library, statistics and notification delivery remain later work.              |
+| 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
+| 19–22                                                  | Not started |                                                                                                                    |
+| 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
+| 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |
+| 25 — Production Deploy                                 | Not started | Needs the Phase 24 Go.                                                                                             |
 
 Statuses: `Not started` · `In progress` · `Done` · `Blocked` · `Needs approval`.

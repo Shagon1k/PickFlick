@@ -14,6 +14,7 @@ export interface IButtonLinkProps extends Omit<
     variant?: Exclude<TButtonVariant, 'danger'>;
     size?: TButtonSize;
     disabled?: boolean;
+    fullWidth?: boolean;
 }
 
 export default function ButtonLink({
@@ -30,7 +31,11 @@ export default function ButtonLink({
         <MantineButton
             {...props}
             aria-disabled={disabled || undefined}
-            classNames={{ root: getButtonClassName(variant, size), label: styles.button__label }}
+            classNames={{
+                root: getButtonClassName(variant, size),
+                inner: styles.button__inner,
+                label: styles.button__label,
+            }}
             component="a"
             href={disabled ? undefined : href}
             onClick={disabled ? (event) => event.preventDefault() : onClick}

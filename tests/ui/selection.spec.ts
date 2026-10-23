@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { settle } from './settle';
-import { canonicalViewports } from './viewports';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000045';
 async function authenticate(context: BrowserContext, scenario = '') {
@@ -38,7 +38,7 @@ test(
         await expect(page.getByText('2 of 2 films scored · Ready to submit')).toBeVisible();
         await page.getByRole('button', { name: 'Submit scores' }).click();
         await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Movie Selection' })).toBeFocused();
+        await expect(page.getByRole('heading', { name: 'Score nominated films' })).toBeFocused();
         await expect(page.getByRole('radio')).toHaveCount(0);
         await expect(
             page.getByText('2 of 3 participants have submitted.', { exact: false }),
@@ -110,14 +110,33 @@ for (const viewport of canonicalViewports) {
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
-        const progressBounds = await page
-            .getByRole('progressbar', { name: 'Selection progress' })
+        const refreshBounds = await page
+            .getByRole('button', { name: 'Refresh Selection' })
             .boundingBox();
-        expect(progressBounds?.width).toBeGreaterThanOrEqual(44);
+        expect(refreshBounds?.width).toBeGreaterThanOrEqual(44);
         const target = page.getByRole('radio', { name: '10 of 10' }).first();
         const bounds = await target.boundingBox();
         expect(bounds?.width).toBeGreaterThanOrEqual(44);
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
         await page.screenshot({ path: test.info().outputPath('selection.png'), fullPage: true });
     });
+}
+
+for (const viewport of screenshotViewports) {
+    test(
+        `selection matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, 'operator-visual');
+            await page.setViewportSize(viewport);
+            await page.goto(PATH, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`selection-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
 }

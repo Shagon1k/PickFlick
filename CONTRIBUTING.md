@@ -4,7 +4,7 @@
 
 1. Select or create a focused issue in [Project 3](https://github.com/users/Shagon1k/projects/3).
 2. Branch from `main` using `PF-TYPE-SHORT-DESCRIPTOR`.
-3. Make focused commits following [Conventional Commits](#commit-message-format).
+3. Make focused commits following the [Git rules](.agent-docs/rules/git.md).
 4. Open a PR whose title follows Conventional Commits and whose body links the Project issue.
 5. Report acceptance evidence and call out environment variables, migrations, or infrastructure
    impact explicitly.
@@ -20,28 +20,9 @@
 - `ROADMAP.md` remains the product/MVP/phase contract and phase-level acceptance record, not a
   duplicate issue backlog.
 
-## Commit message format
+## Commits, pull requests and checks
 
-```text
-TYPE(SCOPE): SUBJECT
-```
-
-Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `style`.
-
-Use imperative mood, lowercase, no trailing period, and keep the subject under 72 characters.
-
-Examples:
-
-```text
-feat(auth): add Google OAuth callback
-fix(clubs): enforce one blocking session
-docs(project): align GitHub delivery workflow
-```
-
-## Current enforcement
-
-- Husky's pre-commit hook scans staged changes with gitleaks, formats them with Prettier, and runs
-  ESLint with autofix; commitlint checks the message (header up to 72 characters, body lines up to
-  100).
-- `pnpm lint` enforces the house style described in `.agent-docs/rules/`.
-- Run `pnpm verify` before requesting review; CI repeats it with integration, UI, and image checks.
+[Git rules](.agent-docs/rules/git.md) define branch names, Conventional Commit messages, pull
+requests and the hooks that check them; [GitHub issue rules](.agent-docs/rules/github-issues.md)
+define Project 3 statuses and run authorization. Run `pnpm verify` before requesting review; CI
+repeats it with integration, UI and image checks.

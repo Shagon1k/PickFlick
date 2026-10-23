@@ -8,6 +8,7 @@ import {
     buildMovieLookup,
     MOVIE_ID,
 } from '../../../testing/movie-fixtures.js';
+import { buildDetailsCacheKey } from '../catalog-cache-key.js';
 import { MoviesRepository } from '../movies.repository.js';
 import { MoviesService } from '../movies.service.js';
 import {
@@ -28,6 +29,8 @@ describe('MoviesService', () => {
         saveSearch: vi.fn<MoviesRepository['saveSearch']>(),
         saveDetails: vi.fn<MoviesRepository['saveDetails']>(),
         findExternalIds: vi.fn<MoviesRepository['findExternalIds']>(),
+        findCachedPoster: vi.fn<MoviesRepository['findCachedPoster']>(),
+        findCachedMetadata: vi.fn<MoviesRepository['findCachedMetadata']>(),
     };
     const database = { movie: { findMany: vi.fn() } };
     const environment = {
@@ -71,39 +74,71 @@ describe('MoviesService', () => {
 
     afterEach(() => vi.useRealTimers());
 
-    it('should read nomination summaries from Movie rows without calling a provider', async () => {
+    it('should resolve a poster from caches without calling catalog providers', async () => {
+        repository.findCachedPoster.mockResolvedValue('https://image.tmdb.org/poster.jpg');
+        expect(await service.getCachedPoster(MOVIE_ID)).toBe('https://image.tmdb.org/poster.jpg');
+        expect(repository.findCachedPoster).toHaveBeenCalledWith(
+            MOVIE_ID,
+            'tmdb',
+            buildDetailsCacheKey('tmdb', 'en-US'),
+        );
+        expect(provider.search).not.toHaveBeenCalled();
+        expect(provider.fetchDetails).not.toHaveBeenCalled();
+    });
+
+    it('should read nomination summaries and cached genres without calling a provider', async () => {
         database.movie.findMany.mockResolvedValue([
             { id: MOVIE_ID, title: 'Stored title', releaseYear: 2026 },
         ]);
+        repository.findCachedMetadata.mockResolvedValue(
+            new Map([[MOVIE_ID, { ...buildCanonicalDetails(), genres: ['Drama'] }]]),
+        );
         const summaries = await service.findSummaries(database as unknown as PrismaService, [
             MOVIE_ID,
             'missing',
         ]);
         expect([...summaries.values()]).toEqual([
-            { id: MOVIE_ID, title: 'Stored title', year: 2026 },
-            { id: 'missing', title: null, year: null },
+            { id: MOVIE_ID, title: 'Stored title', year: 2026, genres: ['Drama'] },
+            { id: 'missing', title: null, year: null, genres: [] },
         ]);
+        expect(repository.findCachedMetadata).toHaveBeenCalledWith(
+            [MOVIE_ID, 'missing'],
+            buildDetailsCacheKey('tmdb', 'en-US'),
+        );
         expect(provider.fetchDetails).not.toHaveBeenCalled();
         expect(provider.search).not.toHaveBeenCalled();
     });
 
-    it('should return backend-built IMDb links without exposing identifiers', async () => {
+    it('should return backend-built outbound links without exposing identifiers', async () => {
         repository.findCachedDetails.mockResolvedValue({
             data: buildCanonicalDetails(),
             fetchedAt: now,
         });
         repository.findExternalIds.mockResolvedValue({
-            externalIds: [{ source: 'imdb', externalId: 'tt0000100' }],
+            externalIds: [
+                { source: 'imdb', externalId: 'tt0000100' },
+                { source: 'poiskkino', externalId: '258687' },
+            ],
         });
         expect(await service.getDetailsResponse(MOVIE_ID)).toMatchObject({
             result: { state: 'fresh', data: { id: MOVIE_ID } },
-            links: { imdb: 'https://www.imdb.com/title/tt0000100/' },
+            links: {
+                imdb: 'https://www.imdb.com/title/tt0000100/',
+                kinopoisk: 'https://www.kinopoisk.ru/film/258687/',
+                letterboxd: 'https://letterboxd.com/imdb/tt0000100/',
+            },
+        });
+        repository.findExternalIds.mockResolvedValue({
+            externalIds: [{ source: 'tmdb', externalId: '157336' }],
+        });
+        expect(await service.getDetailsResponse(MOVIE_ID)).toMatchObject({
+            links: { imdb: null, letterboxd: 'https://letterboxd.com/tmdb/157336/' },
         });
         repository.findCachedDetails.mockResolvedValue(null);
         repository.findExternalIds.mockResolvedValue(null);
         expect(await service.getDetailsResponse(MOVIE_ID)).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
     });
 

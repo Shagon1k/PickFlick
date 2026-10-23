@@ -1,0 +1,193 @@
+.switcher {
+    margin: var(--gap-sm) auto var(--gap-sm);
+}
+
+.row {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    width: min(100%, 760px);
+    margin: auto;
+}
+
+.stage {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+
+    /* The browser keeps vertical panning; horizontal swipes switch Clubs. */
+    touch-action: pan-y;
+}
+
+.heading h1 {
+    display: -webkit-box;
+    max-width: 680px;
+
+    /* The clamp clips at the line box; padding keeps descenders of the tight display face. */
+    padding-bottom: 0.14em;
+    margin: 0 auto calc(var(--gap-sm) - 0.14em);
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);
+    letter-spacing: var(--tracking-tight);
+    hyphens: auto;
+    overflow-wrap: break-word;
+    -webkit-box-orient: vertical;
+}
+
+.heading p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+}
+
+.heading p span {
+    margin-inline: 4px;
+    opacity: 0.5;
+}
+
+.arrow {
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+}
+
+.arrow > span {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    opacity: 0.42;
+    transition:
+        opacity var(--motion-local),
+        color var(--motion-local),
+        border-color var(--motion-local),
+        transform var(--motion-press);
+}
+
+.arrow svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.switcher:hover .arrow > span,
+.switcher:focus-within .arrow > span {
+    opacity: 0.9;
+}
+
+.arrow:hover > span,
+.arrow:focus-visible > span {
+    color: var(--fg);
+    border-color: var(--border-lit);
+    opacity: 1;
+}
+
+.arrow:active > span {
+    transform: scale(0.95);
+}
+
+.dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: var(--gap-sm);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 50%;
+    transition: background var(--motion-local);
+}
+
+.dot[data-current] {
+    background: var(--gold);
+}
+
+/* The prototype shows the pager on phones only; wider screens keep the arrows. */
+@media (width >= 768px) {
+    .switcher {
+        margin-bottom: var(--gap-xl);
+    }
+
+    .dots {
+        display: none;
+    }
+}
+
+.create {
+    display: grid;
+    gap: var(--gap-sm);
+    justify-items: center;
+    padding-block: var(--gap-md);
+    color: var(--fg-secondary);
+    text-decoration: none;
+}
+
+.create h1 {
+    margin: 0;
+    font: 400 var(--fs-body-sm)/var(--lh-body) var(--font-body);
+}
+
+.createCircle {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 1px dashed var(--border);
+    border-radius: 50%;
+    transition:
+        border-color var(--motion-local),
+        background var(--motion-local);
+}
+
+.createCircle svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 1.4;
+}
+
+.create:hover .createCircle,
+.create:focus-visible .createCircle {
+    color: var(--fg);
+    background: var(--accent-soft);
+    border-color: var(--fg);
+}
+
+@media (width < 768px) {
+    .row {
+        gap: 0;
+    }
+
+    .heading h1 {
+        font-size: clamp(38px, 10vw, 52px);
+    }
+
+    .heading p {
+        font-size: var(--fs-meta);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .arrow > span,
+    .dot,
+    .createCircle {
+        transition: none;
+    }
+}

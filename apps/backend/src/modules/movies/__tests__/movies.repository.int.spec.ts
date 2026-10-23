@@ -79,6 +79,48 @@ describe('MoviesRepository', () => {
         );
         expect((await repository.findCachedDetails(id, detailKey))?.data.id).toBe(id);
     });
+    it('should use the validated detail-cache poster after search cache expiry', async () => {
+        const record = fixture();
+        const id = await ingest(record);
+        const detailKey = key();
+        await repository.saveDetails(id, detailKey, record, time);
+        await prisma.movieSearchCache.deleteMany({ where: { key: { in: searchKeys } } });
+        expect(await repository.findCachedPoster(id, 'tmdb', detailKey)).toBe(
+            record.data.posterUrl,
+        );
+        expect(await repository.findCachedPoster(id, 'tmdb', key())).toBeNull();
+        expect((await repository.findCachedMetadata([id], detailKey)).get(id)?.runtime).toBe(120);
+    });
+    it('should resolve the newest validated search poster from the active source', async () => {
+        const record = fixture(time, 'poiskkino');
+        const id = await ingest(record);
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBe(record.data.posterUrl);
+        expect(await repository.findCachedPoster(id, 'tmdb')).toBeNull();
+        const posterUrl = 'https://avatars.mds.yandex.net/get-kinopoisk-image/100/poster/orig';
+        const searchKey = key();
+        await repository.saveSearch(
+            searchKey,
+            search([{ ...record, data: { ...record.data, posterUrl } }]),
+            later,
+        );
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBe(posterUrl);
+        await prisma.movieSearchCache.update({
+            where: { key: searchKey },
+            data: {
+                data: {
+                    movies: [
+                        {
+                            id,
+                            posterUrl: 'http://127.0.0.1/private.jpg',
+                            provenance: [{ source: 'poiskkino' }],
+                        },
+                    ],
+                },
+            },
+        });
+        expect(await repository.findCachedPoster(id, 'poiskkino')).toBeNull();
+    });
+
     it('should retain UUID when provider configuration and external identities change', async () => {
         const original = fixture();
         const id = await ingest(original);
@@ -131,6 +173,50 @@ describe('MoviesRepository', () => {
         expect((await repository.findCachedDetails(id, detailKey))?.data.similarMovieIds).toEqual([
             relatedId,
         ]);
+    });
+    it('should retain valid search results when a duplicate has contradictory source IDs', async () => {
+        const original = fixture(time, 'poiskkino');
+        const duplicate = fixture(time, 'poiskkino', original.externalIds[1]!.externalId);
+        const unrelated = fixture();
+        const searchKey = key();
+        const result = await repository.saveSearch(
+            searchKey,
+            search([original, duplicate, unrelated]),
+            time,
+        );
+        ownedIds.push(...result.movies.map((movie) => movie.id));
+        expect(result.movies).toHaveLength(2);
+        expect((await repository.findCachedSearch(searchKey))?.data).toEqual(result);
+        expect(await prisma.movieExternalId.count({ where: duplicate.externalIds[0]! })).toBe(0);
+        expect(await ingest(original)).toBe(result.movies[0]!.id);
+    });
+    it('should skip a conflict without changing summaries or adding earlier source mappings', async () => {
+        const original = fixture(time, 'poiskkino');
+        const id = await ingest(original);
+        const conflicting = fixture(time, 'poiskkino', original.externalIds[1]!.externalId);
+        const tmdbId = String(randomInt(10000000, 2000000000));
+        const unrelated = fixture();
+        const result = await repository.saveSearch(
+            key(),
+            search([
+                {
+                    ...conflicting,
+                    externalIds: [
+                        { source: 'tmdb', externalId: tmdbId },
+                        ...conflicting.externalIds,
+                    ],
+                    data: { ...conflicting.data, title: 'Conflicting title' },
+                },
+                unrelated,
+            ]),
+            time,
+        );
+        ownedIds.push(...result.movies.map((movie) => movie.id));
+        expect(result.movies).toHaveLength(1);
+        expect((await prisma.movie.findUnique({ where: { id } }))?.title).toBe(original.data.title);
+        expect(
+            await prisma.movieExternalId.count({ where: { source: 'tmdb', externalId: tmdbId } }),
+        ).toBe(0);
     });
     it('should never let search summary freshness refresh details', async () => {
         const record = fixture(earlier);

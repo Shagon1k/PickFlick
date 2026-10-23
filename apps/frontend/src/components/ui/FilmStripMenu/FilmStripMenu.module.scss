@@ -3,60 +3,88 @@
     display: inline-flex;
 }
 
+.menu[data-cell] {
+    display: flex;
+}
+
 .menu__dropdown {
     position: absolute;
     z-index: 20;
-    width: min(260px, calc(100vw - 32px));
-    padding: 14px 22px;
-    overflow: hidden;
-    background: var(--bg);
-    border: 1px solid var(--border-lit);
-    border-radius: 7px;
-    box-shadow: var(--shadow-popover);
+    width: 174px;
+    scroll-margin-block: 80px;
     animation: menu-reveal var(--motion-menu) var(--ease-menu);
 }
 
-.menu__dropdown::before,
-.menu__dropdown::after {
+/* The tab links the strip to its trigger, as in the account menu. */
+.menu__tail {
     position: absolute;
-    top: 7px;
-    bottom: 7px;
-    width: 6px;
+    top: -10px;
+    left: 50%;
+    width: 42px;
+    height: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border-lit);
+    border-bottom: 0;
+    border-radius: 10px 10px 0 0;
+    transform: translateX(-50%);
+}
+
+.menu__strip {
+    position: relative;
+    padding: 10px 22px;
+    background: var(--bg);
+    border: 1px solid var(--border-lit);
+    border-radius: 3px 3px 7px 7px;
+    box-shadow: var(--shadow-popover);
+}
+
+.menu__strip::before,
+.menu__strip::after {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 9px;
+    pointer-events: none;
     content: '';
     background: repeating-linear-gradient(
         to bottom,
-        var(--ivory-muted) 0 5px,
-        transparent 5px 12px
+        transparent 0 7px,
+        var(--ivory-muted) 7px 14px,
+        transparent 14px 22px
     );
-    opacity: 0.62;
+    border-radius: 2px;
+    opacity: 0.82;
 }
 
-.menu__dropdown::before {
-    left: 7px;
+.menu__strip::before {
+    left: 6px;
 }
 
-.menu__dropdown::after {
-    right: 7px;
+.menu__strip::after {
+    right: 6px;
 }
 
 .menu__item {
     position: relative;
     display: flex;
+    flex-direction: column;
+    gap: 4px;
     align-items: center;
+    justify-content: center;
     width: 100%;
     min-height: 48px;
-    padding: 10px 12px;
-    font-family: var(--font-body);
-    font-size: var(--fs-body-sm);
+    padding: 12px 0;
+    font: inherit;
     color: var(--fg-secondary);
-    text-align: left;
+    text-align: center;
     text-decoration: none;
     cursor: pointer;
-    background: transparent;
-    border-top: 0;
-    border-right: 0;
+    background: none;
+    border: 0;
     border-bottom: 1px solid var(--border);
-    border-left: 0;
+    transition:
+        color 0.16s ease,
+        background-color 0.16s ease;
 }
 
 .menu__item:last-child {
@@ -67,20 +95,57 @@
 .menu__item:focus-visible {
     color: var(--fg);
     outline: 0;
-    background: var(--accent-soft);
+    background: color-mix(in sRGB, var(--surface-lit) 56%, transparent);
 }
 
 .menu__item:focus-visible {
     box-shadow: inset 0 0 0 1px var(--focus);
 }
 
-.menu__item[aria-current='page'] {
-    color: var(--ivory);
-    box-shadow: inset 2px 0 var(--gold);
+.menu__item b {
+    max-width: 110px;
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    line-height: 1.2;
 }
 
-.menu__item[data-danger] {
-    color: var(--danger-text);
+.menu__item[aria-current='page'] {
+    color: var(--ivory);
+}
+
+.menu__item[aria-current='page']::before {
+    position: absolute;
+    top: 9px;
+    bottom: 9px;
+    left: 0;
+    width: 2px;
+    content: '';
+    background: var(--gold);
+    border-radius: var(--radius-pill);
+}
+
+.menu__item-icon,
+.menu__trigger-icon {
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* A landscape phone cannot fit stacked frames between the header and the bottom bar. */
+@media (height < 480px) {
+    .menu__item {
+        flex-direction: row;
+        gap: var(--gap-sm);
+        justify-content: flex-start;
+        min-height: var(--hit);
+        padding: 8px 4px;
+        text-align: left;
+    }
+
+    .menu__dropdown {
+        width: 210px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -93,13 +158,13 @@
 @keyframes menu-reveal {
     from {
         opacity: 0;
-        clip-path: inset(0 0 100% 0);
-        transform: translateY(-8px);
+        clip-path: inset(-12px 0 82% 0 round 0 0 7px 7px);
+        transform: translateY(8px);
     }
 
     to {
         opacity: 1;
-        clip-path: inset(0);
+        clip-path: inset(-12px 0 0 0 round 0 0 7px 7px);
         transform: translateY(0);
     }
 }

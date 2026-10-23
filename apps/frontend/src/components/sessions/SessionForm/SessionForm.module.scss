@@ -1,15 +1,23 @@
 .form {
     display: grid;
-    gap: var(--gap-md);
+    gap: 0;
 }
 
 .modes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
+    min-width: 0;
     padding: 0;
-    margin: 0;
+    margin: 0 0 var(--gap-md);
     border: 0;
+}
+
+.modeOptions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 3px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
 }
 
 .modes legend {
@@ -28,12 +36,13 @@
     padding: var(--gap-xs);
     font-size: var(--fs-body-sm);
     text-align: center;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
 }
 
 .modes label:has(input:checked) {
-    font-weight: 700;
+    font-weight: 500;
+    background: var(--surface);
     border-color: var(--border-lit);
 }
 
@@ -54,8 +63,25 @@
     border-top: 1px solid var(--border);
 }
 
+.edit p {
+    min-height: var(--gap-md);
+    margin-bottom: 0;
+    color: var(--fg-secondary);
+}
+
+.editActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    justify-content: flex-end;
+}
+
+.editActions > * {
+    min-width: 90px;
+}
+
 .submit p {
-    min-height: var(--hit);
+    min-height: var(--gap-md);
     margin-bottom: 0;
     color: var(--fg-secondary);
     overflow-wrap: anywhere;

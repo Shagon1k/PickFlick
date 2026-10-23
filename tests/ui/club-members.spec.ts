@@ -54,10 +54,15 @@ test('Member and restricted Club views explain unavailable actions without losin
     await authenticate(context, 'valid-members-adminless');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
-    await expect(page.getByRole('link', { name: 'Invite members' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '+ Invite' })).toHaveCount(0);
     await page.goto(`/clubs/${CLUB_ID}/settings`);
-    await expect(page.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Invite members' }).click();
+    const invitations = page.getByRole('dialog', { name: 'Invite to this Club' });
+    await expect(
+        invitations.getByText('New invitations are paused.', { exact: false }),
+    ).toBeVisible();
+    await expect(invitations.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
     await authenticate(context, 'valid-members-over-limit');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText(
@@ -191,8 +196,9 @@ test('pending invitations show recoverable loading failures and an explicit empt
     await expect(dialog.getByRole('button', { name: 'Retry invites' })).toBeVisible();
     await authenticate(context, 'valid-empty-invites');
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Open pending invites' }).click();
-    await expect(dialog.getByRole('status')).toHaveText('No pending invitations.');
+    // Without invitations the ticket stays out of the way.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open pending invites' })).toBeHidden();
 });
 
 test('member management and invite popovers meet touch, focus, accessibility, and responsive contracts', async ({

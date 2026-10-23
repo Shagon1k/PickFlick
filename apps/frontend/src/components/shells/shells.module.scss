@@ -18,6 +18,13 @@
     background: var(--header-glass);
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(18px);
+    transition: transform var(--motion-panel) var(--ease-standard);
+}
+
+/* AutoHideHeader slides the header away on scroll down; the bottom bar on phones stays. */
+.publicHeader[data-hidden],
+.productHeader[data-hidden] {
+    transform: translateY(-100%);
 }
 
 .headerInner,
@@ -25,7 +32,7 @@
 .productMain,
 .sessionMain,
 .controlMain {
-    width: min(var(--container), calc(100% - (2 * var(--gutter))));
+    width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
     margin-inline: auto;
 }
 
@@ -35,7 +42,9 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--gap-md);
     align-items: center;
-    min-height: 68px;
+
+    /* With the border every header is the prototype's 73px; 63px below 1024px (see below). */
+    min-height: 72px;
 }
 
 .brand {
@@ -329,8 +338,23 @@
     letter-spacing: var(--tracking-caps);
 }
 
+/* The footer stays at the bottom of short pages instead of floating up under thin content. */
 .productShell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
     padding-bottom: 78px;
+}
+
+.productShell > footer {
+    margin-top: auto;
+}
+
+/* Below 1024px the invite ticket floats above the bottom bar; the footer's links end above it. */
+@media (width < 1024px) {
+    .productShell:has([data-invite-ticket]:not([hidden])) .publicFooterInner {
+        padding-bottom: 96px;
+    }
 }
 
 .productHeader .headerInner {
@@ -550,6 +574,12 @@
 }
 
 @media (width <= 1023px) {
+    /* Public pages match the app header, so moving into the product does not shift the page. */
+    .publicHeader .headerInner,
+    .compactHeader .headerInner {
+        min-height: 62px;
+    }
+
     .productHeader .headerInner {
         display: flex;
         justify-content: center;
@@ -580,6 +610,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .publicHeader,
+    .productHeader {
+        transition: none;
+    }
+
     .publicNav a,
     .publicNav a::after,
     .productDesktopNav a,

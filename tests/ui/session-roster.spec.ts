@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
@@ -46,7 +47,7 @@ test(
         await page.getByRole('button', { name: 'Accept invitation' }).click();
         await expect(page.getByText('Your participation is confirmed.')).toBeVisible();
         await page.getByRole('link', { name: 'Open Session' }).click();
-        await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
+        await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
         await expect(page.getByRole('button', { name: 'Create Session invitation' })).toHaveCount(
             0,
         );
@@ -55,53 +56,53 @@ test(
         await page.getByLabel('Type LEAVE to confirm').fill('LEAVE');
         await page.getByRole('button', { name: 'Confirm leaving' }).click();
         await expect(page.getByRole('dialog')).toHaveCount(0);
-        await expect(page.getByText('0 accepted', { exact: true })).toBeVisible();
+        await expect(acceptedParticipants(page)).toHaveText('No accepted participants');
     },
 );
 
 test(
-    'Operators create, revoke and remove targeted invitations with keyboard and focus return',
+    'Operators share the Session link and manage existing participants with keyboard and focus return',
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'admin');
         await page.goto(`/sessions/${SESSION_ID}`);
-        const memberSelect = page.getByRole('combobox', { name: 'Invite a Club member' });
-        const listbox = page.getByRole('listbox');
-        // A click before hydration opens nothing; retry until the dropdown is really open.
-        await expect(async () => {
-            await memberSelect.click();
-            await expect(listbox).toBeVisible({ timeout: 250 });
-        }).toPass({ timeout: 5_000 });
-        // Mantine seeds its keyboard position shortly after opening; arrow until the member is highlighted.
-        await expect(async () => {
-            await page.keyboard.press('ArrowDown');
-            await expect(listbox.locator('[data-combobox-selected]')).toHaveText('Jordan Member', {
-                timeout: 250,
-            });
-        }).toPass({ timeout: 5_000 });
-        await page.keyboard.press('Enter');
-        await expect(memberSelect).toHaveValue('Jordan Member');
-        await page.getByRole('button', { name: 'Create Session invitation' }).click();
-        await expect(page.getByLabel('Session invitation link')).toHaveValue(
-            new RegExp(`/invite/session/${'s'.repeat(43)}$`),
-        );
-        await page.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
-        await expect(page.getByText('invited · invitation revoked')).toBeVisible();
-        await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.getByRole('button', { name: 'Invite', exact: true }).click();
+        await expect
+            .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+            .toBe(`http://127.0.0.1:41730/sessions/${SESSION_ID}`);
+        await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Kick', exact: true }).click();
+        const kickDialog = page.getByRole('dialog', { name: 'Kick participants' });
+        await kickDialog.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
+        await expect(kickDialog.getByText('invited · invitation revoked')).toBeVisible();
+        await kickDialog.getByRole('button', { name: 'Remove Jordan Member' }).click();
         const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
-        await expect(removalDialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
+        await expect(removalDialog.getByLabel('Type REMOVE to confirm')).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(removalDialog).toHaveCount(0);
-        await expect(page.getByRole('button', { name: 'Remove Jordan Member' })).toBeFocused();
-        await page.getByRole('button', { name: 'Remove Jordan Member' }).click();
+        await expect(
+            kickDialog.getByRole('button', { name: 'Remove Jordan Member' }),
+        ).toBeFocused();
+        await kickDialog.getByRole('button', { name: 'Remove Jordan Member' }).click();
         await page.getByLabel('Type REMOVE to confirm').fill('REMOVE');
         await page.getByRole('button', { name: 'Confirm removal' }).click();
-        await expect(page.getByText('removed', { exact: true })).toBeVisible();
-        await expect(
-            page.getByRole('heading', { name: 'Participants', exact: true }),
-        ).toBeFocused();
+        await expect(kickDialog.getByText('No participants can be removed.')).toBeVisible();
+        await expect(kickDialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
     },
 );
+
+test('a Club member joins directly from the shared Session link', async ({ context, page }) => {
+    await authenticate(context, 'member-direct');
+    await page.goto(`/sessions/${SESSION_ID}`);
+    await expect(acceptedParticipants(page)).toHaveText('No accepted participants');
+    await page.getByRole('button', { name: 'Join Session', exact: true }).click();
+    await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
+    await expect(page.getByRole('button', { name: 'Join Session', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Leave Session', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
+});
 
 test('Pending Session row opens its accepted Session', async ({ context, page }) => {
     await authenticate(context, 'pending-member');
@@ -110,10 +111,10 @@ test('Pending Session row opens its accepted Session', async ({ context, page })
     const row = page
         .getByRole('dialog', { name: 'Pending invites' })
         .getByRole('listitem')
-        .filter({ hasText: 'Session invitation' });
+        .filter({ hasText: 'Session invite' });
     await expect(row.getByText('Private noir night', { exact: false })).toBeVisible();
     await row.getByRole('button', { name: 'Accept', exact: true }).click();
-    await expect(page.getByText('1 accepted', { exact: true })).toBeVisible();
+    await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
 });
 
 test('Invitation failures retain preview and offline decline explains recovery', async ({

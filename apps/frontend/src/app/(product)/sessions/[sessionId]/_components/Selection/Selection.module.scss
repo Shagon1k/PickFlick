@@ -10,29 +10,6 @@
     color: var(--fg-secondary);
 }
 
-.progress {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--gap-sm);
-    align-items: center;
-    padding: var(--gap-sm) var(--gap-md);
-    color: var(--ivory);
-    background: var(--gold-soft);
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius);
-}
-
-.progress p {
-    grid-column: 1 / -1;
-    margin: 0;
-}
-
-.progress progress {
-    width: 100%;
-    max-width: 100%;
-    accent-color: var(--gold);
-}
-
 .movies {
     display: grid;
     gap: var(--gap-sm);
@@ -46,27 +23,38 @@
     gap: var(--gap-md);
     align-items: center;
     min-width: 0;
-    padding: var(--gap-md);
-    background: var(--surface);
+    padding: 16px;
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
 }
 
 .poster {
     display: grid;
     place-items: center;
-    width: 60px;
-    aspect-ratio: 2 / 3;
-    font-family: var(--font-mono);
+    width: 64px;
+    height: 96px;
+    overflow: hidden;
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--fg-secondary);
-    background: var(--bg);
-    border-radius: var(--radius);
+    background: var(--surface-lit);
+    border: 1px solid var(--border);
+    border-radius: 6px;
 }
 
 .info h3 {
-    margin: 0 0 var(--gap-xs);
-    font: 400 var(--fs-card-title)/var(--lh-title) var(--font-display);
+    margin: 0 0 6px;
+    font: 600 var(--fs-body)/var(--lh-ui) var(--font-body);
     overflow-wrap: anywhere;
+}
+
+.info a {
+    color: var(--fg);
+    text-decoration: none;
+}
+
+.info a:hover {
+    text-decoration: underline;
 }
 
 .info p {
@@ -84,22 +72,47 @@
 
 .submit {
     display: grid;
+    gap: var(--gap-sm);
     justify-items: center;
-    min-height: 140px;
+    padding-top: var(--gap-md);
     text-align: center;
 }
 
-@media (width >= 1024px) {
-    .progress {
-        grid-template-columns: minmax(0, 1fr) 160px auto;
-    }
+.summary {
+    margin: 0;
+    font: 600 var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
 
-    .progress p {
-        grid-column: auto;
-    }
+.submit button[type='submit'] {
+    width: min(100%, 250px);
+    min-height: 48px;
+}
 
+/* Small screens stack each film above its score rail, as in the prototype. */
+@media (width < 768px) {
     .movie {
-        grid-template-columns: auto minmax(0, 1fr) minmax(0, 55%);
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .poster {
+        width: 80px;
+        height: 120px;
+    }
+
+    .control {
+        width: 100%;
+        padding-top: var(--gap-md);
+    }
+}
+
+@media (width >= 1024px) {
+    .movie {
+        grid-template-columns: auto minmax(0, 1fr) minmax(0, 56%);
     }
 
     .control {

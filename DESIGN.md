@@ -4,9 +4,9 @@
 > implemented in `apps/frontend/src/styles/tokens.scss`; the canonical design package under
 > `_docs/design/prototypes` stays their source.
 
-| Owner         | Last reviewed |
-| ------------- | ------------- |
-| Product owner | 2026-09-26    |
+| Owner         | Last reviewed                  |
+| ------------- | ------------------------------ |
+| Product owner | 2026-10-23 (Phase 12 accepted) |
 
 ## 1. Authority and sources
 
@@ -38,10 +38,11 @@ When sources conflict:
 Build: `Not started`, `Partial`, `Done` (the documented contract is implemented). QA: `Not checked`,
 `Passed`, `Issues` (`Passed` needs a recorded comparison and baseline evidence).
 
-The design package is approved as direction. Tokens, brand assets, the UI kit, shells, public pages,
-Login, Club onboarding, and Club settings are built; other screens are not started. A good-looking
-prototype is not production QA, and owner review of the hosted preview is still pending for every
-built screen.
+The design package is approved as direction. Foundations, shells, public pages, Login, Club
+onboarding and settings, delivered Hub views, read-only Movie Details, Session creation,
+Nomination and Selection are implemented. Remaining Hub views and later-phase screens are still
+unbuilt. A good-looking prototype is not production QA; the owner accepted the delivered screens in
+Phase 12 (2026-10-23), and each later screen needs its own review.
 
 ## 2. Experience direction
 
@@ -99,14 +100,14 @@ The shells live in `apps/frontend/src/components/shells`, one folder per shell o
 product, Session, Settings, Library, and App Admin compositions without feature data; the shells
 default to the product routes and the preview supplies its own route map.
 
-| Context              | Shell                                                                                                                                                                                                                                                                                                             | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                              | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks.                                                                                                                                                                                                                                  | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
-| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                              | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
-| Product              | The brand links to the public home and Hub links to `/app`; the public footer is shared. Round 34px search, notifications, and avatar controls with 44px targets; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
-| Session detail       | Back to Hub, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                              | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
-| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                          | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
-| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                             | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
+| Context              | Shell                                                                                                                                                                                                                                                                                                                         | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                                          | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks. Contact uses a focused form scene with Back and omits the full marketing header/footer.                                                                                                                                          | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
+| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                                          | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
+| Product              | The brand links to the public home and Hub links to `/app`; the public footer appears on every page. Round 34px search, notifications, and avatar controls with 44px targets; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
+| Session detail       | The product shell, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                                    | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
+| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                                      | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
+| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                                         | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
 
 ### Key flows
 
@@ -133,37 +134,243 @@ the [Roadmap](ROADMAP.md#3-business-rules).
 
 All canonical screens are MVP and approved as direction.
 
-| Route / view                        | Purpose                                                                                                                                                                                                                                                                               | Source                                                                                   | Build                                                                                   | QA                                                                               |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `/`                                 | Explain the ritual and lead visitors to sign up.                                                                                                                                                                                                                                      | [landing.html](_docs/design/prototypes/landing.html)                                     | Done                                                                                    | Passed locally                                                                   |
-| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Done; checkout disabled until billing                                                   | Passed locally                                                                   |
-| `/contact`                          | Send a short message with stable validation and success feedback.                                                                                                                                                                                                                     | [contact.html](_docs/design/prototypes/contact.html)                                     | Done                                                                                    | Passed locally                                                                   |
-| `/legal/privacy`, `/legal/terms`    | Public entries that never present draft policy as approved.                                                                                                                                                                                                                           | Shared public shell                                                                      | Done; final legal copy pending                                                          | Passed locally                                                                   |
-| `/login`                            | Sign in with an enabled provider and continue; signed-in Users go to `/app`. Apple is hidden while gated.                                                                                                                                                                             | [login.html](_docs/design/prototypes/login.html)                                         | Done for Google; Apple built but gated                                                  | Passed locally with Apple off                                                    |
-| `/invite/club/[token]`              | Preview and accept or decline a Club invitation; expiry and sign-in.                                                                                                                                                                                                                  | [invite.html](_docs/design/prototypes/invite.html)                                       | Built; exact-SHA preview acknowledgement pending                                        | Passed locally; owner acknowledgement pending                                    |
-| `/invite/session/[token]`           | Accept a member-only Session invite or show privacy-safe denial.                                                                                                                                                                                                                      | [Club Hub invite ticket](_docs/design/prototypes/app.html)                               | Built; exact-SHA preview acknowledgement pending                                        | Passed locally; owner acknowledgement pending                                    |
-| `/app` with no Clubs                | Orient a new User and create or join the first Club.                                                                                                                                                                                                                                  | [app-no-clubs.html](_docs/design/prototypes/app-no-clubs.html)                           | Done; invitation links arrive with invitations                                          | Passed locally                                                                   |
-| `/clubs/new`                        | Create a Club and choose its Selection scale.                                                                                                                                                                                                                                         | [create-group.html](_docs/design/prototypes/create-group.html)                           | Done: one slider for the `0..N` upper bound, explained by an InfoTip                    | Passed locally                                                                   |
-| `/clubs/[clubId]`                   | Run and understand one Club across six Hub views.                                                                                                                                                                                                                                     | [app.html](_docs/design/prototypes/app.html)                                             | Partial — Overview, switcher, Call Sheet, and basic Session data; remaining views later | Hub interaction and visual checks passed locally; exact-SHA owner review pending |
-| `/clubs/[clubId]/members`           | Active roster, current role, member removal confirmation, and adminless/read-only notices.                                                                                                                                                                                            | Members view in [app.html](_docs/design/prototypes/app.html)                             | Active                                                                                  | Local verification in the Phase 7 document                                       |
-| `/clubs/[clubId]/settings`          | Manage Club info, visibility, scale, roles, lifecycle, and destructive actions.                                                                                                                                                                                                       | Manage Club view in [app.html](_docs/design/prototypes/app.html)                         | Done for the Phase 5 foundation; the full Hub arrives in Phase 7                        | Passed locally (Admin, Member, archived)                                         |
-| `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session and invite members.                                                                                                                                                                                                                       | [create-session.html](_docs/design/prototypes/create-session.html)                       | Built; exact-SHA preview acknowledgement pending                                        | Local QA in progress; owner review pending                                       |
-| `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Not started                                                                             | Not checked                                                                      |
-| Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | In progress                                                                             | Not checked                                                                      |
-| Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Ballot form and automatic closure implemented; result presentation remains Proposed     | Exact-SHA hosted preview and owner acknowledgment pending                        |
-| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Not started                                                                             | Not checked                                                                      |
-| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                             | Not checked                                                                      |
-| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                             | Not checked                                                                      |
-| `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                             | Not checked                                                                      |
-| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Read-only details implemented; Personal Rating and Watchlist remain Phase 16            | Hosted preview and owner review pending                                          |
-| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                             | Not checked                                                                      |
-| `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                             | Not checked                                                                      |
-| `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                    | Passed locally                                                                   |
+| Route / view                        | Purpose                                                                                                                                                                                                                                                                               | Source                                                                                   | Build                                                                                                    | QA                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `/`                                 | Explain the ritual and lead visitors to sign up.                                                                                                                                                                                                                                      | [landing.html](_docs/design/prototypes/landing.html)                                     | Done                                                                                                     | Passed locally                                                        |
+| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Done; checkout disabled until billing                                                                    | Passed locally                                                        |
+| `/contact`                          | Send a short message with stable validation and success feedback.                                                                                                                                                                                                                     | [contact.html](_docs/design/prototypes/contact.html)                                     | Done                                                                                                     | Passed locally                                                        |
+| `/legal/privacy`, `/legal/terms`    | Public entries that never present draft policy as approved.                                                                                                                                                                                                                           | Shared public shell                                                                      | Done; final legal copy pending                                                                           | Passed locally                                                        |
+| `/login`                            | Sign in with an enabled provider and continue; signed-in Users go to `/app`. Apple is hidden while gated.                                                                                                                                                                             | [login.html](_docs/design/prototypes/login.html)                                         | Done for Google; Apple built but gated                                                                   | Passed locally with Apple off                                         |
+| `/invite/club/[token]`              | Preview and accept or decline a Club invitation; expiry and sign-in.                                                                                                                                                                                                                  | [invite.html](_docs/design/prototypes/invite.html)                                       | Accepted in Phase 12                                                                                     | Passed locally; owner accepted 2026-10-23                             |
+| `/invite/session/[token]`           | Accept a member-only Session invite or show privacy-safe denial.                                                                                                                                                                                                                      | [Club Hub invite ticket](_docs/design/prototypes/app.html)                               | Accepted in Phase 12                                                                                     | Passed locally; owner accepted 2026-10-23                             |
+| `/app` with no Clubs                | Orient a new User and create or join the first Club.                                                                                                                                                                                                                                  | [app-no-clubs.html](_docs/design/prototypes/app-no-clubs.html)                           | Done; invitation links arrive with invitations                                                           | Passed locally                                                        |
+| `/clubs/new`                        | Create a Club and choose its Selection scale.                                                                                                                                                                                                                                         | [create-group.html](_docs/design/prototypes/create-group.html)                           | Done: one slider for the `0..N` upper bound, explained by an InfoTip                                     | Passed locally                                                        |
+| `/clubs/[clubId]`                   | Run and understand one Club across six Hub views.                                                                                                                                                                                                                                     | [app.html](_docs/design/prototypes/app.html)                                             | Partial — Overview, Members, Manage Club, carousel and phase-aware Call Sheet; remaining views later     | Hub interaction and visual checks passed; owner accepted 2026-10-23   |
+| `/clubs/[clubId]/members`           | Active roster, current role, member removal confirmation, and adminless/read-only notices.                                                                                                                                                                                            | Members view in [app.html](_docs/design/prototypes/app.html)                             | Active                                                                                                   | Phase 12 contract checks; owner accepted 2026-10-23                   |
+| `/clubs/[clubId]/settings`          | Manage Club info, visibility, scale, roles, lifecycle, and destructive actions.                                                                                                                                                                                                       | Manage Club view in [app.html](_docs/design/prototypes/app.html)                         | Done for the Phase 5 foundation; the full Hub arrives in Phase 7                                         | Passed locally (Admin, Member, archived)                              |
+| `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session and share its member-only join link.                                                                                                                                                                                                      | [create-session.html](_docs/design/prototypes/create-session.html)                       | Accepted in Phase 12                                                                                     | Local QA passed; owner accepted 2026-10-23                            |
+| `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Not started                                                                                              | Not checked                                                           |
+| Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                            | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
+| Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                                   | Responsive and accessibility checks passed; owner accepted 2026-10-23 |
+| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Partial — film header, media grid and chat preview; moving to Rating is Phase 13                         | Checked live; owner accepted 2026-10-23                               |
+| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Not started                                                                                              | Not checked                                                           |
+| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Not started                                                                                              | Not checked                                                           |
+| `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Not started                                                                                              | Not checked                                                           |
+| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player and links implemented; Personal Rating and Watchlist placeholders until Phase 15 | Owner accepted 2026-10-23                                             |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                                              | Not checked                                                           |
+| `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                              | Not checked                                                           |
+| `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                     | Passed locally                                                        |
 
 "Passed locally" means the Playwright suite passes at 390 and 1440 pixels plus overflow checks at
 every breakpoint and gap width.
 
-### Prototype clarifications
+### Screen rules
+
+The prototypes show composition and appearance. These rules add the behavior they cannot show and
+record where production deliberately differs. Pixel values live in the prototypes and tokens, not
+here.
+
+#### Product shell
+
+- Public and product headers share one height: 73px, and 63px below 1024px, so moving from the
+  site into the app does not shift the page. Both slide away while the page scrolls down and
+  return on any scroll up; they stay near the top, while focus is inside them and while one of
+  their menus or panels is open. The phone bottom bar never hides; reduced motion drops the slide.
+  Sticky section menus rise with the hidden header instead of leaving its height empty.
+- The public footer stays on every product page, phones included, because it carries the legal and
+  contact links. It sits at the bottom of short pages, and below 1024px its links end above the
+  floating invite ticket while the ticket shows.
+- The bottom bar's Hub strip lists the Club's sections wherever a Club is in context, the Session page
+  included; without one it offers Create and Join on the onboarding Hub and a Club Hub link elsewhere.
+  Choosing a strip link closes the strip.
+- Back to Hub and other in-header actions use the shared small button, with its hover and focus.
+- The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
+  Panel first for App Admins. Movie Details marks no header destination as current.
+- Search, notifications and film-strip menus move focus inside when they open, also under reduced
+  motion, and return it to the trigger when they close.
+
+#### Club Hub
+
+- Overview, Members and Manage Club share one mounted frame with the Club switcher and Call Sheet.
+  Each panel rechecks authorization and refreshes the frame's snapshot; its links keep the scroll
+  position. Below 768px the section tabs give way to the bottom bar's Hub strip. A section switch
+  answers at once: the strip closes, the current section moves and a card skeleton holds the panel
+  until the server responds. The same `LoadingState` cards variant suits later panel routes such as
+  the Library.
+- The carousel ends with Create new club. The caption shows member count, the count of Sessions that
+  were not cancelled, and the founding month and year; description, plan, role and scale stay in
+  their own panels. Names wrap by whole words and stop at three lines. Phones show position dots and
+  switch Clubs with a clearly sideways swipe over the name as well as the arrows; wider screens hide
+  the dots.
+- The Call Sheet opens the current Session from every section, for participants too. Without one it
+  keeps the sheet's frame: "No screening scheduled", the projectionist panda in the still and, for
+  Admins and Moderators, Schedule a Session. Its number is the Club-local creation order, cancelled Sessions
+  included. Sessions store only a date, so the call-time slot shows the location (two lines at most)
+  until a real time exists, never a fabricated midnight. Topics stop at two lines.
+- The Call Sheet still uses cached Movie artwork or an explicit missing-image state, never fixture
+  film data. Before a film is selected it shows the choosing panda rather than a nominated poster,
+  because nominations stay behind the Club's visibility settings.
+- Overview shows seven statistics with `—` for missing values; Session ratings stay unavailable until
+  Phase 13. In the Active Session card only its button acts: Open Session for participants, Join me!
+  for an eligible member. Session history is a quiet disclosure row.
+- Manage Club's Active Session gives Admins and Moderators the gear menu's controls: Start next phase
+  (Selection, or Watching for a single nomination or after Selection), Kick participant and Cancel
+  Session, with the same typed confirmations. Moving Watching to Rating arrives in Phase 13.
+- Members shows each role and the accepted participations, excluding cancelled Sessions. Admins
+  remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
+  Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
+  counts stay in one column whether or not a row has a remove control. Role changes happen in the
+  Manage Moderators dialog, whose role controls wrap under a name rather than truncate it; + Invite
+  opens Manage Club. Dates read as `Oct 21, 2026`.
+- Club Info holds the avatar beside the Club name: clicking it picks an image with a preview, its
+  requirements sit in a tip, and Save Changes uploads it with the other fields. Settings lists its
+  checkboxes at a fixed spacing with Save Changes at the card's base. A Pro-only setting carries a
+  Pro marker and its reason in a tip instead of a bare disabled box.
+- The last row pairs two compact cards of equal height: Members (places in use, Invite members, and
+  Manage Moderators for the Admin) and the Danger Zone (one line, then Archive or Reactivate and
+  Delete, or Leave).
+- All three views show the same adminless, archived and excess-member notices. Adminless Clubs
+  explain the missing owner actions; excess-member Clubs keep history and participation but pause new
+  Sessions and invites while roster recovery stays available.
+- Invite members opens the invitation dialog, which loads recent links once. It creates one
+  single-use link with a 12-hour expiry: the link field carries Copy, and Revoke is a quiet link
+  beneath it. Recent links list a short ID, status, expiry and a quiet Revoke, the newest marked;
+  the link survives closing and reopening the dialog.
+  A new link stays visible and revocable if the list fails to refresh. Active links are capped at the
+  plan's member limit; managers can still inspect and revoke when creation is paused. Members and
+  archived Clubs see no invitation controls.
+
+#### Pending invites
+
+- Club rows list recipient-targeted links with inviter, member count and expiry; shareable Club links
+  stay in their own flow. Session rows are the caller's unanswered open Sessions with topic, Club and
+  date, and have no token expiry. Accepting a Session invite opens the Session.
+- Responding moves focus to Close before the row's controls change, so the trap and Escape keep
+  working after the last answer. Loading, empty, retry and stale-invitation feedback are explicit.
+- The ticket appears once an invitation or a loading failure exists, and then stays, so focus can
+  return to it after the last answer; with nothing pending it never covers content. On phones it
+  floats above the bottom bar.
+
+#### Invitation pages
+
+- Club invitations use one setup scene. The heading says "You are invited" because links reserve no
+  capacity. The preview shows only Club name, icon-labelled member count and inviter, and Accept
+  carries the prototype's check; signed-out and unsafe states omit Club details. Long names use a one-line ellipsis with the full name still accessible.
+- Accept and Decline wait for hydration, show pending and retry feedback and keep the card's size.
+  Success and already-member states open the Hub.
+- Legacy personal Session invitation URLs keep their recipient check, seven-day expiry and focused
+  scene. Signed-out visitors continue through sign-in; non-members see no screening context.
+
+#### Global search and Movie Details
+
+- Header search reuses the product overlay. A 300ms debounce updates a bounded, locally scrolling
+  panel with loading, empty, cached, provider failure, rate-limit, unconfigured and expired-session
+  feedback; a new query clears obsolete results at once. Arrow keys move through results while focus
+  stays in the combobox, Enter opens the canonical Movie route, and Tab and touch work too.
+- Results fall back to an available source title; "Untitled film" means no title at all. Posters load
+  lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
+- Movie Details shows title, then the Session header's meta line (year, runtime, language name and
+  the italic genres), an action rail like the Session's (one rating to one decimal, IMDb else
+  Kinopoisk, with a mark instead of the source name, which readers and the tooltip still get, or a
+  dash; then Rate, a disabled placeholder until Phase 15) and the prototype's Watchlist ribbon on
+  the poster's top-right corner, also a placeholder, poster, directors, writers, up to five actors
+  in one row, budget and worldwide revenue in compact US dollars, synopsis and a trailer player.
+  Rows without data other than directors and actors are left out. On wide screens the poster and
+  trailer share one height (3 : 8 columns), and the poster behaves as in Sessions. Provider
+  attribution stays with TMDB in search results only; where PoiskKino and TheTVDB are credited for
+  public launch is decided in #89. Movie Details and Sessions share one loading skeleton of this
+  layout. On phones the header is the same film ticket as in Sessions, with that rail as its stub.
+  There is no in-content Back. On phones each credit keeps its label and value on one row.
+- Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
+  and stale details each have explicit feedback. Related titles load separately: up to six
+  provider-supplied links, grayscale until hover or focus, with no personalization claim.
+- IMDb, Kinopoisk and Letterboxd links are built by the backend from verified identifiers (a
+  PoiskKino ID is the Kinopoisk film ID; Letterboxd resolves the IMDb, else the TMDB, ID); Wikipedia
+  is a title search. They are bordered pills with each source's one-colour mark and an outbound
+  arrow, marks only on phones, followed by the dotted sprocket divider. The trailer card shows the
+  film still (or the blurred poster) with a Play button; only pressing it loads YouTube's
+  privacy-enhanced player in place, with up to three trailers to choose from. A Search YouTube
+  caption closes the card on the same line as the poster's Film details caption, because provider
+  trailers can be teasers or missing. One credit region covers the film and its related titles.
+  Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with the Library.
+
+#### Create Session
+
+- The setup scene has a Back link, required date and location, optional topic and notes, the two live
+  modes and an optional `hh:mm` Nomination duration. Date-only entries are stored at midnight UTC.
+  Pre-selected mode replaces the deadline with catalog search and a removable selected Movie.
+- Validation focuses the first invalid field; saving, offline and API failures keep the entries. A
+  blocking Session or a Club or role restriction replaces the form with a recovery link.
+- Success links to the new Session and the Hub. Creating or editing a Session refreshes the Hub and
+  Session pages, so browser Back shows current data.
+
+#### Session page
+
+- Every phase is one page: the status banner (with manual refresh while Nomination or Selection is
+  open), the heading with topic, notes and a relative Nomination deadline anchored to the request
+  time, then the phase content, the reel separator with the phase mascot, and the facts.
+- Invite copies the member-only Session link and confirms in its own label. Invite, the Settings
+  gear menu and Join or Leave share one action rail of icon-and-label cells. The gear menu holds
+  early closure, Edit, Kick and Cancel; on short screens its rows compact and it scrolls clear of
+  the bottom bar. The strip centres under its trigger so its tab always sits mid-strip.
+- Dialogs have no close icon: Escape, the overlay and their own Cancel or Close dismiss them. Edit is
+  a focus-trapped form; Cancel, Kick and early closure keep typed `CANCEL`, `REMOVE` and `CLOSE`.
+  Terminal Sessions have no edit or cancel controls. A phase change focuses the Session heading.
+- Participants appear only in the facts. Any current member may join from Nomination through Rating;
+  a declined or departed participant can rejoin, but operator removal blocks self-join. Late
+  Selection participants score the frozen films. Kick lists removable participants and can still
+  revoke legacy personal links. Archived Clubs and terminal Sessions drop the controls they cannot use.
+- The facts companion is the progress metric while Nomination or Selection is open, a coming-soon chat
+  while Watching, and an empty Club score until Phase 13 ratings.
+
+#### Nomination
+
+- Search opens a dropdown over the card; a chosen film becomes a row with Change and Nominate This.
+  Suggestions are the caller's own past losing nominations in this Club and use the same flow.
+- Current Nominations show posters, titles, cached genres and the nominator when the Club allows it.
+  Feedback stays inside the nomination card; a successful submission focuses its heading.
+- Empty history, hidden nominations, missing metadata, non-participant and read-only access, pending
+  saves, failures, offline recovery and locked submission each have explicit copy.
+- Early closure cannot close with no films; one film moves to Watching, several open Selection, and
+  automatic `N/N` completion does the same. Other clients poll a progress version, re-read the page
+  when it moves (also on reconnect and focus), keep polling after a failed check with a visible
+  notice, and recover through a transient "Session unavailable" page.
+
+#### Selection
+
+- Every eligible nomination gets a score row on the Club's scale (`0..N`, or a legacy `1..N`) with one
+  year · genres · nominator line. Rows stack on phones and wide scales scroll inside the row. Scores
+  keep 44px targets and support arrows, Home, End and touch; a score marks only the chosen option.
+- Missing scores focus the first unscored film with live feedback; errors keep the input.
+  Submission is final: a saved ballot shows locked rails with the choices marked. Archived Clubs and
+  ineligible participants cannot submit, and the server filters nominator names.
+- After closure a warm winner card links the Movie, names the permitted nominator and records how
+  and when Selection closed. When allowed, the ranking shows totals, top-score votes, supporters and
+  the deciding tie-break; hidden results show only the winner and why. Zero ballots are explained.
+- Early closure confirms with `CLOSE`, states the received and pending ballots and returns focus to
+  its trigger on cancel.
+
+#### Watching
+
+- A film header (linked title; year and runtime, then the genres in the display italic after a
+  hairline; a phase stamp whose dot pulses only while Watching) sits above the Movie Details media
+  grid. From 576px the stamp sits left of a compact action rail (icon and label inline); below it
+  the header becomes the shared film ticket: the poster carries title, meta, an info mark and the
+  stamp, and the rail is its stub, joined by a perforation with outlined notches. The rail shows
+  only the viewer's actions: Invite, Settings for Session managers, and Join or Leave. The media
+  poster links to Movie Details, mostly grey at rest (softer than the prototype's full grey);
+  colour, a slight zoom and its caption arrive together on hover. When the meta line cannot fit, the
+  genres take a second line, both lines centre and the hairline goes. When film details are
+  unavailable the phase stamp stays and the warning links to the selected Movie. Moving to Rating is
+  Phase 13.
+
+#### Public, Login and Contact
+
+- Login shows the enabled identity providers only; dormant Apple sign-in stays hidden.
+- Contact uses the focused task scene with Back and requires JavaScript through `@mantine/form`;
+  revisit no-JavaScript submission only if it becomes a requirement.
+
+### Prototype fixtures and superseded content
 
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -200,25 +407,25 @@ every breakpoint and gap width.
 The UI kit lives in `apps/frontend/src/components/ui/<Name>/`. The `/ui-preview` gallery exercises
 foundation components; feature-specific wrappers are checked in their built screens.
 
-| Component                      | Purpose and states                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Source                                                                   | Build                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Public and product header      | Brand, navigation, search, notifications, account; public, authenticated, and admin on desktop and mobile.                                                                                                                                                                                                                                                                                                                                                           | [Design system](_docs/design/prototypes/design-system.html)              | Done                                                                     |
-| Film-strip menu and mobile bar | Compact cinematic secondary navigation for Hub, Library, Settings, Admin; open, closed, active (`FilmStripMenu`).                                                                                                                                                                                                                                                                                                                                                    | [DESIGN.md](_docs/design/prototypes/DESIGN.md)                           | Done                                                                     |
-| Club switcher and Call Sheet   | Keep Club and screening context: several Clubs, no Session, each phase, with or without image.                                                                                                                                                                                                                                                                                                                                                                       | [Club Hub](_docs/design/prototypes/app.html)                             | Partial — Club switching and current Session skeleton                    |
-| Tabs                           | Local views without losing shell context; horizontal, vertical, mobile menu (`Tabs`).                                                                                                                                                                                                                                                                                                                                                                                | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
-| Buttons                        | Primary, secondary, ghost, danger, secondary-danger; loading, disabled, success; links styled as buttons (`Button`, `ButtonLink`).                                                                                                                                                                                                                                                                                                                                   | [DESIGN.md](_docs/design/prototypes/DESIGN.md)                           | Done                                                                     |
-| Form controls                  | `TextInput`, `Textarea`, `Select`, `Switch`, the Club Selection scale slider, and `InfoTip` (a "?" hint on hover, focus, or tap). Controls sit one step darker than their surface (`--bg` on `--surface`). Labels are `--fg-secondary`, weight 500, with a quiet qualifier (`— required`, `— optional`); counters read `n/max`; focus is a gold border with a soft gold ring; checkboxes are monochrome. Date, time, file, and segmented controls are still to come. | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
-| Movie search result            | Catalog discovery: loading, results, empty, error, selected, removed.                                                                                                                                                                                                                                                                                                                                                                                                | [Create Session](_docs/design/prototypes/create-session.html)            | Active — Session Movie picker                                            |
-| Score selector                 | Score every nomination on the configured scale; incomplete, submitted, keyboard and touch (`ScoreControl`).                                                                                                                                                                                                                                                                                                                                                          | [Selection](_docs/design/prototypes/session-detail-selection.html)       | Done                                                                     |
-| Rating control                 | 1–10 personal or Session score (`RatingControl`).                                                                                                                                                                                                                                                                                                                                                                                                                    | [Rating](_docs/design/prototypes/session-detail-rating.html)             | Done                                                                     |
-| Progress film strip            | `N/N` participation, compact or full (`Progress`).                                                                                                                                                                                                                                                                                                                                                                                                                   | [Club Hub](_docs/design/prototypes/app.html)                             | Done                                                                     |
-| Status banner and phase stamp  | Lifecycle and recovery for each phase, error, read-only (`StatusBanner`).                                                                                                                                                                                                                                                                                                                                                                                            | [Session family](_docs/design/prototypes/session-detail-nomination.html) | Done                                                                     |
-| Invite ticket and popover      | Club and Session invitations: several, empty, accept, decline, expired, forbidden.                                                                                                                                                                                                                                                                                                                                                                                   | [Club Hub](_docs/design/prototypes/app.html)                             | Active for Club invites; Session invitations built; owner review pending |
-| Notification popover           | Recent in-app events: read, unread, empty, loading, error, mobile.                                                                                                                                                                                                                                                                                                                                                                                                   | [Settings](_docs/design/prototypes/settings.html)                        | Partial                                                                  |
-| Dialog                         | Phase moves, edits, removals, cancellation, destructive actions; typed confirmation (`Modal`).                                                                                                                                                                                                                                                                                                                                                                       | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
-| Stat, leaderboard, table       | Summaries, histories, rankings, usage, admin lists; sorted, filtered, mobile scroll (`Table`).                                                                                                                                                                                                                                                                                                                                                                       | [Club Hub](_docs/design/prototypes/app.html)                             | Partial                                                                  |
-| Achievement card and filter    | Earned, in-progress, and locked goals.                                                                                                                                                                                                                                                                                                                                                                                                                               | [Library](_docs/design/prototypes/library.html)                          | Not started                                                              |
-| Privacy accordion              | Data summary and rights actions (export, GDPR archive, deletion) in "Privacy & data", linking to the Privacy Notice.                                                                                                                                                                                                                                                                                                                                                 | [Settings](_docs/design/prototypes/settings.html)                        | Not started                                                              |
+| Component                      | Purpose and states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Source                                                                   | Build                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Public and product header      | Brand, navigation, search, notifications, account; public, authenticated, and admin on desktop and mobile.                                                                                                                                                                                                                                                                                                                                                                                                          | [Design system](_docs/design/prototypes/design-system.html)              | Done                                                                     |
+| Film-strip menu and mobile bar | Compact cinematic secondary navigation for Hub, Library, Settings, Admin; open, closed, active (`FilmStripMenu`).                                                                                                                                                                                                                                                                                                                                                                                                   | [DESIGN.md](_docs/design/prototypes/DESIGN.md)                           | Done                                                                     |
+| Club switcher and Call Sheet   | Keep Club and screening context: several Clubs, no Session, each phase, with or without image.                                                                                                                                                                                                                                                                                                                                                                                                                      | [Club Hub](_docs/design/prototypes/app.html)                             | Active for delivered Club/Session phases; remaining views are later work |
+| Tabs                           | Local views without losing shell context; horizontal, vertical, mobile menu (`Tabs`).                                                                                                                                                                                                                                                                                                                                                                                                                               | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
+| Buttons                        | Primary, secondary, ghost, danger, secondary-danger; loading, disabled, success; links styled as buttons (`Button`, `ButtonLink`).                                                                                                                                                                                                                                                                                                                                                                                  | [DESIGN.md](_docs/design/prototypes/DESIGN.md)                           | Done                                                                     |
+| Form controls                  | `TextInput`, `Textarea`, `Select`, `Switch`, the Club Selection scale slider, and `InfoTip` (a "?" hint on hover, focus, or tap). Controls sit one step darker than their surface (`--bg` on `--surface`). Labels are `--fg-secondary`, weight 500, with a quiet qualifier (`— required`, `— optional`); counters read `n/max`; focus is a gold border with a soft gold ring; checkboxes are monochrome. Native date, file and segmented controls are active in delivered forms; later field types remain Proposed. | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
+| Movie search result            | Catalog discovery: loading, results, empty, error, selected, removed.                                                                                                                                                                                                                                                                                                                                                                                                                                               | [Create Session](_docs/design/prototypes/create-session.html)            | Active — Session Movie picker                                            |
+| Score selector                 | Score every nomination on the configured scale; incomplete, submitted, keyboard and touch (`ScoreControl`).                                                                                                                                                                                                                                                                                                                                                                                                         | [Selection](_docs/design/prototypes/session-detail-selection.html)       | Done                                                                     |
+| Rating control                 | 1–10 personal or Session score (`RatingControl`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Rating](_docs/design/prototypes/session-detail-rating.html)             | Done                                                                     |
+| Progress film strip            | `N/N` participation, compact or full (`Progress`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | [Club Hub](_docs/design/prototypes/app.html)                             | Done                                                                     |
+| Status banner and phase stamp  | Lifecycle and recovery for each phase, error, read-only (`StatusBanner`).                                                                                                                                                                                                                                                                                                                                                                                                                                           | [Session family](_docs/design/prototypes/session-detail-nomination.html) | Done                                                                     |
+| Invite ticket and popover      | Club and Session invitations: several, empty, accept, decline, expired, forbidden.                                                                                                                                                                                                                                                                                                                                                                                                                                  | [Club Hub](_docs/design/prototypes/app.html)                             | Active for Club and Session invitations                                  |
+| Notification popover           | Recent in-app events: read, unread, empty, loading, error, mobile.                                                                                                                                                                                                                                                                                                                                                                                                                                                  | [Settings](_docs/design/prototypes/settings.html)                        | Partial                                                                  |
+| Dialog                         | Phase moves, edits, removals, cancellation, destructive actions; typed confirmation (`Modal`).                                                                                                                                                                                                                                                                                                                                                                                                                      | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                  |
+| Stat, leaderboard, table       | Summaries, histories, rankings, usage, admin lists; sorted, filtered, mobile scroll (`Table`).                                                                                                                                                                                                                                                                                                                                                                                                                      | [Club Hub](_docs/design/prototypes/app.html)                             | Partial                                                                  |
+| Achievement card and filter    | Earned, in-progress, and locked goals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [Library](_docs/design/prototypes/library.html)                          | Not started                                                              |
+| Privacy accordion              | Data summary and rights actions (export, GDPR archive, deletion) in "Privacy & data", linking to the Privacy Notice.                                                                                                                                                                                                                                                                                                                                                                                                | [Settings](_docs/design/prototypes/settings.html)                        | Not started                                                              |
 
 | Pattern              | Behavior                                                                                                                           |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -250,7 +457,7 @@ foundation components; feature-specific wrappers are checked in their built scre
 
 | Check              | Target                                                                                                           | Evidence                                                                                                                                                                                                                                                                                      | Status      |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Source parity      | Every screen and shared component compared with its source.                                                      | 76 baselines at 390 and 1440 (gallery, seven shells, public pages, Login, Club onboarding, invitation states, Hub overview, members and settings, recovery states); Hub preview needs exact-SHA owner review.                                                                                 | In progress |
+| Source parity      | Every screen and shared component compared with its source.                                                      | 84 baselines at 390 and 1440 (gallery, seven shells, public pages, Login, Club onboarding, invitations, Hub, members/settings, recovery, Movie Details, Session creation, Nomination and Selection). The owner accepted the delivered screens in Phase 12.                                    | In progress |
 | Responsive         | Continuous widths plus 390, 768, 1024, 1440; orientation where it matters.                                       | Established screens: overflow at 390, 640, 768, 900, 1024, 1200, 1440. Session creation/detail: 390, 768, 1024, 1440.                                                                                                                                                                         | In progress |
 | Keyboard and focus | Auth, Club creation, Sessions, search, menus, dialogs, rating and score controls, settings, admin confirmations. | Automated for shared and shell controls, Pricing FAQ, Contact and Create Club validation focus, Club switch, member removal, pending invites, Club settings dialogs, Session validation, Movie selection, edit/cancel dialogs, and the unavailable checkout. Remaining feature flows pending. | In progress |
 | Accessibility      | Structure, names, focus, contrast, live regions, targets, reduced motion.                                        | Axe at 390 and 1440 on every built screen; automated focus, live-region, 44px target, local-scroll, and reduced-motion checks. Manual review pending.                                                                                                                                         | In progress |
@@ -261,170 +468,10 @@ foundation components; feature-specific wrappers are checked in their built scre
 Update this document when a design source changes, visible behavior is clarified, a screen or
 component is added, or build or QA status changes. A correct-looking prototype is not passed QA.
 
-Club invitation states use one setup scene with the invitation mascot, reserved card regions, and
-stable recovery actions. Its heading says "You are invited" because invitation links do not reserve
-capacity. Signed-out and unsafe states omit Club details. The usable preview shows
-only Club name, member count, and inviter; Session totals are omitted. Accept and Decline have visible
-pending and retry feedback; both wait for hydration before enabling their decision handlers.
-Success and already-member states open the authorized Hub. Manage Club
-lets Admins and Moderators create, copy, inspect, and revoke links. The shared pending-invite ticket
-and popover are active for recipient-targeted Club invitations. Owner review of the exact hosted head
-SHA remains required.
-Long Club names use a single-line ellipsis in the invitation preview while keeping the full heading
-text accessible. Accepting or declining a maximum-length name keeps the card dimensions stable.
-Manage Club keeps a newly created link visible and revocable when list refresh fails, with a warning
-that directs the manager to reload Recent invitations. Older live pending links remain in that list.
-Active Admins and Moderators can inspect and revoke existing links when an excess-member or adminless
-restriction pauses creation. Members and archived Clubs keep the invitation controls hidden.
-
-### Hub membership states
-
-Members shows the live roster and joined dates; the Session skeleton has no per-member attendance
-counters yet. Admins remove Members or Moderators; Moderators remove Members; Members review the
-roster and leave through Manage Club. Removal requires `REMOVE`, preserves shared history, and returns
-focus to the Members heading when the removed row disappears. Role changes remain in the Manage
-Moderators dialog in Manage Club.
-
-Overview, Members, and Manage Club show the same adminless, archived, and excess-member notices.
-Adminless Clubs explain missing owner actions and paused new work. Excess-member Clubs preserve
-history and existing participation while disabling new Sessions and invites; roster recovery remains
-available. Account deletion, administration recovery, and billing delivery remain in their owning phases.
-
-The shared product shell displays the pending-invite ticket and an anchored dialog with trapped and
-returned focus. Responding moves focus to Close before invitation controls are disabled or removed,
-preserving the focus trap and Escape dismissal even after the final invitation is declined.
-It supports loading, empty, retry, acceptance, decline, and stale-invitation feedback.
-Only eligible invitations targeted to the signed-in account appear. Shareable links stay in the link
-flow. Session rows show the Club, Session topic, inviter and expiry; acceptance opens Session detail. The ticket and popover use shared UI components and
-tokens, with a mobile position above the fixed navigation.
-
-## Global Movie search
-
-The authenticated header search reuses the product overlay and its mutual-exclusion, dismissal,
-focus-return and reduced-motion behavior. A 300ms debounce updates a bounded result panel with
-loading, no-results, cached-results, provider failure, rate-limit, unconfigured and expired-session
-feedback. Query changes remove obsolete results immediately. Arrow keys select results while focus
-stays in the combobox; Enter opens the selected canonical Movie UUID route. Results also support
-Tab and touch. Long titles wrap inside the panel, which scrolls locally and fits the viewport.
-
-Search uses neutral PF poster placeholders. Catalog
-credits identify the returned sources; TMDB uses its approved logo and required notice. The Movie
-route checks the session and now renders the read-only details described below. Local search keyboard, touch,
-axe and overflow checks passed at 390, 768, 1024 and 1440px on 2026-10-10. Personal Ratings, Watchlist,
-metadata and related films remain outside this change. Exact-SHA hosted preview and owner visual
-acknowledgement remain required before #37 is complete.
-
-## Read-only Movie Details
-
-The canonical UUID route renders title, year, language, runtime, genres, source-labelled ratings,
-poster, directors, cast, synopsis and outbound trailers. Desktop places poster/trailer above
-credits/synopsis in one flat grid. Mobile centers the title, pairs poster with credits, then places
-synopsis and trailer beneath. Long provider text wraps; no fixture posters or stills are bundled.
-Missing or failed media, absent English synopsis, provider outage/rate limits, unconfigured
-catalog, partial details and bounded stale details have explicit feedback. Loading related titles
-is independent of the main detail page. Unknown Movies use the existing not-found surface.
-
-Catalog credits reuse the approved TMDB logo and notice, plus attribution for contributing
-PoiskKino/TheTVDB sources. Related titles are provider-supplied, with up to six canonical links;
-they make no personalization claim. IMDb links arrive as backend-built URLs from verified stored identifiers.
-Catalog images are served from private storage through authenticated same-origin paths; failed
-ingestion uses the existing missing-media presentation. Wikipedia is
-labelled as a title search because no verified article correspondence is available. Trailer links
-open YouTube in a new tab and announce that behavior. Personal Ratings and Watchlist controls
-remain outside #38. Hosted exact-head preview and owner visual acknowledgement are still required.
-
-Local verification on 2026-10-10 passed Movie Details axe and overflow checks at 390, 768,
-1024 and 1440px, desktop equal-width credits/synopsis and 16:9 trailer geometry, missing-media
-and provider-failure checks. Mobile and desktop screenshots were inspected. Existing visual
-baselines were not changed; hosted preview and owner review remain pending.
-
-## Session creation and management foundations
-
-The standalone Create Session screen uses the canonical panda, centered card, required date and
-location, optional topic/notes, two live modes, and an optional `hh:mm` nomination duration.
-Date-only entries are stored at midnight UTC. Pre-selected mode replaces the deadline with
-catalog search, keyboard selection and a removable selected Movie. Search reports loading, empty,
-provider failure and cached results; provider text stays escaped.
-
-Validation focuses the first invalid field. Saving, offline and API-failure feedback preserves
-entries. Success links to the created Session and Club Hub; operators create member-targeted
-invitation links on Session detail. Blocking Sessions and Club/role restrictions replace the form with a recovery link.
-The phase-labelled detail foundation shows date/location/notes, deadline and a selected-Movie link.
-Operators edit details in a focus-trapped dialog and cancel with typed `CANCEL`; terminal Sessions
-have no edit or cancellation controls. Club Hub links current, Rating and history rows to detail.
-Successful creation and edits invalidate the Hub and detail pages so browser Back shows current data.
-Full nomination, selection and watching/rating content remain later work.
-
-Chromium checks cover both creation modes, edit/cancel and Hub updates, validation focus, dialog
-focus return, keyboard Movie selection, and retained entries after offline/API failures. Creation
-and detail pass axe and page-overflow checks at 390, 768, 1024 and 1440. Local captures were
-inspected; the four changed Hub and overlaid-invitation baselines were regenerated in the pinned Linux browser.
-
-Hosted exact-head preview and owner visual acknowledgement remain required for #40.
-
-## Member-only Session invitations and roster
-
-Session invitation pages reuse the focused invitation scene and UI kit. Signed-out visitors see
-sign-in continuation; ineligible viewers see one generic denial with a hint to join the Club first,
-without a Club name, Session topic, date, location, or participant list. Eligible recipients see the
-screening context and Accept/Decline. Loading, failure and offline feedback preserve their response
-controls. Acceptance confirms participation and links to Session detail; declining returns to Clubs.
-
-Session detail shows the accepted count and participant states. Operators select an existing Club
-member and create a link that expires in seven days; the returned link stays visible until the operator leaves the page. Pending links can be revoked. Leave/removal dialogs require typed `LEAVE`/`REMOVE`, preserve
-history, trap focus, and show explicit failure/offline feedback. Archived/terminal/role restrictions
-remove unavailable controls. Responsive and owner visual review evidence is tracked in the active
-Phase 9 document; exact-head hosted preview and owner acknowledgement remain required for #41.
-
-## Nomination submissions and personal suggestions
-
-Session detail places nomination progress above the search/suggestions and Current Nominations
-cards. Desktop uses the canonical unequal two-column composition; mobile stacks the primary search
-before nominations. Suggestions scroll within their carousel and select a Movie for the same
-confirmation action as catalog search. Empty history, hidden nominations, unavailable metadata,
-nonparticipant/read-only access, pending saves, failures, offline recovery and locked submission
-have explicit feedback. Neutral PF poster placeholders match the existing catalog picker.
-
-Operators keep the existing edit, cancel, invite and roster controls and can confirm early closure
-in a focus-trapped dialog. A phase change moves focus to the Session heading when the original
-trigger disappears. Zero films cannot close; one moves to Watching and multiple nominations
-open Selection. Automatic N/N completion follows the same outcomes. Other clients poll a
-progress version and re-read the authoritative page when it moves, also on reconnect and window
-focus. A failed check shows “Could not check for updates. Retrying shortly.” and keeps polling. Recovery continues through a transient
-“Session unavailable” page and refreshes when either the rendered detail or roster is stale.
-Manual refresh remains available.
-Exact-head hosted preview and owner visual acknowledgement remain required for #42 and #44.
-
-Successful Nomination submission focuses the stable “Find & Nominate a Movie” heading after the
-submit control is replaced by the locked confirmation.
-
-### Selection ballots
-
-The Selection view reuses `ScoreControl` for every eligible nomination and generates the
-Session's inclusive 0..N or legacy 1..N range. Desktop rows align Movie metadata with the score
-rail; mobile stacks the rail below each film. Wide ranges scroll inside the control. Every score
-retains a 44px target and supports arrows, Home/End and touch. Missing scores focus the first
-unscored nomination and produce live feedback. Recoverable and offline errors preserve input.
-
-The form explains that submission is final. A saved ballot replaces controls with the caller's
-scores and a locked message; refresh keeps that state. Aggregate accepted/submitted progress
-shares the warm Selection route; ordinary film rows stay neutral. Archived Clubs and ineligible
-participants cannot submit. The server filters nominator names independently. Hosted visual
-review remains required before #45 acceptance.
-
-### Selection results and early closure
-
-After closure, a restrained warm winner card replaces the ballot. It links to the selected Movie,
-shows the permitted nominator and records automatic or operator closure. When allowed, a neutral
-ordered list shows frozen totals, maximum scores and supporting voters, with the decisive
-tie-break explained in plain text. Mobile stacks each Movie above its metrics. Hidden results
-show the winner and a visibility explanation without rankings or numeric breakdowns. Missing
-Movie metadata uses the existing title placeholder; zero-ballot closure explains the tie-break.
-
-Operators can close Selection through the shared focus-trapped confirmation dialog by typing
-`CLOSE`. The dialog shows accepted/submitted progress, explains that all received ballots count
-and that remaining participants cannot submit, and retains confirmation after offline/API errors.
-Cancel returns focus to the trigger; a successful phase change focuses the Session heading.
-The existing progress poll refreshes other clients and recovers on reconnect. Watching and Rating
-workflows remain later work. Exact-head hosted preview and owner visual acknowledgment remain
-required before #47 acceptance.
+Phase 12 compared every prototype file with the live app on 2026-10-21 at 390, 768, 844×390,
+1024 and 1440px as Admin, participant and non-participant, across Nomination, Selection, Watching,
+Rating and Completed; owner reviews on 2026-10-22 and 2026-10-23 refined the result, and the owner
+accepted it on 2026-10-23. Its outcomes are recorded in the screen rules above; run evidence lives in
+[Phase 12](ROADMAP.md#phase-12--human-verification--bug-fixing-ii--done). Linux baselines prove
+regression stability. The remaining Hub views and Rating/Completed content are Phase 13 and later
+work.

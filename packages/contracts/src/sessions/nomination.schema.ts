@@ -11,6 +11,7 @@ export const nominationMovieSchema = z.strictObject({
     id: z.uuid(),
     title: z.string().nullable(),
     year: z.number().int().nullable(),
+    genres: z.array(z.string().min(1).max(200)).max(100),
 });
 export type TNominationMovie = z.infer<typeof nominationMovieSchema>;
 export const nominationsSchema = z.strictObject({

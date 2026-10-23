@@ -28,11 +28,16 @@ export async function getSessionState(): Promise<TSessionState> {
             signal: AbortSignal.timeout(SESSION_CHECK_TIMEOUT_MS),
         });
         if (!response.ok) {
+            console.error('Session check unavailable.', {
+                status: response.status,
+                requestId: response.headers.get('x-request-id'),
+            });
             return 'unavailable';
         }
         const session = (await response.json()) as { user?: { id?: unknown } } | null;
         return typeof session?.user?.id === 'string' ? 'authenticated' : 'anonymous';
     } catch {
+        console.error('Session check did not complete.');
         return 'unavailable';
     }
 }

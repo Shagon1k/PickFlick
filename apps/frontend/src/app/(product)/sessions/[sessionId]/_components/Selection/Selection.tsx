@@ -1,18 +1,32 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import { submitSelectionSchema, type TSelection } from '@pickflick/contracts';
+import {
+    submitSelectionSchema,
+    type TNominationMovie,
+    type TSelection,
+} from '@pickflick/contracts';
 import Link from 'next/link';
-import { useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState, useTransition } from 'react';
 
+import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { getOfflineMessage } from '#lib/offline';
 
 import { refreshSelectionAction, submitSelectionAction } from '../../selection-actions';
+import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Selection.module.scss';
 
-export default function Selection({ sessionId, data }: { sessionId: string; data: TSelection }) {
+export default function Selection({
+    sessionId,
+    data,
+    header,
+}: {
+    sessionId: string;
+    data: TSelection;
+    header: ReactNode;
+}) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
@@ -72,22 +86,17 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
     }
     return (
         <section className={styles.selection} aria-labelledby="selection-heading">
-            <div className={styles.progress}>
-                <p role="status">
-                    Selection in progress — {data.submittedCount} of {data.acceptedCount}{' '}
-                    participants have submitted.
-                </p>
-                <progress
-                    aria-label="Selection progress"
-                    value={data.submittedCount}
-                    max={Math.max(data.acceptedCount, 1)}
-                />
-                <Button variant="ghost" disabled={isPending} onClick={handleRefresh}>
-                    Refresh Selection
-                </Button>
-            </div>
-            <h2 id="selection-heading" ref={headingRef} tabIndex={-1}>
-                Movie Selection
+            <PhaseProgress
+                refreshLabel="Refresh Selection"
+                disabled={isPending}
+                onRefresh={handleRefresh}
+            >
+                Selection in progress — {data.submittedCount} of {data.acceptedCount} participants
+                have submitted.
+            </PhaseProgress>
+            {header}
+            <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
+                Score nominated films
             </h2>
             <p>
                 Score every nominated film from {data.scaleMin} to {data.scaleMax}. Submit once;
@@ -100,20 +109,21 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                     <ul className={styles.movies} aria-label="Nominated films">
                         {data.nominations.map((row, index) => (
                             <li key={row.id} className={styles.movie}>
-                                <div className={styles.poster} aria-hidden="true">
-                                    PF
-                                </div>
+                                <SearchPoster
+                                    className={styles.poster}
+                                    url={`/api/movies/${row.movie.id}/poster`}
+                                />
                                 <div className={styles.info}>
                                     <h3>
                                         <Link href={`/movies/${row.movie.id}`}>
                                             {row.movie.title ?? 'Movie title unavailable'}
                                         </Link>
                                     </h3>
-                                    {row.movie.year ? <p>{row.movie.year}</p> : null}
-                                    {row.author !== null ? <p>Nominated by {row.author}</p> : null}
+                                    <p>{describeNomination(row.movie, row.author)}</p>
                                 </div>
                                 <div className={styles.control}>
                                     <ScoreControl
+                                        compact
                                         label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
                                         name={`score-${row.id}`}
                                         min={data.scaleMin}
@@ -141,7 +151,7 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
                         ) : null}
                         {data.canSubmit && !data.submittedAt ? (
                             <>
-                                <p role="status">
+                                <p className={styles.summary} role="status">
                                     {scoredCount} of {data.nominations.length} films scored ·{' '}
                                     {scoredCount === data.nominations.length
                                         ? 'Ready to submit'
@@ -167,3 +177,15 @@ export default function Selection({ sessionId, data }: { sessionId: string; data
         </section>
     );
 }
+
+function describeNomination(movie: TNominationMovie, author: string | null) {
+    return [
+        movie.year,
+        movie.genres.slice(0, MAX_GENRES).join(', '),
+        author === null ? null : `nominated by ${author}`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+}
+
+const MAX_GENRES = 2;

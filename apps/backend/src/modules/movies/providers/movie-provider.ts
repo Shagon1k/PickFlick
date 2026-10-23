@@ -67,8 +67,11 @@ export function createEmptyMetadata() {
         runtime: null,
         genres: null,
         directors: null,
+        writers: null,
         cast: null,
         trailers: null,
+        budget: null,
+        revenue: null,
     });
 }
 export function parseProviderRecord(value: unknown): TProviderRecord {

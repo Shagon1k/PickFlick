@@ -98,6 +98,60 @@
     border-color: var(--danger-hover);
 }
 
+/* One cell of an action rail: an icon over a short label on phones, inline from 576px. */
+.button.m-cell,
+.button.m-cell-danger {
+    flex: 1;
+    width: calc(100% - 8px);
+    min-height: 54px;
+    padding: 6px 4px;
+    margin: 4px;
+    font-size: var(--fs-caption);
+    color: var(--fg);
+    letter-spacing: 0;
+    background: transparent;
+}
+
+.button.m-cell-danger {
+    color: var(--danger-text);
+}
+
+.button.m-cell:hover,
+.button.m-cell-danger:hover {
+    background: var(--accent-soft);
+}
+
+.button.m-cell .button__label,
+.button.m-cell-danger .button__label {
+    flex-direction: column;
+    gap: 5px;
+}
+
+@media (width >= 576px) {
+    /* Inline cells stay 44px targets; the rail's own border is the only frame. */
+    .button.m-cell,
+    .button.m-cell-danger {
+        width: 100%;
+        min-height: var(--hit);
+        padding: 0 16px;
+        margin: 0;
+        font-size: var(--fs-meta);
+        border-radius: calc(var(--radius) - 1px);
+    }
+
+    .button.m-cell .button__label,
+    .button.m-cell-danger .button__label {
+        flex-direction: row;
+        gap: 7px;
+    }
+
+    .button.m-cell svg,
+    .button.m-cell-danger svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
 .button.m-small {
     min-height: 36px;
     padding: 6px 14px;
@@ -116,6 +170,20 @@
     color: var(--success-text-strong);
     background: var(--success-soft);
     border-color: var(--success-border);
+}
+
+/* Icons centre on the button, not on the text baseline. */
+.button__inner {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: center;
+}
+
+.button__label {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
 }
 
 .button[data-state='loading'] .button__label {
@@ -165,4 +233,11 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+.button.m-icon {
+    flex: 0 0 var(--hit);
+    width: var(--hit);
+    height: var(--hit);
+    padding: 0;
 }

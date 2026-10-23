@@ -11,12 +11,14 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Switch from '#components/ui/Switch/Switch';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '#lib/form-errors';
+import { formatUtcDateTime } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 
 import { saveSessionAction } from './actions';
@@ -36,12 +38,14 @@ interface ISessionFormProps {
     clubId: string;
     session?: TSession;
     onSaved?: () => void;
+    onCancel?: () => void;
     creationRestriction?: 'blocking' | 'permission';
 }
 export default function SessionForm({
     clubId,
     session,
     onSaved,
+    onCancel,
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
@@ -126,6 +130,7 @@ export default function SessionForm({
                 label="Topic"
                 labelHint="optional"
                 maxLength={SESSION_TOPIC_MAX_LENGTH}
+                placeholder="e.g. Best of 2020s cinema"
             />
             <Textarea
                 {...form.getInputProps('notes')}
@@ -134,6 +139,7 @@ export default function SessionForm({
                 label="Notes"
                 labelHint="optional"
                 maxLength={SESSION_NOTES_MAX_LENGTH}
+                placeholder="Anything members should know before the session?"
                 size="compact"
             />
             {!session ? (
@@ -160,7 +166,7 @@ export default function SessionForm({
                     placeholder="hh:mm"
                     hint={
                         session?.deadlineAt
-                            ? `Current deadline: ${session.deadlineAt}. Leave blank to keep it.`
+                            ? `Current deadline: ${formatUtcDateTime(session.deadlineAt)}. Leave blank to keep it.`
                             : 'hh:mm from now. Leave blank for no deadline.'
                     }
                 />
@@ -176,19 +182,52 @@ export default function SessionForm({
                 <MoviePicker
                     disabled={isPending}
                     error={form.errors.movieId}
+                    placeholder="Search films by title…"
                     value={form.values.movieId}
                     onChange={(movieId) => form.setFieldValue('movieId', movieId)}
                 />
             ) : null}
-            <div className={styles.submit}>
-                <Button fullWidth loading={isPending} type="submit">
-                    {session ? 'Save changes' : 'Create Session'}
-                </Button>
-                <p aria-atomic="true" aria-live="polite" role="status">
-                    {message}
-                </p>
-            </div>
+            <SessionFormActions
+                isEditing={Boolean(session)}
+                isPending={isPending}
+                message={message}
+                onCancel={onCancel}
+            />
         </form>
+    );
+}
+
+function SessionFormActions({
+    isEditing,
+    isPending,
+    message,
+    onCancel,
+}: {
+    isEditing: boolean;
+    isPending: boolean;
+    message: string;
+    onCancel?: () => void;
+}) {
+    return (
+        <div className={isEditing ? styles.edit : styles.submit}>
+            {isEditing ? (
+                <div className={styles.editActions}>
+                    <Button disabled={isPending} onClick={onCancel} variant="secondary">
+                        Cancel
+                    </Button>
+                    <Button loading={isPending} type="submit">
+                        Save
+                    </Button>
+                </div>
+            ) : (
+                <Button fullWidth loading={isPending} type="submit">
+                    Create Session
+                </Button>
+            )}
+            <p aria-atomic="true" aria-live="polite" role="status">
+                {message}
+            </p>
+        </div>
     );
 }
 
@@ -204,18 +243,20 @@ function SessionTypeField({
     return (
         <fieldset className={styles.modes} disabled={disabled}>
             <legend>Session type</legend>
-            {SESSION_TYPES.map(({ type, label }) => (
-                <label key={type}>
-                    <input
-                        checked={value === type}
-                        name="session-type"
-                        type="radio"
-                        value={type}
-                        onChange={() => onChange(type)}
-                    />
-                    {label}
-                </label>
-            ))}
+            <div className={styles.modeOptions}>
+                {SESSION_TYPES.map(({ type, label }) => (
+                    <label key={type}>
+                        <input
+                            checked={value === type}
+                            name="session-type"
+                            type="radio"
+                            value={type}
+                            onChange={() => onChange(type)}
+                        />
+                        {label}
+                    </label>
+                ))}
+            </div>
         </fieldset>
     );
 }
@@ -237,6 +278,7 @@ function SessionResult({ session }: { session: TSession }) {
     return (
         <div className={styles.result}>
             <p role="status">Session created. {phaseMessage}</p>
+            <SessionLink sessionId={session.id} />
             <ButtonLink href={`/sessions/${session.id}`} variant="primary">
                 Open Session
             </ButtonLink>

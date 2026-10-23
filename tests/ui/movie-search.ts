@@ -39,7 +39,7 @@ export function handleMovieSearch(
             releaseYear: 2026,
             adult: false,
             originalLanguage: 'en',
-            posterUrl: null,
+            posterUrl: query.startsWith('posters') ? `/api/movies/${id}/poster` : null,
             backdropUrl: null,
             ratings: [],
             provenance: [
@@ -57,7 +57,9 @@ export function handleMovieSearch(
                     ? []
                     : [
                           buildMovie(
-                              '10000000-0000-4000-8000-000000000037',
+                              query === 'posters-broken'
+                                  ? '10000000-0000-4000-8000-000000000039'
+                                  : '10000000-0000-4000-8000-000000000037',
                               query === 'slow' ? 'Old film' : '<script>alert(1)</script> & Film',
                           ),
                           buildMovie('10000000-0000-4000-8000-000000000038', 'Second Film'),

@@ -3,7 +3,12 @@
     gap: var(--gap-sm);
 }
 
-.loadingState__line {
+.loadingState__line,
+.loadingState__title,
+.film__actions,
+.film__poster,
+.film__trailer,
+.film__credits {
     display: block;
     width: 100%;
     height: var(--hit);
@@ -22,8 +27,165 @@
     width: 72%;
 }
 
+/* Quiet stand-ins for a panel's cards: the Hub frame stays put while one panel loads. */
+.loadingState__cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-md);
+}
+
+.loadingState__card {
+    display: grid;
+    gap: var(--gap-sm);
+    align-content: start;
+    min-height: 180px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.loadingState__card .loadingState__title {
+    width: 44%;
+    height: 22px;
+    margin-bottom: var(--gap-xs);
+}
+
+.loadingState__card .loadingState__line {
+    height: 14px;
+}
+
+.loadingState__card .loadingState__line:last-child {
+    width: 64%;
+}
+
+@media (width >= 768px) {
+    .loadingState__cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* The shared Movie Details and Session layout: poster and trailer share one height (3 : 8). */
+.film {
+    display: grid;
+    gap: var(--gap-lg);
+}
+
+.film__head {
+    display: flex;
+    gap: var(--gap-lg);
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.film__heading {
+    display: grid;
+    flex: 1;
+    gap: var(--gap-sm);
+    max-width: 420px;
+}
+
+.film__heading .loadingState__title {
+    width: 70%;
+    height: 48px;
+}
+
+.film__heading .loadingState__line {
+    width: 55%;
+    height: 16px;
+}
+
+.film__actions {
+    flex: 0 0 280px;
+    height: 46px;
+}
+
+.film__media {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+    gap: var(--gap-lg);
+}
+
+.film__poster {
+    height: auto;
+    aspect-ratio: 2 / 3;
+}
+
+.film__trailer {
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
+.film__details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-lg);
+}
+
+.film__credits {
+    height: 230px;
+    border-radius: var(--radius-lg);
+}
+
+.film__synopsis {
+    display: grid;
+    gap: var(--gap-sm);
+    align-content: start;
+}
+
+.film__synopsis .loadingState__line {
+    height: 14px;
+}
+
+.film__synopsis .loadingState__line:last-child {
+    width: 60%;
+}
+
+@media (width < 1024px) {
+    .film__media {
+        grid-template-columns: 200px minmax(0, 1fr);
+    }
+
+    .film__trailer {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Phones centre the heading and give the poster, then each block, the full width. */
+@media (width < 576px) {
+    .film__head {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .film__heading {
+        justify-items: center;
+        width: 100%;
+    }
+
+    .film__actions {
+        flex-basis: auto;
+        width: 100%;
+        height: 62px;
+    }
+
+    .film__media,
+    .film__details {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .film__poster {
+        justify-self: center;
+        width: min(100%, 320px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .loadingState__line {
+    .loadingState__line,
+    .loadingState__title,
+    .film__actions,
+    .film__poster,
+    .film__trailer,
+    .film__credits {
         animation-duration: 0.01ms;
         animation-iteration-count: 1;
     }

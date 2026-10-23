@@ -15,6 +15,7 @@ export async function readRoster(
     if (!session) throw new NotFoundException();
     const membership = await findMembership(tx, userId, session.clubId);
     const isOpen = isOpenSessionPhase(session.phase);
+    const isActive = membership.club.lifecycle === 'ACTIVE';
     // One rule decides every roster control: invite, revoke, and remove.
     const isManager = isOpen && (await canManage(tx, membership));
     const participants = await tx.sessionParticipant.findMany({
@@ -31,6 +32,14 @@ export async function readRoster(
             .length,
         canInvite: isManager,
         canManage: isManager,
+        canJoin:
+            isOpen &&
+            isActive &&
+            !participants.some(
+                (participant) =>
+                    participant.membershipId === membership.id &&
+                    ['ACCEPTED', 'REMOVED'].includes(participant.status),
+            ),
         canLeave:
             isOpen &&
             participants.some(

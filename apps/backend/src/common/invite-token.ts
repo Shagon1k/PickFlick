@@ -11,13 +11,13 @@ export function digestInviteToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
 }
 
-/** A fresh link token, its stored digest, and the seven-day expiry shared by all invitations. */
-export function createInviteToken() {
+/** Session tokens keep the default lifetime; Club links supply their shorter lifetime. */
+export function createInviteToken(lifetimeMs = INVITE_LIFETIME_MS) {
     const token = randomBytes(TOKEN_BYTES).toString('base64url');
     return {
         token,
         tokenDigest: digestInviteToken(token),
-        expiresAt: new Date(Date.now() + INVITE_LIFETIME_MS),
+        expiresAt: new Date(Date.now() + lifetimeMs),
     };
 }
 

@@ -2,10 +2,12 @@ import { createHash } from 'node:crypto';
 
 import type { TMovieSearch } from '@pickflick/contracts';
 
-/** Switching provider or locale starts a separate cache; old entries simply age out. */
+const CACHE_VERSION = 3;
+
+/** New normalization policies refetch projections while keeping the canonical Movie identities. */
 function buildCatalogCacheKey(provider: string, ...values: unknown[]): string {
     return createHash('sha256')
-        .update(JSON.stringify([provider, ...values]))
+        .update(JSON.stringify([CACHE_VERSION, provider, ...values]))
         .digest('hex');
 }
 

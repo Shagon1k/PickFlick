@@ -1,4 +1,9 @@
-import { MOVIE_CAST_LIMIT, movieImageUrlSchema, type TMovieExternalId } from '@pickflick/contracts';
+import {
+    MOVIE_CAST_LIMIT,
+    movieImageUrlSchema,
+    movieTrailerUrlSchema,
+    type TMovieExternalId,
+} from '@pickflick/contracts';
 import { z } from 'zod';
 
 import { MovieHttp } from './movie-http.js';
@@ -16,6 +21,7 @@ const response = <TData extends z.ZodType>(data: TData) =>
     z.object({ status: z.literal('success'), data });
 const extended = z.object({
     id,
+    image: movieImageUrlSchema.nullish().catch(null),
     originalLanguage: z.string().max(10).nullish(),
     runtime: z.number().int().nonnegative().nullish(),
     remoteIds: z.array(z.object({ sourceName: z.string(), id: z.string() })).max(100),
@@ -24,6 +30,18 @@ const extended = z.object({
         .array(z.object({ name: z.string().min(1).max(200) }))
         .max(100)
         .nullish(),
+    trailers: z
+        .array(
+            z.object({
+                url: z.string().max(2048).nullish(),
+                name: z.string().max(1000).nullish(),
+                language: z.string().max(10).nullish(),
+            }),
+        )
+        .max(200)
+        .nullish(),
+    budget: z.string().max(40).nullish(),
+    boxOffice: z.string().max(40).nullish(),
     characters: z
         .array(
             z.object({
@@ -51,6 +69,47 @@ const extended = z.object({
         })
         .nullish(),
 });
+type TCharacter = NonNullable<z.infer<typeof extended>['characters']>[number];
+
+function namesOf(characters: TCharacter[] | null | undefined, peopleType: string) {
+    const names = characters
+        ?.filter((person) => person.peopleType.toLowerCase() === peopleType && person.personName)
+        .map((person) => person.personName ?? '');
+    return names?.length ? [...new Set(names)].map((name) => ({ name })) : null;
+}
+
+/** Billed actors in order; none means unknown so another source may fill the credits. */
+function castOf(characters: TCharacter[] | null | undefined) {
+    const cast = characters
+        ?.filter((person) => person.peopleType.toLowerCase() === 'actor' && person.personName)
+        .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+        .slice(0, MOVIE_CAST_LIMIT)
+        .map((person) => ({
+            name: person.personName ?? '',
+            character: person.name || null,
+            profileUrl: person.personImgURL || null,
+        }));
+    return cast?.length ? cast : null;
+}
+
+/** English YouTube trailers only; other languages would surprise an English catalog. */
+function englishTrailers(trailers: z.infer<typeof extended>['trailers']) {
+    const english = (trailers ?? []).flatMap((trailer) =>
+        trailer.language === 'eng' &&
+        trailer.url &&
+        movieTrailerUrlSchema.safeParse(trailer.url).success
+            ? [{ url: trailer.url, name: trailer.name || null, official: null }]
+            : [],
+    );
+    return english.length ? english : null;
+}
+
+/** TheTVDB sends amounts in US dollars as decimal strings such as `1020000.00`; zero means unknown. */
+function toDollars(value: string | null | undefined) {
+    const amount = value && /^\d{1,15}(?:\.\d{1,2})?$/u.test(value) ? Math.round(Number(value)) : 0;
+    return amount > 0 ? amount : null;
+}
+
 export class ThetvdbClient {
     private http: MovieHttp;
     constructor(
@@ -94,6 +153,7 @@ export class ThetvdbClient {
             similarExternalIds: null,
             data: {
                 ...createEmptyMetadata(),
+                posterUrl: movie.image ?? null,
                 title:
                     movie.translations?.nameTranslations?.find((text) => text.language === 'eng')
                         ?.name || null,
@@ -109,26 +169,12 @@ export class ThetvdbClient {
                         ? movie.first_release.date
                         : null,
                 genres: movie.genres?.map((genre) => genre.name) ?? null,
-                directors:
-                    movie.characters
-                        ?.filter(
-                            (person) =>
-                                person.peopleType.toLowerCase() === 'director' && person.personName,
-                        )
-                        .map((person) => ({ name: person.personName ?? '' })) ?? null,
-                cast:
-                    movie.characters
-                        ?.filter(
-                            (person) =>
-                                person.peopleType.toLowerCase() === 'actor' && person.personName,
-                        )
-                        .toSorted((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-                        .slice(0, MOVIE_CAST_LIMIT)
-                        .map((person) => ({
-                            name: person.personName ?? '',
-                            character: person.name || null,
-                            profileUrl: person.personImgURL || null,
-                        })) ?? null,
+                directors: namesOf(movie.characters, 'director'),
+                writers: namesOf(movie.characters, 'writer'),
+                trailers: englishTrailers(movie.trailers),
+                budget: toDollars(movie.budget),
+                revenue: toDollars(movie.boxOffice),
+                cast: castOf(movie.characters),
             },
         });
     }

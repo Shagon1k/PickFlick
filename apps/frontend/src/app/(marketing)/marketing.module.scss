@@ -3,7 +3,7 @@
 }
 
 .container {
-    width: min(var(--container), calc(100% - (2 * var(--gutter))));
+    width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
     margin-inline: auto;
 }
 

@@ -87,7 +87,8 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
 
     const asyncField = page
         .locator('#async-club-name')
-        .locator("xpath=ancestor::*[contains(@class, '__field')][1]");
+        // The nearest wrapper holding the live regions; generated class names vary by Next.js build.
+        .locator('xpath=ancestor::*[.//*[@data-field-live]][1]');
     const errorAnnouncement = asyncField.locator('[data-field-live="error"]');
     const successAnnouncement = asyncField.locator('[data-field-live="success"]');
     await expect(errorAnnouncement).toBeAttached();
@@ -231,10 +232,10 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     await expect(page.locator('input[type="hidden"][name="adjustable-score"]')).toHaveValue('');
     await expect(adjustableScale.locator('[aria-checked="true"]')).toHaveCount(0);
     const firstAdjustableOption = adjustableScale.getByRole('radio', { name: '1 of 4' });
+    // Focus alone must not look like a chosen score.
     await firstAdjustableOption.focus();
-    await expect(firstAdjustableOption).toHaveAttribute('data-active', 'true');
-    await page.keyboard.press('Tab');
-    await expect(firstAdjustableOption).not.toHaveAttribute('data-active', 'true');
+    await expect(firstAdjustableOption).not.toHaveAttribute('data-active');
+    await expect(firstAdjustableOption).not.toHaveAttribute('data-selected');
 
     const requiredScoreForm = page.getByRole('form', { name: 'Required score form' });
     const requiredScore = requiredScoreForm.getByRole('radiogroup', {
@@ -259,9 +260,9 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog', { name: 'Move to Selection?' });
     await expect(dialog).toBeVisible();
-    const dialogClose = page.getByRole('button', { name: 'Close dialog' });
-    await expect(dialogClose).toBeFocused();
-    await assertVisibleFocus(dialogClose, 'dialog close button');
+    const dialogAction = dialog.getByRole('button', { name: 'Continue' });
+    await expect(dialogAction).toBeFocused();
+    await assertVisibleFocus(dialogAction, 'dialog action');
     for (let index = 0; index < 4; index += 1) {
         await page.keyboard.press('Tab');
         assert.equal(
@@ -297,9 +298,11 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
         // Controls sit one step darker (--bg) than the --surface that holds them.
         'rgb(12, 12, 12)',
     );
+    // The film strip inside the menu carries the black stock; the tail sits above it.
     assert.equal(
         await page
             .getByRole('menu', { name: 'Club menu' })
+            .locator(':scope > div')
             .evaluate(
                 (element) =>
                     element.ownerDocument.defaultView?.getComputedStyle(element).backgroundColor,

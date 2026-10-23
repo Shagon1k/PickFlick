@@ -9,3 +9,10 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow-popover);
 }
+
+.popover.m-invites {
+    padding: 0;
+    background: color-mix(in oklch, var(--surface) 96%, var(--bg));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-overlay);
+}

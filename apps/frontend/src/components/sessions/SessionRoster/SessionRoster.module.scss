@@ -1,0 +1,44 @@
+.list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    min-height: 52px;
+    padding-block: var(--gap-xs);
+    overflow-wrap: anywhere;
+}
+
+.row + .row {
+    border-top: 1px solid var(--border);
+}
+
+.avatar {
+    display: grid;
+    flex: 0 0 28px;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font: 600 var(--fs-micro)/1 var(--font-body);
+    color: var(--fg-secondary);
+    background: var(--surface-lit);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.name {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg);
+}
+
+.name small {
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+}

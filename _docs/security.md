@@ -39,6 +39,7 @@ The page CSP allows:
 | `script-src 'self' 'nonce-…' 'strict-dynamic'`                                                 | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
 | `style-src 'self' 'unsafe-inline'`                                                             | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
 | `img-src 'self' data: blob:` plus catalog CDN origins; `font-src 'self'`, `connect-src 'self'` | Images from PickFlick and the catalog allowlist; fonts and API requests stay same-origin.                        |
+| `frame-src https://www.youtube-nocookie.com`                                                   | Trailers only, in YouTube's privacy-enhanced player, which the page loads after the viewer presses Play.         |
 | `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`                                   | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
 | `frame-ancestors 'none'`                                                                       | No site may embed PickFlick in a frame.                                                                          |
 
@@ -67,7 +68,11 @@ A forged request from another site needs the session cookie, and several layers 
 - Club rules are re-read from the database on every request. A Club you are not an active member of
   answers `404`, so its existence does not leak.
 - App Admin grants no Club rights.
-- Session invites require their exact target's active Membership before any preview fields or
+- Shared Session URLs require current Club Membership to disclose details. Joining additionally
+  requires an active Club and an open Session; operator removal blocks self-join. Responses lock
+  Club → Session, affect only the caller's participant row, and never create Membership. Pending
+  rows derive only from the caller's active Club Memberships and open, unanswered Sessions.
+- Existing personalized Session invites require their exact target's active Membership before any preview fields or
   response IDs are returned. Invalid, expired, revoked and ineligible access all return the same
   detail-free denial. Accepting updates a SessionParticipant and never creates Membership.
   Session token material is omitted from pending rows and audit events; raw links appear only at
@@ -135,6 +140,11 @@ peer requirements remain compatible with the installed stack. The app configures
 `images.remotePatterns`, so the advisory's exposure condition is absent; the production audit
 still requires the fixed version.
 
+On 2026-10-23, the [GitHub advisory](https://github.com/advisories/GHSA-2464-fhr4-w9xw) and two
+related Next.js advisories (critical remote code execution and a high App Router denial of service)
+covered `next` 16.0.0 to 16.4.0. The frontend pins `next@16.4.2`, which the production audit
+accepts; `better-auth` resolves the same release.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development
@@ -164,11 +174,15 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 - Error telemetry and alerts on security-relevant failures.
 - Data export and account deletion that anonymizes shared history.
 - HSTS `includeSubDomains` and `preload`.
-- Apple Sign In, which stays off until the owner approves it.
+- Apple Sign In activation; its gated adapter exists and stays off until the owner approves it.
+- Periodic abandoned-object cleanup, owned by release retention work in #87.
+- Owner confirmation of repository-level Dependabot security-update enablement before release readiness;
+  the committed weekly-update configuration does not prove that account setting.
 
 ## Club invitation links
 
-Invitation tokens contain 32 random bytes and expire after seven days. The API stores only a
+Club invitation tokens contain 32 random bytes; new links expire after 12 hours. Existing links
+retain their stored expiry, and legacy personalized Session tokens keep their seven-day lifetime. The API stores only a
 SHA-256 digest; it returns the token once to the authorized Admin or Moderator creating the link.
 Preview and response require authentication, validate the optional recipient, and reveal no Club
 data for unsafe states. Accept, decline, and revoke serialize on the Club row; acceptance checks
@@ -183,18 +197,28 @@ provider log messages and error arguments are omitted to keep that path out of l
 
 ## Catalog media and outbound links
 
-The backend downloads displayed detail posters from the five validated provider hosts into private
+The backend downloads displayed posters from the five validated provider hosts into private
 S3-compatible storage. Downloads reject redirects, stop after five seconds or 5 MiB, and accept
 only PNG, JPEG and WebP signatures. Source URLs remain in internal catalog caches; API responses
-contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search media, detail
-backdrops and cast portraits are returned as null without image I/O. The authenticated image endpoint
+contain opaque same-origin `/api/movies/images/:key` paths for detail posters. Search returns lazy
+`/api/movies/:movieId/poster` URLs, resolving the configured validated details cache first, then validated private search caches
+for the active source and redirecting to an ingested same-origin image. Search JSON never waits for downloads;
+its image endpoint makes no provider metadata requests. Detail backdrops and cast portraits remain
+null. The authenticated image endpoint
 serves stored bytes through the existing frontend API rewrite. CSP limits images to self, data
 and blob sources. Missing or failed downloads become text placeholders; storage errors propagate.
 Provider text is escaped by React. Provider records are validated once, when the backend ingests
 them; the web app trusts the API's contract types and does not re-validate its responses.
+Yandex mirror URLs under `/get-kinopoisk-image/` normalize to the existing canonical
+`avatars.mds.yandex.net` host before the full image URL validation. No new host is allowlisted.
+Other unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
+existing placeholder is shown without rejecting the Movie. The media host allowlist is unchanged.
 
-Trailers stay outbound YouTube links. The backend builds `links.imdb` from stored validated IMDb
-identifiers; details responses expose no external identifiers.
-Wikipedia links explicitly search an encoded title on the fixed English Wikipedia origin;
-they do not assert a verified article correspondence. External detail links use
-`noopener noreferrer`. Third-party scripts, frames and API connections remain disallowed.
+Trailers play in YouTube's privacy-enhanced player: the page loads
+`https://www.youtube-nocookie.com/embed/<id>` only after the viewer presses Play, from a video ID the
+trailer contract has already validated, and the CSP allows that one frame origin. The backend
+builds `links.imdb`, `links.kinopoisk` (a PoiskKino ID is the Kinopoisk film ID) and
+`links.letterboxd` (from the IMDb, else the TMDB, ID) from stored validated identifiers; details
+responses expose no external identifiers. Wikipedia links explicitly search an encoded title on the
+fixed English Wikipedia origin; they do not assert a verified article correspondence. External detail
+links use `noopener noreferrer`. Third-party scripts and API connections remain disallowed.

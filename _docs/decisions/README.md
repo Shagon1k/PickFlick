@@ -1323,6 +1323,27 @@ detail result is at most one refresh old, and Movie summaries track the newest p
 - [TheTVDB v4 OpenAPI](https://thetvdb.github.io/v4-api/)
 - [TMDB movie details](https://developer.themoviedb.org/reference/movie-details)
 
+### Amendment — Display titles, 2026-10-20
+
+Owner verification found real PoiskKino search results with empty `enName` but usable
+`alternativeName` or `name`. The display title now prefers these fields in that order after
+`enName`; it is not a guarantee of English language. TheTVDB English titles still take precedence
+in details, and descriptions remain English-only. Unknown title stays null only when all source
+names are empty. This supersedes the English-title missing-data restriction above without using
+title/year for Movie identity or adding per-result enrichment requests.
+
+### Amendment — Poster availability, 2026-10-20
+
+The owner verification requests available posters in search and details. Details now prefer the
+verified TheTVDB record's poster and fall back to PoiskKino when absent, superseding PoiskKino-only
+poster precedence. Yandex image mirrors normalize to the existing canonical host only for their
+shared `/get-kinopoisk-image/` paths; the full trusted-image validation remains enforced.
+Search metadata still calls PoiskKino only and never downloads images in its response path.
+An authenticated lazy poster URL resolves validated active-source search caches and uses the
+existing bounded private image ingestion. It does not fan out to detail/enrichment APIs per result.
+A cache-policy version invalidates older normalized metadata without changing canonical identities.
+Backdrops, trailers and other section rules remain unchanged.
+
 ## ADR-018 — Persist Nomination deadline jobs in PostgreSQL
 
 - **Status:** Accepted; implemented for #43

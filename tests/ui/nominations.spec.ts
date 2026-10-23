@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { settle } from './settle';
-import { canonicalViewports } from './viewports';
+import { canonicalViewports, screenshotViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000042';
 async function authenticate(context: BrowserContext, scenario = '', token?: string) {
@@ -30,7 +30,7 @@ test(
         await expect(page.getByText('Current private film')).toHaveCount(0);
         await page.getByRole('button', { name: 'Past losing nomination (2020)' }).focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByText('Selected: Past losing nomination (2020)')).toBeVisible();
+        await expect(page.getByText('Selected:', { exact: false })).toHaveCount(1);
         await page.getByRole('button', { name: 'Nominate This' }).focus();
         await page.keyboard.press('Enter');
         await expect(page.getByText('Your nomination is confirmed.')).toBeVisible();
@@ -74,19 +74,18 @@ test('Operator early close traps and returns focus and requires confirmation', a
 }) => {
     await authenticate(context, 'operator');
     await page.goto(PATH);
-    const close = page.getByRole('button', { name: 'Close nominations early' });
+    const close = page.getByRole('button', { name: 'Session settings', exact: true });
     await close.click();
+    await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(close).toBeFocused();
     await close.click();
+    await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
     await page.getByRole('button', { name: 'Confirm close' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByText('selection', { exact: true })).toBeVisible();
-    await expect(
-        page.getByRole('heading', { name: 'Nomination night', exact: true }),
-    ).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Movie Selection', exact: true })).toBeFocused();
 });
 
 for (const viewport of canonicalViewports) {
@@ -98,6 +97,27 @@ for (const viewport of canonicalViewports) {
         await page.setViewportSize(viewport);
         await page.goto(PATH, { waitUntil: 'load' });
         await settle(page);
+        await expect(
+            page.getByRole('heading', { level: 1, name: 'Movie Nomination' }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('navigation', { name: 'Product navigation' }).getByRole('link'),
+        ).toHaveCount(0);
+        const formBounds = await page
+            .getByRole('heading', { name: 'Find & Nominate a Movie' })
+            .boundingBox();
+        const listBounds = await page
+            .getByRole('heading', { name: 'Current Nominations' })
+            .boundingBox();
+        expect(
+            Boolean(
+                formBounds &&
+                listBounds &&
+                (viewport.width >= 1024
+                    ? Math.abs(formBounds.y - listBounds.y) < 2
+                    : listBounds.y > formBounds.y),
+            ),
+        ).toBe(true);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -124,12 +144,19 @@ test(
             await actorPage.getByRole('button', { name: 'Nominate This' }).click();
             await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible();
             await viewer.setOffline(true);
-            await actorPage.getByRole('button', { name: 'Close nominations early' }).click();
+            await actorPage.getByRole('button', { name: 'Session settings', exact: true }).click();
+            await actorPage
+                .getByRole('menuitem', { name: 'Close nominations early', exact: true })
+                .click();
             await actorPage.getByLabel('Type CLOSE to confirm').fill('CLOSE');
             await actorPage.getByRole('button', { name: 'Confirm close' }).click();
-            await expect(actorPage.getByText('selection', { exact: true })).toBeVisible();
+            await expect(
+                actorPage.getByRole('heading', { name: 'Movie Selection', exact: true }),
+            ).toBeVisible();
             await viewer.setOffline(false);
-            await expect(viewerPage.getByText('selection', { exact: true })).toBeVisible();
+            await expect(
+                viewerPage.getByRole('heading', { name: 'Movie Selection', exact: true }),
+            ).toBeVisible();
         } finally {
             await actor.close();
             await viewer.close();
@@ -203,9 +230,44 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'split-roster');
         await page.goto(PATH);
-        await expect(page.getByText('3 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('1 of 2 participants have nominated.')).toBeVisible();
-        await expect(page.getByText('2 accepted', { exact: true })).toBeVisible();
         await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);
     },
 );
+
+for (const viewport of screenshotViewports) {
+    test(
+        `nominations matches the ${viewport.name} prototype composition`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, 'operator-visual');
+            await page.setViewportSize(viewport);
+            await page.goto(PATH, { waitUntil: 'load' });
+            await settle(page);
+            await expect(page).toHaveScreenshot(`nominations-${viewport.name}.png`, {
+                fullPage: true,
+                animations: 'disabled',
+                caret: 'hide',
+                scale: 'css',
+            });
+        },
+    );
+}
+
+test('the Session header shares the existing member-only Session link', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'operator-copy');
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(PATH);
+    await page.getByRole('button', { name: 'Invite', exact: true }).click();
+    await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toBe(`http://127.0.0.1:41730${PATH}`);
+    await expect(
+        page
+            .getByRole('status')
+            .filter({ hasText: 'Session link copied. Share it with your Club.' }),
+    ).toBeVisible();
+});

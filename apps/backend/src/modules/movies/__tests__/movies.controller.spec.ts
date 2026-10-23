@@ -17,6 +17,7 @@ describe('MoviesController', () => {
     const getImage = vi.fn<MovieImagesService['get']>();
     const storeMedia = vi.fn<MovieImagesService['storeMedia']>();
     const search = vi.fn<MoviesService['search']>();
+    const getCachedPoster = vi.fn<MoviesService['getCachedPoster']>();
 
     beforeAll(async () => {
         const module = await Test.createTestingModule({
@@ -24,7 +25,10 @@ describe('MoviesController', () => {
             providers: [
                 AuthGuard,
                 { provide: MovieImagesService, useValue: { get: getImage, storeMedia } },
-                { provide: MoviesService, useValue: { search, getDetailsResponse } },
+                {
+                    provide: MoviesService,
+                    useValue: { search, getDetailsResponse, getCachedPoster },
+                },
                 {
                     provide: AuthService,
                     useValue: {
@@ -44,6 +48,7 @@ describe('MoviesController', () => {
         getImage.mockReset();
         storeMedia.mockReset();
         getDetailsResponse.mockReset();
+        getCachedPoster.mockReset();
     });
     afterAll(() => app.close());
 
@@ -68,13 +73,13 @@ describe('MoviesController', () => {
         expect(getDetailsResponse).not.toHaveBeenCalled();
         getDetailsResponse.mockResolvedValue({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         const response = await fetch(detailsUrl, { headers: { 'x-test-user': 'user' } });
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({
             result: { state: 'unavailable', reason: 'NOT_FOUND' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         expect(getDetailsResponse).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000100');
     });
@@ -108,20 +113,20 @@ describe('MoviesController', () => {
         storeMedia.mockResolvedValue(stored);
         getDetailsResponse.mockResolvedValue({
             result: { state: 'fresh', data, fetchedAt: '2026-10-10T12:00:00.000Z' },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         const details = await fetch(url.replace('/search', `/${MOVIE_ID}`), {
             headers: { 'x-test-user': 'user' },
         });
         expect(await details.json()).toMatchObject({
             result: { data: { posterUrl: stored.posterUrl } },
-            links: { imdb: null },
+            links: { imdb: null, kinopoisk: null, letterboxd: null },
         });
         expect(storeMedia).toHaveBeenCalledWith(data);
     });
 
     it.each([{ state: 'fresh' }, { state: 'stale', reason: 'TIMEOUT' }] as const)(
-        'should omit unused search media from $state results without ingestion',
+        'should expose lazy same-origin search posters in $state results without ingestion',
         async (result) => {
             const data = {
                 ...buildCanonicalDetails(),
@@ -138,7 +143,12 @@ describe('MoviesController', () => {
                 ...result,
                 data: {
                     movies: [
-                        { id: data.id, title: data.title, posterUrl: null, backdropUrl: null },
+                        {
+                            id: data.id,
+                            title: data.title,
+                            posterUrl: `/api/movies/${data.id}/poster`,
+                            backdropUrl: null,
+                        },
                     ],
                 },
             });
@@ -146,6 +156,30 @@ describe('MoviesController', () => {
             expect(getImage).not.toHaveBeenCalled();
         },
     );
+
+    it('should guard lazy posters and redirect only to an ingested same-origin image', async () => {
+        const posterUrl = url.replace('/search', `/${MOVIE_ID}/poster`);
+        expect((await fetch(posterUrl)).status).toBe(401);
+        getCachedPoster.mockResolvedValue(null);
+        expect((await fetch(posterUrl, { headers: { 'x-test-user': 'user' } })).status).toBe(404);
+        expect(storeMedia).not.toHaveBeenCalled();
+        getCachedPoster.mockResolvedValue('https://image.tmdb.org/t/p/original/poster.jpg');
+        storeMedia.mockResolvedValue({
+            ...buildCanonicalDetails(),
+            posterUrl: `/api/movies/images/${'a'.repeat(64)}`,
+        });
+        const response = await fetch(posterUrl, {
+            headers: { 'x-test-user': 'user' },
+            redirect: 'manual',
+        });
+        expect(response.status).toBe(302);
+        expect(response.headers.get('cache-control')).toBe('private, no-store');
+        expect(response.headers.get('location')).toBe(`/api/movies/images/${'a'.repeat(64)}`);
+        expect(storeMedia).toHaveBeenCalledWith({
+            posterUrl: 'https://image.tmdb.org/t/p/original/poster.jpg',
+            backdropUrl: null,
+        });
+    });
 
     it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {
         vi.useFakeTimers();
@@ -183,7 +217,15 @@ describe('MoviesController', () => {
             await vi.advanceTimersByTimeAsync(10000);
             expect(await response).toMatchObject({
                 state: 'fresh',
-                data: { movies: [{ id: data.id, posterUrl: null, backdropUrl: null }] },
+                data: {
+                    movies: [
+                        {
+                            id: data.id,
+                            posterUrl: `/api/movies/${data.id}/poster`,
+                            backdropUrl: null,
+                        },
+                    ],
+                },
             });
             expect(storeMedia).not.toHaveBeenCalled();
         } finally {

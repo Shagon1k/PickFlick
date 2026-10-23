@@ -12,7 +12,7 @@ export async function cancelSessionAction(id: string, input: unknown) {
     if (!parsed.success) return { ok: false, message: 'Type CANCEL to confirm.' };
     try {
         const session = await cancelSession(id, parsed.data);
-        revalidatePath(`/clubs/${session.clubId}`);
+        revalidatePath(`/clubs/${session.clubId}`, 'layout');
         revalidatePath(`/sessions/${id}`);
         return { ok: true, message: 'Session cancelled.' };
     } catch (error) {

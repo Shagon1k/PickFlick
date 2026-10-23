@@ -50,7 +50,9 @@
     bottom: calc(100% + 10px);
     left: 50%;
     z-index: 30;
-    visibility: hidden;
+
+    /* Closed bubbles leave the layout, so a tip near an edge never widens the page. */
+    display: none;
     width: max-content;
     max-width: min(240px, 70vw);
     padding: 8px 10px;
@@ -62,22 +64,21 @@
     border: 1px solid var(--border-lit);
     border-radius: 8px;
     box-shadow: var(--shadow-popover);
-    opacity: 0;
-    transform: translate(-50%, 4px);
+    transform: translate(calc(-50% + var(--tip-shift, 0px)), 0);
     transition:
         opacity var(--motion-local) var(--ease-standard),
-        transform var(--motion-local) var(--ease-standard),
-        visibility 0s linear var(--motion-local);
+        transform var(--motion-local) var(--ease-standard);
 }
 
 .infoTip__bubble[data-open] {
-    visibility: visible;
-    opacity: 1;
-    transform: translate(-50%, 0);
-    transition:
-        opacity var(--motion-local) var(--ease-standard),
-        transform var(--motion-local) var(--ease-standard),
-        visibility 0s linear 0s;
+    display: block;
+}
+
+@starting-style {
+    .infoTip__bubble[data-open] {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tip-shift, 0px)), 4px);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

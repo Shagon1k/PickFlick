@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { getSessionState, isAppleSignInEnabled } from '#api/session.server';
+import RetryButton from '#components/shells/RetryButton/RetryButton';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Icon from '#components/ui/Icon/Icon';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
@@ -59,6 +60,7 @@ export default async function LoginPage({
                             {errorMessage}
                         </p>
                     ) : null}
+                    {session === 'unavailable' ? <RetryButton /> : null}
                     <LoginActions appleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}

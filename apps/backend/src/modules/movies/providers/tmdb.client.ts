@@ -52,6 +52,8 @@ function toSummary(movie: TTmdbMovie) {
 function toImageUrl(path: string | null) {
     return path ? `https://image.tmdb.org/t/p/original${path}` : null;
 }
+const WRITER_JOBS = new Set(['Screenplay', 'Writer']);
+
 export class TmdbClient implements IMovieProvider {
     private http: MovieHttp;
     constructor(
@@ -127,6 +129,15 @@ export class TmdbClient implements IMovieProvider {
                 directors: movie.credits.crew
                     .filter((person) => person.job === 'Director')
                     .map((person) => ({ name: person.name })),
+                writers: [
+                    ...new Set(
+                        movie.credits.crew
+                            .filter((person) => WRITER_JOBS.has(person.job))
+                            .map((person) => person.name),
+                    ),
+                ].map((name) => ({ name })),
+                budget: movie.budget || null,
+                revenue: movie.revenue || null,
                 cast: movie.credits.cast
                     .toSorted((a, b) => a.order - b.order)
                     .slice(0, MOVIE_CAST_LIMIT)

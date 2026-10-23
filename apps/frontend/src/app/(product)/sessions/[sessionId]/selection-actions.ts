@@ -56,6 +56,7 @@ export async function closeSelectionAction(
     try {
         await closeSelection(id, parsed.data);
         revalidatePath(`/sessions/${id}`);
+        revalidatePath('/clubs/[clubId]', 'layout');
         return { ok: true };
     } catch (error) {
         return {
