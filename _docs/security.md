@@ -139,6 +139,11 @@ peer requirements remain compatible with the installed stack. The app configures
 `images.remotePatterns`, so the advisory's exposure condition is absent; the production audit
 still requires the fixed version.
 
+On 2026-10-23, the [GitHub advisory](https://github.com/advisories/GHSA-2464-fhr4-w9xw) and two
+related Next.js advisories (critical remote code execution and a high App Router denial of service)
+covered `next` 16.0.0 to 16.4.0. The frontend pins `next@16.4.2`, which the production audit
+accepts; `better-auth` resolves the same release.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development
