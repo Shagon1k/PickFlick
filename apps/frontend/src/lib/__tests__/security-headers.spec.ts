@@ -14,10 +14,18 @@ describe('buildContentSecurityPolicy', () => {
     it('should restrict images and connections to our own origin', () => {
         const policy = buildContentSecurityPolicy('abc123', false);
         expect(policy).toContain("img-src 'self' data: blob:;");
-        expect(policy).not.toContain('https://');
+        expect(policy.replace('frame-src https://www.youtube-nocookie.com', '')).not.toContain(
+            'https://',
+        );
         expect(policy).toContain("connect-src 'self'");
         expect(policy).toContain("default-src 'self'");
         expect(policy).not.toContain('https:;');
+    });
+
+    it('should allow frames only from the privacy-enhanced YouTube player', () => {
+        expect(buildContentSecurityPolicy('abc123', false)).toContain(
+            'frame-src https://www.youtube-nocookie.com;',
+        );
     });
 
     it('should allow eval only in development', () => {

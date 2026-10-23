@@ -98,7 +98,7 @@
     border-color: var(--danger-hover);
 }
 
-/* One cell of an action rail: an icon over a short label, filling its share of the rail. */
+/* One cell of an action rail: an icon over a short label on phones, inline from 576px. */
 .button.m-cell,
 .button.m-cell-danger {
     flex: 1;
@@ -125,6 +125,31 @@
 .button.m-cell-danger .button__label {
     flex-direction: column;
     gap: 5px;
+}
+
+@media (width >= 576px) {
+    /* Inline cells stay 44px targets; the rail's own border is the only frame. */
+    .button.m-cell,
+    .button.m-cell-danger {
+        width: 100%;
+        min-height: var(--hit);
+        padding: 0 16px;
+        margin: 0;
+        font-size: var(--fs-meta);
+        border-radius: calc(var(--radius) - 1px);
+    }
+
+    .button.m-cell .button__label,
+    .button.m-cell-danger .button__label {
+        flex-direction: row;
+        gap: 7px;
+    }
+
+    .button.m-cell svg,
+    .button.m-cell-danger svg {
+        width: 16px;
+        height: 16px;
+    }
 }
 
 .button.m-small {

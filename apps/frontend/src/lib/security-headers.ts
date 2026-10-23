@@ -23,6 +23,8 @@ export function buildContentSecurityPolicy(nonce: string, isDevelopment: boolean
         "img-src 'self' data: blob:",
         "font-src 'self'",
         "connect-src 'self'",
+        // Trailers use YouTube's privacy-enhanced player, loaded only once the viewer presses Play.
+        'frame-src https://www.youtube-nocookie.com',
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

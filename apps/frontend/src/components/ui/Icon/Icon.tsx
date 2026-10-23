@@ -16,6 +16,7 @@ export type TIconName =
     | 'star-circle'
     | 'stopwatch'
     | 'genre'
+    | 'globe'
     | 'director'
     | 'actor'
     | 'achievements'

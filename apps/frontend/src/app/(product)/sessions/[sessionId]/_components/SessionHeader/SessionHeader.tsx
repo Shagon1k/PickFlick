@@ -2,13 +2,13 @@ import type { TMovieDetails, TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 import type { ReactNode, RefObject } from 'react';
 
+import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
 import Icon from '#components/ui/Icon/Icon';
-import { formatRuntime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
@@ -73,7 +73,9 @@ export default function SessionHeader({
                 <p className="visually-hidden">
                     Session · {SESSION_TYPES[session.type]} · {session.phase.toLowerCase()}
                 </p>
-                {movie && !isDecisionPhase ? <FilmMeta movie={movie} /> : null}
+                {movie && !isDecisionPhase ? (
+                    <FilmMeta className={styles.filmMeta} movie={movie} />
+                ) : null}
                 <SessionLines session={session} hasMovie={movie !== null} renderedAt={renderedAt} />
             </div>
             {/* The phase stamp stays when film details are unavailable. */}
@@ -181,22 +183,3 @@ const SESSION_TYPES = {
     PRE_SELECTED: 'Pre-selected Movie',
     PAST: 'Past screening',
 } as const;
-
-/** Year and runtime read plainly; the genres follow a hairline in the display italic. */
-function FilmMeta({ movie }: { movie: TMovieDetails }) {
-    const facts = [movie.releaseYear, formatRuntime(movie.runtime)].filter(Boolean);
-    const genres = movie.genres?.slice(0, MAX_GENRES) ?? [];
-    return (
-        <p className={styles.filmMeta}>
-            {facts.map((fact) => (
-                <span key={fact}>{fact}</span>
-            ))}
-            {facts.length > 0 && genres.length > 0 ? (
-                <span aria-hidden="true" className={styles.metaRule} />
-            ) : null}
-            {genres.length ? <span className={styles.genres}>{genres.join(', ')}</span> : null}
-        </p>
-    );
-}
-
-const MAX_GENRES = 3;

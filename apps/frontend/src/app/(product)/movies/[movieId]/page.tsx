@@ -5,7 +5,6 @@ import { Suspense } from 'react';
 
 import { getMovieDetails } from '#api/movies.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
-import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
@@ -65,13 +64,10 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                     <h2 id="related-title">You may also like</h2>
                     {relatedIds.length ? (
                         <Suspense fallback={<p role="status">Loading related titles…</p>}>
-                            <RelatedMovies ids={relatedIds} primaryMovie={movie} />
+                            <RelatedMovies ids={relatedIds} />
                         </Suspense>
                     ) : (
-                        <>
-                            <p>No related titles are available.</p>
-                            <SearchCredits movies={[movie]} label="Movie catalog credits" />
-                        </>
+                        <p>No related titles are available.</p>
                     )}
                 </section>
             </main>

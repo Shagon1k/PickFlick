@@ -762,3 +762,11 @@
 .searchResults .overlayEmpty {
     color: var(--fg-secondary);
 }
+
+/* With results the count is a slim caption, so the films start at once. */
+.searchResults .overlayEmpty[data-count] {
+    padding: var(--gap-xs) 16px;
+    font-size: var(--fs-caption);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}

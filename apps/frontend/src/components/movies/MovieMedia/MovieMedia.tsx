@@ -2,6 +2,7 @@ import type { TMovieDetails } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
+import TrailerPlayer from '#components/movies/TrailerPlayer/TrailerPlayer';
 import Icon from '#components/ui/Icon/Icon';
 
 import styles from './MovieMedia.module.scss';
@@ -46,37 +47,15 @@ export default function MovieMedia({
                 <h2 id="synopsis-title">Synopsis</h2>
                 <p>{movie.overview ?? 'No synopsis is available in English.'}</p>
             </section>
-            <section className={styles.trailer} aria-labelledby="trailer-title">
-                <h2 id="trailer-title">Trailer</h2>
-                {movie.trailers?.length ? (
-                    <ul>
-                        {movie.trailers.map((trailer, index) => (
-                            // eslint-disable-next-line @eslint-react/no-array-index-key -- provider trailers can repeat a URL and never reorder
-                            <li key={`${trailer.url}-${index}`}>
-                                <a href={trailer.url} target="_blank" rel="noopener noreferrer">
-                                    {trailer.name ?? 'Watch trailer'} ↗
-                                    <span className="visually-hidden">
-                                        {' '}
-                                        (YouTube, opens in a new tab)
-                                    </span>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>Our film sources have no trailer for this Movie.</p>
-                )}
-                {/* Always offered: provider trailers can be teasers or the wrong cut. */}
-                <a
-                    aria-label="Search YouTube for a trailer (opens in a new tab)"
-                    className={styles.trailerSearch}
-                    href={buildTrailerSearch(title, movie.releaseYear)}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    Search YouTube ↗
-                </a>
-            </section>
+            <div className={styles.trailer}>
+                <TrailerPlayer
+                    backdropUrl={movie.backdropUrl}
+                    posterUrl={movie.posterUrl}
+                    searchUrl={buildTrailerSearch(title, movie.releaseYear)}
+                    title={title}
+                    trailers={movie.trailers ?? []}
+                />
+            </div>
         </div>
     );
 }

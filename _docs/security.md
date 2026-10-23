@@ -39,6 +39,7 @@ The page CSP allows:
 | `script-src 'self' 'nonce-…' 'strict-dynamic'`                                                 | A script runs only if it carries this request's nonce or a nonced script loaded it.                              |
 | `style-src 'self' 'unsafe-inline'`                                                             | Stylesheets from PickFlick plus inline `style` attributes, which React and Mantine set and a nonce cannot cover. |
 | `img-src 'self' data: blob:` plus catalog CDN origins; `font-src 'self'`, `connect-src 'self'` | Images from PickFlick and the catalog allowlist; fonts and API requests stay same-origin.                        |
+| `frame-src https://www.youtube-nocookie.com`                                                   | Trailers only, in YouTube's privacy-enhanced player, which the page loads after the viewer presses Play.         |
 | `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`                                   | No plugins, no foreign `<base>`, and forms submit only to PickFlick.                                             |
 | `frame-ancestors 'none'`                                                                       | No site may embed PickFlick in a frame.                                                                          |
 

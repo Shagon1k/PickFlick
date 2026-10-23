@@ -13,10 +13,8 @@
 
 .movieMain h1 {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: clamp(28px, 3.5vw, 44px);
-    font-weight: 400;
-    line-height: var(--lh-title);
+    font: 700 clamp(34px, 4.6vw, 52px) / var(--lh-tight) var(--font-display);
+    letter-spacing: var(--tracking-tight);
 }
 
 .movieMain h2 {
@@ -48,54 +46,36 @@
     min-width: 0;
 }
 
-.genres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
-    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-}
-
-.genres span {
-    padding: 3px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
 .titleBlock p {
+    margin: 0;
     color: var(--fg-secondary);
 }
 
-.ratings {
-    display: flex;
-    flex-wrap: wrap;
+/* One source-labelled rating, as compact as the prototype's score pill. */
+.titleBlock .rating {
+    display: inline-flex;
+    flex: 0 0 auto;
     gap: var(--gap-sm);
-    justify-content: flex-end;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.ratings li {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 4px var(--gap-xs);
     align-items: center;
-    padding: var(--gap-xs) var(--gap-sm);
-    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    padding: var(--gap-xs) var(--gap-md);
+    color: var(--fg-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius);
 }
 
-.ratings small {
-    grid-column: 1 / -1;
-    font: var(--fs-micro)/var(--lh-caption) var(--font-body);
-    color: var(--fg-secondary);
+.rating svg {
+    width: 16px;
+    height: 16px;
 }
 
-.ratings strong {
-    font-size: var(--fs-card-title);
+.rating strong {
+    font: 600 var(--fs-card-title)/1 var(--font-mono);
     color: var(--fg);
+}
+
+.rating small {
+    font-size: var(--fs-micro);
+    line-height: 1;
 }
 
 .links a {
@@ -179,23 +159,12 @@
         text-align: center;
     }
 
-    .ratings,
-    .genres {
+    .filmMeta {
         justify-content: center;
     }
 
     .relatedGrid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (width < 576px) {
-    .ratings {
-        gap: var(--gap-xs);
-    }
-
-    .ratings li {
-        padding: var(--gap-xs);
     }
 }
 

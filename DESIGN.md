@@ -264,18 +264,23 @@ here.
   stays in the combobox, Enter opens the canonical Movie route, and Tab and touch work too.
 - Results fall back to an available source title; "Untitled film" means no title at all. Posters load
   lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
-- Movie Details shows title, year, language name, runtime in hours and minutes, genres,
-  source-labelled ratings to one decimal, poster, directors, writers, up to five actors in one row,
-  budget and worldwide revenue in compact US dollars, synopsis and outbound trailers. Rows without data
-  other than directors and actors are left out. There is no in-content Back. Phones place the poster
+- Movie Details shows title, then the Session header's meta line (year, runtime, language name and
+  the italic genres), one rating to one decimal (IMDb, else Kinopoisk) with a mark instead of the
+  source name, which readers and the tooltip still get, poster, directors, writers, up to five actors in one row,
+  budget and worldwide revenue in compact US dollars, synopsis and a trailer player. Rows without
+  data other than directors and actors are left out. On wide screens the poster and trailer share
+  one height (3 : 8 columns), and the poster behaves as in Sessions. Provider attribution stays with
+  TMDB in search results only; where PoiskKino and TheTVDB are credited for public launch is
+  decided in #89. Movie Details and Sessions share one loading skeleton of this layout. There is no in-content Back. Phones place the poster
   above the credits; each credit keeps its label and value on one row.
 - Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
   and stale details each have explicit feedback. Related titles load separately: up to six
   provider-supplied links, grayscale until hover or focus, with no personalization claim.
 - IMDb links are built by the backend from verified identifiers; Wikipedia is labelled a title
-  search. Trailers open YouTube in a new tab and say so; the card's corner always offers a labelled
-  YouTube search, because provider trailers can be teasers or missing. One credit region covers the film and its
-  related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
+  search. The trailer card shows the film still (or the blurred poster) with a Play button; only
+  pressing it loads YouTube's privacy-enhanced player in place, with up to three trailers to choose
+  from. A Search YouTube caption closes the card on the same line as the poster's Film details
+  caption, because provider trailers can be teasers or missing. One credit region covers the film and its related titles. Unknown Movies use the not-found page. Personal Rating and Watchlist arrive with
   the Library.
 
 #### Create Session
@@ -338,10 +343,13 @@ here.
 
 - A film header (linked title; year and runtime, then the genres in the display italic after a
   hairline; a phase stamp whose dot pulses only while Watching) sits above the Movie Details media
-  grid. From 576px the stamp sits above an action rail on the right; below it the header becomes a
-  ticket: the poster carries title, meta, an info mark and the stamp, and the rail is its stub,
-  joined by a perforation with outlined notches. The rail shows only the viewer's actions: Invite,
-  Settings for Session managers, and Join or Leave. The poster links to Movie Details. When film
+  grid. From 576px the stamp sits left of a compact action rail (icon and label inline); below it
+  the header becomes a ticket: the poster carries title, meta, an info mark and the stamp, and the
+  rail is its stub, joined by a perforation with outlined notches. The rail shows only the viewer's
+  actions: Invite, Settings for Session managers, and Join or Leave. The media poster links to Movie
+  Details, mostly grey at rest (softer than the prototype's full grey); colour, a slight zoom and
+  its caption arrive together on hover. When the meta line cannot fit, the genres take a second
+  line, both lines centre and the hairline goes. When film
   details are unavailable the phase stamp stays and the warning links to the selected Movie. Moving
   to Rating is Phase 13.
 

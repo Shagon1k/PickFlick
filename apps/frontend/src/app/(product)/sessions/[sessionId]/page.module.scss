@@ -5,17 +5,15 @@
     overflow-wrap: anywhere;
 }
 
-/* One grid serves both layouts: the D2 header from 768px, a poster ticket on phones. */
+/* One grid serves both layouts: title, stamp and rail in a row from 576px, a poster ticket below. */
 .header {
     position: relative;
 
     /* Its own stacking layer keeps the gear menu above the phase content below. */
     z-index: 2;
     display: grid;
-    grid-template-areas:
-        'copy stamp'
-        'copy rail';
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'copy stamp rail';
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: var(--gap-sm) var(--gap-lg);
     align-items: end;
     padding-block: 18px 28px;
@@ -90,33 +88,14 @@
     text-underline-offset: 6px;
 }
 
-/* Year and runtime in the body face; the genres after a hairline in the display italic. */
-.headingCopy .filmMeta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 14px;
-    align-items: center;
-    font-size: var(--fs-body-sm);
-    color: var(--fg);
-}
-
-.metaRule {
-    width: 1px;
-    height: 14px;
-    background: color-mix(in sRGB, var(--ivory) 30%, transparent);
-}
-
-.genres {
-    font: italic 400 var(--fs-body)/1 var(--font-display);
-    color: var(--fg-secondary);
-}
-
 .phaseStamp {
     display: inline-flex;
     grid-area: stamp;
     gap: var(--gap-xs);
     align-items: center;
-    justify-self: end;
+
+    /* As tall as the rail (a 44px cell and its border), so the stamp sits on its centre line. */
+    min-height: calc(var(--hit) + 2px);
     font: 600 var(--fs-caption)/1 var(--font-mono);
     color: var(--fg-secondary);
     text-transform: uppercase;
@@ -153,11 +132,10 @@
 .actionRail {
     display: grid;
     grid-area: rail;
-    grid-auto-columns: minmax(104px, 1fr);
     grid-auto-flow: column;
     background: color-mix(in sRGB, var(--surface) 70%, transparent);
     border: 1px solid var(--border-lit);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius);
 }
 
 .actionRail > * + * {
@@ -369,24 +347,19 @@
 @media (width < 768px) {
     .header {
         grid-template-areas:
-            'copy'
-            'stamp'
-            'rail';
-        grid-template-columns: minmax(0, 1fr);
-        justify-items: center;
+            'copy copy'
+            'stamp rail';
+        grid-template-columns: auto auto;
+        justify-content: center;
         text-align: center;
+    }
+
+    .headingCopy {
+        justify-items: center;
     }
 
     .headingCopy .filmMeta {
         justify-content: center;
-    }
-
-    .phaseStamp {
-        justify-self: center;
-    }
-
-    .actionRail {
-        justify-self: stretch;
     }
 
     .detailsGrid {
@@ -435,6 +408,25 @@
  * hides its own poster below it.
  */
 @media (width < 576px) {
+    .header {
+        grid-template-areas:
+            'copy'
+            'stamp'
+            'rail';
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: stretch;
+    }
+
+    .phaseStamp {
+        justify-self: center;
+    }
+
+    /* Phones share the rail out evenly, each cell an icon over its label. */
+    .actionRail {
+        grid-auto-columns: minmax(0, 1fr);
+        border-radius: var(--radius-lg);
+    }
+
     .header[data-film] {
         --notch: 9px;
         --stub: 62px;

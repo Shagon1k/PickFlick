@@ -1,6 +1,7 @@
+/* 3 : 8 columns make a 2:3 poster exactly as tall as the 16:9 trailer beside it. */
 .heroGrid {
     display: grid;
-    grid-template-columns: 260px repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
     gap: var(--gap-lg);
     align-items: start;
 }
@@ -46,8 +47,7 @@
     margin: 0;
 }
 
-.credits ul,
-.trailer ul {
+.credits ul {
     padding: 0;
     margin: 0;
     list-style: none;
@@ -71,40 +71,9 @@
 }
 
 .trailer {
-    position: relative;
-    display: grid;
     grid-row: 1;
-    grid-column: 2 / -1;
-    align-content: center;
-    aspect-ratio: 16 / 9;
-    padding: var(--gap-md);
-    text-align: center;
-    background: var(--bg-deep);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.trailer a {
-    display: inline-flex;
-    gap: var(--gap-xs);
-    align-items: center;
-    min-height: var(--hit);
-    color: var(--fg);
-}
-
-/* A quiet corner link, so the search never costs the card its own row. */
-.trailer .trailerSearch {
-    position: absolute;
-    top: 2px;
-    right: var(--gap-sm);
-    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-
-.trailer .trailerSearch:hover {
-    color: var(--fg);
+    grid-column: 2;
+    min-width: 0;
 }
 
 .posterLink {
@@ -131,10 +100,42 @@
     letter-spacing: var(--tracking-wide);
     background: linear-gradient(transparent, color-mix(in sRGB, var(--bg-deep) 92%, transparent));
     border-radius: 0 0 var(--radius) var(--radius);
+    transition: color var(--motion-emphasis) var(--ease-standard);
 }
 
-.posterLink:hover .posterCaption {
+/*
+ * One poster on Movie Details and in Sessions: mostly grey at rest (a hint of colour stays, softer
+ * than the prototype's full grey); colour, a slight zoom and (where it links) the caption arrive
+ * together.
+ */
+.heroGrid .posterRegion img {
+    filter: grayscale(0.7) contrast(1.05);
+    transition:
+        filter var(--motion-emphasis) var(--ease-standard),
+        transform var(--motion-emphasis) var(--ease-standard);
+}
+
+.heroGrid .posterRegion:hover img,
+.heroGrid .posterRegion:focus-within img {
+    filter: none;
+    transform: scale(1.03);
+}
+
+.posterLink:hover .posterCaption,
+.posterLink:focus-visible .posterCaption {
     color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heroGrid .posterRegion img,
+    .posterCaption {
+        transition: none;
+    }
+
+    .heroGrid .posterRegion:hover img,
+    .heroGrid .posterRegion:focus-within img {
+        transform: none;
+    }
 }
 
 /* Scoped under the grid so a host page's own heading rules cannot win on load order. */
@@ -166,13 +167,6 @@
 /* Outside Movie Details the headings and paragraphs carry no page-level reset. */
 .heroGrid p {
     margin: 0;
-}
-
-.heroGrid .trailer h2 {
-    margin: 0 0 var(--gap-sm);
-    font-family: var(--font-display);
-    font-size: var(--fs-card-title);
-    font-weight: 400;
 }
 
 @media (width < 1024px) {

@@ -105,7 +105,11 @@ export default function ProductSearch() {
                     <Icon className={styles.roundIcon} name="close" />
                 </button>
                 <div className={styles.searchResults} hidden={!term}>
-                    <p className={styles.overlayEmpty} role="status">
+                    <p
+                        className={styles.overlayEmpty}
+                        data-count={movies.length > 0 || undefined}
+                        role="status"
+                    >
                         {message}
                         {result?.state === 'signed-out' ? (
                             <>

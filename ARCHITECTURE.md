@@ -300,7 +300,8 @@ every authentication session.
   data. Stale fallback requires opt-in, a cache younger than `CATALOG_STALE_HOURS` and a transient
   error; invalid payloads, authentication, disabled configuration and NOT_FOUND never reuse it.
   Adapters cap response bodies, reject redirects, apply timeouts and retain the longest bounded
-  Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links.
+  Retry-After cooldown. Images use allowlisted HTTPS CDN URLs; trailers remain safe YouTube links,
+  which the frontend plays through `youtube-nocookie.com` only after the viewer presses Play.
   Detail posters prefer TheTVDB's image, then the available PoiskKino image. Verified Yandex
   mirror paths normalize to the already allowlisted canonical host. Displayed posters are copied
   to private `movie-images/<sha256-of-source-url>` objects. Source URLs stay in internal caches;
@@ -330,7 +331,8 @@ every authentication session.
   A separate streamed section resolves up to six deduplicated related UUIDs through the same
   endpoint. TMDB appends similar-title identifiers; the canonical repository resolves them.
   Posters load from the authenticated stored-image endpoint without Next.js image optimization;
-  trailers remain outbound links. No background refresh, migration or new configuration is added.
+  trailers play in place (see above). No background refresh, migration or new configuration is
+  added.
   Live source completeness is not guaranteed. Scheduled Movie refresh remains unimplemented
   pending ADR-016 approval; it is separate from the active Nomination deadline worker.
 - **Authentication:** Better Auth in the backend; identities keyed by provider subject; implicit

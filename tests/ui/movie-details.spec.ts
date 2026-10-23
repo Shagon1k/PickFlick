@@ -34,17 +34,12 @@ for (const width of [390, 768, 1024, 1440]) {
             await expect(page.getByRole('heading', { level: 1 })).toHaveText(
                 '<script>alert(1)</script> & Film',
             );
-            const ratings = page.getByRole('list', { name: 'Provider ratings' });
-            await expect(
-                ratings.getByRole('listitem').filter({ hasText: 'KINOPOISK' }),
-            ).toContainText('7.5 / 10');
-            await expect(ratings.getByRole('listitem').filter({ hasText: 'TMDB' })).toContainText(
-                '7.0 / 10',
+            // One rating: IMDb wins over Kinopoisk and TMDB, rounded to one decimal.
+            await expect(page.getByTitle('IMDb rating')).toHaveText(
+                'IMDb rating7.6 out of 10431K ratings',
             );
-            await expect(ratings).not.toContainText('7.519');
-            await expect(ratings.getByRole('listitem').filter({ hasText: 'IMDB' })).toContainText(
-                '7.6 / 10',
-            );
+            await expect(page.getByText('7.519')).toHaveCount(0);
+            await expect(page.getByText('Kinopoisk', { exact: true })).toHaveCount(0);
             await expect(page.getByRole('link', { name: 'IMDb' })).toHaveAttribute(
                 'href',
                 'https://www.imdb.com/title/tt1234567/',
@@ -54,31 +49,39 @@ for (const width of [390, 768, 1024, 1440]) {
                 'href',
                 `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: '<script>alert(1)</script> & Film' })}`,
             );
-            await expect(page.getByRole('link', { name: 'Watch trailer' })).toHaveAttribute(
-                'rel',
-                'noopener noreferrer',
+            // Nothing reaches YouTube until Play; then the privacy-enhanced player loads in place.
+            await page.route('https://www.youtube-nocookie.com/**', (route) =>
+                route.fulfill({
+                    body: '<!doctype html><title>Player</title>',
+                    contentType: 'text/html',
+                }),
+            );
+            await expect(page.locator('iframe')).toHaveCount(0);
+            await page.getByRole('button', { name: 'Play Watch trailer' }).click();
+            await expect(page.locator('iframe')).toHaveAttribute(
+                'src',
+                'https://www.youtube-nocookie.com/embed/abc123XYZ-_?autoplay=1&rel=0',
             );
             await expect(page.getByRole('link', { name: 'Related Film 2026' })).toHaveAttribute(
                 'href',
                 '/movies/10000000-0000-4000-8000-000000000038',
             );
+            // Provider attribution lives with search, not on Movie Details (#89 places it for launch).
             await expect(
-                page
-                    .getByText(
-                        'This product uses the TMDB API but is not endorsed or certified by TMDB.',
-                    )
-                    .first(),
-            ).toBeVisible();
+                page.getByRole('complementary', { name: 'Movie catalog credits' }),
+            ).toHaveCount(0);
             await settle(page);
-            expect((await new AxeBuilder({ page }).include('main').analyze()).violations).toEqual(
-                [],
-            );
+            // The YouTube player document is not ours to audit.
+            expect(
+                (await new AxeBuilder({ page }).include('main').exclude('iframe').analyze())
+                    .violations,
+            ).toEqual([]);
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             await page.screenshot({ path: `test-results/movie-${width}.png`, fullPage: true });
             await expect(page.getByRole('heading', { name: 'You may also like' })).toBeVisible();
-            await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(1);
+            await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(0);
             await page.getByRole('link', { name: /Search Wikipedia/u }).focus();
             await expect(page.getByRole('link', { name: /Search Wikipedia/u })).toBeFocused();
         },
