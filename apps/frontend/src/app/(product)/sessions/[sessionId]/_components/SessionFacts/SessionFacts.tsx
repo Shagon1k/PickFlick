@@ -53,7 +53,10 @@ export default function SessionFacts({
                             {roster.participants
                                 .filter((participant) => participant.status === 'ACCEPTED')
                                 .map((participant) => participant.displayName)
-                                .join(' • ') || 'No accepted participants'}
+                                .join(' • ') ||
+                                (session.type === 'PAST'
+                                    ? 'No attendance record is available.'
+                                    : 'No accepted participants')}
                         </dd>
                     </div>
                     <div>

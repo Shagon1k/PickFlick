@@ -18,7 +18,7 @@ export type TCloseRating = z.infer<typeof closeRatingSchema>;
 const sessionRatingSchema = z.strictObject({
     score: z.int().min(1).max(10),
     comment: z.string().nullable(),
-    submittedAt: z.iso.datetime(),
+    submittedAt: z.iso.datetime().nullable(),
 });
 export const ratingSchema = z.strictObject({
     acceptedCount: z.int().nonnegative(),

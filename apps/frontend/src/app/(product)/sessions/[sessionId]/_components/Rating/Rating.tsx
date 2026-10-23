@@ -14,10 +14,12 @@ export default function Rating({
     sessionId,
     data,
     isCompleted,
+    isImported = false,
 }: {
     sessionId: string;
     data: TRating;
     isCompleted: boolean;
+    isImported?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const unavailable = isCompleted
@@ -45,6 +47,12 @@ export default function Rating({
                 Your rating
             </h2>
             {response}
+            {isImported ? (
+                <p>
+                    Imported historical ratings. Original submission times are unknown; missing
+                    ratings remain unrecorded.
+                </p>
+            ) : null}
             {data.results ? (
                 <div className={styles.results}>
                     <h3>Individual Ratings</h3>
