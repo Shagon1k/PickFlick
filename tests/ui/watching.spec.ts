@@ -50,6 +50,7 @@ for (const viewport of canonicalViewports) {
             await expect(
                 dialog.getByRole('button', { name: 'Open Rating', exact: true }),
             ).toBeDisabled();
+            await expect(dialog).toHaveCSS('opacity', '1');
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             await page.screenshot({
                 path: `test-results/open-rating-${viewport.name}.png`,

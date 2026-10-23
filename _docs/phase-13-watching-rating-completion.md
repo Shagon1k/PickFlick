@@ -55,5 +55,17 @@ Selection check now waits for initial focus and finite animations before clickin
 dialog to finish closing before reopening. The focused rerun passed without changing shared UI
 behavior. The final full smoke and real-role journeys passed.
 
+The subsequent [PR UI smoke run](https://github.com/Shagon1k/PickFlick/actions/runs/39981245774/job/120508788115)
+failed on transient contrast in the Open Rating dialog during its 200 ms fade. The Watching test
+now waits for dialog opacity `1` before running axe and capturing the confirmation, matching the
+existing Selection confirmation check.
+
+Repair verification: all 12 focused Watching runs passed (three runs at each width, retries
+disabled), as did focused lint and formatting. The full CI-mode smoke run passed all four Watching
+checks and reported 41 passes plus one flaky Session roster `Kick` click timeout, which passed on
+retry. The smoke command therefore exited with failure; that separate test remains unchanged.
+`pnpm verify` passed, including the dependency audit gate, lint, Knip, formatting, type checking,
+all 339 unit tests and workspace builds.
+
 The exact-SHA hosted preview and owner visual acknowledgment remain required on #49. The repository has no hosted-preview workflow; no preview URL has been supplied for this run.
 Phase-level completion evidence belongs in Roadmap only when the entire phase is accepted.
