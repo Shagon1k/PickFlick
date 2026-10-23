@@ -64,6 +64,12 @@ export const cancelSessionSchema = z.strictObject({
 });
 export type TCancelSession = z.infer<typeof cancelSessionSchema>;
 
+export const openRatingSchema = z.strictObject({
+    phaseVersion: z.number().int().positive(),
+    confirmation: z.literal('OPEN'),
+});
+export type TOpenRating = z.infer<typeof openRatingSchema>;
+
 export const sessionSchema = z.strictObject({
     id: z.uuid(),
     clubId: z.uuid(),

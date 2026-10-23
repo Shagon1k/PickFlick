@@ -3,6 +3,7 @@ import 'server-only';
 import type {
     TCancelSession,
     TCreateSession,
+    TOpenRating,
     TSession,
     TSessionProgress,
     TUpdateSession,
@@ -19,3 +20,6 @@ export const cancelSession = (id: string, input: TCancelSession): Promise<TSessi
     requestApi(apiPath`/sessions/${id}/cancel`, { method: 'POST', json: input });
 export const getSessionProgress = (id: string): Promise<TSessionProgress> =>
     requestApi(apiPath`/sessions/${id}/progress`);
+
+export const openRating = (id: string, input: TOpenRating): Promise<void> =>
+    requestApi(apiPath`/sessions/${id}/rating/open`, { method: 'POST', json: input });

@@ -16,6 +16,7 @@ import selectionPanda from '#brand/panda-rating-2.webp';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
 import NominationClose from '#components/sessions/NominationClose/NominationClose';
+import OpenRating from '#components/sessions/OpenRating/OpenRating';
 import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
@@ -57,9 +58,7 @@ export default function SessionDetails({
             renderedAt={renderedAt}
             onKick={onKick}
             onClosePhase={onClosePhase}
-            closePhaseLabel={
-                session.phase === 'NOMINATION' ? 'Close nominations early' : 'Close Selection early'
-            }
+            closePhaseLabel={getClosePhaseLabel(session.phase)}
             headingRef={headingRef}
             onEdit={() => setDialog('edit')}
             onCancel={() => setDialog('cancel')}
@@ -69,15 +68,23 @@ export default function SessionDetails({
     function renderPhase(participation: ReactNode, onKick?: () => void) {
         if (isFilmSessionPhase(session.phase))
             return (
-                <>
-                    <PhaseProgress>
-                        {roster.acceptedCount}{' '}
-                        {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined the
-                        screening.
-                    </PhaseProgress>
-                    {header(participation, onKick)}
-                    <ScreeningFilm movie={movie} movieId={session.movieId} />
-                </>
+                <OpenRating
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    canOpen={session.phase === 'WATCHING' && session.canEdit}
+                >
+                    {(onOpen) => (
+                        <>
+                            <PhaseProgress>
+                                {roster.acceptedCount}{' '}
+                                {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined
+                                the screening.
+                            </PhaseProgress>
+                            {header(participation, onKick, onOpen)}
+                            <ScreeningFilm movie={movie} movieId={session.movieId} />
+                        </>
+                    )}
+                </OpenRating>
             );
         const nominations = session.nominations;
         if (nominations)
@@ -184,4 +191,10 @@ function getPhaseMascot(phase: TSession['phase']) {
     if (phase === 'NOMINATION') return nominationPanda;
     if (phase === 'SELECTION') return selectionPanda;
     return watchingPanda;
+}
+
+function getClosePhaseLabel(phase: TSession['phase']) {
+    if (phase === 'WATCHING') return 'Open Rating';
+    if (phase === 'NOMINATION') return 'Close nominations early';
+    return 'Close Selection early';
 }

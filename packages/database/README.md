@@ -27,3 +27,7 @@ coexistence, settings snapshots, roster serialization/rollback, and member-only 
 Migration 25 adds Session `selectionResult` JSON and `SESSION_SELECTION_CLOSED`. Closure stores
 the inputs, ranking and explanation with the selected Movie in one transaction. A PostgreSQL
 trigger freezes the saved snapshot and selected Movie; existing history is not backfilled.
+
+Migration 26 adds `SESSION_RATING_OPENED`. The manual Watching → Rating API writes the phase,
+audit and progress event atomically; the existing blocking-Session index releases the Club slot
+at commit. No table or existing history changes.

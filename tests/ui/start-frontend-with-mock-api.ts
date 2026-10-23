@@ -26,6 +26,7 @@ import { handlePendingInvitation } from './pending-invites.ts';
 import { handleSelection } from './selection.ts';
 import { handleSessionRoster } from './session-roster.ts';
 import { handleSessionWorkflow, sessionHub } from './session-workflows.ts';
+import { handleWatching } from './watching.ts';
 
 type TToken = string | undefined;
 const clubsBySession = new Map<TToken, IClubSummary[]>();
@@ -401,6 +402,7 @@ const api = createServer((request, response) => {
             handleMovieDetails,
             handleMovieSearch,
             handleSelection,
+            handleWatching,
             handleNominations,
             handleSessionRoster,
             handleSessionWorkflow,

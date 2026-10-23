@@ -9,6 +9,8 @@ import { SelectionController } from './selection/selection.controller.js';
 import { SelectionService } from './selection/selection.service.js';
 import { SessionsController } from './sessions.controller.js';
 import { SessionsService } from './sessions.service.js';
+import { WatchingController } from './watching/watching.controller.js';
+import { WatchingService } from './watching/watching.service.js';
 
 @Module({
     imports: [MoviesModule],
@@ -17,7 +19,14 @@ import { SessionsService } from './sessions.service.js';
         SessionRosterController,
         NominationsController,
         SelectionController,
+        WatchingController,
     ],
-    providers: [SessionsService, SessionRosterService, NominationsService, SelectionService],
+    providers: [
+        SessionsService,
+        SessionRosterService,
+        NominationsService,
+        SelectionService,
+        WatchingService,
+    ],
 })
 export class SessionsModule {}
