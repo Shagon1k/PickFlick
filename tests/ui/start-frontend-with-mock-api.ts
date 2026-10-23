@@ -23,6 +23,7 @@ import { handleMovieDetails } from './movie-details.ts';
 import { handleMovieSearch } from './movie-search.ts';
 import { handleNominations } from './nominations.ts';
 import { handlePendingInvitation } from './pending-invites.ts';
+import { handleRating } from './rating.ts';
 import { handleSelection } from './selection.ts';
 import { handleSessionRoster } from './session-roster.ts';
 import { handleSessionWorkflow, sessionHub } from './session-workflows.ts';
@@ -403,6 +404,7 @@ const api = createServer((request, response) => {
             handleMovieSearch,
             handleSelection,
             handleWatching,
+            handleRating,
             handleNominations,
             handleSessionRoster,
             handleSessionWorkflow,

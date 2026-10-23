@@ -155,5 +155,12 @@ cancel once, then confirm with `OPEN` after the screening. Verify both clients r
 the Movie and participants remain, and Manage Club allows a new blocking Session alongside
 the Rating Session. Manage Club's Start next phase: Rating uses the same confirmation dialog.
 
+For Rating, submit a 1–10 score and optional comment from a participant. Confirm that the saved
+response replaces the form and another client updates its progress. Retry the same request and
+verify one response remains. Submit the remaining responses and confirm all clients reach
+Completed. In a second Session, close Rating early as an operator with `CLOSE` and verify that
+only received responses remain and late submissions are rejected. Check member-hidden results
+and the caller's own response against the Session visibility snapshot at phone and desktop widths.
+
 Retain the exact SHA, preview URL, multi-client evidence and owner visual acknowledgement on the
 owning issue. A local test or Draft PR does not satisfy the hosted-preview acceptance criterion.

@@ -6,7 +6,7 @@
 
 | Owner     | Last reviewed | Verified against                                                                    |
 | --------- | ------------- | ----------------------------------------------------------------------------------- |
-| Developer | 2026-10-23    | Current Club-to-winner code, migrations 1–26, ADR-001–ADR-018 and Phase 12 evidence |
+| Developer | 2026-10-23    | Current Club-to-winner code, migrations 1–27, ADR-001–ADR-018 and Phase 12 evidence |
 
 **States:** `Active` — implemented and verified; `Partial` — some exists, the gap is named;
 `Proposed` — accepted direction, not built. An accepted ADR does not make anything `Active`.
@@ -37,8 +37,8 @@ flowchart LR
 | Concern    | Direction                                                                                    | State                                                                                                                                     | ADR               |
 | ---------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | Shape      | pnpm monorepo, frontend, backend, deadline worker plus a one-shot release job.               | Active                                                                                                                                    | ADR-014           |
-| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.        | Partial — public/auth, Clubs, catalog and Session flows through manual Rating opening; later product routes Proposed                      | ADR-013           |
-| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.                   | Partial — auth, Clubs, Contact, health, catalog and Sessions through manual Rating opening; later modules Proposed                        | ADR-002, 010, 011 |
+| Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.        | Partial — public/auth, Clubs, catalog and Session flows through Session Rating and completion; later product routes Proposed              | ADR-013           |
+| Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.                   | Partial — auth, Clubs, Contact, health, catalog and Sessions through Session Rating and completion; later modules Proposed                | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.                  | Active                                                                                                                                    | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.               | Partial — identity, Clubs, catalog, Session roster, Nomination, Selection and durable result/notification intent; later entities Proposed | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Partial — Club avatars and catalog images                                                                                                 | —                 |
@@ -71,17 +71,17 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                 | Owns                                                                                                                                                                       | State                                                                                         |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| auth                                                                   | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                       | Partial — Apple not activated                                                                 |
-| clubs                                                                  | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                        | Active                                                                                        |
-| contact                                                                | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                     | Active                                                                                        |
-| email                                                                  | Resend client; a logging stub when delivery is disabled.                                                                                                                   | Active                                                                                        |
-| storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                                          | Active                                                                                        |
-| health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                  | Active                                                                                        |
-| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                             | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
-| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching and manual Rating opening; Rating/completion pending |
-| Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                    | Proposed                                                                                      |
+| Module                                                                 | Owns                                                                                                                                                                       | State                                                                                    |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| auth                                                                   | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                       | Partial — Apple not activated                                                            |
+| clubs                                                                  | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                        | Active                                                                                   |
+| contact                                                                | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                     | Active                                                                                   |
+| email                                                                  | Resend client; a logging stub when delivery is disabled.                                                                                                                   | Active                                                                                   |
+| storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                                          | Active                                                                                   |
+| health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                  | Active                                                                                   |
+| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                             | Partial — authenticated search/details and stored catalog images; refresh worker pending |
+| sessions                                                               | Live Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating and completion                  |
+| Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                    | Proposed                                                                                 |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -127,10 +127,10 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images                                   |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                                      |
 
-The schema (`packages/database/prisma/schema.prisma`, twenty-six migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, twenty-seven migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
-`SelectionBallot`, `SelectionScore`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
+`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache` and `MovieSearchCache`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
@@ -196,7 +196,7 @@ and leaving can restore capacity. At exact capacity, the invitation API still re
 The unresolved choice among excess administered Clubs is not implemented.
 
 Session persistence, live creation, editing/cancellation, member-only joining, Nomination,
-deadlines and Selection outcomes are Active. Manual Watching → Rating is Active; Rating submission and completion remain Phase 13.
+deadlines and Selection outcomes are Active. Manual Watching → Rating, Session Rating submission and completion are Active.
 Each new Session requires its own score bounds and five visibility/media flags. The internal
 `snapshotSessionSettings` helper locks the Club and reads those fields; creation must call it
 inside the same transaction as the Session insert. Club settings edits do not change saved Session
@@ -614,4 +614,39 @@ failure rolls everything back. The selected Movie, saved Selection result, setti
 participants are preserved; physical attendance is not inferred from browser activity.
 Migration 26 adds only the audit enum value and must precede the updated API. Session and
 Manage Club reuse one confirmation dialog and revalidate the Session and Club views. Rating
-submission and completion remain Proposed. No dependency or environment change is required.
+submission and completion are described below. No dependency or environment change is required.
+
+### Historical Session Ratings and completion
+
+`POST /sessions/:sessionId/rating` accepts an integer `score` from 1 to 10 and an optional
+comment of at most 2000 characters. Current active Club Membership and accepted Session
+participation are required; archived Clubs reject submissions. The shared zod contract normalizes
+comment line endings and trims whitespace. Session Ratings have no update or delete API and stay
+separate from future editable `PersonalMovieRating` records.
+
+Migration 27 adds `SessionRating`, its unique participant/Session key, same-Session foreign key,
+score/comment bounds and an update-rejecting trigger. Inserts lock the Session row and require
+Rating, preventing a late insert after completion. Apply this migration before the updated API.
+No existing history is backfilled or changed.
+
+Commands use the existing Club → Session locks. An identical submission retry succeeds without
+writing another rating or progress event, including after automatic completion; a different
+response returns `ALREADY_SUBMITTED`. Submission, roster changes and Club reactivation evaluate
+positive N/N accepted participants. Departed participants' received responses remain stored and
+count in published results; only accepted participants count toward progress and automatic closure.
+Archived Clubs pause completion, and zero accepted participants never trigger it.
+
+`POST /sessions/:sessionId/rating/close` accepts `phaseVersion` and typed `CLOSE`, under the shared
+Admin/Moderator management rule. It permits partial or empty completion, returns `RATING_CHANGED`
+for a stale open phase and succeeds without another write on an authorized Completed retry.
+Both paths use one transition that writes Completed, increments phase/details versions and
+publishes the existing progress event. Manual closure also writes `SESSION_RATING_CLOSED` in the
+same transaction. Any event or audit failure rolls back completion and its submission.
+
+Session detail includes `rating` in Rating and Completed: accepted/submitted/received counts,
+permissions, the caller's own immutable response and a policy-filtered results object. Other
+responses and the average remain absent until completion. Afterwards Admins and Moderators can
+read them; ordinary members require the Session's snapshotted `showRatingResults`. Hidden results
+are `null`, including their average and comments. Current Club Membership remains required for
+every read. The existing version poll refreshes other clients; no new transport, dependency,
+notification delivery, runtime variable or deployment topology is introduced.

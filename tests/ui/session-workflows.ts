@@ -115,6 +115,7 @@ export function handleSessionWorkflow(
                 nominations: null,
                 selection: null,
                 selectionOutcome: null,
+                rating: null,
                 canEdit: true,
                 canCancel: true,
                 topic: input.topic ?? null,

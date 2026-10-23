@@ -15,6 +15,7 @@ import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
 import { NominationsService } from './nominations/nominations.service.js';
+import { RatingService } from './rating/rating.service.js';
 import { SelectionService } from './selection/selection.service.js';
 import { assertManager, assertOpen, canManage } from './session-access.js';
 import { lockSessionForMember } from './session-lock.js';
@@ -26,6 +27,7 @@ export class SessionsService {
         private readonly prisma: PrismaService,
         private readonly nominations: NominationsService,
         private readonly selection: SelectionService,
+        private readonly rating: RatingService,
     ) {}
 
     async get(userId: string, id: string): Promise<TSession> {
@@ -37,6 +39,10 @@ export class SessionsService {
                 const canManageSession = await canManage(transaction, membership);
                 return {
                     ...toSession(session, membership.club.name, canManageSession),
+                    rating:
+                        session.phase === 'RATING' || session.phase === 'COMPLETED'
+                            ? await this.rating.loadRating(transaction, session, membership)
+                            : null,
                     selectionOutcome: await this.selection.loadOutcome(
                         transaction,
                         session,
@@ -212,7 +218,7 @@ function toSession(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
     canManageSession: boolean,
-): Omit<TSession, 'nominations' | 'selection' | 'selectionOutcome'> {
+): Omit<TSession, 'nominations' | 'selection' | 'selectionOutcome' | 'rating'> {
     const isOpen = isOpenSessionPhase(session.phase);
     return {
         id: session.id,

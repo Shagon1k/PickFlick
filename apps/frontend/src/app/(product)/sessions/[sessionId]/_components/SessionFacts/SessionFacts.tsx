@@ -111,7 +111,7 @@ function getCompanion(session: TSession, roster: ISessionRoster): ReactNode {
     if (session.phase === 'RATING' || session.phase === 'COMPLETED')
         return (
             <div className={styles.metric}>
-                <strong>—</strong>
+                <strong>{session.rating?.results?.average?.toFixed(1) ?? '—'}</strong>
                 <span>Club score</span>
             </div>
         );

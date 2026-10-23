@@ -283,7 +283,13 @@ the same result rules and cannot advance Nomination with no films.
   Moderators can see aggregate rankings; ordinary members need the current Pro entitlement and
   the Session's snapshotted vote-result visibility. Free members receive no breakdown even if
   that snapshot flag is true. Individual ballots and internal winner inputs stay private.
-- Session Ratings use a fixed 1–10 scale with an optional comment.
+- Session Ratings use a fixed 1–10 scale with an optional comment (at most 2000 characters).
+  Each participant submits once; identical retries preserve the saved response. Only accepted
+  participants count toward positive N/N completion; received responses from departed participants
+  remain part of history. Manual completion may keep partial or empty ratings.
+- Other participants' Session Ratings and the Session average appear only after completion.
+  Admins and Moderators can see them; ordinary members require the Session's snapshotted
+  `showRatingResults`. A caller can always read their own response while they remain a Club member.
 
 ### Plans and limits
 

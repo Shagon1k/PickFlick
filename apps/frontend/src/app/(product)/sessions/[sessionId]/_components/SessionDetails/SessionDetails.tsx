@@ -17,6 +17,7 @@ import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
 import NominationClose from '#components/sessions/NominationClose/NominationClose';
 import OpenRating from '#components/sessions/OpenRating/OpenRating';
+import RatingClose from '#components/sessions/RatingClose/RatingClose';
 import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
@@ -27,6 +28,7 @@ import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
+import Rating from '../Rating/Rating';
 import Selection from '../Selection/Selection';
 import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
 import SessionFacts from '../SessionFacts/SessionFacts';
@@ -64,8 +66,36 @@ export default function SessionDetails({
             onCancel={() => setDialog('cancel')}
         />
     );
-    // The server sends Nomination or Selection data only in its own phase.
     function renderPhase(participation: ReactNode, onKick?: () => void) {
+        const rating = session.rating;
+        if (rating)
+            return (
+                <RatingClose
+                    sessionId={session.id}
+                    phaseVersion={session.phaseVersion}
+                    data={rating}
+                >
+                    {(onClose) => (
+                        <>
+                            <PhaseProgress>
+                                {session.phase === 'COMPLETED'
+                                    ? 'Session complete'
+                                    : 'Rating in progress'}{' '}
+                                — {rating.submittedCount} of {rating.acceptedCount} participants
+                                have rated. Rating never blocks the next Session.
+                            </PhaseProgress>
+                            {header(participation, onKick, onClose)}
+                            <ScreeningFilm movie={movie} movieId={session.movieId} />
+                            <Rating
+                                key={session.phase}
+                                sessionId={session.id}
+                                data={rating}
+                                isCompleted={session.phase === 'COMPLETED'}
+                            />
+                        </>
+                    )}
+                </RatingClose>
+            );
         if (isFilmSessionPhase(session.phase))
             return (
                 <OpenRating
@@ -194,6 +224,7 @@ function getPhaseMascot(phase: TSession['phase']) {
 }
 
 function getClosePhaseLabel(phase: TSession['phase']) {
+    if (phase === 'RATING') return 'Close Rating early';
     if (phase === 'WATCHING') return 'Open Rating';
     if (phase === 'NOMINATION') return 'Close nominations early';
     return 'Close Selection early';

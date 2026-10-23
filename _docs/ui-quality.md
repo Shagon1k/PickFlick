@@ -6,7 +6,8 @@ the public pages, Login, Club onboarding, Hub overview, settings, Club invitatio
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
 live Session creation/edit/cancellation, member-only Session invitation responses and roster
 management, Nomination submissions and personal suggestions, immutable Selection ballots,
-policy-filtered Selection results and early-close confirmations, and the seven `/shell-preview/*` shells.
+policy-filtered Selection results and early-close confirmations, historical Session Rating submission,
+partial completion and permitted results, and the seven `/shell-preview/*` shells.
 
 ## Run it
 

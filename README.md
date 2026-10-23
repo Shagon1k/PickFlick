@@ -4,9 +4,11 @@ PickFlick helps private film clubs nominate, select, watch, rate, and remember f
 gives each registered user a personal film library.
 
 Today the frontend (Next.js) and backend (NestJS) run the public site, Contact, sign-in, Clubs
-(Hub, invitations, members, settings), film search and details, and Sessions through immutable Selection ballots and deterministic winner resolution, including
-Nomination deadlines and shared member joining. Phase 12 verification is complete; Phase 13 is next. Watching/Rating
-workflows, the film library, billing and the rest are later phases; see the [Roadmap](ROADMAP.md#8-phase-plan).
+(Hub, invitations, members, settings), film search and details, and Sessions through Watching,
+historical Session Ratings and automatic or partial completion. Nomination deadlines, shared
+member joining, immutable Selection ballots and deterministic winner resolution are included.
+Phase 13 is active; Rating still requires hosted-preview review. Full Completed history and Hub
+Rating views, the film library, billing and the rest follow the [Roadmap](ROADMAP.md#8-phase-plan).
 
 ## Run locally
 

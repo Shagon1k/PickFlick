@@ -45,6 +45,7 @@ const session: Omit<TSession, 'canEdit' | 'canCancel'> = {
     nominations: null,
     selection: null,
     selectionOutcome: null,
+    rating: null,
 };
 function stateFor(token: string): IRosterState {
     const state = states.get(token) ?? {
