@@ -22,7 +22,7 @@ catalog:
     better-auth: 1.7.5
     tsx: 4.23.13
     typescript: 6.0.3
-    zod: 4.6.5
+    zod: 4.6.6
 
 allowBuilds:
     '@parcel/watcher': false

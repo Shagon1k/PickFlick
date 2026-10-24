@@ -145,6 +145,11 @@ related Next.js advisories (critical remote code execution and a high App Router
 covered `next` 16.0.0 to 16.4.0. The frontend pins `next@16.4.2`, which the production audit
 accepts; `better-auth` resolves the same release.
 
+On 2026-10-24, the [GitHub advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) and
+npm registry confirmed `zod@4.6.6` fixes the constrained-collection memory exhaustion reported
+by PR #186's dependency audit. The shared catalog and all lockfile references use that patch,
+within existing consumer ranges. No override or audit exception is needed.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development

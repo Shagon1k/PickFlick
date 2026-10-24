@@ -51,7 +51,18 @@ The new browser checks exposed two shared UI regressions: setup cards could grow
 phone when a rating rail appeared, and keyboard Movie selection retained an ARIA reference to a
 removed result. The shared card now permits shrinking, and the picker clears its active option.
 
-`pnpm verify` currently stops at the production dependency audit: existing Zod versions are
-affected by [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5),
-which lists 4.6.6 as patched. Dependency remediation is separate from #52; this run does not change
-the lockfile or bypass the gate. Remaining checks run explicitly so their results remain available.
+CI repair attempt 1 on 2026-10-24 addresses the failed dependency audit in
+[run 40028517461](https://github.com/Shagon1k/PickFlick/actions/runs/40028517461).
+The authorized source was `dc3f290fa162fc4b1f7585079d1068ce354e94da`. Only Zod changes:
+the catalog and lockfile use the published 4.6.6 patch for
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), within existing consumer
+ranges. The frozen install and all 120 focused contract, environment and validation-pipe tests pass.
+
+The audit no longer reports Zod. `pnpm verify` still stops at its unchanged production audit gate:
+new high-severity findings affect `body-parser` and `multer`. Those findings were absent from the
+failed CI evidence and remain outside this bounded repair. Remaining checks run explicitly so their
+results remain available.
+
+Repair verification also passes `pnpm lint`, `pnpm knip`, `pnpm format:check`, `pnpm typecheck`,
+all 350 unit tests and `pnpm build`. Integration, browser and image checks are not rerun locally
+for this dependency patch; they passed in the source-SHA CI run. Fresh CI is not awaited.
