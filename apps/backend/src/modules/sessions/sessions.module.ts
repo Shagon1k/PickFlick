@@ -3,6 +3,8 @@ import { Module } from '@nestjs/common';
 import { MoviesModule } from '../movies/movies.module.js';
 import { NominationsController } from './nominations/nominations.controller.js';
 import { NominationsService } from './nominations/nominations.service.js';
+import { PastSessionsController } from './past/past-sessions.controller.js';
+import { PastSessionsService } from './past/past-sessions.service.js';
 import { RatingController } from './rating/rating.controller.js';
 import { RatingService } from './rating/rating.service.js';
 import { SessionRosterController } from './roster/session-roster.controller.js';
@@ -18,6 +20,7 @@ import { WatchingService } from './watching/watching.service.js';
     imports: [MoviesModule],
     controllers: [
         SessionsController,
+        PastSessionsController,
         SessionRosterController,
         NominationsController,
         SelectionController,
@@ -26,6 +29,7 @@ import { WatchingService } from './watching/watching.service.js';
     ],
     providers: [
         SessionsService,
+        PastSessionsService,
         SessionRosterService,
         NominationsService,
         SelectionService,

@@ -51,6 +51,7 @@
 
 .card {
     width: 100%;
+    min-width: 0;
     padding: calc(var(--gap-lg) + var(--gap-xs)) calc(var(--gap-lg) + var(--gap-xs) / 2);
     background: var(--surface);
     border: 1px solid var(--border);

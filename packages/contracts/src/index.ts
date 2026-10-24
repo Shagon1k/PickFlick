@@ -10,6 +10,7 @@ export * from './contact/contact.schema.js';
 export * from './movies/movie.schema.js';
 export * from './movies/tmdb.schema.js';
 export * from './sessions/nomination.schema.js';
+export * from './sessions/past-session.schema.js';
 export * from './sessions/rating.schema.js';
 export * from './sessions/roster.schema.js';
 export * from './sessions/selection.schema.js';

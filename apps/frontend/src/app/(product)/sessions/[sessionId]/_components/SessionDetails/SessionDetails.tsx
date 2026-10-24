@@ -73,6 +73,7 @@ export default function SessionDetails({
             return (
                 <>
                     <PhaseProgress>
+                        {session.type === 'PAST' ? 'Imported past screening. ' : ''}
                         Session complete —{' '}
                         {formatCount(session.rating?.receivedCount ?? 0, 'rating')} received. This
                         screening record is closed.
