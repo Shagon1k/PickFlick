@@ -9,6 +9,8 @@ import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
 const SAVE_FAILURE: IFailureCopy = {
     reasons: {
         SUBMISSION_CONFLICT: 'We could not log this Session. Reload the form before trying again.',
+        SUBMISSION_MISMATCH:
+            'This Session was already logged with different entries. Your changes were not saved. Open Club history to review it.',
         MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
         ATTENDEE_UNAVAILABLE:
             'An attendee is unavailable in this Club. Reload the form to review the roster.',

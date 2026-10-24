@@ -684,9 +684,12 @@ and Memberships outside the Club are rejected before writing.
 
 The request requires a UUID `submissionId`, used as the Session primary key. The form retains it
 across retries. Under the Club lock, an authorized replay by the original creator returns the saved
-Session without rewriting evidence or adding audit events. A key already used by another Club,
-creator or Session type returns `SUBMISSION_CONFLICT`. A new form uses a new key for an intentional
-repeat screening. The existing database primary key enforces uniqueness; no migration is needed.
+Session only when its date, location, Movie, topic, notes, attendees and optional scores match.
+Attendee order is ignored; dates and optional text are compared after normalization. Changed
+evidence returns `SUBMISSION_MISMATCH` without rewriting history or adding audit events.
+A key already used by another Club, creator or Session type returns `SUBMISSION_CONFLICT`.
+A new form uses a new key for an intentional repeat screening. The existing database primary key
+enforces uniqueness; no migration is needed.
 
 `GET /clubs/:clubId/sessions/past/members` lists each person once using their latest current or
 departed Membership, only for authorized operators. Attendees reference those retained Memberships,

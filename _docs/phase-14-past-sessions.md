@@ -106,3 +106,21 @@ regression, and all 54 `pnpm test:ui:smoke` checks. Focused lint and formatting 
 the new journey's setup correction. Visual baselines are unchanged. Local gitleaks is unavailable;
 CI retains the secret-scanning gate. Fresh CI is not awaited, and exact-SHA hosted preview plus
 owner visual acknowledgment remain required before acceptance.
+
+Owner-approved review fix round 2 on 2026-10-24 starts from exact PR head
+`a58159979d36b140645061ec0924ec252edab0c0` and addresses only the
+[changed replay evidence finding](https://github.com/Shagon1k/PickFlick/pull/186#discussion_r4367194090).
+Replays compare all supplied details and attendee scores with the saved record. Changed evidence
+returns `SUBMISSION_MISMATCH`; the form retains the edits and explains that they were not saved.
+Equivalent dates, normalized optional text and reordered attendees still replay successfully.
+The existing Club lock, authorization and primary key continue to prevent duplicate Sessions,
+attendees, ratings and audit events. No schema, dependency, environment or infrastructure change.
+
+Round 2 verification passes on Node 24.15.0 / pnpm 11.25.0: full
+`PICKFLICK_ENV_FILE=.env.example pnpm verify` (including all 350 unit tests and workspace builds),
+all 233 integration tests across 25 files, all 12 real-API journeys and all 54 UI smoke checks.
+The lost-response regression edits location, attendance and a score, checks the explicit mismatch
+and retained entries, then restores the original evidence and recovers the saved Session.
+Phone and desktop form captures were inspected; visual baselines are unchanged. Local gitleaks
+remains unavailable. Fresh CI is not awaited; exact-SHA hosted preview and owner visual
+acknowledgment remain required before acceptance.

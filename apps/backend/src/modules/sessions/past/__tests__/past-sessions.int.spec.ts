@@ -217,6 +217,87 @@ describe('Past Sessions', () => {
         }
         expect(await api.prisma.session.count({ where: { clubId, type: 'PAST' } })).toBe(1);
     });
+    it('should reject changed replay evidence without altering the saved Session', async () => {
+        const input = {
+            submissionId: randomUUID(),
+            topic: 'Old favourites',
+            notes: 'Only one score survived.',
+            attendees: [
+                { membershipId: memberships[2], score: 8 },
+                { membershipId: memberships[3] },
+            ],
+        };
+        const original = await read(await create(input));
+        for (const change of [
+            { movieId: randomUUID() },
+            { scheduledAt: '2021-01-01T00:00:00Z' },
+            { location: 'Another cinema' },
+            { topic: 'New topic' },
+            { topic: '' },
+            { notes: 'New notes' },
+            { notes: '' },
+            { attendees: [] },
+            { attendees: [...input.attendees, { membershipId: memberships[0] }] },
+            {
+                attendees: [
+                    { membershipId: memberships[2], score: 8 },
+                    { membershipId: memberships[0] },
+                ],
+            },
+            {
+                attendees: [
+                    { membershipId: memberships[2], score: 9 },
+                    { membershipId: memberships[3] },
+                ],
+            },
+            { attendees: input.attendees.map(({ membershipId }) => ({ membershipId })) },
+            {
+                attendees: [
+                    { membershipId: memberships[2], score: 8 },
+                    { membershipId: memberships[3], score: 8 },
+                ],
+            },
+            {
+                attendees: [
+                    { membershipId: memberships[2] },
+                    { membershipId: memberships[3], score: 8 },
+                ],
+            },
+        ]) {
+            const response = await create({ ...input, ...change });
+            expect(response.status).toBe(409);
+            expect(await response.json()).toMatchObject({
+                error: { reason: 'SUBMISSION_MISMATCH' },
+            });
+        }
+        expect(await read(await create(input))).toEqual(original);
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
+        expect(await api.prisma.sessionParticipant.count({ where: { clubId } })).toBe(2);
+        expect(await api.prisma.sessionRating.count({ where: { sessionId: original.id } })).toBe(1);
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(1);
+    });
+    it('should replay equivalent dates, optional text and reordered attendees', async () => {
+        const input = {
+            submissionId: randomUUID(),
+            attendees: [
+                { membershipId: memberships[2], score: 8 },
+                { membershipId: memberships[3] },
+            ],
+        };
+        const original = await read(await create(input));
+        const replay = await read(
+            await create({
+                ...input,
+                scheduledAt: '2020-01-01T00:00:00.000Z',
+                location: ' Old cinema ',
+                topic: '',
+                notes: null,
+                attendees: input.attendees.toReversed(),
+            }),
+        );
+        expect(replay).toEqual(original);
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(1);
+    });
     it('should list a rejoined person once and reject duplicate attendance across Memberships', async () => {
         await api.prisma.membership.update({
             where: { id: memberships[2] },

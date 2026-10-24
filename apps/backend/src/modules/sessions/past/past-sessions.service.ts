@@ -39,6 +39,14 @@ export class PastSessionsService {
                 select: {
                     clubId: true,
                     type: true,
+                    scheduledAt: true,
+                    location: true,
+                    movieId: true,
+                    topic: true,
+                    notes: true,
+                    participants: {
+                        select: { membershipId: true, rating: { select: { score: true } } },
+                    },
                     auditEvents: {
                         where: { actorUserId: userId, action: 'SESSION_CREATED' },
                         select: { id: true },
@@ -52,6 +60,25 @@ export class PastSessionsService {
                     existing.auditEvents.length === 0
                 )
                     throw new ConflictException({ reason: 'SUBMISSION_CONFLICT' });
+                const savedScores = new Map(
+                    existing.participants.map((row) => [row.membershipId, row.rating?.score]),
+                );
+                const hasMatchingAttendees =
+                    savedScores.size === attendees.length &&
+                    attendees.every(
+                        (row) =>
+                            savedScores.has(row.membershipId) &&
+                            savedScores.get(row.membershipId) === row.score,
+                    );
+                if (
+                    existing.scheduledAt?.getTime() !== new Date(input.scheduledAt).getTime() ||
+                    existing.location !== input.location ||
+                    existing.movieId !== input.movieId ||
+                    existing.topic !== (input.topic ?? null) ||
+                    existing.notes !== (input.notes ?? null) ||
+                    !hasMatchingAttendees
+                )
+                    throw new ConflictException({ reason: 'SUBMISSION_MISMATCH' });
                 return;
             }
             if (

@@ -139,7 +139,7 @@ test('A minimal past Session retains input after a request failure and denies Me
     }
 });
 
-test('Retrying after a lost committed response preserves one past Session and its evidence', async ({
+test('Retrying after a lost committed response rejects changed evidence and preserves the saved Session', async ({
     browser,
 }) => {
     const journey = await createPastJourney(browser);
@@ -175,6 +175,30 @@ test('Retrying after a lost committed response preserves one past Session and it
             page.getByText('We could not reach PickFlick. Your entries are still here; try again.'),
         ).toBeVisible();
         const committed = await prisma.session.findFirstOrThrow({ where: { clubId } });
+        await page.getByLabel('Location').fill('Changed cinema');
+        await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).uncheck();
+        const ratings = page.getByRole('radiogroup', {
+            name: 'Rating for Former attendee (optional)',
+        });
+        await ratings.getByRole('radio', { name: '9 of 10', exact: true }).click();
+        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await expect(
+            page.getByText(
+                'This Session was already logged with different entries. Your changes were not saved. Open Club history to review it.',
+            ),
+        ).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toHaveCount(0);
+        await expect(page.getByLabel('Location')).toHaveValue('Changed cinema');
+        await expect(
+            page.getByRole('checkbox', { name: 'Current attendee', exact: true }),
+        ).not.toBeChecked();
+        await expect(ratings.getByRole('radio', { name: '9 of 10', exact: true })).toBeChecked();
+        expect(await prisma.session.findUniqueOrThrow({ where: { id: committed.id } })).toEqual(
+            committed,
+        );
+        await page.getByLabel('Location').fill('Old cinema');
+        await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
+        await ratings.getByRole('radio', { name: '8 of 10', exact: true }).click();
         await page.getByRole('button', { name: 'Log Session', exact: true }).click();
         await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toHaveAttribute(
             'href',
