@@ -35,8 +35,8 @@ seeded `pickflick_test` database.
 Completed history and Watching/Rating regressions.
 
 `pnpm lint`, `pnpm knip`, `pnpm format:check` and `pnpm typecheck` passed.
-`pnpm test:unit` passed all 350 tests across 48 files. `pnpm build` passed every workspace build. The complete `pnpm verify` command
-remains blocked by its audit gate as described below.
+`pnpm test:unit` passed all 350 tests across 48 files. `pnpm build` passed every workspace build.
+The audit gate initially blocked `pnpm verify`; CI repair attempt 2 below clears it.
 
 The past-Session journeys check 390/768/1024/1440px layouts, axe, keyboard/touch ratings,
 clear-to-unknown behavior, offline retention, request failure recovery, Member denial and the
@@ -58,11 +58,28 @@ the catalog and lockfile use the published 4.6.6 patch for
 [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), within existing consumer
 ranges. The frozen install and all 120 focused contract, environment and validation-pipe tests pass.
 
-The audit no longer reports Zod. `pnpm verify` still stops at its unchanged production audit gate:
+After attempt 1, the audit no longer reported Zod. `pnpm verify` still stopped at its production audit gate:
 new high-severity findings affect `body-parser` and `multer`. Those findings were absent from the
-failed CI evidence and remain outside this bounded repair. Remaining checks run explicitly so their
-results remain available.
+failed CI evidence and remained outside that bounded repair. Remaining checks ran explicitly so their
+results remained available.
 
 Repair verification also passes `pnpm lint`, `pnpm knip`, `pnpm format:check`, `pnpm typecheck`,
 all 350 unit tests and `pnpm build`. Integration, browser and image checks are not rerun locally
 for this dependency patch; they passed in the source-SHA CI run. Fresh CI is not awaited.
+
+CI repair attempt 2 on 2026-10-24 addresses the dependency audit behind the failed Delivery gate in
+[run 40075170330](https://github.com/Shagon1k/PickFlick/actions/runs/40075170330), from authorized
+source `526ce0dc525730d202c22ff001b416c7a225e734`. The lockfile selects the published
+`body-parser@2.4.0` fix for [GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828)
+within Express's range, plus its required `qs@6.16.1`. A Nest-adapter-scoped override selects
+`multer@2.5.0` for [GHSA-q7qp-rjg7-q26m](https://github.com/advisories/GHSA-q7qp-rjg7-q26m).
+No application code or audit policy changes.
+
+The frozen install and production audit pass; only 2 low and 5 moderate findings remain. Temporary
+runtime checks pass for Express JSON, form and raw parsing, invalid JSON, gzip/deflate trailing bytes,
+and the upstream Multer asynchronous file-filter teardown regression. All 9 focused backend tests
+pass. Integration, browser and image checks are not rerun locally for this repair; those jobs passed
+in the source-SHA CI run. Fresh CI is not awaited or retried.
+
+`PICKFLICK_ENV_FILE=.env.example pnpm verify` passes the production audit, lint, Knip, formatting,
+type checking, all 350 unit tests and every workspace build on Node 24.15.0 / pnpm 11.25.0.
