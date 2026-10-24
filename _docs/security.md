@@ -145,6 +145,20 @@ related Next.js advisories (critical remote code execution and a high App Router
 covered `next` 16.0.0 to 16.4.0. The frontend pins `next@16.4.2`, which the production audit
 accepts; `better-auth` resolves the same release.
 
+On 2026-10-24, the [GitHub advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) and
+npm registry confirmed `zod@4.6.6` fixes the constrained-collection memory exhaustion reported
+by PR #186's dependency audit. The shared catalog and all lockfile references use that patch,
+within existing consumer ranges. No override or audit exception is needed.
+
+On 2026-10-24, PR #186's next dependency audit reported denial-of-service advisories in
+[body-parser](https://github.com/advisories/GHSA-27r3-jxmh-p828) and
+[Multer](https://github.com/advisories/GHSA-q7qp-rjg7-q26m). The npm registry and upstream releases
+confirm fixes in `body-parser@2.4.0` and `multer@2.5.0`. The lockfile updates body-parser within
+Express 5.2.1's declared range, including its required `qs@6.16.1`. Nest's Express adapter pins
+Multer 2.4.0, so an override scoped to `@nestjs/platform-express@12.1.0>multer` selects 2.5.0,
+which retains the same dependencies and Node requirement. Remove that override when the adapter
+includes a fixed version. Application parser settings and the audit policy are unchanged.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development

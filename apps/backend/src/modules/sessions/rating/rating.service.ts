@@ -117,10 +117,10 @@ export class RatingService {
     }
 }
 
-function toRating(rating: { score: number; comment: string | null; submittedAt: Date }) {
+function toRating(rating: { score: number; comment: string | null; submittedAt: Date | null }) {
     return {
         score: rating.score,
         comment: rating.comment,
-        submittedAt: rating.submittedAt.toISOString(),
+        submittedAt: rating.submittedAt?.toISOString() ?? null,
     };
 }

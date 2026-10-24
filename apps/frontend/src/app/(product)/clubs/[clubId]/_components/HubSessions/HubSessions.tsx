@@ -2,6 +2,7 @@ import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
 import { formatCount } from '#lib/format';
 
@@ -12,6 +13,11 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
     return (
         <div className={styles.sessions}>
             <h2>Active Sessions</h2>
+            {hub.permissions.manageSessions ? (
+                <ButtonLink href={`/clubs/${hub.club.id}/sessions/past/new`}>
+                    Log a Past Session
+                </ButtonLink>
+            ) : null}
             <p>One screening at a time. Open Rating Sessions never block the next screening.</p>
             <ActiveSessionCard hub={hub} />
             <section aria-labelledby="active-ratings-heading">

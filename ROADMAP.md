@@ -1072,7 +1072,7 @@ non-blocking Rating views
 
 **Out of scope:** Past Sessions, editable Personal Rating, and achievements.
 
-### Phase 14 — Past Sessions & Shared History · Not started
+### Phase 14 — Past Sessions & Shared History · In progress
 
 **Goal:** Record screenings from before PickFlick with incomplete but trustworthy evidence.
 

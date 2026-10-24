@@ -463,7 +463,7 @@ model SessionRating {
   participantId String             @db.Uuid
   score         Int
   comment       String?
-  submittedAt   DateTime           @default(now()) @db.Timestamptz(3)
+  submittedAt   DateTime?          @default(now()) @db.Timestamptz(3)
   session       Session            @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   participant   SessionParticipant @relation(fields: [participantId, sessionId], references: [id, sessionId], onDelete: Restrict)
 

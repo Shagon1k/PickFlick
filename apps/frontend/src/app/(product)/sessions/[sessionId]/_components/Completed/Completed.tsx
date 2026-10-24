@@ -12,7 +12,12 @@ export default function Completed({ session }: { session: TSession }) {
     return (
         <div className={styles.grid}>
             {session.rating ? (
-                <Rating sessionId={session.id} data={session.rating} isCompleted />
+                <Rating
+                    sessionId={session.id}
+                    data={session.rating}
+                    isCompleted
+                    isImported={session.type === 'PAST'}
+                />
             ) : (
                 <section className={styles.panel}>
                     <h2>Individual Ratings</h2>

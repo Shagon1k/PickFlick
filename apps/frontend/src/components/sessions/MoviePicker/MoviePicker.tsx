@@ -47,6 +47,7 @@ export default function MoviePicker({
         setSelectedTitle(movie.title ?? movie.originalTitle ?? 'Untitled film');
         onChange(movie.id, movie);
         setQuery('');
+        setIndex(-1);
         inputRef.current?.focus();
     }
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -71,7 +72,7 @@ export default function MoviePicker({
             <div className={styles.field}>
                 <TextInput
                     ref={inputRef}
-                    aria-activedescendant={index >= 0 ? `session-movie-${index}` : undefined}
+                    aria-activedescendant={movies[index] ? `session-movie-${index}` : undefined}
                     aria-controls="session-movies"
                     aria-expanded={movies.length > 0}
                     aria-autocomplete="list"
