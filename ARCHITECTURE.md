@@ -682,6 +682,12 @@ SESSION_CREATED audit commit together with the record. Past Sessions do not occu
 slot. Repeat viewings reference the same canonical Movie in distinct Sessions; duplicate attendees
 and Memberships outside the Club are rejected before writing.
 
+The request requires a UUID `submissionId`, used as the Session primary key. The form retains it
+across retries. Under the Club lock, an authorized replay by the original creator returns the saved
+Session without rewriting evidence or adding audit events. A key already used by another Club,
+creator or Session type returns `SUBMISSION_CONFLICT`. A new form uses a new key for an intentional
+repeat screening. The existing database primary key enforces uniqueness; no migration is needed.
+
 `GET /clubs/:clubId/sessions/past/members` lists each person once using their latest current or
 departed Membership, only for authorized operators. Attendees reference those retained Memberships,
 so later departure or anonymization does not erase shared history. No creator participant, nominations, ballots,

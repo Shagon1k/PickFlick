@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { ConflictException, Injectable } from '@nestjs/common';
 import type { TCreatePastSession, TPastSessionMembers } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
@@ -31,11 +29,31 @@ export class PastSessionsService {
     }
 
     async create(userId: string, clubId: string, input: TCreatePastSession): Promise<string> {
-        const id = randomUUID();
+        const { submissionId: id, attendees, ...details } = input;
         await this.prisma.$transaction(async (tx) => {
             await lockClub(tx, clubId);
             const actor = await findMembership(tx, userId, clubId);
             await assertManager(tx, actor);
+            const existing = await tx.session.findUnique({
+                where: { id },
+                select: {
+                    clubId: true,
+                    type: true,
+                    auditEvents: {
+                        where: { actorUserId: userId, action: 'SESSION_CREATED' },
+                        select: { id: true },
+                    },
+                },
+            });
+            if (existing) {
+                if (
+                    existing.clubId !== clubId ||
+                    existing.type !== 'PAST' ||
+                    existing.auditEvents.length === 0
+                )
+                    throw new ConflictException({ reason: 'SUBMISSION_CONFLICT' });
+                return;
+            }
             if (
                 !(await tx.movie.findUnique({ where: { id: input.movieId }, select: { id: true } }))
             )
@@ -48,7 +66,6 @@ export class PastSessionsService {
                 throw new ConflictException({ reason: 'ATTENDEE_UNAVAILABLE' });
             if (new Set(members.map((member) => member.userId)).size !== members.length)
                 throw new ConflictException({ reason: 'ATTENDEE_DUPLICATE' });
-            const { attendees, ...details } = input;
             await tx.session.create({
                 data: {
                     ...details,

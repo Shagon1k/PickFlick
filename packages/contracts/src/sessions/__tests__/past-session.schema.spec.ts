@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createPastSessionSchema } from '../past-session.schema.js';
 
 const minimal = {
+    submissionId: randomUUID(),
     scheduledAt: '2020-01-01T00:00:00Z',
     location: 'Old cinema',
     movieId: randomUUID(),
@@ -37,6 +38,8 @@ describe('createPastSessionSchema', () => {
     it('should reject future dates, missing Movies, repeated attendees and invented phases', () => {
         const attendee = { membershipId: randomUUID() };
         for (const input of [
+            { submissionId: undefined },
+            { submissionId: 'invalid' },
             { scheduledAt: '2999-01-01T00:00:00Z' },
             { scheduledAt: 'not-a-date' },
             { movieId: null },

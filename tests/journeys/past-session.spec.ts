@@ -139,6 +139,60 @@ test('A minimal past Session retains input after a request failure and denies Me
     }
 });
 
+test('Retrying after a lost committed response preserves one past Session and its evidence', async ({
+    browser,
+}) => {
+    const journey = await createPastJourney(browser);
+    const { clubId, context, query, prisma } = journey;
+    const page = await context.newPage();
+    const path = `/clubs/${clubId}/sessions/past/new`;
+    try {
+        await page.goto(path);
+        await settle(page);
+        const search = page.getByRole('combobox', { name: 'Select a Movie' });
+        await search.fill(query);
+        await expect(page.getByRole('option')).toHaveCount(1);
+        await search.press('ArrowDown');
+        await search.press('Enter');
+        await page.getByRole('checkbox', { name: 'Former attendee (former member)' }).check();
+        await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
+        await page
+            .getByRole('radiogroup', { name: 'Rating for Former attendee (optional)' })
+            .getByRole('radio', { name: '8 of 10', exact: true })
+            .click();
+        await page.getByLabel('Date').fill('2020-01-01');
+        await page.getByLabel('Location').fill('Old cinema');
+        await page.route(
+            `**${path}`,
+            async (route) => {
+                await route.fetch();
+                await route.abort('failed');
+            },
+            { times: 1 },
+        );
+        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await expect(
+            page.getByText('We could not reach PickFlick. Your entries are still here; try again.'),
+        ).toBeVisible();
+        const committed = await prisma.session.findFirstOrThrow({ where: { clubId } });
+        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toHaveAttribute(
+            'href',
+            `/sessions/${committed.id}`,
+        );
+        expect(await prisma.session.findMany({ where: { clubId } })).toHaveLength(1);
+        expect(await prisma.sessionParticipant.findMany({ where: { clubId } })).toHaveLength(2);
+        expect(await prisma.sessionRating.findMany({ where: { sessionId: committed.id } })).toEqual(
+            [expect.objectContaining({ score: 8, submittedAt: null })],
+        );
+        expect(
+            await prisma.clubAuditEvent.findMany({ where: { clubId, action: 'SESSION_CREATED' } }),
+        ).toHaveLength(1);
+    } finally {
+        await journey.cleanup();
+    }
+});
+
 for (const viewport of canonicalViewports) {
     test(
         `Past Session preserves partial imported evidence at ${viewport.name}`,

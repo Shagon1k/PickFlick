@@ -10,7 +10,7 @@ import {
     type TPastSessionMembers,
     type TSession,
 } from '@pickflick/contracts';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
@@ -33,10 +33,6 @@ interface IPastSessionValues {
     attendees: TCreatePastSession['attendees'];
 }
 
-function buildInput({ date, ...values }: IPastSessionValues) {
-    return { ...values, scheduledAt: date ? `${date}T00:00:00.000Z` : '' };
-}
-
 export default function PastSessionForm({
     clubId,
     members,
@@ -47,6 +43,15 @@ export default function PastSessionForm({
     const [isPending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
+    const submissionIdRef = useRef<string | null>(null);
+    function buildInput({ date, ...values }: IPastSessionValues) {
+        submissionIdRef.current ??= crypto.randomUUID();
+        return {
+            ...values,
+            scheduledAt: date ? `${date}T00:00:00.000Z` : '',
+            submissionId: submissionIdRef.current,
+        };
+    }
     const form = useForm<IPastSessionValues>({
         initialValues: { date: '', location: '', topic: '', notes: '', movieId: '', attendees: [] },
         validate: (values) => {
@@ -94,10 +99,12 @@ export default function PastSessionForm({
     return (
         <form
             noValidate
-            onSubmit={form.onSubmit(save, (_errors, _values, event) => {
-                setMessage('Review the highlighted fields and try again.');
-                focusFirstInvalid(event?.currentTarget);
-            })}
+            onSubmit={(event) =>
+                form.onSubmit(save, (_errors, _values, submitEvent) => {
+                    setMessage('Review the highlighted fields and try again.');
+                    focusFirstInvalid(submitEvent?.currentTarget);
+                })(event)
+            }
         >
             <TextInput
                 {...form.getInputProps('date')}

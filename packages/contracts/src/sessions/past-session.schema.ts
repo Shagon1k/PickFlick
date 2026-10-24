@@ -5,6 +5,7 @@ import { sessionDetailsSchema } from './session.schema.js';
 export const createPastSessionSchema = sessionDetailsSchema
     .omit({ deadlineAt: true })
     .extend({
+        submissionId: z.uuidv4(),
         scheduledAt: z.iso.datetime().refine((value) => new Date(value).getTime() <= Date.now(), {
             message: 'Choose a date in the past.',
         }),

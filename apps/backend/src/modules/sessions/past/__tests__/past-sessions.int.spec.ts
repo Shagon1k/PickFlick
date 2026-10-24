@@ -41,6 +41,7 @@ describe('Past Sessions', () => {
             userId,
             method: 'POST',
             json: {
+                submissionId: randomUUID(),
                 scheduledAt: '2020-01-01T00:00:00Z',
                 location: 'Old cinema',
                 movieId,
@@ -165,6 +166,56 @@ describe('Past Sessions', () => {
         expect(first.id).not.toBe(second.id);
         expect(await api.prisma.movie.count({ where: { id: movieId } })).toBe(1);
         expect(await api.prisma.session.count({ where: { clubId, movieId } })).toBe(3);
+    });
+    it('should serialize retries into one Session, roster, rating and audit record', async () => {
+        const submissionId = randomUUID();
+        const input = {
+            submissionId,
+            attendees: [
+                { membershipId: memberships[2], score: 8 },
+                { membershipId: memberships[3] },
+            ],
+        };
+        const sessions = await Promise.all(
+            [create(input), create(input)].map(async (response) => read(await response)),
+        );
+        expect(sessions.map((session) => session.id)).toEqual([submissionId, submissionId]);
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
+        expect(await api.prisma.sessionParticipant.count({ where: { clubId } })).toBe(2);
+        expect(await api.prisma.sessionRating.count({ where: { sessionId: submissionId } })).toBe(
+            1,
+        );
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(1);
+        const repeat = await read(await create({ attendees: input.attendees }));
+        expect(repeat.id).not.toBe(submissionId);
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(2);
+    });
+    it('should authorize replays and reject identifiers from another creator, Club or Session type', async () => {
+        const session = await read(await create());
+        expect((await create({ submissionId: session.id }, users[2])).status).toBe(403);
+        const otherClubId = randomUUID();
+        await api.prisma.club.create({ data: { id: otherClubId, name: 'Other Club' } });
+        await addMember(api.prisma, otherClubId, users[0]!, 'ADMIN');
+        const foreign = await createSession(api.prisma, otherClubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
+        });
+        const live = await createSession(api.prisma, clubId, {
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
+        });
+        for (const [submissionId, userId] of [
+            [session.id, users[1]],
+            [foreign.id, users[0]],
+            [live.id, users[0]],
+        ] as const) {
+            const response = await create({ submissionId }, userId);
+            expect(response.status).toBe(409);
+            expect(await response.json()).toMatchObject({
+                error: { reason: 'SUBMISSION_CONFLICT' },
+            });
+        }
+        expect(await api.prisma.session.count({ where: { clubId, type: 'PAST' } })).toBe(1);
     });
     it('should list a rejoined person once and reject duplicate attendance across Memberships', async () => {
         await api.prisma.membership.update({

@@ -408,7 +408,9 @@ here.
   selected attendee has the shared keyboard/touch star control and can clear their optional rating.
   Long rating rails scroll locally. An empty selection leaves attendance unrecorded.
 - Pending saves lock the form. Validation focuses the first invalid field; offline and request
-  failures preserve entries. Success replaces the submit area with a Completed Session link and
+  failures preserve entries and the submission identifier, so retrying returns the saved screening
+  if the original response was lost. A new form allows an intentional repeat screening.
+  Success replaces the submit area with a Completed Session link and
   a return to Club history. Loading and denied access have explicit states.
 - Completed identifies imported history and unknown rating submission times. Missing attendance,
   ratings, nominations and votes remain absent; existing result visibility still applies. Historical

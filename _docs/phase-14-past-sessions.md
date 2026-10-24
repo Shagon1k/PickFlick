@@ -83,3 +83,26 @@ in the source-SHA CI run. Fresh CI is not awaited or retried.
 
 `PICKFLICK_ENV_FILE=.env.example pnpm verify` passes the production audit, lint, Knip, formatting,
 type checking, all 350 unit tests and every workspace build on Node 24.15.0 / pnpm 11.25.0.
+
+Owner-approved review fix round 1 on 2026-10-24 starts from exact PR head
+`75d9c7d84fee03e75d2d23b8a937dcbe40715618` and addresses only the
+[retry-safety finding](https://github.com/Shagon1k/PickFlick/pull/186#discussion_r4366629536).
+The form retains a UUID `submissionId` across retries; the API uses the existing Session primary
+key to enforce uniqueness. Under the existing Club lock, current authorization and the creator's
+SESSION_CREATED audit record gate replay of the saved result. Replays leave the committed evidence
+unchanged. Keys belonging to another Club, creator or Session type return `SUBMISSION_CONFLICT`.
+A new form uses a new key, so intentional repeat screenings remain separate records. No migration,
+dependency or environment change is introduced.
+
+The full integration suite passes all 231 tests across 25 files, including concurrent retries,
+single roster/rating/audit persistence, intentional repeats, authorization and identifier conflicts.
+The browser regression drops the response after the server commits, then retries the same form
+and checks the original Session link, two attendees, one imported rating and one audit event.
+
+`PICKFLICK_ENV_FILE=.env.example pnpm verify` passes the production audit, lint, Knip, formatting,
+type checking, all 350 unit tests and every workspace build on Node 24.15.0 / pnpm 11.25.0.
+The final browser run passes all 12 `pnpm test:journeys` checks, including the lost-response
+regression, and all 54 `pnpm test:ui:smoke` checks. Focused lint and formatting also pass after
+the new journey's setup correction. Visual baselines are unchanged. Local gitleaks is unavailable;
+CI retains the secret-scanning gate. Fresh CI is not awaited, and exact-SHA hosted preview plus
+owner visual acknowledgment remain required before acceptance.
