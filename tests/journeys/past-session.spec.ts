@@ -99,15 +99,28 @@ async function createPastJourney(browser: Browser) {
     };
 }
 
-test('A minimal past Session retains input after a request failure and denies Member creation', async ({
+test('A minimal past Session waits for hydration, retains input after a request failure and denies Member creation', async ({
     browser,
 }) => {
     const journey = await createPastJourney(browser);
     const { clubId, context, query, prisma } = journey;
     const page = await context.newPage();
     const path = `/clubs/${clubId}/sessions/past/new`;
+    let releaseScripts!: () => void;
+    const scriptsReady = new Promise<void>((resolve) => {
+        releaseScripts = resolve;
+    });
+    await page.route('**/_next/static/chunks/*.js', async (route) => {
+        await scriptsReady;
+        await route.continue();
+    });
     try {
-        await page.goto(path);
+        await page.goto(path, { waitUntil: 'commit' });
+        await expect(page.getByLabel('Date')).toBeDisabled();
+        await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeDisabled();
+        await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toBeDisabled();
+        releaseScripts();
+        await expect(page.getByLabel('Date')).toBeEnabled();
         await page.getByLabel('Date').fill('2020-01-01');
         await page.getByLabel('Location').fill('Old cinema');
         const search = page.getByRole('combobox', { name: 'Select a Movie' });
@@ -115,6 +128,7 @@ test('A minimal past Session retains input after a request failure and denies Me
         await expect(page.getByRole('option')).toHaveCount(1);
         await search.press('ArrowDown');
         await search.press('Enter');
+        await expect(page.getByLabel('Date')).toHaveValue('2020-01-01');
         await page.route(`**${path}`, (route) => route.abort('failed'), { times: 1 });
         await page.getByRole('button', { name: 'Log Session', exact: true }).click();
         await expect(
@@ -135,6 +149,7 @@ test('A minimal past Session retains input after a request failure and denies Me
         ).toBeVisible();
         await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toHaveCount(0);
     } finally {
+        releaseScripts();
         await journey.cleanup();
     }
 });

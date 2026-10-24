@@ -124,3 +124,19 @@ and retained entries, then restores the original evidence and recovers the saved
 Phone and desktop form captures were inspected; visual baselines are unchanged. Local gitleaks
 remains unavailable. Fresh CI is not awaited; exact-SHA hosted preview and owner visual
 acknowledgment remain required before acceptance.
+
+Input-readiness repair on 2026-10-25 starts from `b369e9389e1f8739fd6f953a107996e59d8bb8ec`.
+[CI run 40135900869](https://github.com/Shagon1k/PickFlick/actions/runs/40135900869)
+failed because the form accepted a date before hydration. The first controlled update cleared it,
+so client validation prevented the network-failure scenario from reaching submission. Delaying the
+JavaScript chunks reproduced the same failure locally before the fix.
+
+Past Session fields and submission now stay disabled until their handlers are attached, using the
+existing invitation-readiness pattern. The journey holds the chunks, checks the disabled controls,
+then checks the retained date after Movie selection, network-failure recovery and successful retry.
+All 12 real-API journeys pass, including the lost-response replay checks and Past Session coverage
+at 390/768/1024/1440px. This repair changes no schema, dependencies or backend rules.
+
+The repair also passes `PICKFLICK_ENV_FILE=.env.test pnpm verify`, including all 350 unit tests
+and workspace builds, and all 54 `pnpm test:ui:smoke` checks on Node 24.15.0 / pnpm 11.25.0.
+Phone and desktop captures were inspected; visual baselines were not updated.

@@ -402,6 +402,7 @@ here.
 
 - Hub → Sessions offers Log a Past Session to operators in writable Clubs, including while a live
   screening is open. The form reuses the Session setup scene, mascot, fields and Movie picker.
+- Fields and submission stay disabled until their client-side handlers are attached.
 - Date, location and Movie are required. The date must be in the past; live Session date behavior
   is unchanged. Topic, notes, attendees and each attendee’s 1–10 rating are independent evidence.
 - Former members are labeled and may be selected. No attendee is selected automatically. Each

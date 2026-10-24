@@ -10,7 +10,7 @@ import {
     type TPastSessionMembers,
     type TSession,
 } from '@pickflick/contracts';
-import { useRef, useState, useTransition } from 'react';
+import { useRef, useState, useSyncExternalStore, useTransition } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
@@ -33,6 +33,10 @@ interface IPastSessionValues {
     attendees: TCreatePastSession['attendees'];
 }
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export default function PastSessionForm({
     clubId,
     members,
@@ -41,6 +45,9 @@ export default function PastSessionForm({
     members: TPastSessionMembers;
 }) {
     const [isPending, startTransition] = useTransition();
+    // Early input would be lost when React first updates these controlled fields.
+    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isDisabled = !isReady || isPending;
     const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
     const submissionIdRef = useRef<string | null>(null);
@@ -113,7 +120,7 @@ export default function PastSessionForm({
                 labelHint="required"
                 type="date"
                 required
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <TextInput
                 {...form.getInputProps('location')}
@@ -123,7 +130,7 @@ export default function PastSessionForm({
                 maxLength={SESSION_LOCATION_MAX_LENGTH}
                 placeholder="e.g. Sarah’s place, Zoom, Alamo Drafthouse"
                 required
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <TextInput
                 {...form.getInputProps('topic')}
@@ -131,7 +138,7 @@ export default function PastSessionForm({
                 label="Topic"
                 labelHint="optional"
                 maxLength={SESSION_TOPIC_MAX_LENGTH}
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <Textarea
                 {...form.getInputProps('notes')}
@@ -140,16 +147,16 @@ export default function PastSessionForm({
                 labelHint="optional"
                 maxLength={SESSION_NOTES_MAX_LENGTH}
                 size="compact"
-                disabled={isPending}
+                disabled={isDisabled}
             />
             <MoviePicker
                 value={form.values.movieId || null}
                 onChange={(id) => form.setFieldValue('movieId', id ?? '')}
-                disabled={isPending}
+                disabled={isDisabled}
                 error={form.errors.movieId}
                 placeholder="Search films by title…"
             />
-            <fieldset className={styles.attendees} disabled={isPending}>
+            <fieldset className={styles.attendees} disabled={isDisabled}>
                 <legend>Who attended?</legend>
                 <p>Select only known attendees. Leave unknown ratings blank.</p>
                 <div className={styles.members}>
@@ -185,12 +192,12 @@ export default function PastSessionForm({
                             onChange={(score) =>
                                 form.setFieldValue(`attendees.${index}.score`, score)
                             }
-                            disabled={isPending}
+                            disabled={isDisabled}
                         />
                         {attendee.score !== undefined ? (
                             <Button
                                 variant="ghost"
-                                disabled={isPending}
+                                disabled={isDisabled}
                                 onClick={() =>
                                     form.setFieldValue(
                                         'attendees',
@@ -210,7 +217,7 @@ export default function PastSessionForm({
                 <p>Ratings are imported historical records, separate from live submissions.</p>
             </fieldset>
             <div className={styles.submit}>
-                <Button fullWidth loading={isPending} type="submit">
+                <Button fullWidth disabled={isDisabled} loading={isPending} type="submit">
                     Log Session
                 </Button>
                 <p aria-live="polite" aria-atomic="true" role="status">
