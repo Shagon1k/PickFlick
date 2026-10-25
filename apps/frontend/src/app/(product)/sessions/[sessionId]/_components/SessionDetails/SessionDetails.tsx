@@ -173,7 +173,8 @@ export default function SessionDetails({
                 {(participation, onKick) => (
                     <>
                         {renderPhase(participation, onKick)}
-                        {session.selectionOutcome && session.phase !== 'COMPLETED' ? (
+                        {session.selectionOutcome?.source === 'LIVE' &&
+                        session.phase !== 'COMPLETED' ? (
                             <SelectionOutcome data={session.selectionOutcome} />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">

@@ -5,6 +5,7 @@ import type { Prisma } from '@pickflick/database';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
+import { loadPastSelection } from '../past/past-selection-projection.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceSelection, completeSelection } from './selection-completion.js';
@@ -22,7 +23,9 @@ export class SelectionService {
         session: Prisma.SessionGetPayload<object>,
         membership: Awaited<ReturnType<typeof findMembership>>,
     ) {
-        return loadSelectionOutcome(tx, session, membership, this.movies);
+        return session.type === 'PAST'
+            ? loadPastSelection(tx, session, membership, this.movies)
+            : loadSelectionOutcome(tx, session, membership, this.movies);
     }
 
     async loadSelection(

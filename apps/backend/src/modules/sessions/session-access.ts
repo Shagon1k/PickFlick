@@ -4,6 +4,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { type findMembership, loadClubAccess } from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
+import { getClubEntitlements } from '../clubs/access/club-tiers.js';
 
 export async function canManage(
     transaction: Prisma.TransactionClient,
@@ -27,4 +28,15 @@ export async function assertManager(
     if (membership.role === 'MEMBER') throw new ForbiddenException();
     if (!(await canManage(transaction, membership)))
         throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+}
+
+export function canViewSelectionBreakdown(
+    session: Pick<Prisma.SessionGetPayload<object>, 'clubId' | 'showVoteResults'>,
+    membership: Pick<Awaited<ReturnType<typeof findMembership>>, 'role'>,
+) {
+    return (
+        membership.role !== 'MEMBER' ||
+        (getClubEntitlements(session.clubId).voteResultVisibility === 'ADMIN_CONFIGURABLE' &&
+            session.showVoteResults)
+    );
 }

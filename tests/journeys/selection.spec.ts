@@ -130,7 +130,10 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 await (await contexts[0]!.request.get(`/api/sessions/${session.id}`)).json(),
             ).selectionOutcome;
         const saved = await readOutcome();
-        expect(saved?.breakdown).toMatchObject({ ballotCount: 2, reason: 'TOTAL' });
+        expect(saved?.source === 'LIVE' ? saved.breakdown : null).toMatchObject({
+            ballotCount: 2,
+            reason: 'TOTAL',
+        });
         const retry = await contexts[0]!.request.post(
             `/api/sessions/${session.id}/selection/close`,
             {

@@ -22,6 +22,7 @@ import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
 import { getOfflineMessage } from '#lib/offline';
 
 import { savePastSessionAction } from '../../actions';
+import PastNominations from '../PastNominations/PastNominations';
 import styles from './PastSessionForm.module.scss';
 
 interface IPastSessionValues {
@@ -31,6 +32,8 @@ interface IPastSessionValues {
     notes: string;
     movieId: string;
     attendees: TCreatePastSession['attendees'];
+    nominations: TCreatePastSession['nominations'];
+    scoreMatrix: TCreatePastSession['scoreMatrix'];
 }
 
 const subscribe = () => () => {};
@@ -40,9 +43,13 @@ const getServerSnapshot = () => false;
 export default function PastSessionForm({
     clubId,
     members,
+    scaleMin,
+    scaleMax,
 }: {
     clubId: string;
     members: TPastSessionMembers;
+    scaleMin: number;
+    scaleMax: number;
 }) {
     const [isPending, startTransition] = useTransition();
     // Early input would be lost when React first updates these controlled fields.
@@ -60,7 +67,16 @@ export default function PastSessionForm({
         };
     }
     const form = useForm<IPastSessionValues>({
-        initialValues: { date: '', location: '', topic: '', notes: '', movieId: '', attendees: [] },
+        initialValues: {
+            date: '',
+            location: '',
+            topic: '',
+            notes: '',
+            movieId: '',
+            attendees: [],
+            nominations: [],
+            scoreMatrix: [],
+        },
         validate: (values) => {
             const parsed = createPastSessionSchema.safeParse(buildInput(values));
             if (parsed.success) return {};
@@ -96,7 +112,7 @@ export default function PastSessionForm({
     if (created)
         return (
             <div className={styles.result}>
-                <p role="status">Past Session logged. This screening record is complete.</p>
+                <p role="status">Past Session logged. Only the evidence you supplied was saved.</p>
                 <ButtonLink href={`/sessions/${created.id}`} variant="primary">
                     Open Session
                 </ButtonLink>
@@ -174,7 +190,15 @@ export default function PastSessionForm({
                                             form.insertListItem('attendees', {
                                                 membershipId: member.id,
                                             });
-                                        else form.removeListItem('attendees', index);
+                                        else {
+                                            form.removeListItem('attendees', index);
+                                            form.setFieldValue(
+                                                'scoreMatrix',
+                                                form.values.scoreMatrix.filter(
+                                                    (row) => row.membershipId !== member.id,
+                                                ),
+                                            );
+                                        }
                                     }}
                                 />
                                 {member.displayName}
@@ -216,6 +240,19 @@ export default function PastSessionForm({
                 ))}
                 <p>Ratings are imported historical records, separate from live submissions.</p>
             </fieldset>
+            <PastNominations
+                evidence={{
+                    nominations: form.values.nominations,
+                    scoreMatrix: form.values.scoreMatrix,
+                }}
+                attendees={form.values.attendees}
+                members={members}
+                scaleMin={scaleMin}
+                scaleMax={scaleMax}
+                disabled={isDisabled}
+                error={form.errors.nominations ?? form.errors.scoreMatrix}
+                onChange={(evidence) => form.setValues(evidence)}
+            />
             <div className={styles.submit}>
                 <Button fullWidth disabled={isDisabled} loading={isPending} type="submit">
                     Log Session

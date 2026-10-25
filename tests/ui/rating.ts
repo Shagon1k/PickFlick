@@ -2,8 +2,8 @@ import {
     closeRatingSchema,
     type ISessionRoster,
     submitRatingSchema,
+    type TLiveSelectionOutcome,
     type TRating,
-    type TSelectionOutcome,
     type TSession,
     type TSubmitRating,
 } from '@pickflick/contracts';
@@ -138,7 +138,7 @@ function buildRating(
     };
 }
 
-function buildHistoricalSelection(token: string): TSelectionOutcome {
+function buildHistoricalSelection(token: string): TLiveSelectionOutcome {
     const winner = {
         id: '10000000-0000-4000-8000-000000000037',
         title: 'Selected film',
@@ -146,6 +146,7 @@ function buildHistoricalSelection(token: string): TSelectionOutcome {
         genres: ['Drama'],
     };
     return {
+        source: 'LIVE',
         winner,
         author: token.includes('hidden') ? null : 'Jordan',
         closedAt: '2026-12-01T19:00:00.000Z',

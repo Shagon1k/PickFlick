@@ -5,6 +5,12 @@ import { snapshotSessionSettings } from '@pickflick/database';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../../clubs/access/club-access.js';
 import { assertManager } from '../session-access.js';
+import {
+    assertPastNominators,
+    assertPastSelectionRange,
+    assertPastSelectionReplay,
+    createPastSelection,
+} from './past-selection-evidence.js';
 
 @Injectable()
 export class PastSessionsService {
@@ -29,7 +35,7 @@ export class PastSessionsService {
     }
 
     async create(userId: string, clubId: string, input: TCreatePastSession): Promise<string> {
-        const { submissionId: id, attendees, ...details } = input;
+        const { submissionId: id, attendees, nominations, scoreMatrix, ...details } = input;
         await this.prisma.$transaction(async (tx) => {
             await lockClub(tx, clubId);
             const actor = await findMembership(tx, userId, clubId);
@@ -79,12 +85,17 @@ export class PastSessionsService {
                     !hasMatchingAttendees
                 )
                     throw new ConflictException({ reason: 'SUBMISSION_MISMATCH' });
+                await assertPastSelectionReplay(tx, id, input);
                 return;
             }
-            if (
-                !(await tx.movie.findUnique({ where: { id: input.movieId }, select: { id: true } }))
-            )
+            const movieIds = [
+                ...new Set([input.movieId, ...nominations.map((row) => row.movieId)]),
+            ];
+            if ((await tx.movie.count({ where: { id: { in: movieIds } } })) !== movieIds.length)
                 throw new ConflictException({ reason: 'MOVIE_UNAVAILABLE' });
+            await assertPastNominators(tx, clubId, nominations);
+            const settings = await snapshotSessionSettings(tx, clubId);
+            assertPastSelectionRange(scoreMatrix, settings);
             const members = await tx.membership.findMany({
                 where: { clubId, id: { in: input.attendees.map((row) => row.membershipId) } },
                 select: { userId: true },
@@ -100,7 +111,7 @@ export class PastSessionsService {
                     clubId,
                     type: 'PAST',
                     phase: 'COMPLETED',
-                    ...(await snapshotSessionSettings(tx, clubId)),
+                    ...settings,
                 },
             });
             for (const attendee of attendees) {
@@ -123,6 +134,7 @@ export class PastSessionsService {
                         },
                     });
             }
+            await createPastSelection(tx, id, input);
             await recordAudit(tx, {
                 clubId,
                 sessionId: id,

@@ -55,7 +55,12 @@ export default async function PastSessionPage({ params }: { params: Promise<{ cl
                         Add a screening that already happened to your Club’s history.
                     </p>
                     {members ? (
-                        <PastSessionForm clubId={clubId} members={members} />
+                        <PastSessionForm
+                            clubId={clubId}
+                            members={members}
+                            scaleMin={hub.club.selectionScaleMin}
+                            scaleMax={hub.club.selectionScaleMax}
+                        />
                     ) : (
                         <>
                             <p role="status">

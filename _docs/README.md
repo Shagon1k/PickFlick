@@ -61,7 +61,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 
 ## Current verification
 
-[Phase 14 — Past Sessions](phase-14-past-sessions.md) is active for minimal historical screenings.
+[Phase 14 — Past Sessions](phase-14-past-sessions.md) is active for historical screenings and optional
+nomination/score reconstruction.
 
 Phase 12 closed under [#48](https://github.com/Shagon1k/PickFlick/issues/48).
 [Phase 13 — Watching, Rating and completion](phase-13-watching-rating-completion.md) is active. [Roadmap phase evidence](../ROADMAP.md#11-progress) and
