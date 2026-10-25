@@ -83,6 +83,10 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     await prisma.clubAuditEvent.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.sessionInvite.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.sessionRating.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
+    await prisma.pastSelectionScore.deleteMany({
+        where: { nomination: { session: { clubId: { in: clubIds } } } },
+    });
+    await prisma.pastNomination.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
     await prisma.selectionScore.deleteMany({
         where: { ballot: { session: { clubId: { in: clubIds } } } },
     });

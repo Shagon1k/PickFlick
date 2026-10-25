@@ -80,7 +80,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
 | movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
-| sessions                                                               | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and minimal past imports |
+| sessions                                                               | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -673,7 +673,7 @@ It displays the blocking Session, all open Ratings and the latest twenty Complet
 Overview and Manage Club also retain the open Ratings collection. This adds no provider adapter,
 notification transport, environment variable or runtime service.
 
-### Minimal past Sessions
+### Past Sessions and imported evidence
 
 `POST /clubs/:clubId/sessions/past` creates a PAST Session directly in Completed, with required
 date/location/Movie, optional topic/notes, selected historical Memberships and optional attendee
@@ -684,17 +684,35 @@ and Memberships outside the Club are rejected before writing.
 
 The request requires a UUID `submissionId`, used as the Session primary key. The form retains it
 across retries. Under the Club lock, an authorized replay by the original creator returns the saved
-Session only when its date, location, Movie, topic, notes, attendees and optional scores match.
-Attendee order is ignored; dates and optional text are compared after normalization. Changed
+Session only when its date, location, Movie, topic, notes, attendees, nominations and optional scores match.
+Attendee, nomination and matrix order are ignored; dates and optional text are compared after normalization. Changed
 evidence returns `SUBMISSION_MISMATCH` without rewriting history or adding audit events.
 A key already used by another Club, creator or Session type returns `SUBMISSION_CONFLICT`.
 A new form uses a new key for an intentional repeat screening. The existing database primary key
-enforces uniqueness; no migration is needed.
+enforces retry uniqueness.
 
 `GET /clubs/:clubId/sessions/past/members` lists each person once using their latest current or
 departed Membership, only for authorized operators. Attendees reference those retained Memberships,
-so later departure or anonymization does not erase shared history. No creator participant, nominations, ballots,
-Selection snapshot or phase times are generated. Optional nomination reconstruction remains Proposed.
+so later departure or anonymization does not erase shared history. No creator participant, live nominations,
+ballots, Selection result snapshot or phase times are generated.
+
+Optional `nominations` contain unique canonical Movie IDs; `scoreMatrix` contains selected attendee
+Membership IDs with sparse Movie/score cells. A nomination list needs no attendees or scores. A matrix
+may omit rows and cells; empty rows carry no score evidence. Duplicate rows/Movies, unselected attendees,
+unknown Movies, malformed cells and scores outside the Club scale snapshot reject the entire import.
+An unchanged replay uses the saved evidence even if the Club scale has since changed.
+
+Migration 29 adds `PastNomination` and `PastSelectionScore`, separate from live records that require
+a nominator and complete ballots. Same-Session participant foreign keys retain Membership attribution
+without copying names. Database triggers require Completed PAST provenance, enforce the saved scale
+and prohibit evidence updates. No original submission times or nominators are fabricated. Apply the
+migration before the API; existing Sessions need no backfill.
+
+The `pastSelection` projection returns the saved scale and permitted imported nomination summaries.
+Zero is a recorded score; an absent score total is null. Totals count only supplied cells and do not
+rank nominations or recalculate the screened Movie. Current plan and snapshotted vote-result visibility
+use the same rules as live post-close breakdowns. Individual matrix cells and Membership IDs remain
+private. Completed labels imported and unknown evidence explicitly.
 
 The PAST Session type records imported provenance. Migration 28 makes SessionRating.submittedAt
 nullable: imported ratings require a Completed PAST Session and a null original submission time;

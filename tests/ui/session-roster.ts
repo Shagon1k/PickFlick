@@ -44,6 +44,7 @@ const session: Omit<TSession, 'canEdit' | 'canCancel'> = {
     progressVersion: 1,
     nominations: null,
     selection: null,
+    pastSelection: null,
     selectionOutcome: null,
     rating: null,
 };

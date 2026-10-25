@@ -16,6 +16,17 @@ export const createPastSessionSchema = sessionDetailsSchema
                 score: z.int().min(1).max(10).optional(),
             }),
         ),
+        nominations: z.array(z.uuid()).default([]),
+        scoreMatrix: z
+            .array(
+                z.strictObject({
+                    membershipId: z.uuid(),
+                    scores: z.array(
+                        z.strictObject({ movieId: z.uuid(), score: z.int().min(0).max(10) }),
+                    ),
+                }),
+            )
+            .default([]),
     })
     .refine(
         (input) =>
@@ -24,7 +35,36 @@ export const createPastSessionSchema = sessionDetailsSchema
             path: ['attendees'],
             message: 'Select each attendee once.',
         },
-    );
+    )
+    .superRefine((input, context) => {
+        if (new Set(input.nominations).size !== input.nominations.length)
+            context.addIssue({
+                code: 'custom',
+                path: ['nominations'],
+                message: 'Add each nominated Movie once.',
+            });
+        if (
+            new Set(input.scoreMatrix.map((row) => row.membershipId)).size !==
+            input.scoreMatrix.length
+        )
+            context.addIssue({
+                code: 'custom',
+                path: ['scoreMatrix'],
+                message: 'Supply each participant row once.',
+            });
+        for (const [index, row] of input.scoreMatrix.entries()) {
+            if (
+                !input.attendees.some((attendee) => attendee.membershipId === row.membershipId) ||
+                new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length ||
+                row.scores.some((cell) => !input.nominations.includes(cell.movieId))
+            )
+                context.addIssue({
+                    code: 'custom',
+                    path: ['scoreMatrix', index],
+                    message: 'Use selected attendees and unique nominated Movies only.',
+                });
+        }
+    });
 export type TCreatePastSession = z.infer<typeof createPastSessionSchema>;
 
 export const pastSessionMembersSchema = z.array(

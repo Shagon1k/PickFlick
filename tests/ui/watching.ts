@@ -79,6 +79,7 @@ export function handleWatching(
             canCancel: canManage,
             nominations: null,
             selection: null,
+            pastSelection: null,
             selectionOutcome: null,
             rating: null,
         };

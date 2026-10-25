@@ -118,6 +118,7 @@ export function handleSelection(
         progressVersion: version,
         nominations: null,
         selection: isClosed ? null : buildSelection(token, ballot),
+        pastSelection: null,
         selectionOutcome: isClosed ? buildOutcome(token) : null,
         rating: null,
         canEdit: token.includes('operator'),

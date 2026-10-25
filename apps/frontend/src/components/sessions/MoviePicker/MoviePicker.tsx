@@ -19,6 +19,9 @@ import styles from './MoviePicker.module.scss';
 type TSearchMovie = TMovieSearchResults['movies'][number];
 
 interface IMoviePickerProps {
+    id?: string;
+    label?: string;
+    required?: boolean;
     value: string | null;
     onChange: (id: string | null, movie?: TSearchMovie) => void;
     error?: React.ReactNode;
@@ -28,6 +31,9 @@ interface IMoviePickerProps {
     hideLabel?: boolean;
 }
 export default function MoviePicker({
+    id = 'session-movie',
+    label = 'Select a Movie',
+    required = true,
     value,
     onChange,
     error,
@@ -42,7 +48,7 @@ export default function MoviePicker({
     const term = query.trim();
     const result = useMovieSearch(term, !value);
     const movies = result && 'data' in result ? result.data.movies : [];
-    useActiveOptionVisible('session-movie', index);
+    useActiveOptionVisible(id, index);
     function select(movie: TSearchMovie) {
         setSelectedTitle(movie.title ?? movie.originalTitle ?? 'Untitled film');
         onChange(movie.id, movie);
@@ -72,19 +78,19 @@ export default function MoviePicker({
             <div className={styles.field}>
                 <TextInput
                     ref={inputRef}
-                    aria-activedescendant={movies[index] ? `session-movie-${index}` : undefined}
-                    aria-controls="session-movies"
+                    aria-activedescendant={movies[index] ? `${id}-${index}` : undefined}
+                    aria-controls={`${id}-results`}
                     aria-expanded={movies.length > 0}
                     aria-autocomplete="list"
                     role="combobox"
                     disabled={disabled || Boolean(value)}
                     error={error}
-                    id="session-movie"
-                    label="Select a Movie"
-                    labelHint="required"
+                    id={id}
+                    label={label}
+                    labelHint={required ? 'required' : 'optional'}
                     labelProps={hideLabel ? { className: 'visually-hidden' } : undefined}
                     placeholder={placeholder}
-                    required
+                    required={required}
                     value={value ? selectedTitle : query}
                     maxLength={MOVIE_QUERY_MAX_LENGTH}
                     onChange={(event) => {
@@ -95,14 +101,14 @@ export default function MoviePicker({
                 />
                 <div
                     aria-label="Movie results"
-                    id="session-movies"
+                    id={`${id}-results`}
                     role="listbox"
                     className={styles.results}
                 >
                     {movies.map((movie, position) => (
                         <button
                             aria-selected={position === index}
-                            id={`session-movie-${position}`}
+                            id={`${id}-${position}`}
                             key={movie.id}
                             role="option"
                             tabIndex={-1}

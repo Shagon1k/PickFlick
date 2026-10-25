@@ -7,9 +7,9 @@ and [#53](https://github.com/Shagon1k/PickFlick/issues/53).
 Run `r_29040fec8b495f603abc` implements #52 on the managed branch
 `PF-52_14-1-record-minimal-past-sessions`. It reuses Club authorization/locking, settings snapshots,
 historical Membership references, Movie picking, Completed detail and Hub history. Optional nomination
-and score-matrix reconstruction belongs to #53.
+and score-matrix reconstruction is implemented by #53 as described below.
 
-Past Sessions enter Completed directly. Only supplied attendees and 1–10 ratings are stored.
+Past Sessions enter Completed directly. Attendees and 1–10 ratings preserve only supplied evidence.
 The PAST Session type records imported provenance; imported ratings have no submission timestamp.
 Migration 28 permits those null timestamps while retaining immutable responses and the live Rating
 phase guard. Deploy the migration before the API. No existing rows are backfilled.
@@ -140,3 +140,46 @@ at 390/768/1024/1440px. This repair changes no schema, dependencies or backend r
 The repair also passes `PICKFLICK_ENV_FILE=.env.test pnpm verify`, including all 350 unit tests
 and workspace builds, and all 54 `pnpm test:ui:smoke` checks on Node 24.15.0 / pnpm 11.25.0.
 Phone and desktop captures were inspected; visual baselines were not updated.
+
+## Optional historical nominations and scores (#53)
+
+Run `r_be07ac03afc80581eee2` uses managed branch
+`PF-53_14-2-reconstruct-optional-historical-nominations`. It extends the existing import transaction,
+Club settings snapshot, Movie picker and Completed detail. Bulk import and live winner resolution
+remain out of scope.
+
+Migration 29 adds imported nominations and sparse Selection scores. These relational records preserve
+participant/Membership references without requiring a known nominator or complete live ballot.
+Completed labels incomplete evidence, unknown scores and unknown original times explicitly. Imported
+totals do not choose or rank the screened Movie. Existing result visibility applies. Canonical behavior
+and interfaces are recorded in Roadmap, Design and Architecture.
+
+Verification covers schema validation, snapshot ranges, atomic rejection, equivalent and changed
+replays, database provenance/foreign keys/immutability, departed and anonymized participants, hidden
+results and responsive keyboard/touch entry. The exact-SHA hosted preview and owner acknowledgment
+remain required before issue or phase acceptance.
+
+Local verification on 2026-10-24–25 uses Node 24.15.0 / pnpm 11.25.0 and the isolated, seeded
+`pickflick_test` database on port 35432. All 29 migrations apply. `pnpm verify` passes the production
+audit, lint, Knip, formatting, type checking, all 352 unit tests and every workspace build.
+`pnpm test:integration` passes all 240 tests across 26 files, including seven new imported-Selection
+checks. The full suite requires the deterministic seed; the first fresh-database attempt lacked it.
+
+The initial responsive fixture tried to choose zero on a legacy 1–5 Club scale. The form correctly
+offered 1–5; the fixture now explicitly uses 0–5. API validation separately checks both scale starts.
+Interrupting that run temporarily left default journey listeners on 41740/42741 outside the subsequent
+command's process namespace. The corrected run uses temporary copies of the journey configuration and
+startup script on 41840/42841. Repository test configuration and timeouts are unchanged. The original
+listeners were later verified released.
+
+All 12 real-API journeys pass with that temporary configuration, including all four partial-import
+viewports and existing live Nomination, Selection, Watching and Rating flows. The new checks cover
+duplicate feedback, clearing scores to unknown, removing a nomination and returning focus, offline
+retention, zero versus unknown totals, hidden evidence, no page overflow and axe. Phone and desktop
+form/Completed captures in `test-results/past-{form,completed}-{viewport}.png` were inspected.
+Visual baselines are unchanged.
+
+`pnpm test:ui:smoke` passes all 54 checks, including shared Movie selection, Completed history,
+live Selection, Watching and Rating regressions. Local gitleaks is unavailable; the existing commit
+hook reports that limitation and CI retains the mandatory secret scan. Fresh CI and the required
+exact-head hosted preview with owner acknowledgment remain pending.

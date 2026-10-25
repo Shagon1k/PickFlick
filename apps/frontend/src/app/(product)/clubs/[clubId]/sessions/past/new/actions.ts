@@ -15,6 +15,8 @@ const SAVE_FAILURE: IFailureCopy = {
         ATTENDEE_UNAVAILABLE:
             'An attendee is unavailable in this Club. Reload the form to review the roster.',
         ATTENDEE_DUPLICATE: 'Select each person only once, even if they rejoined the Club.',
+        SCORE_OUT_OF_RANGE:
+            'The Club Selection scale changed. Reload the form and review the scores.',
         CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
     },
     statuses: [

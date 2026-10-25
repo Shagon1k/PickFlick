@@ -211,6 +211,7 @@ function buildRatingSession({
         canCancel: canManageSession,
         nominations: null,
         selection: null,
+        pastSelection: null,
         selectionOutcome: token.includes('history') ? buildHistoricalSelection(token) : null,
         rating,
     };
