@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 
 import styles from './Popover.module.scss';
 
-const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '560px' };
+const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '560px', watchlist: '208px' };
 
 export default function Popover({
     children,
@@ -23,7 +23,7 @@ export default function Popover({
     onChange: (open: boolean) => void;
     label: string;
     id: string;
-    variant?: 'default' | 'invites' | 'rating';
+    variant?: 'default' | 'invites' | 'rating' | 'watchlist';
 }) {
     return (
         <MantinePopover
@@ -32,7 +32,7 @@ export default function Popover({
             width={`min(${POPOVER_WIDTHS[variant]}, calc(100vw - var(--gap-md) * 2))`}
             opened={open}
             onChange={onChange}
-            position="top-end"
+            position={variant === 'watchlist' ? 'bottom-end' : 'top-end'}
             returnFocus
             trapFocus
             withinPortal

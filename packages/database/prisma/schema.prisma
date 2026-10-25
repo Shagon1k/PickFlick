@@ -102,6 +102,7 @@ model User {
   targetedClubInvites      ClubInvite[]          @relation("ClubInviteTarget")
   answeredClubInvites      ClubInvite[]          @relation("ClubInviteResponder")
   personalRatings          PersonalMovieRating[]
+  watchlistItems           WatchlistItem[]
   memberships              Membership[]
   authSessions             AuthSession[]
   providerAccounts         ProviderAccount[]
@@ -346,6 +347,7 @@ model Movie {
   nominations     Nomination[]
   pastNominations PastNomination[]
   personalRatings PersonalMovieRating[]
+  watchlistItems  WatchlistItem[]
 }
 
 model MovieExternalId {
@@ -517,6 +519,23 @@ model PersonalMovieRating {
   updatedAt DateTime             @default(now()) @updatedAt @db.Timestamptz(3)
   user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   movie     Movie                @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@id([userId, movieId])
+}
+
+enum WatchlistPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model WatchlistItem {
+  userId   String            @db.Uuid
+  movieId  String            @db.Uuid
+  priority WatchlistPriority
+  addedAt  DateTime          @default(now()) @db.Timestamptz(3)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie    Movie             @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@id([userId, movieId])
 }

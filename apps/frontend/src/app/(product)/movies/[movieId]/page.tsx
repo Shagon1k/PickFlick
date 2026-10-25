@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { getMovieDetails } from '#api/movies.server';
 import { getPersonalRating } from '#api/personal-rating.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
+import { getWatchlistItem } from '#api/watchlist.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
@@ -41,7 +42,10 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     if (!result || result.state === 'unavailable') {
         return <MovieUnavailable movieId={movieId} reason={result?.reason} />;
     }
-    const rating = await getPersonalRating(movieId);
+    const [rating, watchlistItem] = await Promise.all([
+        getPersonalRating(movieId),
+        getWatchlistItem(movieId),
+    ]);
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
@@ -61,7 +65,12 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                         Some provider details are unavailable. Available information is shown below.
                     </Alert>
                 ) : null}
-                <MovieHero movie={movie} title={title} rating={rating} />
+                <MovieHero
+                    movie={movie}
+                    title={title}
+                    rating={rating}
+                    watchlistItem={watchlistItem}
+                />
                 <MovieLinks
                     imdb={response?.links.imdb ?? null}
                     kinopoisk={response?.links.kinopoisk ?? null}

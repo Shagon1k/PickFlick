@@ -15,6 +15,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
+import { WatchlistModule } from './modules/watchlist/watchlist.module.js';
 
 // Each client may send 120 requests a minute.
 const DEFAULT_RATE_LIMIT = { ttl: 60_000, limit: 120 };
@@ -64,6 +65,7 @@ export class AppModule {
                 HealthModule,
                 MoviesModule,
                 SessionsModule,
+                WatchlistModule,
             ],
             providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
         };

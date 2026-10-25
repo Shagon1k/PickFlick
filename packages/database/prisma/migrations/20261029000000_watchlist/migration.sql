@@ -1,0 +1,13 @@
+BEGIN;
+
+CREATE TYPE "WatchlistPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
+
+CREATE TABLE "WatchlistItem" (
+    "userId" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "movieId" UUID NOT NULL REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "priority" "WatchlistPriority" NOT NULL,
+    "addedAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("userId", "movieId")
+);
+
+COMMIT;
