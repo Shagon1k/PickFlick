@@ -14,6 +14,8 @@ const SAVE_FAILURE: IFailureCopy = {
         MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
         ATTENDEE_UNAVAILABLE:
             'An attendee is unavailable in this Club. Reload the form to review the roster.',
+        NOMINATOR_UNAVAILABLE:
+            'A nominator is unavailable in this Club. Reload the form to review the roster.',
         ATTENDEE_DUPLICATE: 'Select each person only once, even if they rejoined the Club.',
         SCORE_OUT_OF_RANGE:
             'The Club Selection scale changed. Reload the form and review the scores.',

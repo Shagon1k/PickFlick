@@ -1,4 +1,8 @@
-import type { TPastSelection, TSelectionOutcome, TSession } from '@pickflick/contracts';
+import type {
+    TImportedSelectionOutcome,
+    TLiveSelectionOutcome,
+    TSession,
+} from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
@@ -26,9 +30,9 @@ export default function Completed({ session }: { session: TSession }) {
             )}
             <section className={styles.panel} aria-labelledby="rivals-heading">
                 <h2 id="rivals-heading">Nomination Rivals</h2>
-                {session.pastSelection ? (
+                {session.selectionOutcome?.source === 'IMPORTED' ? (
                     <ImportedNominations
-                        evidence={session.pastSelection}
+                        evidence={session.selectionOutcome}
                         movieId={session.movieId}
                     />
                 ) : (
@@ -43,7 +47,7 @@ function ImportedNominations({
     evidence,
     movieId,
 }: {
-    evidence: TPastSelection;
+    evidence: TImportedSelectionOutcome;
     movieId: string | null;
 }) {
     if (evidence.nominations === null)
@@ -66,9 +70,9 @@ function ImportedNominations({
                 Imported historical evidence · Scale {evidence.scaleMin}–{evidence.scaleMax}.
             </p>
             <p>
-                The list and scores may be incomplete. Nominators, original submission times and
-                Selection closure are unknown. Recorded totals do not establish a ranking or why
-                this Movie was screened.
+                The list and scores may be incomplete. Original submission times and Selection
+                closure are unknown. Recorded totals do not establish a ranking or why this Movie
+                was screened.
             </p>
             <ul className={styles.ranking} aria-label="Imported historical nominations">
                 {evidence.nominations.map((row) => (
@@ -79,6 +83,11 @@ function ImportedNominations({
                         {row.movie.id === movieId ? (
                             <span className={styles.winner}>Screened Movie</span>
                         ) : null}
+                        <p>
+                            {row.author === null
+                                ? 'Nominator unknown or hidden.'
+                                : `Nominated by ${row.author}`}
+                        </p>
                         <p>
                             {row.total === null
                                 ? 'Selection scores unknown.'
@@ -95,7 +104,7 @@ function NominationHistory({
     outcome,
     type,
 }: {
-    outcome: TSelectionOutcome | null;
+    outcome: TLiveSelectionOutcome | null;
     type: TSession['type'];
 }) {
     if (!outcome)
@@ -118,7 +127,7 @@ function NominationHistory({
     );
 }
 
-function HistoricalVotes({ breakdown }: { breakdown: TSelectionOutcome['breakdown'] }) {
+function HistoricalVotes({ breakdown }: { breakdown: TLiveSelectionOutcome['breakdown'] }) {
     if (!breakdown)
         return (
             <p>Vote breakdowns are hidden by this Club’s plan or Session visibility settings.</p>

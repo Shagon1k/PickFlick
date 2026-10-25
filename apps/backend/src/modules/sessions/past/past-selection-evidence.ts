@@ -18,6 +18,20 @@ export function assertPastSelectionRange(
         throw new ConflictException({ reason: 'SCORE_OUT_OF_RANGE' });
 }
 
+export async function assertPastNominators(
+    tx: Prisma.TransactionClient,
+    clubId: string,
+    nominations: TCreatePastSession['nominations'],
+) {
+    const ids = [
+        ...new Set(
+            nominations.map((row) => row.nominatorMembershipId).filter((id) => id !== undefined),
+        ),
+    ];
+    if ((await tx.membership.count({ where: { clubId, id: { in: ids } } })) !== ids.length)
+        throw new ConflictException({ reason: 'NOMINATOR_UNAVAILABLE' });
+}
+
 export async function assertPastSelectionReplay(
     tx: Prisma.TransactionClient,
     sessionId: string,
@@ -36,8 +50,14 @@ export async function assertPastSelectionReplay(
         row.scores.map((cell) => `${row.membershipId}:${cell.movieId}:${cell.score}`),
     );
     if (
-        JSON.stringify(saved.map((row) => row.movieId).toSorted()) !==
-            JSON.stringify(input.nominations.toSorted()) ||
+        JSON.stringify(
+            saved.map((row) => `${row.movieId}:${row.nominatorMembershipId ?? ''}`).toSorted(),
+        ) !==
+            JSON.stringify(
+                input.nominations
+                    .map((row) => `${row.movieId}:${row.nominatorMembershipId ?? ''}`)
+                    .toSorted(),
+            ) ||
         JSON.stringify(savedCells.toSorted()) !== JSON.stringify(inputCells.toSorted())
     )
         throw new ConflictException({ reason: 'SUBMISSION_MISMATCH' });
@@ -50,11 +70,12 @@ export async function createPastSelection(
 ) {
     const participants = await tx.sessionParticipant.findMany({ where: { sessionId } });
     const participantIds = new Map(participants.map((row) => [row.membershipId, row.id]));
-    for (const movieId of input.nominations) {
+    for (const { movieId, nominatorMembershipId } of input.nominations) {
         await tx.pastNomination.create({
             data: {
                 sessionId,
                 movieId,
+                nominatorMembershipId,
                 scores: {
                     create: input.scoreMatrix.flatMap((row) =>
                         row.scores

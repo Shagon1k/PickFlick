@@ -1,10 +1,10 @@
-import { selectionReasonSchema, type TSelectionOutcome } from '@pickflick/contracts';
+import { selectionReasonSchema, type TLiveSelectionOutcome } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 import { z } from 'zod';
 
 import type { TMembership } from '../../clubs/access/club-access.js';
-import { getClubEntitlements } from '../../clubs/access/club-tiers.js';
 import type { MoviesService } from '../../movies/movies.service.js';
+import { canViewSelectionBreakdown } from '../session-access.js';
 
 // Read the stored JSON boundary once; never return its ballots, recipients or provider IDs.
 const snapshotSchema = z.object({
@@ -34,13 +34,10 @@ export async function loadSelectionOutcome(
     session: Prisma.SessionGetPayload<object>,
     membership: TMembership,
     moviesService: MoviesService,
-): Promise<TSelectionOutcome | null> {
+): Promise<TLiveSelectionOutcome | null> {
     if (session.selectionResult === null) return null;
     const saved = snapshotSchema.parse(session.selectionResult);
-    const canSeeBreakdown =
-        membership.role !== 'MEMBER' ||
-        (getClubEntitlements(session.clubId).voteResultVisibility === 'ADMIN_CONFIGURABLE' &&
-            session.showVoteResults);
+    const canSeeBreakdown = canViewSelectionBreakdown(session, membership);
     const visible = canSeeBreakdown
         ? saved.ranking
         : saved.ranking.filter((row) => row.id === saved.winnerNominationId);
@@ -67,6 +64,7 @@ export async function loadSelectionOutcome(
         nominations.map((row) => [row.id, row.participant.membership.user.displayName]),
     );
     return {
+        source: 'LIVE',
         winner: movies.get(saved.movieId)!,
         author: authors.get(saved.winnerNominationId) ?? null,
         closedAt: saved.closedAt,

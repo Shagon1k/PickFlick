@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import { multilineText, optionalText, singleLineText } from '../common/text.js';
 import { nominationsSchema } from './nomination.schema.js';
-import { pastSelectionSchema } from './past-selection.schema.js';
 import { ratingSchema } from './rating.schema.js';
 import { selectionOutcomeSchema, selectionSchema } from './selection.schema.js';
 
@@ -91,7 +90,6 @@ export const sessionSchema = z.strictObject({
     selection: selectionSchema.nullable(),
     rating: ratingSchema.nullable(),
     selectionOutcome: selectionOutcomeSchema.nullable(),
-    pastSelection: pastSelectionSchema.nullable(),
     canEdit: z.boolean(),
     canCancel: z.boolean(),
 });

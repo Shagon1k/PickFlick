@@ -196,6 +196,7 @@ model Membership {
   user                  User                             @relation(fields: [userId], references: [id], onDelete: Restrict)
   auditEvents           ClubAuditEvent[]
   sessionParticipants   SessionParticipant[]
+  pastNominations       PastNomination[]
   createdSessionInvites SessionInvite[]                  @relation("SessionInviteCreator")
 
   @@unique([id, clubId])
@@ -388,14 +389,16 @@ model Nomination {
   @@index([sessionId, submittedAt])
 }
 
-// Imported evidence has no known nominator, ballot completeness or original submission time.
+// Imported evidence may have a known nominator, but no ballot completeness or original time.
 model PastNomination {
-  id        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionId String               @db.Uuid
-  movieId   String               @db.Uuid
-  session   Session              @relation(fields: [sessionId], references: [id], onDelete: Restrict)
-  movie     Movie                @relation(fields: [movieId], references: [id], onDelete: Restrict)
-  scores    PastSelectionScore[]
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId             String               @db.Uuid
+  movieId               String               @db.Uuid
+  nominatorMembershipId String?              @db.Uuid
+  session               Session              @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  movie                 Movie                @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  nominator             Membership?          @relation(fields: [nominatorMembershipId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  scores                PastSelectionScore[]
 
   @@unique([sessionId, movieId])
   @@unique([id, sessionId])

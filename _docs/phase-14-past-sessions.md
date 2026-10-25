@@ -183,3 +183,39 @@ Visual baselines are unchanged.
 live Selection, Watching and Rating regressions. Local gitleaks is unavailable; the existing commit
 hook reports that limitation and CI retains the mandatory secret scan. Fresh CI and the required
 exact-head hosted preview with owner acknowledgment remain pending.
+
+Owner-approved #53 review fix round 2 on 2026-10-25 starts from exact PR head
+`45c9981445a8c09a89bacd158227a8817f8f5325` and addresses the three captured threads on
+[PR #187](https://github.com/Shagon1k/PickFlick/pull/187). Both outcome loaders call the shared
+Selection-breakdown visibility predicate. Session detail uses a discriminated `selectionOutcome`
+with LIVE native results and IMPORTED sparse evidence; active voting and post-screening ratings
+retain their existing fields.
+
+Migration 30 adds nullable historical nominator Membership attribution and same-Club integrity
+checks while retaining evidence immutability. Existing nominations keep unknown authors. The request,
+form and history support known current/former nominators independently of attendance. Replay matching
+includes authors and ignores equivalent ordering. Current display names, anonymization, the saved
+author setting and existing result visibility govern projection. Migrations run only against disposable
+local test data. No inferred backfill, shared database changes, new dependency, environment contract
+or infrastructure changes are included.
+
+Round 2 local verification uses Node 24.15.0 / pnpm 11.25.0 and a new disposable
+`pickflick_test` database on loopback port 35432. All 30 migrations apply. The migration compatibility
+probe retains existing nomination IDs, Movies and zero scores with null authors. All 244 integration
+tests across 27 files pass, including same-Club attribution, immutable authors, reordered replay,
+changed-author rejection, non-attendees, former members, anonymized names and both visibility rules.
+
+`pnpm verify` passes the production audit gate, lint, Knip, formatting, type checking, all 352 unit
+tests and every workspace build. The full Playwright journey report records all 12 passing tests;
+a focused repeat records all six past-Session tests passing. The command wrappers reported exit 143
+before their children finished; the final reports confirm completion, and both journey ports were
+verified released before the next browser suite. No test configuration or timeout changes were made.
+Phone and desktop form/history captures were inspected. The four responsive journeys include axe,
+no page overflow, author selection and history attribution. Visual baselines are unchanged.
+
+`pnpm test:ui:smoke` reports all 54 checks passed, including native Completed history, live Selection,
+Watching and Rating regressions. The disposable PostgreSQL and MinIO containers were stopped after
+verification; their test volumes are retained. Local gitleaks remains unavailable, and CI retains the
+mandatory scan. Fresh CI is not awaited. Exact-head hosted preview and owner acknowledgment remain
+required before acceptance; #53 remains in Project 3 Human Review. Review conversations are left for
+Kurami to reply to and resolve after it observes the new head and CI.

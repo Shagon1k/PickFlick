@@ -23,15 +23,9 @@ export class SelectionService {
         session: Prisma.SessionGetPayload<object>,
         membership: Awaited<ReturnType<typeof findMembership>>,
     ) {
-        return loadSelectionOutcome(tx, session, membership, this.movies);
-    }
-
-    async loadPastOutcome(
-        tx: Prisma.TransactionClient,
-        session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
-    ) {
-        return loadPastSelection(tx, session, membership, this.movies);
+        return session.type === 'PAST'
+            ? loadPastSelection(tx, session, membership, this.movies)
+            : loadSelectionOutcome(tx, session, membership, this.movies);
     }
 
     async loadSelection(

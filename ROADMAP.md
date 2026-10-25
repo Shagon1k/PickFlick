@@ -292,8 +292,10 @@ the same result rules and cannot advance Nomination with no films.
   `showRatingResults`. A caller can always read their own response while they remain a Club member.
 - Past Session nomination lists and Selection matrices preserve partial imported evidence. Missing
   cells remain unknown; zero is an explicit score on the saved Club scale. Recorded totals neither
-  establish a complete ballot nor determine a winner. Original nominators and phase times remain
-  unknown. Existing post-close result visibility applies to imported breakdowns.
+  establish a complete ballot nor determine a winner. Each nomination may identify a current or former
+  Club Membership, including a non-attendee; omitted authors remain unknown. Author visibility and
+  current anonymized names apply. Original phase and submission times remain unknown. Existing
+  post-close result visibility applies to imported breakdowns.
 
 ### Plans and limits
 

@@ -418,14 +418,16 @@ here.
 - Completed identifies imported history and unknown rating submission times. Missing attendance,
   ratings, nominations and votes remain unknown; existing result visibility still applies.
 - Optional Nomination Details reuse Movie search and allow each nominated Movie once. Selected
-  attendees form the matrix rows; nominations form columns. Each cell offers Unknown and the inclusive
-  Club Selection scale, including zero where permitted. Clearing a cell restores Unknown. Removing
+  attendees form the matrix rows; nominations form columns. Each nomination offers an optional
+  nominator selector with Unknown and current/former Club members, independent of attendance.
+  Each cell offers Unknown and the inclusive Club Selection scale, including zero where permitted. Clearing a cell restores Unknown. Removing
   an attendee or nomination clears its associated cells. The matrix scrolls locally on phones, with
   labeled controls, table headers, visible focus and 44px targets.
 - Completed labels imported nomination lists and recorded score totals as potentially incomplete.
-  Missing scores display Unknown rather than zero. Nominators, original submission times and Selection
-  closure remain unknown. The screened Movie is marked independently of recorded totals; no ranking
-  or winner rationale is inferred. Hidden evidence has explicit copy. Imports remain read-only.
+  Missing scores display Unknown rather than zero. Permitted known nominators use current display
+  names; omitted or hidden authors are labeled unknown or hidden. Original submission times and
+  Selection closure remain unknown. The screened Movie is marked independently of recorded totals;
+  no ranking or winner rationale is inferred. Hidden evidence has explicit copy. Imports remain read-only.
 
 #### Public, Login and Contact
 

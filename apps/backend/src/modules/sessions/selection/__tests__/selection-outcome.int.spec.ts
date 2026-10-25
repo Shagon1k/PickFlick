@@ -81,7 +81,9 @@ describe('Selection outcome', () => {
         expect(JSON.stringify(detail.selectionOutcome)).not.toMatch(
             /participantId|externalIds|recipientIds|membershipId|"scores"|"inputs"/u,
         );
-        return detail;
+        if (detail.selectionOutcome?.source === 'IMPORTED')
+            throw new Error('Expected live outcome');
+        return { ...detail, selectionOutcome: detail.selectionOutcome };
     }
     async function close() {
         const response = await api.request(`/sessions/${sessionId}/selection/close`, {
@@ -155,6 +157,7 @@ describe('Selection outcome', () => {
             const detail = await read();
             expect(detail.selection).toBeNull();
             expect(detail.selectionOutcome).toMatchObject({
+                source: 'LIVE',
                 winner: { id: movieIds[0] },
                 author: null,
                 closure: 'MANUAL',

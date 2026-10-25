@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { CLUB_SELECTION_SCALE_CEILING } from '../clubs/club.schema.js';
 import { nominationMovieSchema } from './nomination.schema.js';
+import { importedSelectionOutcomeSchema } from './past-selection.schema.js';
 
 const selectionScoreSchema = z.strictObject({
     nominationId: z.uuid(),
@@ -29,7 +30,8 @@ export const selectionReasonSchema = z.enum([
 ]);
 export type TSelectionReason = z.infer<typeof selectionReasonSchema>;
 
-export const selectionOutcomeSchema = z.strictObject({
+export const liveSelectionOutcomeSchema = z.strictObject({
+    source: z.literal('LIVE'),
     winner: nominationMovieSchema,
     author: z.string().nullable(),
     closedAt: z.iso.datetime(),
@@ -53,6 +55,11 @@ export const selectionOutcomeSchema = z.strictObject({
         })
         .nullable(),
 });
+export type TLiveSelectionOutcome = z.infer<typeof liveSelectionOutcomeSchema>;
+export const selectionOutcomeSchema = z.discriminatedUnion('source', [
+    liveSelectionOutcomeSchema,
+    importedSelectionOutcomeSchema,
+]);
 export type TSelectionOutcome = z.infer<typeof selectionOutcomeSchema>;
 
 export const selectionSchema = z.strictObject({

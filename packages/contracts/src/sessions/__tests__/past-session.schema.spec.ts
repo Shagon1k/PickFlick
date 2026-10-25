@@ -20,12 +20,17 @@ describe('createPastSessionSchema', () => {
     });
     it('should preserve partial matrices, unknown cells and explicit zero independently of ratings', () => {
         const membershipId = randomUUID();
-        const nominations = [randomUUID(), randomUUID()];
+        const nominations = [
+            { movieId: randomUUID(), nominatorMembershipId: randomUUID() },
+            { movieId: randomUUID() },
+        ];
         const input = {
             ...minimal,
             attendees: [{ membershipId }],
             nominations,
-            scoreMatrix: [{ membershipId, scores: [{ movieId: nominations[0], score: 0 }] }],
+            scoreMatrix: [
+                { membershipId, scores: [{ movieId: nominations[0]!.movieId, score: 0 }] },
+            ],
         };
         expect(createPastSessionSchema.parse(input)).toEqual(input);
         expect(createPastSessionSchema.safeParse({ ...minimal, nominations }).success).toBe(true);
@@ -35,9 +40,13 @@ describe('createPastSessionSchema', () => {
         const movieId = randomUUID();
         const cell = { movieId, score: 3 };
         const row = { membershipId, scores: [cell] };
-        const input = { ...minimal, attendees: [{ membershipId }], nominations: [movieId] };
+        const input = { ...minimal, attendees: [{ membershipId }], nominations: [{ movieId }] };
         for (const patch of [
-            { nominations: [movieId, movieId] },
+            { nominations: [{ movieId }, { movieId, nominatorMembershipId: membershipId }] },
+            { nominations: [movieId] },
+            { nominations: [{ movieId, nominatorMembershipId: 'invalid' }] },
+            { nominations: [{ movieId, nominatorMembershipId: null }] },
+            { nominations: [{ movieId, submittedAt: minimal.scheduledAt }] },
             { scoreMatrix: [row, row] },
             { scoreMatrix: [{ ...row, membershipId: randomUUID() }] },
             { scoreMatrix: [{ ...row, scores: [cell, cell] }] },

@@ -341,6 +341,13 @@ for (const viewport of canonicalViewports) {
                 await addNomination(page, query);
                 await expect(zero).toHaveValue('');
                 await zero.selectOption('0');
+                const nominator = page.getByRole('combobox', {
+                    name: 'Nominator for A remembered film (optional)',
+                });
+                await nominator.click();
+                await page
+                    .getByRole('option', { name: 'Former attendee (former member)', exact: true })
+                    .click();
                 await context.setOffline(true);
                 await page.getByRole('button', { name: 'Log Session', exact: true }).click();
                 await expect(
@@ -382,9 +389,13 @@ for (const viewport of canonicalViewports) {
                 ).toBeVisible();
                 await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
                 await expect(
-                    rivals.getByText(
-                        /Nominators, original submission times and Selection closure are unknown/,
-                    ),
+                    rivals.getByText(/Original submission times and Selection closure are unknown/),
+                ).toBeVisible();
+                await expect(
+                    rivals.getByText('Nominated by Former attendee', { exact: true }),
+                ).toBeVisible();
+                await expect(
+                    rivals.getByText('Nominator unknown or hidden.', { exact: true }),
                 ).toBeVisible();
                 await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
                 expect(

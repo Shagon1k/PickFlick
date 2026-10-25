@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
+import Select from '#components/ui/Select/Select';
 
 import styles from './PastNominations.module.scss';
 
@@ -34,7 +35,7 @@ export default function PastNominations({
     const { nominations, scoreMatrix } = evidence;
     function removeNomination(movieId: string) {
         onChange({
-            nominations: nominations.filter((id) => id !== movieId),
+            nominations: nominations.filter((row) => row.movieId !== movieId),
             scoreMatrix: scoreMatrix.map((row) => ({
                 ...row,
                 scores: row.scores.filter((cell) => cell.movieId !== movieId),
@@ -69,7 +70,7 @@ export default function PastNominations({
                 error={error}
                 onChange={(id, movie) => {
                     if (!id || !movie) return;
-                    if (nominations.includes(id)) {
+                    if (nominations.some((row) => row.movieId === id)) {
                         setMessage('This Movie is already in the nomination list.');
                         return;
                     }
@@ -77,17 +78,43 @@ export default function PastNominations({
                         ...current,
                         [id]: movie.title ?? movie.originalTitle ?? 'Untitled film',
                     }));
-                    onChange({ nominations: [...nominations, id], scoreMatrix });
+                    onChange({ nominations: [...nominations, { movieId: id }], scoreMatrix });
                     setMessage(
-                        'Nomination added. Original nominator and submission time are unknown.',
+                        'Nomination added. Choose a nominator if known; original submission time is unknown.',
                     );
                 }}
             />
             <p role="status">{message}</p>
             <ul className={styles.movies} aria-label="Imported nominations">
-                {nominations.map((id) => (
+                {nominations.map(({ movieId: id, nominatorMembershipId }) => (
                     <li key={id}>
                         <span>{titles[id]}</span>
+                        <Select
+                            id={`nominator-${id}`}
+                            label={`Nominator for ${titles[id]} (optional)`}
+                            value={nominatorMembershipId ?? ''}
+                            disabled={disabled}
+                            data={[
+                                { value: '', label: 'Unknown' },
+                                ...members.map((member) => ({
+                                    value: member.id,
+                                    label: `${member.displayName}${member.status === 'ACTIVE' ? '' : ' (former member)'}`,
+                                })),
+                            ]}
+                            onChange={(value) =>
+                                onChange({
+                                    nominations: nominations.map((row) =>
+                                        row.movieId === id
+                                            ? {
+                                                  movieId: id,
+                                                  nominatorMembershipId: value || undefined,
+                                              }
+                                            : row,
+                                    ),
+                                    scoreMatrix,
+                                })
+                            }
+                        />
                         <Button
                             variant="ghost"
                             disabled={disabled}
@@ -112,7 +139,7 @@ export default function PastNominations({
                         <thead>
                             <tr>
                                 <th scope="col">Attendee</th>
-                                {nominations.map((id) => (
+                                {nominations.map(({ movieId: id }) => (
                                     <th scope="col" key={id}>
                                         {titles[id]}
                                     </th>
@@ -127,7 +154,7 @@ export default function PastNominations({
                                 return (
                                     <tr key={attendee.membershipId}>
                                         <th scope="row">{name}</th>
-                                        {nominations.map((movieId) => (
+                                        {nominations.map(({ movieId }) => (
                                             <td key={movieId}>
                                                 <select
                                                     aria-label={`Selection score for ${name}: ${titles[movieId]}`}

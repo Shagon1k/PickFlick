@@ -583,7 +583,8 @@ saved snapshot or its selected Movie. It leaves historical Sessions untouched. A
 updated API; existing Selection Sessions are checked on their next workflow mutation.
 
 This internal snapshot is never included in Session detail responses. Session detail returns a
-separate `selectionOutcome` after closure, including in later phases. Every current Club member
+discriminated `selectionOutcome` after closure, including in later phases. Native results have
+`source: 'LIVE'`; imported evidence has `source: 'IMPORTED'` without fabricated closure or ranking fields. Every current Club member
 can see the winning Movie and closure information. Admins and Moderators can read aggregate
 rankings; ordinary members need the current Pro entitlement and the Session's snapshotted
 `showVoteResults`. Free members receive `breakdown: null`, even if that flag is stored as true.
@@ -684,7 +685,7 @@ and Memberships outside the Club are rejected before writing.
 
 The request requires a UUID `submissionId`, used as the Session primary key. The form retains it
 across retries. Under the Club lock, an authorized replay by the original creator returns the saved
-Session only when its date, location, Movie, topic, notes, attendees, nominations and optional scores match.
+Session only when its date, location, Movie, topic, notes, attendees, nominations (including optional authors) and optional scores match.
 Attendee, nomination and matrix order are ignored; dates and optional text are compared after normalization. Changed
 evidence returns `SUBMISSION_MISMATCH` without rewriting history or adding audit events.
 A key already used by another Club, creator or Session type returns `SUBMISSION_CONFLICT`.
@@ -696,8 +697,10 @@ departed Membership, only for authorized operators. Attendees reference those re
 so later departure or anonymization does not erase shared history. No creator participant, live nominations,
 ballots, Selection result snapshot or phase times are generated.
 
-Optional `nominations` contain unique canonical Movie IDs; `scoreMatrix` contains selected attendee
-Membership IDs with sparse Movie/score cells. A nomination list needs no attendees or scores. A matrix
+Optional `nominations` contain objects with a unique canonical `movieId` and optional
+`nominatorMembershipId`. Authors may be current or former Club members, including non-attendees;
+missing authors remain unknown. Foreign-Club Memberships reject the entire import.
+`scoreMatrix` contains selected attendee Membership IDs with sparse Movie/score cells. A nomination list needs no attendees or scores. A matrix
 may omit rows and cells; empty rows carry no score evidence. Duplicate rows/Movies, unselected attendees,
 unknown Movies, malformed cells and scores outside the Club scale snapshot reject the entire import.
 An unchanged replay uses the saved evidence even if the Club scale has since changed.
@@ -705,10 +708,19 @@ An unchanged replay uses the saved evidence even if the Club scale has since cha
 Migration 29 adds `PastNomination` and `PastSelectionScore`, separate from live records that require
 a nominator and complete ballots. Same-Session participant foreign keys retain Membership attribution
 without copying names. Database triggers require Completed PAST provenance, enforce the saved scale
-and prohibit evidence updates. No original submission times or nominators are fabricated. Apply the
+and prohibit evidence updates. No original submission times or missing nominators are fabricated. Apply the
 migration before the API; existing Sessions need no backfill.
 
-The `pastSelection` projection returns the saved scale and permitted imported nomination summaries.
+Migration 30 adds nullable `PastNomination.nominatorMembershipId` with a retained Membership foreign
+key and same-Club checks on inserts and Club reassignment. The existing evidence trigger prohibits
+author edits. Existing imported nominations retain null authors; no author backfill runs.
+Apply migration 30 before the updated API.
+
+The `selectionOutcome` union replaces the separate imported response field. Its `IMPORTED` variant
+returns the saved scale and permitted imported nomination summaries, including author display names
+when `showNominationAuthors` permits them. Names follow current account data and anonymization;
+Membership IDs remain private. Its `LIVE` variant preserves native winner, closure and breakdown
+behavior. Active voting still uses `selection`; imported post-screening ratings still use `rating`.
 Zero is a recorded score; an absent score total is null. Totals count only supplied cells and do not
 rank nominations or recalculate the screened Movie. Current plan and snapshotted vote-result visibility
 use the same rules as live post-close breakdowns. Individual matrix cells and Membership IDs remain

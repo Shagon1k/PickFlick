@@ -1,7 +1,7 @@
 import type {
     ISessionRoster,
+    TLiveSelectionOutcome,
     TSelection,
-    TSelectionOutcome,
     TSession,
     TSubmitSelection,
 } from '@pickflick/contracts';
@@ -118,7 +118,6 @@ export function handleSelection(
         progressVersion: version,
         nominations: null,
         selection: isClosed ? null : buildSelection(token, ballot),
-        pastSelection: null,
         selectionOutcome: isClosed ? buildOutcome(token) : null,
         rating: null,
         canEdit: token.includes('operator'),
@@ -128,9 +127,10 @@ export function handleSelection(
     return true;
 }
 
-function buildOutcome(token: string): TSelectionOutcome {
+function buildOutcome(token: string): TLiveSelectionOutcome {
     const nominations = buildSelection(token, null).nominations;
     return {
+        source: 'LIVE',
         winner: nominations[0]!.movie,
         author: nominations[0]!.author,
         closedAt: '2026-10-15T12:00:00.000Z',

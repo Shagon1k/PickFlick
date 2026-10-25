@@ -6,6 +6,7 @@ import { PrismaService } from '../../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../../clubs/access/club-access.js';
 import { assertManager } from '../session-access.js';
 import {
+    assertPastNominators,
     assertPastSelectionRange,
     assertPastSelectionReplay,
     createPastSelection,
@@ -87,9 +88,12 @@ export class PastSessionsService {
                 await assertPastSelectionReplay(tx, id, input);
                 return;
             }
-            const movieIds = [...new Set([input.movieId, ...nominations])];
+            const movieIds = [
+                ...new Set([input.movieId, ...nominations.map((row) => row.movieId)]),
+            ];
             if ((await tx.movie.count({ where: { id: { in: movieIds } } })) !== movieIds.length)
                 throw new ConflictException({ reason: 'MOVIE_UNAVAILABLE' });
+            await assertPastNominators(tx, clubId, nominations);
             const settings = await snapshotSessionSettings(tx, clubId);
             assertPastSelectionRange(scoreMatrix, settings);
             const members = await tx.membership.findMany({

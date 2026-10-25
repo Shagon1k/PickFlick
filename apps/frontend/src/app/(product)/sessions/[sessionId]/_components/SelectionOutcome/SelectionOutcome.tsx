@@ -1,4 +1,4 @@
-import type { TSelectionOutcome } from '@pickflick/contracts';
+import type { TLiveSelectionOutcome } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import { formatCount, formatUtcDateTime } from '#lib/format';
@@ -7,7 +7,7 @@ import { SELECTION_REASONS } from './selection-reasons';
 import styles from './SelectionOutcome.module.scss';
 
 interface ISelectionOutcomeProps {
-    data: TSelectionOutcome;
+    data: TLiveSelectionOutcome;
 }
 
 export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {

@@ -16,7 +16,14 @@ export const createPastSessionSchema = sessionDetailsSchema
                 score: z.int().min(1).max(10).optional(),
             }),
         ),
-        nominations: z.array(z.uuid()).default([]),
+        nominations: z
+            .array(
+                z.strictObject({
+                    movieId: z.uuid(),
+                    nominatorMembershipId: z.uuid().optional(),
+                }),
+            )
+            .default([]),
         scoreMatrix: z
             .array(
                 z.strictObject({
@@ -37,7 +44,7 @@ export const createPastSessionSchema = sessionDetailsSchema
         },
     )
     .superRefine((input, context) => {
-        if (new Set(input.nominations).size !== input.nominations.length)
+        if (new Set(input.nominations.map((row) => row.movieId)).size !== input.nominations.length)
             context.addIssue({
                 code: 'custom',
                 path: ['nominations'],
@@ -56,7 +63,12 @@ export const createPastSessionSchema = sessionDetailsSchema
             if (
                 !input.attendees.some((attendee) => attendee.membershipId === row.membershipId) ||
                 new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length ||
-                row.scores.some((cell) => !input.nominations.includes(cell.movieId))
+                row.scores.some(
+                    (cell) =>
+                        !input.nominations.some(
+                            (nomination) => nomination.movieId === cell.movieId,
+                        ),
+                )
             )
                 context.addIssue({
                     code: 'custom',

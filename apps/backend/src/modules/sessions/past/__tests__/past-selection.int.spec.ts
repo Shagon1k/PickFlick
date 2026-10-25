@@ -58,7 +58,7 @@ describe('Past Selection evidence', () => {
             location: 'Old cinema',
             movieId: movieIds[0]!,
             attendees: memberships.map((membershipId) => ({ membershipId })),
-            nominations: movieIds,
+            nominations: movieIds.map((movieId) => ({ movieId })),
             scoreMatrix: [
                 {
                     membershipId: memberships[0]!,
@@ -73,22 +73,43 @@ describe('Past Selection evidence', () => {
     }
     const create = (input: unknown, userId = users[0]) =>
         api.request(`/clubs/${clubId}/sessions/past`, { userId, method: 'POST', json: input });
-    const get = async (id: string, userId = users[0]) =>
-        sessionSchema.parse(await (await api.request(`/sessions/${id}`, { userId })).json());
+    const get = async (id: string, userId = users[0]) => {
+        const session = sessionSchema.parse(
+            await (await api.request(`/sessions/${id}`, { userId })).json(),
+        );
+        if (session.selectionOutcome?.source !== 'IMPORTED')
+            throw new Error('Expected imported outcome');
+        return { ...session, selectionOutcome: session.selectionOutcome };
+    };
 
     it('should store only supplied partial evidence without live ballots, authors, times or recomputed winners', async () => {
         const input = buildInput();
         expect((await create(input)).status).toBe(201);
         const session = await get(input.submissionId);
         expect(session.movieId).toBe(movieIds[0]);
-        expect(session.selectionOutcome).toBeNull();
-        expect(session.pastSelection).toMatchObject({
+        expect(session.selectionOutcome).toMatchObject({
+            source: 'IMPORTED',
             scaleMin: 0,
             scaleMax: 5,
             nominations: expect.arrayContaining([
-                { movie: expect.objectContaining({ id: movieIds[0] }), total: 0, scoreCount: 1 },
-                { movie: expect.objectContaining({ id: movieIds[1] }), total: 8, scoreCount: 2 },
-                { movie: expect.objectContaining({ id: movieIds[2] }), total: null, scoreCount: 0 },
+                {
+                    movie: expect.objectContaining({ id: movieIds[0] }),
+                    author: null,
+                    total: 0,
+                    scoreCount: 1,
+                },
+                {
+                    movie: expect.objectContaining({ id: movieIds[1] }),
+                    author: null,
+                    total: 8,
+                    scoreCount: 2,
+                },
+                {
+                    movie: expect.objectContaining({ id: movieIds[2] }),
+                    author: null,
+                    total: null,
+                    scoreCount: 0,
+                },
             ]),
         });
         expect(
@@ -104,13 +125,18 @@ describe('Past Selection evidence', () => {
         const input = {
             ...buildInput(),
             attendees: [],
-            nominations: [movieIds[1]],
+            nominations: [{ movieId: movieIds[1] }],
             scoreMatrix: [],
         };
         expect((await create(input)).status).toBe(201);
         const session = await get(input.submissionId);
-        expect(session.pastSelection?.nominations).toEqual([
-            { movie: expect.objectContaining({ id: movieIds[1] }), scoreCount: 0, total: null },
+        expect(session.selectionOutcome?.nominations).toEqual([
+            {
+                movie: expect.objectContaining({ id: movieIds[1] }),
+                author: null,
+                scoreCount: 0,
+                total: null,
+            },
         ]);
         expect(
             await api.prisma.sessionParticipant.count({ where: { sessionId: session.id } }),
@@ -128,11 +154,21 @@ describe('Past Selection evidence', () => {
             }
         }
         expect(
-            (await create({ ...buildInput(), nominations: [randomUUID()], scoreMatrix: [] }))
-                .status,
+            (
+                await create({
+                    ...buildInput(),
+                    nominations: [{ movieId: randomUUID() }],
+                    scoreMatrix: [],
+                })
+            ).status,
         ).toBe(409);
         expect(
-            (await create({ ...buildInput(), nominations: [movieIds[0], movieIds[0]] })).status,
+            (
+                await create({
+                    ...buildInput(),
+                    nominations: [{ movieId: movieIds[0] }, { movieId: movieIds[0] }],
+                })
+            ).status,
         ).toBe(400);
         expect(
             (
@@ -190,7 +226,7 @@ describe('Past Selection evidence', () => {
                 error: { reason: 'SUBMISSION_MISMATCH' },
             });
         }
-        expect((await get(input.submissionId)).pastSelection).toMatchObject({
+        expect((await get(input.submissionId)).selectionOutcome).toMatchObject({
             scaleMin: 0,
             scaleMax: 5,
         });
@@ -215,26 +251,152 @@ describe('Past Selection evidence', () => {
         expect(saved.find((row) => row.score === 3)?.participant.membership.user.displayName).toBe(
             'Deleted user',
         );
-        expect((await get(input.submissionId)).pastSelection?.nominations).toEqual(
-            expect.arrayContaining([expect.objectContaining({ total: 8, scoreCount: 2 })]),
+        expect((await get(input.submissionId)).selectionOutcome?.nominations).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ author: null, total: 8, scoreCount: 2 }),
+            ]),
         );
     });
     it('should apply current plan and saved visibility before projecting imported evidence', async () => {
         const input = buildInput();
         expect((await create(input)).status).toBe(201);
-        expect((await get(input.submissionId, users[1])).pastSelection?.nominations).toBeNull();
+        expect((await get(input.submissionId, users[1])).selectionOutcome?.nominations).toBeNull();
         vi.spyOn(tiers, 'getClubEntitlements').mockReturnValue(tiers.getTierEntitlements('PRO'));
-        expect((await get(input.submissionId, users[1])).pastSelection?.nominations).toHaveLength(
-            3,
-        );
-        expect((await get(input.submissionId, users[2])).pastSelection?.nominations).toHaveLength(
-            3,
-        );
+        expect(
+            (await get(input.submissionId, users[1])).selectionOutcome?.nominations,
+        ).toHaveLength(3);
+        expect(
+            (await get(input.submissionId, users[2])).selectionOutcome?.nominations,
+        ).toHaveLength(3);
         await api.prisma.session.update({
             where: { id: input.submissionId },
             data: { showVoteResults: false },
         });
-        expect((await get(input.submissionId, users[1])).pastSelection?.nominations).toBeNull();
+        expect((await get(input.submissionId, users[1])).selectionOutcome?.nominations).toBeNull();
+    });
+    it('should retain known current and former non-attendee authors, unknown authors and anonymization visibility', async () => {
+        await api.prisma.membership.update({
+            where: { id: memberships[1] },
+            data: { status: 'LEFT', leftAt: new Date() },
+        });
+        const input = buildInput();
+        input.attendees = [];
+        input.scoreMatrix = [];
+        input.nominations = movieIds.map((movieId, index) => ({
+            movieId,
+            nominatorMembershipId: index < 2 ? memberships[index] : undefined,
+        }));
+        expect((await create(input)).status).toBe(201);
+        expect((await get(input.submissionId)).selectionOutcome.nominations).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    movie: expect.objectContaining({ id: movieIds[0] }),
+                    author: 'Test User',
+                }),
+                expect.objectContaining({
+                    movie: expect.objectContaining({ id: movieIds[1] }),
+                    author: 'Test User',
+                }),
+                expect.objectContaining({
+                    movie: expect.objectContaining({ id: movieIds[2] }),
+                    author: null,
+                }),
+            ]),
+        );
+        expect(
+            await api.prisma.sessionParticipant.count({ where: { sessionId: input.submissionId } }),
+        ).toBe(0);
+        await api.prisma.user.update({
+            where: { id: users[1] },
+            data: { status: 'ANONYMIZED', displayName: 'Deleted user' },
+        });
+        expect((await get(input.submissionId)).selectionOutcome.nominations).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    movie: expect.objectContaining({ id: movieIds[1] }),
+                    author: 'Deleted user',
+                }),
+            ]),
+        );
+        await api.prisma.session.update({
+            where: { id: input.submissionId },
+            data: { showNominationAuthors: false },
+        });
+        const hidden = (await get(input.submissionId)).selectionOutcome;
+        expect(hidden.nominations?.every((row) => row.author === null)).toBe(true);
+        expect(JSON.stringify(hidden)).not.toMatch(
+            /Deleted user|nominatorMembershipId|participantId|submittedAt|closedAt|winner|ranking/u,
+        );
+    });
+    it('should match reordered attribution and reject adding, removing or changing authors on replay', async () => {
+        const input = buildInput();
+        input.nominations[0]!.nominatorMembershipId = memberships[1]!;
+        expect((await create(input)).status).toBe(201);
+        expect(
+            (await create({ ...input, nominations: [...input.nominations].reverse() })).status,
+        ).toBe(201);
+        for (const nominations of [
+            input.nominations.map(({ movieId }) => ({ movieId })),
+            input.nominations.map((row, index) =>
+                index === 0 ? { ...row, nominatorMembershipId: memberships[0] } : row,
+            ),
+            input.nominations.map((row, index) =>
+                index === 1 ? { ...row, nominatorMembershipId: memberships[2] } : row,
+            ),
+        ]) {
+            const response = await create({ ...input, nominations });
+            expect(response.status).toBe(409);
+            expect(await response.json()).toMatchObject({
+                error: { reason: 'SUBMISSION_MISMATCH' },
+            });
+        }
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(1);
+    });
+    it('should reject foreign nominators at the API and database boundaries and keep attribution immutable', async () => {
+        const foreignClub = await api.prisma.club.create({
+            data: { id: randomUUID(), name: 'Other Club' },
+        });
+        const foreignMembership = await addMember(api.prisma, foreignClub.id, users[0]!, 'ADMIN');
+        const input = { ...buildInput(), attendees: [], scoreMatrix: [] };
+        const response = await create({
+            ...input,
+            nominations: [{ movieId: movieIds[0], nominatorMembershipId: foreignMembership }],
+        });
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({ error: { reason: 'NOMINATOR_UNAVAILABLE' } });
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(0);
+        input.nominations = [{ movieId: movieIds[0]!, nominatorMembershipId: memberships[1]! }];
+        expect((await create(input)).status).toBe(201);
+        await expect(
+            api.prisma.pastNomination.create({
+                data: {
+                    sessionId: input.submissionId,
+                    movieId: movieIds[1]!,
+                    nominatorMembershipId: foreignMembership,
+                },
+            }),
+        ).rejects.toThrow('same Club');
+        const nomination = await api.prisma.pastNomination.findFirstOrThrow({
+            where: { sessionId: input.submissionId },
+        });
+        await expect(
+            api.prisma.pastNomination.update({
+                where: { id: nomination.id },
+                data: { nominatorMembershipId: memberships[0] },
+            }),
+        ).rejects.toThrow('immutable');
+        await expect(
+            api.prisma.membership.update({
+                where: { id: memberships[1] },
+                data: { clubId: foreignClub.id },
+            }),
+        ).rejects.toThrow('same Club');
+        await expect(
+            api.prisma.session.update({
+                where: { id: input.submissionId },
+                data: { clubId: foreignClub.id },
+            }),
+        ).rejects.toThrow('same Club');
     });
     it('should enforce provenance, scale, immutability and same-Session attribution in the database', async () => {
         const input = buildInput();
