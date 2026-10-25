@@ -1,4 +1,4 @@
-/* As in the prototype: a tall ribbon over the poster's corner, unfilled until a film is saved. */
+/* A tall ribbon over the poster corner, filled only after a successful save. */
 .bookmark {
     position: absolute;
     top: 10px;
@@ -10,7 +10,7 @@
     height: 58px;
     padding: 0;
     color: var(--ivory-muted);
-    cursor: not-allowed;
+    cursor: pointer;
     background: transparent;
     border: 0;
     filter: drop-shadow(0 5px 12px color-mix(in sRGB, black 38%, transparent));
@@ -34,4 +34,121 @@
     fill: none;
     stroke: color-mix(in sRGB, var(--bg-deep) 70%, transparent);
     stroke-width: 2.6;
+}
+
+.bookmark:hover {
+    color: var(--ivory);
+    transform: translateY(-2px);
+}
+
+.bookmark[aria-disabled='true'] {
+    cursor: progress;
+}
+
+.bookmark:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.bookmark.m-saved {
+    color: var(--gold);
+}
+
+.bookmark.m-saved path:not(.halo) {
+    fill: currentColor;
+}
+
+.editor {
+    display: grid;
+    gap: var(--gap-xs);
+    font-size: var(--fs-body-sm);
+}
+
+.editor > strong {
+    padding: var(--gap-xs);
+    border-bottom: 1px solid var(--border);
+}
+
+.editor > button[aria-pressed] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--hit);
+    padding: var(--gap-xs);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius);
+}
+
+.editor > button[aria-pressed]:hover,
+.editor > button[aria-pressed='true'] {
+    color: var(--fg);
+    background: var(--accent-soft);
+}
+
+.editor > button[aria-pressed] span {
+    width: var(--gap-xs);
+    height: var(--gap-xs);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-pill);
+}
+
+.editor > button[aria-pressed='true'] span {
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+.editor p {
+    margin: 0;
+    color: var(--fg-secondary);
+}
+
+.remove {
+    min-height: var(--hit);
+    padding: var(--gap-xs);
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--border);
+}
+
+.remove:hover {
+    color: var(--fg);
+}
+
+.remove:disabled {
+    cursor: progress;
+}
+
+.priority {
+    min-height: var(--hit);
+    padding: var(--gap-xs) var(--gap-sm);
+    font: var(--fs-meta)/var(--lh-ui) var(--font-mono);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-pill);
+}
+
+.priority:hover {
+    background: var(--accent-soft);
+}
+
+.priority[data-priority='HIGH'] {
+    font-weight: 700;
+    color: var(--fg);
+}
+
+/* Stay inside the viewport even when the table's priority column scrolls offscreen. */
+.feedback {
+    position: fixed;
+    top: 0;
+    left: 0;
 }

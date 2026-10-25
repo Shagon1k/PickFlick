@@ -40,14 +40,12 @@ for (const width of [390, 768, 1024, 1440]) {
             );
             await expect(page.getByText('7.519')).toHaveCount(0);
             await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
-            // Personal ratings open the shared star editor; Watchlist is a later issue.
+            // Personal Ratings and Watchlist use the shared editors.
             await expect(page.getByRole('button', { name: 'Rate this film' })).toBeEnabled();
             // The ribbon sits on the visible poster: the media grid's, or the phone ticket's.
             await expect(
-                page
-                    .getByRole('button', { name: 'Add to Watchlist (coming soon)' })
-                    .filter({ visible: true }),
-            ).toBeDisabled();
+                page.getByRole('button', { name: 'Add to watchlist' }).filter({ visible: true }),
+            ).toBeEnabled();
             await expect(page.getByRole('link', { name: 'IMDb' })).toHaveAttribute(
                 'href',
                 'https://www.imdb.com/title/tt1234567/',

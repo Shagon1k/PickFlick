@@ -62,7 +62,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 ## Current verification
 
 [Phase 15 — Personal Library, Ratings and Watchlist](phase-15-personal-library.md) is active.
-The first delivery covers editable Personal Ratings and synchronization from live Session Ratings.
+The active deliveries cover editable Personal Ratings, synchronization from live Session Ratings,
+and prioritized Watchlist controls across Movie Details and the Library.
 
 [Phase 14 — Past Sessions](phase-14-past-sessions.md) is active for historical screenings and optional
 nomination/score reconstruction.

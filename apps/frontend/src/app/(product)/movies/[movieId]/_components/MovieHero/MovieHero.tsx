@@ -1,4 +1,4 @@
-import type { TMovieDetails, TPersonalMovieRating } from '@pickflick/contracts';
+import type { TMovieDetails, TPersonalMovieRating, TWatchlistItem } from '@pickflick/contracts';
 import clsx from 'clsx';
 
 import ticket from '#components/movies/film-ticket.module.scss';
@@ -29,14 +29,19 @@ interface IMovieHeroProps {
     movie: TMovieDetails;
     title: string;
     rating: TPersonalMovieRating | null;
+    watchlistItem: TWatchlistItem | null;
 }
 
-export default function MovieHero({ movie, title, rating }: IMovieHeroProps) {
+export default function MovieHero({ movie, title, rating, watchlistItem }: IMovieHeroProps) {
     return (
         <section className={styles.hero} aria-labelledby="movie-title">
             {/* On phones the header becomes the film ticket, its rating the stub, as in Sessions. */}
             <header className={clsx(styles.titleBlock, ticket.ticket)} data-film>
-                <TicketPoster corner={<WatchlistBookmark />} title={title} url={movie.posterUrl} />
+                <TicketPoster
+                    corner={<WatchlistBookmark movieId={movie.id} item={watchlistItem} />}
+                    title={title}
+                    url={movie.posterUrl}
+                />
                 <div className={clsx(styles.titleCopy, ticket.copy)}>
                     <h1 id="movie-title">{title}</h1>
                     {movie.originalTitle && movie.originalTitle !== title ? (
@@ -60,7 +65,7 @@ export default function MovieHero({ movie, title, rating }: IMovieHeroProps) {
             <MovieMedia
                 hidePhonePoster
                 movie={movie}
-                posterCorner={<WatchlistBookmark />}
+                posterCorner={<WatchlistBookmark movieId={movie.id} item={watchlistItem} />}
                 title={title}
             />
         </section>

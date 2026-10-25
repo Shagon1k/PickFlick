@@ -29,6 +29,7 @@ import { handleSelection } from './selection.ts';
 import { handleSessionRoster } from './session-roster.ts';
 import { handleSessionWorkflow, sessionHub } from './session-workflows.ts';
 import { handleWatching } from './watching.ts';
+import { handleWatchlist } from './watchlist.ts';
 
 type TToken = string | undefined;
 const clubsBySession = new Map<TToken, IClubSummary[]>();
@@ -401,6 +402,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (
         [
+            handleWatchlist,
             handlePersonalRating,
             handleMovieDetails,
             handleMovieSearch,
