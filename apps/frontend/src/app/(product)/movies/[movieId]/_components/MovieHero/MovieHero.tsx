@@ -1,4 +1,4 @@
-import type { TMovieDetails } from '@pickflick/contracts';
+import type { TMovieDetails, TPersonalMovieRating } from '@pickflick/contracts';
 import clsx from 'clsx';
 
 import ticket from '#components/movies/film-ticket.module.scss';
@@ -6,10 +6,10 @@ import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
-import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
+import PersonalRating from '../PersonalRating/PersonalRating';
 
 const ratingFormat = new Intl.NumberFormat('en', {
     minimumFractionDigits: 1,
@@ -28,9 +28,10 @@ const RATING_LABELS: Record<string, string> = {
 interface IMovieHeroProps {
     movie: TMovieDetails;
     title: string;
+    rating: TPersonalMovieRating | null;
 }
 
-export default function MovieHero({ movie, title }: IMovieHeroProps) {
+export default function MovieHero({ movie, title, rating }: IMovieHeroProps) {
     return (
         <section className={styles.hero} aria-labelledby="movie-title">
             {/* On phones the header becomes the film ticket, its rating the stub, as in Sessions. */}
@@ -49,14 +50,10 @@ export default function MovieHero({ movie, title }: IMovieHeroProps) {
                         movie={movie}
                     />
                 </div>
-                {/* Rate and the poster's Watchlist ribbon are placeholders until Phase 15. */}
                 <div className={clsx(ticket.rail, ticket.stub)}>
                     <Rating ratings={movie.ratings} />
                     <div className={ticket.railCell}>
-                        <Button aria-label="Rate this film (coming soon)" disabled variant="cell">
-                            <Icon name="ratings" />
-                            Rate
-                        </Button>
+                        <PersonalRating movieId={movie.id} rating={rating} />
                     </div>
                 </div>
             </header>

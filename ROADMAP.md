@@ -1107,7 +1107,7 @@ non-blocking Rating views
 
 **Out of scope:** Bulk third-party history import and personal CSV import/export.
 
-### Phase 15 — Personal Library, Ratings & Watchlist · Not started
+### Phase 15 — Personal Library, Ratings & Watchlist · In progress
 
 **Goal:** A durable, editable personal film memory independent of shared history.
 

@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 
 import styles from './Popover.module.scss';
 
+const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '560px' };
+
 export default function Popover({
     children,
     trigger,
@@ -21,13 +23,13 @@ export default function Popover({
     onChange: (open: boolean) => void;
     label: string;
     id: string;
-    variant?: 'default' | 'invites';
+    variant?: 'default' | 'invites' | 'rating';
 }) {
     return (
         <MantinePopover
             id={id}
             floatingStrategy="fixed"
-            width={`min(${variant === 'invites' ? '344px' : '380px'}, calc(100vw - var(--gap-md) * 2))`}
+            width={`min(${POPOVER_WIDTHS[variant]}, calc(100vw - var(--gap-md) * 2))`}
             opened={open}
             onChange={onChange}
             position="top-end"

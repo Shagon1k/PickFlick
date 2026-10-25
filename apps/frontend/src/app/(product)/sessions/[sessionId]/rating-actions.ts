@@ -10,6 +10,8 @@ import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
 const RATING_FAILURE: IFailureCopy = {
     reasons: {
+        RATING_MOVIE_MISSING:
+            'This Session has no selected Movie. Refresh and ask a Club operator to check it.',
         ALREADY_SUBMITTED: 'Your rating is already saved and cannot be changed. Refresh to see it.',
         RATING_CLOSED: 'Rating has closed. Refresh to see the completed Session.',
         RATING_CHANGED: 'This Session changed. Refresh before closing Rating.',

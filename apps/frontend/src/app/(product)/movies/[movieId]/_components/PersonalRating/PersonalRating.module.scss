@@ -1,0 +1,11 @@
+.personalRating {
+    display: grid;
+    gap: var(--gap-sm);
+    min-width: 0;
+}
+
+.personalRating p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
