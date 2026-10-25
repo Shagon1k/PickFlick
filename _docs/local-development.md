@@ -114,6 +114,11 @@ an isolated test database so they never touch your local data:
 3. Apply the migrations and run the specs with `PICKFLICK_ENV_FILE=.env.test`, for example
    `PICKFLICK_ENV_FILE=.env.test pnpm db:migrate` and then `pnpm test:integration` the same way.
 
+Browser journeys require `APP_ENV=test` and `pickflick_test`. Each journey connection clears the
+database's auth rate-limit counters before making requests. Keep the configured single worker and
+use a disposable database dedicated to the suite. Authentication rate limits remain enforced
+throughout each journey.
+
 The UI selections build the frontend and serve it against a mock backend, so they need no database.
 The UI selections and the journeys each rebuild `apps/frontend/.next` for their own API address, so
 rebuild before `pnpm start` after running them. Install Chromium once with

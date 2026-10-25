@@ -44,8 +44,13 @@ export interface IJourneyBackend {
 
 export async function connectJourneyBackend(): Promise<IJourneyBackend> {
     const environment = loadRuntimeEnvironment();
+    if (environment.appEnvironment !== 'test') {
+        throw new Error('Browser journeys require APP_ENV=test.');
+    }
     assertSafeSeedOrResetTarget(environment);
     const prisma = createDatabaseClient(environment.databaseUrl);
+    // Journeys run with one worker; each starts with its own auth request allowance.
+    await prisma.authRateLimit.deleteMany();
     const auth = createAuth(environment, prisma, [testUtils()]);
     // Better Auth adds the test plugin's helpers to the context without typing them.
     const context = (await auth.$context) as unknown as {

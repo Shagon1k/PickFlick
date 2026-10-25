@@ -153,3 +153,19 @@ Exact-head hosted preview and owner visual acknowledgment remain acceptance requ
 repository has preview Compose but no hosted-preview workflow or authorized hosted-preview resource
 for this run. Local responsive captures and a Draft PR do not satisfy that requirement; the issue
 must remain open pending that evidence and owner acceptance.
+
+### CI repair — shared journey auth counters
+
+CI run `40230353458` reaches the final Watchlist journey with HTTP 429 session checks;
+the Library shows its unavailable state instead of the expected empty state. Better Auth stores
+the shared client/path counters in PostgreSQL. A focused regression reproduces an exhausted
+`127.0.0.1|/get-session` counter surviving a new journey connection. The unchanged full suite
+passes locally when slower execution lets that counter expire between tests.
+
+Each journey connection now clears auth counters after requiring `APP_ENV=test` and passing the
+existing `pickflick_test` database guard. The suite retains its single worker. The two regression
+checks verify refusal outside the test environment and an authenticated 429 before cleanup followed
+by 200 after cleanup. Application authentication, rate limits and browser assertions are unchanged.
+All 15 real-API journeys pass on a new disposable PostgreSQL database at loopback port 39432.
+All 260 integration tests across 31 files pass. `pnpm verify` passes the production audit, lint,
+Knip, formatting, type checking, all 355 unit tests and every workspace build.
