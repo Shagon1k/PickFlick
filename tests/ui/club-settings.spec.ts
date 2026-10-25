@@ -33,7 +33,7 @@ test('Club settings redirects an unauthenticated visitor and withholds outsider 
     page,
 }) => {
     await page.goto(ROUTE);
-    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/clubs/${CLUB_ID}/settings$`, 'u'));
+    await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(ROUTE)}`);
 
     await authenticate(context, 'valid-settings-outsider');
     await page.goto(ROUTE);

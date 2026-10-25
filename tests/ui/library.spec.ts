@@ -116,11 +116,56 @@ test(
         );
         await context.clearCookies();
         await page.goto('/library?q=retained');
-        await expect(page).toHaveURL(/\/login\?returnTo=/u);
+        await expect(page).toHaveURL(
+            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&q=retained&score=&priority=&sort=default&page=1')}`,
+        );
         await page.goto('/library?page=-1');
-        await expect(page).toHaveURL(/\/login\?returnTo=/u);
+        await expect(page).toHaveURL(
+            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&q=&score=&priority=&sort=default&page=1')}`,
+        );
     },
 );
+
+for (const destination of [
+    '/library?tab=my-ratings&q=Alien&score=8&priority=&sort=recent&page=2',
+    '/library?tab=watchlist&q=Alien+%26+Aliens&score=&priority=HIGH&sort=title&page=2',
+]) {
+    test(
+        `Library sign-in preserves and recovers ${destination}`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            let requestBody: Record<string, unknown> | undefined;
+            await page.route('**/api/auth/sign-in/social', async (route) => {
+                requestBody = route.request().postDataJSON() as Record<string, unknown>;
+                await route.fulfill({ json: { redirect: false } });
+            });
+
+            await page.goto(destination);
+            await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(destination)}`);
+            await page.getByRole('button', { name: 'Continue with Google' }).click();
+            await expect
+                .poll(() => requestBody)
+                .toMatchObject({
+                    provider: 'google',
+                    callbackURL: destination,
+                });
+
+            await context.addCookies([
+                {
+                    name: 'pickflick.session_token',
+                    value: 'valid-library-sign-in',
+                    domain: '127.0.0.1',
+                    path: '/',
+                },
+            ]);
+            await page.reload();
+            await expect(page).toHaveURL(destination);
+            await expect(
+                page.getByRole('searchbox', { name: /^Search (rated films|watchlist)$/u }),
+            ).toHaveValue(new URLSearchParams(destination.split('?')[1]).get('q')!);
+        },
+    );
+}
 
 test(
     'Library rating failures preserve the selection and recover',

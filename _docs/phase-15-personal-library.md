@@ -169,3 +169,22 @@ by 200 after cleanup. Application authentication, rate limits and browser assert
 All 15 real-API journeys pass on a new disposable PostgreSQL database at loopback port 39432.
 All 260 integration tests across 31 files pass. `pnpm verify` passes the production audit, lint,
 Knip, formatting, type checking, all 355 unit tests and every workspace build.
+
+### Review fix round 1 — Library sign-in continuation
+
+The owner-approved review fix for PR #190 starts from
+`b933468bd2c2107618417dd18dcf7e35ac13aa9b` and addresses only
+[the Library return-target finding](https://github.com/Shagon1k/PickFlick/pull/190#discussion_r4372828619).
+The shared allowlist validates Library queries with `libraryQuerySchema`; login links encode the
+complete destination. Tabs, search, filters, sort and pagination survive sign-in. Invalid queries,
+repeated parameters, fragments and unrelated return targets remain rejected.
+
+`pnpm verify` passes, including all 369 unit tests and workspace builds. The focused return-target
+suite passes all 37 cases; four new valid-Library cases failed before the fix. Browser verification
+uses temporary ports 41790/42791 because the standard ports are occupied. The 77-check smoke and
+redirect selection passes 74 checks. Two new recovery checks used `textbox` instead of `searchbox`;
+both pass after correcting the locator, verifying OAuth callback payloads and session recovery for
+both tabs, including an ampersand in search text. Focused lint and formatting pass after that correction.
+The remaining unchanged Session roster test expects clipboard port 41730 instead of 41790. No
+Session source, test skip or visual baseline changes are included. OAuth is mocked in these browser
+checks; hosted preview and owner acceptance remain pending.

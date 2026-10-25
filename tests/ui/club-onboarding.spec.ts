@@ -33,9 +33,9 @@ function widths(page: Page) {
 
 test('protected Club onboarding redirects an unauthenticated visitor', async ({ page }) => {
     await page.goto('/app');
-    await expect(page).toHaveURL(/\/login\?returnTo=\/app$/u);
+    await expect(page).toHaveURL('/login?returnTo=%2Fapp');
     await page.goto('/clubs/new');
-    await expect(page).toHaveURL(/\/login\?returnTo=\/clubs\/new$/u);
+    await expect(page).toHaveURL('/login?returnTo=%2Fclubs%2Fnew');
 });
 
 test('Create Club and Login surface an unavailable session API instead of signing out', async ({
