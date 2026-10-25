@@ -4,12 +4,15 @@ export default function LibraryLoading() {
     return (
         <ControlShell
             title="My Library"
-            description="Films you want to watch, at your own pace."
+            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
-            items={[{ label: 'Watchlist', href: '/library?tab=watchlist', current: true }]}
+            items={[
+                { label: 'My Ratings', href: '/library?tab=my-ratings' },
+                { label: 'Watchlist', href: '/library?tab=watchlist' },
+            ]}
         >
-            <p role="status">Loading your Watchlist…</p>
+            <p role="status">Loading your Library…</p>
         </ControlShell>
     );
 }

@@ -12,6 +12,7 @@ import type {
 
 import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
 import { buildHubProjection } from './hub-projections.ts';
+import { handleLibrary } from './library.ts';
 import {
     readJson,
     sendError,
@@ -402,6 +403,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (
         [
+            handleLibrary,
             handleWatchlist,
             handlePersonalRating,
             handleMovieDetails,

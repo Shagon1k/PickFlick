@@ -45,9 +45,11 @@ on one origin and the cookie is first-party.
 Rules the backend enforces during sign-in (`apps/backend/src/modules/auth/auth.config.ts`):
 
 - **Return targets.** `callbackURL` must match `isAllowedAuthReturnTarget` in
-  `@pickflick/contracts`: `/app`, `/clubs/new`, a Club's Hub or settings page, or an invitation. Anything
-  else is rejected with `INVALID_RETURN_TARGET`, and pages build login links with
-  `resolveAuthReturnTarget`, which falls back to `/app`.
+  `@pickflick/contracts`: `/app`, `/clubs/new`, a Club's Hub or settings page, an invitation, or
+  `/library`. Library queries must pass `libraryQuerySchema`, with no repeated parameters or fragment.
+  Anything else is rejected with `INVALID_RETURN_TARGET`, and pages build login links with
+  `resolveAuthReturnTarget`, which falls back to `/app`. Login links encode
+  the complete return target so Library tabs, search, filters, sort and page survive sign-in.
 - **Identity.** An account is the pair (provider, provider subject), stored in `ProviderAccount`.
   Email is profile data, never the identity key.
 - **No implicit linking.** When a signed-out person signs in with a new provider whose email already

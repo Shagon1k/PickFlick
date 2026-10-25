@@ -131,8 +131,9 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
         viewport: { width: 390, height: 844 },
     });
     const page = await context.newPage();
-    await page.goto(`/movies/${MOVIE_ID}`);
-    await expect(page).toHaveURL(new RegExp(`/login\\?returnTo=/movies/${MOVIE_ID}$`, 'u'));
+    const moviePath = `/movies/${MOVIE_ID}`;
+    await page.goto(moviePath);
+    await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
     await context.addCookies([
         {
             name: 'pickflick.session_token',

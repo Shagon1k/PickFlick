@@ -1,0 +1,32 @@
+.libraryTable {
+    min-width: 0;
+}
+
+.libraryTable a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--hit);
+    overflow-wrap: anywhere;
+}
+
+.libraryTable__pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--gap-md);
+    font-size: var(--fs-body-sm);
+}
+
+.libraryTable__film {
+    min-width: 16ch;
+    max-width: 28ch;
+}
+
+.libraryTable__title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}

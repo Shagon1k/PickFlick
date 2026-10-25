@@ -93,3 +93,98 @@ Hosted exact-head preview and owner visual acknowledgment remain required before
 The repository provides preview Compose, but no hosted-preview workflow or authorized preview
 resource is configured for this run. The issue stays open; a Draft PR and local screenshots do
 not establish owner acceptance.
+
+## My Library — issue #56
+
+Run `r_c79c2b3637ea69840226` implements #56 on managed branch
+`PF-56_15-3-build-searchable-filterable-my`; prerequisites #54 and #55 are closed.
+It reuses the current PersonalMovieRating and WatchlistItem tables, authenticated API boundary,
+control shell, bounded table, rating rail and Movie mutation feedback. Statistics, achievements,
+provider refresh, historical imports and shared-history changes remain outside this delivery.
+
+The Library query accepts URL-based title search, exact rating/priority filters, four sort choices
+and bounded pagination. It counts and reads in one database snapshot, limits pages to 25 rows and
+uses Movie ID to break ties. The current last page replaces stale bounds. Cached genres add no
+provider calls; absent metadata stays explicit. Both editors revalidate Movie Details and Library;
+a successful Library mutation announces feedback and focuses the section heading even if its row
+leaves the active filter.
+
+Verification uses Node 24.15.0 / pnpm 11.25.0 and the launcher's workspace pnpm store. Prisma uses
+a task-local cache because the shared cache is read-only. A disposable PostgreSQL container serves
+only `pickflick_test` on loopback port 37432; all 32 existing migrations and the idempotent synthetic
+seed apply. No migration, dependency or environment setting is added to the product.
+
+All 258 integration checks across 30 files and all 355 unit checks pass. The focused Library
+integration checks also pass after the final query cleanup, covering user isolation, malformed
+queries, literal wildcard searches, combined filters, stable ties across pages, stale and empty
+page bounds, missing metadata and cached genres. The production dependency audit passes its
+high/critical gate with two low and five moderate findings.
+
+All six Library browser checks pass on the built app, including 390/768/1024/1440px, local table
+scrolling, keyboard/touch, axe, pagination bounds, reload persistence, edits that remove a filtered
+row, empty/invalid/unavailable states and offline/API recovery. Existing Personal Rating and
+Watchlist editor checks pass at all four widths. The initial pagination assertions targeted the
+wrong element in a disabled shared ButtonLink; the corrected assertions check its anchor.
+Mobile title text stops at three lines while retaining its full accessible name. Responsive
+captures live under `test-results/library-ratings-*.png`; visual baselines are unchanged.
+
+The required UI suite uses a temporary local config on 41770/42771 because its standard frontend
+port is already occupied. Its standalone build is copied under ignored `test-results/pf56` so
+verification builds cannot change the running test app. The final Library rerun uses 41780/42781.
+`pnpm verify` passes the production audit, lint, Knip, formatting, type checking, all 355 unit tests
+and every workspace build. Backend type checking and the three focused integration checks pass
+again after removing unnecessary sort assertions.
+
+The Library and Watchlist real-API journeys pass. The unchanged Personal Rating/Completed-history
+journey passes on a second fresh `pickflick_test` database at loopback 38432. Its first run lost the
+scripted Session rating selection; the next run reached Movie editing but hit HTTP 429 session
+checks. The fresh-database rerun preserves the application rate-limit policy and verifies the
+Session → personal edit → retry → unchanged history flow.
+
+The broad UI smoke selection passes 69 of 71 checks. The Nomination two-client progress check
+and Session roster operator check also fail in isolated temporary-spec reruns. The roster copy
+adjusts only its hardcoded clipboard origin for the alternate port; it then reaches the existing
+decorative reel-break interception of Kick, followed by menu detachment. Session and existing test
+sources are unchanged. The Nomination test times out in its Session settings flow. These failures
+remain outside #56; this delivery does not claim a clean full smoke suite. No committed test
+configuration change, skipped test or visual baseline update is introduced.
+
+Exact-head hosted preview and owner visual acknowledgment remain acceptance requirements. The
+repository has preview Compose but no hosted-preview workflow or authorized hosted-preview resource
+for this run. Local responsive captures and a Draft PR do not satisfy that requirement; the issue
+must remain open pending that evidence and owner acceptance.
+
+### CI repair — shared journey auth counters
+
+CI run `40230353458` reaches the final Watchlist journey with HTTP 429 session checks;
+the Library shows its unavailable state instead of the expected empty state. Better Auth stores
+the shared client/path counters in PostgreSQL. A focused regression reproduces an exhausted
+`127.0.0.1|/get-session` counter surviving a new journey connection. The unchanged full suite
+passes locally when slower execution lets that counter expire between tests.
+
+Each journey connection now clears auth counters after requiring `APP_ENV=test` and passing the
+existing `pickflick_test` database guard. The suite retains its single worker. The two regression
+checks verify refusal outside the test environment and an authenticated 429 before cleanup followed
+by 200 after cleanup. Application authentication, rate limits and browser assertions are unchanged.
+All 15 real-API journeys pass on a new disposable PostgreSQL database at loopback port 39432.
+All 260 integration tests across 31 files pass. `pnpm verify` passes the production audit, lint,
+Knip, formatting, type checking, all 355 unit tests and every workspace build.
+
+### Review fix round 1 — Library sign-in continuation
+
+The owner-approved review fix for PR #190 starts from
+`b933468bd2c2107618417dd18dcf7e35ac13aa9b` and addresses only
+[the Library return-target finding](https://github.com/Shagon1k/PickFlick/pull/190#discussion_r4372828619).
+The shared allowlist validates Library queries with `libraryQuerySchema`; login links encode the
+complete destination. Tabs, search, filters, sort and pagination survive sign-in. Invalid queries,
+repeated parameters, fragments and unrelated return targets remain rejected.
+
+`pnpm verify` passes, including all 369 unit tests and workspace builds. The focused return-target
+suite passes all 37 cases; four new valid-Library cases failed before the fix. Browser verification
+uses temporary ports 41790/42791 because the standard ports are occupied. The 77-check smoke and
+redirect selection passes 74 checks. Two new recovery checks used `textbox` instead of `searchbox`;
+both pass after correcting the locator, verifying OAuth callback payloads and session recovery for
+both tabs, including an ampersand in search text. Focused lint and formatting pass after that correction.
+The remaining unchanged Session roster test expects clipboard port 41730 instead of 41790. No
+Session source, test skip or visual baseline changes are included. OAuth is mocked in these browser
+checks; hosted preview and owner acceptance remain pending.

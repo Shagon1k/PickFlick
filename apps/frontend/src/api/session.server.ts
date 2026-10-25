@@ -44,7 +44,7 @@ export async function getSessionState(): Promise<TSessionState> {
 
 /** Login URL that returns to `path` when it is an allowed target, otherwise to `/app`. */
 export function buildLoginPath(path: string): string {
-    return `/login?returnTo=${resolveAuthReturnTarget(path)}`;
+    return `/login?returnTo=${encodeURIComponent(resolveAuthReturnTarget(path))}`;
 }
 
 export function isAppleSignInEnabled(): boolean {

@@ -15,6 +15,15 @@ import {
 
 const itemsBySession = new Map<string, Map<string, TWatchlistItem>>();
 
+export function getLibraryWatchlist(token: string) {
+    return [...(itemsBySession.get(token)?.values() ?? [])].map((item) => ({
+        ...item,
+        title: 'The Grand Budapest Hotel',
+        releaseYear: 2014,
+        genres: ['Comedy', 'Drama'],
+    }));
+}
+
 export function handleWatchlist(
     request: TMockRequest,
     response: TMockResponse,

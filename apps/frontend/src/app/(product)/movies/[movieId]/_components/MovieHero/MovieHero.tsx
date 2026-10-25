@@ -4,12 +4,12 @@ import clsx from 'clsx';
 import ticket from '#components/movies/film-ticket.module.scss';
 import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
+import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
-import PersonalRating from '../PersonalRating/PersonalRating';
 
 const ratingFormat = new Intl.NumberFormat('en', {
     minimumFractionDigits: 1,
