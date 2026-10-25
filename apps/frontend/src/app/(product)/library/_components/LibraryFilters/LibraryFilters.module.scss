@@ -1,0 +1,24 @@
+.libraryFilters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+    gap: var(--gap-sm);
+    align-items: end;
+    margin-block: var(--gap-md);
+}
+
+.libraryFilters__actions {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    gap: var(--gap-xs);
+}
+
+@media (width <= 767px) {
+    .libraryFilters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .libraryFilters__search {
+        grid-column: 1 / -1;
+    }
+}

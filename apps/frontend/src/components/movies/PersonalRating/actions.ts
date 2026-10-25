@@ -14,6 +14,7 @@ export async function savePersonalRatingAction(movieId: string, input: unknown) 
     try {
         await savePersonalRating(movieId, parsed.data);
         revalidatePath(`/movies/${movieId}`);
+        revalidatePath('/library');
         return { ok: true as const };
     } catch (error) {
         return {

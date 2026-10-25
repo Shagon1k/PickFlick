@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { ClubsModule } from './modules/clubs/clubs.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { LibraryModule } from './modules/library/library.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
@@ -63,6 +64,7 @@ export class AppModule {
                 ClubsModule,
                 ContactModule,
                 HealthModule,
+                LibraryModule,
                 MoviesModule,
                 SessionsModule,
                 WatchlistModule,

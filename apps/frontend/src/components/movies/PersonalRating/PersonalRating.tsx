@@ -9,15 +9,17 @@ import Popover from '#components/ui/Popover/Popover';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
 import { getOfflineMessage } from '#lib/offline';
 
-import { savePersonalRatingAction } from '../../actions';
+import { savePersonalRatingAction } from './actions';
 import styles from './PersonalRating.module.scss';
 
 export default function PersonalRating({
     movieId,
     rating,
+    onSaved,
 }: {
     movieId: string;
     rating: TPersonalMovieRating | null;
+    onSaved?: (message: string) => void;
 }) {
     const id = useId();
     const feedbackRef = useRef<HTMLParagraphElement>(null);
@@ -41,6 +43,10 @@ export default function PersonalRating({
             }));
             setMessage(result.ok ? 'Personal Rating saved.' : result.message);
             feedbackRef.current?.focus();
+            if (result.ok && onSaved) {
+                setIsOpen(false);
+                onSaved('Personal Rating saved.');
+            }
         });
     }
 

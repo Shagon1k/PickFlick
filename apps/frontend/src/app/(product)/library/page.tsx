@@ -1,51 +1,81 @@
-import { HTTP_STATUS } from '@pickflick/contracts';
+import { HTTP_STATUS, libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { getLibrary } from '#api/library.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
-import { getWatchlist } from '#api/watchlist.server';
 import ControlShell from '#components/shells/ControlShell/ControlShell';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 
-import WatchlistTable from './_components/WatchlistTable/WatchlistTable';
+import LibraryTable from './_components/LibraryTable/LibraryTable';
+import { buildLibraryPath } from './library-path';
 
 export const metadata: Metadata = {
     title: 'My Library — PickFlick',
     robots: { index: false, follow: false },
 };
 
-async function loadWatchlist() {
-    const session = await getSessionState();
-    if (session === 'anonymous') redirect(buildLoginPath('/library?tab=watchlist'));
-    if (session === 'unavailable') return null;
+async function loadLibrary(query: TLibraryQuery) {
+    const path = buildLibraryPath(query);
     try {
-        return await getWatchlist();
+        return await getLibrary(query);
     } catch (error) {
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
-            redirect(buildLoginPath('/library?tab=watchlist'));
+            redirect(buildLoginPath(path));
         if (error instanceof ApiError || error instanceof TypeError) return null;
         throw error;
     }
 }
 
-export default async function LibraryPage() {
-    const watchlist = await loadWatchlist();
+export default async function LibraryPage({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const parsed = libraryQuerySchema.safeParse(await searchParams);
+    const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
+    const session = await getSessionState();
+    if (session === 'anonymous') redirect(buildLoginPath(buildLibraryPath(query)));
+    const library = parsed.success && session === 'authenticated' ? await loadLibrary(query) : null;
+    const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
         <ControlShell
             title="My Library"
-            description="Films you want to watch, at your own pace."
+            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
-            items={[{ label: 'Watchlist', href: '/library?tab=watchlist', current: true }]}
+            items={[
+                {
+                    label: 'My Ratings',
+                    href: '/library?tab=my-ratings',
+                    current: query.tab === 'my-ratings',
+                },
+                {
+                    label: 'Watchlist',
+                    href: '/library?tab=watchlist',
+                    current: query.tab === 'watchlist',
+                },
+            ]}
         >
-            {watchlist ? (
-                <WatchlistTable items={watchlist.items} />
-            ) : (
-                <section aria-label="Watchlist unavailable">
-                    <Alert tone="warning">Your Watchlist is temporarily unavailable.</Alert>
-                    <ButtonLink href="/library?tab=watchlist">Try again</ButtonLink>
+            {!parsed.success && (
+                <section aria-label="Invalid Library filters">
+                    <Alert tone="warning">
+                        These Library filters are invalid. Clear them and try again.
+                    </Alert>
+                    <ButtonLink href="/library">Clear filters</ButtonLink>
+                </section>
+            )}
+            {library && <LibraryTable key={query.tab} library={library} query={query} />}
+            {parsed.success && !library && (
+                <section aria-label={`${title} unavailable`}>
+                    <Alert tone="warning">
+                        {query.tab === 'watchlist'
+                            ? 'Your Watchlist is temporarily unavailable.'
+                            : 'Your ratings are temporarily unavailable.'}
+                    </Alert>
+                    <ButtonLink href={buildLibraryPath(query)}>Try again</ButtonLink>
                 </section>
             )}
         </ControlShell>

@@ -71,18 +71,19 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                                                         | Owns                                                                                                                                                                                | State                                                                                         |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| auth                                                                           | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
-| clubs                                                                          | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
-| contact                                                                        | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
-| email                                                                          | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
-| storage                                                                        | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
-| health                                                                         | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                                                                         | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
-| sessions                                                                       | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| watchlist                                                                      | Private saved Movies, Low/Medium/High priority and the Library Watchlist projection.                                                                                                | Active                                                                                        |
-| Library ratings, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
+| Module                                                        | Owns                                                                                                                                                                                | State                                                                                         |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| auth                                                          | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
+| clubs                                                         | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
+| contact                                                       | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
+| email                                                         | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
+| storage                                                       | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
+| health                                                        | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
+| movies                                                        | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| sessions                                                      | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
+| watchlist                                                     | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
+| library                                                       | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
+| Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -753,6 +754,25 @@ User/Movie use the database's atomic upsert; the last write becomes the current 
 Personal edits have no path to Session or Club history. Imported past evidence remains historical
 and does not set another user's current opinion. No recomputation or historical backfill runs.
 
+### Searchable personal Library
+
+The authenticated Library module serves `GET /library` with private/no-store caching. The shared
+strict query contract accepts `tab` (`my-ratings` by default, or `watchlist`), a trimmed title search
+`q` (up to 200 characters), exact `score`/`priority`, `sort` (`default`, `title`, `year`, `recent`)
+and a positive page up to 100,000. Unknown and repeated parameters are rejected. The inactive tab's
+filter is ignored. Identity always comes from the authenticated session.
+
+Queries select the caller's PersonalMovieRating or WatchlistItem rows in PostgreSQL. Search is
+case-insensitive and escapes SQL wildcard characters. A repeatable-read transaction counts matches,
+clamps the page to the current last page and reads at most 25 rows. Movie ID breaks sort ties;
+missing titles and years sort last. The response carries the tab, rows, total, page, pages and
+pageSize. Empty results retain page one of one.
+
+Genre labels come only from the configured provider/locale's existing details cache; absent or
+obsolete cache shapes yield an empty genre list. Listing a Library makes no provider calls.
+Both Movie and Library editors share their server actions, which revalidate both routes after a
+successful mutation. No schema migration, new dependency or environment variable is needed.
+
 ### Prioritized Watchlist
 
 Migration 32 adds `WatchlistItem`, keyed by `(userId, movieId)`, with a PostgreSQL
@@ -767,8 +787,8 @@ requires an existing Movie and uses the database's atomic upsert. Duplicate save
 edits retain the original added date; repeat deletes succeed. Concurrent different priorities use
 the database's last write. There are no item IDs or user selectors exposed for mutations.
 
-The Library projection returns stored Movie titles and release years without provider calls,
-ordered by High, Medium, Low, then added date and Movie ID. Movie Details and the Library reuse
-the same editor and server action, which revalidates both routes after a successful change.
-Library ratings, statistics, catalog-derived genre columns, search, filters and user-selected
-sorting remain later work. No dependency, environment variable, worker or deployment change is added.
+`GET /watchlist` retains its existing stored-title/year projection ordered by High, Medium, Low,
+then added date and Movie ID. The Library screen uses the bounded `/library` projection above.
+Movie Details and the Library reuse the same priority editor and server action. Statistics and
+achievements remain later work. No dependency, environment variable, worker or deployment change
+is added.

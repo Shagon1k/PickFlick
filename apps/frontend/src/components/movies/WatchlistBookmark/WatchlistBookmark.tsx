@@ -21,14 +21,14 @@ interface IWatchlistBookmarkProps {
     movieId: string;
     item: TWatchlistItem | null;
     variant?: 'poster' | 'table';
-    onRemoved?: () => void;
+    onSaved?: (message: string) => void;
 }
 
 export default function WatchlistBookmark({
     movieId,
     item,
     variant = 'poster',
-    onRemoved,
+    onSaved,
 }: IWatchlistBookmarkProps) {
     const id = useId();
     const feedbackRef = useRef<HTMLParagraphElement>(null);
@@ -52,7 +52,7 @@ export default function WatchlistBookmark({
             if (result.ok) {
                 setMessage(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
                 if (shouldClose) setIsOpen(false);
-                if (priority === null) onRemoved?.();
+                onSaved?.(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
             } else {
                 setMessage(result.message);
                 feedbackRef.current?.focus();
