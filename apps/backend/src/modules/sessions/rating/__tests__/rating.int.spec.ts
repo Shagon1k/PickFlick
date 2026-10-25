@@ -15,6 +15,7 @@ describe('Rating', () => {
     let api: ITestApi;
     let users: string[];
     let clubId: string;
+    let movieId: string;
     let sessionId: string;
     let memberships: string[];
     let participantIds: string[];
@@ -31,8 +32,13 @@ describe('Rating', () => {
         ).entries()) {
             memberships.push(await addMember(api.prisma, clubId, users[index]!, role));
         }
+        movieId = (await api.prisma.movie.create({ data: { title: 'Rating screening' } })).id;
         sessionId = (
-            await createSession(api.prisma, clubId, { type: 'PRE_SELECTED', phase: 'RATING' })
+            await createSession(api.prisma, clubId, {
+                type: 'PRE_SELECTED',
+                phase: 'RATING',
+                movieId,
+            })
         ).id;
         participantIds = [];
         for (const membershipId of memberships.slice(0, 3)) {
@@ -47,6 +53,7 @@ describe('Rating', () => {
     });
     afterEach(async () => {
         await removeUsers(api.prisma, users);
+        await api.prisma.movie.delete({ where: { id: movieId } });
     });
     afterAll(async () => {
         await api.close();

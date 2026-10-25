@@ -1,0 +1,14 @@
+BEGIN;
+
+CREATE TYPE "PersonalRatingSource" AS ENUM ('PERSONAL', 'SESSION');
+
+CREATE TABLE "PersonalMovieRating" (
+    "userId" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "movieId" UUID NOT NULL REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "score" INTEGER NOT NULL CHECK ("score" BETWEEN 1 AND 10),
+    "source" "PersonalRatingSource" NOT NULL,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("userId", "movieId")
+);
+
+COMMIT;

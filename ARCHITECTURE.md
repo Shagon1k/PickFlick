@@ -79,7 +79,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                                                                  | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
 | storage                                                                | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
 | health                                                                 | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| movies                                                                 | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
 | sessions                                                               | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
 | Library, Achievements, Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
@@ -623,7 +623,7 @@ submission and completion are described below. No dependency or environment chan
 comment of at most 2000 characters. Current active Club Membership and accepted Session
 participation are required; archived Clubs reject submissions. The shared zod contract normalizes
 comment line endings and trims whitespace. Session Ratings have no update or delete API and stay
-separate from future editable `PersonalMovieRating` records.
+separate from editable `PersonalMovieRating` records.
 
 Migration 27 adds `SessionRating`, its unique participant/Session key, same-Session foreign key,
 score/comment bounds and an update-rejecting trigger. Inserts lock the Session row and require
@@ -732,3 +732,22 @@ live ratings still require Rating and a timestamp. The database retains response
 same-Session foreign keys. Existing ratings keep their timestamps. Apply the migration before the
 API. Completed detail and Hub history reuse the existing role/visibility projections; no Personal
 Rating, new dependency, environment variable or runtime service is added.
+
+### Current Personal Ratings
+
+`PersonalMovieRating` stores one current 1–10 opinion per `(userId, movieId)`, enforced by its
+primary key and database score constraint. `source` is PERSONAL or SESSION; `updatedAt` records
+the last write. Migration 31 adds this table without backfilling or modifying Session history.
+
+Authenticated `GET /movies/:movieId/personal-rating` returns `{ rating: null }` or the caller's
+score, source and ISO update time. `PUT` accepts only `{ score }` and returns the saved rating.
+The server takes user identity exclusively from the authenticated session. Both responses use
+private/no-store caching; a missing Movie rejects writes with 404. No user selector is accepted.
+
+A new live Session Rating requires a selected Movie and upserts the current Personal Rating in the existing
+Club → Session transaction, before completion. Personal persistence failure rolls back submission;
+completion failure rolls back both records. Identical Session retries return before the upsert,
+so they cannot overwrite later personal edits or newer screenings. Concurrent writes to one
+User/Movie use the database's atomic upsert; the last write becomes the current opinion.
+Personal edits have no path to Session or Club history. Imported past evidence remains historical
+and does not set another user's current opinion. No recomputation or historical backfill runs.

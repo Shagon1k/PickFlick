@@ -88,24 +88,25 @@ enum SessionParticipantStatus {
 }
 
 model User {
-  id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                    String            @unique
-  emailVerified            Boolean           @default(false)
+  id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                    String                @unique
+  emailVerified            Boolean               @default(false)
   displayName              String
   image                    String?
-  appRole                  AppRole           @default(USER)
-  status                   UserStatus        @default(ACTIVE)
-  locale                   String            @default("en")
-  createdAt                DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt                DateTime          @updatedAt @db.Timestamptz(3)
-  createdClubInvites       ClubInvite[]      @relation("ClubInviteCreator")
-  targetedClubInvites      ClubInvite[]      @relation("ClubInviteTarget")
-  answeredClubInvites      ClubInvite[]      @relation("ClubInviteResponder")
+  appRole                  AppRole               @default(USER)
+  status                   UserStatus            @default(ACTIVE)
+  locale                   String                @default("en")
+  createdAt                DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime              @updatedAt @db.Timestamptz(3)
+  createdClubInvites       ClubInvite[]          @relation("ClubInviteCreator")
+  targetedClubInvites      ClubInvite[]          @relation("ClubInviteTarget")
+  answeredClubInvites      ClubInvite[]          @relation("ClubInviteResponder")
+  personalRatings          PersonalMovieRating[]
   memberships              Membership[]
   authSessions             AuthSession[]
   providerAccounts         ProviderAccount[]
-  clubAuditEventsAsActor   ClubAuditEvent[]  @relation("ClubAuditActor")
-  clubAuditEventsAsSubject ClubAuditEvent[]  @relation("ClubAuditSubject")
+  clubAuditEventsAsActor   ClubAuditEvent[]      @relation("ClubAuditActor")
+  clubAuditEventsAsSubject ClubAuditEvent[]      @relation("ClubAuditSubject")
 }
 
 model AuthSession {
@@ -335,8 +336,8 @@ model ClubInvite {
 }
 
 model Movie {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt       DateTime            @default(now()) @db.Timestamptz(3)
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
   title           String?
   releaseYear     Int?
   externalIds     MovieExternalId[]
@@ -344,6 +345,7 @@ model Movie {
   sessions        Session[]
   nominations     Nomination[]
   pastNominations PastNomination[]
+  personalRatings PersonalMovieRating[]
 }
 
 model MovieExternalId {
@@ -500,4 +502,21 @@ model SessionRating {
 
   @@unique([participantId, sessionId])
   @@index([sessionId])
+}
+
+enum PersonalRatingSource {
+  PERSONAL
+  SESSION
+}
+
+model PersonalMovieRating {
+  userId    String               @db.Uuid
+  movieId   String               @db.Uuid
+  score     Int
+  source    PersonalRatingSource
+  updatedAt DateTime             @default(now()) @updatedAt @db.Timestamptz(3)
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie     Movie                @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@id([userId, movieId])
 }

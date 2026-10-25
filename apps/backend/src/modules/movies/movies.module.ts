@@ -6,6 +6,8 @@ import { MovieImagesService } from './movie-images.service.js';
 import { MoviesController } from './movies.controller.js';
 import { MoviesRepository } from './movies.repository.js';
 import { MoviesService } from './movies.service.js';
+import { PersonalRatingController } from './personal-rating.controller.js';
+import { PersonalRatingService } from './personal-rating.service.js';
 import { CompositeMovieProvider } from './providers/composite.provider.js';
 import { MOVIE_PROVIDER } from './providers/movie-provider.js';
 import { PoiskkinoClient } from './providers/poiskkino.client.js';
@@ -13,7 +15,7 @@ import { ThetvdbClient } from './providers/thetvdb.client.js';
 import { TmdbClient } from './providers/tmdb.client.js';
 
 @Module({
-    controllers: [MoviesController],
+    controllers: [MoviesController, PersonalRatingController],
     providers: [
         {
             provide: MOVIE_PROVIDER,
@@ -26,6 +28,7 @@ import { TmdbClient } from './providers/tmdb.client.js';
                           new ThetvdbClient(thetvdb),
                       ),
         },
+        PersonalRatingService,
         MoviesRepository,
         MovieImagesService,
         MoviesService,

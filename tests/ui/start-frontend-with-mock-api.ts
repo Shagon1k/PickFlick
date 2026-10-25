@@ -23,6 +23,7 @@ import { handleMovieDetails } from './movie-details.ts';
 import { handleMovieSearch } from './movie-search.ts';
 import { handleNominations } from './nominations.ts';
 import { handlePendingInvitation } from './pending-invites.ts';
+import { handlePersonalRating } from './personal-rating.ts';
 import { handleRating } from './rating.ts';
 import { handleSelection } from './selection.ts';
 import { handleSessionRoster } from './session-roster.ts';
@@ -400,6 +401,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (
         [
+            handlePersonalRating,
             handleMovieDetails,
             handleMovieSearch,
             handleSelection,

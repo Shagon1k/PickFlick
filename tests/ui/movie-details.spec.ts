@@ -40,10 +40,8 @@ for (const width of [390, 768, 1024, 1440]) {
             );
             await expect(page.getByText('7.519')).toHaveCount(0);
             await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
-            // Personal Rating and Watchlist hold their places until the Library ships.
-            await expect(
-                page.getByRole('button', { name: 'Rate this film (coming soon)' }),
-            ).toBeDisabled();
+            // Personal ratings open the shared star editor; Watchlist is a later issue.
+            await expect(page.getByRole('button', { name: 'Rate this film' })).toBeEnabled();
             // The ribbon sits on the visible poster: the media grid's, or the phone ticket's.
             await expect(
                 page

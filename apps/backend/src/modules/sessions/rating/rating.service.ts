@@ -85,6 +85,7 @@ export class RatingService {
             }
             if (session.phase !== 'RATING')
                 throw new ConflictException({ reason: 'RATING_CLOSED' });
+            if (!session.movieId) throw new ConflictException({ reason: 'RATING_MOVIE_MISSING' });
             await tx.sessionRating.create({
                 data: {
                     sessionId: id,
@@ -92,6 +93,12 @@ export class RatingService {
                     score: input.score,
                     comment: input.comment || null,
                 },
+            });
+            const data = { score: input.score, source: 'SESSION' as const };
+            await tx.personalMovieRating.upsert({
+                where: { userId_movieId: { userId, movieId: session.movieId } },
+                create: { userId, movieId: session.movieId, ...data },
+                update: data,
             });
             await completeRating(tx, id);
         });

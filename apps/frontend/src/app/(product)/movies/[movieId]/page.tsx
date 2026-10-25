@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { getMovieDetails } from '#api/movies.server';
+import { getPersonalRating } from '#api/personal-rating.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';
@@ -40,6 +41,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     if (!result || result.state === 'unavailable') {
         return <MovieUnavailable movieId={movieId} reason={result?.reason} />;
     }
+    const rating = await getPersonalRating(movieId);
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
@@ -59,7 +61,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                         Some provider details are unavailable. Available information is shown below.
                     </Alert>
                 ) : null}
-                <MovieHero movie={movie} title={title} />
+                <MovieHero movie={movie} title={title} rating={rating} />
                 <MovieLinks
                     imdb={response?.links.imdb ?? null}
                     kinopoisk={response?.links.kinopoisk ?? null}
