@@ -324,7 +324,7 @@ test('Watching Call Sheet uses the Session ordinal, weekday and actual selected 
     await expect(sheet).toContainText('Sci-Fi');
     await expect(sheet).not.toContainText('2026');
     const statistics = page.getByRole('region', { name: 'Club statistics' });
-    await expect(statistics.locator('strong')).toHaveText(Array(7).fill('—'));
+    await expect(statistics.locator('strong')).toHaveText(['0', '0']);
     await page
         .getByRole('navigation', { name: 'Club sections' })
         .getByRole('link', { name: 'Manage Club' })

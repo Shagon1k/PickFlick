@@ -3,6 +3,8 @@ import { DEFAULT_AUTH_RETURN_TARGET, resolveAuthReturnTarget } from '../return-t
 describe('resolveAuthReturnTarget', () => {
     it.each([
         '/app',
+        '/clubs/10000000-0000-4000-8000-000000000031/ratings',
+        '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=title&page=2',
         '/library',
         '/library?tab=my-ratings&q=Alien&score=8',
         '/library?tab=watchlist&q=Alien+%26+Aliens&priority=HIGH&sort=title&page=2',
@@ -25,6 +27,9 @@ describe('resolveAuthReturnTarget', () => {
         '/\\evil.example/app',
         '/app?next=https://evil.example',
         '/admin',
+        '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=secret',
+        '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=title&sort=time',
+        '/clubs/10000000-0000-4000-8000-000000000031/ratings#hidden',
         '/library/extra',
         '/library#filters',
         '/library?next=//evil.example',

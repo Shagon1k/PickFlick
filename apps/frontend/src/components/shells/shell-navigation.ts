@@ -122,12 +122,13 @@ export function buildAccountNavigation(
 /** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
 export function buildClubNavigation(
     clubId: string,
-    current: 'overview' | 'sessions' | 'members' | 'manage' | null,
+    current: 'overview' | 'sessions' | 'ratings' | 'members' | 'manage' | null,
 ): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [
         { href: hub, label: 'Overview', current: current === 'overview' },
         { href: `${hub}/sessions`, label: 'Sessions', current: current === 'sessions' },
+        { href: `${hub}/ratings`, label: 'Ratings', current: current === 'ratings' },
         { href: `${hub}/members`, label: 'Members', current: current === 'members' },
         { href: `${hub}/settings`, label: 'Manage Club', current: current === 'manage' },
     ];

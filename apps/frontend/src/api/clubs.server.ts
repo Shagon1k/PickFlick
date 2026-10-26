@@ -5,6 +5,8 @@ import type {
     IClubSettings,
     IClubSummary,
     TChangeMemberRoleRequest,
+    TClubRatings,
+    TClubRatingsQuery,
     TCreateClubRequest,
     TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
@@ -18,6 +20,13 @@ export const getClubHub = cache(
     (clubId: string, incomingHeaders?: Headers): Promise<IClubHub> =>
         requestApi(apiPath`/clubs/${clubId}/hub`, {}, incomingHeaders),
 );
+
+export const getClubRatings = (clubId: string, query: TClubRatingsQuery): Promise<TClubRatings> => {
+    const path = apiPath`/clubs/${clubId}/ratings`;
+    return requestApi(
+        `${path}?${new URLSearchParams({ sort: query.sort, page: String(query.page) })}`,
+    );
+};
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>
     requestApi('/clubs', { method: 'POST', json: input });

@@ -344,6 +344,12 @@
     }
 }
 
+@media (width >= 1024px) {
+    .statistics[data-basic] .stat {
+        grid-column: span 6;
+    }
+}
+
 @media (width < 768px) {
     /* Phones end the page above the footer without the desktop's long tail. */
     .hub {

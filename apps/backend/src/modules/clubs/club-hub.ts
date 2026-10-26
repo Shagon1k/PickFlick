@@ -3,7 +3,6 @@ import {
     type IClubHub,
     type IClubHubSession,
     isOpenSessionPhase,
-    type TMovieDetails,
 } from '@pickflick/contracts';
 import { Prisma } from '@pickflick/database';
 
@@ -11,10 +10,10 @@ import { findMembership, loadClubAccess } from './access/club-access.js';
 import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
+import { readCompletedScreenings } from './statistics/completed-screenings.js';
 
 const RECENT_LIMIT = 5;
 const HISTORY_LIMIT = 20;
-const MINUTES_PER_HOUR = 60;
 const sessionInclude = {
     movie: { select: { id: true, title: true, releaseYear: true } },
     _count: {
@@ -67,10 +66,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
             take: HISTORY_LIMIT,
             include: sessionInclude,
         }),
-        tx.session.findMany({
-            where: { clubId, phase: 'COMPLETED' },
-            select: { movieId: true, scheduledAt: true },
-        }),
+        readCompletedScreenings(tx, clubId, membership.role),
         tx.membership.findMany({
             where: { clubId, status: 'ACTIVE' },
             orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
@@ -173,41 +169,4 @@ function getProgressCount(row: THubSessionRow) {
     if (row.phase === 'SELECTION') return row._count.selectionBallots;
     if (row.phase === 'RATING') return row._count.ratings;
     return null;
-}
-
-export function buildClubStatistics(
-    completed: { movieId: string | null; scheduledAt: Date | null }[],
-    metadata: Map<string, TMovieDetails>,
-): IClubHub['statistics'] {
-    const movies = completed.map((row) => (row.movieId ? metadata.get(row.movieId) : undefined));
-    const hasHistory = completed.length > 0;
-    const year = new Date().getUTCFullYear();
-    return {
-        sessionsWatched: hasHistory ? completed.length : null,
-        sessionsThisYear: hasHistory
-            ? completed.filter((row) => row.scheduledAt?.getUTCFullYear() === year).length
-            : null,
-        averageRating: null,
-        totalWatchHours:
-            hasHistory && movies.every((movie) => movie?.runtime)
-                ? movies.reduce((sum, movie) => sum + movie!.runtime!, 0) / MINUTES_PER_HOUR
-                : null,
-        topGenre: getMostFrequent(movies.flatMap((movie) => movie?.genres ?? [])),
-        topDirector: getMostFrequent(
-            movies.flatMap((movie) => movie?.directors?.map((person) => person.name) ?? []),
-        ),
-        topActor: getMostFrequent(
-            movies.flatMap((movie) => movie?.cast?.map((person) => person.name) ?? []),
-        ),
-    };
-}
-
-function getMostFrequent(values: string[]): string | null {
-    const counts = new Map<string, number>();
-    for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
-    return (
-        [...counts].sort(
-            ([a, aCount], [b, bCount]) => bCount - aCount || a.localeCompare(b),
-        )[0]?.[0] ?? null
-    );
 }
