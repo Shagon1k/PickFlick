@@ -95,9 +95,11 @@ file paths to the existing Playwright commands. It combines all affected areas:
 | Changed source or baseline                                                               | Selected area                                                                                |
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Marketing routes, contact API                                                            | Public pages                                                                                 |
+| Club invitation routes (`/invite/club/[token]`)                                          | Club invitations                                                                             |
+| Session invitation routes (`/invite/session/[token]`)                                    | Session roster                                                                               |
 | Login routes                                                                             | Authentication                                                                               |
-| Club routes, Club/invitation API                                                         | Club onboarding, Hub, invitations, members, settings, Ratings and Achievements               |
-| Session routes/components/API                                                            | Session workflows, roster, Nomination, Selection, Watching, Rating, history and Hub          |
+| Club routes (except Session creation), Club/invitation API                               | Club onboarding, Hub, invitations, members, settings, Ratings and Achievements               |
+| Session routes/components/API, including `/clubs/[clubId]/sessions/new`                  | Session workflows, roster, Nomination, Selection, Watching, Rating, history and Hub          |
 | Movie routes/API                                                                         | Movie search/details, Personal Rating and Watchlist                                          |
 | Library routes, achievement component, Library/achievement/personal-rating/Watchlist API | Library, statistics, Achievements, Club Ratings, Movie Details and rating/Watchlist controls |
 
@@ -106,6 +108,7 @@ specs run directly; feature baseline updates select their area too. Shared compo
 layouts, UI fixtures, contracts, configuration, dependencies, the selector and CI changes run all
 smoke and visual checks. Unmapped frontend or UI test paths also run both full selections.
 Documentation/backend-only changes skip mock UI checks; the other CI jobs still run.
+The shared authentication adapter `src/api/session.server.ts` runs both full selections.
 A selected area with no tests carrying that suite's tag succeeds without starting the app.
 The Git comparison trusts only the current checkout directory for that command because the CI
 container user differs from the checkout owner. It does not change stored Git configuration.

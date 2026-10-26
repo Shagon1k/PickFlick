@@ -10,19 +10,27 @@ const AREAS = [
         captures: /^(?:landing|pricing|contact|privacy|terms)-/,
     },
     {
+        source: /^apps\/frontend\/src\/app\/\(auth\)\/invite\/club\//,
+        tests: /^club-invitations\.spec\.ts$/,
+    },
+    {
+        source: /^apps\/frontend\/src\/app\/\(auth\)\/invite\/session\//,
+        tests: /^session-roster\.spec\.ts$/,
+    },
+    {
         source: /^apps\/frontend\/src\/app\/\(auth\)\//,
         tests: /^auth\.spec\.ts$/,
         captures: /^login-/,
     },
     {
+        source: /^(?:apps\/frontend\/src\/app\/\(product\)\/(?:sessions\/|clubs\/\[clubId\]\/sessions\/new\/)|apps\/frontend\/src\/components\/sessions\/|apps\/frontend\/src\/api\/(?:sessions|session-roster|nominations|selection|rating)\.server\.ts$)/,
+        tests: /^(?:session-.+|nominations|selection(?:-outcome)?|watching|rating|completed-history|club-hub|phase-states-visual)\.spec\.ts$/,
+        captures: /^(?:create-session|nominations|selection|watching|rating|completed-history)-/,
+    },
+    {
         source: /^(?:apps\/frontend\/src\/app\/\(product\)\/clubs\/|apps\/frontend\/src\/api\/(?:clubs|invitations)\.server\.ts$)/,
         tests: /^(?:club-.+|achievements|phase-states-visual)\.spec\.ts$/,
         captures: /^(?:club-|create-club-|no-clubs-|pending-invites-|hub-history-)/,
-    },
-    {
-        source: /^(?:apps\/frontend\/src\/app\/\(product\)\/sessions\/|apps\/frontend\/src\/components\/sessions\/|apps\/frontend\/src\/api\/(?:sessions?|session-roster|nominations|selection|rating)\.server\.ts$)/,
-        tests: /^(?:session-.+|nominations|selection(?:-outcome)?|watching|rating|completed-history|club-hub|phase-states-visual)\.spec\.ts$/,
-        captures: /^(?:create-session|nominations|selection|watching|rating|completed-history)-/,
     },
     {
         source: /^(?:apps\/frontend\/src\/app\/\(product\)\/movies\/|apps\/frontend\/src\/api\/movies\.server\.ts$)/,
@@ -48,7 +56,7 @@ export function selectUiFiles(paths, testFiles) {
             ({ source, captures }) =>
                 source.test(path) ||
                 (path.startsWith('tests/ui/__screenshots__/') &&
-                    captures.test(path.split('/').at(-1))),
+                    captures?.test(path.split('/').at(-1))),
         );
         if (area) {
             testFiles

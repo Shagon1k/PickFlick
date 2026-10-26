@@ -1,7 +1,9 @@
 import { selectUiFiles } from '../run-ui-checks.mjs';
 
 const files = [
+    'tests/ui/auth.spec.ts',
     'tests/ui/club-hub.spec.ts',
+    'tests/ui/club-invitations.spec.ts',
     'tests/ui/club-ratings.spec.ts',
     'tests/ui/library.spec.ts',
     'tests/ui/achievements.spec.ts',
@@ -10,6 +12,8 @@ const files = [
     'tests/ui/movie-details.spec.ts',
     'tests/ui/phase-states-visual.spec.ts',
     'tests/ui/selection.spec.ts',
+    'tests/ui/session-roster.spec.ts',
+    'tests/ui/session-workflows.spec.ts',
     'tests/ui/public-pages.spec.ts',
 ];
 
@@ -41,10 +45,37 @@ describe('PR UI test selection', () => {
             'tests/ui/phase-states-visual.spec.ts',
             'tests/ui/public-pages.spec.ts',
             'tests/ui/selection.spec.ts',
+            'tests/ui/session-roster.spec.ts',
+            'tests/ui/session-workflows.spec.ts',
+        ]);
+    });
+
+    it('should select Session workflows for nested Club Session creation routes', () => {
+        expect(
+            selectUiFiles(
+                ['apps/frontend/src/app/(product)/clubs/[clubId]/sessions/new/page.module.scss'],
+                files,
+            ),
+        ).toEqual([
+            'tests/ui/club-hub.spec.ts',
+            'tests/ui/phase-states-visual.spec.ts',
+            'tests/ui/selection.spec.ts',
+            'tests/ui/session-roster.spec.ts',
+            'tests/ui/session-workflows.spec.ts',
         ]);
     });
 
     it.each([
+        ['club', 'tests/ui/club-invitations.spec.ts'],
+        ['session', 'tests/ui/session-roster.spec.ts'],
+    ])('should select invitation checks for the %s invitation route', (kind, spec) => {
+        expect(
+            selectUiFiles([`apps/frontend/src/app/(auth)/invite/${kind}/[token]/page.tsx`], files),
+        ).toEqual([spec]);
+    });
+
+    it.each([
+        'apps/frontend/src/api/session.server.ts',
         'apps/frontend/src/components/ui/Button/Button.tsx',
         'apps/frontend/src/components/movies/FilmMeta/FilmMeta.module.scss',
         'apps/frontend/src/app/(product)/layout.tsx',
