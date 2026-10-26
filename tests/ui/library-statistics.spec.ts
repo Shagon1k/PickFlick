@@ -81,6 +81,35 @@ for (const width of [390, 768, 1024, 1440]) {
 }
 
 test(
+    'Personal statistics timeouts preserve the Library table and filters',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await context.addCookies([
+            {
+                name: 'pickflick.session_token',
+                value: 'valid-library-statistics-timeout',
+                domain: '127.0.0.1',
+                path: '/',
+            },
+        ]);
+        await page.goto('/library?q=Grand&score=8');
+        await expect(
+            page.getByRole('region', { name: 'Personal statistics unavailable' }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('link', { name: 'Retry statistics', exact: true }),
+        ).toHaveAttribute(
+            'href',
+            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
+        );
+        await expect(page.getByRole('table')).toBeVisible();
+        await expect(page.getByRole('row')).toHaveCount(2);
+        await expect(page.getByLabel('Search rated films')).toHaveValue('Grand');
+        await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
+    },
+);
+
+test(
     'Personal statistics show empty values and recover from read failure',
     { tag: '@smoke' },
     async ({ context, page }) => {

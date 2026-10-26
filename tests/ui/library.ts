@@ -25,7 +25,11 @@ export function handleLibrary(
         return true;
     }
     if (pathname === '/library/statistics') {
-        sendJson(response, 200, buildStatistics(token));
+        if (token.includes('statistics-timeout')) {
+            setTimeout(() => sendJson(response, 200, buildStatistics(token)), 11_000);
+        } else {
+            sendJson(response, 200, buildStatistics(token));
+        }
         return true;
     }
     const query = libraryQuerySchema.parse(

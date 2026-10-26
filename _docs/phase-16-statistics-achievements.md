@@ -98,6 +98,27 @@ Exact-head hosted preview and owner visual acknowledgment remain required before
 The repository has preview Compose but no hosted-preview workflow or authorized destination for
 this run. Local captures and a Draft PR do not satisfy that criterion; the issue remains open.
 
+### Personal review fix round 1
+
+The statistics loader handles the `TimeoutError` DOMException from the existing ten-second API
+deadline through its unavailable/retry state. Successful table reads keep their rows and filters.
+The browser regression delays only the statistics response beyond that deadline; it reproduced
+the route error boundary on source commit `7a0300687b4e4d9f173a8df1df3fd92e6bc7f499`.
+
+`pnpm verify` passes the audit gate, lint, Knip, formatting, type checking, all 393 unit tests and
+every workspace build with Node 24.15.0 and pnpm 11.25.0. The audit retains two low and five moderate
+findings. No schema, migration, dependency or environment change is introduced.
+
+All six statistics browser checks pass, including the real-timeout regression, four responsive
+layouts with axe and keyboard/touch editing, and empty/error recovery. The timeout case preserves
+the filtered table row, search value, enabled Apply button and retry URL.
+
+The full smoke selection passes 83 of 84 checks, including all existing Library, Personal Rating
+and Watchlist checks. Its only failure is the unchanged Session clipboard assertion at
+`tests/ui/session-roster.spec.ts:73`: expected origin port 41730, received the isolated run's 41860.
+The standard ports were occupied, so temporary ignored configuration used 41860/42861. No Session
+test or visual baseline is changed. Hosted preview and owner visual acknowledgment remain pending.
+
 ## Club verification
 
 Node 24.15.0 and pnpm 11.25.0 run with the launcher's workspace pnpm store. A disposable

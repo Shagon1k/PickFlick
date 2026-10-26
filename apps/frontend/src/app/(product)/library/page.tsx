@@ -36,7 +36,12 @@ async function loadStatistics(query: TLibraryQuery) {
     } catch (error) {
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             redirect(buildLoginPath(buildLibraryPath(query)));
-        if (error instanceof ApiError || error instanceof TypeError) return null;
+        if (
+            error instanceof ApiError ||
+            error instanceof TypeError ||
+            (error instanceof DOMException && error.name === 'TimeoutError')
+        )
+            return null;
         throw error;
     }
 }
