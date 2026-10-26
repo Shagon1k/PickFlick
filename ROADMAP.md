@@ -1247,7 +1247,7 @@ non-blocking Rating views
 
 **Out of scope:** AI insights and Club rating CSV export.
 
-### Phase 17 — Notifications & Preferences · Not started
+### Phase 17 — Notifications & Preferences · In progress
 
 **Goal:** Durable in-app and opted-in email notifications for lifecycle, membership, inactivity, and
 billing events.
@@ -1279,6 +1279,14 @@ event mapping · [#61](https://github.com/Shagon1k/PickFlick/issues/61) inbox, b
 - [ ] Duplicate events and retries never create duplicate notifications or emails.
 - [ ] Notification UI states, focus and dismissal, and mobile behavior pass design and accessibility
       checks.
+
+**Notification policy:** Optional events default to in-app on and email off. Explicit per-event
+preferences apply to future notifications. Transactional `BILLING_SERVICE` notices are mandatory
+on both channels; marketing is never included in that exception. Notification content stores typed
+entity references only. Current authorization and saved achievement privacy govern projection;
+deleted or inaccessible entities return generic unavailable copy without a link. Inactivity and
+billing producers arrive in their owning phases. The active [Phase 17 document](_docs/phase-17-notifications.md)
+records the event/audience matrix and verification in progress.
 
 **Out of scope:** Web push and Paddle events before Phase 20.
 
@@ -1681,7 +1689,7 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
 | 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
 | 13 — Watching, Rating & Completion                     | In progress | Manual Watching → Rating delivery is active; Rating submission/completion and phase acceptance remain open.        |
-| 14–17                                                  | Not started | History, Library, statistics and notification delivery remain later work.                                          |
+| 14–17                                                  | In progress | Notification persistence and preferences are active; inbox/SSE and email delivery remain open.                     |
 | 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
 | 19–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |

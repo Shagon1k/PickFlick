@@ -88,27 +88,29 @@ enum SessionParticipantStatus {
 }
 
 model User {
-  id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                    String                @unique
-  emailVerified            Boolean               @default(false)
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference[]
+  id                       String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                    String                   @unique
+  emailVerified            Boolean                  @default(false)
   displayName              String
   image                    String?
-  appRole                  AppRole               @default(USER)
-  status                   UserStatus            @default(ACTIVE)
-  locale                   String                @default("en")
-  createdAt                DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt                DateTime              @updatedAt @db.Timestamptz(3)
-  createdClubInvites       ClubInvite[]          @relation("ClubInviteCreator")
-  targetedClubInvites      ClubInvite[]          @relation("ClubInviteTarget")
-  answeredClubInvites      ClubInvite[]          @relation("ClubInviteResponder")
+  appRole                  AppRole                  @default(USER)
+  status                   UserStatus               @default(ACTIVE)
+  locale                   String                   @default("en")
+  createdAt                DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                 @updatedAt @db.Timestamptz(3)
+  createdClubInvites       ClubInvite[]             @relation("ClubInviteCreator")
+  targetedClubInvites      ClubInvite[]             @relation("ClubInviteTarget")
+  answeredClubInvites      ClubInvite[]             @relation("ClubInviteResponder")
   personalRatings          PersonalMovieRating[]
   watchlistItems           WatchlistItem[]
   memberships              Membership[]
   achievements             AchievementAward[]
   authSessions             AuthSession[]
   providerAccounts         ProviderAccount[]
-  clubAuditEventsAsActor   ClubAuditEvent[]      @relation("ClubAuditActor")
-  clubAuditEventsAsSubject ClubAuditEvent[]      @relation("ClubAuditSubject")
+  clubAuditEventsAsActor   ClubAuditEvent[]         @relation("ClubAuditActor")
+  clubAuditEventsAsSubject ClubAuditEvent[]         @relation("ClubAuditSubject")
 }
 
 model AuthSession {
@@ -563,4 +565,78 @@ model WatchlistItem {
   movie    Movie             @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@id([userId, movieId])
+}
+
+enum NotificationEvent {
+  SESSION_STARTED
+  SELECTION_OPENED
+  SELECTION_CLOSED
+  RATING_OPENED
+  RATING_CLOSED
+  SESSION_CANCELLED
+  NOMINATION_STALLED
+  MEMBERSHIP_JOINED
+  MEMBERSHIP_ROLE_CHANGED
+  MEMBERSHIP_REMOVED
+  MEMBERSHIP_LEFT
+  CLUB_ARCHIVED
+  CLUB_REACTIVATED
+  ACHIEVEMENT_EARNED
+  CLUB_INACTIVITY_WARNING
+  BILLING_SERVICE
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  SUPPRESSED
+}
+
+model Notification {
+  id          String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientId String                        @db.Uuid
+  event       NotificationEvent
+  sourceId    String                        @db.Uuid
+  occurrence  Int                           @default(1)
+  clubId      String?                       @db.Uuid
+  sessionId   String?                       @db.Uuid
+  awardId     String?                       @db.Uuid
+  inApp       Boolean
+  email       Boolean
+  readAt      DateTime?                     @db.Timestamptz(3)
+  createdAt   DateTime                      @default(now()) @db.Timestamptz(3)
+  recipient   User                          @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  attempts    NotificationDeliveryAttempt[]
+
+  @@unique([recipientId, event, sourceId, occurrence])
+  @@index([recipientId, inApp, createdAt, id])
+}
+
+model NotificationPreference {
+  userId String            @db.Uuid
+  event  NotificationEvent
+  inApp  Boolean
+  email  Boolean
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, event])
+}
+
+model NotificationDeliveryAttempt {
+  notificationId String                     @db.Uuid
+  channel        NotificationChannel
+  attempt        Int
+  status         NotificationDeliveryStatus
+  createdAt      DateTime                   @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime?                  @db.Timestamptz(3)
+  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, channel, attempt])
+  @@index([channel, status, createdAt])
 }

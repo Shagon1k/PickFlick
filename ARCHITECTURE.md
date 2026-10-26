@@ -71,20 +71,21 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                                          | Owns                                                                                                                                                                                | State                                                                                         |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| auth                                            | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
-| clubs                                           | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
-| contact                                         | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
-| email                                           | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
-| storage                                         | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
-| health                                          | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                                          | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
-| sessions                                        | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| watchlist                                       | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
-| library                                         | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
-| achievements                                    | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| Notifications, Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
+| Module                           | Owns                                                                                                                                                                                | State                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| auth                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
+| clubs                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
+| contact                          | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
+| email                            | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
+| storage                          | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
+| health                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
+| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| sessions                         | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
+| watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
+| library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
+| achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
+| notifications                    | Durable per-recipient events, channel preference snapshots, delivery attempts and privacy-safe target projection.                                                                   | Active — inbox/SSE and email dispatcher remain Proposed                                       |
+| Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -135,7 +136,8 @@ The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) ho
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
 `SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
-`PersonalMovieRating`, `WatchlistItem` and `AchievementAward`. Database-enforced invariants:
+`PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
+and `NotificationDeliveryAttempt`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -876,3 +878,31 @@ local status filters, counts, progress, versions and calculation explanations. T
 its existing statistics summary above the Achievements tab. An async summary component and tab
 content render concurrently, with independent read-failure recovery and a shared timeout policy. Hosted preview and
 owner visual acceptance are still pending.
+
+### Durable notification intent
+
+Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt. Apply it
+before the updated API and deadline worker. It is additive, with no historical backfill. Source
+Session transitions, audited Membership/Club changes and new achievement awards record intent in
+their existing transaction. Notification writes failing roll back the source mutation. The
+per-recipient/event/source UUID/occurrence unique index handles concurrent replay; phase/deadline
+versions distinguish repeated Session events. First-write preferences and attempts survive retries.
+Existing SessionProgressEvent and NominationDeadlineNotification records retain their existing
+roles; neither is a second inbox. Only future writes produce Notifications.
+
+The authenticated preference GET/PUT API is private/no-store, derives identity from the session,
+and validates strict shared contracts. Optional defaults are in-app on/email off; transactional
+BILLING_SERVICE is mandatory on both channels. The database also rejects disabled mandatory rows.
+Preferences apply prospectively. Each Notification has initial per-channel attempts with a unique
+positive attempt number; email intent remains pending until #62 implements transport.
+
+Only typed references and delivery/read metadata are stored. There is no payload JSON or copied
+entity content. Entity UUIDs intentionally have no foreign keys: deletion retains generic inbox
+history. Recipient deletion cascades private notifications, attempts and preferences. The internal
+projection checks the recipient's current account, Club Membership, source existence, award owner
+and saved privacy classification before returning static copy and a canonical relative link.
+Deleted/private sources share one unavailable message without a link or exposed entity UUID.
+Private Club awards only fan out to current Admins/Moderators. Inactivity and billing have event
+contracts but no producers here. No worker, broker, provider call, environment or dependency is
+added. #61 owns inbox/read state/SSE; #62 owns templates, authorization rechecks at send time,
+provider idempotency using Notification UUIDs, retries and suppression.
