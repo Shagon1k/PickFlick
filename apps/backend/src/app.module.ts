@@ -8,6 +8,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { RuntimeModule } from './config/runtime.module.js';
 import { DatabaseModule } from './database/database.module.js';
+import { AchievementsModule } from './modules/achievements/achievements.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { ClubsModule } from './modules/clubs/clubs.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
@@ -61,6 +62,7 @@ export class AppModule {
                 DatabaseModule,
                 StorageModule,
                 AuthModule,
+                AchievementsModule,
                 ClubsModule,
                 ContactModule,
                 HealthModule,

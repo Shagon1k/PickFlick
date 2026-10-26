@@ -80,6 +80,7 @@ describe('TmdbClient', () => {
             ],
             data: {
                 runtime: 120,
+                productionCountries: ['US'],
 
                 directors: [{ name: 'Synthetic Director' }],
                 cast: [{ name: 'Synthetic Actor', character: 'Lead', profileUrl: null }],

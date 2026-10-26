@@ -97,6 +97,7 @@ function mergeMetadata(primary: TSourceSnapshot | null, enrichment: TSourceSnaps
         originalLanguage: english?.originalLanguage ?? base.originalLanguage,
         runtime: english?.runtime ?? base.runtime,
         genres: english?.genres ?? null,
+        productionCountries: english?.productionCountries ?? null,
         directors: english?.directors ?? base.directors,
         writers: english?.writers ?? base.writers,
         cast: english?.cast ?? base.cast,

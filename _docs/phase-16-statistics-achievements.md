@@ -155,3 +155,144 @@ are not claimed by these focused checks.
 Exact-head hosted preview and owner visual acknowledgment remain required before acceptance.
 The repository has preview Compose, but no hosted-preview workflow or destination is configured
 for this run. Local captures and a Draft PR do not satisfy that requirement. The issue stays open.
+
+## Versioned achievements — issue #59
+
+Run `r_cc059a8cb25a586d636f` uses managed branch
+`PF-59_16-3-implement-versioned-club-personal`. Prerequisites #57 and #58 are closed.
+
+Reuse membership authorization, source Session/Selection/Rating records, configured catalog cache,
+Library/Hub shells, Icon and Progress. Migration 33 introduced definitions and progress records;
+migration 34 preserves earned snapshots in one award table and derives pending progress on reads.
+The owner FK check, unique retry keys and immutable earned snapshots remain database enforced.
+Recompute occurs when opening a view; source mutation hooks and background delivery are out of
+scope. Pending progress follows current data; earned versions keep their original measured facts.
+
+Fifteen Club and fourteen personal cards cover the canonical shelves. World Tour counts recorded
+production countries from the configured catalog; Silent Era uses release years before 1930. Older cache rows
+remain readable, contributing countries after their next fetch. Attendance uses explicit recorded
+attendance, never accepted participation. Calendar criteria use documented UTC scheduled times; no timezone guess is
+made. The Roadmap records precise rules and privacy limits, including the manager-only projection
+of result-based Club awards. No dependencies or environment settings change.
+
+Verification plan: pure fixtures for every rule and unknown/partial data; API/DB tests for owner
+isolation, member denial, concurrent retries, progress recomputation, immutable award snapshots and
+version changes; keyboard/touch, axe, filters, long content and error recovery at
+390/768/1024/1440px; existing Library/Hub regressions and `pnpm verify`. Migration validation uses
+only a new disposable `pickflick_test` database on loopback port 42432. Existing services are kept.
+Hosted exact-head preview and owner acknowledgment remain required; this run has no configured
+hosted-preview destination and local screenshots do not satisfy acceptance.
+
+### Initial achievement verification
+
+Evidence for source commit `b11af3e39f2e89a65eff70b0bee6533ea6b42d09`.
+
+Node 24.15.0 / pnpm 11.25.0 use the launcher's workspace store. All 33 migrations apply to the
+new disposable PostgreSQL `pickflick_test` database on loopback port 42432, and the synthetic seed
+succeeds. The clean integration run passes all 272 tests across 34 files, including five new API
+checks for concurrent retries, owner isolation, strict selectors, scope checks, earned-version
+immutability, metadata refresh, pending progress removal, archived reads and Member privacy.
+Seven pure fixtures cover every supported rule, partial evidence and imports, known
+attendance, date-only exclusions, hidden averages and missing live timestamps.
+
+All five achievement browser checks pass on the final shelf at 390/768/1024/1440px, with axe,
+keyboard/touch filters, empty/no-match states, long titles, version explanations, independent
+statistics failure, retry recovery, sign-in continuation and Club denial. The Library retains its
+eight existing summary tiles above the new tab. Local phone and desktop captures under
+`test-results/achievements-{library,club}-*.png` were inspected; no visual baseline is changed.
+The real-API `tests/journeys/achievements.spec.ts` also passes with real Better Auth sessions,
+14 personal and 15 Club cards, source removal after earning, retained award snapshots, and a
+second owner's isolation and Club denial.
+
+The broader smoke selection passes 88 of 89 checks. Its sole failure is the existing Session
+clipboard assertion at `tests/ui/session-roster.spec.ts:73`: it hard-codes origin port 41730 while
+this isolated run correctly returns 41890. Standard UI ports were occupied, so ignored temporary
+configuration uses 41890/42891. Session code, that test and baselines are unchanged. An initial
+integration run overlapped Prisma generation and lost one generated-client import; the isolated
+rerun passes all 34 suites. An early browser run exposed the missing achievement sign-in return
+allowlist; the scoped paths and selector-rejection fixtures now pass.
+
+Exact-head hosted preview and owner visual acknowledgment remain pending; local screenshots, tests and a Draft PR do not complete #59.
+
+The final `pnpm verify` passes the production audit gate, lint, Knip, formatting, type checking,
+all 405 unit tests and every workspace build. The audit retains two low and five moderate
+findings. The staged gitleaks scan passes with no allowlist change. Achievement evaluation adds
+no provider request, dependency or environment variable. TMDB detail normalization now retains
+production countries from its existing request. The new migration is local/test-verified only;
+UAT migration, full visual baseline comparisons and owner visual acceptance are not claimed.
+
+### Owner-approved review fix round 1
+
+The 15 captured findings are addressed together. Earned-only awards snapshot their definitions;
+progress is computed from current metrics. Migration 34 preserves existing earned history and
+removes redundant pending state and the definition table. A populated v33-to-v34 upgrade on a
+separate disposable test database preserved award ID, presentation, explanation, evidence,
+progress and award time. All 34 migrations and the synthetic seed also apply cleanly to the new
+loopback `pickflick_test` database on port 42432.
+
+Full `pnpm verify` passes: audit gate, lint, Knip, formatting, type checking, all 417 unit tests and
+all builds. All 273 integration tests pass, including real past-import/rejoin evidence, concurrent
+award deduplication, earned-version retention, pending progress without stored rows and owner
+constraints. The real-API achievement journey passes using the existing built artifacts and real
+Better Auth sessions. The staged gitleaks scan passes without allowlist changes.
+
+The shared Library shell retains statistics and independent request recovery. The shared
+achievement component now lives under the achievements feature and shows privacy explanations
+for masked progress. Fixtures cover the common Selection snapshot boundary, UTC attendance
+boundaries, distinct production countries, the pre-1930 rule and old cached details without the
+new field. Phone and desktop achievement captures were inspected; baselines are unchanged.
+
+The clean sequential smoke run passes 88 of 89 checks on isolated UI ports 41960/42961 because
+the standard ports are occupied. The sole failure is unchanged
+`tests/ui/session-roster.spec.ts:73`, which expects clipboard origin port 41730 while the isolated
+run correctly returns 41960. All five achievement checks and all Library navigation/statistics
+checks pass. No Session code, that test or screenshot baseline is changed. Exact-head hosted
+preview, owner visual acknowledgment, UAT migration and full visual comparisons remain unverified.
+
+### Owner-approved review fix round 2
+
+The 12 captured threads on source `bd9ccdcdd5e97330652d96ce6e520f251a060441` are handled together.
+The rule files and unit specs move into `rules/`, leaving Nest wiring in the module root.
+Award snapshots retain their privacy classification. Members receive current masked private cards
+independently of earned rows, and no retired private award rows. Attendance runs reset between
+Membership intervals while historical attendees still match by User. Early Bird evidence includes
+ballot-to-Session links. Club metadata is parsed once per completed screening, and unknown release
+years explicitly cannot qualify for Silent Era.
+
+Migration 33 now creates the final snapshot table directly; the unmerged migration 34 is removed.
+The round-1 upgrade evidence above describes the superseded two-migration implementation.
+No shared database is migrated or reset. Round-2 verification uses new isolated local services,
+with `pickflick_test` on loopback port 42433.
+
+World Tour uses the configured catalog's production countries. TheTVDB extended metadata supplies
+countries to the composite provider; uppercase two- or three-letter country codes are accepted.
+The [published TheTVDB schema](https://github.com/thetvdb/v4-api/blob/main/docs/swagger.yml) defines `production_countries` as `ProductionCountry` objects with
+`country` strings. Live-response validation is unavailable because this run has no local TheTVDB
+read token. Provider fixtures cover lowercase three-letter normalization and retention through
+the composite merge.
+
+The synchronous Library shell renders an async statistics summary beside tab content. All Library
+reads reuse the same error policy, including timeout recovery. Private cards show the privacy
+explanation once. Browser regression checks cover concurrent starts, table timeout recovery and
+masked-card rendering. Exact-head hosted preview and owner visual acknowledgment remain pending.
+
+Round-2 `pnpm verify` passes the production audit gate, lint, Knip, formatting, type checking,
+all 421 unit tests and every workspace build. The audit reports two low and five moderate findings.
+All 281 integration tests pass across 35 files with a confirmed zero command exit, including private
+version upgrades/retirement, retained Early Bird evidence after ballot/Session deletion, and the
+final migration's ownership, unique-index and always-immutable snapshot constraints. All 33
+migrations and the synthetic seed apply to the disposable test database.
+
+The full browser smoke run passes 90 of 91 checks using isolated ports 41960/42961. All five
+achievement checks and all Library checks pass, including the new request-concurrency handshake,
+table timeout recovery and single privacy explanation. Mobile and desktop captures were inspected;
+no baselines changed. The sole failure is the unchanged Session clipboard assertion at
+`tests/ui/session-roster.spec.ts:73`, which expects port 41730 and correctly receives 41960.
+No Session code or that test changes in this round. Hosted exact-head preview, owner visual
+acknowledgment, UAT migration and full screenshot comparisons remain unverified.
+
+The real-API achievement journey passes against the built frontend/backend and disposable test
+database, using real Better Auth sessions. It verifies earned-history retention and owner
+isolation through the Library and Club views. No review thread is replied to or resolved by this
+fix round. Project 3 remains Human Review; acceptance checkboxes stay open pending hosted preview
+and owner visual acknowledgment.

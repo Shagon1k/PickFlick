@@ -9,6 +9,11 @@ import { sendError, sendJson, type TMockRequest, type TMockResponse } from './mo
 import { getLibraryRatings } from './personal-rating.ts';
 import { getLibraryWatchlist } from './watchlist.ts';
 
+const parallelReads = new Map<
+    string,
+    { contentStarted: boolean; releaseStatistics?: () => void }
+>();
+
 export function handleLibrary(
     request: TMockRequest,
     response: TMockResponse,
@@ -24,12 +29,21 @@ export function handleLibrary(
         sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-library');
         return true;
     }
+    if (token.includes('parallel-library') && holdStatisticsUntilContent(response, pathname, token))
+        return true;
     if (pathname === '/library/statistics') {
         if (token.includes('statistics-timeout')) {
             setTimeout(() => sendJson(response, 200, buildStatistics(token)), 11_000);
         } else {
             sendJson(response, 200, buildStatistics(token));
         }
+        return true;
+    }
+    if (token.includes('library-table-timeout')) {
+        setTimeout(
+            () => sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-library'),
+            11_000,
+        );
         return true;
     }
     const query = libraryQuerySchema.parse(
@@ -51,6 +65,20 @@ export function handleLibrary(
         sendJson(response, 200, body);
     }
     return true;
+}
+
+function holdStatisticsUntilContent(response: TMockResponse, pathname: string, token: string) {
+    const reads = parallelReads.get(token) ?? { contentStarted: false };
+    parallelReads.set(token, reads);
+    if (pathname === '/library/statistics') {
+        const release = () => sendJson(response, 200, buildStatistics(token));
+        if (reads.contentStarted) release();
+        else reads.releaseStatistics = release;
+        return true;
+    }
+    reads.contentStarted = true;
+    reads.releaseStatistics?.();
+    return false;
 }
 
 function buildStatistics(token: string): TLibraryStatistics {

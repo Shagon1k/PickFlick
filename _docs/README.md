@@ -62,8 +62,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 ## Current verification
 
 [Phase 16 — Statistics and achievements](phase-16-statistics-achievements.md) is active for Club
-statistics and the rating leaderboard under #57 and personal Library statistics under #58.
-Achievements remain separate.
+statistics and the rating leaderboard under #57, personal Library statistics under #58, and
+versioned achievements under #59.
 
 [Phase 15 — Personal Library, Ratings and Watchlist](phase-15-personal-library.md) is active.
 The active deliveries cover editable Personal Ratings, synchronization from live Session Ratings,

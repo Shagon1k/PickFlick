@@ -91,7 +91,10 @@ describe('movieMetadataSchema', () => {
             cast: null,
             trailers: null,
         };
-        expect(movieMetadataSchema.parse(unknown)).toEqual(unknown);
+        expect(movieMetadataSchema.parse(unknown)).toEqual({
+            ...unknown,
+            productionCountries: null,
+        });
         expect(
             movieMetadataSchema.safeParse({
                 ...unknown,

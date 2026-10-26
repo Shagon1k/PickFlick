@@ -26,6 +26,7 @@ export function buildTmdbDetails(tmdbId = 100) {
     return {
         ...buildTmdbMovie(tmdbId),
         runtime: 120,
+        production_countries: [{ iso_3166_1: 'US', name: 'United States of America' }],
         genres: [{ id: 18, name: 'Drama' }],
         imdb_id: 'tt1234567',
         credits: {

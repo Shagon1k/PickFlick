@@ -213,4 +213,17 @@ describe('CompositeMovieProvider', () => {
         expect(result.data.overview).toBeNull();
         expect(result.provenance[1]?.reason).toBe('DISABLED');
     });
+    it('should carry TheTVDB production countries through the configured catalog merge', async () => {
+        const english = record('thetvdb');
+        english.data.productionCountries = ['USA', 'GBR'];
+        enrichment.fetchDetails.mockResolvedValue(english);
+        expect((await provider.fetchDetails(buildMovieLookup())).data.productionCountries).toEqual([
+            'USA',
+            'GBR',
+        ]);
+        english.data.productionCountries = null;
+        expect(
+            (await provider.fetchDetails(buildMovieLookup())).data.productionCountries,
+        ).toBeNull();
+    });
 });

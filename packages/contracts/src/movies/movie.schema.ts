@@ -122,6 +122,11 @@ export const movieMetadataSchema = z.strictObject({
         )
         .max(20),
     runtime: z.number().int().positive().nullable(),
+    productionCountries: z
+        .array(z.string().regex(/^[A-Z]{2,3}$/u))
+        .max(250)
+        .nullable()
+        .default(null),
     genres: z.array(z.string().min(1).max(200)).max(100).nullable(),
     directors: z
         .array(z.strictObject({ name: z.string().min(1).max(1000) }))

@@ -55,6 +55,7 @@ async function createPastJourney(browser: Browser) {
         releaseDate: null,
         releaseYear: 1999,
         adult: false,
+        productionCountries: null,
         originalLanguage: 'en',
         posterUrl: null,
         backdropUrl: null,

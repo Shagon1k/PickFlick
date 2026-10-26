@@ -66,6 +66,7 @@ export function createEmptyMetadata() {
         ratings: [],
         runtime: null,
         genres: null,
+        productionCountries: null,
         directors: null,
         writers: null,
         cast: null,

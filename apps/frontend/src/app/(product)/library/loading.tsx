@@ -10,6 +10,7 @@ export default function LibraryLoading() {
             items={[
                 { label: 'My Ratings', href: '/library?tab=my-ratings' },
                 { label: 'Watchlist', href: '/library?tab=watchlist' },
+                { label: 'Achievements', href: '/library?tab=achievements' },
             ]}
         >
             <p role="status">Loading your Library…</p>

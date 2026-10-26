@@ -104,6 +104,7 @@ model User {
   personalRatings          PersonalMovieRating[]
   watchlistItems           WatchlistItem[]
   memberships              Membership[]
+  achievements             AchievementAward[]
   authSessions             AuthSession[]
   providerAccounts         ProviderAccount[]
   clubAuditEventsAsActor   ClubAuditEvent[]      @relation("ClubAuditActor")
@@ -163,25 +164,49 @@ model AuthRateLimit {
 }
 
 model Club {
-  id                          String           @id @db.Uuid
+  achievements                AchievementAward[]
+  id                          String             @id @db.Uuid
   name                        String
   description                 String?
   avatarObjectKey             String?
-  lifecycle                   ClubLifecycle    @default(ACTIVE)
-  selectionScaleMin           Int              @default(1)
-  selectionScaleMax           Int              @default(5)
-  showNominationAuthors       Boolean          @default(true)
-  showNominationsBeforeSubmit Boolean          @default(true)
-  showVoteResults             Boolean          @default(false)
-  showRatingResults           Boolean          @default(true)
-  useMonochromeMedia          Boolean          @default(true)
-  deletedAt                   DateTime?        @db.Timestamptz(3)
-  createdAt                   DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt                   DateTime         @updatedAt @db.Timestamptz(3)
+  lifecycle                   ClubLifecycle      @default(ACTIVE)
+  selectionScaleMin           Int                @default(1)
+  selectionScaleMax           Int                @default(5)
+  showNominationAuthors       Boolean            @default(true)
+  showNominationsBeforeSubmit Boolean            @default(true)
+  showVoteResults             Boolean            @default(false)
+  showRatingResults           Boolean            @default(true)
+  useMonochromeMedia          Boolean            @default(true)
+  deletedAt                   DateTime?          @db.Timestamptz(3)
+  createdAt                   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime           @updatedAt @db.Timestamptz(3)
   memberships                 Membership[]
   sessions                    Session[]
   auditEvents                 ClubAuditEvent[]
   invitations                 ClubInvite[]
+}
+
+model AchievementAward {
+  private     Boolean  @default(false)
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String
+  version     Int
+  title       String
+  description String
+  target      Int
+  userId      String?  @db.Uuid
+  clubId      String?  @db.Uuid
+  progress    Int
+  explanation String
+  evidence    Json
+  awardedAt   DateTime @default(now()) @db.Timestamptz(3)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club        Club?    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([key, version, userId])
+  @@unique([key, version, clubId])
+  @@index([userId])
+  @@index([clubId])
 }
 
 model Membership {

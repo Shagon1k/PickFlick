@@ -30,6 +30,10 @@ const extended = z.object({
         .array(z.object({ name: z.string().min(1).max(200) }))
         .max(100)
         .nullish(),
+    production_countries: z
+        .array(z.object({ country: z.string().regex(/^[a-zA-Z]{2,3}$/u) }))
+        .max(100)
+        .nullish(),
     trailers: z
         .array(
             z.object({
@@ -169,6 +173,8 @@ export class ThetvdbClient {
                         ? movie.first_release.date
                         : null,
                 genres: movie.genres?.map((genre) => genre.name) ?? null,
+                productionCountries:
+                    movie.production_countries?.map(({ country }) => country.toUpperCase()) ?? null,
                 directors: namesOf(movie.characters, 'director'),
                 writers: namesOf(movie.characters, 'writer'),
                 trailers: englishTrailers(movie.trailers),

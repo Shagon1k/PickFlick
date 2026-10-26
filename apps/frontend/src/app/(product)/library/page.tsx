@@ -1,96 +1,57 @@
-import { HTTP_STATUS, libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
+import { libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { getLibrary, getLibraryStatistics } from '#api/library.server';
+import { getPersonalAchievements } from '#api/achievements.server';
+import { getLibrary } from '#api/library.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
-import ControlShell from '#components/shells/ControlShell/ControlShell';
+import Achievements from '#components/achievements/Achievements/Achievements';
+import RetryButton from '#components/shells/RetryButton/RetryButton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { ApiError } from '#lib/api.server';
 
-import LibraryStatistics from './_components/LibraryStatistics/LibraryStatistics';
+import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
+import { loadLibraryRead } from './load-library-read';
 
 export const metadata: Metadata = {
     title: 'My Library — PickFlick',
     robots: { index: false, follow: false },
 };
 
-async function loadLibrary(query: TLibraryQuery) {
-    const path = buildLibraryPath(query);
-    try {
-        return await getLibrary(query);
-    } catch (error) {
-        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
-            redirect(buildLoginPath(path));
-        if (error instanceof ApiError || error instanceof TypeError) return null;
-        throw error;
-    }
+async function AchievementContent() {
+    const achievements = await loadLibraryRead(
+        getPersonalAchievements,
+        '/library?tab=achievements',
+    );
+    return achievements ? (
+        <Achievements items={achievements.items} />
+    ) : (
+        <section aria-label="Achievements unavailable">
+            <Alert tone="warning">Your achievements are temporarily unavailable.</Alert>
+            <RetryButton />
+        </section>
+    );
 }
 
-async function loadStatistics(query: TLibraryQuery) {
-    try {
-        return await getLibraryStatistics();
-    } catch (error) {
-        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
-            redirect(buildLoginPath(buildLibraryPath(query)));
-        if (
-            error instanceof ApiError ||
-            error instanceof TypeError ||
-            (error instanceof DOMException && error.name === 'TimeoutError')
-        )
-            return null;
-        throw error;
-    }
-}
-
-export default async function LibraryPage({
-    searchParams,
+async function LibraryContent({
+    query,
+    valid,
+    authenticated,
 }: {
-    searchParams: Promise<Record<string, string | string[] | undefined>>;
+    query: TLibraryQuery;
+    valid: boolean;
+    authenticated: boolean;
 }) {
-    const parsed = libraryQuerySchema.safeParse(await searchParams);
-    const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
-    const session = await getSessionState();
-    if (session === 'anonymous') redirect(buildLoginPath(buildLibraryPath(query)));
-    const [library, statistics] =
-        parsed.success && session === 'authenticated'
-            ? await Promise.all([loadLibrary(query), loadStatistics(query)])
-            : [null, null];
+    const library =
+        valid && authenticated
+            ? await loadLibraryRead(() => getLibrary(query), buildLibraryPath(query))
+            : null;
     const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
-        <ControlShell
-            title="My Library"
-            description="Your ratings and films to watch, at your own pace."
-            currentArea="library"
-            clubItems={[]}
-            summary={
-                parsed.success &&
-                (statistics ? (
-                    <LibraryStatistics statistics={statistics} />
-                ) : (
-                    <section aria-label="Personal statistics unavailable">
-                        <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
-                        <ButtonLink href={buildLibraryPath(query)}>Retry statistics</ButtonLink>
-                    </section>
-                ))
-            }
-            items={[
-                {
-                    label: 'My Ratings',
-                    href: '/library?tab=my-ratings',
-                    current: query.tab === 'my-ratings',
-                },
-                {
-                    label: 'Watchlist',
-                    href: '/library?tab=watchlist',
-                    current: query.tab === 'watchlist',
-                },
-            ]}
-        >
-            {!parsed.success && (
+        <>
+            {!valid && (
                 <section aria-label="Invalid Library filters">
                     <Alert tone="warning">
                         These Library filters are invalid. Clear them and try again.
@@ -99,7 +60,7 @@ export default async function LibraryPage({
                 </section>
             )}
             {library && <LibraryTable key={query.tab} library={library} query={query} />}
-            {parsed.success && !library && (
+            {valid && !library && (
                 <section aria-label={`${title} unavailable`}>
                     <Alert tone="warning">
                         {query.tab === 'watchlist'
@@ -109,6 +70,38 @@ export default async function LibraryPage({
                     <ButtonLink href={buildLibraryPath(query)}>Try again</ButtonLink>
                 </section>
             )}
-        </ControlShell>
+        </>
+    );
+}
+
+export default async function LibraryPage({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const parameters = await searchParams;
+    const isAchievements = parameters.tab === 'achievements';
+    const parsed = libraryQuerySchema.safeParse(parameters);
+    const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
+    const current = isAchievements ? 'achievements' : query.tab;
+    const returnPath = isAchievements ? '/library?tab=achievements' : buildLibraryPath(query);
+    const session = await getSessionState();
+    if (session === 'anonymous') redirect(buildLoginPath(returnPath));
+    return (
+        <LibraryShell
+            current={current}
+            returnPath={returnPath}
+            showStatistics={isAchievements || (parsed.success && session === 'authenticated')}
+        >
+            {isAchievements ? (
+                <AchievementContent />
+            ) : (
+                <LibraryContent
+                    query={query}
+                    valid={parsed.success}
+                    authenticated={session === 'authenticated'}
+                />
+            )}
+        </LibraryShell>
     );
 }

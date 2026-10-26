@@ -335,6 +335,45 @@ change descriptive summaries but cannot change saved rating counts, update dates
 Watchlist count. Identical source data reproduces identical results. No awards or shared history
 are written by this calculation.
 
+### Achievement evidence and versions
+
+Achievement views evaluate recorded data when opened. Each key/version has at most one earned
+award per User or Club. Earned awards retain their original definition, source values, progress
+and award time. New rules use a new version; retired earned versions remain visible. Pending
+progress is recomputed and can decrease when source facts change. Catalog refresh can change
+pending country, genre, decade and runtime evidence, but cannot rewrite earned awards. No
+background or source-mutation award delivery is claimed; a transient fact removed before evaluation is not awarded.
+
+The catalog contains 15 Club and 14 personal criteria from the canonical screens. Card descriptions
+and expandable explanations state the version's precise evidence rule. Completed screenings count
+repeat viewings and PAST imports. Attendance criteria require explicit `attended = true`; accepted
+participation alone proves no attendance. Missing dates, membership windows, scores, ballots or
+metadata cannot prove an award. PAST nominations count only with known authors; partial score
+matrices never establish a submitted live ballot or a Selection winner.
+
+Calendar rules use scheduled UTC dates. Evening means 18:00 onwards on one UTC date; Night Owl
+requires a time strictly after 23:00. Date-only entries cannot establish an evening or night.
+Full House and Critics Circle reconstruct members at the scheduled date from Membership intervals.
+Runs use scheduled date then Session ID; unknown attendance/averages break the applicable run.
+Personal attendance streaks reset between Membership intervals in the same Club.
+Perfect Split uses a one-point margin in frozen live Selection totals, not a majority-vote count.
+Hot Take uses an absolute difference of at least two from the received historical average, including
+the caller's score, only while that result is accessible. Archivist counts distinct current Ratings
+and Watchlist Movies once. Long Review uses a historical Session Rating comment longer than 300
+JavaScript characters; no comment text enters achievement evidence.
+
+Club reads require active Membership, including for archived Clubs. Rating/Selection-derived Club
+criteria (Critics Circle, Cult Classic, Perfect Split, Shared Taste) expose progress and earned
+history only to Admins/Moderators, including retired rule versions. Members see current private
+criteria with a privacy explanation and no award state or time, regardless of earned history;
+retired private award cards are omitted.
+Personal responses contain only the caller's achievement summaries. Evidence snapshots stay internal
+and contain source references and measured facts without raw comments, image URLs or credentials.
+
+World Tour counts distinct production-country ISO codes from Completed screenings in the configured
+catalog cache. The configured catalog supplies these facts; older cached rows add no country evidence until fetched
+again, while their other metadata remains usable. Silent Era requires a known release year before 1930. Missing countries or years add no evidence. Exact-SHA hosted visual acceptance remains open.
+
 ### Plans and limits
 
 | Feature                          | Free — Screening Room               | Pro — Director's Cut             |
@@ -413,8 +452,7 @@ are written by this calculation.
 | SessionRating          | Session, participant, score, comment, time                                                  | Immutable after the Session completes.                                          |
 | PersonalMovieRating    | User, Movie, score, updated time, source                                                    | Editable; a Session Rating may update it without rewriting history.             |
 | WatchlistItem          | User, Movie, priority, times                                                                | Priority is Low, Medium, or High.                                               |
-| AchievementDefinition  | scope, key, rule version, presentation                                                      | Personal or Club; rules are versioned instead of rewriting earned history.      |
-| AchievementAward       | definition, User or Club, progress, awarded time                                            | Supports unlocked, in-progress, and not-started views.                          |
+| AchievementAward       | key/version, definition snapshot, User or Club, earned progress and time                    | Supports unlocked, in-progress, and not-started views.                          |
 | Notification           | recipient, type, payload reference, read and delivery state                                 | In-app source of truth; payloads reference entities safely.                     |
 | NotificationPreference | User, event type, in-app and email flags                                                    | Billing and service notices may be mandatory.                                   |
 | Subscription           | User, Paddle IDs, plan, status, billing period                                              | Club entitlements derive from the Admin's plan.                                 |
@@ -1572,6 +1610,14 @@ the MVP
 | Worker, Redis, and operation IDs  | Developer     | Removed until needed: the worker and Redis return with the first background job (ADR-014); Club commands dropped caller operation IDs because serialized database checks already make the observed races safe.                                                                                | Phase 6, 2026-09-26.                                                                                                      |
 | Code conventions                  | Developer     | Follow TailorTales: `apps/frontend` and `apps/backend`, zod at boundaries (ADR-012), the UI kit on unstyled Mantine inside the frontend (ADR-013), deployment logic in workflow steps, and house style enforced by ESLint.                                                                    | Phase 6, 2026-09-26.                                                                                                      |
 | Nomination suggestions            | Product owner | Reuse the user's own past losing nominations in the current Club as suggestions derived from Nomination history. This replaces the previously planned shared saved-film entity and manual list management.                                                                                    | Owner clarification, 2026-10-12; [#42](https://github.com/Shagon1k/PickFlick/issues/42).                                  |
+
+### Achievement criteria clarification
+
+Silent Era v1 uses a release year before 1930 ("Watch a film released before 1930.") instead of
+the prototype's black-and-white criterion. Neither this rule nor World Tour had earned history;
+both remain v1. World Tour v1 uses the configured catalog's recorded production countries, never
+language or artwork (provider scope corrected by owner review in round 2).
+Source: owner decision in [#193 review](https://github.com/Shagon1k/PickFlick/pull/193#discussion_r4378065675).
 
 ### Open questions
 
