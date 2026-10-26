@@ -1,3 +1,4 @@
+import { clubRatingsQuerySchema } from '../clubs/ratings.schema.js';
 import { libraryQuerySchema } from '../movies/library.schema.js';
 
 export const DEFAULT_AUTH_RETURN_TARGET = '/app';
@@ -15,12 +16,17 @@ const allowedReturnTargets = [
 export function isAllowedAuthReturnTarget(value: unknown): value is string {
     if (typeof value !== 'string') return false;
     if (allowedReturnTargets.some((pattern) => pattern.test(value))) return true;
-    if (!/^\/library(?:\?[^#]*)?$/u.test(value)) return false;
+    const isRatings =
+        /^\/clubs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/ratings(?:\?[^#]*)?$/u.test(
+            value,
+        );
+    if (!isRatings && !/^\/library(?:\?[^#]*)?$/u.test(value)) return false;
 
-    const parameters = new URLSearchParams(value.slice('/library'.length));
+    const parameters = new URL(value, 'https://pickflick.invalid').searchParams;
     const query = Object.fromEntries(parameters);
     return (
-        parameters.size === Object.keys(query).length && libraryQuerySchema.safeParse(query).success
+        parameters.size === Object.keys(query).length &&
+        (isRatings ? clubRatingsQuerySchema : libraryQuerySchema).safeParse(query).success
     );
 }
 

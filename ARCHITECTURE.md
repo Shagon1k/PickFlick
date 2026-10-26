@@ -356,12 +356,12 @@ every authentication session.
   participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
   within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
   Club's Session count excludes cancelled Sessions.
-  Completed-screening statistics use validated cached Movie metadata. Missing metadata and Club-wide
-  rating statistics stay unavailable. Active selected-Movie enrichment runs after the snapshot transaction
+  Completed-screening statistics use validated cached Movie metadata and policy-filtered historical
+  Session Ratings. Free projects basic counts; Pro adds the extended summaries described below. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
   Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
   Session page's closure, Kick and cancellation dialogs; those actions revalidate every Club Hub view.
-  Overview, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets
+  Overview, Sessions, Ratings, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets
   Next.js prefetch only the loading boundary of these dynamic routes (no data or authorization), and
   the frame prefetches every section on mount because phone navigation sits in a closed strip. Each panel performs a
   fresh authorization read and updates the frame's client snapshot, including clearing it on denial
@@ -792,3 +792,27 @@ then added date and Movie ID. The Library screen uses the bounded `/library` pro
 Movie Details and the Library reuse the same priority editor and server action. Statistics and
 achievements remain later work. No dependency, environment variable, worker or deployment change
 is added.
+
+### Club analytics and rating rankings
+
+The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership authorization and
+repeatable-read Completed Session projections. A Member's rating query selects only responses from
+Sessions with saved `showRatingResults`; Admins and Moderators may aggregate all Completed results.
+No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
+caching. Free returns a BASIC projection without ranking rows; Pro returns EXTENDED analytics.
+The existing entitlement adapter supplies the plan; this adds no billing behavior.
+
+The shared pure calculators count completed screenings, group received historical ratings by
+canonical Movie and weight every response equally. Departed participants and partial PAST imports
+remain history. PersonalMovieRating, open Rating and Cancelled Sessions do not affect the result.
+The strict shared query accepts `sort=rating|time|title` and a positive page up to 100,000; unknown
+or repeated parameters reject. Sorting uses Movie ID for stable ties, unknown title/date values
+last, and the latest permitted rated screening for time order. Responses clamp stale pages and
+contain at most 25 rows. Individual scores, comments and participant identifiers stay internal.
+
+Cached metadata supplies genres and person/runtime summaries without provider requests. A summary
+is unavailable if any screening lacks its required details. Refreshing descriptive metadata can
+change those summaries, but never changes the immutable rating inputs or screening counts.
+No new persisted aggregate, backfill, migration, worker, dependency, environment setting or runtime
+service is introduced. The Ratings route reuses the mounted Club Hub frame, local table scrolling,
+loading boundary, sign-in continuation and error recovery.

@@ -1,0 +1,46 @@
+.clubRatings {
+    display: grid;
+    gap: var(--gap-md);
+    min-width: 0;
+    padding-top: var(--gap-md);
+
+    h2,
+    p {
+        margin: 0;
+    }
+
+    h2 {
+        font: var(--fs-app-section)/var(--lh-title) var(--font-display);
+    }
+
+    p {
+        color: var(--fg-secondary);
+    }
+}
+
+.clubRatings__sort {
+    max-width: 280px;
+}
+
+.clubRatings__film {
+    display: inline-flex;
+    align-items: center;
+    min-width: 150px;
+    min-height: var(--hit);
+    color: var(--fg);
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+
+.clubRatings__rating {
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+    color: var(--gold-light);
+}
+
+.clubRatings__pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: space-between;
+}

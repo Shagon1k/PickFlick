@@ -209,8 +209,8 @@ describe('Club Hub projection', () => {
             expect(ownerHub.members.find(({ id }) => id === ownerId)?.sessionCount).toBe(1);
             expect(ownerHub.historySessions[0]?.ordinal).toBe(1);
             expect(ownerHub.statistics).toEqual({
-                sessionsWatched: null,
-                sessionsThisYear: null,
+                sessionsWatched: 0,
+                sessionsThisYear: 0,
                 averageRating: null,
                 totalWatchHours: null,
                 topGenre: null,

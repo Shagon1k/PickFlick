@@ -11,6 +11,7 @@ import type {
 } from '@pickflick/contracts';
 
 import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
+import { handleClubRatings } from './club-ratings.ts';
 import { buildHubProjection } from './hub-projections.ts';
 import { handleLibrary } from './library.ts';
 import {
@@ -408,6 +409,7 @@ const api = createServer((request, response) => {
             handlePersonalRating,
             handleMovieDetails,
             handleMovieSearch,
+            handleClubRatings,
             handleSelection,
             handleWatching,
             handleRating,

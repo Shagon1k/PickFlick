@@ -297,6 +297,26 @@ the same result rules and cannot advance Nomination with no films.
   current anonymized names apply. Original phase and submission times remain unknown. Existing
   post-close result visibility applies to imported breakdowns.
 
+### Club analytics
+
+Active Club analytics count Completed screenings, including PAST imports and repeat viewings.
+Open and Cancelled Sessions do not contribute. Free exposes completed and UTC calendar-year
+counts; Pro adds watch time, metadata summaries, historical rating averages and a Movie leaderboard.
+The existing Club entitlement adapter supplies the plan until billing is implemented.
+
+Rating aggregates use immutable SessionRating rows, never editable Personal Ratings. Each received
+response has equal weight, including retained responses after departure. Repeat screenings share a
+canonical Movie ranking. Missing responses remain unknown. Admins and Moderators aggregate every
+Completed Session; Members aggregate only Sessions with saved `showRatingResults`. Filtering happens
+before averaging, ranking and latest-screening sorting. Analytics expose no individual responses,
+comments or hidden response counts. Archived Clubs keep read access for current members.
+
+The leaderboard sorts by highest rating, latest permitted rated screening or title, with Movie ID
+breaking ties and unknown titles/dates last. It returns 25 Movies per page. Watch time and each
+metadata summary remain unavailable when any screening lacks the required metadata. Descriptive
+summaries use the validated catalog cache and may change when it is refreshed; completed counts and
+historical rating aggregates do not. This delivery creates no achievement awards.
+
 ### Plans and limits
 
 | Feature                          | Free — Screening Room               | Pro — Director's Cut             |
@@ -1138,7 +1158,7 @@ non-blocking Rating views
 
 **Out of scope:** Recomputing Personal Ratings from all viewings and AI recommendations.
 
-### Phase 16 — Club/Personal Statistics & Achievements · Not started
+### Phase 16 — Club/Personal Statistics & Achievements · In progress
 
 **Goal:** Accurate, explainable summaries and achievements from Club and personal activity.
 

@@ -29,10 +29,15 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
         { label: 'Top director', value: stats.topDirector, icon: 'director', small: true },
         { label: 'Top actor', value: stats.topActor, icon: 'actor', small: true },
     ];
+    const visibleTiles = hub.club.tier === 'FREE' ? tiles.slice(0, 2) : tiles;
     return (
         <div className={styles.overview}>
-            <section aria-label="Club statistics" className={styles.statistics}>
-                {tiles.map((tile) => (
+            <section
+                aria-label="Club statistics"
+                className={styles.statistics}
+                data-basic={hub.club.tier === 'FREE' || undefined}
+            >
+                {visibleTiles.map((tile) => (
                     <div className={styles.stat} key={tile.label}>
                         <Icon name={tile.icon} />
                         <div>
@@ -44,6 +49,14 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     </div>
                 ))}
             </section>
+            {hub.club.tier === 'FREE' ? (
+                <p>Extended Club analytics and the ratings leaderboard are available with Pro.</p>
+            ) : (
+                <p>
+                    Ratings use completed results you can view. Metadata summaries need film details
+                    for every completed screening.
+                </p>
+            )}
             <div className={styles.cards}>
                 <section className={styles.card}>
                     <div className={styles.cardHeading}>

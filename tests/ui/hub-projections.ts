@@ -17,8 +17,8 @@ export function buildHubProjection(
             memberLimit: 8,
             members: projection.members,
             statistics: {
-                sessionsWatched: null,
-                sessionsThisYear: null,
+                sessionsWatched: 0,
+                sessionsThisYear: 0,
                 averageRating: null,
                 totalWatchHours: null,
                 topGenre: null,
@@ -30,6 +30,7 @@ export function buildHubProjection(
             historySessions: [],
         };
     }
+    if (token?.includes('ratings-pro')) club = { ...club, tier: 'PRO' };
     const isSecondClub = club.id === SECOND_CLUB_ID;
     const session: IClubHubSession = {
         id: isSecondClub
@@ -61,8 +62,8 @@ export function buildHubProjection(
         memberLimit: 8,
         members: projection.members,
         statistics: {
-            sessionsWatched: isSecondClub ? 3 : null,
-            sessionsThisYear: isSecondClub ? 3 : null,
+            sessionsWatched: isSecondClub ? 3 : 0,
+            sessionsThisYear: isSecondClub ? 3 : 0,
             averageRating: null,
             totalWatchHours: null,
             topGenre: null,

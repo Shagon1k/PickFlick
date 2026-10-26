@@ -88,8 +88,9 @@ export default function ClubHubFrame({
     );
 }
 
-function getSection(pathname: string): 'overview' | 'sessions' | 'members' | 'manage' {
+function getSection(pathname: string): 'overview' | 'sessions' | 'ratings' | 'members' | 'manage' {
     if (pathname.endsWith('/sessions')) return 'sessions';
+    if (pathname.endsWith('/ratings')) return 'ratings';
     if (pathname.endsWith('/members')) return 'members';
     if (pathname.endsWith('/settings')) return 'manage';
     return 'overview';

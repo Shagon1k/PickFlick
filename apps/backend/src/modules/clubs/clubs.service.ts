@@ -7,6 +7,7 @@ import {
     type IClubSummary,
     type TChangeMemberRoleRequest,
     type TCreateClubRequest,
+    type TMovieDetails,
     type TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
@@ -25,7 +26,8 @@ import {
 import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
-import { buildClubStatistics, readClubHub } from './club-hub.js';
+import { readClubHub } from './club-hub.js';
+import { buildClubStatistics } from './statistics/club-statistics.js';
 
 const AUDIT_EVENTS_LIMIT = 20;
 
@@ -55,7 +57,10 @@ export class ClubsService {
             ...snapshot,
             statistics: buildClubStatistics(
                 completed,
-                await this.movies.getCachedMetadata(completedIds),
+                snapshot.club.tier === 'PRO'
+                    ? await this.movies.getCachedMetadata(completedIds)
+                    : new Map<string, TMovieDetails>(),
+                snapshot.club.tier,
             ),
         };
         const selected = hub.activeSession?.movie;

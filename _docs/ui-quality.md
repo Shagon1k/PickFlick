@@ -8,7 +8,8 @@ live Session creation/edit/cancellation, member-only Session invitation response
 management, Nomination submissions and personal suggestions, immutable Selection ballots,
 policy-filtered Selection results and early-close confirmations, historical Session Rating submission,
 partial completion and permitted results, Completed facts/ratings/nomination disclosures, Hub
-Sessions with concurrent Ratings and policy-filtered history scores, and the seven `/shell-preview/*` shells.
+Sessions with concurrent Ratings and policy-filtered history scores, Club analytics and paginated
+Ratings sorting at all four representative widths, and the seven `/shell-preview/*` shells.
 
 ## Run it
 
