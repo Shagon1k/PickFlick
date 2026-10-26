@@ -841,30 +841,38 @@ The `achievements` Nest module owns private/no-store `GET /library/achievements`
 comes from the authenticated session; Club reads reuse the active Membership boundary. Both
 endpoints compute current progress within their transaction and return summaries, never evidence JSON.
 
-Migration 34 evolves migration 33 into earned-only `AchievementAward` snapshots. Each award stores
-its key, version, title, description, explanation, target, measured progress, evidence and award time.
+Migration 33 creates earned-only `AchievementAward` snapshots directly. Each award stores
+its key, version, title, description, explanation, target, privacy classification, measured progress,
+evidence and award time.
 Exactly one nullable User or Club foreign key identifies ownership. Unique `(key, version, userId)`
 and `(key, version, clubId)` indexes make concurrent inserts idempotent with `skipDuplicates`;
-no Club/User row lock is required. A SQL trigger rejects award updates. The migration copies
-presentation fields from the old definition table, preserves earned snapshots and removes pending
-rows before dropping the redundant definition table and scope/subject/computation columns.
+no Club/User row lock is required. A SQL trigger rejects every award update. No definition table
+or pending-progress rows are stored. The two previously unmerged migrations are consolidated;
+no shared-database upgrade or data copying is required.
 Source deletion does not erase earned evidence; owner/Club hard deletion cascades its own awards.
 New rule versions append; old earned versions remain visible. Pending progress is computed from
 current source data and code definitions, without database writes.
 
 Pure Club and personal evaluators consume existing Session evidence and only the configured
 provider/locale's cached metadata. Stored evidence captures measured facts and source IDs at
-earning; awarded rows retain the snapshot and award time. Pending progress recomputes on each read.
+earning, including each ballot's Session ID and submission time alongside Selection opening times.
+Awarded rows retain the snapshot and award time. Attendance streaks are evaluated within individual
+Membership intervals, matching historical attendees by User. Pending progress recomputes on each read.
 There is no new worker, event bus, provider request, dependency or environment variable. Read/write
 cost grows with the subject's activity; source writes do not trigger awards. Transient criteria
 removed before a view evaluation are not captured. Results use statement snapshots under the
 existing default transaction isolation; the next read incorporates concurrent source changes.
 
 Result-derived Club award state is restricted to Admins/Moderators to avoid leaking historical
-hidden results after visibility changes. Personal Hot Take evaluates only currently accessible
-Completed results. World Tour uses cached TMDB production-country ISO codes; the new nullable
+hidden results after visibility changes. Saved privacy classification also protects retired versions.
+Members receive only current private definition cards with masked state, independent of earned rows;
+retired private award rows are omitted. Personal Hot Take evaluates only currently accessible
+Completed results. World Tour uses the configured catalog's cached production countries. TheTVDB's
+client maps production-country records from its existing extended request into uppercase codes for
+the composite catalog; TMDB maps two-letter codes in its separate provider cache. The nullable
 metadata field defaults to null when absent in older cache rows. Silent Era uses known release years
 before 1930. Missing facts add no evidence. The shared shelf renders Club and personal summaries with
 local status filters, counts, progress, versions and calculation explanations. The Library retains
-its existing statistics summary above the Achievements tab, with independent read-failure recovery. Hosted preview and
+its existing statistics summary above the Achievements tab. An async summary component and tab
+content render concurrently, with independent read-failure recovery and a shared timeout policy. Hosted preview and
 owner visual acceptance are still pending.

@@ -36,6 +36,14 @@ for (const width of [390, 768, 1024, 1440]) {
                             .getByText('Result-based Club achievements', { exact: false })
                             .first(),
                     ).toBeVisible();
+                    const masked = shelf.getByRole('article', {
+                        name: 'Critics Circle',
+                        exact: true,
+                    });
+                    await expect(
+                        masked.getByText('Result-based Club achievements', { exact: false }),
+                    ).toHaveCount(1);
+                    await expect(masked.locator('details')).toHaveCount(0);
                     await settle(page);
                     expect(
                         await page.evaluate(

@@ -169,7 +169,7 @@ Recompute occurs when opening a view; source mutation hooks and background deliv
 scope. Pending progress follows current data; earned versions keep their original measured facts.
 
 Fifteen Club and fourteen personal cards cover the canonical shelves. World Tour counts recorded
-TMDB production-country ISO codes; Silent Era uses release years before 1930. Older cache rows
+production countries from the configured catalog; Silent Era uses release years before 1930. Older cache rows
 remain readable, contributing countries after their next fetch. Attendance uses explicit recorded
 attendance, never accepted participation. Calendar criteria use documented UTC scheduled times; no timezone guess is
 made. The Roadmap records precise rules and privacy limits, including the manager-only projection
@@ -248,3 +248,51 @@ the standard ports are occupied. The sole failure is unchanged
 run correctly returns 41960. All five achievement checks and all Library navigation/statistics
 checks pass. No Session code, that test or screenshot baseline is changed. Exact-head hosted
 preview, owner visual acknowledgment, UAT migration and full visual comparisons remain unverified.
+
+### Owner-approved review fix round 2
+
+The 12 captured threads on source `bd9ccdcdd5e97330652d96ce6e520f251a060441` are handled together.
+The rule files and unit specs move into `rules/`, leaving Nest wiring in the module root.
+Award snapshots retain their privacy classification. Members receive current masked private cards
+independently of earned rows, and no retired private award rows. Attendance runs reset between
+Membership intervals while historical attendees still match by User. Early Bird evidence includes
+ballot-to-Session links. Club metadata is parsed once per completed screening, and unknown release
+years explicitly cannot qualify for Silent Era.
+
+Migration 33 now creates the final snapshot table directly; the unmerged migration 34 is removed.
+The round-1 upgrade evidence above describes the superseded two-migration implementation.
+No shared database is migrated or reset. Round-2 verification uses new isolated local services,
+with `pickflick_test` on loopback port 42433.
+
+World Tour uses the configured catalog's production countries. TheTVDB extended metadata supplies
+countries to the composite provider; uppercase two- or three-letter country codes are accepted.
+The [published TheTVDB schema](https://github.com/thetvdb/v4-api/blob/main/docs/swagger.yml) defines `production_countries` as `ProductionCountry` objects with
+`country` strings. Live-response validation is unavailable because this run has no local TheTVDB
+read token. Provider fixtures cover lowercase three-letter normalization and retention through
+the composite merge.
+
+The synchronous Library shell renders an async statistics summary beside tab content. All Library
+reads reuse the same error policy, including timeout recovery. Private cards show the privacy
+explanation once. Browser regression checks cover concurrent starts, table timeout recovery and
+masked-card rendering. Exact-head hosted preview and owner visual acknowledgment remain pending.
+
+Round-2 `pnpm verify` passes the production audit gate, lint, Knip, formatting, type checking,
+all 421 unit tests and every workspace build. The audit reports two low and five moderate findings.
+All 281 integration tests pass across 35 files with a confirmed zero command exit, including private
+version upgrades/retirement, retained Early Bird evidence after ballot/Session deletion, and the
+final migration's ownership, unique-index and always-immutable snapshot constraints. All 33
+migrations and the synthetic seed apply to the disposable test database.
+
+The full browser smoke run passes 90 of 91 checks using isolated ports 41960/42961. All five
+achievement checks and all Library checks pass, including the new request-concurrency handshake,
+table timeout recovery and single privacy explanation. Mobile and desktop captures were inspected;
+no baselines changed. The sole failure is the unchanged Session clipboard assertion at
+`tests/ui/session-roster.spec.ts:73`, which expects port 41730 and correctly receives 41960.
+No Session code or that test changes in this round. Hosted exact-head preview, owner visual
+acknowledgment, UAT migration and full screenshot comparisons remain unverified.
+
+The real-API achievement journey passes against the built frontend/backend and disposable test
+database, using real Better Auth sessions. It verifies earned-history retention and owner
+isolation through the Library and Club views. No review thread is replied to or resolved by this
+fix round. Project 3 remains Human Review; acceptance checkboxes stay open pending hosted preview
+and owner visual acknowledgment.

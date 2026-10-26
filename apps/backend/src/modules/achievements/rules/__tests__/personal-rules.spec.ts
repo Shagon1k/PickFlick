@@ -118,4 +118,59 @@ describe('buildPersonalAchievements', () => {
         session.club.memberships[0]!.leftAt = session.scheduledAt!;
         expect(buildPersonalAchievements(facts).metrics['reliable-viewer']).toBe(0);
     });
+    it('should reset attendance streaks between Membership intervals while matching historical attendees by user', () => {
+        const facts = buildFacts();
+        const original = facts.sessions[0]!.club.memberships[0]!;
+        const club = {
+            memberships: [
+                { ...original, leftAt: new Date('2026-10-04'), status: 'LEFT' as const },
+                { ...original, id: 'rejoined', joinedAt: new Date('2026-10-05') },
+            ],
+        };
+        facts.sessions = Array.from({ length: 6 }, (_, index) =>
+            buildScreening({
+                id: `screening-${index}`,
+                scheduledAt: new Date(`2026-10-0${index + 1}T20:00Z`),
+                club,
+                participants: index === 3 ? [] : buildScreening().participants,
+            }),
+        );
+        const { metrics } = buildPersonalAchievements(facts);
+        expect(metrics['reliable-viewer']).toBe(3);
+        expect(metrics['never-miss']).toBe(3);
+        facts.sessions = Array.from({ length: 5 }, (_, index) =>
+            buildScreening({
+                id: `screening-${index}`,
+                scheduledAt: new Date(`2026-10-0${index + 5}T20:00Z`),
+                club,
+            }),
+        );
+        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']).toBe(5);
+    });
+
+    it('should retain the ballot-to-Session link needed to explain Early Bird after source removal', () => {
+        const facts = buildFacts();
+        const first = facts.sessions[0]!;
+        const second = buildScreening({
+            id: 'second',
+            type: 'FULL_CYCLE',
+            progressEvents: [{ createdAt: new Date('2026-10-01T17:00Z') }],
+        });
+        facts.sessions.push(second);
+        const earned = buildPersonalAchievements(facts);
+        second.selectionBallots = first.selectionBallots;
+        first.selectionBallots = [];
+        const late = buildPersonalAchievements(facts);
+        expect(earned.metrics['early-bird']).toBe(1);
+        expect(late.metrics['early-bird']).toBe(0);
+        expect(earned.evidence).not.toEqual(late.evidence);
+        const retained = structuredClone(earned.evidence);
+        facts.sessions = [];
+        const ballot = retained.ballots[0]!;
+        const opening = retained.openings.find((session) => session.id === ballot.sessionId)!;
+        expect(Date.parse(ballot.submittedAt) - Date.parse(opening.openedAt!)).toBe(
+            3 * 60 * 60 * 1000,
+        );
+        expect(ballot.sessionId).toBe(first.id);
+    });
 });

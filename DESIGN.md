@@ -340,7 +340,9 @@ here.
   with `aria-pressed`; all start selected, and zero matches has explicit feedback. The completion
   tile counts visible-to-caller unlocked versions over all returned versions. Cards show an icon,
   status, description, bounded progress and expandable rule/version explanation. Earned versions
-  show their UTC date. Private criteria have no numeric progress and display their privacy explanation.
+  show their UTC date. Members see only current private criteria, independent of earned history;
+  these cards have no numeric progress and display their privacy explanation once, without expandable
+  calculation details. Retired private award cards are omitted.
   Loading, unavailable/retry, empty and sign-in/Club-denied states reuse existing boundaries.
   World Tour uses recorded production countries; Silent Era uses a release year before 1930.
   Exact-SHA hosted visual review is pending.

@@ -1,4 +1,4 @@
-import { HTTP_STATUS, libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
+import { libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
@@ -9,7 +9,6 @@ import Achievements from '#components/achievements/Achievements/Achievements';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { ApiError } from '#lib/api.server';
 
 import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
@@ -20,18 +19,6 @@ export const metadata: Metadata = {
     title: 'My Library — PickFlick',
     robots: { index: false, follow: false },
 };
-
-async function loadLibrary(query: TLibraryQuery) {
-    const path = buildLibraryPath(query);
-    try {
-        return await getLibrary(query);
-    } catch (error) {
-        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
-            redirect(buildLoginPath(path));
-        if (error instanceof ApiError || error instanceof TypeError) return null;
-        throw error;
-    }
-}
 
 async function AchievementContent() {
     const achievements = await loadLibraryRead(
@@ -57,7 +44,10 @@ async function LibraryContent({
     valid: boolean;
     authenticated: boolean;
 }) {
-    const library = valid && authenticated ? await loadLibrary(query) : null;
+    const library =
+        valid && authenticated
+            ? await loadLibraryRead(() => getLibrary(query), buildLibraryPath(query))
+            : null;
     const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
         <>

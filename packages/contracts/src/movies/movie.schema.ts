@@ -123,7 +123,7 @@ export const movieMetadataSchema = z.strictObject({
         .max(20),
     runtime: z.number().int().positive().nullable(),
     productionCountries: z
-        .array(z.string().regex(/^[A-Z]{2}$/u))
+        .array(z.string().regex(/^[A-Z]{2,3}$/u))
         .max(250)
         .nullable()
         .default(null),

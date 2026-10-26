@@ -8,7 +8,19 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import { loadLibraryRead } from '../../load-library-read';
 import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
 
-export default async function LibraryShell({
+async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) {
+    const statistics = await loadLibraryRead(getLibraryStatistics, returnPath);
+    return statistics ? (
+        <LibraryStatistics statistics={statistics} />
+    ) : (
+        <section aria-label="Personal statistics unavailable">
+            <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
+            <ButtonLink href={returnPath}>Retry statistics</ButtonLink>
+        </section>
+    );
+}
+
+export default function LibraryShell({
     current,
     returnPath,
     showStatistics,
@@ -19,27 +31,13 @@ export default async function LibraryShell({
     showStatistics: boolean;
     children: ReactNode;
 }) {
-    const [statistics, content] = await Promise.all([
-        showStatistics ? loadLibraryRead(getLibraryStatistics, returnPath) : null,
-        children,
-    ]);
     return (
         <ControlShell
             title="My Library"
             description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
-            summary={
-                showStatistics &&
-                (statistics ? (
-                    <LibraryStatistics statistics={statistics} />
-                ) : (
-                    <section aria-label="Personal statistics unavailable">
-                        <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
-                        <ButtonLink href={returnPath}>Retry statistics</ButtonLink>
-                    </section>
-                ))
-            }
+            summary={showStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}
             items={[
                 {
                     label: 'My Ratings',
@@ -58,7 +56,7 @@ export default async function LibraryShell({
                 },
             ]}
         >
-            {content}
+            {children}
         </ControlShell>
     );
 }

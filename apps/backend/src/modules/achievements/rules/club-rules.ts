@@ -19,9 +19,13 @@ const SILENT_ERA_YEAR = 1930;
 
 export function buildClubAchievements(sessions: TAchievementSession[]) {
     const completed = sessions.filter((session) => session.phase === 'COMPLETED');
+    const screenings = completed.map((session) => ({
+        session,
+        details: readDetails(session.movie),
+    }));
     const dated = completed.filter((session) => session.scheduledAt !== null);
     const evidence = {
-        sessions: completed.map((session) => ({
+        sessions: screenings.map(({ session, details }) => ({
             id: session.id,
             date: session.scheduledAt?.toISOString() ?? null,
             members: getMembersAtScreening(session).map((member) => member.id),
@@ -33,10 +37,10 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
                 participantId: rating.participantId,
                 score: rating.score,
             })),
-            genres: readDetails(session.movie)?.genres ?? null,
+            genres: details?.genres ?? null,
             year: session.movie?.releaseYear ?? null,
-            runtime: readDetails(session.movie)?.runtime ?? null,
-            productionCountries: readDetails(session.movie)?.productionCountries ?? null,
+            runtime: details?.runtime ?? null,
+            productionCountries: details?.productionCountries ?? null,
         })),
     };
     const hasFullHouse = completed.some((session) =>
@@ -47,17 +51,19 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
             session.ratings.some((rating) => rating.participantId === participant.id),
         ),
     );
-    const evenings = dated.filter((session) => session.scheduledAt!.getUTCHours() >= EVENING_HOUR);
+    const evenings = screenings.filter(
+        ({ session }) => session.scheduledAt && session.scheduledAt.getUTCHours() >= EVENING_HOUR,
+    );
     const double = getLargestBucket(
-        evenings.map((session) => ({
+        evenings.map(({ session }) => ({
             bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
             value: 1,
         })),
     );
     const runtime = getLargestBucket(
-        evenings.map((session) => ({
+        evenings.map(({ session, details }) => ({
             bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
-            value: readDetails(session.movie)?.runtime ?? 0,
+            value: details?.runtime ?? 0,
         })),
     );
     const month = getLargestBucket(
@@ -71,9 +77,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
             session.movie?.releaseYear ? [Math.floor(session.movie.releaseYear / DECADE)] : [],
         ),
     );
-    const genres = new Set(
-        completed.flatMap((session) => readDetails(session.movie)?.genres ?? []),
-    );
+    const genres = new Set(screenings.flatMap(({ details }) => details?.genres ?? []));
     const selections = sessions.flatMap((session) => {
         if (session.type !== 'FULL_CYCLE') return [];
         const parsed = snapshotSchema.safeParse(session.selectionResult);
@@ -83,7 +87,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
         ({ ranking }) => ranking.length > 1 && ranking[0]!.total - ranking[1]!.total === 1,
     );
     const countries = new Set(
-        completed.flatMap((session) => readDetails(session.movie)?.productionCountries ?? []),
+        screenings.flatMap(({ details }) => details?.productionCountries ?? []),
     );
     const metrics: Record<string, number> = {
         'first-screening': completed.length,
@@ -107,7 +111,10 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
         'genre-roulette': genres.size,
         'silent-era': Number(
             completed.some(
-                (session) => (session.movie?.releaseYear ?? SILENT_ERA_YEAR) < SILENT_ERA_YEAR,
+                (session) =>
+                    session.movie !== null &&
+                    session.movie.releaseYear !== null &&
+                    session.movie.releaseYear < SILENT_ERA_YEAR,
             ),
         ),
         comeback: Number(

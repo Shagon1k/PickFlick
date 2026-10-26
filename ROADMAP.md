@@ -355,6 +355,7 @@ Calendar rules use scheduled UTC dates. Evening means 18:00 onwards on one UTC d
 requires a time strictly after 23:00. Date-only entries cannot establish an evening or night.
 Full House and Critics Circle reconstruct members at the scheduled date from Membership intervals.
 Runs use scheduled date then Session ID; unknown attendance/averages break the applicable run.
+Personal attendance streaks reset between Membership intervals in the same Club.
 Perfect Split uses a one-point margin in frozen live Selection totals, not a majority-vote count.
 Hot Take uses an absolute difference of at least two from the received historical average, including
 the caller's score, only while that result is accessible. Archivist counts distinct current Ratings
@@ -363,12 +364,14 @@ JavaScript characters; no comment text enters achievement evidence.
 
 Club reads require active Membership, including for archived Clubs. Rating/Selection-derived Club
 criteria (Critics Circle, Cult Classic, Perfect Split, Shared Taste) expose progress and earned
-history only to Admins/Moderators; Members see a privacy explanation and no award state or time.
+history only to Admins/Moderators, including retired rule versions. Members see current private
+criteria with a privacy explanation and no award state or time, regardless of earned history;
+retired private award cards are omitted.
 Personal responses contain only the caller's achievement summaries. Evidence snapshots stay internal
 and contain source references and measured facts without raw comments, image URLs or credentials.
 
 World Tour counts distinct production-country ISO codes from Completed screenings in the configured
-catalog cache. TMDB supplies these facts; older cached rows add no country evidence until fetched
+catalog cache. The configured catalog supplies these facts; older cached rows add no country evidence until fetched
 again, while their other metadata remains usable. Silent Era requires a known release year before 1930. Missing countries or years add no evidence. Exact-SHA hosted visual acceptance remains open.
 
 ### Plans and limits
@@ -1612,7 +1615,8 @@ the MVP
 
 Silent Era v1 uses a release year before 1930 ("Watch a film released before 1930.") instead of
 the prototype's black-and-white criterion. Neither this rule nor World Tour had earned history;
-both remain v1. World Tour v1 uses recorded TMDB production countries, never language or artwork.
+both remain v1. World Tour v1 uses the configured catalog's recorded production countries, never
+language or artwork (provider scope corrected by owner review in round 2).
 Source: owner decision in [#193 review](https://github.com/Shagon1k/PickFlick/pull/193#discussion_r4378065675).
 
 ### Open questions

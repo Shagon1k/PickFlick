@@ -26,6 +26,7 @@ describe('ThetvdbClient', () => {
         expect(result.data).toMatchObject({
             title: 'English title',
             overview: null,
+            productionCountries: null,
             posterUrl: movie().image,
         });
         expect(request.mock.calls[0]?.[0]).toEqual(
@@ -124,5 +125,21 @@ describe('ThetvdbClient', () => {
         await expect(
             client().fetchDetails([{ source: 'thetvdb', externalId: '10' }]),
         ).rejects.toMatchObject({ reason: 'NOT_FOUND', source: 'thetvdb' });
+    });
+    it('should normalize TheTVDB production countries from extended metadata', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                status: 'success',
+                data: {
+                    ...movie(),
+                    production_countries: [
+                        { id: 1, country: 'usa', name: 'United States' },
+                        { id: 2, country: 'gbr', name: 'United Kingdom' },
+                    ],
+                },
+            }),
+        );
+        const result = await client().fetchDetails([{ source: 'thetvdb', externalId: '10' }]);
+        expect(result.data.productionCountries).toEqual(['USA', 'GBR']);
     });
 });

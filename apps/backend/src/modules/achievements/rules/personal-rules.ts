@@ -26,7 +26,9 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         ),
     );
     const ballots = sessions.flatMap((session) =>
-        session.selectionBallots.filter((ballot) => ownParticipants.has(ballot.participantId)),
+        session.selectionBallots
+            .filter((ballot) => ownParticipants.has(ballot.participantId))
+            .map((ballot) => ({ ...ballot, sessionId: session.id })),
     );
     const ratings = sessions.flatMap((session) =>
         session.ratings.filter((rating) => ownParticipants.has(rating.participantId)),
@@ -42,15 +44,21 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         session.participants.some(
             (participant) => ownParticipants.has(participant.id) && participant.attended === true,
         );
-    const clubs = [...new Set(completed.map((session) => session.clubId))];
+    const membershipIds = [
+        ...new Set(
+            completed.flatMap((session) =>
+                getMembersAtScreening(session)
+                    .filter((member) => member.userId === userId)
+                    .map((member) => member.id),
+            ),
+        ),
+    ];
     const streak = Math.max(
         0,
-        ...clubs.map((clubId) =>
+        ...membershipIds.map((membershipId) =>
             getLongestRun(
-                completed.filter(
-                    (session) =>
-                        session.clubId === clubId &&
-                        getMembersAtScreening(session).some((member) => member.userId === userId),
+                completed.filter((session) =>
+                    getMembersAtScreening(session).some((member) => member.id === membershipId),
                 ),
                 isAttendee,
             ),
@@ -68,6 +76,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     const evidence = {
         ballots: ballots.map((ballot) => ({
             id: ballot.id,
+            sessionId: ballot.sessionId,
             submittedAt: ballot.submittedAt.toISOString(),
         })),
         ratings: ratings.map((rating) => ({

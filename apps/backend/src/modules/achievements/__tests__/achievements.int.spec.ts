@@ -265,4 +265,126 @@ describe('Achievements API', () => {
         });
         expect((await api.request(path, { userId: users[1] })).status).toBe(404);
     });
+    it('should explain Early Bird from immutable evidence after its ballot and Session are removed', async () => {
+        const member = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: users[0] },
+        });
+        const sessions = [];
+        for (const hour of [17, 18]) {
+            const session = await createSession(api.prisma, clubId, {
+                type: 'FULL_CYCLE',
+                phase: 'COMPLETED',
+            });
+            sessions.push(session);
+            await api.prisma.sessionProgressEvent.create({
+                data: {
+                    sessionId: session.id,
+                    version: 1,
+                    kind: 'AUTOMATIC',
+                    phase: 'SELECTION',
+                    phaseVersion: 1,
+                    detailsVersion: 1,
+                    acceptedCount: 1,
+                    nominatedCount: 1,
+                    recipientIds: [],
+                    createdAt: new Date(`2026-10-01T${hour}:00Z`),
+                },
+            });
+        }
+        const session = sessions[1]!;
+        const participant = await api.prisma.sessionParticipant.create({
+            data: { clubId, sessionId: session.id, membershipId: member.id, status: 'ACCEPTED' },
+        });
+        const ballot = await api.prisma.selectionBallot.create({
+            data: {
+                sessionId: session.id,
+                participantId: participant.id,
+                submittedAt: new Date('2026-10-01T21:00Z'),
+            },
+        });
+        await read();
+        const before = await api.prisma.achievementAward.findFirstOrThrow({
+            where: { userId: users[0], key: 'early-bird' },
+        });
+        await api.prisma.selectionBallot.delete({ where: { id: ballot.id } });
+        await api.prisma.sessionParticipant.delete({ where: { id: participant.id } });
+        await api.prisma.session.deleteMany({
+            where: { id: { in: sessions.map((item) => item.id) } },
+        });
+        await read();
+        const retained = await api.prisma.achievementAward.findUniqueOrThrow({
+            where: { id: before.id },
+        });
+        expect(retained).toEqual(before);
+        const evidence = retained.evidence as {
+            ballots: { id: string; sessionId: string; submittedAt: string }[];
+            openings: { id: string; openedAt: string | null }[];
+        };
+        const savedBallot = evidence.ballots.find((item) => item.id === ballot.id)!;
+        const opening = evidence.openings.find((item) => item.id === savedBallot.sessionId)!;
+        expect(savedBallot.sessionId).toBe(session.id);
+        expect(Date.parse(savedBallot.submittedAt) - Date.parse(opening.openedAt!)).toBe(
+            3 * 60 * 60 * 1000,
+        );
+    });
+
+    it('should hide private earned history across version upgrades and retirement without revealing its presence', async () => {
+        const key = 'cult-classic';
+        const index = ACHIEVEMENT_DEFINITIONS.findIndex(
+            (item) => item.scope === 'CLUB' && item.key === key,
+        );
+        const definition = ACHIEVEMENT_DEFINITIONS[index]!;
+        const original = { ...definition };
+        const emptyClubId = randomUUID();
+        await api.prisma.club.create({ data: { id: emptyClubId, name: 'No private awards' } });
+        await addMember(api.prisma, emptyClubId, users[0]!, 'ADMIN');
+        await addMember(api.prisma, emptyClubId, users[1]!);
+        await api.prisma.membership.updateMany({
+            where: { clubId, userId: users[1] },
+            data: { status: 'ACTIVE', leftAt: null },
+        });
+        const path = `/clubs/${clubId}/achievements`;
+        await read(path);
+        const before = await api.prisma.achievementAward.findFirstOrThrow({
+            where: { clubId, key },
+        });
+        expect(before.private).toBe(true);
+        try {
+            definition.version = 2;
+            definition.target = 2;
+            const upgraded = (await read(path)).items.filter((item) => item.key === key);
+            expect(upgraded).toMatchObject([
+                { version: 1, status: 'unlocked' },
+                { version: 2, status: 'in-progress' },
+            ]);
+            const masked = (await read(path, users[1])).items.filter((item) => item.key === key);
+            expect(masked).toMatchObject([
+                { version: 2, progress: null, awardedAt: null, status: 'not-started' },
+            ]);
+            expect(masked).toEqual(
+                (await read(`/clubs/${emptyClubId}/achievements`, users[1])).items.filter(
+                    (item) => item.key === key,
+                ),
+            );
+            ACHIEVEMENT_DEFINITIONS.splice(index, 1);
+            expect((await read(path, users[1])).items.filter((item) => item.key === key)).toEqual(
+                [],
+            );
+            expect(
+                (await read(`/clubs/${emptyClubId}/achievements`, users[1])).items.filter(
+                    (item) => item.key === key,
+                ),
+            ).toEqual([]);
+            expect((await read(path)).items.filter((item) => item.key === key)).toMatchObject([
+                { version: 1, status: 'unlocked' },
+            ]);
+            expect(
+                await api.prisma.achievementAward.findUniqueOrThrow({ where: { id: before.id } }),
+            ).toEqual(before);
+        } finally {
+            Object.assign(definition, original);
+            if (!ACHIEVEMENT_DEFINITIONS.includes(definition))
+                ACHIEVEMENT_DEFINITIONS.splice(index, 0, definition);
+        }
+    });
 });

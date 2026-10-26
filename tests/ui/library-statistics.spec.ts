@@ -130,3 +130,47 @@ test(
         await expect(statistics.locator('dd').first()).toHaveText('0');
     },
 );
+
+test(
+    'Library starts statistics and tab content concurrently',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await context.addCookies([
+            {
+                name: 'pickflick.session_token',
+                value: 'valid-parallel-library',
+                domain: '127.0.0.1',
+                path: '/',
+            },
+        ]);
+        await page.goto('/library');
+        await expect(
+            page.getByRole('region', { name: 'Personal statistics', exact: true }),
+        ).toBeVisible();
+        await expect(page.getByRole('table')).toBeVisible();
+    },
+);
+
+test(
+    'Library table timeouts preserve statistics and show the existing recovery state',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await context.addCookies([
+            {
+                name: 'pickflick.session_token',
+                value: 'valid-library-table-timeout',
+                domain: '127.0.0.1',
+                path: '/',
+            },
+        ]);
+        await page.goto('/library?q=Grand&score=8');
+        await expect(
+            page.getByRole('region', { name: 'Personal statistics', exact: true }),
+        ).toBeVisible();
+        await expect(page.getByRole('region', { name: 'My Ratings unavailable' })).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Try again', exact: true })).toHaveAttribute(
+            'href',
+            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
+        );
+    },
+);

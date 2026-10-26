@@ -187,6 +187,7 @@ model Club {
 }
 
 model AchievementAward {
+  private     Boolean  @default(false)
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   key         String
   version     Int

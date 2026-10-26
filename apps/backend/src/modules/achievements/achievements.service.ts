@@ -25,23 +25,13 @@ export class AchievementsService {
             const facts = buildClubAchievements(
                 await readAchievementSessions(tx, [clubId], this.getCacheKey()),
             );
-            const items = await this.recompute(tx, { scope: 'CLUB', subjectId: clubId, ...facts });
             return {
-                items: items.map((item) =>
-                    member.role === 'MEMBER' &&
-                    ACHIEVEMENT_DEFINITIONS.find(
-                        (definition) => definition.scope === 'CLUB' && definition.key === item.key,
-                    )?.private
-                        ? {
-                              ...item,
-                              progress: null,
-                              status: 'not-started',
-                              awardedAt: null,
-                              explanation:
-                                  'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.',
-                          }
-                        : item,
-                ),
+                items: await this.recompute(tx, {
+                    scope: 'CLUB',
+                    subjectId: clubId,
+                    hidePrivate: member.role === 'MEMBER',
+                    ...facts,
+                }),
             };
         });
     }
@@ -93,6 +83,7 @@ export class AchievementsService {
         tx: Prisma.TransactionClient,
         input: {
             scope: IAchievementDefinition['scope'];
+            hidePrivate?: boolean;
             subjectId: string;
             metrics: Record<string, number>;
             evidence: Prisma.InputJsonObject;
@@ -106,21 +97,33 @@ export class AchievementsService {
         await tx.achievementAward.createMany({
             data: definitions
                 .filter((definition) => input.metrics[definition.key]! >= definition.target)
-                .map(({ key, version, title, description, explanation, target }) => ({
-                    ...owner,
-                    key,
-                    version,
-                    title,
-                    description,
-                    explanation,
-                    target,
-                    progress: input.metrics[key]!,
-                    evidence: input.evidence,
-                })),
+                .map(
+                    ({
+                        key,
+                        version,
+                        title,
+                        description,
+                        explanation,
+                        target,
+                        private: isPrivate,
+                    }) => ({
+                        ...owner,
+                        key,
+                        version,
+                        title,
+                        description,
+                        explanation,
+                        target,
+                        private: isPrivate ?? false,
+                        progress: input.metrics[key]!,
+                        evidence: input.evidence,
+                    }),
+                ),
             skipDuplicates: true,
         });
         const rows = await tx.achievementAward.findMany({ where: owner });
-        const items: TAchievement[] = rows.map((row) => ({
+        const visibleRows = rows.filter((row) => !input.hidePrivate || !row.private);
+        const items: TAchievement[] = visibleRows.map((row) => ({
             key: row.key,
             version: row.version,
             title: row.title,
@@ -132,8 +135,25 @@ export class AchievementsService {
             awardedAt: row.awardedAt.toISOString(),
         }));
         for (const definition of definitions) {
+            if (input.hidePrivate && definition.private) {
+                items.push({
+                    key: definition.key,
+                    version: definition.version,
+                    title: definition.title,
+                    description: definition.description,
+                    target: definition.target,
+                    progress: null,
+                    status: 'not-started',
+                    awardedAt: null,
+                    explanation:
+                        'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.',
+                });
+                continue;
+            }
             if (
-                rows.some((row) => row.key === definition.key && row.version === definition.version)
+                visibleRows.some(
+                    (row) => row.key === definition.key && row.version === definition.version,
+                )
             )
                 continue;
             const progress = input.metrics[definition.key]!;

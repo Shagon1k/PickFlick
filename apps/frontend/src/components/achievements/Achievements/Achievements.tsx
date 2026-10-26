@@ -86,19 +86,21 @@ export default function Achievements({ items }: TAchievements) {
                         ) : (
                             <p>{item.explanation}</p>
                         )}
-                        <details>
-                            <summary>How this is calculated · v{item.version}</summary>
-                            <p>{item.explanation}</p>
-                            {item.awardedAt && (
-                                <p>
-                                    Unlocked{' '}
-                                    <time dateTime={item.awardedAt}>
-                                        {item.awardedAt.slice(0, DATE_LENGTH)}
-                                    </time>{' '}
-                                    (UTC). Earned history is retained.
-                                </p>
-                            )}
-                        </details>
+                        {item.progress !== null && (
+                            <details>
+                                <summary>How this is calculated · v{item.version}</summary>
+                                <p>{item.explanation}</p>
+                                {item.awardedAt && (
+                                    <p>
+                                        Unlocked{' '}
+                                        <time dateTime={item.awardedAt}>
+                                            {item.awardedAt.slice(0, DATE_LENGTH)}
+                                        </time>{' '}
+                                        (UTC). Earned history is retained.
+                                    </p>
+                                )}
+                            </details>
+                        )}
                     </article>
                 ))}
             </div>
