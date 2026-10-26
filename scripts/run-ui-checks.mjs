@@ -77,9 +77,19 @@ function runUiChecks() {
         .map((file) => `tests/ui/${file}`);
     const files = base
         ? selectUiFiles(
-              execFileSync('git', ['diff', '--name-only', '-z', `${base}...HEAD`], {
-                  encoding: 'utf8',
-              })
+              // The CI container user differs from the checkout owner; trust only this checkout.
+              execFileSync(
+                  'git',
+                  [
+                      '-c',
+                      `safe.directory=${resolve('.')}`,
+                      'diff',
+                      '--name-only',
+                      '-z',
+                      `${base}...HEAD`,
+                  ],
+                  { encoding: 'utf8' },
+              )
                   .split('\0')
                   .filter(Boolean),
               testFiles,

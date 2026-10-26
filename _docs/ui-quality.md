@@ -107,6 +107,8 @@ layouts, UI fixtures, contracts, configuration, dependencies, the selector and C
 smoke and visual checks. Unmapped frontend or UI test paths also run both full selections.
 Documentation/backend-only changes skip mock UI checks; the other CI jobs still run.
 A selected area with no tests carrying that suite's tag succeeds without starting the app.
+The Git comparison trusts only the current checkout directory for that command because the CI
+container user differs from the checkout owner. It does not change stored Git configuration.
 
 All UI runs use Linux in `mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in
 `ci.yml`, with the locked Node and pnpm versions. CI retries a failure once and fails flaky tests.
@@ -171,6 +173,8 @@ The retained captures were reviewed in the original pinned-image run. The origin
 retained images. After reduction, all 20 retained later-screen visual tests pass again in the pinned
 CI image with four workers, without retries or baseline updates. The selector passes 13 unit cases
 and CLI checks for scoped arguments, no-UI changes, full manual runs and failure propagation.
+A real Git checkout owned by another user reproduces the CI failure; the command-scoped directory
+trust fixes it and selects only the expected Library tests.
 Playwright listing confirms 22 visual tests for Library changes, 28 for Session changes and 10 for
 public-page changes, versus 104 for shared changes. The inventory has 53 complete 390/1440 pairs.
 Main, Delivery and the UAT artifact still require verification after merge.
