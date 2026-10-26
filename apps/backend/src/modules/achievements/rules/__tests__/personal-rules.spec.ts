@@ -1,5 +1,8 @@
-import { buildScreening, buildSelectionSnapshot } from '../../../testing/achievement-fixtures.js';
-import { buildPersonalAchievements } from '../personal-achievements.js';
+import {
+    buildScreening,
+    buildSelectionSnapshot,
+} from '../../../../testing/achievement-fixtures.js';
+import { buildPersonalAchievements } from '../personal-rules.js';
 
 describe('buildPersonalAchievements', () => {
     const nomination = {

@@ -7,10 +7,10 @@ import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership } from '../clubs/access/club-access.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
-import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './achievement-definitions.js';
-import { readAchievementSessions } from './achievement-sources.js';
-import { buildClubAchievements } from './club-achievements.js';
-import { buildPersonalAchievements } from './personal-achievements.js';
+import { buildClubAchievements } from './rules/club-rules.js';
+import { buildPersonalAchievements } from './rules/personal-rules.js';
+import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './rules/rule-catalog.js';
+import { readAchievementSessions } from './rules/rule-sources.js';
 
 @Injectable()
 export class AchievementsService {

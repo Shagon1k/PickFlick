@@ -1,6 +1,9 @@
-import { buildScreening, buildSelectionSnapshot } from '../../../testing/achievement-fixtures.js';
-import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
-import { buildClubAchievements } from '../club-achievements.js';
+import {
+    buildScreening,
+    buildSelectionSnapshot,
+} from '../../../../testing/achievement-fixtures.js';
+import { buildCanonicalDetails } from '../../../../testing/movie-fixtures.js';
+import { buildClubAchievements } from '../club-rules.js';
 
 describe('buildClubAchievements', () => {
     it('should evaluate every Club criterion from explicit recorded evidence', () => {

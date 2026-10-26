@@ -1,7 +1,7 @@
 import { movieDetailsSchema } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import type { TAchievementSession } from './achievement-sources.js';
+import type { TAchievementSession } from './rule-sources.js';
 
 export function readDetails(movie: { details: { data: Prisma.JsonValue }[] } | null) {
     const details = movieDetailsSchema.safeParse(movie?.details[0]?.data);

@@ -13,7 +13,7 @@ import {
 } from '../../../testing/integration.js';
 import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
 import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
-import { ACHIEVEMENT_DEFINITIONS } from '../achievement-definitions.js';
+import { ACHIEVEMENT_DEFINITIONS } from '../rules/rule-catalog.js';
 
 describe('Achievements API', () => {
     let api: ITestApi;

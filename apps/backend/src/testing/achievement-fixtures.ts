@@ -1,4 +1,4 @@
-import type { TAchievementSession } from '../modules/achievements/achievement-sources.js';
+import type { TAchievementSession } from '../modules/achievements/rules/rule-sources.js';
 import { buildCanonicalDetails } from './movie-fixtures.js';
 
 const REVIEW_LENGTH = 301;

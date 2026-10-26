@@ -1,12 +1,12 @@
-import { snapshotSchema } from '../sessions/selection/selection-outcome.js';
+import { snapshotSchema } from '../../sessions/selection/selection-outcome.js';
 import {
     getAverage,
     getLargestBucket,
     getLongestRun,
     getMembersAtScreening,
     readDetails,
-} from './achievement-metrics.js';
-import type { TAchievementSession } from './achievement-sources.js';
+} from './rule-helpers.js';
+import type { TAchievementSession } from './rule-sources.js';
 
 const DATE_LENGTH = 10;
 const MONTH_LENGTH = 7;
