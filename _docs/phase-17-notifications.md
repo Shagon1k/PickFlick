@@ -96,3 +96,19 @@ The complete UI selections pass: 91 smoke tests and 104 exact visual comparisons
 digest-pinned CI Playwright image with Node 24.15.0, using an isolated container network. No
 baseline changes or pixel-tolerance changes are made. The staged gitleaks scan passes without
 an allowlist change. No UAT/production migration or actual email delivery is claimed.
+
+## Review fix round 1
+
+The deduplication test now establishes its own preference snapshot before concurrent writes. It
+passes alone and with all seven notification integration tests against a disposable local
+`pickflick_test` database. Recipient selection and transactional recording live in
+`notification-producers.ts`; authorization-aware projection lives in `notification-resolver.ts`.
+The Session producer names its audience condition and reuses it for the occurrence version.
+The store comment clarifies that in-app DELIVERED means durable inbox availability, with client
+push and `readAt` separate. These changes preserve notification behavior and delivery policy.
+
+The full integration suite passes 288 tests across 36 files. The disposable database container
+is removed after verification. `pnpm verify` passes the production audit gate, lint, Knip,
+formatting, type checking, all 518 unit tests and all workspace builds. The first lint run caught
+an import ordering change from the resolver rename; sorting that block fixes it. The staged
+gitleaks scan passes. This backend-only review round does not rerun the UI suites.

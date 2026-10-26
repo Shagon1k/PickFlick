@@ -15,9 +15,9 @@ import {
 } from '../../../testing/integration.js';
 import { recordAudit } from '../../clubs/access/club-access.js';
 import { publishProgress } from '../../sessions/session-progress.js';
-import { recordAchievementNotifications } from '../notification-events.js';
+import { recordAchievementNotifications } from '../notification-producers.js';
+import { resolveNotification } from '../notification-resolver.js';
 import { recordNotification } from '../notification-store.js';
-import { resolveNotification } from '../notification-target.js';
 
 describe('Notifications', () => {
     let api: ITestApi;
@@ -94,6 +94,10 @@ describe('Notifications', () => {
     });
 
     it('should deduplicate concurrent events and preserve channel decisions across preference edits and retries', async () => {
+        expect(
+            (await updatePreference({ event: 'SESSION_STARTED', inApp: false, email: true }))
+                .status,
+        ).toBe(200);
         const sourceId = randomUUID();
         const input = {
             recipientId: users[0]!,

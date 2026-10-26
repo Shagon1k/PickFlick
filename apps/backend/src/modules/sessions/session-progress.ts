@@ -3,7 +3,7 @@ import type { Prisma } from '@pickflick/database';
 import {
     getSessionNotificationEvent,
     recordSessionNotifications,
-} from '../notifications/notification-events.js';
+} from '../notifications/notification-producers.js';
 
 export async function publishProgress(
     tx: Prisma.TransactionClient,

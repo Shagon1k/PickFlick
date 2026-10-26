@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { recordAuditNotifications } from '../../notifications/notification-events.js';
+import { recordAuditNotifications } from '../../notifications/notification-producers.js';
 import { getClubEntitlements } from './club-tiers.js';
 
 const clubColumns = {

@@ -47,6 +47,7 @@ export async function recordNotification(tx: Prisma.TransactionClient, input: IN
                 notificationId: created.id,
                 channel: 'IN_APP',
                 attempt: 1,
+                // DELIVERED means durable inbox availability; no client push or read (readAt is separate).
                 status: policy.inApp ? 'DELIVERED' : 'SUPPRESSED',
                 completedAt: now,
             },

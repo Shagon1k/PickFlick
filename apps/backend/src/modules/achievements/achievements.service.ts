@@ -7,7 +7,7 @@ import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership } from '../clubs/access/club-access.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
-import { recordAchievementNotifications } from '../notifications/notification-events.js';
+import { recordAchievementNotifications } from '../notifications/notification-producers.js';
 import { buildClubAchievements } from './rules/club-rules.js';
 import { buildPersonalAchievements } from './rules/personal-rules.js';
 import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './rules/rule-catalog.js';

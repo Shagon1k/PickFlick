@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../../clubs/access/club-access.js';
-import { recordSessionNotifications } from '../../notifications/notification-events.js';
+import { recordSessionNotifications } from '../../notifications/notification-producers.js';
 import { lockSession } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';

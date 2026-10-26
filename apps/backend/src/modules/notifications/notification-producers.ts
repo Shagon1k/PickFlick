@@ -60,13 +60,15 @@ export async function recordSessionNotifications(
     session: Prisma.SessionGetPayload<object>,
     event: TNotificationEvent,
 ) {
+    const isModeratorAttentionRequired = event === 'NOMINATION_STALLED';
+    const audienceFilter: Prisma.MembershipWhereInput = isModeratorAttentionRequired
+        ? { role: { in: ['ADMIN', 'MODERATOR'] } }
+        : { sessionParticipants: { some: { sessionId: session.id, status: 'ACCEPTED' } } };
     const members = await tx.membership.findMany({
         where: {
             clubId: session.clubId,
             status: 'ACTIVE',
-            ...(event === 'NOMINATION_STALLED'
-                ? { role: { in: ['ADMIN', 'MODERATOR'] } }
-                : { sessionParticipants: { some: { sessionId: session.id, status: 'ACCEPTED' } } }),
+            ...audienceFilter,
         },
         select: { userId: true },
     });
@@ -75,8 +77,9 @@ export async function recordSessionNotifications(
             recipientId: member.userId,
             event,
             sourceId: session.id,
-            occurrence:
-                event === 'NOMINATION_STALLED' ? session.deadlineVersion : session.phaseVersion,
+            occurrence: isModeratorAttentionRequired
+                ? session.deadlineVersion
+                : session.phaseVersion,
             clubId: session.clubId,
             sessionId: session.id,
         });
