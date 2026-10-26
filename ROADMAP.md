@@ -335,6 +335,43 @@ change descriptive summaries but cannot change saved rating counts, update dates
 Watchlist count. Identical source data reproduces identical results. No awards or shared history
 are written by this calculation.
 
+### Achievement evidence and versions
+
+Achievement views evaluate recorded data when opened. Each scope/key/version has one progress
+record per User or Club. Earned awards retain their original definition, source values, progress
+and award time. New rules use a new version; retired earned versions remain visible. Pending
+progress is recomputed and can decrease when source facts change. Catalog refresh can change
+pending genre, decade and runtime evidence, but cannot rewrite earned awards. No background or
+source-mutation award delivery is claimed; a transient fact removed before evaluation is not awarded.
+
+The catalog contains 15 Club and 14 personal criteria from the canonical screens. Card descriptions
+and expandable explanations state the version's precise evidence rule. Completed screenings count
+repeat viewings and PAST imports. Attendance criteria require explicit `attended = true`; accepted
+participation alone proves no attendance. Missing dates, membership windows, scores, ballots or
+metadata cannot prove an award. PAST nominations count only with known authors; partial score
+matrices never establish a submitted live ballot or a Selection winner.
+
+Calendar rules use scheduled UTC dates. Evening means 18:00 onwards on one UTC date; Night Owl
+requires a time strictly after 23:00. Date-only entries cannot establish an evening or night.
+Full House and Critics Circle reconstruct members at the scheduled date from Membership intervals.
+Runs use scheduled date then Session ID; unknown attendance/averages break the applicable run.
+Perfect Split uses a one-point margin in frozen live Selection totals, not a majority-vote count.
+Hot Take uses an absolute difference of at least two from the received historical average, including
+the caller's score, only while that result is accessible. Archivist counts distinct current Ratings
+and Watchlist Movies once. Long Review uses a historical Session Rating comment longer than 300
+JavaScript characters; no comment text enters achievement evidence.
+
+Club reads require active Membership, including for archived Clubs. Rating/Selection-derived Club
+criteria (Critics Circle, Cult Classic, Perfect Split, Shared Taste) expose progress and earned
+history only to Admins/Moderators; Members see a privacy explanation and no award state or time.
+Personal responses contain only the caller's achievement summaries. Evidence snapshots stay internal
+and contain source references and measured facts without raw comments, image URLs or credentials.
+
+World Tour and Silent Era remain evidence-unavailable: the catalog records neither production
+countries nor black-and-white status. Language, release year and monochrome artwork must not stand
+in for these facts. These criteria and exact-SHA hosted visual acceptance remain open requirements;
+showing an unavailable card does not complete them.
+
 ### Plans and limits
 
 | Feature                          | Free — Screening Room               | Pro — Director's Cut             |

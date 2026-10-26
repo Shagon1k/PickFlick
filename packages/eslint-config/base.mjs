@@ -171,7 +171,17 @@ export default [
                     'apps/frontend/src/components/*/': 'KEBAB_CASE',
                     'apps/frontend/src/components/*/!(__tests__)/': 'PASCAL_CASE',
                 },
-                { ignoreWords: ['clubs', 'movies', 'navigation', 'sessions', 'shells', 'ui'] },
+                {
+                    ignoreWords: [
+                        'clubs',
+                        'library',
+                        'movies',
+                        'navigation',
+                        'sessions',
+                        'shells',
+                        'ui',
+                    ],
+                },
             ],
         },
     },

@@ -7,9 +7,10 @@ const allowedReturnTargets = [
     /^\/movies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u,
     /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u,
     /^\/app$/u,
+    /^\/library\?tab=achievements$/u,
     /^\/invite\/(?:club|session)\/[\w-]{1,512}$/u,
     /^\/clubs\/new$/u,
-    /^\/clubs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\/settings|\/sessions\/new)?$/u,
+    /^\/clubs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\/settings|\/sessions\/new|\/achievements)?$/u,
 ];
 
 /** Sign-in may return only to these same-origin paths; anything else falls back to `/app`. */

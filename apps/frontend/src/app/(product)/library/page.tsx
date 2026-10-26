@@ -9,6 +9,7 @@ import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 
+import LibraryAchievements from './_components/LibraryAchievements/LibraryAchievements';
 import LibraryStatistics from './_components/LibraryStatistics/LibraryStatistics';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
@@ -51,7 +52,9 @@ export default async function LibraryPage({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-    const parsed = libraryQuerySchema.safeParse(await searchParams);
+    const parameters = await searchParams;
+    if (parameters.tab === 'achievements') return <LibraryAchievements />;
+    const parsed = libraryQuerySchema.safeParse(parameters);
     const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
     const session = await getSessionState();
     if (session === 'anonymous') redirect(buildLoginPath(buildLibraryPath(query)));
@@ -88,6 +91,7 @@ export default async function LibraryPage({
                     href: '/library?tab=watchlist',
                     current: query.tab === 'watchlist',
                 },
+                { label: 'Achievements', href: '/library?tab=achievements' },
             ]}
         >
             {!parsed.success && (

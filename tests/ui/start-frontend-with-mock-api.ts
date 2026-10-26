@@ -10,6 +10,7 @@ import type {
     TRespondInvitation,
 } from '@pickflick/contracts';
 
+import { handleAchievements } from './achievements.ts';
 import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
 import { buildHubProjection } from './hub-projections.ts';
@@ -404,6 +405,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (
         [
+            handleAchievements,
             handleLibrary,
             handleWatchlist,
             handlePersonalRating,
