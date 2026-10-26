@@ -157,6 +157,9 @@ understand -> read the source of truth -> choose the smallest useful move -> edi
 - When evidence is inconclusive, run one stronger check before concluding.
 - Verify the layer you changed: focused tests for logic, integration tests for boundaries, visual and
   accessibility checks for UI.
+- New screens and prototype states need reviewed `@visual` baselines at 390 and 1440 in the same
+  PR. Every PR runs UI smoke and UI visual; the Delivery gate requires both. Main and manual CI
+  runs require the full UI contract and visual suites. See [\_docs/ui-quality.md](_docs/ui-quality.md).
 - After a CLI scaffold, audit every generated file before keeping it.
 
 ## Product invariants

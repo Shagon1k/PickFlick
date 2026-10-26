@@ -206,9 +206,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests run the tagged smoke checks; main and manual runs run the full contract
-        # and visual regression suites.
-        suite: ${{ github.event_name == 'pull_request' && fromJSON('["smoke"]') || fromJSON('["contract", "visual"]') }}
+        # Every PR runs smoke and visual checks; main and manual runs use the full contract.
+        suite: ${{ github.event_name == 'pull_request' && fromJSON('["smoke", "visual"]') || fromJSON('["contract", "visual"]') }}
 
     steps:
       - name: Check out the exact revision

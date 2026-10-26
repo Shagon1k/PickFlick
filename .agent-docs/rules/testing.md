@@ -51,9 +51,14 @@
 - `eslint-plugin-playwright` enforces awaited actions and assertions, no focused or conditional
   tests, and web-first assertions.
 - Screenshot baselines are taken at two widths: mobile 390 and desktop 1440.
+- Add reviewed baselines for every new screen or implemented prototype state in the same PR.
+  Cover its key populated, empty, read-only/hidden, and dialog states where applicable. Compare
+  each capture with the canonical prototype and record the review in the PR; passing pixels alone
+  do not establish design fidelity.
 - Tag every screenshot comparison with Playwright's `{ tag: '@visual' }`. Tag the explicit PR
   behavior selection with `{ tag: '@smoke' }`; the full contract selection includes these checks.
-  Run `pnpm test:ui:smoke` on PRs and both `pnpm test:ui:contract` and `pnpm test:ui:visual` on
-  main pushes and manual CI runs.
+  Run both `pnpm test:ui:smoke` and `pnpm test:ui:visual` on every PR. Main pushes and manual CI
+  runs require both `pnpm test:ui:contract` and `pnpm test:ui:visual`. The Delivery gate requires
+  every selected suite; missing or mismatched baselines fail the PR.
 - Update baselines in the pinned Linux Playwright image only after a reviewed visual change:
   `pnpm test:ui:update`. See [UI quality checks](../../_docs/ui-quality.md).

@@ -9,6 +9,9 @@ import { sendError, sendJson, type TMockRequest, type TMockResponse } from './mo
 import { getLibraryRatings } from './personal-rating.ts';
 import { getLibraryWatchlist } from './watchlist.ts';
 
+// Match the fixture dates so screenshots do not change at the new year.
+const STATISTICS_YEAR = 2026;
+
 const parallelReads = new Map<
     string,
     { contentStarted: boolean; releaseStatistics?: () => void }
@@ -93,7 +96,7 @@ function buildStatistics(token: string): TLibraryStatistics {
     const body: TLibraryStatistics = {
         filmsRated: ratings.length,
         ratedThisYear: ratings.filter(
-            (rating) => new Date(rating.updatedAt).getUTCFullYear() === new Date().getUTCFullYear(),
+            (rating) => new Date(rating.updatedAt).getUTCFullYear() === STATISTICS_YEAR,
         ).length,
         averageRating: hasRatings
             ? ratings.reduce((sum, rating) => sum + rating.score, 0) / ratings.length

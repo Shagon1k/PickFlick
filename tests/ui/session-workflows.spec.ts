@@ -101,10 +101,10 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'valid-session-workflow-preselected');
         await page.goto(ROUTE);
-        await page.getByLabel('Date').fill('2026-12-01');
-        await page.getByLabel('Location').fill('Room A');
         await page.getByRole('radio', { name: 'Pre-selected Movie' }).check();
         await expect(page.getByLabel('Nomination phase ends in')).toHaveCount(0);
+        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Location').fill('Room A');
         const search = page.getByRole('combobox', { name: 'Select a Movie' });
         await search.fill('film');
         await expect(page.getByRole('option')).toHaveCount(2);

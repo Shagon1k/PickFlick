@@ -28,6 +28,7 @@ export default defineConfig({
     snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
     testDir: 'tests/ui',
     timeout: 60_000,
+    updateSnapshots: 'none',
     use: {
         baseURL: BASE_URL,
         colorScheme: 'dark',
