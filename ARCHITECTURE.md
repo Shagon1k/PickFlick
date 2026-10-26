@@ -773,6 +773,22 @@ obsolete cache shapes yield an empty genre list. Listing a Library makes no prov
 Both Movie and Library editors share their server actions, which revalidate both routes after a
 successful mutation. No schema migration, new dependency or environment variable is needed.
 
+`GET /library/statistics` is an authenticated private/no-store projection with a strict empty query;
+identity comes only from the session. A repeatable-read transaction reads all the caller's current
+PersonalMovieRating scores/update dates and the configured provider/locale's Movie details cache,
+and counts their Watchlist rows. A pure calculator returns the eight personal summaries without
+provider calls or writes. Table filters and pagination do not affect these totals. Only aggregate
+values cross the boundary; no other user's activity or historical Session responses enter it.
+
+Yearly activity uses current rating update dates in UTC. Each rated Movie contributes one runtime
+and at most one occurrence of each exact genre/person name. Equal frequencies use code-unit name
+order. Missing or obsolete caches make the corresponding metadata summary unavailable across the
+whole set. The cache's latest validated data is used even when stale; refresh changes descriptive
+values intentionally. Counts, scores and dates remain independent of provider metadata. No snapshots,
+persisted aggregates, migrations or refresh worker are introduced. Read cost grows with the caller's
+number of rated Movies. The Library loads statistics and table rows concurrently and handles their
+read failures independently; existing mutation revalidation refreshes both.
+
 ### Prioritized Watchlist
 
 Migration 32 adds `WatchlistItem`, keyed by `(userId, movieId)`, with a PostgreSQL
@@ -789,8 +805,8 @@ the database's last write. There are no item IDs or user selectors exposed for m
 
 `GET /watchlist` retains its existing stored-title/year projection ordered by High, Medium, Low,
 then added date and Movie ID. The Library screen uses the bounded `/library` projection above.
-Movie Details and the Library reuse the same priority editor and server action. Statistics and
-achievements remain later work. No dependency, environment variable, worker or deployment change
+Movie Details and the Library reuse the same priority editor and server action. Achievements
+remain later work. No dependency, environment variable, worker or deployment change
 is added.
 
 ### Club analytics and rating rankings

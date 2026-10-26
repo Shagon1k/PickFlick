@@ -447,6 +447,11 @@
     min-width: 0;
 }
 
+.controlSummary {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
 @media (width >= 768px) {
     .setupPanel {
         grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
