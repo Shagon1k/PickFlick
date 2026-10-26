@@ -14,6 +14,7 @@ interface IControlShellProps {
     items: readonly IShellNavigationItem[];
     routes?: IShellRouteMap;
     title: string;
+    summary?: ReactNode;
 }
 
 export default function ControlShell({
@@ -25,6 +26,7 @@ export default function ControlShell({
     items,
     routes,
     title,
+    summary,
 }: IControlShellProps) {
     return (
         <ProductChrome
@@ -42,6 +44,7 @@ export default function ControlShell({
                         <h1>{title}</h1>
                         <p>{description}</p>
                     </div>
+                    {summary && <div className={styles.controlSummary}>{summary}</div>}
                 </header>
                 <SectionNavigation items={items} label={`${title} sections`} />
                 <div className={styles.controlContent}>{children}</div>

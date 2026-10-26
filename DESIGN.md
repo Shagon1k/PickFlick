@@ -327,7 +327,14 @@ here.
 - Tables and rating rails scroll locally on phones. Successful Library edits return focus to the
   section heading and announce feedback, including when the edit removes a filtered row. Loading,
   empty Library, no matches, invalid filters, unavailable/retry and sign-in recovery are explicit.
-  Statistics and achievements remain later work; no fixture statistics or film content appear.
+  Personal statistics appear above the local tabs on both Library views, independent of table
+  filters. Eight bordered tiles use the canonical stat icons and a decorative panda backdrop;
+  the four-column desktop grid recomposes into two columns below L. Genre/person names wrap fully,
+  including unbroken text. Empty counts and watch hours show zero; absent averages and metadata
+  summaries show an explained em dash. Copy explains current-rating/UTC-year semantics and the
+  watch-time estimate. Loading uses the Library boundary; statistics failures show their own retry
+  while the table stays usable. Existing editor revalidation updates the totals after saves.
+  Achievements remain later work; no fixture statistics or film content appear.
 
 #### Create Session
 

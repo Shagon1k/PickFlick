@@ -5,12 +5,14 @@ import {
     movieDetailsSchema,
     type TLibrary,
     type TLibraryQuery,
+    type TLibraryStatistics,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
+import { buildLibraryStatistics } from './library-statistics.js';
 
 function getPagination(
     total: number,
@@ -26,6 +28,36 @@ export class LibraryService {
         private readonly prisma: PrismaService,
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
     ) {}
+
+    async getStatistics(userId: string): Promise<TLibraryStatistics> {
+        const [ratings, watchlistCount] = await this.prisma.$transaction(
+            [
+                this.prisma.personalMovieRating.findMany({
+                    where: { userId },
+                    select: {
+                        score: true,
+                        updatedAt: true,
+                        movie: {
+                            select: {
+                                details: {
+                                    where: {
+                                        key: buildDetailsCacheKey(
+                                            this.environment.catalog.provider,
+                                            this.environment.catalog.locale,
+                                        ),
+                                    },
+                                    select: { data: true },
+                                },
+                            },
+                        },
+                    },
+                }),
+                this.prisma.watchlistItem.count({ where: { userId } }),
+            ],
+            { isolationLevel: 'RepeatableRead' },
+        );
+        return buildLibraryStatistics(ratings, watchlistCount);
+    }
 
     async list(userId: string, query: TLibraryQuery): Promise<TLibrary> {
         const movieFilter: Prisma.MovieWhereInput | undefined = query.q

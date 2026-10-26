@@ -33,7 +33,93 @@ responsive Ratings sorting, empty/loading/error states, keyboard/touch and acces
 and owner visual acknowledgment are required before acceptance. Preview Compose exists, but the
 repository currently has no hosted-preview workflow; local captures do not satisfy that criterion.
 
-## Verification
+## Personal statistics — issue #58
+
+Run `r_93ab5e32cb67e9c1cd67` uses managed branch
+`PF-58_16-2-deliver-deterministic-personal-library`. Prerequisite #56 is closed.
+
+Reuse the authenticated Library module, PersonalMovieRating and WatchlistItem storage, configured
+Movie cache, repeatable-read transactions, stat icons, brand image, control shell and mutation
+revalidation. The strict private/no-store `GET /library/statistics` endpoint accepts no user or
+filter selectors. Its pure calculator counts current rated Movies, current UTC-year rating updates,
+equal-weight current average, estimated one-viewing watch time, all Watchlist priorities and
+genre/director/actor frequency. Exact cached names count once per film, with code-unit tie order.
+Missing metadata leaves only the affected summaries unavailable. Identical inputs reproduce the
+same output; refreshing the configured cache intentionally changes descriptive values without
+changing saved personal activity. Historical Session Ratings are not inputs or outputs.
+
+The eight tiles appear above both Library tabs with four desktop columns and two below L. Full
+names wrap, empty values remain honest and read errors have independent retry feedback. No schema
+migration, dependency, environment setting, achievement, billing, catalog request or refresh worker
+is added. Watch time is an estimate and yearly activity is the latest opinion update, as explained
+in the UI and canonical rules. The read cost grows with the user's rated-film count.
+
+Verification plan: deterministic aggregate fixtures (UTC bounds, duplicate credits, ties, partial
+and obsolete cache, refresh/recompute); real API isolation, strict query rejection and save/retry
+updates; browser checks at 390/768/1024/1440px for long content, empty/error recovery, table-filter
+independence, mutation refresh, keyboard/touch and axe; existing Library/editor regressions and
+`pnpm verify`. Hosted exact-head preview and owner visual acknowledgment remain required for
+acceptance. Local screenshots and a Draft PR do not establish those requirements.
+
+## Personal verification
+
+Node 24.15.0 / pnpm 11.25.0 use the launcher's workspace store. A new disposable PostgreSQL
+container serves only `pickflick_test` on loopback port 41432. All 32 existing migrations and the
+idempotent synthetic seed apply; no product migration or secret-file change is introduced.
+
+All 267 integration checks across 33 files pass, including three new statistics API checks for
+identity isolation, strict query rejection, configured-cache selection, refresh/recompute, empty
+and obsolete metadata, rating edits and Watchlist retries. Five pure calculator fixtures cover all
+eight values, UTC year boundaries, duplicate credits, deterministic ties and unchanged retries.
+`pnpm verify` passes the production audit, lint, Knip, formatting, type checking, all 393 unit tests
+and every workspace build. The audit passes its high/critical gate with two low and five moderate
+findings. The staged gitleaks scan passes without an allowlist change.
+
+All five statistics browser checks pass, including 390/768/1024/1440px, full long-name wrapping,
+two/four-column composition, axe, table-filter independence, both tabs, reload, keyboard/touch
+editing and refreshed averages, empty values and retry recovery. All 19 existing Library,
+Personal Rating and Watchlist checks pass too. Initial browser checks exposed invalid definition-list
+nesting and a sidebar-grid placement conflict; both are corrected. The mobile test also stopped
+targeting a tab link while its menu was closed. Styles use the repository's 576px compact breakpoint.
+
+The full smoke selection passes 82 of 83 checks. Its only failure is the unchanged Session roster
+clipboard assertion: it expects origin port 41730 but correctly receives this run's 41840 origin.
+No Session test, skip, visual baseline or product behavior is changed to bypass it. The previous
+Nomination progress failure does not reproduce in this run. Temporary UI configuration lives under
+ignored `test-results/`; the app copy there keeps later verification builds from changing the test
+server. The standard UI ports were already occupied.
+
+`pnpm test:journeys tests/journeys/library.spec.ts` passes through the real API and database,
+including the new all-Library statistics assertions across pagination, filters and Watchlist.
+Local phone/desktop captures were inspected; four-width long-content captures are under
+`test-results/library-statistics-*.png`. Full visual baseline comparisons are not claimed.
+
+Exact-head hosted preview and owner visual acknowledgment remain required before acceptance.
+The repository has preview Compose but no hosted-preview workflow or authorized destination for
+this run. Local captures and a Draft PR do not satisfy that criterion; the issue remains open.
+
+### Personal review fix round 1
+
+The statistics loader handles the `TimeoutError` DOMException from the existing ten-second API
+deadline through its unavailable/retry state. Successful table reads keep their rows and filters.
+The browser regression delays only the statistics response beyond that deadline; it reproduced
+the route error boundary on source commit `7a0300687b4e4d9f173a8df1df3fd92e6bc7f499`.
+
+`pnpm verify` passes the audit gate, lint, Knip, formatting, type checking, all 393 unit tests and
+every workspace build with Node 24.15.0 and pnpm 11.25.0. The audit retains two low and five moderate
+findings. No schema, migration, dependency or environment change is introduced.
+
+All six statistics browser checks pass, including the real-timeout regression, four responsive
+layouts with axe and keyboard/touch editing, and empty/error recovery. The timeout case preserves
+the filtered table row, search value, enabled Apply button and retry URL.
+
+The full smoke selection passes 83 of 84 checks, including all existing Library, Personal Rating
+and Watchlist checks. Its only failure is the unchanged Session clipboard assertion at
+`tests/ui/session-roster.spec.ts:73`: expected origin port 41730, received the isolated run's 41860.
+The standard ports were occupied, so temporary ignored configuration used 41860/42861. No Session
+test or visual baseline is changed. Hosted preview and owner visual acknowledgment remain pending.
+
+## Club verification
 
 Node 24.15.0 and pnpm 11.25.0 run with the launcher's workspace pnpm store. A disposable
 PostgreSQL container serves only `pickflick_test` on loopback port 40432. All 32 existing

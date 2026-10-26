@@ -1,0 +1,113 @@
+.statistics {
+    min-width: 0;
+    margin-bottom: var(--gap-lg);
+}
+
+.stage {
+    position: relative;
+    isolation: isolate;
+}
+
+.mascot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: -1;
+    width: min(360px, 64%);
+    height: auto;
+    pointer-events: none;
+    opacity: 0.08;
+    filter: grayscale(1);
+    transform: translate(-50%, -50%);
+}
+
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--gap-sm);
+    margin: 0;
+}
+
+.tile {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: var(--gap-sm);
+    align-items: center;
+    min-width: 0;
+    min-height: 124px;
+    padding: var(--gap-md);
+    container-type: inline-size;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+
+    svg {
+        width: 58px;
+        height: 58px;
+        color: var(--muted);
+    }
+}
+
+.copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+
+    dt {
+        margin-top: var(--gap-xs);
+        font-size: var(--fs-meta);
+        color: var(--muted);
+    }
+
+    dd {
+        order: -1;
+        margin: 0;
+        font: 600 clamp(40px, 5vw, 56px) / var(--lh-tight) var(--font-display);
+        font-variant-numeric: lining-nums;
+        overflow-wrap: anywhere;
+    }
+
+    dd[data-text] {
+        font-size: clamp(20px, 10cqi, 42px);
+        text-wrap: balance;
+    }
+}
+
+.explanation {
+    margin: var(--gap-sm) 0 0;
+    font-size: var(--fs-caption);
+    color: var(--muted);
+}
+
+@media (width < 1024px) {
+    .tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width < 576px) {
+    .tiles {
+        gap: var(--gap-xs);
+    }
+
+    .tile {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: var(--gap-xs);
+        min-height: 104px;
+        padding: var(--gap-sm) var(--gap-xs);
+
+        svg {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    .copy dd {
+        font-size: 30px;
+    }
+
+    .copy dt {
+        font-size: var(--fs-caption);
+    }
+}

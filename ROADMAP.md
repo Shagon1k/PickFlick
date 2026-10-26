@@ -317,6 +317,24 @@ metadata summary remain unavailable when any screening lacks the required metada
 summaries use the validated catalog cache and may change when it is refreshed; completed counts and
 historical rating aggregates do not. This delivery creates no achievement awards.
 
+### Personal Library analytics
+
+Active personal statistics count the caller's current PersonalMovieRating rows, once per canonical
+Movie, across the entire Library regardless of table filters or Club plan. Both PERSONAL and
+SESSION sources contribute. The average weights each current score equally. “Rated this year” uses
+the saved rating's latest update time in the current UTC calendar year; it describes current rating
+activity, not first viewing dates or historical screening frequency. Watchlist count includes every
+saved priority, including films that are also rated.
+
+Watch time estimates one viewing per rated film from cached runtime. Genre, director and actor
+summaries count each exact cached name once per rated film; highest count wins, with code-unit name
+order breaking ties. The configured provider/locale's validated cache is the only metadata source.
+Missing, empty or invalid details make the affected summary unavailable for the whole rated set.
+An empty Library has zero counts and watch hours, with no average or favorites. Catalog refresh may
+change descriptive summaries but cannot change saved rating counts, update dates, average or
+Watchlist count. Identical source data reproduces identical results. No awards or shared history
+are written by this calculation.
+
 ### Plans and limits
 
 | Feature                          | Free — Screening Room               | Pro — Director's Cut             |

@@ -2,13 +2,14 @@ import { HTTP_STATUS, libraryQuerySchema, type TLibraryQuery } from '@pickflick/
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { getLibrary } from '#api/library.server';
+import { getLibrary, getLibraryStatistics } from '#api/library.server';
 import { buildLoginPath, getSessionState } from '#api/session.server';
 import ControlShell from '#components/shells/ControlShell/ControlShell';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 
+import LibraryStatistics from './_components/LibraryStatistics/LibraryStatistics';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
 
@@ -29,6 +30,22 @@ async function loadLibrary(query: TLibraryQuery) {
     }
 }
 
+async function loadStatistics(query: TLibraryQuery) {
+    try {
+        return await getLibraryStatistics();
+    } catch (error) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+            redirect(buildLoginPath(buildLibraryPath(query)));
+        if (
+            error instanceof ApiError ||
+            error instanceof TypeError ||
+            (error instanceof DOMException && error.name === 'TimeoutError')
+        )
+            return null;
+        throw error;
+    }
+}
+
 export default async function LibraryPage({
     searchParams,
 }: {
@@ -38,7 +55,10 @@ export default async function LibraryPage({
     const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
     const session = await getSessionState();
     if (session === 'anonymous') redirect(buildLoginPath(buildLibraryPath(query)));
-    const library = parsed.success && session === 'authenticated' ? await loadLibrary(query) : null;
+    const [library, statistics] =
+        parsed.success && session === 'authenticated'
+            ? await Promise.all([loadLibrary(query), loadStatistics(query)])
+            : [null, null];
     const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
         <ControlShell
@@ -46,6 +66,17 @@ export default async function LibraryPage({
             description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
+            summary={
+                parsed.success &&
+                (statistics ? (
+                    <LibraryStatistics statistics={statistics} />
+                ) : (
+                    <section aria-label="Personal statistics unavailable">
+                        <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
+                        <ButtonLink href={buildLibraryPath(query)}>Retry statistics</ButtonLink>
+                    </section>
+                ))
+            }
             items={[
                 {
                     label: 'My Ratings',

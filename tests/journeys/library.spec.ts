@@ -54,6 +54,17 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         const page = await context.newPage();
         await page.goto('/library?sort=title');
         await expect(page.getByRole('row')).toHaveCount(26);
+        const statistics = page.getByRole('region', { name: 'Personal statistics', exact: true });
+        await expect(statistics.locator('dd')).toHaveText([
+            '28',
+            '28',
+            '8',
+            '—',
+            '28',
+            '—',
+            '—',
+            '—',
+        ]);
         await page.getByRole('link', { name: 'Next', exact: true }).click();
         await expect(page.getByText('Page 2 of 2')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(4);
@@ -62,6 +73,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByRole('option', { name: '8/10', exact: true }).click();
         await page.getByRole('button', { name: 'Apply', exact: true }).click();
         await expect(page.getByRole('row')).toHaveCount(2);
+        await expect(statistics.locator('dd').first()).toHaveText('28');
         await expect(page.getByText('Page 1 of 1')).toBeVisible();
         await page.reload();
         await expect(page.getByLabel('Search rated films')).toHaveValue('Library journey 00');
@@ -78,6 +90,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
             page.getByRole('button', { name: 'Your rating: 9 out of 10. Edit rating' }),
         ).toBeVisible();
         await page.goto('/library?tab=watchlist&q=Library+journey+00&priority=HIGH');
+        await expect(statistics.locator('dd').nth(4)).toHaveText('28');
         await page.getByRole('button', { name: 'Edit watchlist priority' }).click();
         await dialog.getByRole('button', { name: 'Low', exact: true }).click();
         await expect(

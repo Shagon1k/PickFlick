@@ -9,6 +9,7 @@ export * from './common/http-status.js';
 export * from './common/text.js';
 export * from './contact/contact.schema.js';
 export * from './movies/library.schema.js';
+export * from './movies/library-statistics.schema.js';
 export * from './movies/movie.schema.js';
 export * from './movies/personal-rating.schema.js';
 export * from './movies/tmdb.schema.js';
