@@ -65,7 +65,7 @@ export function handleWatchlist(
             const item: TWatchlistItem = {
                 movieId,
                 priority: body.priority,
-                addedAt: items.get(movieId)?.addedAt ?? new Date().toISOString(),
+                addedAt: items.get(movieId)?.addedAt ?? '2026-10-01T20:00:00.000Z',
             };
             items.set(movieId, item);
             sendJson(response, 200, item);

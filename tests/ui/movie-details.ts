@@ -2,6 +2,11 @@ import type { TMovieDetailsResponse, TMovieProviderReason } from '@pickflick/con
 
 import { sendError, sendJson, type TMockRequest, type TMockResponse } from './mock-http.ts';
 
+const VISUAL_TITLES: Record<string, string> = {
+    '20000000-0000-4000-8000-000000000000': 'The Night of the Hunter',
+    '10000000-0000-4000-8000-000000000037': 'The Grand Budapest Hotel',
+};
+
 export function handleMovieDetails(
     request: TMockRequest,
     response: TMockResponse,
@@ -39,6 +44,11 @@ export function handleMovieDetails(
     const isMissing = token === 'valid-movie-missing';
     const isRelated = id.endsWith('038');
     const data = movieData(id, isMissing, isRelated);
+    if (token.includes('phase-visual')) {
+        data.title = VISUAL_TITLES[id] ?? 'Related Film';
+        data.overview =
+            'An unexpected encounter turns an ordinary screening into a night to remember.';
+    }
     const fetchedAt = '2026-10-10T12:00:00.000Z';
     let result: TMovieDetailsResponse['result'] = { state: 'fresh', fetchedAt, data };
     if (token === 'valid-movie-stale')

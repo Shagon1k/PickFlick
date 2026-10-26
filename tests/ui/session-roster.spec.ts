@@ -72,6 +72,7 @@ test(
             .poll(() => page.evaluate(() => navigator.clipboard.readText()))
             .toBe(`http://127.0.0.1:41730/sessions/${SESSION_ID}`);
         await page.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await settle(page);
         await page.getByRole('menuitem', { name: 'Kick', exact: true }).click();
         const kickDialog = page.getByRole('dialog', { name: 'Kick participants' });
         await kickDialog.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();

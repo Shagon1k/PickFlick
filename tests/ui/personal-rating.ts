@@ -65,7 +65,7 @@ export function handlePersonalRating(
             const rating: TPersonalMovieRating = {
                 score: body.score,
                 source: 'PERSONAL',
-                updatedAt: new Date().toISOString(),
+                updatedAt: '2026-10-01T20:00:00.000Z',
             };
             ratings.set(key, rating);
             sendJson(response, 200, rating);
