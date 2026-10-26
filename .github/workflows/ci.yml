@@ -206,13 +206,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every PR runs smoke and visual checks; main and manual runs use the full contract.
+        # PRs select affected areas; main and manual runs use the full contract and visuals.
         suite: ${{ github.event_name == 'pull_request' && fromJSON('["smoke", "visual"]') || fromJSON('["contract", "visual"]') }}
 
     steps:
       - name: Check out the exact revision
         uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Install pnpm
@@ -227,8 +228,10 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run the UI ${{ matrix.suite }} suite
-        run: pnpm test:ui:${{ matrix.suite }}
+      - name: Run the selected UI ${{ matrix.suite }} checks
+        env:
+          UI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+        run: node scripts/run-ui-checks.mjs "${{ matrix.suite }}" "$UI_BASE_SHA"
 
       - name: Upload UI failure evidence
         if: ${{ failure() }}

@@ -51,14 +51,16 @@
 - `eslint-plugin-playwright` enforces awaited actions and assertions, no focused or conditional
   tests, and web-first assertions.
 - Screenshot baselines are taken at two widths: mobile 390 and desktop 1440.
-- Add reviewed baselines for every new screen or implemented prototype state in the same PR.
-  Cover its key populated, empty, read-only/hidden, and dialog states where applicable. Compare
-  each capture with the canonical prototype and record the review in the PR; passing pixels alone
-  do not establish design fidelity.
+- Add reviewed baselines for each new screen at 390 and 1440 in the same PR. Capture the
+  representative populated layout; add another state only when its composition differs materially.
+  Keep permissions, errors, empty results and save flows in behavior tests unless they introduce a
+  distinct layout. Compare captures with the canonical prototype and record the review in the PR.
 - Tag every screenshot comparison with Playwright's `{ tag: '@visual' }`. Tag the explicit PR
   behavior selection with `{ tag: '@smoke' }`; the full contract selection includes these checks.
-  Run both `pnpm test:ui:smoke` and `pnpm test:ui:visual` on every PR. Main pushes and manual CI
-  runs require both `pnpm test:ui:contract` and `pnpm test:ui:visual`. The Delivery gate requires
-  every selected suite; missing or mismatched baselines fail the PR.
+  PR CI selects smoke and visual checks for affected areas through `scripts/run-ui-checks.mjs`.
+  Shared UI, fixtures, contracts, dependencies and CI changes run the full smoke/visual selections;
+  documentation/backend-only PRs need no mock UI checks. Main and manual runs require the full
+  contract and visual suites. The Delivery gate requires every selected check; missing or mismatched
+  baselines fail it. See [UI quality checks](../../_docs/ui-quality.md#ci) for area selection.
 - Update baselines in the pinned Linux Playwright image only after a reviewed visual change:
   `pnpm test:ui:update`. See [UI quality checks](../../_docs/ui-quality.md).

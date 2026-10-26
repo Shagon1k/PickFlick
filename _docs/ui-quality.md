@@ -46,9 +46,9 @@ The suite checks:
 - collapsed motion when reduced motion is requested.
 
 Viewports are defined once in `tests/ui/viewports.ts`. Visual captures include Movie Details,
-Session creation, Nomination, Selection and its visible/hidden outcome, Watching and Rating,
+Session creation, Nomination, Selection and its outcome, Watching and Rating,
 Completed history and Hub history, Personal Rating and Watchlist editors, Club Ratings, Library
-tables and statistics, and personal/Club achievement shelves alongside the existing coverage.
+tables and statistics, and the shared achievement shelf alongside the existing coverage.
 `tests/ui/phase-states-visual.spec.ts` reuses the behavior fixtures for these later states.
 The Nomination viewport checks also assert the Session header variant and the two-column to
 single-column layout change at 1024px. Hub checks verify that tab navigation keeps the upper frame
@@ -78,26 +78,41 @@ pnpm test:ui:update
 Inspect every changed PNG and rerun `pnpm test:ui:visual` in that image before committing. An
 updated baseline is not proof that a visual change is right.
 
-Every new screen or implemented prototype state must add reviewed `@visual` baselines at both
-390 and 1440 in the same PR. Include its key populated, empty, read-only/hidden, and dialog states
-where applicable. Record the prototype and review findings in the PR. Keep the existing behavior
-checks in the smoke/contract selections; visual tests must also assert that the intended content
-has loaded before capturing it. Use fixed fixture dates for visible timestamps and statistics.
+Add a representative reviewed capture at 390 and 1440 for each new screen in the same PR.
+Add another state only for a materially different composition. Permissions, validation, errors,
+empty results and saved feedback normally belong in behavior tests. Record the prototype and
+review findings in the PR. Visual tests assert that the intended content has loaded before capture;
+use fixed fixture dates for visible timestamps and statistics.
 
 ## CI
 
-One UI job runs as a matrix: every PR runs `UI smoke` and `UI visual`, including PRs that change
-the frontend or `tests/ui`. Main pushes and manual CI runs run `UI contract` and `UI visual`.
-All run on Linux in
-`mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in `ci.yml`, so fonts and browser
-dependencies do not drift with the GitHub runner. CI uses the locked Node and pnpm versions, retries
-a failure once, and fails on flaky tests.
+One UI job runs as a matrix. PRs select `UI smoke` and `UI visual` checks for affected areas;
+main pushes and manual CI runs use the full `UI contract` and `UI visual` suites.
 
-The Delivery gate requires every selected suite to pass. A missing or mismatched screenshot
-baseline fails the PR's visual job and the gate. Normal runs use `updateSnapshots: 'none'`;
-only the explicit update command writes baselines. Running visuals on every PR also covers shared
-component and dependency changes. To run the full contract on a branch before merging, open
-**Actions → CI → Run workflow** and select the branch.
+`scripts/run-ui-checks.mjs` compares the PR with its base using Git's merge base and passes test
+file paths to the existing Playwright commands. It combines all affected areas:
+
+| Changed source or baseline                                                               | Selected area                                                                                |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Marketing routes, contact API                                                            | Public pages                                                                                 |
+| Login routes                                                                             | Authentication                                                                               |
+| Club routes, Club/invitation API                                                         | Club onboarding, Hub, invitations, members, settings, Ratings and Achievements               |
+| Session routes/components/API                                                            | Session workflows, roster, Nomination, Selection, Watching, Rating, history and Hub          |
+| Movie routes/API                                                                         | Movie search/details, Personal Rating and Watchlist                                          |
+| Library routes, achievement component, Library/achievement/personal-rating/Watchlist API | Library, statistics, Achievements, Club Ratings, Movie Details and rating/Watchlist controls |
+
+The compact later-screen visual file is included in each relevant product area. Changed test
+specs run directly; feature baseline updates select their area too. Shared components/styles,
+layouts, UI fixtures, contracts, configuration, dependencies, the selector and CI changes run all
+smoke and visual checks. Unmapped frontend or UI test paths also run both full selections.
+Documentation/backend-only changes skip mock UI checks; the other CI jobs still run.
+A selected area with no tests carrying that suite's tag succeeds without starting the app.
+
+All UI runs use Linux in `mcr.microsoft.com/playwright:v1.63.0-noble`, pinned by digest in
+`ci.yml`, with the locked Node and pnpm versions. CI retries a failure once and fails flaky tests.
+The Delivery gate requires every selected check to pass. Missing or mismatched baselines fail it.
+Normal runs use `updateSnapshots: 'none'`; only the explicit update command writes baselines.
+To run both full suites before merging, open **Actions → CI → Run workflow** and select the branch.
 
 On `main`, contract and visual regression must pass before `deploy-uat.yml` can deploy the exact
 revision and upload its `uat-<sha>` screenshot artifact. A passing branch run does not prove that
@@ -129,28 +144,33 @@ columns on phones, three at medium widths, and five on wide screens, with center
 titles and the earned badge highlighted. Versioned rule explanations and privacy text remain
 part of each card.
 Film metadata now occupies the available header width before its wrapping check, keeping the
-hairline stable when short facts and genres fit on one line. Dialog captures use the established
-keyboard menu flow so the reveal animation cannot dismiss a pointer action during capture.
-The existing roster smoke check also waits for that reveal with `settle` before clicking Kick.
+hairline stable when short facts and genres fit on one line.
+The existing roster smoke check waits for the Session settings menu reveal with `settle` before
+clicking Kick.
 The pre-selected Movie smoke flow observes its client-side mode change before filling Date and
 Location, so hydration cannot clear values filled into the server-rendered form.
 
-| Area               | Key captured states                                                                                                  | Canonical source                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Selection outcome  | Visible ranking, hidden/anonymous result, early-close dialog                                                         | `session-detail-selection.html`, shared `session-detail-watching.html` hero, DESIGN Selection rules |
-| Rating             | Form, saved response, read-only, completed result, no ratings, close dialog                                          | `session-detail-rating.html`, `session-detail.html`                                                 |
-| Watching           | Operator, read-only, Open Rating dialog                                                                              | `session-detail-watching.html`                                                                      |
-| Completed history  | Historical rivals/ratings, hidden results; Hub active Ratings, scored/hidden/empty history                           | `session-detail.html`, `app.html` Sessions                                                          |
-| Personal Rating    | Editor, saved score                                                                                                  | `movie-details.html` rating control                                                                 |
-| Watchlist          | Priority editor, populated Library, empty Library                                                                    | `movie-details.html`, `library.html` Watchlist                                                      |
-| Club Ratings       | Populated leaderboard, Free, empty, read failure                                                                     | `app.html` Ratings                                                                                  |
-| Library            | Populated Ratings, empty, no filter matches, read failure                                                            | `library.html` My Ratings                                                                           |
-| Library statistics | Populated/long metadata, empty values, statistics failure with retained table                                        | `library.html` statistics                                                                           |
-| Achievements       | Personal and Club shelves, unlocked/progress/not-started/private cards, empty shelf, no filter matches, read failure | `library.html` and `app.html` Achievements                                                          |
+The owner review reduced the added set from 74 to 22 PNGs: eight representative page states
+and two editor flows at both widths. Distinct phases and the Watchlist table remain covered;
+permission/error/empty/save variants stay in the existing contract tests.
 
-Verification in the pinned CI image with Node 24.15.0 and pnpm 11.25.0: all 154 visual tests pass
-with four workers and all 91 smoke tests pass with the configured single worker. The seven
-previously unstable visual cases and the roster menu check pass three repetitions each (24
-checks); the pre-selected Movie flow passes five repetitions. These final runs have no flaky
-results. The PNG inventory has 79 complete 390/1440 pairs. Main, Delivery and the UAT artifact
-still require verification after merge.
+| Area                   | Representative capture                               | Canonical source                                                              |
+| ---------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Selection outcome      | Winner and ranking                                   | `session-detail-selection.html`, shared Watching hero, DESIGN Selection rules |
+| Watching               | Operator screen                                      | `session-detail-watching.html`                                                |
+| Rating                 | Rating form                                          | `session-detail-rating.html`                                                  |
+| Completed history      | Completed ratings/rivals and Hub history             | `session-detail.html`, `app.html` Sessions                                    |
+| Personal Rating        | Editor                                               | `movie-details.html`                                                          |
+| Watchlist              | Priority editor and populated Library                | `movie-details.html`, `library.html`                                          |
+| Club Ratings           | Populated leaderboard                                | `app.html` Ratings                                                            |
+| Library and statistics | Populated Ratings table and statistics               | `library.html`                                                                |
+| Achievements           | Shared shelf with earned, progress and private cards | `library.html`, `app.html`                                                    |
+
+The retained captures were reviewed in the original pinned-image run. The original full run passed
+154 visual and 91 smoke tests; the review removes 50 visual tests and 52 PNGs without changing
+retained images. After reduction, all 20 retained later-screen visual tests pass again in the pinned
+CI image with four workers, without retries or baseline updates. The selector passes 13 unit cases
+and CLI checks for scoped arguments, no-UI changes, full manual runs and failure propagation.
+Playwright listing confirms 22 visual tests for Library changes, 28 for Session changes and 10 for
+public-page changes, versus 104 for shared changes. The inventory has 53 complete 390/1440 pairs.
+Main, Delivery and the UAT artifact still require verification after merge.
