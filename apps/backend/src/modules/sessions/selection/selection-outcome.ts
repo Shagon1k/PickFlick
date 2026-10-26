@@ -7,7 +7,7 @@ import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewSelectionBreakdown } from '../session-access.js';
 
 // Read the stored JSON boundary once; never return its ballots, recipients or provider IDs.
-const snapshotSchema = z.object({
+export const snapshotSchema = z.object({
     movieId: z.uuid(),
     winnerNominationId: z.uuid(),
     closedAt: z.iso.datetime(),

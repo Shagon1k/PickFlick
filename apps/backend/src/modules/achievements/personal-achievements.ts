@@ -1,11 +1,9 @@
-import { z } from 'zod';
-
+import { snapshotSchema } from '../sessions/selection/selection-outcome.js';
 import {
     getAverage,
     getLongestRun,
-    type IAchievementMetric,
-    measure,
-    readGenres,
+    getMembersAtScreening,
+    readDetails,
 } from './achievement-metrics.js';
 import type { TAchievementSession } from './achievement-sources.js';
 
@@ -13,7 +11,7 @@ const LONG_REVIEW = 301;
 const NIGHT_HOUR = 23;
 const EARLY_MS = 3 * 60 * 60 * 1000;
 const HOT_DIFFERENCE = 2;
-const winnerSchema = z.object({ winnerNominationId: z.string() });
+const HOUR_MS = 60 * 60 * 1000;
 
 export interface IPersonalAchievementFacts {
     userId: string;
@@ -23,9 +21,7 @@ export interface IPersonalAchievementFacts {
     sessions: TAchievementSession[];
 }
 
-export function buildPersonalAchievements(
-    facts: IPersonalAchievementFacts,
-): Record<string, IAchievementMetric> {
+export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     const { userId, sessions } = facts;
     const ownParticipants = new Set(
         sessions.flatMap((session) =>
@@ -59,13 +55,7 @@ export function buildPersonalAchievements(
                 completed.filter(
                     (session) =>
                         session.clubId === clubId &&
-                        session.club.memberships.some(
-                            (member) =>
-                                member.userId === userId &&
-                                session.scheduledAt &&
-                                member.joinedAt <= session.scheduledAt &&
-                                (!member.leftAt || member.leftAt > session.scheduledAt),
-                        ),
+                        getMembersAtScreening(session).some((member) => member.userId === userId),
                 ),
                 isAttendee,
             ),
@@ -73,7 +63,7 @@ export function buildPersonalAchievements(
     );
     const wins = sessions.flatMap((session) => {
         if (session.type !== 'FULL_CYCLE') return [];
-        const result = winnerSchema.safeParse(session.selectionResult);
+        const result = snapshotSchema.safeParse(session.selectionResult);
         return result.success
             ? nominations
                   .filter((nomination) => nomination.id === result.data.winnerNominationId)
@@ -92,7 +82,7 @@ export function buildPersonalAchievements(
         })),
         nominations: nominations.map((nomination) => ({
             id: nomination.id,
-            genres: readGenres(nomination.movie),
+            genres: readDetails(nomination.movie)?.genres ?? null,
         })),
         wins,
         libraryMovieIds: facts.libraryMovieIds,
@@ -105,7 +95,6 @@ export function buildPersonalAchievements(
             accepted: isAttendee(session),
         })),
     };
-    const metric = (value: number, explanation: string) => measure(value, explanation, evidence);
     const hasEarlyBallot = sessions.some((session) => {
         const opened = session.progressEvents[0]?.createdAt;
         return (
@@ -136,84 +125,45 @@ export function buildPersonalAchievements(
                     average,
                 }));
         });
+    const metrics: Record<string, number> = {
+        'opening-credits': Number(facts.hasProfile),
+        'first-vote': ballots.length,
+        'reliable-viewer': streak,
+        critic: ratings.length,
+        'panda-patron': facts.acceptedInviteIds.length,
+        nominator: nominations.length,
+        'never-miss': streak,
+        'taste-maker': wins.length,
+        'genre-scout': new Set(
+            nominations.flatMap((nomination) => readDetails(nomination.movie)?.genres ?? []),
+        ).size,
+        archivist: new Set(facts.libraryMovieIds).size,
+        'long-review': Math.min(
+            LONG_REVIEW,
+            Math.max(0, ...ratings.map((rating) => rating.comment?.length ?? 0)),
+        ),
+        'night-owl': Number(
+            completed.some(
+                (session) =>
+                    isAttendee(session) &&
+                    session.scheduledAt &&
+                    session.scheduledAt.getUTCHours() === NIGHT_HOUR &&
+                    session.scheduledAt.getTime() % HOUR_MS > 0,
+            ),
+        ),
+        'early-bird': Number(hasEarlyBallot),
+        'hot-take': Number(hot.length > 0),
+    };
     return {
-        'opening-credits': metric(
-            Number(facts.hasProfile),
-            'Current display name and profile image; no image URL is retained in evidence.',
-        ),
-        'first-vote': metric(
-            ballots.length,
-            'Submitted live Selection ballots; partial imported scores do not count as ballots.',
-        ),
-        'reliable-viewer': metric(
-            streak,
-            'Longest run of explicitly recorded attendance in Completed screenings during one Club membership. Unknown attendance breaks the run.',
-        ),
-        critic: metric(
-            ratings.length,
-            'Recorded historical Session Ratings. Personal Rating edits do not add historical ratings.',
-        ),
-        'panda-patron': metric(
-            facts.acceptedInviteIds.length,
-            'Accepted Club invitations created by you; pending or declined invitations do not count.',
-        ),
-        nominator: metric(
-            nominations.length,
-            'Live nominations and PAST nominations explicitly attributed to you.',
-        ),
-        'never-miss': metric(
-            streak,
-            'Same explicit-attendance and membership-window rule as Reliable Viewer.',
-        ),
-        'taste-maker': metric(
-            wins.length,
-            'Your nomination ID matches the frozen live winner. PAST chosen films do not prove a Selection win.',
-        ),
-        'genre-scout': metric(
-            new Set(nominations.flatMap((nomination) => readGenres(nomination.movie) ?? [])).size,
-            'Distinct known genres from your nominated films in the configured catalog cache.',
-        ),
-        archivist: metric(
-            new Set(facts.libraryMovieIds).size,
-            'Distinct films currently saved in Ratings or Watchlist; overlap counts once.',
-        ),
-        'long-review': metric(
-            Math.min(
-                LONG_REVIEW,
-                Math.max(0, ...ratings.map((rating) => rating.comment?.length ?? 0)),
-            ),
-            'Longest recorded Session Rating comment in JavaScript characters; comment text is not retained in achievement evidence.',
-        ),
-        'night-owl': metric(
-            Number(
-                completed.some(
-                    (session) =>
-                        isAttendee(session) &&
-                        session.scheduledAt &&
-                        session.scheduledAt.getUTCHours() >= NIGHT_HOUR &&
-                        (session.scheduledAt.getUTCMinutes() > 0 ||
-                            session.scheduledAt.getUTCSeconds() > 0 ||
-                            session.scheduledAt.getUTCMilliseconds() > 0),
-                ),
-            ),
-            'Recorded attendance at a Completed screening scheduled strictly after 23:00 UTC. Date-only entries cannot qualify.',
-        ),
-        'early-bird': measure(
-            Number(hasEarlyBallot),
-            'Ballot submitted from Selection opening through three hours later. Missing live opening timestamps cannot qualify.',
-            {
-                ...evidence,
-                openings: sessions.map((session) => ({
-                    id: session.id,
-                    openedAt: session.progressEvents[0]?.createdAt.toISOString() ?? null,
-                })),
-            },
-        ),
-        'hot-take': measure(
-            Number(hot.length > 0),
-            'Absolute difference of at least two from the received historical average, including your own rating. Only currently accessible, visible Completed results qualify.',
-            { qualifying: hot },
-        ),
+        metrics,
+        evidence: {
+            ...evidence,
+            openings: sessions.map((session) => ({
+                id: session.id,
+                openedAt: session.progressEvents[0]?.createdAt.toISOString() ?? null,
+            })),
+            qualifying: hot,
+        },
     };
 }
 

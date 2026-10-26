@@ -70,6 +70,7 @@ function movieData(id: string, isMissing: boolean, isRelated: boolean): TPublicD
         releaseDate: null,
         releaseYear: isMissing ? null : 2026,
         adult: false,
+        productionCountries: null,
         originalLanguage: 'en',
         posterUrl: isMissing ? null : `/api/movies/images/${'a'.repeat(64)}`,
         backdropUrl: null,

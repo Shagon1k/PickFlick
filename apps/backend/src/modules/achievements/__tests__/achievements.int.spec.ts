@@ -71,7 +71,7 @@ describe('Achievements API', () => {
         return achievementsSchema.parse(await response.json());
     }
 
-    it('should isolate owners, reject selectors, and serialize retry awards', async () => {
+    it('should isolate owners, reject selectors, and deduplicate concurrent retry awards', async () => {
         const results = await Promise.all([read(), read()]);
         expect(results[0]).toEqual(results[1]);
         expect(results[0].items.find((item) => item.key === 'archivist')).toMatchObject({
@@ -131,16 +131,46 @@ describe('Achievements API', () => {
                     data: { progress: 0 },
                 }),
             ).rejects.toThrow('immutable');
-            await expect(
-                api.prisma.achievementDefinition.update({
-                    where: {
-                        scope_key_version: { scope: 'PERSONAL', key: 'archivist', version: 1 },
-                    },
-                    data: { target: 99 },
-                }),
-            ).rejects.toThrow('immutable');
         } finally {
             Object.assign(definition, original);
+        }
+    });
+
+    it('should award imported attendance and ratings across historical Membership records after rejoining', async () => {
+        const historicalClubId = randomUUID();
+        await api.prisma.club.create({ data: { id: historicalClubId, name: 'Rejoined history' } });
+        const oldId = await addMember(api.prisma, historicalClubId, users[0]!, 'ADMIN');
+        await api.prisma.membership.update({
+            where: { id: oldId },
+            data: {
+                joinedAt: new Date('2019-01-01'),
+                leftAt: new Date('2021-01-01'),
+                status: 'LEFT',
+            },
+        });
+        const currentId = await addMember(api.prisma, historicalClubId, users[0]!, 'ADMIN');
+        await api.prisma.membership.update({
+            where: { id: currentId },
+            data: { joinedAt: new Date('2022-01-01') },
+        });
+        const response = await api.request(`/clubs/${historicalClubId}/sessions/past`, {
+            userId: users[0],
+            method: 'POST',
+            json: {
+                submissionId: randomUUID(),
+                scheduledAt: '2020-01-01T20:00:00Z',
+                location: 'Old cinema',
+                movieId: movies[0],
+                attendees: [{ membershipId: currentId, score: 8 }],
+            },
+        });
+        expect(response.status).toBe(201);
+        const { items } = await read(`/clubs/${historicalClubId}/achievements`);
+        for (const key of ['full-house', 'critics-circle']) {
+            expect(items.find((item) => item.key === key)).toMatchObject({
+                progress: 1,
+                status: 'unlocked',
+            });
         }
     });
 
@@ -185,14 +215,19 @@ describe('Achievements API', () => {
                 (item) => item.key === 'archivist',
             )!.progress,
         ).toBe(1);
+        expect(
+            await api.prisma.achievementAward.count({ where: { userId, key: 'archivist' } }),
+        ).toBe(0);
         await read(`/clubs/${clubId}/achievements`);
         await expect(
             api.prisma.achievementAward.create({
                 data: {
-                    scope: 'CLUB',
                     key: 'first-screening',
                     version: 1,
-                    subjectId: clubId,
+                    clubId,
+                    title: 'Invalid award',
+                    description: 'Invalid owner',
+                    target: 1,
                     userId,
                     progress: 0,
                     explanation: 'invalid scope',

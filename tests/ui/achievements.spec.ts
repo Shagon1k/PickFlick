@@ -30,6 +30,12 @@ for (const width of [390, 768, 1024, 1440]) {
                     await page.goto(path);
                     const shelf = page.getByRole('region', { name: 'Achievements', exact: true });
                     await expect(shelf.getByRole('article')).toHaveCount(6);
+                    await expect(
+                        shelf
+                            .getByRole('article', { name: 'Critics Circle', exact: true })
+                            .getByText('Result-based Club achievements', { exact: false })
+                            .first(),
+                    ).toBeVisible();
                     await settle(page);
                     expect(
                         await page.evaluate(

@@ -29,6 +29,9 @@ export const tmdbSearchSchema = z.object({
 
 export const tmdbDetailsSchema = tmdbMovieSchema.extend({
     similar: tmdbSearchSchema.optional(),
+    production_countries: z
+        .array(z.object({ iso_3166_1: z.string().regex(/^[A-Z]{2}$/u) }))
+        .max(250),
     runtime: z.number().int().nonnegative().nullable(),
     budget: z.number().int().nonnegative().nullish(),
     revenue: z.number().int().nonnegative().nullish(),

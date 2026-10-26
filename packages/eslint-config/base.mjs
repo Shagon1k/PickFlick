@@ -174,7 +174,7 @@ export default [
                 {
                     ignoreWords: [
                         'clubs',
-                        'library',
+                        'achievements',
                         'movies',
                         'navigation',
                         'sessions',

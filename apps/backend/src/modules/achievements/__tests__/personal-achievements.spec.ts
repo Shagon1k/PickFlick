@@ -1,9 +1,9 @@
-import { buildScreening } from '../../../testing/achievement-fixtures.js';
+import { buildScreening, buildSelectionSnapshot } from '../../../testing/achievement-fixtures.js';
 import { buildPersonalAchievements } from '../personal-achievements.js';
 
 describe('buildPersonalAchievements', () => {
     const nomination = {
-        id: 'nomination-1',
+        id: '00000000-0000-4000-8000-000000000001',
         movieId: 'movie-1',
         participant: { membership: { userId: 'user-1' } },
         movie: buildScreening().movie!,
@@ -18,7 +18,7 @@ describe('buildPersonalAchievements', () => {
                 buildScreening({
                     type: 'FULL_CYCLE',
                     nominations: [nomination],
-                    selectionResult: { winnerNominationId: 'nomination-1' },
+                    selectionResult: buildSelectionSnapshot(),
                     selectionBallots: [
                         {
                             id: 'ballot-1',
@@ -42,10 +42,8 @@ describe('buildPersonalAchievements', () => {
     }
     it('should evaluate every personal criterion using only attributable evidence', () => {
         const facts = buildFacts();
-        const metrics = buildPersonalAchievements(facts);
-        expect(
-            Object.fromEntries(Object.entries(metrics).map(([key, metric]) => [key, metric.value])),
-        ).toEqual({
+        const { metrics, evidence } = buildPersonalAchievements(facts);
+        expect(metrics).toEqual({
             'opening-credits': 1,
             'first-vote': 1,
             'reliable-viewer': 1,
@@ -62,7 +60,7 @@ describe('buildPersonalAchievements', () => {
             'hot-take': 1,
         });
         expect(JSON.stringify(metrics)).not.toContain('a'.repeat(301));
-        expect(buildPersonalAchievements(facts)).toEqual(metrics);
+        expect(buildPersonalAchievements(facts)).toEqual({ metrics, evidence });
     });
 
     it('should deny hidden averages and ignore another user and unproven timestamps', () => {
@@ -71,20 +69,20 @@ describe('buildPersonalAchievements', () => {
         facts.sessions[0]!.showRatingResults = false;
         facts.sessions[0]!.progressEvents = [];
         facts.sessions[0]!.scheduledAt = new Date('2026-10-01');
-        const metrics = buildPersonalAchievements(facts);
-        expect(metrics['hot-take']!.value).toBe(0);
-        expect(metrics['early-bird']!.value).toBe(0);
-        expect(metrics['night-owl']!.value).toBe(0);
-        const other = buildPersonalAchievements({
+        const { metrics } = buildPersonalAchievements(facts);
+        expect(metrics['hot-take']!).toBe(0);
+        expect(metrics['early-bird']!).toBe(0);
+        expect(metrics['night-owl']!).toBe(0);
+        const { metrics: other } = buildPersonalAchievements({
             ...facts,
             userId: 'other',
             hasProfile: false,
             libraryMovieIds: [],
             acceptedInviteIds: [],
         });
-        expect(other['first-vote']!.value).toBe(0);
-        expect(other['taste-maker']!.value).toBe(0);
-        expect(other['critic']!.value).toBe(0);
+        expect(other['first-vote']!).toBe(0);
+        expect(other['taste-maker']!).toBe(0);
+        expect(other['critic']!).toBe(0);
     });
 
     it('should break attendance streaks on unknown attendance and avoid imported wins', () => {
@@ -94,7 +92,27 @@ describe('buildPersonalAchievements', () => {
             buildScreening({ id: 'unknown', participants: [] }),
             buildScreening({ id: 'last' }),
         );
-        expect(buildPersonalAchievements(facts)['reliable-viewer']!.value).toBe(1);
-        expect(buildPersonalAchievements(facts)['taste-maker']!.value).toBe(0);
+        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']!).toBe(1);
+        expect(buildPersonalAchievements(facts).metrics['taste-maker']!).toBe(0);
+    });
+
+    it.each(['2026-10-01T23:00:00.000Z', '2026-10-01T23:00:00.001Z'])(
+        'should require a screening strictly after 23:00 for Night Owl: %s',
+        (date) => {
+            const facts = buildFacts();
+            facts.sessions[0]!.scheduledAt = new Date(date);
+            expect(buildPersonalAchievements(facts).metrics['night-owl']).toBe(
+                Number(date.endsWith('001Z')),
+            );
+        },
+    );
+
+    it('should use inclusive join and exclusive departure dates for streaks', () => {
+        const facts = buildFacts();
+        const session = facts.sessions[0]!;
+        session.club.memberships[0]!.joinedAt = session.scheduledAt!;
+        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']).toBe(1);
+        session.club.memberships[0]!.leftAt = session.scheduledAt!;
+        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']).toBe(0);
     });
 });

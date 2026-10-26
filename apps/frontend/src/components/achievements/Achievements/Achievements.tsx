@@ -84,7 +84,7 @@ export default function Achievements({ items }: TAchievements) {
                                 compact
                             />
                         ) : (
-                            <p>Evidence unavailable</p>
+                            <p>{item.explanation}</p>
                         )}
                         <details>
                             <summary>How this is calculated · v{item.version}</summary>

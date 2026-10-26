@@ -186,36 +186,24 @@ model Club {
   invitations                 ClubInvite[]
 }
 
-model AchievementDefinition {
-  scope       String
+model AchievementAward {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   key         String
   version     Int
   title       String
   description String
   target      Int
-  awards      AchievementAward[]
-
-  @@id([scope, key, version])
-}
-
-model AchievementAward {
-  id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scope       String
-  key         String
-  version     Int
-  subjectId   String                @db.Uuid
-  userId      String?               @db.Uuid
-  clubId      String?               @db.Uuid
-  progress    Int?
+  userId      String?  @db.Uuid
+  clubId      String?  @db.Uuid
+  progress    Int
   explanation String
   evidence    Json
-  computedAt  DateTime              @default(now()) @db.Timestamptz(3)
-  awardedAt   DateTime?             @db.Timestamptz(3)
-  definition  AchievementDefinition @relation(fields: [scope, key, version], references: [scope, key, version], onDelete: Restrict)
-  user        User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  club        Club?                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  awardedAt   DateTime @default(now()) @db.Timestamptz(3)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club        Club?    @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
-  @@unique([scope, key, version, subjectId])
+  @@unique([key, version, userId])
+  @@unique([key, version, clubId])
   @@index([userId])
   @@index([clubId])
 }

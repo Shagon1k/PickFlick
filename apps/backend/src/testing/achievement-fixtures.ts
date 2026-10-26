@@ -49,3 +49,20 @@ export function buildScreening(overrides: Partial<TAchievementSession> = {}): TA
         ...overrides,
     };
 }
+
+export function buildSelectionSnapshot() {
+    const first = '00000000-0000-4000-8000-000000000001';
+    const second = '00000000-0000-4000-8000-000000000002';
+    return {
+        movieId: first,
+        winnerNominationId: first,
+        closedAt: '2026-10-01T20:00:00.000Z',
+        closure: { kind: 'AUTOMATIC' },
+        reason: 'TOTAL',
+        inputs: { scaleMin: 0, scaleMax: 10, ballots: [] },
+        ranking: [
+            { id: first, movieId: first, total: 10, maximumCount: 1, supporterCount: 1 },
+            { id: second, movieId: second, total: 9, maximumCount: 0, supporterCount: 1 },
+        ],
+    };
+}

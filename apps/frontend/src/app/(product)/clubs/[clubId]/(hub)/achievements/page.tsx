@@ -6,7 +6,7 @@ import { connection } from 'next/server';
 import { getClubAchievements } from '#api/achievements.server';
 import { getClubHub } from '#api/clubs.server';
 import { buildLoginPath } from '#api/session.server';
-import Achievements from '#components/library/Achievements/Achievements';
+import Achievements from '#components/achievements/Achievements/Achievements';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';

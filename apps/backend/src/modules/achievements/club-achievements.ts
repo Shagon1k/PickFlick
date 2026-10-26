@@ -1,14 +1,10 @@
-import { movieDetailsSchema } from '@pickflick/contracts';
-import { z } from 'zod';
-
+import { snapshotSchema } from '../sessions/selection/selection-outcome.js';
 import {
     getAverage,
     getLargestBucket,
     getLongestRun,
     getMembersAtScreening,
-    type IAchievementMetric,
-    measure,
-    readGenres,
+    readDetails,
 } from './achievement-metrics.js';
 import type { TAchievementSession } from './achievement-sources.js';
 
@@ -19,11 +15,9 @@ const DECADE = 10;
 const COMEBACK_MS = 30 * 24 * 60 * 60 * 1000;
 const CULT_RATING = 9;
 const SHARED_RATING = 8;
-const selectionMarginSchema = z.object({ ranking: z.array(z.object({ total: z.number() })) });
+const SILENT_ERA_YEAR = 1930;
 
-export function buildClubAchievements(
-    sessions: TAchievementSession[],
-): Record<string, IAchievementMetric> {
+export function buildClubAchievements(sessions: TAchievementSession[]) {
     const completed = sessions.filter((session) => session.phase === 'COMPLETED');
     const dated = completed.filter((session) => session.scheduledAt !== null);
     const evidence = {
@@ -39,38 +33,20 @@ export function buildClubAchievements(
                 participantId: rating.participantId,
                 score: rating.score,
             })),
-            genres: readGenres(session.movie),
+            genres: readDetails(session.movie)?.genres ?? null,
             year: session.movie?.releaseYear ?? null,
-            metadata: getRuntime(session),
+            runtime: readDetails(session.movie)?.runtime ?? null,
+            productionCountries: readDetails(session.movie)?.productionCountries ?? null,
         })),
     };
-    const metric = (value: number | null, explanation: string) =>
-        measure(value, explanation, evidence);
-    const hasFullHouse = completed.some((session) => {
-        const members = getMembersAtScreening(session);
-        return (
-            members.length > 0 &&
-            members.every((member) =>
-                session.participants.some(
-                    (participant) =>
-                        participant.membershipId === member.id && participant.attended === true,
-                ),
-            )
-        );
-    });
-    const hasCriticsCircle = completed.some((session) => {
-        const members = getMembersAtScreening(session);
-        return (
-            members.length > 0 &&
-            members.every((member) =>
-                session.participants.some(
-                    (participant) =>
-                        participant.membershipId === member.id &&
-                        session.ratings.some((rating) => rating.participantId === participant.id),
-                ),
-            )
-        );
-    });
+    const hasFullHouse = completed.some((session) =>
+        everyMemberAtScreening(session, (participant) => participant.attended === true),
+    );
+    const hasCriticsCircle = completed.some((session) =>
+        everyMemberAtScreening(session, (participant) =>
+            session.ratings.some((rating) => rating.participantId === participant.id),
+        ),
+    );
     const evenings = dated.filter((session) => session.scheduledAt!.getUTCHours() >= EVENING_HOUR);
     const double = getLargestBucket(
         evenings.map((session) => ({
@@ -81,7 +57,7 @@ export function buildClubAchievements(
     const runtime = getLargestBucket(
         evenings.map((session) => ({
             bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
-            value: getRuntime(session) ?? 0,
+            value: readDetails(session.movie)?.runtime ?? 0,
         })),
     );
     const month = getLargestBucket(
@@ -95,103 +71,69 @@ export function buildClubAchievements(
             session.movie?.releaseYear ? [Math.floor(session.movie.releaseYear / DECADE)] : [],
         ),
     );
-    const genres = new Set(completed.flatMap((session) => readGenres(session.movie) ?? []));
-    const hasMargin = sessions.some((session) => {
-        if (session.type !== 'FULL_CYCLE') return false;
-        const parsed = selectionMarginSchema.safeParse(session.selectionResult);
-        return (
-            parsed.success &&
-            parsed.data.ranking.length > 1 &&
-            parsed.data.ranking[0]!.total - parsed.data.ranking[1]!.total === 1
-        );
+    const genres = new Set(
+        completed.flatMap((session) => readDetails(session.movie)?.genres ?? []),
+    );
+    const selections = sessions.flatMap((session) => {
+        if (session.type !== 'FULL_CYCLE') return [];
+        const parsed = snapshotSchema.safeParse(session.selectionResult);
+        return parsed.success ? [{ id: session.id, ranking: parsed.data.ranking }] : [];
     });
-    return {
-        'first-screening': metric(
-            completed.length,
-            'Completed screenings; repeat viewings and PAST imports count.',
+    const hasMargin = selections.some(
+        ({ ranking }) => ranking.length > 1 && ranking[0]!.total - ranking[1]!.total === 1,
+    );
+    const countries = new Set(
+        completed.flatMap((session) => readDetails(session.movie)?.productionCountries ?? []),
+    );
+    const metrics: Record<string, number> = {
+        'first-screening': completed.length,
+        'full-house': Number(hasFullHouse),
+        'critics-circle': Number(hasCriticsCircle),
+        'cult-classic': Number(
+            completed.some((session) => (getAverage(session) ?? 0) >= CULT_RATING),
         ),
-        'full-house': metric(
-            Number(hasFullHouse),
-            'Only explicit recorded attendance counts. Membership is reconstructed at the scheduled date; missing dates cannot qualify.',
+        'perfect-split': Number(hasMargin),
+        'double-feature': double,
+        'decade-tour': decades.size,
+        'marathon-night': runtime,
+        'world-tour': countries.size,
+        'first-ten': completed.length,
+        'packed-calendar': month,
+        'shared-taste': getLongestRun(
+            completed,
+            (session) =>
+                (getAverage(session) ?? 0) >= SHARED_RATING && session.scheduledAt !== null,
         ),
-        'critics-circle': metric(
-            Number(hasCriticsCircle),
-            'Recorded ratings for every member at the scheduled date. Missing dates or ratings cannot qualify.',
-        ),
-        'cult-classic': metric(
-            Number(completed.some((session) => (getAverage(session) ?? 0) >= CULT_RATING)),
-            'At least one received historical rating; missing ratings are unknown, not zero.',
-        ),
-        'perfect-split': measure(
-            Number(hasMargin),
-            'One point between the first two frozen live Selection totals; imported matrices do not establish an outcome.',
-            {
-                selections: sessions
-                    .filter(
-                        (session) =>
-                            session.selectionResult !== null && session.type === 'FULL_CYCLE',
-                    )
-                    .map((session) => ({
-                        id: session.id,
-                        ranking: selectionMarginSchema.parse(session.selectionResult).ranking,
-                    })),
-            },
-        ),
-        'double-feature': metric(
-            double,
-            'Largest screening count on one scheduled UTC evening. Date-only screenings cannot qualify.',
-        ),
-        'decade-tour': metric(
-            decades.size,
-            'Distinct known release decades from cached films; missing years add no evidence.',
-        ),
-        'marathon-night': metric(
-            runtime,
-            'Largest known runtime sum on one scheduled UTC evening, in minutes. Missing runtime adds no evidence.',
-        ),
-        'world-tour': metric(
-            null,
-            'Evidence unavailable: the catalog does not record production countries. Language is not a country.',
-        ),
-        'first-ten': metric(
-            completed.length,
-            'Completed screenings; repeat viewings and PAST imports count.',
-        ),
-        'packed-calendar': metric(
-            month,
-            'Largest count in a scheduled UTC month; undated screenings add no evidence.',
-        ),
-        'shared-taste': metric(
-            getLongestRun(
-                completed,
-                (session) =>
-                    (getAverage(session) ?? 0) >= SHARED_RATING && session.scheduledAt !== null,
+        'genre-roulette': genres.size,
+        'silent-era': Number(
+            completed.some(
+                (session) => (session.movie?.releaseYear ?? SILENT_ERA_YEAR) < SILENT_ERA_YEAR,
             ),
-            'Longest run in scheduled-date order, then Session ID. Missing averages or dates break the run.',
         ),
-        'genre-roulette': metric(
-            genres.size,
-            'Distinct exact genre names in the configured catalog cache; missing genres add no evidence.',
-        ),
-        'silent-era': metric(
-            null,
-            'Evidence unavailable: the catalog does not record whether a film is black-and-white. Monochrome artwork is not evidence.',
-        ),
-        comeback: metric(
-            Number(
-                dated.some(
-                    (session, index) =>
-                        index > 0 &&
-                        session.scheduledAt!.getTime() - dated[index - 1]!.scheduledAt!.getTime() >=
-                            COMEBACK_MS,
-                ),
+        comeback: Number(
+            dated.some(
+                (session, index) =>
+                    index > 0 &&
+                    session.scheduledAt!.getTime() - dated[index - 1]!.scheduledAt!.getTime() >=
+                        COMEBACK_MS,
             ),
-            'A gap of at least 30 days between consecutive known scheduled screenings.',
         ),
     };
+    return { metrics, evidence: { ...evidence, selections } };
 }
 
-function getRuntime(session: TAchievementSession) {
-    const parsed = movieDetailsSchema.safeParse(session.movie?.details[0]?.data);
-    return parsed.success ? parsed.data.runtime : null;
+function everyMemberAtScreening(
+    session: TAchievementSession,
+    qualifies: (participant: TAchievementSession['participants'][number]) => boolean,
+) {
+    const members = getMembersAtScreening(session);
+    return (
+        members.length > 0 &&
+        members.every((member) =>
+            session.participants.some(
+                (participant) =>
+                    participant.membership.userId === member.userId && qualifies(participant),
+            ),
+        )
+    );
 }

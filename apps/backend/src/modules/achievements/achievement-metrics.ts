@@ -3,23 +3,9 @@ import type { Prisma } from '@pickflick/database';
 
 import type { TAchievementSession } from './achievement-sources.js';
 
-export interface IAchievementMetric {
-    value: number | null;
-    explanation: string;
-    evidence: Prisma.InputJsonObject;
-}
-
-export function measure(
-    value: number | null,
-    explanation: string,
-    evidence: Prisma.InputJsonObject = {},
-): IAchievementMetric {
-    return { value, explanation, evidence };
-}
-
-export function readGenres(movie: { details: { data: Prisma.JsonValue }[] } | null) {
+export function readDetails(movie: { details: { data: Prisma.JsonValue }[] } | null) {
     const details = movieDetailsSchema.safeParse(movie?.details[0]?.data);
-    return details.success ? details.data.genres : null;
+    return details.success ? details.data : null;
 }
 
 export function getAverage(session: TAchievementSession) {

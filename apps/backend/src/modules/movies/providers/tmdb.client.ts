@@ -126,6 +126,9 @@ export class TmdbClient implements IMovieProvider {
                 ...toSummary(movie),
                 runtime: movie.runtime || null,
                 genres: movie.genres.map((genre) => genre.name),
+                productionCountries: movie.production_countries.map(
+                    (country) => country.iso_3166_1,
+                ),
                 directors: movie.credits.crew
                     .filter((person) => person.job === 'Director')
                     .map((person) => ({ name: person.name })),

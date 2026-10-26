@@ -1,0 +1,64 @@
+import type { ReactNode } from 'react';
+
+import { getLibraryStatistics } from '#api/library.server';
+import ControlShell from '#components/shells/ControlShell/ControlShell';
+import Alert from '#components/ui/Alert/Alert';
+import ButtonLink from '#components/ui/Button/ButtonLink';
+
+import { loadLibraryRead } from '../../load-library-read';
+import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
+
+export default async function LibraryShell({
+    current,
+    returnPath,
+    showStatistics,
+    children,
+}: {
+    current: 'my-ratings' | 'watchlist' | 'achievements';
+    returnPath: string;
+    showStatistics: boolean;
+    children: ReactNode;
+}) {
+    const [statistics, content] = await Promise.all([
+        showStatistics ? loadLibraryRead(getLibraryStatistics, returnPath) : null,
+        children,
+    ]);
+    return (
+        <ControlShell
+            title="My Library"
+            description="Your ratings and films to watch, at your own pace."
+            currentArea="library"
+            clubItems={[]}
+            summary={
+                showStatistics &&
+                (statistics ? (
+                    <LibraryStatistics statistics={statistics} />
+                ) : (
+                    <section aria-label="Personal statistics unavailable">
+                        <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
+                        <ButtonLink href={returnPath}>Retry statistics</ButtonLink>
+                    </section>
+                ))
+            }
+            items={[
+                {
+                    label: 'My Ratings',
+                    href: '/library?tab=my-ratings',
+                    current: current === 'my-ratings',
+                },
+                {
+                    label: 'Watchlist',
+                    href: '/library?tab=watchlist',
+                    current: current === 'watchlist',
+                },
+                {
+                    label: 'Achievements',
+                    href: '/library?tab=achievements',
+                    current: current === 'achievements',
+                },
+            ]}
+        >
+            {content}
+        </ControlShell>
+    );
+}

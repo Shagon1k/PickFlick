@@ -5,14 +5,9 @@ import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { findMembership, lockClub } from '../clubs/access/club-access.js';
+import { findMembership } from '../clubs/access/club-access.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
-import {
-    ACHIEVEMENT_DEFINITIONS,
-    type IAchievementDefinition,
-    PRIVATE_CLUB_CRITERIA,
-} from './achievement-definitions.js';
-import type { IAchievementMetric } from './achievement-metrics.js';
+import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './achievement-definitions.js';
 import { readAchievementSessions } from './achievement-sources.js';
 import { buildClubAchievements } from './club-achievements.js';
 import { buildPersonalAchievements } from './personal-achievements.js';
@@ -26,15 +21,17 @@ export class AchievementsService {
 
     async listClub(userId: string, clubId: string): Promise<TAchievements> {
         return this.prisma.$transaction(async (tx) => {
-            await lockClub(tx, clubId);
             const member = await findMembership(tx, userId, clubId);
-            const metrics = buildClubAchievements(
+            const facts = buildClubAchievements(
                 await readAchievementSessions(tx, [clubId], this.getCacheKey()),
             );
-            const items = await this.recompute(tx, { scope: 'CLUB', subjectId: clubId, metrics });
+            const items = await this.recompute(tx, { scope: 'CLUB', subjectId: clubId, ...facts });
             return {
                 items: items.map((item) =>
-                    member.role === 'MEMBER' && PRIVATE_CLUB_CRITERIA.has(item.key)
+                    member.role === 'MEMBER' &&
+                    ACHIEVEMENT_DEFINITIONS.find(
+                        (definition) => definition.scope === 'CLUB' && definition.key === item.key,
+                    )?.private
                         ? {
                               ...item,
                               progress: null,
@@ -51,8 +48,6 @@ export class AchievementsService {
 
     async listPersonal(userId: string): Promise<TAchievements> {
         return this.prisma.$transaction(async (tx) => {
-            // Recomputations for one owner serialize before reading source data and prior awards.
-            await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
             const user = await tx.user.findUniqueOrThrow({
                 where: { id: userId },
                 select: { displayName: true, image: true },
@@ -74,7 +69,7 @@ export class AchievementsService {
                     select: { id: true },
                 }),
             ]);
-            const metrics = buildPersonalAchievements({
+            const facts = buildPersonalAchievements({
                 userId,
                 sessions,
                 hasProfile: Boolean(user.displayName.trim() && user.image),
@@ -82,7 +77,7 @@ export class AchievementsService {
                 acceptedInviteIds: invites.map((invite) => invite.id),
             });
             return {
-                items: await this.recompute(tx, { scope: 'PERSONAL', subjectId: userId, metrics }),
+                items: await this.recompute(tx, { scope: 'PERSONAL', subjectId: userId, ...facts }),
             };
         });
     }
@@ -99,95 +94,61 @@ export class AchievementsService {
         input: {
             scope: IAchievementDefinition['scope'];
             subjectId: string;
-            metrics: Record<string, IAchievementMetric>;
+            metrics: Record<string, number>;
+            evidence: Prisma.InputJsonObject;
         },
     ): Promise<TAchievement[]> {
         const definitions = ACHIEVEMENT_DEFINITIONS.filter(
             (definition) => definition.scope === input.scope,
         );
-        await tx.achievementDefinition.createMany({ data: definitions, skipDuplicates: true });
-        const storedDefinitions = await tx.achievementDefinition.findMany({
-            where: { scope: input.scope },
+        const owner =
+            input.scope === 'PERSONAL' ? { userId: input.subjectId } : { clubId: input.subjectId };
+        await tx.achievementAward.createMany({
+            data: definitions
+                .filter((definition) => input.metrics[definition.key]! >= definition.target)
+                .map(({ key, version, title, description, explanation, target }) => ({
+                    ...owner,
+                    key,
+                    version,
+                    title,
+                    description,
+                    explanation,
+                    target,
+                    progress: input.metrics[key]!,
+                    evidence: input.evidence,
+                })),
+            skipDuplicates: true,
         });
+        const rows = await tx.achievementAward.findMany({ where: owner });
+        const items: TAchievement[] = rows.map((row) => ({
+            key: row.key,
+            version: row.version,
+            title: row.title,
+            description: row.description,
+            explanation: row.explanation,
+            target: row.target,
+            progress: row.progress,
+            status: 'unlocked',
+            awardedAt: row.awardedAt.toISOString(),
+        }));
         for (const definition of definitions) {
-            const stored = storedDefinitions.find(
-                (row) => row.key === definition.key && row.version === definition.version,
-            )!;
             if (
-                stored.target !== definition.target ||
-                stored.title !== definition.title ||
-                stored.description !== definition.description
-            ) {
-                throw new Error('Achievement definition changed without a new rule version.');
-            }
-            const metric = input.metrics[definition.key]!;
-            const existing = await tx.achievementAward.findUnique({
-                where: {
-                    scope_key_version_subjectId: {
-                        scope: input.scope,
-                        key: definition.key,
-                        version: definition.version,
-                        subjectId: input.subjectId,
-                    },
-                },
-            });
-            if (existing?.awardedAt) continue;
-            const data = {
-                progress: metric.value,
-                explanation: metric.explanation,
-                evidence: metric.evidence,
-                computedAt: new Date(),
-                awardedAt:
-                    metric.value !== null && metric.value >= definition.target ? new Date() : null,
-            };
-            await tx.achievementAward.upsert({
-                where: {
-                    scope_key_version_subjectId: {
-                        scope: input.scope,
-                        key: definition.key,
-                        version: definition.version,
-                        subjectId: input.subjectId,
-                    },
-                },
-                create: {
-                    ...data,
-                    scope: input.scope,
-                    key: definition.key,
-                    version: definition.version,
-                    subjectId: input.subjectId,
-                    userId: input.scope === 'PERSONAL' ? input.subjectId : null,
-                    clubId: input.scope === 'CLUB' ? input.subjectId : null,
-                },
-                update: data,
+                rows.some((row) => row.key === definition.key && row.version === definition.version)
+            )
+                continue;
+            const progress = input.metrics[definition.key]!;
+            items.push({
+                key: definition.key,
+                version: definition.version,
+                title: definition.title,
+                description: definition.description,
+                explanation: definition.explanation,
+                target: definition.target,
+                progress,
+                status: progress ? 'in-progress' : 'not-started',
+                awardedAt: null,
             });
         }
-        const rows = await tx.achievementAward.findMany({
-            where: { scope: input.scope, subjectId: input.subjectId },
-            include: { definition: true },
-            orderBy: [{ key: 'asc' }, { version: 'asc' }],
-        });
-        return rows
-            .filter(
-                (row) =>
-                    row.awardedAt ||
-                    definitions.some(
-                        (definition) =>
-                            definition.key === row.key && definition.version === row.version,
-                    ),
-            )
-            .map((row) => {
-                const pendingStatus = row.progress ? 'in-progress' : 'not-started';
-                return {
-                    key: row.key,
-                    version: row.version,
-                    title: row.definition.title,
-                    description: row.definition.description,
-                    target: row.definition.target,
-                    progress: row.progress,
-                    status: row.awardedAt ? 'unlocked' : pendingStatus,
-                    awardedAt: row.awardedAt?.toISOString() ?? null,
-                    explanation: row.explanation,
-                };
-            });
+        return items.sort((a, b) => a.key.localeCompare(b.key) || a.version - b.version);
     }
 }

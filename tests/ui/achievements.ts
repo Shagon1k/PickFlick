@@ -44,7 +44,7 @@ export function handleAchievements(
         awardedAt: null,
         explanation:
             progress === null
-                ? 'Evidence unavailable: the catalog does not record this fact.'
+                ? 'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.'
                 : 'Recorded source events; missing evidence cannot qualify.',
     });
     const first = build('first', 'First Screening', 1, 1);
@@ -55,7 +55,7 @@ export function handleAchievements(
         build('ten', 'The First Ten', 7, 10),
         build('genre', 'Genre Scout', 3, 5),
         build('night', 'Night Owl', 0, 1),
-        build('silent', 'Silent Era', null, 1),
+        build('critics-circle', 'Critics Circle', null, 1),
         build('long', 'A Very Long Achievement Title That Must Wrap Without Hiding Its Rule', 0, 1),
     ];
     const body: TAchievements = { items: token.includes('achievements-empty') ? [] : items };
