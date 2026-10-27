@@ -1,5 +1,10 @@
 import type { Prisma } from '@pickflick/database';
 
+import {
+    getSessionNotificationEvent,
+    recordSessionNotifications,
+} from '../notifications/notification-producers.js';
+
 export async function publishProgress(
     tx: Prisma.TransactionClient,
     sessionId: string,
@@ -26,4 +31,8 @@ export async function publishProgress(
             recipientIds: participants.map((participant) => participant.membershipId),
         },
     });
+    const event = getSessionNotificationEvent(session.phase);
+    if (event && kind !== 'PROGRESS' && kind !== 'DETAILS') {
+        await recordSessionNotifications(tx, session, event);
+    }
 }

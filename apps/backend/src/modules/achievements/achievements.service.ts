@@ -7,6 +7,7 @@ import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership } from '../clubs/access/club-access.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
+import { recordAchievementNotifications } from '../notifications/notification-producers.js';
 import { buildClubAchievements } from './rules/club-rules.js';
 import { buildPersonalAchievements } from './rules/personal-rules.js';
 import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './rules/rule-catalog.js';
@@ -94,7 +95,7 @@ export class AchievementsService {
         );
         const owner =
             input.scope === 'PERSONAL' ? { userId: input.subjectId } : { clubId: input.subjectId };
-        await tx.achievementAward.createMany({
+        const created = await tx.achievementAward.createManyAndReturn({
             data: definitions
                 .filter((definition) => input.metrics[definition.key]! >= definition.target)
                 .map(
@@ -121,6 +122,7 @@ export class AchievementsService {
                 ),
             skipDuplicates: true,
         });
+        await recordAchievementNotifications(tx, created);
         const rows = await tx.achievementAward.findMany({ where: owner });
         const visibleRows = rows.filter((row) => !input.hidePrivate || !row.private);
         const items: TAchievement[] = visibleRows.map((row) => ({

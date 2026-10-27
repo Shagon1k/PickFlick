@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../../clubs/access/club-access.js';
+import { recordSessionNotifications } from '../../notifications/notification-producers.js';
 import { lockSession } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';
@@ -138,6 +139,9 @@ export class NominationDeadlines {
                     notifications: { create: recipients },
                 },
             });
+            if (outcome === 'EMPTY') {
+                await recordSessionNotifications(tx, session, 'NOMINATION_STALLED');
+            }
             if (outcome !== 'EMPTY') {
                 await advanceNomination(tx, session, nominations);
                 await publishProgress(tx, sessionId, 'DEADLINE');

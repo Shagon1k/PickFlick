@@ -15,6 +15,7 @@ import { ContactModule } from './modules/contact/contact.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { LibraryModule } from './modules/library/library.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { WatchlistModule } from './modules/watchlist/watchlist.module.js';
@@ -69,6 +70,7 @@ export class AppModule {
                 LibraryModule,
                 MoviesModule,
                 SessionsModule,
+                NotificationsModule,
                 WatchlistModule,
             ],
             providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

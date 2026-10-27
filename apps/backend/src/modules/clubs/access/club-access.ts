@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { recordAuditNotifications } from '../../notifications/notification-producers.js';
 import { getClubEntitlements } from './club-tiers.js';
 
 const clubColumns = {
@@ -63,7 +64,8 @@ export async function recordAudit(
     transaction: Prisma.TransactionClient,
     event: TAuditEvent,
 ): Promise<void> {
-    await transaction.clubAuditEvent.create({ data: { ...event, changed: true } });
+    const audit = await transaction.clubAuditEvent.create({ data: { ...event, changed: true } });
+    await recordAuditNotifications(transaction, audit);
 }
 
 /** Shares the invitation lock with membership and lifecycle writes before authorization is read. */

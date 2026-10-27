@@ -15,6 +15,7 @@ export * from './movies/movie.schema.js';
 export * from './movies/personal-rating.schema.js';
 export * from './movies/tmdb.schema.js';
 export * from './movies/watchlist.schema.js';
+export * from './notifications/notification.schema.js';
 export * from './sessions/nomination.schema.js';
 export * from './sessions/past-selection.schema.js';
 export * from './sessions/past-session.schema.js';
