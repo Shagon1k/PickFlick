@@ -15,6 +15,7 @@ import type { Prisma } from '@pickflick/database';
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { MoviesService } from '../movies/movies.service.js';
+import { NotificationTransactions } from '../notifications/notification-transactions.js';
 import {
     assertActive,
     assertAdmin,
@@ -35,6 +36,7 @@ const AUDIT_EVENTS_LIMIT = 20;
 export class ClubsService {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly notifications: NotificationTransactions,
         private readonly movies: MoviesService,
     ) {}
 
@@ -48,7 +50,7 @@ export class ClubsService {
     }
 
     async getHub(userId: string, clubId: string): Promise<IClubHub> {
-        const { hub: snapshot, completed } = await this.prisma.$transaction(
+        const { hub: snapshot, completed } = await this.notifications.run(
             (tx) => readClubHub(tx, userId, clubId),
             { isolationLevel: 'RepeatableRead' },
         );
@@ -80,7 +82,7 @@ export class ClubsService {
 
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
         const { adminClubLimit } = getTierEntitlements('FREE');
-        return this.prisma.$transaction(async (transaction) => {
+        return this.notifications.run(async (transaction) => {
             await lockKey(transaction, `club-admin:${userId}`);
             await assertBelowAdminLimit(transaction, userId, adminClubLimit);
             const club = await transaction.club.create({
@@ -95,7 +97,7 @@ export class ClubsService {
     }
 
     async getSettings(userId: string, clubId: string): Promise<IClubSettings> {
-        return this.prisma.$transaction(
+        return this.notifications.run(
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const { club, role } = membership;
@@ -172,7 +174,7 @@ export class ClubsService {
         clubId: string,
         input: TUpdateClubSettingsRequest,
     ): Promise<IClubSettings> {
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
@@ -204,7 +206,7 @@ export class ClubsService {
         membershipId: string,
         { role }: TChangeMemberRoleRequest,
     ): Promise<void> {
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);

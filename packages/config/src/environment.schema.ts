@@ -2,8 +2,9 @@ import { createPrivateKey } from 'node:crypto';
 
 import { z } from 'zod';
 
+import { redisUrl } from './notification-environment.schema.js';
+
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
-export type TAppEnvironment = (typeof APP_ENVIRONMENTS)[number];
 
 const PRODUCTION_SENDER = 'PickFlick <notifications@pick-flick.app>';
 const UAT_SENDER = 'PickFlick UAT <notifications@uat.pick-flick.app>';
@@ -96,6 +97,7 @@ const rawRuntimeEnvironmentSchema = z.object({
     BACKEND_HOST: required.regex(/^\S+$/u, 'must not contain whitespace'),
     BACKEND_PORT: z.coerce.number().int().min(1).max(65_535),
     DATABASE_URL: databaseUrl,
+    REDIS_URL: redisUrl,
     STORAGE_ENDPOINT: httpUrl,
     STORAGE_REGION: required,
     STORAGE_BUCKET: bucket,
@@ -262,6 +264,7 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
         backendHost: env.BACKEND_HOST,
         backendPort: env.BACKEND_PORT,
         databaseUrl: env.DATABASE_URL,
+        redisUrl: env.REDIS_URL,
         storage: {
             endpoint: env.STORAGE_ENDPOINT,
             region: env.STORAGE_REGION,

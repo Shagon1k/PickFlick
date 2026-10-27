@@ -24,7 +24,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open `http://127.0.0.1:3000`. `pnpm services:up` starts PostgreSQL and MinIO; `pnpm dev` builds the
+Open `http://127.0.0.1:3000`. `pnpm services:up` starts PostgreSQL, Redis and MinIO; `pnpm dev` builds the
 shared packages and starts the frontend on port 3000 and the backend on port 3001.
 
 Before you open a pull request, run:

@@ -114,7 +114,7 @@ formatting, type checking, all 518 unit tests and all workspace builds. The firs
 an import ordering change from the resolver rename; sorting that block fixes it. The staged
 gitleaks scan passes. This backend-only review round does not rerun the UI suites.
 
-## Issue 61 implementation and remaining gates
+## Issue 61 initial implementation and remaining gates
 
 Run `r_e0670d883186bbcfc808` uses managed branch `PF-61_17-2-build-inbox-bell-read` in the
 launcher-provided worktree. The worktree started clean; #60 is closed and Project 3 confirmed
@@ -130,8 +130,8 @@ initial load, stream connection/messages, reconnect and focus, plus periodic rec
 overlapping refreshes coalesce and loaded pages remain available. Entity/file routes keep their
 existing authorization. There is no migration, environment variable, provider call or new dependency.
 
-This is a partial delivery. Redis distribution requires a new client; AGENTS.md requires explicit
-dependency approval, which was requested during this run and remains pending. Do not describe
+At initial submission this was a partial delivery. Redis client approval was pending; the owner
+subsequently approved the integration recorded in review fix round 2 below. Do not describe
 periodic SSE reconciliation as Redis distribution or claim multi-instance broker verification.
 The proposed integration is the official Node Redis client with separate publisher/subscriber
 connections and recipient-only refresh signals; PostgreSQL remains authoritative after gaps.
@@ -191,5 +191,58 @@ than adding a focus-management mechanism.
 
 The final full UI visual selection passes all 106 checks in the pinned Linux image, including the
 two new notification captures. All 108 screenshot files use the existing zero-pixel tolerance.
-The remaining issue gates are Redis distribution and an exact-head hosted preview with owner
-acknowledgment; local tests and captures do not satisfy those gates.
+At initial submission, the remaining issue gates were Redis distribution and an exact-head hosted
+preview with owner acknowledgment; local tests and captures do not satisfy those gates.
+
+## Issue 61 review fix round 2
+
+The owner approved the official Node Redis client and focused configuration and Compose changes
+in PR #197. ADR-019 records recipient-only invalidation, post-commit publication and best-effort
+recovery. A concrete notification transaction service collects newly inserted in-app recipients
+and publishes after commit. Club, Session, achievement and deadline-worker producers use it.
+Read mutations publish after successful updates. No schema, migration, backfill, generic event
+framework, queue, outbox, cache, credential or permission change is introduced.
+
+Each API subscribes once and routes recipient-only signals to every matching local SSE connection.
+REST still authorizes and projects all content. Node Redis restores subscriptions after reconnect.
+Offline publishes are skipped; a 500ms reply bound prevents a stalled broker from delaying a
+successful business action. Errors omit broker details. Thirty-second named heartbeats reauthorize
+streams without requesting REST. Initial connection, reconnect, focus and five-minute reconciliation
+recover persisted state. A signal during an active refresh schedules one coalesced follow-up.
+
+Notification links close the overlay within the persistent Club frame. Reverse Tab from the
+focused panel wraps to its last control after read actions. The existing overlay and panel refs
+own these behaviors. Existing visuals and entity authorization remain unchanged.
+
+### Round 2 verification
+
+The focused stream/configuration selection passes 24 unit tests. Three Redis integration cases
+pass against new disposable loopback PostgreSQL (`pickflick_test`, port 43461) and Redis (46379).
+They cover cross-instance recipient isolation, multiple SSE connections, read synchronization,
+commit ordering, rollback, duplicate intent, stalled publication and subscription restoration.
+An initial test-helper omission was corrected. The outage test exposed that the Redis client's
+command timeout ends when bytes are written; an explicit reply deadline fixes that failure.
+
+`pnpm verify` reaches the production audit and fails on the unchanged `better-auth@1.7.5` dependency:
+one critical and one high advisory, plus four low and six moderate findings. Auth dependency
+updates are outside this bounded review scope. The remaining gates run individually; results are
+recorded below. Hosted exact-head preview and owner visual acknowledgment remain pending. No shared-environment deployment is authorized or performed.
+
+The full integration suite passes all 296 tests across 38 files after explicit feature-module
+imports. Full unit verification passes 523 tests across 58 files. Lint (including Stylelint),
+Knip, formatting, type checking and every workspace production build pass.
+`pnpm deploy:check` renders local, preview and deployment definitions. Built deadline-worker smoke
+passes overdue execution, restart idempotence and SIGTERM shutdown; built frontend/backend smoke
+passes health, headers and the synthetic Apple authentication boundary. PostgreSQL, Redis and
+MinIO verification uses only new disposable local services.
+
+All twelve focused notification browser checks pass in the digest-pinned Playwright image with
+Node 24.15.0. They cover the original read/empty/error/offline cases, Club-frame keyboard navigation
+at 390/1440, reverse Tab after reads, heartbeat silence, five-minute reconciliation and a signal
+received during an earlier REST request. No screenshot baseline is changed. The full selected UI
+gate also passes all 202 checks: 96 smoke tests and 106 exact visual comparisons. Existing zero-pixel tolerance remains unchanged.
+
+All four disposable test containers and their anonymous volumes are removed after verification.
+
+The staged gitleaks scan passes without an allowlist change. The managed worktree is retained for
+the existing PR; this round creates no manual worktree.

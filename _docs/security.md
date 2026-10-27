@@ -86,8 +86,9 @@ A forged request from another site needs the session cookie, and several layers 
 - Notification list, cursors and read mutations are scoped to the authenticated recipient and
   in-app channel. Inbox projection rechecks current entity access; inaccessible or deleted targets
   reveal no entity link or copied content. The notification SSE connection rechecks its original
-  session before each refresh signal, terminates on revocation or identity change, and sends no
-  entity payload. REST responses are private/no-store; streams also disable transformation and
+  session before each refresh signal and thirty-second heartbeat, terminates on revocation or identity change, and sends no
+  entity payload. Redis carries only recipient UUID invalidation after database commits;
+  it holds no notification content. Heartbeats never trigger inbox REST refreshes. REST responses are private/no-store; streams also disable transformation and
   proxy buffering. File and entity endpoints independently authorize every follow-up request.
 
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
@@ -184,7 +185,7 @@ is vulnerability-free.
 
 ## Infrastructure
 
-- Only the frontend is published. The backend, PostgreSQL, and MinIO sit on the internal Compose
+- Only the frontend is published. The backend, PostgreSQL, Redis, and MinIO sit on the internal Compose
   network with no host ports.
 - Dokploy is protected by Cloudflare Access; automation reaches it with a service token.
 - Production promotion is off until the owner enables it (`PRODUCTION_DEPLOY_ENABLED`).

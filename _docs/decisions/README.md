@@ -40,6 +40,8 @@ separately.
 | [ADR-017](#adr-017--keep-movie-identity-independent-of-catalog-sources) | Keep Movie identity independent of catalog sources | Accepted — developer request in PR #160; amended in #172 | 2026-10-09 |
 | [ADR-018](#adr-018--persist-nomination-deadline-jobs-in-postgresql) | Persist Nomination deadline jobs in PostgreSQL | Accepted — implemented for #43 on 2026-10-13; amended in #172 | 2026-10-12 |
 
+| [ADR-019](#adr-019--distribute-notification-invalidation-through-redis-pubsub) | Distribute notification invalidation through Redis Pub/Sub | Accepted — owner approval in PR #197 | 2026-10-27 |
+
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
@@ -1455,3 +1457,53 @@ from committed Session state; clients re-fetch their authorized projection after
 gaps or reconnects. Polling covers unavailable streams. Recipient snapshots retain notification
 intent; inbox/email delivery remains later work. No broker, queue library, dispatcher or process
 is added. This extends the implementation without changing the accepted deadline-job decision.
+
+## ADR-019 — Distribute notification invalidation through Redis Pub/Sub
+
+- **Status:** Accepted
+- **Date:** 2026-10-27
+- **Decider:** Owner, [captured approval in PR #197](https://github.com/Shagon1k/PickFlick/pull/197#discussion_r4392323541)
+- **Owning issue:** [#61](https://github.com/Shagon1k/PickFlick/issues/61)
+
+### Context
+
+A periodic SSE refresh caused REST inbox requests every five seconds even when nothing changed.
+Multiple API instances and browser tabs need prompt notification and read-state invalidation.
+PostgreSQL already owns durable notification intent and recipient authorization.
+
+### Decision
+
+Use the official Node Redis client and a concrete publisher/subscriber inside the notification
+feature. Publish recipient UUIDs on an environment-scoped Pub/Sub channel only after successful
+source transactions or read-state commits. Each API forwards matching signals to all active SSE
+connections for that recipient. No notification content, entity data or credentials enter messages.
+
+Keep PostgreSQL authoritative. Clients fetch REST on initial connection, reconnect, focus and
+change signals, with five-minute safety reconciliation and coalesced overlapping refreshes.
+Thirty-second named heartbeats maintain the connection and recheck authorization without REST
+refreshes. Redis loss may lose signals. Bound publishes to 500ms, disable offline publish queuing,
+log safe failures and let the official client reconnect and restore subscriptions. A Redis failure
+must never roll back or fail a successful domain write.
+
+Add only the client, validated `REDIS_URL`, an ephemeral broker in local/CI/preview/deployment
+definitions, and deadline-worker signal wiring. Deployment to shared environments, production
+activation, secrets and permissions remain unauthorized. ADR-018's PostgreSQL deadline schedule
+is unchanged; Redis provides notification invalidation only.
+
+### Alternatives and limits
+
+- PostgreSQL LISTEN/NOTIFY: explicitly excluded by the owner.
+- Unconditional SSE refresh: simple, but generates unnecessary REST traffic and delays updates.
+- A generic event framework, Streams, queue, outbox or cache: outside this bounded requirement.
+
+There is no durable broker delivery guarantee. A crash between database commit and publish loses
+the signal; initial/reconnect/focus and safety reconciliation recover persisted state. Read APIs,
+authorization and safe projection remain independent of Redis.
+
+### Verification
+
+Verify recipient isolation, cross-instance delivery, multiple connections, read-state updates,
+no publication on rollback, bounded broker failure and reconnect/resubscription. Browser checks
+must cover persistent Club navigation dismissal, reverse Tab after read actions, heartbeat silence
+and refresh overlap. Run the repository's static, integration, deployment-definition and selected
+UI gates. The active phase document records results; hosted visual acceptance remains separate.

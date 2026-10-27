@@ -9,13 +9,15 @@ import {
     type TDatabaseEnvironment,
     type TRuntimeEnvironment,
 } from './environment.schema.js';
+import { notificationSignalEnvironmentSchema } from './notification-environment.schema.js';
 
 export {
     APP_ENVIRONMENTS,
-    type TAppEnvironment,
     type TDatabaseEnvironment,
     type TRuntimeEnvironment,
 } from './environment.schema.js';
+
+export type TAppEnvironment = TDatabaseEnvironment['appEnvironment'];
 
 type TEnvironmentSource = Record<string, string | undefined>;
 
@@ -79,4 +81,9 @@ export function loadDatabaseEnvironment(): TDatabaseEnvironment {
 export function loadRuntimeEnvironment(): TRuntimeEnvironment {
     loadRepositoryEnvironmentFile();
     return parseRuntimeEnvironment(process.env);
+}
+
+export function loadNotificationSignalEnvironment() {
+    loadRepositoryEnvironmentFile();
+    return parse(notificationSignalEnvironmentSchema, process.env);
 }

@@ -13,7 +13,8 @@ Ratings sorting at all four representative widths, and the seven `/shell-preview
 
 Notification checks cover desktop/mobile read actions, pagination, focus and dismissal, axe,
 overflow, two-tab updates, offline stream gaps, session expiry, loading/empty/error recovery and
-lost browser action requests. `notifications.spec.ts` includes smoke behavior at 390 and 1440px
+lost browser action requests. They also cover persistent Club-frame navigation dismissal, reverse
+Tab after a read action, heartbeat silence and reconciliation of overlapping signals. `notifications.spec.ts` includes smoke behavior at 390 and 1440px
 and representative populated popover baselines at both widths. Compare the panel with the
 canonical `app.html` notification popover and mobile Alerts panel before updating those baselines.
 

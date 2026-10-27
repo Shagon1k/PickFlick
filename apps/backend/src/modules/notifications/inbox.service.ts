@@ -4,10 +4,14 @@ import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { resolveNotification } from './notification-resolver.js';
+import { NotificationSignals } from './notification-signals.js';
 
 @Injectable()
 export class InboxService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly signals: NotificationSignals,
+    ) {}
 
     list(userId: string, query: TNotificationListQuery): Promise<TNotificationList> {
         return this.prisma.$transaction(
@@ -59,9 +63,10 @@ export class InboxService {
         if (id && !(await this.prisma.notification.findFirst({ where: { ...where, id } }))) {
             throw new NotFoundException();
         }
-        await this.prisma.notification.updateMany({
+        const changed = await this.prisma.notification.updateMany({
             where: { ...where, id, readAt: null },
             data: { readAt: new Date() },
         });
+        if (changed.count) await this.signals.publish([userId]);
     }
 }

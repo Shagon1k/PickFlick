@@ -8,6 +8,7 @@ x-build: &build
 
 x-runtime-environment: &runtime-environment
     APP_ENV: ${APP_ENV:?APP_ENV is required}
+    REDIS_URL: redis://pickflick-${APP_ENV:?APP_ENV is required}-redis:6379
     DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}
     STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION is required}
@@ -43,6 +44,20 @@ x-application-service: &application-service
         - /tmp
 
 services:
+    redis:
+        image: redis:8.2.2-alpine
+        command: ['redis-server', '--save', '', '--appendonly', 'no']
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 3s
+            timeout: 3s
+            retries: 20
+        restart: unless-stopped
+        networks:
+            application:
+                aliases:
+                    - pickflick-${APP_ENV:?APP_ENV is required}-redis
+
     release:
         <<: *application-service
         build:
@@ -105,6 +120,7 @@ services:
         environment:
             APP_ENV: ${APP_ENV:?APP_ENV is required}
             DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+            REDIS_URL: redis://pickflick-${APP_ENV:?APP_ENV is required}-redis:6379
         healthcheck:
             test:
                 [

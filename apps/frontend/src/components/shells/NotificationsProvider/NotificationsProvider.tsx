@@ -10,7 +10,7 @@ import {
 } from '#components/shells/NotificationsPanel/actions';
 import { getOfflineMessage } from '#lib/offline';
 
-const RECONCILE_MS = 15_000;
+const RECONCILE_MS = 5 * 60_000;
 
 async function loadPages(pageCount: number) {
     const first = await loadNotifications();
@@ -35,30 +35,35 @@ export default function NotificationsProvider({ children }: { children: ReactNod
     const requestVersionRef = useRef(0);
     const inFlightRef = useRef<Promise<void> | null>(null);
 
-    const refresh = useCallback(() => {
+    const pendingSignalRef = useRef(false);
+
+    const refresh = useCallback((): Promise<void> => {
         if (inFlightRef.current) return inFlightRef.current;
+        const offline = getOfflineMessage();
+        if (offline) {
+            setError(offline);
+            setIsLoading(false);
+            return Promise.resolve();
+        }
         const version = ++requestVersionRef.current;
         const perform = async () => {
-            const offline = getOfflineMessage();
-            if (offline) {
-                setError(offline);
-                setIsLoading(false);
-                return;
-            }
-            const first = await loadPages(pageCountRef.current);
-            if (!first.ok) {
+            do {
+                pendingSignalRef.current = false;
+                const first = await loadPages(pageCountRef.current);
+                if (!first.ok) {
+                    if (version === requestVersionRef.current) {
+                        if (first.isUnauthorized) setData(null);
+                        setError(first.message);
+                        setIsLoading(false);
+                    }
+                    return;
+                }
                 if (version === requestVersionRef.current) {
-                    if (first.isUnauthorized) setData(null);
-                    setError(first.message);
+                    setData(first.data);
+                    setError('');
                     setIsLoading(false);
                 }
-                return;
-            }
-            if (version === requestVersionRef.current) {
-                setData(first.data);
-                setError('');
-                setIsLoading(false);
-            }
+            } while (pendingSignalRef.current);
         };
         const result = perform()
             .catch(() => {
@@ -81,6 +86,7 @@ export default function NotificationsProvider({ children }: { children: ReactNod
             void refresh();
         };
         stream.onmessage = () => {
+            if (inFlightRef.current) pendingSignalRef.current = true;
             void refresh();
         };
         stream.onerror = () => {
@@ -102,6 +108,7 @@ export default function NotificationsProvider({ children }: { children: ReactNod
         };
         return () => {
             stream.close();
+            pendingSignalRef.current = false;
             clearInterval(timer);
             window.removeEventListener('online', handleReconnect);
             window.removeEventListener('focus', handleReconnect);

@@ -9,6 +9,9 @@ const PAGE_SIZE = 20;
 const LOADING_MS = 1_500;
 
 function getItems(token: string): TNotificationItem[] {
+    const href = token.includes('navigation')
+        ? '/clubs/10000000-0000-4000-8000-000000000031/achievements'
+        : '/app';
     let items = notifications.get(token);
     if (!items) {
         items = token.includes('notifications')
@@ -19,7 +22,7 @@ function getItems(token: string): TNotificationItem[] {
                       index === 2
                           ? 'This update is no longer available.'
                           : 'A new Session has started.',
-                  href: index === 2 ? null : '/app',
+                  href: index === 2 ? null : href,
                   createdAt: '2026-10-27T07:00:00.000Z',
                   readAt: index < 3 ? null : '2026-10-27T07:30:00.000Z',
               }))
@@ -38,7 +41,11 @@ function openStream(response: TMockResponse, key: string) {
     const clients = streams.get(key) ?? new Set<TMockResponse>();
     streams.set(key, clients);
     clients.add(response);
-    response.on('close', () => clients.delete(response));
+    const heartbeat = setInterval(() => response.write('event: heartbeat\ndata: \n\n'), 100);
+    response.on('close', () => {
+        clearInterval(heartbeat);
+        clients.delete(response);
+    });
 }
 
 function listNotifications(request: TMockRequest, response: TMockResponse, key: string) {

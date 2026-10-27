@@ -16,6 +16,8 @@ import { configureApplication } from '../config/configure-application.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { AuthService } from '../modules/auth/auth.service.js';
 import type { IAuthUser } from '../modules/auth/auth.types.js';
+import { NotificationSignals } from '../modules/notifications/notification-signals.js';
+import { NotificationTransactions } from '../modules/notifications/notification-transactions.js';
 import { type IStoredObject, StorageService } from '../modules/storage/storage.service.js';
 
 /** Loads the local or test environment and refuses to run against any other database. */
@@ -125,6 +127,8 @@ class MemoryStorage {
 
 export interface ITestApi {
     prisma: PrismaService;
+    notifications: NotificationTransactions;
+    signals: NotificationSignals;
     storage: MemoryStorage;
     /** Calls the API as a User; the `x-test-user` header stands in for a session cookie. */
     request(
@@ -167,6 +171,8 @@ export async function startTestApi(): Promise<ITestApi> {
 
     return {
         prisma: app.get(PrismaService),
+        notifications: app.get(NotificationTransactions),
+        signals: app.get(NotificationSignals),
         storage,
         request: (path, { userId, json, headers, ...init } = {}) =>
             fetch(`http://127.0.0.1:${port}${path}`, {

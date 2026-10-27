@@ -278,11 +278,13 @@ here.
   344px panel, elevated neutral surface, heading/unread summary, bounded scrolling list, event icons
   and small gold unread dots. Mobile centers the panel above the bottom bar. The existing overlay
   handles focus, Escape, outside dismissal and return to the trigger; another overlay closes it.
+  Following a notification link closes the panel within the persistent Club frame. Reverse Tab
+  from the panel after a read action wraps to its last enabled control.
 - Linked rows and explicit unread-dot buttons have 44px targets. Marking one or all read updates
   the shared count; pagination stays inside the panel. Loading, empty, load/save failure, retry,
   offline, ended-session and paused-live-update feedback are explicit. UTC metadata accompanies
   static, authorization-aware copy; unavailable sources have no link.
-- Local reference comparison covers 390 and 1440px. Redis distribution, an exact-head hosted
+- Local reference comparison covers 390 and 1440px. An exact-head hosted
   preview and owner visual acknowledgment remain required before #61 is accepted.
 
 #### Global search and Movie Details
@@ -597,11 +599,13 @@ foundation components; feature-specific wrappers are checked in their built scre
 | Localization       | Longer English, locale-safe formats, no new text in images.                                                      | None yet; reviewed in Phases 22 and 24.                                                                                                                                                                                                                                                                                                                     | Not checked |
 | Browsers and input | The final browser and device matrix with mouse, keyboard, and touch.                                             | Chromium automation only.                                                                                                                                                                                                                                                                                                                                   | In progress |
 
-Phase 17 notification panels have eight passing browser checks at 390 and 1440px, including axe,
+Phase 17 notification panels have twelve passing browser checks at 390 and 1440px, including axe,
 read actions, local pagination, focus/dismissal, two-tab state, reconnect and failure recovery.
+They also cover persistent Club navigation, reverse Tab after reads, heartbeat silence and
+overlapping refreshes. The full selection passes 96 smoke and 106 visual checks.
 The canonical `app.html` popovers and rendered implementation were inspected at both widths;
-the new populated panel baselines preserve their composition with 44px actions. Redis distribution,
-exact-head hosting and owner visual acknowledgment remain pending for #61.
+the new populated panel baselines preserve their composition with 44px actions. Exact-head hosting
+and owner visual acknowledgment remain pending for #61.
 
 Update this document when a design source changes, visible behavior is clarified, a screen or
 component is added, or build or QA status changes. A correct-looking prototype is not passed QA.

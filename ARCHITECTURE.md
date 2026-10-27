@@ -26,6 +26,8 @@ flowchart LR
   User["Registered User / App Admin"] --> Frontend["frontend (Next.js)"]
   Frontend --> API["backend (NestJS)"]
   API --> DB["PostgreSQL"]
+  API <--> Redis["Redis notification invalidation"]
+  Worker --> Redis
   API --> Objects["S3-compatible storage"]
   API --> OAuth["Google / Apple"]
   API --> Email["Resend"]
@@ -43,7 +45,7 @@ flowchart LR
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.               | Partial — identity, Clubs, catalog, Session roster, Nomination, Selection and durable result/notification intent; later entities Proposed | ADR-003           |
 | Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Partial — Club avatars and catalog images                                                                                                 | —                 |
 | Background | Session-row deadlines polled by the backend worker; no scheduling table or queue dependency. | Active                                                                                                                                    | ADR-018           |
-| Real-time  | Session progress versions polled from the API every five seconds.                            | Active                                                                                                                                    | —                 |
+| Real-time  | Session progress polls every five seconds; notification changes use Redis Pub/Sub and SSE.   | Active                                                                                                                                    | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.               | Partial — repository-verified; live production not provisioned                                                                            | ADR-007, 008      |
 
 ## 2. Repository
@@ -84,7 +86,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
 | library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Partial — Redis distribution and email dispatcher remain pending                              |
+| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Active inbox and Redis invalidation; email dispatcher pending                                 |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -395,9 +397,9 @@ every authentication session.
 
 | Environment | Topology                                                                                                                                                                                                                 | Data                           |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
-| Local       | Frontend, backend and deadline worker run natively; PostgreSQL and MinIO in Docker.                                                                                                                                      | Synthetic seed; email disabled |
+| Local       | Frontend, backend and deadline worker run natively; PostgreSQL, Redis and MinIO in Docker.                                                                                                                               | Synthetic seed; email disabled |
 | CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs select UI smoke and visual checks by affected area (full selections for shared changes); main/manual run full contract and visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`) + managed data.                                                                                                                                             | Synthetic; test-inbox email    |
+| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`, Redis) + managed data.                                                                                                                                      | Synthetic; test-inbox email    |
 | Production  | Same shape, pinned to a SemVer tag.                                                                                                                                                                                      | Real users; live providers     |
 
 ```mermaid
@@ -509,7 +511,7 @@ Archived Clubs pause until reactivation. Structured events record each cycle's d
 outcomes, stale work, safe failure reasons and lateness without user text or database error
 details. Pending work retries on the next poll after failure or process restart. SIGTERM/SIGINT
 stop accepting candidates, finish the current transaction and disconnect Prisma. A private heartbeat
-file marks completed cycles; Compose checks its freshness. No Redis, queue library or generic job
+file marks completed cycles; Compose checks its freshness. No queue library or generic job
 framework is introduced. Production activation remains unauthorized.
 
 ### Automatic Nomination completion and live progress
@@ -916,16 +918,28 @@ suppressed rows never enter the inbox. `POST /notifications/:id/read` and
 `POST /notifications/read` preserve the first read timestamp and accept no User selector.
 Responses are private/no-store. Existing entity and file routes retain their own authorization.
 
-`GET /notifications/stream` emits refresh signals every five seconds, rechecking the original
-session before each signal. It carries no entity data. Nest's SSE transport sets no-store,
-no-transform and X-Accel-Buffering headers and releases the subscription on disconnect.
-The shared product shell reads REST state initially, on stream open/message, browser reconnect
-and focus, with a fifteen-second reconciliation interval for stream failures or missed signals.
-Refreshes preserve the number of loaded pages and coalesce overlapping requests. No event replay
-is required: PostgreSQL remains authoritative.
+`GET /notifications/stream` sends a refresh on connection and when Redis reports a change for
+that recipient. Each backend subscribes to an environment-scoped channel carrying only recipient
+UUIDs and forwards matching signals to all local connections. REST remains the authorization and
+content boundary. The stream rechecks its original session before each event and every thirty
+seconds through a named heartbeat. Heartbeats do not request inbox state. Nest disables caching,
+transformation and proxy buffering and unsubscribes disconnected clients.
 
-This is a partial #61 delivery. Redis distribution still requires approval for its client dependency;
-no broker, new environment variable or runtime service is introduced in this change. The current
-stream checks committed database state through client REST refreshes; it does not provide Redis
-fan-out or claim multi-instance broker verification. Settings preference UI and email dispatch
-remain with their owning work.
+The product shell reads REST initially, on stream open/message, reconnect and focus, plus every
+five minutes to recover missed signals. Overlapping requests coalesce; a change received during
+a request schedules one follow-up. Pagination stays loaded. PostgreSQL is authoritative; Redis
+has no replay or durable notification data.
+
+The concrete notification transaction wrapper collects newly inserted in-app recipients, then
+publishes after Prisma commits. Club, Session, achievement and deadline-worker producers reuse
+it; read-state updates publish after their database write succeeds. Rollbacks and duplicate intent
+send no signal. Separate official Node Redis publisher/subscriber connections use bounded commands,
+no offline publish queue and the client's automatic reconnect/resubscription. Broker failure is
+logged without connection details and never fails a committed business action. See
+[ADR-019](_docs/decisions/README.md#adr-019--distribute-notification-invalidation-through-redis-pubsub).
+
+Local, CI, preview and deployment definitions include an ephemeral Redis service. API startup
+and business actions remain available during broker outages. This repository change does not
+authorize shared-environment deployment or production activation. Exact-head hosting and owner
+visual acknowledgment remain pending for #61. Settings preferences UI and email dispatch remain
+with their owning work.

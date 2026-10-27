@@ -40,6 +40,10 @@ for (const width of [390, 1440]) {
             await page.keyboard.press('Enter');
             await expect(panel.getByText('2 unread', { exact: true })).toBeVisible();
             await expect(panel).toBeFocused();
+            await page.keyboard.press('Shift+Tab');
+            await expect(panel.getByRole('button', { name: 'Load more' })).toBeFocused();
+            await page.keyboard.press('Tab');
+            await expect(panel.getByRole('button', { name: 'Mark all as read' })).toBeFocused();
             await panel.getByRole('button', { name: 'Load more' }).click();
             await expect(panel.getByRole('listitem')).toHaveCount(23);
             await expect(panel).toBeFocused();
@@ -147,4 +151,64 @@ test('notifications show loading, load failures, retries and save failures', asy
     await save.getByRole('button', { name: 'Mark all as read' }).click();
     await expect(save.getByRole('alert')).toContainText('Read state could not be saved.');
     await expect(save.getByText('3 unread', { exact: true })).toBeVisible();
+});
+
+for (const width of [390, 1440]) {
+    test(
+        `notification navigation dismisses the persistent Club overlay at ${width}`,
+        { tag: '@smoke' },
+        async ({ page }) => {
+            await openNotifications(page, `valid-hub-notifications-navigation-${width}`, width);
+            await page.goto('/clubs/10000000-0000-4000-8000-000000000031/sessions');
+            const trigger = page.getByRole('button', {
+                name: width < 1024 ? /Alerts/u : /^Notifications/u,
+            });
+            await trigger.click();
+            const panel = page.getByRole('dialog', { name: 'Notifications' });
+            const link = panel.getByRole('link').first();
+            await expect(link).toHaveAttribute(
+                'href',
+                '/clubs/10000000-0000-4000-8000-000000000031/achievements',
+            );
+            await link.focus();
+            await page.keyboard.press('Enter');
+            await expect(page).toHaveURL(
+                '/clubs/10000000-0000-4000-8000-000000000031/achievements',
+            );
+            await expect(panel).toBeHidden();
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            await page.keyboard.press('Tab');
+            expect(
+                await page.evaluate(
+                    () => document.activeElement?.closest('[role="dialog"]') === null,
+                ),
+            ).toBe(true);
+        },
+    );
+}
+
+test('notification heartbeats do not request inbox state', { tag: '@smoke' }, async ({ page }) => {
+    await page.clock.install();
+    const { panel } = await openNotifications(page, 'valid-notifications-heartbeat');
+    await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
+    const requests: string[] = [];
+    page.on('request', (request) => {
+        if (request.method() === 'POST') requests.push(request.url());
+    });
+    await page.clock.fastForward(4 * 60_000);
+    await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
+    expect(requests).toEqual([]);
+    await page.clock.fastForward(60_000);
+    await expect.poll(() => requests.length).toBe(1);
+});
+
+test('notifications reconcile a change received during an earlier inbox request', async ({
+    page,
+    context,
+}) => {
+    const { panel } = await openNotifications(page, 'valid-notifications-loading-overlap');
+    await expect(panel.getByText('Loading notifications…')).toBeVisible();
+    const response = await context.request.post('/api/notifications/read', { data: {} });
+    expect(response.status()).toBe(204);
+    await expect(panel.getByText('You’re all caught up')).toBeVisible();
 });

@@ -65,7 +65,7 @@ export function useOverlayDismissal(
                 root.focus();
             } else if (
                 event.shiftKey &&
-                (activeElement === first || !root.contains(activeElement))
+                (activeElement === root || activeElement === first || !root.contains(activeElement))
             ) {
                 event.preventDefault();
                 last.focus();

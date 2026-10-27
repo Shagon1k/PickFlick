@@ -1,18 +1,18 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import type { TOpenRating } from '@pickflick/contracts';
 
-import { PrismaService } from '../../../database/prisma.service.js';
 import { recordAudit } from '../../clubs/access/club-access.js';
+import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 
 @Injectable()
 export class WatchingService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly notifications: NotificationTransactions) {}
 
     async openRating(userId: string, id: string, input: TOpenRating): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase === 'RATING') return;

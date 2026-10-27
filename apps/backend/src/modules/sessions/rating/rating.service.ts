@@ -2,15 +2,15 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { PrismaService } from '../../../database/prisma.service.js';
 import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager, canManage } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
 export class RatingService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly notifications: NotificationTransactions) {}
 
     async loadRating(
         tx: Prisma.TransactionClient,
@@ -66,7 +66,7 @@ export class RatingService {
     }
 
     async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (membership.club.lifecycle !== 'ACTIVE')
                 throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
@@ -105,7 +105,7 @@ export class RatingService {
     }
 
     async close(userId: string, id: string, input: TCloseRating): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase === 'COMPLETED') return;

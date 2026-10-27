@@ -4,6 +4,7 @@ import type { RefObject } from 'react';
 
 import { useNotifications } from '#components/shells/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
+import { useProductOverlay } from '#components/shells/product-overlay';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 
 const NOTIFICATION_ICONS: Partial<Record<TNotificationEvent, TIconName>> = {
@@ -24,6 +25,7 @@ interface INotificationItemsProps {
 }
 
 export default function NotificationItems({ panelRef }: INotificationItemsProps) {
+    const { closeOverlay } = useProductOverlay();
     const { data, isLoading, isSaving, markRead, loadMore } = useNotifications();
     return data?.items.length ? (
         <div className={styles.notifList} aria-busy={isLoading}>
@@ -50,7 +52,11 @@ export default function NotificationItems({ panelRef }: INotificationItemsProps)
                                 name={NOTIFICATION_ICONS[item.event] ?? 'bell'}
                             />
                             {item.href ? (
-                                <Link className={styles.notifBody} href={item.href}>
+                                <Link
+                                    className={styles.notifBody}
+                                    href={item.href}
+                                    onClick={() => closeOverlay(false)}
+                                >
                                     {body}
                                 </Link>
                             ) : (

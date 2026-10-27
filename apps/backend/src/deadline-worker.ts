@@ -8,11 +8,14 @@ import { join } from 'node:path';
 import {
     getSafeEnvironmentValidationFailures,
     loadDatabaseEnvironment,
+    loadNotificationSignalEnvironment,
 } from '@pickflick/config/environment';
 import { createDatabaseClient } from '@pickflick/database';
 import pino from 'pino';
 
 import { runDeadlineWorker } from './deadline-worker-loop.js';
+import { NotificationSignals } from './modules/notifications/notification-signals.js';
+import { NotificationTransactions } from './modules/notifications/notification-transactions.js';
 import { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
 
 const OWNER_READ_WRITE = 0o600;
@@ -25,13 +28,19 @@ process.once('SIGINT', () => shutdown.abort());
 try {
     const environment = loadDatabaseEnvironment();
     const prisma = createDatabaseClient(environment.databaseUrl);
+    const signals = new NotificationSignals(loadNotificationSignalEnvironment());
+    signals.onModuleInit();
     try {
         await prisma.$queryRaw`SELECT 1`;
         logger.info({ event: 'deadline.worker.started' });
-        const deadlines = new NominationDeadlines(prisma, (fields) => {
-            if (fields.event === 'deadline.failure') logger.error(fields);
-            else logger.info(fields);
-        });
+        const deadlines = new NominationDeadlines(
+            prisma,
+            (fields) => {
+                if (fields.event === 'deadline.failure') logger.error(fields);
+                else logger.info(fields);
+            },
+            new NotificationTransactions(prisma, signals),
+        );
         await runDeadlineWorker(
             {
                 runOnce: async (now, signal) => {
@@ -54,6 +63,7 @@ try {
             (event) => logger.error({ event }),
         );
     } finally {
+        signals.onModuleDestroy();
         await prisma.$disconnect();
         logger.info({ event: 'deadline.worker.stopped' });
     }
