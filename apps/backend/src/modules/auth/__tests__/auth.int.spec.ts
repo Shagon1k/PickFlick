@@ -86,10 +86,17 @@ describe('AuthService', () => {
             expect(new URL(body.url).hostname).toBe('accounts.google.com');
             expect(body.url).not.toContain(callbackURL);
             const state = new URL(body.url).searchParams.get('state');
+            expect(state).toBeTruthy();
             const verification = await prisma.authVerification.findFirstOrThrow({
-                where: { identifier: state ?? '' },
+                where: { identifier: `auth-state:${state}` },
             });
-            expect(verification.value).toContain(callbackURL);
+            expect(
+                await prisma.authVerification.findFirst({ where: { identifier: state ?? '' } }),
+            ).toBeNull();
+            expect(JSON.parse(verification.value)).toMatchObject({
+                callbackURL,
+                oauthState: state,
+            });
             expect(verification.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(
                 10 * 60 * 1000,
             );

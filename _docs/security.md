@@ -168,6 +168,16 @@ Multer 2.4.0, so an override scoped to `@nestjs/platform-express@12.1.0>multer` 
 which retains the same dependencies and Node requirement. Remove that override when the adapter
 includes a fixed version. Application parser settings and the audit policy are unchanged.
 
+On 2026-10-27, the official GitHub advisories
+[GHSA-965c-763c-88jm](https://github.com/advisories/GHSA-965c-763c-88jm) (critical OAuth state
+sign-in bypass) and [GHSA-r4xp-prcw-77qf](https://github.com/advisories/GHSA-r4xp-prcw-77qf)
+(high OAuth Proxy sign-in bypass), together with the npm registry, confirmed `better-auth@1.7.7`
+as the first patched release. The shared client/server catalog, direct Prisma adapter, and
+versioned Better Auth core, adapters and telemetry resolve to 1.7.7. Authentication configuration,
+endpoint restrictions and the production high/critical audit gate are unchanged; no exception
+or override is added. Database-backed OAuth state now uses the `auth-state:` namespace. A sign-in
+started before the upgrade may need to be restarted after rollout; persisted sessions are unchanged.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development
