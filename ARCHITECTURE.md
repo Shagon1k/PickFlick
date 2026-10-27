@@ -84,7 +84,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
 | library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, channel preference snapshots, delivery attempts and privacy-safe target projection.                                                                   | Active — inbox/SSE and email dispatcher remain Proposed                                       |
+| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Partial — Redis distribution and email dispatcher remain pending                              |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -906,3 +906,26 @@ Private Club awards only fan out to current Admins/Moderators. Inactivity and bi
 contracts but no producers here. No worker, broker, provider call, environment or dependency is
 added. #61 owns inbox/read state/SSE; #62 owns templates, authorization rechecks at send time,
 provider idempotency using Notification UUIDs, retries and suppression.
+
+### Notification inbox and refresh transport
+
+`GET /notifications` returns the signed-in recipient's in-app rows and authoritative unread count.
+Strict queries accept a limit from 1 to 50 (default 20) and an optional recipient-owned cursor.
+Descending `(createdAt, id)` pagination and projection run in one repeatable-read transaction;
+suppressed rows never enter the inbox. `POST /notifications/:id/read` and
+`POST /notifications/read` preserve the first read timestamp and accept no User selector.
+Responses are private/no-store. Existing entity and file routes retain their own authorization.
+
+`GET /notifications/stream` emits refresh signals every five seconds, rechecking the original
+session before each signal. It carries no entity data. Nest's SSE transport sets no-store,
+no-transform and X-Accel-Buffering headers and releases the subscription on disconnect.
+The shared product shell reads REST state initially, on stream open/message, browser reconnect
+and focus, with a fifteen-second reconciliation interval for stream failures or missed signals.
+Refreshes preserve the number of loaded pages and coalesce overlapping requests. No event replay
+is required: PostgreSQL remains authoritative.
+
+This is a partial #61 delivery. Redis distribution still requires approval for its client dependency;
+no broker, new environment variable or runtime service is introduced in this change. The current
+stream checks committed database state through client REST refreshes; it does not provide Redis
+fan-out or claim multi-instance broker verification. Settings preference UI and email dispatch
+remain with their owning work.

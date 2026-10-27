@@ -156,7 +156,7 @@
 
 .notifHeader button {
     flex: 0 0 auto;
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 9px;
     font: var(--fs-micro) var(--font-body);
     color: var(--fg-secondary);
@@ -187,6 +187,132 @@
     font-size: var(--fs-meta);
     color: var(--muted);
     text-align: center;
+}
+
+.notifBadge {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+}
+
+.navTrigger .notifBadge {
+    top: 8px;
+    right: calc(50% - 16px);
+}
+
+.notifList {
+    max-height: min(320px, calc(100dvh - 240px));
+    overflow-y: auto;
+}
+
+.notifList ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.notifItem {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 36px 16px 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notifItem:last-child {
+    border-bottom: 0;
+}
+
+.notifItem:hover {
+    background: var(--accent-soft);
+}
+
+.notifIcon {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--muted);
+}
+
+.notifBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.notifBody p {
+    margin: 0;
+    font-size: var(--fs-meta);
+    line-height: 1.45;
+}
+
+.notifBody {
+    display: block;
+    min-height: 44px;
+    color: var(--fg);
+    text-decoration: none;
+}
+
+.notifBody time {
+    display: block;
+    margin-top: 5px;
+    font-size: var(--fs-micro);
+    color: var(--fg-secondary);
+}
+
+.notifRead {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    transform: translateY(-50%);
+}
+
+.notifRead span {
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+}
+
+.notifStatus,
+.notifFeedback {
+    padding: 12px 18px;
+    margin: 0;
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.notifFeedback p {
+    margin: 0;
+}
+
+.notifMore,
+.notifFeedback button {
+    min-height: 44px;
+    padding: 8px 18px;
+    font: inherit;
+    color: var(--fg);
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+.notifMore {
+    width: 100%;
+    border-top: 1px solid var(--border);
 }
 
 .globalSearch {

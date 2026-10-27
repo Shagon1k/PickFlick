@@ -83,6 +83,13 @@ A forged request from another site needs the session cookie, and several layers 
   denies the next poll; Movie and author visibility remain enforced by the authoritative Session
   detail projection.
 
+- Notification list, cursors and read mutations are scoped to the authenticated recipient and
+  in-app channel. Inbox projection rechecks current entity access; inaccessible or deleted targets
+  reveal no entity link or copied content. The notification SSE connection rechecks its original
+  session before each refresh signal, terminates on revocation or identity change, and sends no
+  entity payload. REST responses are private/no-store; streams also disable transformation and
+  proxy buffering. File and entity endpoints independently authorize every follow-up request.
+
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 
 ## Input and output
@@ -98,7 +105,8 @@ See [Authentication and sessions](authentication.md#authorizing-a-request) for t
 ## Abuse limits
 
 `@nestjs/throttler` allows 120 requests a minute per client, 5 Contact messages per 10 minutes, and
-600 Session progress checks a minute, because every open Session page polls and a group often
+600 Session progress or notification inbox checks a minute, because every open product page checks
+for updates and a watch party often
 shares one address.
 Better Auth allows 60 requests a minute on its routes and 10 for social sign-in. The backend finds
 the client address by trusting exactly two proxy hops (the frontend rewrite and the Cloudflare

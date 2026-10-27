@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import { useNotifications } from '#components/shells/notifications-context';
 import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '#components/shells/product-navigation.module.scss';
 import {
@@ -37,6 +38,7 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const isNotificationsPanelOpen = activeOverlay === 'notifications';
     const { data: session } = authClient.useSession();
     const initials = getInitials(session?.user.name);
+    const { data: notifications } = useNotifications();
 
     useOverlayDismissal(isAccountMenuOpen, accountRef, closeOverlay, true);
     useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
@@ -67,13 +69,18 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                     aria-controls="shell-notifications"
                     aria-expanded={isNotificationsPanelOpen}
                     aria-haspopup="dialog"
-                    aria-label="Notifications"
+                    aria-label={
+                        notifications?.unreadCount
+                            ? `Notifications, ${notifications.unreadCount} unread`
+                            : 'Notifications'
+                    }
                     className={styles.roundButton}
                     data-product-overlay-control
                     onClick={(event) => toggleOverlay('notifications', event.currentTarget)}
                     type="button"
                 >
                     <Icon className={styles.roundIcon} name="bell" />
+                    {notifications?.unreadCount ? <span className={styles.notifBadge} /> : null}
                 </button>
                 <NotificationsPanel
                     id="shell-notifications"

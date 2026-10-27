@@ -5,6 +5,7 @@ import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
 import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
+import NotificationsProvider from '#components/shells/NotificationsProvider/NotificationsProvider';
 import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
 import ProductOverlayProvider from '#components/shells/ProductOverlayProvider/ProductOverlayProvider';
 import ProductSearch from '#components/shells/ProductSearch/ProductSearch';
@@ -55,51 +56,56 @@ export default function ProductChrome({
     );
     return (
         <ProductOverlayProvider>
-            <div className={`${styles.shell} ${styles.productShell}`} data-shell={currentArea}>
-                <AutoHideHeader className={styles.productHeader}>
-                    <div className={styles.headerInner}>
-                        <Brand href={routes.home} />
-                        <nav aria-label="Product navigation" className={styles.productDesktopNav}>
-                            {desktopItems.map((item) => (
-                                <Link
-                                    aria-current={item.current ? 'page' : undefined}
-                                    href={item.href}
-                                    key={item.label}
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
-                        <div className={styles.productHeaderControls}>
-                            {sessionBackHref ? (
-                                <span className={styles.sessionHeaderBack}>
-                                    <ButtonLink href={sessionBackHref} size="small">
-                                        <Icon name="arrow-left" />
-                                        Back to Hub
-                                    </ButtonLink>
-                                </span>
-                            ) : null}
-                            <ProductHeaderActions
-                                accountItems={buildAccountNavigation(routes, admin)}
-                            />
+            <NotificationsProvider>
+                <div className={`${styles.shell} ${styles.productShell}`} data-shell={currentArea}>
+                    <AutoHideHeader className={styles.productHeader}>
+                        <div className={styles.headerInner}>
+                            <Brand href={routes.home} />
+                            <nav
+                                aria-label="Product navigation"
+                                className={styles.productDesktopNav}
+                            >
+                                {desktopItems.map((item) => (
+                                    <Link
+                                        aria-current={item.current ? 'page' : undefined}
+                                        href={item.href}
+                                        key={item.label}
+                                    >
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                            <div className={styles.productHeaderControls}>
+                                {sessionBackHref ? (
+                                    <span className={styles.sessionHeaderBack}>
+                                        <ButtonLink href={sessionBackHref} size="small">
+                                            <Icon name="arrow-left" />
+                                            Back to Hub
+                                        </ButtonLink>
+                                    </span>
+                                ) : null}
+                                <ProductHeaderActions
+                                    accountItems={buildAccountNavigation(routes, admin)}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <ProductSearch />
-                </AutoHideHeader>
-                {children}
-                <SiteFooter routes={routes} />
-                <PendingInvites />
-                <MobileProductNavigation
-                    entries={buildMobileNavigation({
-                        admin,
-                        clubItems,
-                        currentArea,
-                        libraryItems,
-                        routes,
-                        settingsItems,
-                    })}
-                />
-            </div>
+                        <ProductSearch />
+                    </AutoHideHeader>
+                    {children}
+                    <SiteFooter routes={routes} />
+                    <PendingInvites />
+                    <MobileProductNavigation
+                        entries={buildMobileNavigation({
+                            admin,
+                            clubItems,
+                            currentArea,
+                            libraryItems,
+                            routes,
+                            settingsItems,
+                        })}
+                    />
+                </div>
+            </NotificationsProvider>
         </ProductOverlayProvider>
     );
 }

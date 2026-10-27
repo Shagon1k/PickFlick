@@ -17,7 +17,9 @@ export async function resolveNotification(
     const target = await resolveTarget(tx, notification);
     return {
         id: notification.id,
+        event: notification.event,
         createdAt: notification.createdAt.toISOString(),
+        readAt: notification.readAt?.toISOString() ?? null,
         ...(target
             ? { message: NOTIFICATION_MESSAGES[notification.event], href: target }
             : UNAVAILABLE),

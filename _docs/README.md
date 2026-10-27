@@ -62,7 +62,8 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 ## Current verification
 
 [Phase 17 — Notifications and preferences](phase-17-notifications.md) is active for durable
-notifications, preferences and safe event mapping under #60.
+notifications, preferences and safe event mapping under #60, plus the inbox, read state and
+notification refresh UI under #61. Redis distribution and hosted visual acceptance remain pending.
 
 [Phase 16 — Statistics and achievements](phase-16-statistics-achievements.md) is active for Club
 statistics and the rating leaderboard under #57, personal Library statistics under #58, and
