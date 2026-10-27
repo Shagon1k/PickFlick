@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { MoviesModule } from '../movies/movies.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { ClubAvatarService } from './club-avatar.service.js';
 import { ClubLifecycleService } from './club-lifecycle.service.js';
 import { ClubsController } from './clubs.controller.js';
@@ -11,7 +12,7 @@ import { ClubRatingsController } from './statistics/club-ratings.controller.js';
 import { ClubRatingsService } from './statistics/club-ratings.service.js';
 
 @Module({
-    imports: [MoviesModule],
+    imports: [MoviesModule, NotificationsModule],
     controllers: [ClubsController, ClubInvitationsController, ClubRatingsController],
     providers: [
         ClubsService,

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
+import { useNotifications } from '#components/shells/notifications-context';
 import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '#components/shells/product-navigation.module.scss';
 import {
@@ -18,6 +19,7 @@ interface IMobileProductNavigationProps {
 }
 
 export default function MobileProductNavigation({ entries }: IMobileProductNavigationProps) {
+    const { data: notifications } = useNotifications();
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
     const navigationRef = useRef<HTMLElement>(null);
     const notificationsRef = useRef<HTMLDivElement>(null);
@@ -64,6 +66,12 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                                         type="button"
                                     >
                                         <Icon className={styles.navGlyph} name="bell" />
+                                        {notifications?.unreadCount ? (
+                                            <span
+                                                className={styles.notifBadge}
+                                                aria-label={`${notifications.unreadCount} unread`}
+                                            />
+                                        ) : null}
                                         <span>{entry.label}</span>
                                     </button>
                                 </div>

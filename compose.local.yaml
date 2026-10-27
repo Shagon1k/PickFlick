@@ -1,4 +1,15 @@
 services:
+    redis:
+        image: redis:8.2.2-alpine
+        command: ['redis-server', '--save', '', '--appendonly', 'no']
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 3s
+            timeout: 3s
+            retries: 20
+        ports:
+            - '127.0.0.1:${REDIS_PORT:-16379}:6379'
+
     postgres:
         image: postgres:17.6-alpine
         environment:

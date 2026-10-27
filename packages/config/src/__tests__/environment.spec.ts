@@ -11,6 +11,7 @@ const local = {
     APP_ENV: 'local',
     BACKEND_HOST: '127.0.0.1',
     BACKEND_PORT: '3001',
+    REDIS_URL: 'redis://127.0.0.1:16379',
     DATABASE_URL: 'postgresql://pickflick:secret@127.0.0.1:15432/pickflick_local',
     STORAGE_ENDPOINT: 'http://127.0.0.1:19000',
     STORAGE_REGION: 'us-east-1',
@@ -48,6 +49,19 @@ function failuresOf(source: Record<string, string>): string[] {
 }
 
 describe('parseRuntimeEnvironment', () => {
+    it('should validate the notification Redis URL without exposing its value', () => {
+        expect(parseRuntimeEnvironment(local).redisUrl).toBe('redis://127.0.0.1:16379');
+        expect(
+            parseRuntimeEnvironment({ ...local, REDIS_URL: 'rediss://broker.invalid:6379' })
+                .redisUrl,
+        ).toBe('rediss://broker.invalid:6379');
+        for (const value of ['', 'https://broker.invalid', 'redis:///']) {
+            expect(failuresOf({ ...local, REDIS_URL: value })).toEqual([
+                'REDIS_URL must be a redis(s) URL with a host',
+            ]);
+        }
+    });
+
     it('should build the typed runtime environment', () => {
         expect(parseRuntimeEnvironment(local)).toMatchObject({
             appEnvironment: 'local',

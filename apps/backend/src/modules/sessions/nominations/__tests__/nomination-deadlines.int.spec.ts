@@ -74,7 +74,7 @@ describe('NominationDeadlines', () => {
             });
         }
         movieId = (await api.prisma.movie.create({ data: {} })).id;
-        worker = new NominationDeadlines(api.prisma, log);
+        worker = new NominationDeadlines(api.prisma, log, api.notifications);
     });
     afterEach(async () => {
         vi.restoreAllMocks();
@@ -122,7 +122,7 @@ describe('NominationDeadlines', () => {
             deadlineAt: deadline,
         });
         expect((await edit({ topic: 'Edited topic' })).status).toBe(200);
-        await new NominationDeadlines(api.prisma, log).runOnce(due);
+        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
         const result = await decisions();
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'EMPTY', nominationCount: 0 });
@@ -310,7 +310,7 @@ describe('NominationDeadlines', () => {
             );
             await api.prisma.$executeRawUnsafe('DROP FUNCTION pf43_fail_completion()');
         }
-        await new NominationDeadlines(api.prisma, log).runOnce(due);
+        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
         expect(await decisions()).toHaveLength(1);
     });

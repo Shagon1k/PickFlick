@@ -6,9 +6,9 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { PrismaService } from '../../../database/prisma.service.js';
 import { findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
+import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
@@ -19,7 +19,7 @@ const MAX_SUGGESTIONS = 12;
 @Injectable()
 export class NominationsService {
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly notifications: NotificationTransactions,
         private readonly movies: MoviesService,
     ) {}
 
@@ -90,7 +90,7 @@ export class NominationsService {
     }
 
     async submit(userId: string, id: string, input: TSubmitNomination): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'NOMINATION')
                 throw new ConflictException({ reason: 'NOMINATION_CLOSED' });
@@ -113,7 +113,7 @@ export class NominationsService {
     }
 
     async close(userId: string, id: string, input: TCloseNomination): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.phaseVersion)

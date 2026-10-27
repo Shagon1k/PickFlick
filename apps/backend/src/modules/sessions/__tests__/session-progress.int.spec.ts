@@ -264,7 +264,7 @@ describe('Session progress', () => {
         const deadlineAt = new Date(Date.now() + 60000);
         await api.prisma.session.update({ where: { id: sessionId }, data: { deadlineAt } });
         await submit();
-        const worker = new NominationDeadlines(api.prisma, () => undefined);
+        const worker = new NominationDeadlines(api.prisma, () => undefined, api.notifications);
         await Promise.all([
             submit(users[1]),
             worker.execute(sessionId, new Date(deadlineAt.getTime() + 1)),

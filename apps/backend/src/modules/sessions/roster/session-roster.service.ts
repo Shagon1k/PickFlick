@@ -11,6 +11,7 @@ import type { Prisma } from '@pickflick/database';
 import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { lockClub, recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
+import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager, assertOpen } from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
@@ -19,10 +20,13 @@ import { readRoster } from './session-roster-projection.js';
 
 @Injectable()
 export class SessionRosterService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notifications: NotificationTransactions,
+    ) {}
 
     async get(userId: string, sessionId: string): Promise<ISessionRoster> {
-        return this.prisma.$transaction((tx) => readRoster(tx, userId, sessionId), {
+        return this.notifications.run((tx) => readRoster(tx, userId, sessionId), {
             isolationLevel: 'RepeatableRead',
         });
     }
@@ -32,7 +36,7 @@ export class SessionRosterService {
         sessionId: string,
         decision: 'accept' | 'decline',
     ): Promise<TSessionInvitationPreview> {
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             if (membership.club.lifecycle !== 'ACTIVE')
@@ -77,7 +81,7 @@ export class SessionRosterService {
         sessionId: string,
         membershipId: string,
     ): Promise<ICreatedInvitation> {
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             await assertManager(tx, membership);
@@ -124,7 +128,7 @@ export class SessionRosterService {
     }
 
     async revoke(userId: string, sessionId: string, inviteId: string) {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             await assertManager(tx, membership);
@@ -154,7 +158,7 @@ export class SessionRosterService {
         sessionId: string,
         input: { confirmation: 'LEAVE' } | { confirmation: 'REMOVE'; participantId: string },
     ) {
-        await this.prisma.$transaction(async (tx) => {
+        await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             const isRemoving = input.confirmation === 'REMOVE';
@@ -189,7 +193,7 @@ export class SessionRosterService {
     }
 
     async preview(userId: string, token: string): Promise<TSessionInvitationPreview> {
-        return this.prisma.$transaction(
+        return this.notifications.run(
             async (tx) =>
                 toInvitationPreview(
                     await tx.sessionInvite.findUnique({
@@ -234,7 +238,7 @@ export class SessionRosterService {
         selector: { token: string } | { id: string },
         decision: 'accept' | 'decline',
     ): Promise<TSessionInvitationPreview> {
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             const where =
                 'token' in selector
                     ? { tokenDigest: digestInviteToken(selector.token) }

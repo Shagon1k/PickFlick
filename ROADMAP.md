@@ -1288,6 +1288,11 @@ deleted or inaccessible entities return generic unavailable copy without a link.
 billing producers arrive in their owning phases. The active [Phase 17 document](_docs/phase-17-notifications.md)
 records the event/audience matrix and verification in progress.
 
+The recipient-scoped inbox and read APIs, shared desktop/mobile list and recipient-scoped
+Redis refresh signals are implemented under #61, with post-commit publication and REST recovery
+after gaps ([ADR-019](_docs/decisions/README.md#adr-019--distribute-notification-invalidation-through-redis-pubsub)).
+Exact-head hosted visual acceptance remains pending; this does not complete the phase's transport or UI acceptance.
+
 **Out of scope:** Web push and Paddle events before Phase 20.
 
 ### Phase 18 — Human Verification & Bug Fixing III · Not started

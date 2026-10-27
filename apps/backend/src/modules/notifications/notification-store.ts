@@ -3,6 +3,12 @@ import type { Prisma } from '@pickflick/database';
 
 import { getNotificationPolicy } from './notification-policy.js';
 
+const pendingRecipients = new WeakMap<Prisma.TransactionClient, Set<string>>();
+
+export function trackNotificationRecipients(tx: Prisma.TransactionClient, recipients: Set<string>) {
+    pendingRecipients.set(tx, recipients);
+}
+
 export interface INotificationInput {
     recipientId: string;
     event: TNotificationEvent;
@@ -13,7 +19,10 @@ export interface INotificationInput {
     awardId?: string;
 }
 
-/** Call inside the source transaction so failed domain writes cannot leave delivery intent. */
+/**
+ * Record inside the source's NotificationTransactions callback so intent is atomic
+ * and signals follow commit.
+ */
 export async function recordNotification(tx: Prisma.TransactionClient, input: INotificationInput) {
     const user = await tx.user.findFirst({
         where: { id: input.recipientId, status: 'ACTIVE' },
@@ -47,7 +56,7 @@ export async function recordNotification(tx: Prisma.TransactionClient, input: IN
                 notificationId: created.id,
                 channel: 'IN_APP',
                 attempt: 1,
-                // DELIVERED means durable inbox availability; no client push or read (readAt is separate).
+                // DELIVERED records inbox availability; SSE receipt and readAt are separate.
                 status: policy.inApp ? 'DELIVERED' : 'SUPPRESSED',
                 completedAt: now,
             },
@@ -60,5 +69,6 @@ export async function recordNotification(tx: Prisma.TransactionClient, input: IN
             },
         ],
     });
+    if (created.inApp) pendingRecipients.get(tx)?.add(created.recipientId);
     return created;
 }

@@ -83,6 +83,14 @@ A forged request from another site needs the session cookie, and several layers 
   denies the next poll; Movie and author visibility remain enforced by the authoritative Session
   detail projection.
 
+- Notification list, cursors and read mutations are scoped to the authenticated recipient and
+  in-app channel. Inbox projection rechecks current entity access; inaccessible or deleted targets
+  reveal no entity link or copied content. The notification SSE connection rechecks its original
+  session before each refresh signal and thirty-second heartbeat, terminates on revocation or identity change, and sends no
+  entity payload. Redis carries only recipient UUID invalidation after database commits;
+  it holds no notification content. Heartbeats never trigger inbox REST refreshes. REST responses are private/no-store; streams also disable transformation and
+  proxy buffering. File and entity endpoints independently authorize every follow-up request.
+
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 
 ## Input and output
@@ -98,7 +106,8 @@ See [Authentication and sessions](authentication.md#authorizing-a-request) for t
 ## Abuse limits
 
 `@nestjs/throttler` allows 120 requests a minute per client, 5 Contact messages per 10 minutes, and
-600 Session progress checks a minute, because every open Session page polls and a group often
+600 Session progress or notification inbox checks a minute, because every open product page checks
+for updates and a watch party often
 shares one address.
 Better Auth allows 60 requests a minute on its routes and 10 for social sign-in. The backend finds
 the client address by trusting exactly two proxy hops (the frontend rewrite and the Cloudflare
@@ -159,6 +168,16 @@ Multer 2.4.0, so an override scoped to `@nestjs/platform-express@12.1.0>multer` 
 which retains the same dependencies and Node requirement. Remove that override when the adapter
 includes a fixed version. Application parser settings and the audit policy are unchanged.
 
+On 2026-10-27, the official GitHub advisories
+[GHSA-965c-763c-88jm](https://github.com/advisories/GHSA-965c-763c-88jm) (critical OAuth state
+sign-in bypass) and [GHSA-r4xp-prcw-77qf](https://github.com/advisories/GHSA-r4xp-prcw-77qf)
+(high OAuth Proxy sign-in bypass), together with the npm registry, confirmed `better-auth@1.7.7`
+as the first patched release. The shared client/server catalog, direct Prisma adapter, and
+versioned Better Auth core, adapters and telemetry resolve to 1.7.7. Authentication configuration,
+endpoint restrictions and the production high/critical audit gate are unchanged; no exception
+or override is added. Database-backed OAuth state now uses the `auth-state:` namespace. A sign-in
+started before the upgrade may need to be restarted after rollout; persisted sessions are unchanged.
+
 ### Retired braces mitigation
 
 `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`, no upstream fix) is reachable only through development
@@ -176,8 +195,15 @@ is vulnerability-free.
 
 ## Infrastructure
 
-- Only the frontend is published. The backend, PostgreSQL, and MinIO sit on the internal Compose
-  network with no host ports.
+- Only the frontend has public application routing; application Compose publishes no host ports.
+  Backend and worker retain Dokploy's shared network for existing external connections. Managed
+  PostgreSQL and MinIO must keep their data ports private; the shared network is not cross-project
+  isolation.
+- Signal-only Redis attaches exclusively to the project-scoped, `internal: true`
+  `notification-signals` network, shared only with backend and worker. It has no published port,
+  route or configured persistent volume, and never joins `dokploy-network`. This isolates the
+  unauthenticated broker from other projects on that shared network, not from the Docker host
+  administrator or a compromised backend/worker.
 - Dokploy is protected by Cloudflare Access; automation reaches it with a service token.
 - Production promotion is off until the owner enables it (`PRODUCTION_DEPLOY_ENABLED`).
 

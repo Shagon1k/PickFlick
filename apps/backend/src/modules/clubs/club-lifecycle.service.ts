@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger } from '@nest
 import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
-import { PrismaService } from '../../database/prisma.service.js';
+import { NotificationTransactions } from '../notifications/notification-transactions.js';
 import { departSessions } from '../sessions/roster/session-departure.js';
 import { completeSessionPhase } from '../sessions/session-completion.js';
 import { lockSession } from '../sessions/session-lock.js';
@@ -30,7 +30,7 @@ export class ClubLifecycleService {
     private readonly logger = new Logger(ClubLifecycleService.name);
 
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly notifications: NotificationTransactions,
         private readonly storage: StorageService,
     ) {}
 
@@ -45,7 +45,7 @@ export class ClubLifecycleService {
 
     async leave(userId: string, clubId: string, confirmation: string): Promise<void> {
         assertConfirmed(confirmation, 'LEAVE');
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             if (membership.role === 'ADMIN') {
@@ -74,7 +74,7 @@ export class ClubLifecycleService {
         confirmation: string,
     ): Promise<void> {
         assertConfirmed(confirmation, 'REMOVE');
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             await lockClub(transaction, clubId);
             const actor = await findMembership(transaction, userId, clubId);
             if (actor.role === 'MEMBER') throw new ForbiddenException();
@@ -104,7 +104,7 @@ export class ClubLifecycleService {
 
     /** Deletes an empty Club: members lose access, while the audit trail stays. */
     async delete(userId: string, clubId: string, confirmation: string): Promise<void> {
-        const avatarKey = await this.prisma.$transaction(async (transaction) => {
+        const avatarKey = await this.notifications.run(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
@@ -142,7 +142,7 @@ export class ClubLifecycleService {
         clubId: string,
         next: 'ACTIVE' | 'ARCHIVED',
     ): Promise<void> {
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             if (next === 'ACTIVE') {
                 await lockKey(transaction, `club-admin:${userId}`);
             }

@@ -272,6 +272,21 @@ here.
 - Legacy personal Session invitation URLs keep their recipient check, seven-day expiry and focused
   scene. Signed-out visitors continue through sign-in; non-members see no screening context.
 
+#### Notification inbox
+
+- The shared desktop bell and mobile Alerts trigger open the same recent inbox. Reuse `app.html`'s
+  344px panel, elevated neutral surface, heading/unread summary, bounded scrolling list, event icons
+  and small gold unread dots. Mobile centers the panel above the bottom bar. The existing overlay
+  handles focus, Escape, outside dismissal and return to the trigger; another overlay closes it.
+  Following a notification link closes the panel within the persistent Club frame. Reverse Tab
+  from the panel after a read action wraps to its last enabled control.
+- Linked rows and explicit unread-dot buttons have 44px targets. Marking one or all read updates
+  the shared count; pagination stays inside the panel. Loading, empty, load/save failure, retry,
+  offline, ended-session and paused-live-update feedback are explicit. UTC metadata accompanies
+  static, authorization-aware copy; unavailable sources have no link.
+- Local reference comparison covers 390 and 1440px. An exact-head hosted
+  preview and owner visual acknowledgment remain required before #61 is accepted.
+
 #### Global search and Movie Details
 
 - Header search reuses the product overlay. A 300ms debounce updates a bounded, locally scrolling
@@ -576,13 +591,21 @@ foundation components; feature-specific wrappers are checked in their built scre
 
 | Check              | Target                                                                                                           | Evidence                                                                                                                                                                                                                                                                                                                                                    | Status      |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Source parity      | Every screen and shared component compared with its source.                                                      | 106 baselines at 390 and 1440, including Selection outcome, Watching, Rating, Completed history, Personal Rating/Watchlist editors, Club Ratings, Library/statistics and Achievements. [Review findings](_docs/ui-quality.md#baseline-review-2026-10-26) record the 13 refreshed and 22 added captures. Owner acceptance of the later screens remains open. | In progress |
+| Source parity      | Every screen and shared component compared with its source.                                                      | 108 baselines at 390 and 1440, including Selection outcome, Watching, Rating, Completed history, Personal Rating/Watchlist editors, Club Ratings, Library/statistics and Achievements. [Review findings](_docs/ui-quality.md#baseline-review-2026-10-26) record the 13 refreshed and 22 added captures. Owner acceptance of the later screens remains open. | In progress |
 | Responsive         | Continuous widths plus 390, 768, 1024, 1440; orientation where it matters.                                       | Established screens: overflow at 390, 640, 768, 900, 1024, 1200, 1440. Session creation/detail: 390, 768, 1024, 1440.                                                                                                                                                                                                                                       | In progress |
 | Keyboard and focus | Auth, Club creation, Sessions, search, menus, dialogs, rating and score controls, settings, admin confirmations. | Automated for shared and shell controls, Pricing FAQ, Contact and Create Club validation focus, Club switch, member removal, pending invites, Club settings dialogs, Session validation, Movie selection, edit/cancel dialogs, and the unavailable checkout. Remaining feature flows pending.                                                               | In progress |
 | Accessibility      | Structure, names, focus, contrast, live regions, targets, reduced motion.                                        | Axe at 390 and 1440 on every built screen; automated focus, live-region, 44px target, local-scroll, and reduced-motion checks. Manual review pending.                                                                                                                                                                                                       | In progress |
 | Dynamic content    | Empty, loading, error, read-only, offline, long text, large lists, provider failures.                            | Contact covers validation, loading, rate limit, service failure, offline, and preserved input; Hub covers no-Clubs, loading, unauthorized, archived, adminless, and over-limit states; pending invites cover loading, empty, retry, and responses. The broader feature matrix is pending.                                                                   | In progress |
 | Localization       | Longer English, locale-safe formats, no new text in images.                                                      | None yet; reviewed in Phases 22 and 24.                                                                                                                                                                                                                                                                                                                     | Not checked |
 | Browsers and input | The final browser and device matrix with mouse, keyboard, and touch.                                             | Chromium automation only.                                                                                                                                                                                                                                                                                                                                   | In progress |
+
+Phase 17 notification panels have twelve passing browser checks at 390 and 1440px, including axe,
+read actions, local pagination, focus/dismissal, two-tab state, reconnect and failure recovery.
+They also cover persistent Club navigation, reverse Tab after reads, heartbeat silence and
+overlapping refreshes. The full selection passes 96 smoke and 106 visual checks.
+The canonical `app.html` popovers and rendered implementation were inspected at both widths;
+the new populated panel baselines preserve their composition with 44px actions. Exact-head hosting
+and owner visual acknowledgment remain pending for #61.
 
 Update this document when a design source changes, visible behavior is clarified, a screen or
 component is added, or build or QA status changes. A correct-looking prototype is not passed QA.

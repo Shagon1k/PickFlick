@@ -120,6 +120,7 @@ jobs:
       GOOGLE_CLIENT_SECRET: synthetic-ci-google-client-secret
       RESEND_DELIVERY_MODE: disabled
       CI_COMPOSE_PROJECT_NAME: pickflick-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      REDIS_URL: redis://127.0.0.1:16379
       DATABASE_URL: postgresql://pickflick_ci:synthetic-ci-password@127.0.0.1:15432/pickflick_test
       MINIO_ROOT_PASSWORD: synthetic-ci-password
       MINIO_ROOT_USER: pickflick-ci
@@ -157,7 +158,7 @@ jobs:
 
       - name: Start isolated test dependencies
         run: |
-          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml -f compose.ci.yaml up -d --wait postgres minio
+          docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml -f compose.ci.yaml up -d --wait postgres redis minio
           docker compose --project-name "$CI_COMPOSE_PROJECT_NAME" --env-file .env.example -f compose.local.yaml -f compose.ci.yaml run --rm minio-init
 
       - name: Check dependency integration

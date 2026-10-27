@@ -2,6 +2,7 @@ import type { PrismaClient } from '@pickflick/database';
 
 import { lockClub } from '../../clubs/access/club-access.js';
 import { recordSessionNotifications } from '../../notifications/notification-producers.js';
+import { type NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { lockSession } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';
@@ -25,6 +26,7 @@ export class NominationDeadlines {
     constructor(
         private readonly prisma: PrismaClient,
         private readonly log: (event: IDeadlineEvent) => void,
+        private readonly notifications: NotificationTransactions,
     ) {}
 
     async runOnce(now = new Date(), signal?: AbortSignal): Promise<void> {
@@ -81,7 +83,7 @@ export class NominationDeadlines {
             where: { id: sessionId },
             select: { clubId: true },
         });
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             await lockClub(tx, initial.clubId);
             await lockSession(tx, sessionId);
             const session = await tx.session.findUniqueOrThrow({

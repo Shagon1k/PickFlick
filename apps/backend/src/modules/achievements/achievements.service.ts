@@ -4,10 +4,10 @@ import type { TAchievement, TAchievements } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
-import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership } from '../clubs/access/club-access.js';
 import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
 import { recordAchievementNotifications } from '../notifications/notification-producers.js';
+import { NotificationTransactions } from '../notifications/notification-transactions.js';
 import { buildClubAchievements } from './rules/club-rules.js';
 import { buildPersonalAchievements } from './rules/personal-rules.js';
 import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './rules/rule-catalog.js';
@@ -16,12 +16,12 @@ import { readAchievementSessions } from './rules/rule-sources.js';
 @Injectable()
 export class AchievementsService {
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly notifications: NotificationTransactions,
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
     ) {}
 
     async listClub(userId: string, clubId: string): Promise<TAchievements> {
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             const member = await findMembership(tx, userId, clubId);
             const facts = buildClubAchievements(
                 await readAchievementSessions(tx, [clubId], this.getCacheKey()),
@@ -38,7 +38,7 @@ export class AchievementsService {
     }
 
     async listPersonal(userId: string): Promise<TAchievements> {
-        return this.prisma.$transaction(async (tx) => {
+        return this.notifications.run(async (tx) => {
             const user = await tx.user.findUniqueOrThrow({
                 where: { id: userId },
                 select: { displayName: true, image: true },

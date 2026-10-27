@@ -25,7 +25,7 @@ corepack enable
     pnpm install --frozen-lockfile
     ```
 
-3. Start PostgreSQL and MinIO and create the storage bucket.
+3. Start PostgreSQL, Redis and MinIO and create the storage bucket.
 
     ```bash
     pnpm services:up
@@ -67,10 +67,11 @@ not be replaced with prototype film images. See the [environment reference](envi
 
 ## Local services
 
-| Service    | Host port                           | Check                 |
-| ---------- | ----------------------------------- | --------------------- |
-| PostgreSQL | `15432`                             | `pnpm services:check` |
-| MinIO      | `19000` (S3 API), `19001` (console) | `pnpm services:check` |
+| Service    | Host port                           | Check                                                                            |
+| ---------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| PostgreSQL | `15432`                             | `pnpm services:check`                                                            |
+| Redis      | `16379`                             | `docker compose --env-file .env -f compose.local.yaml exec redis redis-cli ping` |
+| MinIO      | `19000` (S3 API), `19001` (console) | `pnpm services:check`                                                            |
 
 The ports avoid the usual defaults and bind to `127.0.0.1` only. `pnpm services:down` stops the
 containers and keeps their data.

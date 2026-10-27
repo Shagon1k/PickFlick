@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
     BLOCKING_SESSION_PHASES,
     isOpenSessionPhase,
@@ -14,6 +14,7 @@ import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
+import { NotificationTransactions } from '../notifications/notification-transactions.js';
 import { NominationsService } from './nominations/nominations.service.js';
 import { RatingService } from './rating/rating.service.js';
 import { SelectionService } from './selection/selection.service.js';
@@ -23,6 +24,8 @@ import { publishProgress } from './session-progress.js';
 
 @Injectable()
 export class SessionsService {
+    @Inject(NotificationTransactions)
+    private readonly notifications!: NotificationTransactions;
     constructor(
         private readonly prisma: PrismaService,
         private readonly nominations: NominationsService,
@@ -31,7 +34,7 @@ export class SessionsService {
     ) {}
 
     async get(userId: string, id: string): Promise<TSession> {
-        return this.prisma.$transaction(
+        return this.notifications.run(
             async (transaction) => {
                 const session = await transaction.session.findUnique({ where: { id } });
                 if (!session) throw new NotFoundException();
@@ -79,7 +82,7 @@ export class SessionsService {
     async create(userId: string, clubId: string, input: TCreateSession): Promise<TSession> {
         const id = randomUUID();
         try {
-            await this.prisma.$transaction(async (transaction) => {
+            await this.notifications.run(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
                 await assertManager(transaction, membership);
@@ -125,7 +128,7 @@ export class SessionsService {
     }
 
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             const { session, membership } = await loadWritableSession(transaction, userId, id);
             assertOpen(session.phase);
             const data = {
@@ -165,7 +168,7 @@ export class SessionsService {
     }
 
     async cancel(userId: string, id: string, input: TCancelSession): Promise<TSession> {
-        await this.prisma.$transaction(async (transaction) => {
+        await this.notifications.run(async (transaction) => {
             const { session, membership } = await loadWritableSession(transaction, userId, id);
             if (session.phase === 'CANCELLED') return;
             if (session.phase === 'COMPLETED')

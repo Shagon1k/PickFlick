@@ -19,7 +19,7 @@ catalog:
     '@types/node': 22.20.1
     '@types/react': 19.2.18
     '@types/react-dom': 19.2.7
-    better-auth: 1.7.5
+    better-auth: 1.7.7
     tsx: 4.23.13
     typescript: 6.0.3
     zod: 4.6.6

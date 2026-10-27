@@ -1,5 +1,6 @@
 /** HTTP statuses the API answers with and the web app and the API's HTTP clients branch on. */
 export const HTTP_STATUS = {
+    NO_CONTENT: 204,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,

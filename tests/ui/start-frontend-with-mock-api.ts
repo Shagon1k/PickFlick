@@ -25,6 +25,7 @@ import {
 import { handleMovieDetails } from './movie-details.ts';
 import { handleMovieSearch } from './movie-search.ts';
 import { handleNominations } from './nominations.ts';
+import { handleNotifications } from './notifications.ts';
 import { handlePendingInvitation } from './pending-invites.ts';
 import { handlePersonalRating } from './personal-rating.ts';
 import { handleRating } from './rating.ts';
@@ -406,6 +407,7 @@ const api = createServer((request, response) => {
     if (
         [
             handleAchievements,
+            handleNotifications,
             handleLibrary,
             handleWatchlist,
             handlePersonalRating,

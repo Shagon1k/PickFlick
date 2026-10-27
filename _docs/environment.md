@@ -15,6 +15,7 @@ variable, never its value.
 | `SOURCE_REVISION`                                  | Optional full Git SHA; images set it and `/health/live` reports it.                                                            | No     |
 | `BACKEND_HOST`, `BACKEND_PORT`                     | Backend bind address and port.                                                                                                 | No     |
 | `DATABASE_URL`                                     | `postgres(ql)://` URL with host and database.                                                                                  | Yes    |
+| `REDIS_URL`                                        | Required `redis://` or `rediss://` URL with a host. API and deadline worker use it only for notification invalidation.         | Yes    |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`               | S3 API URL and signing region (`us-east-1` for MinIO).                                                                         | No     |
 | `STORAGE_BUCKET`                                   | Lowercase S3 bucket name.                                                                                                      | No     |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`         | Application storage credentials.                                                                                               | Yes    |
@@ -42,7 +43,7 @@ variable, never its value.
 \* Except the published production address.
 
 The frontend server also reads `BACKEND_INTERNAL_URL` (default `http://127.0.0.1:3001`) to reach
-the backend. `compose.local.yaml` reads `POSTGRES_*`, `MINIO_ROOT_*`, and `MINIO_*_PORT`; they are not
+the backend. `compose.local.yaml` reads `POSTGRES_*`, `REDIS_PORT`, `MINIO_ROOT_*`, and `MINIO_*_PORT`; they are not
 application variables.
 
 Auth credentials stay in the backend: never expose them to the browser, logs, screenshots, or rendered
@@ -120,7 +121,7 @@ toolchain:
   see [Security](security.md)), independently of the static checks.
 - **Lint, type-check, test** — ESLint, Stylelint, knip, Prettier, `tsc`,
   Vitest, workspace build, artifact drift.
-- **Integration** — `pnpm deploy:check`, isolated PostgreSQL and MinIO, migrations, seed,
+- **Integration** — `pnpm deploy:check`, isolated PostgreSQL, Redis and MinIO, migrations, seed,
   `pnpm test:integration`, `pnpm test:e2e` against the built frontend and backend, and
   `pnpm test:journeys` (browser journeys through the real web app and API). CI layers
   `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
@@ -148,12 +149,12 @@ forces the fixed version; remove the entry once Prisma catches up.
 migrations, then the required seed step). `pnpm build:images` builds them from a clean checkout and tags them
 with the short revision.
 
-| File                   | Purpose                                                                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `compose.local.yaml`   | Local PostgreSQL and MinIO.                                                                                                                   |
-| `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                      |
-| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend`. Dokploy manages the data services.                                            |
-| `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
+| File                   | Purpose                                                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compose.local.yaml`   | Local PostgreSQL, Redis and MinIO.                                                                                                                   |
+| `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                             |
+| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.                              |
+| `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL, Redis and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
 Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
 `cgr.dev/chainguard/minio-client` pair already selected in `compose.ci.yaml`, replacing the
@@ -172,8 +173,8 @@ repeated initialization, S3 put/get/delete, and object persistence across server
 Their test containers, volumes, and networks were removed afterward.
 
 `pnpm deploy:check` renders all three with synthetic values. In `compose.deploy.yaml`, `release`
-must finish before `backend` and `worker` start, and `frontend` waits for backend health. Containers are
-read-only, drop all capabilities, and publish no host ports. Dokploy supplies `DATABASE_URL` and the
+must finish before `backend` and `worker` start, and `frontend` waits for backend health. Application containers are
+read-only and drop all capabilities. No deployment service publishes host ports. Dokploy supplies `DATABASE_URL` and the
 storage values; every service joins Dokploy's shared `dokploy-network` under an alias such as
 `pickflick-uat-backend`. UAT and production use separate projects, credentials, buckets, and Resend
 identities. Never save rendered Compose output; it contains secrets.
@@ -201,7 +202,8 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 
 ## Nomination deadline worker
 
-The worker reads only `APP_ENV` and `DATABASE_URL` through the existing database environment schema.
+The worker validates `APP_ENV` and `DATABASE_URL` through the database schema, plus `REDIS_URL`
+through the notification signal schema. Database-only migration tools do not require Redis.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
 `pnpm test:worker` checks built-process overdue decisions, restart idempotence and graceful shutdown
 against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
@@ -226,3 +228,18 @@ with `Cache-Control: private, no-store`. The Session page polls it every five se
 and on focus and online events; a failed poll shows feedback and the next poll retries.
 Migration 19 must precede updated API and worker images. There is no new service, runtime variable
 or notification transport; the PostgreSQL outbox retains later notification intent.
+
+## Notification invalidation broker
+
+`REDIS_URL` is required for the backend and deadline worker. Local defaults use loopback port
+16379 (`REDIS_PORT` changes the Compose host binding). CI starts its own Redis alongside the
+isolated database and storage. Preview uses its Compose-local Redis; deployment definitions use
+an environment-specific internal Redis alias with no host port. These definitions do not authorize
+deployment or production provisioning.
+
+Redis stores no inbox state; persistence is disabled. PostgreSQL commits remain successful during
+broker outages. The publisher bounds commands to 500ms, skips offline sends, and logs a safe
+warning. The client reconnects and restores subscriptions. Reconciliation reads persisted REST
+state on initial connection, reconnect, focus and every five minutes. Heartbeats every thirty
+seconds recheck stream authorization without causing REST requests. No Redis queue, Streams,
+cache, outbox or notification replay is configured.

@@ -2,7 +2,8 @@
 
 This phase implements [Roadmap Phase 17](../ROADMAP.md#phase-17--notifications--preferences--in-progress).
 Project 3 owns live status: [#60](https://github.com/Shagon1k/PickFlick/issues/60) covers persistence,
-preferences and safe event mapping; #61 owns inbox, bell, read-state APIs and SSE; #62 owns Resend
+preferences and safe event mapping; [#61](https://github.com/Shagon1k/PickFlick/issues/61) owns inbox,
+bell, read-state APIs and SSE; #62 owns Resend
 templates, retry/backoff, suppression and delivery observability.
 
 Run `r_d19661da0f0f02cfaf82` uses managed branch
@@ -112,3 +113,136 @@ is removed after verification. `pnpm verify` passes the production audit gate, l
 formatting, type checking, all 518 unit tests and all workspace builds. The first lint run caught
 an import ordering change from the resolver rename; sorting that block fixes it. The staged
 gitleaks scan passes. This backend-only review round does not rerun the UI suites.
+
+## Issue 61 initial implementation and remaining gates
+
+Run `r_e0670d883186bbcfc808` uses managed branch `PF-61_17-2-build-inbox-bell-read` in the
+launcher-provided worktree. The worktree started clean; #60 is closed and Project 3 confirmed
+#61 In progress at admission. No manual worktree is created.
+
+Reuse the existing Notification rows, safe projection, product overlay, design tokens and Icon
+component. The recipient-scoped inbox returns stable descending pagination and unread count in
+one repeatable-read transaction. Read mutations filter recipient and in-app availability and
+preserve the first timestamp. Suppressed notifications and foreign cursors never enter the list.
+The SSE route rechecks the original session before emitting refresh-only signals every five
+seconds. Nest supplies the streaming headers and disconnect cleanup. The shell reads REST on
+initial load, stream connection/messages, reconnect and focus, plus periodic reconciliation;
+overlapping refreshes coalesce and loaded pages remain available. Entity/file routes keep their
+existing authorization. There is no migration, environment variable, provider call or new dependency.
+
+At initial submission this was a partial delivery. Redis client approval was pending; the owner
+subsequently approved the integration recorded in review fix round 2 below. Do not describe
+periodic SSE reconciliation as Redis distribution or claim multi-instance broker verification.
+The proposed integration is the official Node Redis client with separate publisher/subscriber
+connections and recipient-only refresh signals; PostgreSQL remains authoritative after gaps.
+The repository has no hosted-preview workflow or configured preview destination. Exact-head
+hosting and owner acknowledgment are also pending. Keep the issue open and the PR Draft.
+
+### Issue 61 local verification
+
+Use Node 24.15.0, pnpm 11.25.0 and the launcher's workspace store. Prisma's home cache is read-only;
+an isolated `/tmp/pf61-cache` resolves installation without modifying credentials. A new disposable
+`pf61-postgres` container hosts only `pickflick_test` on loopback port 43461. All 34 existing
+migrations apply, and the synthetic seed succeeds. Existing services remain untouched.
+
+Rendered reference inspection uses `app.html` at 390 and 1440px, with the design contract,
+responsive baseline and Settings notification markup. The implementation keeps the existing
+344px panel, neutral surface, bounded list, small unread dots and mobile placement above Alerts.
+Linked bodies include their metadata in one 44px target to preserve row density. The header's
+read action has a 44px target. The app panel's refined shared composition takes precedence over
+the older Settings fixture styling; neither prototype is rewritten.
+
+Six focused browser checks pass in the digest-pinned Playwright image: desktop/mobile read state,
+pagination, focus, dismissal, axe and overflow; two-tab synchronization; offline gap recovery;
+empty state; loading, load/save failures and retry. The first run exposed a mock-only buffering
+problem: its SSE headers omitted Nest's automatic no-transform header. Aligning the mock fixes
+immediate frontend-proxy delivery. A direct proxy check receives the refresh event immediately.
+The first desktop outside-click assertion targeted content under the popover; it now uses the
+non-interactive header background and checks that the route stays unchanged. Three stream unit tests pass, including revocation of an already
+open stream. The first full integration run lacked synthetic seed fixtures and compared the
+entire Nest-owned cache header too strictly; seed setup and token assertions correct those checks.
+
+After seeding, the complete integration suite passes 293 tests across 37 files, including all five
+inbox cases and the real authenticated SSE response/header check. No existing integration test is
+skipped or changed. All three stream unit tests pass, including authorization loss after opening.
+
+`pnpm verify` passes the production dependency audit gate, lint, Knip, formatting, type checking,
+all 521 unit tests across 58 files and all workspace builds. The production audit reports two low
+and five moderate findings, with no high/critical finding. Final focused verification after raising
+the inbox polling allowance for shared client addresses passes all five inbox integration cases.
+The staged gitleaks scan passes with a checksum-verified release binary and no allowlist change.
+The disposable database container is removed after verification. No UAT/production deployment,
+Redis distribution or actual email delivery is claimed.
+
+The final notification browser selection passes eight cases against the verified production build.
+It also proves that session expiry clears cached rows/links and that a lost browser action request
+releases pending state, preserves retry feedback and succeeds on retry.
+
+The full selected UI smoke suite passes all 93 checks. New 390/1440 populated panel baselines
+were generated in the digest-pinned Playwright image and inspected against the rendered canonical
+popovers; the existing baselines and zero-pixel tolerance remain unchanged. Final keyboard review
+moves focus to the stable panel before read/pagination controls become disabled or disappear.
+The notification checks explicitly assert retained focus and outside dismissal without navigation.
+
+After that focus correction, the frontend production build/type check and all eight focused browser
+checks pass again. Keyboard read actions and completed pagination retain panel focus at both
+widths; outside dismissal keeps the current route. The change uses the existing panel ref rather
+than adding a focus-management mechanism.
+
+The final full UI visual selection passes all 106 checks in the pinned Linux image, including the
+two new notification captures. All 108 screenshot files use the existing zero-pixel tolerance.
+At initial submission, the remaining issue gates were Redis distribution and an exact-head hosted
+preview with owner acknowledgment; local tests and captures do not satisfy those gates.
+
+## Issue 61 review fix round 2
+
+The owner approved the official Node Redis client and focused configuration and Compose changes
+in PR #197. ADR-019 records recipient-only invalidation, post-commit publication and best-effort
+recovery. A concrete notification transaction service collects newly inserted in-app recipients
+and publishes after commit. Club, Session, achievement and deadline-worker producers use it.
+Read mutations publish after successful updates. No schema, migration, backfill, generic event
+framework, queue, outbox, cache, credential or permission change is introduced.
+
+Each API subscribes once and routes recipient-only signals to every matching local SSE connection.
+REST still authorizes and projects all content. Node Redis restores subscriptions after reconnect.
+Offline publishes are skipped; a 500ms reply bound prevents a stalled broker from delaying a
+successful business action. Errors omit broker details. Thirty-second named heartbeats reauthorize
+streams without requesting REST. Initial connection, reconnect, focus and five-minute reconciliation
+recover persisted state. A signal during an active refresh schedules one coalesced follow-up.
+
+Notification links close the overlay within the persistent Club frame. Reverse Tab from the
+focused panel wraps to its last control after read actions. The existing overlay and panel refs
+own these behaviors. Existing visuals and entity authorization remain unchanged.
+
+### Round 2 verification
+
+The focused stream/configuration selection passes 24 unit tests. Three Redis integration cases
+pass against new disposable loopback PostgreSQL (`pickflick_test`, port 43461) and Redis (46379).
+They cover cross-instance recipient isolation, multiple SSE connections, read synchronization,
+commit ordering, rollback, duplicate intent, stalled publication and subscription restoration.
+An initial test-helper omission was corrected. The outage test exposed that the Redis client's
+command timeout ends when bytes are written; an explicit reply deadline fixes that failure.
+
+`pnpm verify` reaches the production audit and fails on the unchanged `better-auth@1.7.5` dependency:
+one critical and one high advisory, plus four low and six moderate findings. Auth dependency
+updates are outside this bounded review scope. The remaining gates run individually; results are
+recorded below. Hosted exact-head preview and owner visual acknowledgment remain pending. No shared-environment deployment is authorized or performed.
+
+The full integration suite passes all 296 tests across 38 files after explicit feature-module
+imports. Full unit verification passes 523 tests across 58 files. Lint (including Stylelint),
+Knip, formatting, type checking and every workspace production build pass.
+`pnpm deploy:check` renders local, preview and deployment definitions. Built deadline-worker smoke
+passes overdue execution, restart idempotence and SIGTERM shutdown; built frontend/backend smoke
+passes health, headers and the synthetic Apple authentication boundary. PostgreSQL, Redis and
+MinIO verification uses only new disposable local services.
+
+All twelve focused notification browser checks pass in the digest-pinned Playwright image with
+Node 24.15.0. They cover the original read/empty/error/offline cases, Club-frame keyboard navigation
+at 390/1440, reverse Tab after reads, heartbeat silence, five-minute reconciliation and a signal
+received during an earlier REST request. No screenshot baseline is changed. The full selected UI
+gate also passes all 202 checks: 96 smoke tests and 106 exact visual comparisons. Existing zero-pixel tolerance remains unchanged.
+
+All four disposable test containers and their anonymous volumes are removed after verification.
+
+The staged gitleaks scan passes without an allowlist change. The managed worktree is retained for
+the existing PR; this round creates no manual worktree.
