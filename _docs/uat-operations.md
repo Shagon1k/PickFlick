@@ -79,8 +79,11 @@ STORAGE_SECRET_KEY
 STORAGE_BUCKET
 ```
 
-8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, `worker`, and `frontend` exist
-   and none publishes a host port. Do not save the preview; it contains secrets.
+8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, `worker`, `frontend`,
+   and `redis` exist and none publishes a host port. Redis must attach only to the project-scoped
+   internal `notification-signals` network, never `dokploy-network`. Only `backend` and `worker`
+   join both networks; `release` and `frontend` stay on `dokploy-network` only.
+   Do not save or share the preview; it contains secrets.
 
 Rules for these values:
 
@@ -93,6 +96,23 @@ Rules for these values:
   run, use a UAT-only Services ID and key, register `https://uat.pick-flick.app` and
   `https://uat.pick-flick.app/api/auth/callback/apple`, set `APPLE_SIGN_IN_ENABLED=true`, and enter
   the `.p8` key as PKCS#8 PEM (`\n` line breaks are accepted).
+
+### Notification signal Redis
+
+The normal approved deployment creates Redis from `compose.deploy.yaml`; do not create a separate
+Dokploy Redis resource, domain, route or public port for it. With the existing `APP_ENV=uat`, Compose
+supplies `REDIS_URL=redis://pickflick-uat-redis:6379` to backend and worker automatically. No new
+manual Dokploy environment value is needed. Keep existing managed PostgreSQL and external
+application connections unchanged.
+
+This is ephemeral Pub/Sub only: snapshots and AOF are disabled, and no persistent volume is
+configured. Redis loss can drop refresh signals, not durable notifications or committed business
+writes. REST reload/reconnect/focus and five-minute reconciliation recover authoritative PostgreSQL
+state. Backend and worker are deliberately not startup-gated on Redis health. See
+[ADR-019](decisions/README.md#adr-019--distribute-notification-invalidation-through-redis-pubsub).
+After an approved deployment, inspect actual network membership and Redis health without exposing
+credentials, then verify notification and read-state refresh between two authenticated clients.
+Repository renders alone do not prove live UAT isolation or delivery.
 
 ## Configure ingress
 

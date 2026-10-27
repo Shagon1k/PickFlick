@@ -938,7 +938,13 @@ no offline publish queue and the client's automatic reconnect/resubscription. Br
 logged without connection details and never fails a committed business action. See
 [ADR-019](_docs/decisions/README.md#adr-019--distribute-notification-invalidation-through-redis-pubsub).
 
-Local, CI, preview and deployment definitions include an ephemeral Redis service. API startup
+Local, CI, preview and deployment definitions include an ephemeral Redis service. Deployment
+Compose confines Redis to the project-scoped internal `notification-signals` network with only
+backend and worker; those consumers retain their existing `dokploy-network` connections. Frontend
+and release do not join the Redis network. Compose supplies the environment-specific `REDIS_URL`
+without a new operator value. Redis publishes no host port and has no configured persistent volume;
+snapshots and AOF are disabled. ADR-019 narrowly amends ADR-007 for reconstructable signals only,
+not managed PostgreSQL or future durable queues. API startup
 and business actions remain available during broker outages. This repository change does not
 authorize shared-environment deployment or production activation. Exact-head hosting and owner
 visual acknowledgment remain pending for #61. Settings preferences UI and email dispatch remain

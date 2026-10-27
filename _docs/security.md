@@ -195,8 +195,15 @@ is vulnerability-free.
 
 ## Infrastructure
 
-- Only the frontend is published. The backend, PostgreSQL, Redis, and MinIO sit on the internal Compose
-  network with no host ports.
+- Only the frontend has public application routing; application Compose publishes no host ports.
+  Backend and worker retain Dokploy's shared network for existing external connections. Managed
+  PostgreSQL and MinIO must keep their data ports private; the shared network is not cross-project
+  isolation.
+- Signal-only Redis attaches exclusively to the project-scoped, `internal: true`
+  `notification-signals` network, shared only with backend and worker. It has no published port,
+  route or configured persistent volume, and never joins `dokploy-network`. This isolates the
+  unauthenticated broker from other projects on that shared network, not from the Docker host
+  administrator or a compromised backend/worker.
 - Dokploy is protected by Cloudflare Access; automation reaches it with a service token.
 - Production promotion is off until the owner enables it (`PRODUCTION_DEPLOY_ENABLED`).
 

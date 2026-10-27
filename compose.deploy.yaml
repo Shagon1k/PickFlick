@@ -54,7 +54,7 @@ services:
             retries: 20
         restart: unless-stopped
         networks:
-            application:
+            notification-signals:
                 aliases:
                     - pickflick-${APP_ENV:?APP_ENV is required}-redis
 
@@ -111,6 +111,7 @@ services:
             application:
                 aliases:
                     - pickflick-${APP_ENV:?APP_ENV is required}-backend
+            notification-signals:
 
     worker:
         <<: *application-service
@@ -140,6 +141,7 @@ services:
             application:
                 aliases:
                     - pickflick-${APP_ENV:?APP_ENV is required}-worker
+            notification-signals:
 
     frontend:
         <<: *application-service
@@ -179,6 +181,8 @@ services:
             - /app/apps/frontend/.next/cache
 
 networks:
+    notification-signals:
+        internal: true
     application:
         external: true
         name: dokploy-network
