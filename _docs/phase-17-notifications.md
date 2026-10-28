@@ -9,6 +9,61 @@ templates, retry/backoff, suppression and delivery observability.
 Run `r_d19661da0f0f02cfaf82` uses managed branch
 `PF-60_17-1-establish-durable-notifications-preferences`. Dependencies #12, #35, #51 and #59 are closed.
 
+## Issue 62 owner decisions and template review
+
+Run `r_59bd0aae28e2aabefd27` uses the launcher-provided branch
+`PF-62_17-3-deliver-resend-email-templates`. Alex approved a focused PostgreSQL-backed email
+dispatcher with concurrent-worker safety and bounded retries within the provider idempotency
+window. Reuse existing Notification intent, delivery attempts, authorization projection and backend
+worker patterns. Do not add BullMQ, a generic queue framework or Web Push. Use TailorTales' concrete
+email client and template structure where it fits; its log-and-continue delivery does not satisfy
+#62's retry and deduplication acceptance. Record the dispatcher's architecture before implementation.
+
+Alex changed the UAT identity to `PickFlick UAT <uat@pick-flick.app>` and approved
+`test@pick-flick.app` as the synthetic notification test recipient. ADR-009's amendment records the
+shared-domain alias arrangement. The application contract, preview Compose and operator guidance
+use the new identity; no provider, DNS, credential or deployed environment is changed.
+
+The next owner checkpoint is visual selection: three email compositions for each of the sixteen
+event types, with a generic unavailable-target state. Drafts follow the canonical Projector Noir
+palette, typography and hierarchy. They use static event copy and authorized canonical links,
+without Club names, Movie titles, ratings, participant names or invitation tokens. Inactivity and
+billing examples are previews of reserved events, not new producers. Template selection does not
+complete sandbox delivery, suppression/failure alerting, exact-head hosted preview or owner visual
+acceptance. The operational alert destination remains to be chosen.
+
+### Sender and draft verification
+
+The sender boundary passes all 25 configuration tests, including preview/live acceptance of the
+new alias, rejection of the former UAT address and rejection of cross-environment senders. Shared
+configuration type checking, focused ESLint, changed-file formatting and `pnpm deploy:check` pass.
+Node 24.15.0 and pnpm 11.25.0 are used. The resumed environment lacks the launcher's store setting;
+dependency installation uses a workspace-local pnpm store without changing a persistent setting.
+
+The in-conversation catalog provides three compositions for all sixteen events and an unavailable
+state. Browser checks cover 288 event/state/composition/width combinations at 320, 390 and 1440px,
+with no horizontal overflow or draft JavaScript errors. Rendered `app.html` and Settings notification
+references are inspected at 390/1440 after fonts, images and finite animations settle. The prototype
+emits an existing `e.target.closest is not a function` error during inspection; none of its scripts
+is copied into the drafts. The drafts retain the noir surfaces, serif hierarchy, sparse amber and
+neutral actions. The unavailable state removes the entity action and uses generic subject/content;
+mandatory billing copy has no opt-out action. Template choice remains the next owner checkpoint.
+
+No actual email, provider webhook, suppression integration, dispatcher, hosted exact-head preview,
+deployment or email-client rendering is verified in this preparation step. No UI baseline is
+changed, and the full application verification suites are not run for this sender-only code change.
+
+### Managed continuation — 2026-10-28
+
+The successor uses the same worktree and branch, preserving all ten inherited changed files.
+Fresh verification on Node 24.15.0 and pnpm 11.25.0 passes all 25 configuration tests,
+configuration type checking, focused ESLint and `pnpm deploy:check`. The recovered local draft
+catalog offers “Записка” (short note), “Карточка” (editorial card) and “Билет” (ticket).
+Its browser check passes all 288 event/state/composition/width combinations at 320, 390 and
+1440px without overflow or JavaScript errors; this rerun does not inspect the prototype pages.
+Owner selection and the persistent-failure alert destination remain required before delivery
+implementation. The sender preparation does not satisfy #62's delivery acceptance criteria.
+
 ## Issue 60 implementation
 
 Reuse Prisma transactions, Session phase/progress versions, Club audit rows and newly earned

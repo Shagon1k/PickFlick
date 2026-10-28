@@ -795,6 +795,22 @@ through Resend with `Reply-To` set to the visitor's address when given, and answ
 delivery fails; the form keeps the visitor's text so they can retry. Rate limiting uses
 `@nestjs/throttler`. Sender identities and environment rules above are unchanged.
 
+### Amendment — 2026-10-28: UAT sender alias
+
+Alex approved `PickFlick UAT <uat@pick-flick.app>` in the human-controlled #62 run, superseding
+the UAT sender and separate sending-subdomain requirement above. The owner uses one Google
+Workspace user with aliases; this change requires no additional paid mailbox. Production remains
+`PickFlick <notifications@pick-flick.app>`, and notification replies go to `hello@pick-flick.app`.
+
+Both environments now send from the verified `pick-flick.app` domain. Keep separate sending-only
+API keys for UAT and production, restricted to that domain. This no longer isolates the sender
+addresses through domain restriction; exact application sender validation and synthetic UAT
+recipients remain required. Alex approved `test@pick-flick.app` for #62 test delivery.
+
+Local/test delivery stays disabled and preview mode sends nothing. Update the operator-managed UAT
+`RESEND_FROM` before starting a revision that requires the alias. This amendment records the
+approved configuration contract, not a provider, DNS, alias, credential or deployment change.
+
 ## ADR-010 — Use Better Auth at the API boundary
 
 - **Status:** Accepted

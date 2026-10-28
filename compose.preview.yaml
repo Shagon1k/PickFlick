@@ -29,7 +29,7 @@ x-runtime-environment: &runtime-environment
     STORAGE_FORCE_PATH_STYLE: 'true'
     RESEND_DELIVERY_MODE: preview
     RESEND_API_KEY: preview-disabled
-    RESEND_FROM: PickFlick UAT <notifications@uat.pick-flick.app>
+    RESEND_FROM: PickFlick UAT <uat@pick-flick.app>
     CONTACT_DELIVERY_TO: contact@example.invalid
     CATALOG_ENABLED: 'false'
     CATALOG_PROVIDER: poiskkino-thetvdb

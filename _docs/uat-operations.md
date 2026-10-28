@@ -40,8 +40,10 @@ named `UAT E2E`; production promotion requires it to have passed for the release
 2. Attach the Compose resource and PostgreSQL to Dokploy's shared `dokploy-network`.
    `compose.deploy.yaml` fixes that name; do not add a network variable.
 3. Create a UAT-only MinIO bucket and an application access key (not the MinIO root identity).
-4. Create a Resend sending-only key restricted to `uat.pick-flick.app` and verify the sender
-   `PickFlick UAT <notifications@uat.pick-flick.app>`.
+4. Create a separate UAT Resend sending-only key restricted to the verified `pick-flick.app`
+   domain and use `PickFlick UAT <uat@pick-flick.app>`. This sender is an alias on the existing
+   Google Workspace account; it does not require another paid user. UAT and production share the
+   sending domain, so domain restriction alone does not isolate their sender addresses.
 5. Create a Google OAuth web client for UAT only. Its one redirect URI is
    `https://uat.pick-flick.app/api/auth/callback/google`; leave JavaScript origins empty.
 6. Create the Compose resource with these settings:
@@ -70,7 +72,7 @@ DATABASE_URL
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
 RESEND_API_KEY
-RESEND_FROM="PickFlick UAT <notifications@uat.pick-flick.app>"
+RESEND_FROM="PickFlick UAT <uat@pick-flick.app>"
 STORAGE_ENDPOINT=https://storage-uat.pick-flick.app
 STORAGE_FORCE_PATH_STYLE=true
 STORAGE_REGION=us-east-1
@@ -88,6 +90,9 @@ STORAGE_BUCKET
 Rules for these values:
 
 - Set `CONTACT_DELIVERY_TO` to one approved test inbox and send only synthetic content.
+- For #62 notification delivery tests, the owner approved `test@pick-flick.app` as the recipient.
+- Before starting a revision with the new sender contract, change the UAT `RESEND_FROM` in the
+  environment editor. Repository changes do not update the deployed environment.
 - Never reuse production or preview keys, senders, or OAuth clients, and never fall back to personal
   SMTP. UAT needs no Google Workspace mailbox for its sender.
 - Keep `AUTH_SECRET`, `GOOGLE_CLIENT_SECRET`, and (later) `APPLE_PRIVATE_KEY` only in Dokploy's

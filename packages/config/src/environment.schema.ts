@@ -7,7 +7,7 @@ import { redisUrl } from './notification-environment.schema.js';
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
 
 const PRODUCTION_SENDER = 'PickFlick <notifications@pick-flick.app>';
-const UAT_SENDER = 'PickFlick UAT <notifications@uat.pick-flick.app>';
+const UAT_SENDER = 'PickFlick UAT <uat@pick-flick.app>';
 const PRODUCTION_CONTACT = 'hello@pick-flick.app';
 
 const required = z.string().trim().min(1, 'is required');

@@ -83,6 +83,49 @@ describe('parseRuntimeEnvironment', () => {
         });
     });
 
+    describe('when using the UAT sender alias', () => {
+        const uat = {
+            ...local,
+            APP_ENV: 'uat',
+            AUTH_BASE_URL: 'https://uat.pick-flick.app',
+            RESEND_FROM: 'PickFlick UAT <uat@pick-flick.app>',
+            CONTACT_DELIVERY_TO: 'test@pick-flick.app',
+        };
+
+        it.each([
+            { mode: 'preview', apiKey: 'preview-disabled', isEnabled: false },
+            { mode: 'live', apiKey: 'synthetic-uat-sending-key', isEnabled: true },
+        ])(
+            'should accept $mode delivery with the approved alias',
+            ({ mode, apiKey, isEnabled }) => {
+                expect(
+                    parseRuntimeEnvironment({
+                        ...uat,
+                        RESEND_DELIVERY_MODE: mode,
+                        RESEND_API_KEY: apiKey,
+                    }).resend,
+                ).toMatchObject({
+                    from: 'PickFlick UAT <uat@pick-flick.app>',
+                    deliveryEnabled: isEnabled,
+                });
+            },
+        );
+
+        it.each([
+            'PickFlick UAT <notifications@uat.pick-flick.app>',
+            'PickFlick <notifications@pick-flick.app>',
+        ])('should reject a different UAT identity: %s', (sender) => {
+            expect(
+                failuresOf({
+                    ...uat,
+                    RESEND_DELIVERY_MODE: 'preview',
+                    RESEND_API_KEY: 'preview-disabled',
+                    RESEND_FROM: sender,
+                }),
+            ).toContain('RESEND_FROM must be PickFlick UAT <uat@pick-flick.app> in uat');
+        });
+    });
+
     it('should name every missing variable without echoing values', () => {
         const failures = failuresOf({ APP_ENV: 'local', AUTH_SECRET: 'short-secret-value' });
 
@@ -138,6 +181,10 @@ describe('parseRuntimeEnvironment', () => {
             'RESEND_DELIVERY_MODE may be preview only in uat',
         ],
         [{ ...production, RESEND_FROM: 'Other <a@b.example>' }, 'RESEND_FROM must be PickFlick'],
+        [
+            { ...production, RESEND_FROM: 'PickFlick UAT <uat@pick-flick.app>' },
+            'RESEND_FROM must be PickFlick <notifications@pick-flick.app> in production',
+        ],
         [
             { ...production, CONTACT_DELIVERY_TO: 'me@b.example' },
             'CONTACT_DELIVERY_TO must be hello@pick-flick.app',

@@ -274,6 +274,12 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                                          |
 
+Email sender identities follow ADR-009 and its 2026-10-28 amendment: production uses
+`PickFlick <notifications@pick-flick.app>`, while UAT uses `PickFlick UAT <uat@pick-flick.app>`.
+Separate sending-only keys share the verified `pick-flick.app` domain; application validation
+enforces the exact sender. Preview delivery stays disabled. Operator-managed provider and UAT
+environment configuration are not changed by repository updates.
+
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
 and transition at most once in one transaction. The deadline worker reads due Sessions directly and
 rechecks each one under its locks. Proposed Paddle flows verify events, store provider

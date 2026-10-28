@@ -56,17 +56,24 @@ secret from the `.p8` key at startup, so an invalid key fails validation.
 
 Fixed by [ADR-009](decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders):
 
-| Environment | `RESEND_FROM`                                      | Delivery                                     |
-| ----------- | -------------------------------------------------- | -------------------------------------------- |
-| Local, test | `PickFlick <pickflick@example.invalid>`            | Disabled; messages are logged, never sent    |
-| Preview     | `PickFlick UAT <notifications@uat.pick-flick.app>` | `preview` mode; nothing is sent              |
-| UAT         | `PickFlick UAT <notifications@uat.pick-flick.app>` | Live, key restricted to `uat.pick-flick.app` |
-| Production  | `PickFlick <notifications@pick-flick.app>`         | Live, key restricted to `pick-flick.app`     |
+| Environment | `RESEND_FROM`                              | Delivery                                              |
+| ----------- | ------------------------------------------ | ----------------------------------------------------- |
+| Local, test | `PickFlick <pickflick@example.invalid>`    | Disabled; messages are logged, never sent             |
+| Preview     | `PickFlick UAT <uat@pick-flick.app>`       | `preview` mode; nothing is sent                       |
+| UAT         | `PickFlick UAT <uat@pick-flick.app>`       | Live, separate UAT key restricted to `pick-flick.app` |
+| Production  | `PickFlick <notifications@pick-flick.app>` | Live, key restricted to `pick-flick.app`              |
 
 Startup rejects any other sender or mode for UAT and production. Contact messages are sent
 directly with `Reply-To` set to the visitor when they give an address; a delivery failure answers
 `503` and nothing is stored. Google Workspace receives `hello@pick-flick.app`; Alex owns Cloudflare
 DNS, Google Workspace, and Resend. Never configure a personal fallback address.
+
+The owner-approved UAT sender is an alias on the same `pick-flick.app` domain as production
+(ADR-009 amendment, 2026-10-28). Keep separate sending-only keys for each environment; the shared
+domain does not provide sender-level credential isolation. The approved notification test recipient
+for #62 is `test@pick-flick.app`. Preview mode never sends email. Update the deployed UAT
+`RESEND_FROM` before starting a revision that requires the new alias; repository changes do not
+update Dokploy or Resend configuration.
 
 Club avatars are private objects under `club-avatars/`: PNG, JPEG, or WebP up to 512 KiB, type
 checked against the file signature, readable only by active members.
