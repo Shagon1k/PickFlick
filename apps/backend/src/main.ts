@@ -29,6 +29,7 @@ async function bootstrap(): Promise<void> {
     const environment = loadRuntimeEnvironment();
     const app = await NestFactory.create<NestExpressApplication>(AppModule.register(environment), {
         bodyParser: false,
+        rawBody: true,
         bufferLogs: true,
     });
     app.useLogger(app.get(Logger));

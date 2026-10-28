@@ -34,6 +34,7 @@ const production = {
     APP_ENV: 'production',
     RESEND_DELIVERY_MODE: 'live',
     RESEND_API_KEY: 're_live_key',
+    RESEND_WEBHOOK_SECRET: 'synthetic-provider-signing-secret',
     RESEND_FROM: 'PickFlick <notifications@pick-flick.app>',
     CONTACT_DELIVERY_TO: 'hello@pick-flick.app',
     AUTH_BASE_URL: 'https://pick-flick.app',
@@ -103,6 +104,7 @@ describe('parseRuntimeEnvironment', () => {
                         ...uat,
                         RESEND_DELIVERY_MODE: mode,
                         RESEND_API_KEY: apiKey,
+                        RESEND_WEBHOOK_SECRET: 'synthetic-provider-signing-secret',
                     }).resend,
                 ).toMatchObject({
                     from: 'PickFlick UAT <uat@pick-flick.app>',
@@ -124,6 +126,13 @@ describe('parseRuntimeEnvironment', () => {
                 }),
             ).toContain('RESEND_FROM must be PickFlick UAT <uat@pick-flick.app> in uat');
         });
+    });
+
+    it('should require a webhook signing secret only for live delivery', () => {
+        expect(failuresOf({ ...production, RESEND_WEBHOOK_SECRET: '' })).toContain(
+            'RESEND_WEBHOOK_SECRET is required in live mode',
+        );
+        expect(parseRuntimeEnvironment(local).resend.webhookSecret).toBe('');
     });
 
     it('should name every missing variable without echoing values', () => {

@@ -9,60 +9,76 @@ templates, retry/backoff, suppression and delivery observability.
 Run `r_d19661da0f0f02cfaf82` uses managed branch
 `PF-60_17-1-establish-durable-notifications-preferences`. Dependencies #12, #35, #51 and #59 are closed.
 
-## Issue 62 owner decisions and template review
+## Issue 62 email delivery
 
-Run `r_59bd0aae28e2aabefd27` uses the launcher-provided branch
-`PF-62_17-3-deliver-resend-email-templates`. Alex approved a focused PostgreSQL-backed email
-dispatcher with concurrent-worker safety and bounded retries within the provider idempotency
-window. Reuse existing Notification intent, delivery attempts, authorization projection and backend
-worker patterns. Do not add BullMQ, a generic queue framework or Web Push. Use TailorTales' concrete
-email client and template structure where it fits; its log-and-continue delivery does not satisfy
-#62's retry and deduplication acceptance. Record the dispatcher's architecture before implementation.
+The owner approved PostgreSQL dispatch, bounded retries, the **Card** composition for all sixteen
+events, `PickFlick UAT <uat@pick-flick.app>` and the synthetic recipient `test@pick-flick.app`.
+Operator alerts use `CONTACT_DELIVERY_TO`: `test@pick-flick.app` in UAT and `hello@pick-flick.app`
+in production. These decisions precede the predecessor's incomplete summary; neither visual
+selection nor the alert destination is an outstanding implementation question.
 
-Alex changed the UAT identity to `PickFlick UAT <uat@pick-flick.app>` and approved
-`test@pick-flick.app` as the synthetic notification test recipient. ADR-009's amendment records the
-shared-domain alias arrangement. The application contract, preview Compose and operator guidance
-use the new identity; no provider, DNS, credential or deployed environment is changed.
+The same managed branch `PF-62_17-3-deliver-resend-email-templates` preserves sender preparation
+commit `421272e`. [ADR-020](decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
+records the approved queue boundary before implementation. The dispatcher reuses Notification
+intent, delivery attempts, current authorization projection and the backend polling lifecycle.
+No BullMQ, new dependency, Web Push, inactivity producer or billing producer is added.
 
-The next owner checkpoint is visual selection: three email compositions for each of the sixteen
-event types, with a generic unavailable-target state. Drafts follow the canonical Projector Noir
-palette, typography and hierarchy. They use static event copy and authorized canonical links,
-without Club names, Movie titles, ratings, participant names or invitation tokens. Inactivity and
-billing examples are previews of reserved events, not new producers. Template selection does not
-complete sandbox delivery, suppression/failure alerting, exact-head hosted preview or owner visual
-acceptance. The operational alert destination remains to be chosen.
+Migration 35 creates one email delivery per opted-in Notification, address-hash suppression and
+webhook receipt records. It also queues previously pending email intent. Source transactions
+create new jobs atomically. Each claim also materializes pending intent from old API instances
+that can still write during a rolling migration. Workers claim one due row using `SKIP LOCKED`, a two-minute lease and a
+fencing token. Expired claims recover after restart. Six attempts use 1-minute, 5-minute,
+30-minute, 2-hour and 6-hour backoff, within 23 hours from the first claim. The stable provider key
+and request hash prevent changed retries; expired or changed requests fail for operator review.
+Provider acceptance and confirmed delivery are distinct. Preference edits apply to future events;
+current user/entity authorization and address suppression are checked immediately before sending.
 
-### Sender and draft verification
+Templates contain static copy, current authorized links and a generic unavailable state; no Club
+names, Movie titles, scores, participant names or invitation tokens. Inline email styles and tables
+implement the selected composition. Mandatory notices offer no opt-out action. Local/test/preview
+workers leave queue state untouched. `pnpm email:preview` generates the same templates as HTML and
+plain text, with the checked-out revision and an explicit dirty marker when applicable.
 
-The sender boundary passes all 25 configuration tests, including preview/live acceptance of the
-new alias, rejection of the former UAT address and rejection of cross-environment senders. Shared
-configuration type checking, focused ESLint, changed-file formatting and `pnpm deploy:check` pass.
-Node 24.15.0 and pnpm 11.25.0 are used. The resumed environment lacks the launcher's store setting;
-dependency installation uses a workspace-local pnpm store without changing a persistent setting.
+`POST /api/webhooks/resend` verifies the exact raw body using the installed Resend SDK, then parses
+its supported fields through contracts. Persisted receipt IDs deduplicate replays. Provider IDs or
+signed notification tags plus recipient hashes correlate callbacks, including a callback racing
+the send response. Bounce, complaint and provider suppression block later mail to that address,
+including mandatory notices. Terminal rejection cannot regress to delivered or accepted.
 
-The in-conversation catalog provides three compositions for all sixteen events and an unavailable
-state. Browser checks cover 288 event/state/composition/width combinations at 320, 390 and 1440px,
-with no horizontal overflow or draft JavaScript errors. Rendered `app.html` and Settings notification
-references are inspected at 390/1440 after fonts, images and finite animations settle. The prototype
-emits an existing `e.target.closest is not a function` error during inspection; none of its scripts
-is copied into the drafts. The drafts retain the noir surfaces, serif hierarchy, sparse amber and
-neutral actions. The unavailable state removes the entity action and uses generic subject/content;
-mandatory billing copy has no opt-out action. Template choice remains the next owner checkpoint.
+Final failures and provider suppression events cause one persisted, best-effort operator alert.
+Alert failure is logged without recursion. Database states, delivery attempts and structured events
+provide operational counts; [Email delivery operations](email-delivery.md) documents queries,
+configuration, preview generation, recovery limits and remaining provider checks.
 
-No actual email, provider webhook, suppression integration, dispatcher, hosted exact-head preview,
-deployment or email-client rendering is verified in this preparation step. No UI baseline is
-changed, and the full application verification suites are not run for this sender-only code change.
+### Verification in this continuation
 
-### Managed continuation — 2026-10-28
+Node 24.15.0 and pnpm 11.25.0 are used. Migration 35 applies successfully to an isolated local test
+database. The focused unit selection passes 53 checks; notification integration passes 34 checks,
+including eleven dispatcher and eight signed-webhook cases. This proves competing claims, expiry
+recovery, stale-result fencing, bounded retries, stable payloads, preference/mandatory behavior,
+revoked access, replay rejection, early callbacks and suppression of later mail. No live mail is sent. `pnpm verify` passes the production security gate, repository lint, unused-code
+analysis, formatting, all workspace/root type checks, 556 unit tests and production builds.
+`pnpm deploy:check` passes. The full seeded integration suite passes all 315 tests in 40 files. A built-process smoke proves disabled delivery, heartbeat creation and
+graceful SIGTERM. This does not exercise a live Resend key.
 
-The successor uses the same worktree and branch, preserving all ten inherited changed files.
-Fresh verification on Node 24.15.0 and pnpm 11.25.0 passes all 25 configuration tests,
-configuration type checking, focused ESLint and `pnpm deploy:check`. The recovered local draft
-catalog offers “Записка” (short note), “Карточка” (editorial card) and “Билет” (ticket).
-Its browser check passes all 288 event/state/composition/width combinations at 320, 390 and
-1440px without overflow or JavaScript errors; this rerun does not inspect the prototype pages.
-Owner selection and the persistent-failure alert destination remain required before delivery
-implementation. The sender preparation does not satisfy #62's delivery acceptance criteria.
+The generated catalog passes 96 event/state/width checks at 320, 390 and 1440px without overflow or
+email JavaScript errors. Representative available, unavailable and mandatory layouts are inspected;
+app.html and settings.html references are rendered and inspected at 390/1440 after fonts, images and
+finite animations settle. Comparison preserves noir surfaces, serif hierarchy, restrained amber,
+neutral actions and the selected Card composition. Standard email font fallbacks replace web fonts;
+no image or copied prototype script is used. Browser checks do not prove Gmail, Apple Mail or
+Outlook rendering. No application screen or UI baseline changes.
+
+The full pinned Playwright smoke/visual selection records 201 passes and one flaky Nomination
+check (`nominations.spec.ts:129`, two-client offline phase recovery). It times out once and passes
+on retry; CI's fail-on-flaky policy therefore rejects the run. A focused three-repeat run with no
+retries records two passes and one timeout during browser-context cleanup. No application frontend
+code or baseline changes are introduced by #62. The selected UI gate remains unresolved; the
+failure artifacts are retained under `test-results/pf62-focused-ui-artifacts`.
+
+Real Resend sandbox delivery, deployed signing-secret/provider configuration, exact-head hosted
+preview and final owner visual acknowledgement remain open acceptance gates. This work does not
+deploy, merge, alter provider settings or mark the issue/phase Done.
 
 ## Issue 60 implementation
 

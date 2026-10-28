@@ -22,8 +22,9 @@ variable, never its value.
 | `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                          | No     |
 | `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                               | No     |
 | `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                                    | Yes    |
+| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode, blank in local/test/preview.                                 | Yes    |
 | `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                      | No     |
-| `CONTACT_DELIVERY_TO`                              | Contact inbox: `hello@pick-flick.app` in production, an approved test inbox in UAT.                                            | Yes\*  |
+| `CONTACT_DELIVERY_TO`                              | Contact and final email-failure alert inbox: `hello@pick-flick.app` in production; approved test inbox in UAT.                 | Yes\*  |
 | `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                          | No     |
 | `AUTH_SECRET`                                      | At least 32 characters.                                                                                                        | Yes    |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`         | Google OAuth client for this environment.                                                                                      | Yes    |
@@ -77,6 +78,12 @@ update Dokploy or Resend configuration.
 
 Club avatars are private objects under `club-avatars/`: PNG, JPEG, or WebP up to 512 KiB, type
 checked against the file signature, readable only by active members.
+
+The separate email worker reads only `APP_ENV`, `DATABASE_URL`, `AUTH_BASE_URL`,
+`RESEND_DELIVERY_MODE`, `RESEND_API_KEY`, `RESEND_FROM` and `CONTACT_DELIVERY_TO`. It receives no OAuth,
+storage, Redis or webhook signing credentials. The live Compose worker waits for API readiness;
+the API rejects a missing `RESEND_WEBHOOK_SECRET`. Local/test/preview dispatch leaves delivery jobs
+pending. See [Email delivery operations](email-delivery.md) for setup, status counts and alert limits.
 
 ## Health, errors, and logs
 

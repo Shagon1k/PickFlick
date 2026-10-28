@@ -1293,6 +1293,12 @@ Redis refresh signals are implemented under #61, with post-commit publication an
 after gaps ([ADR-019](_docs/decisions/README.md#adr-019--distribute-notification-invalidation-through-redis-pubsub)).
 Exact-head hosted visual acceptance remains pending; this does not complete the phase's transport or UI acceptance.
 
+Notification email dispatch, Card templates, bounded provider retries, signed delivery callbacks,
+address suppression and best-effort alerts are implemented under #62 and ADR-020. Optional channel
+decisions remain fixed at event creation; provider suppression also blocks mandatory email, while
+the inbox remains available. Live sandbox delivery, exact-head hosted preview and final owner visual
+acknowledgement remain acceptance gates. See the active phase document for verification evidence.
+
 **Out of scope:** Web push and Paddle events before Phase 20.
 
 ### Phase 18 — Human Verification & Bug Fixing III · Not started

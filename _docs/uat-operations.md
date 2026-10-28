@@ -72,6 +72,7 @@ DATABASE_URL
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
 RESEND_API_KEY
+RESEND_WEBHOOK_SECRET
 RESEND_FROM="PickFlick UAT <uat@pick-flick.app>"
 STORAGE_ENDPOINT=https://storage-uat.pick-flick.app
 STORAGE_FORCE_PATH_STYLE=true
@@ -81,11 +82,15 @@ STORAGE_SECRET_KEY
 STORAGE_BUCKET
 ```
 
-8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, `worker`, `frontend`,
+8. Open Dokploy's Compose preview and confirm that only `release`, `backend`, `worker`, `email-worker`, `frontend`,
    and `redis` exist and none publishes a host port. Redis must attach only to the project-scoped
    internal `notification-signals` network, never `dokploy-network`. Only `backend` and `worker`
-   join both networks; `release` and `frontend` stay on `dokploy-network` only.
+   join both networks; `release`, `email-worker` and `frontend` stay on `dokploy-network` only.
    Do not save or share the preview; it contains secrets.
+
+Before starting live notification delivery, configure the signed webhook endpoint and signing secret
+as described in [Email delivery operations](email-delivery.md). No provider or deployed environment
+configuration is changed by the repository.
 
 Rules for these values:
 

@@ -2,13 +2,10 @@ import { createPrivateKey } from 'node:crypto';
 
 import { z } from 'zod';
 
+import { validateEmailEnvironment } from './email-environment.js';
 import { redisUrl } from './notification-environment.schema.js';
 
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
-
-const PRODUCTION_SENDER = 'PickFlick <notifications@pick-flick.app>';
-const UAT_SENDER = 'PickFlick UAT <uat@pick-flick.app>';
-const PRODUCTION_CONTACT = 'hello@pick-flick.app';
 
 const required = z.string().trim().min(1, 'is required');
 const flag = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -107,6 +104,7 @@ const rawRuntimeEnvironmentSchema = z.object({
     RESEND_DELIVERY_MODE: z.enum(['disabled', 'preview', 'live']),
     RESEND_API_KEY: required,
     RESEND_FROM: mailbox,
+    RESEND_WEBHOOK_SECRET: z.string().trim().default(''),
     CONTACT_DELIVERY_TO: email,
     AUTH_BASE_URL: origin,
     AUTH_SECRET: required.min(32, 'must contain at least 32 characters'),
@@ -129,9 +127,6 @@ const rawRuntimeEnvironmentSchema = z.object({
 });
 
 type TRawRuntimeEnvironment = z.infer<typeof rawRuntimeEnvironmentSchema>;
-
-const isDeployed = (env: TRawRuntimeEnvironment): boolean =>
-    env.APP_ENV === 'uat' || env.APP_ENV === 'production';
 
 const APPLE_CREDENTIALS = [
     'APPLE_CLIENT_ID',
@@ -173,66 +168,6 @@ const RUNTIME_ENVIRONMENT_RULES: {
             env.CATALOG_PROVIDER === 'poiskkino-thetvdb' &&
             !env.THETVDB_READ_TOKEN,
     },
-    // Email: local and test never send, UAT may preview, production always delivers live.
-    {
-        variable: 'RESEND_DELIVERY_MODE',
-        message: 'must be disabled in local or test',
-        broken: (env) => !isDeployed(env) && env.RESEND_DELIVERY_MODE !== 'disabled',
-    },
-    {
-        variable: 'RESEND_API_KEY',
-        message: 'must be local-disabled in local or test',
-        broken: (env) => !isDeployed(env) && env.RESEND_API_KEY !== 'local-disabled',
-    },
-    {
-        variable: 'RESEND_DELIVERY_MODE',
-        message: 'may be disabled only in local or test',
-        broken: (env) => isDeployed(env) && env.RESEND_DELIVERY_MODE === 'disabled',
-    },
-    {
-        variable: 'RESEND_DELIVERY_MODE',
-        message: 'may be preview only in uat',
-        broken: (env) => env.RESEND_DELIVERY_MODE === 'preview' && env.APP_ENV !== 'uat',
-    },
-    {
-        variable: 'RESEND_API_KEY',
-        message: 'must be preview-disabled in preview mode',
-        broken: (env) =>
-            env.RESEND_DELIVERY_MODE === 'preview' && env.RESEND_API_KEY !== 'preview-disabled',
-    },
-    {
-        variable: 'RESEND_API_KEY',
-        message: 'must be a live environment key in live mode',
-        broken: (env) =>
-            env.RESEND_DELIVERY_MODE === 'live' &&
-            ['local-disabled', 'preview-disabled'].includes(env.RESEND_API_KEY),
-    },
-    {
-        variable: 'RESEND_DELIVERY_MODE',
-        message: 'must be live in production',
-        broken: (env) => env.APP_ENV === 'production' && env.RESEND_DELIVERY_MODE !== 'live',
-    },
-    {
-        variable: 'RESEND_FROM',
-        message: `must be ${UAT_SENDER} in uat`,
-        broken: (env) => env.APP_ENV === 'uat' && env.RESEND_FROM !== UAT_SENDER,
-    },
-    {
-        variable: 'RESEND_FROM',
-        message: `must be ${PRODUCTION_SENDER} in production`,
-        broken: (env) => env.APP_ENV === 'production' && env.RESEND_FROM !== PRODUCTION_SENDER,
-    },
-    {
-        variable: 'CONTACT_DELIVERY_TO',
-        message: `must be ${PRODUCTION_CONTACT} in production`,
-        broken: (env) =>
-            env.APP_ENV === 'production' && env.CONTACT_DELIVERY_TO !== PRODUCTION_CONTACT,
-    },
-    {
-        variable: 'AUTH_BASE_URL',
-        message: 'must use https in uat or production',
-        broken: (env) => isDeployed(env) && !env.AUTH_BASE_URL.startsWith('https:'),
-    },
     ...APPLE_CREDENTIALS.map((variable) => ({
         variable,
         message: 'is required',
@@ -252,6 +187,14 @@ const RUNTIME_ENVIRONMENT_RULES: {
 
 export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .superRefine((env, context) => {
+        validateEmailEnvironment(env, context);
+        if (env.RESEND_DELIVERY_MODE === 'live' && !env.RESEND_WEBHOOK_SECRET) {
+            context.addIssue({
+                code: 'custom',
+                path: ['RESEND_WEBHOOK_SECRET'],
+                message: 'is required in live mode',
+            });
+        }
         for (const rule of RUNTIME_ENVIRONMENT_RULES) {
             if (rule.broken(env)) {
                 context.addIssue({ code: 'custom', path: [rule.variable], message: rule.message });
@@ -275,6 +218,7 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
         },
         resend: {
             apiKey: env.RESEND_API_KEY,
+            webhookSecret: env.RESEND_WEBHOOK_SECRET,
             from: env.RESEND_FROM,
             deliveryMode: env.RESEND_DELIVERY_MODE,
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
@@ -321,3 +265,24 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
 
 export type TDatabaseEnvironment = z.infer<typeof databaseEnvironmentSchema>;
 export type TRuntimeEnvironment = z.infer<typeof runtimeEnvironmentSchema>;
+
+export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
+    .pick({
+        APP_ENV: true,
+        DATABASE_URL: true,
+        AUTH_BASE_URL: true,
+        RESEND_FROM: true,
+        RESEND_API_KEY: true,
+        RESEND_DELIVERY_MODE: true,
+        CONTACT_DELIVERY_TO: true,
+    })
+    .superRefine((env, context) => validateEmailEnvironment(env, context))
+    .transform((env) => ({
+        databaseUrl: env.DATABASE_URL,
+        baseUrl: env.AUTH_BASE_URL,
+        from: env.RESEND_FROM,
+        apiKey: env.RESEND_API_KEY,
+        deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
+        alertTo: env.CONTACT_DELIVERY_TO,
+    }));
+export type TEmailWorkerEnvironment = z.infer<typeof emailWorkerEnvironmentSchema>;

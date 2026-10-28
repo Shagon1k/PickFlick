@@ -4,20 +4,21 @@ Start here before non-trivial product, design, architecture, implementation, or 
 
 ## Canonical documents
 
-| Document                                          | Owns                                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log.      |
-| [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.                 |
-| [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                       |
-| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-019).                       |
-| [Develop locally](local-development.md)           | How-to: run the app, work with the database, run the checks, fix common problems.    |
-| [Add a feature end to end](adding-a-feature.md)   | How-to: schema, backend module, frontend call, form, and tests, using Contact.       |
-| [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                    |
-| [Security](security.md)                           | Explanation: headers and CSP, cross-site requests, input, secrets, and dependencies. |
-| [Environment reference](environment.md)           | Variables, email identities, health, errors, logs, CI, images, and Compose.          |
-| [UAT operations](uat-operations.md)               | Provisioning UAT and how automatic delivery works.                                   |
-| [Production operations](production-operations.md) | Keeping production inactive, provisioning, promotion, rollback, and recovery.        |
-| [UI quality checks](ui-quality.md)                | Running and reviewing the Playwright suite.                                          |
+| Document                                          | Owns                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log.        |
+| [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.                   |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                         |
+| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-020).                         |
+| [Develop locally](local-development.md)           | How-to: run the app, work with the database, run the checks, fix common problems.      |
+| [Add a feature end to end](adding-a-feature.md)   | How-to: schema, backend module, frontend call, form, and tests, using Contact.         |
+| [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                      |
+| [Email delivery operations](email-delivery.md)    | Configure notification email, inspect failures and suppression, and generate previews. |
+| [Security](security.md)                           | Explanation: headers and CSP, cross-site requests, input, secrets, and dependencies.   |
+| [Environment reference](environment.md)           | Variables, email identities, health, errors, logs, CI, images, and Compose.            |
+| [UAT operations](uat-operations.md)               | Provisioning UAT and how automatic delivery works.                                     |
+| [Production operations](production-operations.md) | Keeping production inactive, provisioning, promotion, rollback, and recovery.          |
+| [UI quality checks](ui-quality.md)                | Running and reviewing the Playwright suite.                                            |
 
 ## Working rules
 

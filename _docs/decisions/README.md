@@ -42,6 +42,8 @@ separately.
 
 | [ADR-019](#adr-019--distribute-notification-invalidation-through-redis-pubsub) | Distribute notification invalidation through Redis Pub/Sub | Accepted — owner approval in PR #197 | 2026-10-27 |
 
+| [ADR-020](#adr-020--dispatch-notification-email-from-postgresql) | Dispatch notification email from PostgreSQL | Accepted — owner decisions in #62 | 2026-10-28 |
+
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
@@ -1551,3 +1553,51 @@ no publication on rollback, bounded broker failure and reconnect/resubscription.
 must cover persistent Club navigation dismissal, reverse Tab after read actions, heartbeat silence
 and refresh overlap. Run the repository's static, integration, deployment-definition and selected
 UI gates. The active phase document records results; hosted visual acceptance remains separate.
+
+## ADR-020 — Dispatch notification email from PostgreSQL
+
+- **Status:** Accepted
+- **Date:** 2026-10-28
+- **Owners:** Alex (owner decisions in #62), developer
+
+### Context
+
+Notification intent and channel preferences already commit with source events. Multiple backend
+instances must not duplicate logical email. The owner approved PostgreSQL dispatch, bounded retries,
+the Card composition and operator alerts to `CONTACT_DELIVERY_TO`. Web Push remains outside #62.
+
+### Decision
+
+Use one durable email delivery per Notification and the existing delivery-attempt records. A separate
+backend email process claims due rows atomically with `FOR UPDATE SKIP LOCKED`, a two-minute lease
+and a fencing token. Claims also materialize pending intent written by old API instances during
+rolling migrations. No queue dependency is added. Recover expired claims after a process restart.
+
+Every provider request uses `notification/<UUID>` as its idempotency key. Persist the first request's
+hash and recipient-address hash, never its body. Recheck current user/entity access before every
+request; changed payloads stop rather than reusing a key with different content. Cap retries at six
+attempts and 23 hours after the first claim, within Resend's 24-hour idempotency window. A provider
+acceptance is distinct from confirmed delivery. An uncertain result beyond the window fails visibly
+and requires operator investigation; it is never automatically resent with a new key.
+
+Verify webhook signatures against the raw body with the installed Resend SDK. Correlate through the
+provider ID or signed notification tag plus recipient hash, including callbacks arriving before the
+send response. Persist receipt IDs for replay safety. Bounce, complaint and provider suppression
+block future notification email to that address, including mandatory service notices; the inbox
+remains available. No automatic suppression removal is introduced.
+
+Final failures and provider rejection events remain in the database and structured logs. The email
+worker makes one persisted, best-effort alert attempt to `CONTACT_DELIVERY_TO`, without recipient
+addresses, bodies or recursive alerts. If Resend itself fails, logs/database remain the evidence.
+Independent production monitoring belongs to release readiness.
+
+### Alternatives and consequences
+
+BullMQ would add a dependency and Redis durability requirements for a bounded dispatcher. Direct
+log-and-continue delivery (as in TailorTales) cannot satisfy #62's retry acceptance. Storing rendered
+messages would preserve retries across template changes but retain unnecessary content. Hash checks
+instead stop changed messages and expose that limitation to operators. No exactly-once inbox receipt
+or delivery guarantee is claimed for the external provider.
+
+Local/test/preview modes never claim or send email. Exact-head hosted review and real Resend sandbox
+checks remain acceptance gates; this ADR does not authorize deployment or provider configuration.

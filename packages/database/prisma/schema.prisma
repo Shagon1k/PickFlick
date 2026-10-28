@@ -593,26 +593,29 @@ enum NotificationChannel {
 
 enum NotificationDeliveryStatus {
   PENDING
+  PROCESSING
+  ACCEPTED
   DELIVERED
   FAILED
   SUPPRESSED
 }
 
 model Notification {
-  id          String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  recipientId String                        @db.Uuid
-  event       NotificationEvent
-  sourceId    String                        @db.Uuid
-  occurrence  Int                           @default(1)
-  clubId      String?                       @db.Uuid
-  sessionId   String?                       @db.Uuid
-  awardId     String?                       @db.Uuid
-  inApp       Boolean
-  email       Boolean
-  readAt      DateTime?                     @db.Timestamptz(3)
-  createdAt   DateTime                      @default(now()) @db.Timestamptz(3)
-  recipient   User                          @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  attempts    NotificationDeliveryAttempt[]
+  id            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientId   String                        @db.Uuid
+  event         NotificationEvent
+  sourceId      String                        @db.Uuid
+  occurrence    Int                           @default(1)
+  clubId        String?                       @db.Uuid
+  sessionId     String?                       @db.Uuid
+  awardId       String?                       @db.Uuid
+  inApp         Boolean
+  email         Boolean
+  readAt        DateTime?                     @db.Timestamptz(3)
+  createdAt     DateTime                      @default(now()) @db.Timestamptz(3)
+  recipient     User                          @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  attempts      NotificationDeliveryAttempt[]
+  emailDelivery NotificationEmailDelivery?
 
   @@unique([recipientId, event, sourceId, occurrence])
   @@index([recipientId, inApp, createdAt, id])
@@ -639,4 +642,35 @@ model NotificationDeliveryAttempt {
 
   @@id([notificationId, channel, attempt])
   @@index([channel, status, createdAt])
+}
+
+model NotificationEmailDelivery {
+  notificationId   String                     @id @db.Uuid
+  status           NotificationDeliveryStatus @default(PENDING)
+  attemptCount     Int                        @default(0)
+  nextAttemptAt    DateTime                   @default(now()) @db.Timestamptz(3)
+  firstAttemptAt   DateTime?                  @db.Timestamptz(3)
+  leaseUntil       DateTime?                  @db.Timestamptz(3)
+  claimToken       String?                    @db.Uuid
+  requestHash      String?
+  recipientHash    String?
+  providerId       String?                    @unique
+  reason           String?
+  alertAttemptedAt DateTime?                  @db.Timestamptz(3)
+  alertSentAt      DateTime?                  @db.Timestamptz(3)
+  notification     Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+}
+
+model NotificationEmailSuppression {
+  addressHash String   @id
+  reason      String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model NotificationEmailWebhook {
+  id        String   @id
+  type      String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 }

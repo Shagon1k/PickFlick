@@ -173,6 +173,25 @@ services:
             release:
                 condition: service_completed_successfully
 
+    email-worker:
+        <<: *application-service
+        build:
+            <<: *build
+            target: worker
+        command: ['node', 'dist/email-worker.js']
+        stop_grace_period: 45s
+        environment:
+            APP_ENV: uat
+            DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+            AUTH_BASE_URL: ${AUTH_BASE_URL:?AUTH_BASE_URL is required}
+            RESEND_DELIVERY_MODE: preview
+            RESEND_API_KEY: preview-disabled
+            RESEND_FROM: PickFlick UAT <uat@pick-flick.app>
+            CONTACT_DELIVERY_TO: contact@example.invalid
+        depends_on:
+            release:
+                condition: service_completed_successfully
+
     frontend:
         <<: *application-service
         build:

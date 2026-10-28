@@ -38,7 +38,7 @@ corepack enable
     pnpm db:seed
     ```
 
-5. Start the frontend, backend and deadline worker.
+5. Start the frontend, backend, deadline worker and email worker.
 
     ```bash
     pnpm dev
@@ -47,9 +47,10 @@ corepack enable
 6. Open `http://127.0.0.1:3000`. Use `127.0.0.1`, not `localhost`: `AUTH_BASE_URL` and the local
    Google callback expect it.
 
-`pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline worker without a port. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
+`pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline and email workers without ports. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
-the worker; it applies overdue Nomination deadlines every five seconds.
+the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email dispatch remains disabled locally.
+Generate synthetic templates with `pnpm email:preview`; see [Email delivery operations](email-delivery.md).
 
 ## Enable the movie catalog
 

@@ -163,6 +163,7 @@ export async function startTestApi(): Promise<ITestApi> {
 
     const app = moduleRef.createNestApplication<NestExpressApplication>({
         bodyParser: false,
+        rawBody: true,
         logger: false,
     });
     configureApplication(app);
