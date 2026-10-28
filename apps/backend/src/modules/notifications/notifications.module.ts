@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
+import { EmailWebhookController } from './email/email-webhook.controller.js';
+import { EmailWebhookService } from './email/email-webhook.service.js';
 import { InboxController } from './inbox.controller.js';
 import { InboxService } from './inbox.service.js';
 import { NotificationSignals } from './notification-signals.js';
@@ -11,8 +13,19 @@ import { NotificationsService } from './notifications.service.js';
 
 @Module({
     imports: [AuthModule],
-    controllers: [NotificationsController, InboxController, NotificationStreamController],
-    providers: [NotificationsService, InboxService, NotificationSignals, NotificationTransactions],
+    controllers: [
+        NotificationsController,
+        InboxController,
+        NotificationStreamController,
+        EmailWebhookController,
+    ],
+    providers: [
+        NotificationsService,
+        InboxService,
+        NotificationSignals,
+        NotificationTransactions,
+        EmailWebhookService,
+    ],
     exports: [NotificationTransactions],
 })
 export class NotificationsModule {}

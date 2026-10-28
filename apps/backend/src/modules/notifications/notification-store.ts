@@ -69,6 +69,9 @@ export async function recordNotification(tx: Prisma.TransactionClient, input: IN
             },
         ],
     });
+    if (policy.email) {
+        await tx.notificationEmailDelivery.create({ data: { notificationId: created.id } });
+    }
     if (created.inApp) pendingRecipients.get(tx)?.add(created.recipientId);
     return created;
 }

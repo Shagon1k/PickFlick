@@ -103,6 +103,13 @@ See [Authentication and sessions](authentication.md#authorizing-a-request) for t
   storing it.
 - React escapes rendered text; nothing renders user input as HTML.
 
+Notification delivery callbacks at `POST /api/webhooks/resend` are public to Resend, with raw-body
+signature verification through its SDK before parsing provider data. Missing, invalid, stale or
+modified signatures fail. Persisted receipt IDs make replayed callbacks idempotent. Only provider
+IDs or signed notification tags matching a stored recipient-address hash can change delivery state.
+Logs redact the signature header and omit provider messages, addresses and email bodies. Email jobs
+persist typed source references and request/address hashes, never rendered content or invitation tokens.
+
 ## Abuse limits
 
 `@nestjs/throttler` allows 120 requests a minute per client, 5 Contact messages per 10 minutes, and

@@ -5,12 +5,14 @@
     "type": "module",
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "dev": "tsc -p tsconfig.build.json && pnpm run --parallel \"/^dev:(api|worker)$/\"",
+        "dev": "tsc -p tsconfig.build.json && pnpm run --parallel \"/^dev:(api|worker|email-worker)$/\"",
         "start": "node dist/main.js",
         "typecheck": "tsc -p tsconfig.json",
         "dev:api": "nodemon",
         "dev:worker": "nodemon --config nodemon-worker.json",
-        "start:worker": "node dist/deadline-worker.js"
+        "start:worker": "node dist/deadline-worker.js",
+        "start:email-worker": "node dist/email-worker.js",
+        "dev:email-worker": "nodemon --config nodemon-email-worker.json"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1140.0",

@@ -15,7 +15,7 @@ for environment in uat production; do
         const environment = process.env.APP_ENV;
         const privateNetwork = "notification-signals";
         assert.equal(config.name, `pickflick-${environment}`);
-        assert.deepEqual(Object.keys(config.services).sort(), ["backend", "frontend", "redis", "release", "worker"]);
+        assert.deepEqual(Object.keys(config.services).sort(), ["backend", "email-worker", "frontend", "redis", "release", "worker"]);
         assert.deepEqual(Object.keys(config.networks).sort(), ["application", privateNetwork]);
         assert.equal(config.networks[privateNetwork].internal, true);
         assert.ok(!config.networks[privateNetwork].external);

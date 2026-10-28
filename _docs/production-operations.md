@@ -47,7 +47,7 @@ These never go into `.env`, `.env.example`, or the application environment.
    database, storage, and Resend credentials. The [environment reference](environment.md#runtime-variables)
    lists every variable. Use `RESEND_FROM="PickFlick <notifications@pick-flick.app>"`, a sending-only
    key restricted to `pick-flick.app`, and `CONTACT_DELIVERY_TO=hello@pick-flick.app`.
-8. Open the Compose preview and confirm that only `release`, `backend`, `worker`, and `frontend` exist, none
+8. Open the Compose preview and confirm that only `release`, `backend`, `worker`, `email-worker`, `redis`, and `frontend` exist, none
    publishes a host port, and every alias starts with `pickflick-production-`. Do not save it.
 
 Check before activation:
@@ -153,3 +153,12 @@ and applied migrations, then check that the next `deadline.cycle` picks up the o
 without a new `deadline.failure`. Recipient rows retain operator-alert or participant-notification
 intent; transport remains later work. Production activation still requires its existing
 authorization and promotion guards.
+
+## Notification email readiness
+
+Production stays disabled. Before any separately approved launch, configure its signed Resend
+webhook and backend `RESEND_WEBHOOK_SECRET` using [Email delivery operations](email-delivery.md).
+The email worker waits for release and API readiness and receives only database, public-origin,
+sender, sending-key and alert-destination settings. Alerts use `CONTACT_DELIVERY_TO=hello@pick-flick.app`;
+independent monitoring must also consume persisted failures because an unavailable Resend cannot
+send an email alert. Complete real sandbox checks and exact-head owner review under #62 first.

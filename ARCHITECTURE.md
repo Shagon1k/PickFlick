@@ -31,6 +31,9 @@ flowchart LR
   API --> Objects["S3-compatible storage"]
   API --> OAuth["Google / Apple"]
   API --> Email["Resend"]
+  EmailWorker["Email worker"] --> DB
+  EmailWorker --> Email
+  Email -->|signed webhook| API
   API --> Catalog["PoiskKino + TheTVDB / TMDB"]
   Worker["Nomination deadline worker"] --> DB
   API -. Proposed .-> Paddle["Paddle"]
@@ -38,7 +41,7 @@ flowchart LR
 
 | Concern    | Direction                                                                                    | State                                                                                                                                     | ADR               |
 | ---------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| Shape      | pnpm monorepo, frontend, backend, deadline worker plus a one-shot release job.               | Active                                                                                                                                    | ADR-014           |
+| Shape      | pnpm monorepo, frontend, backend, deadline and email workers plus a one-shot release job.    | Active                                                                                                                                    | ADR-014           |
 | Frontend   | Next.js App Router, server components and server actions, UI kit on unstyled Mantine.        | Partial — public/auth, Clubs, catalog and Session flows through Session Rating and completion; later product routes Proposed              | ADR-013           |
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.                   | Partial — auth, Clubs, Contact, health, catalog and Sessions through Session Rating and completion; later modules Proposed                | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.                  | Active                                                                                                                                    | ADR-012           |
@@ -53,7 +56,7 @@ flowchart LR
 ```text
 apps/
   frontend/   Next.js routes, UI kit, server-side API client
-  backend/    NestJS REST API, Better Auth, feature modules, deadline worker entrypoint
+  backend/    NestJS REST API, Better Auth, feature modules, deadline and email worker entrypoints
 packages/
   contracts/  zod request schemas and response interfaces shared by both apps
   database/   Prisma schema, migrations, client, fixtures, seed/reset CLIs
@@ -86,7 +89,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
 | library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Active inbox and Redis invalidation; email dispatcher pending                                 |
+| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -258,6 +261,25 @@ Hub responses include every open Rating Session and the twenty latest Completed/
 independently of recent activity. Detail and Hub reads use repeatable-read snapshots. Session creation makes no provider calls. The deadline worker below reuses the
 backend package and adds no dependency or environment variable.
 
+Notification email uses one PostgreSQL `NotificationEmailDelivery` per opted-in Notification,
+created with intent in the source transaction. Migration 35 backfills pending email intent and adds
+address-hash suppression and webhook receipts. Claims also materialize pending intent written
+by older API instances during rollout. The separate `email-worker` process polls one due row
+every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. Existing attempts
+record each claim and outcome. It sends through the shared email adapter, bounded to fifteen seconds.
+Six attempts and a 23-hour first-claim window bound provider idempotency. Request hashes stop changed
+payloads without storing bodies. The current authorization projection supplies static copy and safe
+links before every request; preference decisions remain those captured at event creation.
+
+`POST /webhooks/resend` is public to the provider and verifies signatures on the raw body before
+shared-schema parsing. Unique receipts deduplicate callbacks; provider IDs or signed notification
+tags and address hashes correlate early callbacks. Acceptance, confirmed delivery, terminal failure
+and suppression remain distinct. Bounce, complaint and provider suppression block future email to
+the address. One best-effort operator alert uses `CONTACT_DELIVERY_TO`; database/log evidence remains
+when Resend cannot send it. See [ADR-020](_docs/decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
+and [Email delivery operations](_docs/email-delivery.md). Local/test/preview dispatch is disabled;
+live provider and exact-head hosted visual verification remain pending.
+
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
 ## 4. Interfaces
@@ -273,6 +295,12 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active when configured; provider coverage and media rights remain separate checks |
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
 | CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                                          |
+
+Email sender identities follow ADR-009 and its 2026-10-28 amendment: production uses
+`PickFlick <notifications@pick-flick.app>`, while UAT uses `PickFlick UAT <uat@pick-flick.app>`.
+Separate sending-only keys share the verified `pick-flick.app` domain; application validation
+enforces the exact sender. Preview delivery stays disabled. Operator-managed provider and UAT
+environment configuration are not changed by repository updates.
 
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
 and transition at most once in one transaction. The deadline worker reads due Sessions directly and

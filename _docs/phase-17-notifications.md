@@ -9,6 +9,77 @@ templates, retry/backoff, suppression and delivery observability.
 Run `r_d19661da0f0f02cfaf82` uses managed branch
 `PF-60_17-1-establish-durable-notifications-preferences`. Dependencies #12, #35, #51 and #59 are closed.
 
+## Issue 62 email delivery
+
+The owner approved PostgreSQL dispatch, bounded retries, the **Card** composition for all sixteen
+events, `PickFlick UAT <uat@pick-flick.app>` and the synthetic recipient `test@pick-flick.app`.
+Operator alerts use `CONTACT_DELIVERY_TO`: `test@pick-flick.app` in UAT and `hello@pick-flick.app`
+in production. These decisions precede the predecessor's incomplete summary; neither visual
+selection nor the alert destination is an outstanding implementation question.
+
+The same managed branch `PF-62_17-3-deliver-resend-email-templates` preserves sender preparation
+commit `421272e`. [ADR-020](decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
+records the approved queue boundary before implementation. The dispatcher reuses Notification
+intent, delivery attempts, current authorization projection and the backend polling lifecycle.
+No BullMQ, new dependency, Web Push, inactivity producer or billing producer is added.
+
+Migration 35 creates one email delivery per opted-in Notification, address-hash suppression and
+webhook receipt records. It also queues previously pending email intent. Source transactions
+create new jobs atomically. Each claim also materializes pending intent from old API instances
+that can still write during a rolling migration. Workers claim one due row using `SKIP LOCKED`, a two-minute lease and a
+fencing token. Expired claims recover after restart. Six attempts use 1-minute, 5-minute,
+30-minute, 2-hour and 6-hour backoff, within 23 hours from the first claim. The stable provider key
+and request hash prevent changed retries; expired or changed requests fail for operator review.
+Provider acceptance and confirmed delivery are distinct. Preference edits apply to future events;
+current user/entity authorization and address suppression are checked immediately before sending.
+
+Templates contain static copy, current authorized links and a generic unavailable state; no Club
+names, Movie titles, scores, participant names or invitation tokens. Inline email styles and tables
+implement the selected composition. Mandatory notices offer no opt-out action. Local/test/preview
+workers leave queue state untouched. `pnpm email:preview` generates the same templates as HTML and
+plain text, with the checked-out revision and an explicit dirty marker when applicable.
+
+`POST /api/webhooks/resend` verifies the exact raw body using the installed Resend SDK, then parses
+its supported fields through contracts. Persisted receipt IDs deduplicate replays. Provider IDs or
+signed notification tags plus recipient hashes correlate callbacks, including a callback racing
+the send response. Bounce, complaint and provider suppression block later mail to that address,
+including mandatory notices. Terminal rejection cannot regress to delivered or accepted.
+
+Final failures and provider suppression events cause one persisted, best-effort operator alert.
+Alert failure is logged without recursion. Database states, delivery attempts and structured events
+provide operational counts; [Email delivery operations](email-delivery.md) documents queries,
+configuration, preview generation, recovery limits and remaining provider checks.
+
+### Verification in this continuation
+
+Node 24.15.0 and pnpm 11.25.0 are used. Migration 35 applies successfully to an isolated local test
+database. The focused unit selection passes 53 checks; notification integration passes 34 checks,
+including eleven dispatcher and eight signed-webhook cases. This proves competing claims, expiry
+recovery, stale-result fencing, bounded retries, stable payloads, preference/mandatory behavior,
+revoked access, replay rejection, early callbacks and suppression of later mail. No live mail is sent. `pnpm verify` passes the production security gate, repository lint, unused-code
+analysis, formatting, all workspace/root type checks, 556 unit tests and production builds.
+`pnpm deploy:check` passes. The full seeded integration suite passes all 315 tests in 40 files. A built-process smoke proves disabled delivery, heartbeat creation and
+graceful SIGTERM. This does not exercise a live Resend key.
+
+The generated catalog passes 96 event/state/width checks at 320, 390 and 1440px without overflow or
+email JavaScript errors. Representative available, unavailable and mandatory layouts are inspected;
+app.html and settings.html references are rendered and inspected at 390/1440 after fonts, images and
+finite animations settle. Comparison preserves noir surfaces, serif hierarchy, restrained amber,
+neutral actions and the selected Card composition. Standard email font fallbacks replace web fonts;
+no image or copied prototype script is used. Browser checks do not prove Gmail, Apple Mail or
+Outlook rendering. No application screen or UI baseline changes.
+
+The full pinned Playwright smoke/visual selection records 201 passes and one flaky Nomination
+check (`nominations.spec.ts:129`, two-client offline phase recovery). It times out once and passes
+on retry; CI's fail-on-flaky policy therefore rejects the run. A focused three-repeat run with no
+retries records two passes and one timeout during browser-context cleanup. No application frontend
+code or baseline changes are introduced by #62. The selected UI gate remains unresolved; the
+failure artifacts are retained under `test-results/pf62-focused-ui-artifacts`.
+
+Real Resend sandbox delivery, deployed signing-secret/provider configuration, exact-head hosted
+preview and final owner visual acknowledgement remain open acceptance gates. This work does not
+deploy, merge, alter provider settings or mark the issue/phase Done.
+
 ## Issue 60 implementation
 
 Reuse Prisma transactions, Session phase/progress versions, Club audit rows and newly earned

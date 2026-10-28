@@ -10,7 +10,7 @@
     },
     "scripts": {
         "dev": "pnpm build:packages && pnpm --parallel --stream --filter @pickflick/contracts --filter @pickflick/frontend --filter @pickflick/backend dev",
-        "start": "pnpm run --parallel \"/^start:(app|worker)$/\"",
+        "start": "pnpm run --parallel \"/^start:(app|worker|email-worker)$/\"",
         "build": "pnpm -r --if-present build",
         "build:packages": "pnpm -r --filter './packages/*' --if-present build",
         "build:images": "node scripts/build-images.mjs",
@@ -44,6 +44,8 @@
         "security:audit": "pnpm audit --prod --audit-level high",
         "start:app": "pnpm --parallel --stream --filter @pickflick/frontend --filter @pickflick/backend start",
         "start:worker": "pnpm --filter @pickflick/backend start:worker",
+        "start:email-worker": "pnpm --filter @pickflick/backend start:email-worker",
+        "email:preview": "pnpm build:packages && pnpm --filter @pickflick/backend build && node scripts/preview-emails.mjs",
         "test:worker": "node scripts/deadline-worker-smoke.mjs"
     },
     "devDependencies": {

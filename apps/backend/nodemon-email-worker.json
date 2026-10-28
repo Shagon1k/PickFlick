@@ -1,0 +1,8 @@
+{
+    "watch": ["dist", "../../.env", "../../packages/config/dist", "../../packages/database/dist"],
+    "ignore": ["dist/**/__tests__/**"],
+    "ext": "js,json,env",
+    "delay": "500ms",
+    "signal": "SIGTERM",
+    "exec": "node --enable-source-maps dist/email-worker.js"
+}

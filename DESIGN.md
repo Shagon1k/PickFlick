@@ -583,7 +583,7 @@ foundation components; feature-specific wrappers are checked in their built scre
 | DES-006 | Session invite privacy | Non-members see no details and must join the Club first.                                                                                                                                                                                                                                                    | Decided  | Developer decision 10                                                                                        |
 | DES-007 | Ratings                | Historical Session Rating and editable Personal Rating are separate.                                                                                                                                                                                                                                        | Decided  | Developer decision 12                                                                                        |
 | DES-008 | Legal copy             | Layout approved; retention, deletion, and cookie claims stay provisional until implementation and review agree.                                                                                                                                                                                             | Deferred | Phase 19 / 23 review                                                                                         |
-| DES-009 | Contact identity       | Publish `hello@pick-flick.app`; production email comes from `PickFlick <notifications@pick-flick.app>` with replies to the public address; UAT uses `PickFlick UAT <notifications@uat.pick-flick.app>`.                                                                                                     | Decided  | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) |
+| DES-009 | Contact identity       | Publish `hello@pick-flick.app`; production email comes from `PickFlick <notifications@pick-flick.app>` with replies to the public address; UAT uses `PickFlick UAT <uat@pick-flick.app>`.                                                                                                                   | Decided  | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders) |
 | DES-010 | Monochrome fidelity    | No global or duplicated warm washes. Form controls follow the prototype field contract; Create Club uses one range slider for the scale. In-flow Back links return to the previous PickFlick page with a safe fallback.                                                                                     | Decided  | Phase 6, 2026-09-24                                                                                          |
 | DES-011 | Manage Club            | Manage Club renders inside the Club Hub frame as a card grid: Club Info (name, description, scale), Settings (visibility), Club Avatar, and a Danger Zone with Manage Moderators, Archive or Reactivate, Delete, or Leave. Role changes happen in the Manage Moderators dialog. Audit events are not shown. | Decided  | Phase 6, 2026-09-24                                                                                          |
 
@@ -638,3 +638,21 @@ and earned history retain their behavior. New screens require representative rev
 need captures only for materially different layouts. PRs select smoke and visual checks by affected
 area, with full selections for shared changes.
 This does not establish hosted owner acceptance or confirm a subsequent main/UAT deployment.
+
+## Notification email composition
+
+The owner selected **Card** for all sixteen Notification events in #62. The email layout uses a
+centered wordmark, one noir editorial card, restrained amber category, serif headline, secondary
+body copy and a neutral action. At narrow widths, card spacing and headline size reduce while
+content remains in one readable column. Email-safe tables, inline token values and standard font
+fallbacks replace browser-only styling; no remote images, fonts, scripts or tracking pixels are added.
+
+Copy is static; current authorization supplies canonical links. Unavailable targets use a generic
+subject/body without an entity action. Optional email explains the opt-in and links Notification
+settings; mandatory service notices have no opt-out action. `pnpm email:preview` generates all
+sixteen available/unavailable cases using the actual renderer and synthetic references.
+
+Local browser QA covers 320, 390 and 1440px and compares representative layouts with the selected
+draft and app.html/settings.html at 390/1440. The composition is implemented; actual email-client
+rendering and exact-head hosted owner acknowledgement remain pending. Selection of the draft does
+not imply final visual acceptance or completion of Phase 17.
