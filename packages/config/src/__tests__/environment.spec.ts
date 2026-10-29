@@ -6,8 +6,10 @@ import {
     parseDatabaseEnvironment,
     parseRuntimeEnvironment,
 } from '../environment.js';
-import { emailWorkerEnvironmentSchema } from '../environment.schema.js';
-import { notificationSignalEnvironmentSchema } from '../notification-environment.schema.js';
+import {
+    emailWorkerEnvironmentSchema,
+    notificationSignalEnvironmentSchema,
+} from '../environment.schema.js';
 
 const local = {
     APP_ENV: 'local',

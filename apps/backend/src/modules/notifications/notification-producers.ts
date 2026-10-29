@@ -3,7 +3,10 @@ import type { Prisma } from '@pickflick/database';
 
 import { recordNotification } from './notification-store.js';
 
-const AUDIT_EVENTS: Partial<Record<string, TNotificationEvent>> = {
+type TAuditAction = Prisma.ClubAuditEventGetPayload<object>['action'];
+type TSessionPhase = Prisma.SessionGetPayload<object>['phase'];
+
+const AUDIT_EVENTS: Partial<Record<TAuditAction, TNotificationEvent>> = {
     MEMBERSHIP_JOINED: 'MEMBERSHIP_JOINED',
     MEMBERSHIP_ROLE_CHANGED: 'MEMBERSHIP_ROLE_CHANGED',
     ADMIN_TRANSFERRED: 'MEMBERSHIP_ROLE_CHANGED',
@@ -86,21 +89,17 @@ export async function recordSessionNotifications(
     }
 }
 
-export function getSessionNotificationEvent(phase: string): TNotificationEvent | null {
-    switch (phase) {
-        case 'SELECTION':
-            return 'SELECTION_OPENED';
-        case 'WATCHING':
-            return 'SELECTION_CLOSED';
-        case 'RATING':
-            return 'RATING_OPENED';
-        case 'COMPLETED':
-            return 'RATING_CLOSED';
-        case 'CANCELLED':
-            return 'SESSION_CANCELLED';
-        default:
-            return null;
-    }
+const PHASE_EVENTS: Partial<Record<TSessionPhase, TNotificationEvent>> = {
+    SELECTION: 'SELECTION_OPENED',
+    WATCHING: 'SELECTION_CLOSED',
+    RATING: 'RATING_OPENED',
+    COMPLETED: 'RATING_CLOSED',
+    CANCELLED: 'SESSION_CANCELLED',
+};
+
+/** The event a Session sends when it enters `phase`; Nomination starts with SESSION_STARTED instead. */
+export function getSessionNotificationEvent(phase: TSessionPhase): TNotificationEvent | null {
+    return PHASE_EVENTS[phase] ?? null;
 }
 
 export async function recordAchievementNotifications(

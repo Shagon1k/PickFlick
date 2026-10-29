@@ -7,9 +7,9 @@ import { InboxController } from './inbox.controller.js';
 import { InboxService } from './inbox.service.js';
 import { NotificationSignals } from './notification-signals.js';
 import { NotificationStreamController } from './notification-stream.controller.js';
-import { NotificationTransactions } from './notification-transactions.js';
 import { NotificationsController } from './notifications.controller.js';
 import { NotificationsService } from './notifications.service.js';
+import { Transactions } from './transactions.js';
 
 @Module({
     imports: [AuthModule],
@@ -23,9 +23,9 @@ import { NotificationsService } from './notifications.service.js';
         NotificationsService,
         InboxService,
         NotificationSignals,
-        NotificationTransactions,
+        Transactions,
         EmailWebhookService,
     ],
-    exports: [NotificationTransactions],
+    exports: [Transactions],
 })
 export class NotificationsModule {}

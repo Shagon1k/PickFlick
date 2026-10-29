@@ -142,7 +142,7 @@ The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) ho
 `SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
-and `NotificationDeliveryAttempt`. Database-enforced invariants:
+and `NotificationEmailDelivery`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -263,12 +263,12 @@ backend package and adds no dependency or environment variable.
 
 Notification email uses one PostgreSQL `NotificationEmailDelivery` per opted-in Notification,
 created with intent in the source transaction. Migration 35 backfills pending email intent and adds
-address-hash suppression and webhook receipts. Claims also materialize pending intent written
-by older API instances during rollout. The separate `email-worker` process polls one due row
-every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. Existing attempts
-record each claim and outcome. It sends through the shared email adapter, bounded to fifteen seconds.
-Six attempts and a 23-hour first-claim window bound provider idempotency. Request hashes stop changed
-payloads without storing bodies. The current authorization projection supplies static copy and safe
+address-hash suppression and webhook receipts. The separate `email-worker` process polls one due row
+every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. The delivery row
+keeps the attempt count, first attempt and last reason; each attempt is in the structured log. It
+sends through the shared email adapter, bounded to fifteen seconds. Six attempts and a 23-hour
+first-claim window bound provider idempotency: a retry reuses the idempotency key, and a provider
+that refuses a changed payload under it ends the delivery as `FAILED`. The current authorization projection supplies static copy and safe
 links before every request; preference decisions remain those captured at event creation.
 
 `POST /webhooks/resend` is public to the provider and verifies signatures on the raw body before
@@ -912,7 +912,8 @@ owner visual acceptance are still pending.
 
 ### Durable notification intent
 
-Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt. Apply it
+Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt; migration 38
+drops the per-attempt table and the email request hash in favour of the delivery row. Apply it
 before the updated API and deadline worker. It is additive, with no historical backfill. Source
 Session transitions, audited Membership/Club changes and new achievement awards record intent in
 their existing transaction. Notification writes failing roll back the source mutation. The

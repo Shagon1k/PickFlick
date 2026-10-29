@@ -20,7 +20,7 @@ selection nor the alert destination is an outstanding implementation question.
 The same managed branch `PF-62_17-3-deliver-resend-email-templates` preserves sender preparation
 commit `421272e`. [ADR-020](decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
 records the approved queue boundary before implementation. The dispatcher reuses Notification
-intent, delivery attempts, current authorization projection and the backend polling lifecycle.
+intent, the email delivery row, current authorization projection and the backend polling lifecycle.
 No BullMQ, new dependency, Web Push, inactivity producer or billing producer is added.
 
 Migration 35 creates one email delivery per opted-in Notification, address-hash suppression and
@@ -28,7 +28,8 @@ webhook receipt records. It also queues previously pending email intent. Source 
 create new jobs atomically. Workers claim one due row using `SKIP LOCKED`, a two-minute lease and a
 fencing token. Expired claims recover after restart. Six attempts use 1-minute, 5-minute,
 30-minute, 2-hour and 6-hour backoff, within 23 hours from the first claim. The stable provider key
-and request hash prevent changed retries; expired or changed requests fail for operator review.
+is reused on retry; expired requests, or a payload the provider refuses under that key, fail for
+operator review.
 Provider acceptance and confirmed delivery are distinct. Preference edits apply to future events;
 current user/entity authorization and address suppression are checked immediately before sending.
 
@@ -45,7 +46,7 @@ the send response. Bounce, complaint and provider suppression block later mail t
 including mandatory notices. Terminal rejection cannot regress to delivered or accepted.
 
 Final failures and provider suppression events cause one persisted, best-effort operator alert.
-Alert failure is logged without recursion. Database states, delivery attempts and structured events
+Alert failure is logged without recursion. Database states and structured events
 provide operational counts; [Email delivery operations](email-delivery.md) documents queries,
 configuration, preview generation, recovery limits and remaining provider checks.
 

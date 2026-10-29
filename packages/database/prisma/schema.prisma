@@ -573,11 +573,6 @@ enum NotificationEvent {
   BILLING_SERVICE
 }
 
-enum NotificationChannel {
-  IN_APP
-  EMAIL
-}
-
 enum NotificationDeliveryStatus {
   PENDING
   PROCESSING
@@ -588,20 +583,19 @@ enum NotificationDeliveryStatus {
 }
 
 model Notification {
-  id            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  recipientId   String                        @db.Uuid
+  id            String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientId   String                     @db.Uuid
   event         NotificationEvent
-  sourceId      String                        @db.Uuid
-  occurrence    Int                           @default(1)
-  clubId        String?                       @db.Uuid
-  sessionId     String?                       @db.Uuid
-  awardId       String?                       @db.Uuid
+  sourceId      String                     @db.Uuid
+  occurrence    Int                        @default(1)
+  clubId        String?                    @db.Uuid
+  sessionId     String?                    @db.Uuid
+  awardId       String?                    @db.Uuid
   inApp         Boolean
   email         Boolean
-  readAt        DateTime?                     @db.Timestamptz(3)
-  createdAt     DateTime                      @default(now()) @db.Timestamptz(3)
-  recipient     User                          @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  attempts      NotificationDeliveryAttempt[]
+  readAt        DateTime?                  @db.Timestamptz(3)
+  createdAt     DateTime                   @default(now()) @db.Timestamptz(3)
+  recipient     User                       @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   emailDelivery NotificationEmailDelivery?
 
   @@unique([recipientId, event, sourceId, occurrence])
@@ -618,19 +612,6 @@ model NotificationPreference {
   @@id([userId, event])
 }
 
-model NotificationDeliveryAttempt {
-  notificationId String                     @db.Uuid
-  channel        NotificationChannel
-  attempt        Int
-  status         NotificationDeliveryStatus
-  createdAt      DateTime                   @default(now()) @db.Timestamptz(3)
-  completedAt    DateTime?                  @db.Timestamptz(3)
-  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-
-  @@id([notificationId, channel, attempt])
-  @@index([channel, status, createdAt])
-}
-
 model NotificationEmailDelivery {
   notificationId   String                     @id @db.Uuid
   status           NotificationDeliveryStatus @default(PENDING)
@@ -639,7 +620,6 @@ model NotificationEmailDelivery {
   firstAttemptAt   DateTime?                  @db.Timestamptz(3)
   leaseUntil       DateTime?                  @db.Timestamptz(3)
   claimToken       String?                    @db.Uuid
-  requestHash      String?
   recipientHash    String?
   providerId       String?                    @unique
   reason           String?

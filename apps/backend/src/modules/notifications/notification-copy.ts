@@ -1,6 +1,6 @@
 import type { TNotificationEvent } from '@pickflick/contracts';
 
-interface IEmailCopy {
+interface INotificationCopy {
     subject: string;
     title: string;
     body: string;
@@ -8,7 +8,8 @@ interface IEmailCopy {
     action: string;
 }
 
-export const EMAIL_COPY: Record<TNotificationEvent, IEmailCopy> = {
+/** One wording per event: the inbox shows the subject; the email Card uses every field. */
+export const NOTIFICATION_COPY: Record<TNotificationEvent, INotificationCopy> = {
     SESSION_STARTED: {
         subject: 'A Session has started',
         title: 'A new Session. A shared screen.',
@@ -122,3 +123,16 @@ export const EMAIL_COPY: Record<TNotificationEvent, IEmailCopy> = {
         action: 'Review account',
     },
 };
+
+/** Shown, without a link, once the recipient can no longer see what the Notification was about. */
+export const UNAVAILABLE_COPY: INotificationCopy = {
+    subject: 'An update is no longer available',
+    title: 'This update is no longer available.',
+    body: 'Its target may have been removed, or your access may have changed. Open PickFlick to see your current updates.',
+    category: 'Account update',
+    action: '',
+};
+
+export function getInboxMessage(event: TNotificationEvent) {
+    return `${NOTIFICATION_COPY[event].subject}.`;
+}

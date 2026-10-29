@@ -2,6 +2,7 @@ import type { PrismaClient } from '@pickflick/database';
 
 import type { IEmailClient } from '../../email/email.types.js';
 import type { IEmailDispatcherOptions } from './email-dispatcher.js';
+import { SUPPORT_EMAIL } from './email-template.js';
 
 export async function sendFailureAlert(
     prisma: PrismaClient,
@@ -25,7 +26,7 @@ export async function sendFailureAlert(
             to: options.environment.alertTo,
             subject: 'PickFlick notification email needs attention',
             text: `Notification ${failure.notificationId} has a final email failure. Inspect the delivery record and structured logs before any manual action.`,
-            replyTo: 'hello@pick-flick.app',
+            replyTo: SUPPORT_EMAIL,
             idempotencyKey: `notification-alert/${failure.notificationId}`,
         });
     } catch {

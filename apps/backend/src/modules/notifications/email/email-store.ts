@@ -27,94 +27,51 @@ export function getRetryAt(claim: TEmailClaim, now: Date) {
     return next.getTime() < claim.firstAttemptAt.getTime() + RETRY_WINDOW_MS ? next : null;
 }
 
-export async function claimEmail(prisma: PrismaClient, now: Date) {
-    return prisma.$transaction(async (tx) => {
-        const token = randomUUID();
-        const leaseUntil = new Date(now.getTime() + LEASE_MS);
-        const [claim] = await tx.$queryRaw<TEmailClaim[]>`
-            WITH due AS (
-                SELECT "notificationId" FROM "NotificationEmailDelivery"
-                WHERE ("status" = 'PENDING' AND "nextAttemptAt" <= ${now})
-                   OR ("status" = 'PROCESSING' AND "leaseUntil" <= ${now})
-                ORDER BY "nextAttemptAt", "notificationId"
-                FOR UPDATE SKIP LOCKED LIMIT 1
-            )
-            UPDATE "NotificationEmailDelivery" AS delivery
-            SET "status" = 'PROCESSING', "claimToken" = ${token}::uuid,
-                "leaseUntil" = ${leaseUntil}, "attemptCount" = "attemptCount" + 1,
-                "firstAttemptAt" = COALESCE("firstAttemptAt", ${now})
-            FROM due WHERE delivery."notificationId" = due."notificationId"
-            RETURNING delivery.*`;
-        if (!claim) return null;
-        await tx.notificationDeliveryAttempt.updateMany({
-            where: {
-                notificationId: claim.notificationId,
-                channel: 'EMAIL',
-                status: 'PENDING',
-                attempt: { lt: claim.attemptCount },
-            },
-            data: { status: 'FAILED', completedAt: now },
-        });
-        await tx.notificationDeliveryAttempt.upsert({
-            where: {
-                notificationId_channel_attempt: {
-                    notificationId: claim.notificationId,
-                    channel: 'EMAIL',
-                    attempt: claim.attemptCount,
-                },
-            },
-            create: {
-                notificationId: claim.notificationId,
-                channel: 'EMAIL',
-                attempt: claim.attemptCount,
-                status: 'PENDING',
-            },
-            update: {},
-        });
-        return claim;
-    });
+/** Claims one due delivery; `SKIP LOCKED` lets parallel workers take different rows. */
+export async function claimEmail(prisma: PrismaClient, now: Date): Promise<TEmailClaim | null> {
+    const token = randomUUID();
+    const leaseUntil = new Date(now.getTime() + LEASE_MS);
+    const [claim] = await prisma.$queryRaw<TEmailClaim[]>`
+        WITH due AS (
+            SELECT "notificationId" FROM "NotificationEmailDelivery"
+            WHERE ("status" = 'PENDING' AND "nextAttemptAt" <= ${now})
+               OR ("status" = 'PROCESSING' AND "leaseUntil" <= ${now})
+            ORDER BY "nextAttemptAt", "notificationId"
+            FOR UPDATE SKIP LOCKED LIMIT 1
+        )
+        UPDATE "NotificationEmailDelivery" AS delivery
+        SET "status" = 'PROCESSING', "claimToken" = ${token}::uuid,
+            "leaseUntil" = ${leaseUntil}, "attemptCount" = "attemptCount" + 1,
+            "firstAttemptAt" = COALESCE("firstAttemptAt", ${now})
+        FROM due WHERE delivery."notificationId" = due."notificationId"
+        RETURNING delivery.*`;
+    return claim ?? null;
 }
 
-interface IEmailResult {
+export interface IEmailResult {
     claim: TEmailClaim;
     status: 'PENDING' | 'ACCEPTED' | 'FAILED' | 'SUPPRESSED';
-    now: Date;
     reason: string | null;
     providerId?: string;
     nextAttemptAt?: Date;
 }
 
 export async function finishEmail(prisma: PrismaClient, result: IEmailResult) {
-    return prisma.$transaction(async (tx) => {
-        const updated = await tx.notificationEmailDelivery.updateMany({
-            where: {
-                notificationId: result.claim.notificationId,
-                claimToken: result.claim.claimToken,
-                status: 'PROCESSING',
-            },
-            data: {
-                status: result.status,
-                reason: result.reason,
-                providerId: result.providerId,
-                nextAttemptAt: result.nextAttemptAt,
-                leaseUntil: null,
-                claimToken: null,
-            },
-        });
-        if (!updated.count) return false;
-        await tx.notificationDeliveryAttempt.update({
-            where: {
-                notificationId_channel_attempt: {
-                    notificationId: result.claim.notificationId,
-                    channel: 'EMAIL',
-                    attempt: result.claim.attemptCount,
-                },
-            },
-            data: {
-                status: result.status === 'PENDING' ? 'FAILED' : result.status,
-                completedAt: result.now,
-            },
-        });
-        return true;
+    // The claim token fences a worker whose lease expired: only the current claim may finish it.
+    const updated = await prisma.notificationEmailDelivery.updateMany({
+        where: {
+            notificationId: result.claim.notificationId,
+            claimToken: result.claim.claimToken,
+            status: 'PROCESSING',
+        },
+        data: {
+            status: result.status,
+            reason: result.reason,
+            providerId: result.providerId,
+            nextAttemptAt: result.nextAttemptAt,
+            leaseUntil: null,
+            claimToken: null,
+        },
     });
+    return updated.count > 0;
 }

@@ -1,5 +1,13 @@
 import type { z } from 'zod';
 
+// Fixed identities: a deployment that sends from anything else is misconfigured.
+const UAT_SENDER = 'PickFlick UAT <uat@pick-flick.app>';
+const PRODUCTION_SENDER = 'PickFlick <notifications@pick-flick.app>';
+const PRODUCTION_CONTACT = 'hello@pick-flick.app';
+// Placeholder keys that make an accidental send impossible outside live mode.
+const LOCAL_DISABLED_KEY = 'local-disabled';
+const PREVIEW_DISABLED_KEY = 'preview-disabled';
+
 interface IEmailEnvironment {
     APP_ENV: string;
     AUTH_BASE_URL: string;
@@ -21,9 +29,9 @@ export function validateEmailEnvironment(env: IEmailEnvironment, context: z.Refi
         'must be disabled in local or test',
     );
     reject(
-        !isDeployed && env.RESEND_API_KEY !== 'local-disabled',
+        !isDeployed && env.RESEND_API_KEY !== LOCAL_DISABLED_KEY,
         'RESEND_API_KEY',
-        'must be local-disabled in local or test',
+        `must be ${LOCAL_DISABLED_KEY} in local or test`,
     );
     reject(
         isDeployed && mode === 'disabled',
@@ -36,12 +44,12 @@ export function validateEmailEnvironment(env: IEmailEnvironment, context: z.Refi
         'may be preview only in uat',
     );
     reject(
-        mode === 'preview' && env.RESEND_API_KEY !== 'preview-disabled',
+        mode === 'preview' && env.RESEND_API_KEY !== PREVIEW_DISABLED_KEY,
         'RESEND_API_KEY',
-        'must be preview-disabled in preview mode',
+        `must be ${PREVIEW_DISABLED_KEY} in preview mode`,
     );
     reject(
-        mode === 'live' && ['local-disabled', 'preview-disabled'].includes(env.RESEND_API_KEY),
+        mode === 'live' && [LOCAL_DISABLED_KEY, PREVIEW_DISABLED_KEY].includes(env.RESEND_API_KEY),
         'RESEND_API_KEY',
         'must be a live environment key in live mode',
     );
@@ -51,20 +59,19 @@ export function validateEmailEnvironment(env: IEmailEnvironment, context: z.Refi
         'must be live in production',
     );
     reject(
-        env.APP_ENV === 'uat' && env.RESEND_FROM !== 'PickFlick UAT <uat@pick-flick.app>',
+        env.APP_ENV === 'uat' && env.RESEND_FROM !== UAT_SENDER,
         'RESEND_FROM',
-        'must be PickFlick UAT <uat@pick-flick.app> in uat',
+        `must be ${UAT_SENDER} in uat`,
     );
     reject(
-        env.APP_ENV === 'production' &&
-            env.RESEND_FROM !== 'PickFlick <notifications@pick-flick.app>',
+        env.APP_ENV === 'production' && env.RESEND_FROM !== PRODUCTION_SENDER,
         'RESEND_FROM',
-        'must be PickFlick <notifications@pick-flick.app> in production',
+        `must be ${PRODUCTION_SENDER} in production`,
     );
     reject(
-        env.APP_ENV === 'production' && env.CONTACT_DELIVERY_TO !== 'hello@pick-flick.app',
+        env.APP_ENV === 'production' && env.CONTACT_DELIVERY_TO !== PRODUCTION_CONTACT,
         'CONTACT_DELIVERY_TO',
-        'must be hello@pick-flick.app in production',
+        `must be ${PRODUCTION_CONTACT} in production`,
     );
     reject(
         isDeployed && !env.AUTH_BASE_URL.startsWith('https:'),

@@ -81,8 +81,8 @@ async function applyWebhook(
     // A signed tag also correlates callbacks racing the original send response.
     const delivery = await tx.notificationEmailDelivery.findFirst({
         where: {
+            // A recipient hash exists only once the dispatcher prepared the send.
             recipientHash: addressHash,
-            requestHash: { not: null },
             OR: [
                 { providerId: event.data.email_id },
                 ...(notificationId ? [{ notificationId, providerId: null }] : []),
@@ -122,14 +122,6 @@ async function applyWebhook(
             reason:
                 event.type === 'email.delivered' || event.type === 'email.sent' ? null : event.type,
         },
-    });
-    await tx.notificationDeliveryAttempt.updateMany({
-        where: {
-            notificationId: delivery.notificationId,
-            channel: 'EMAIL',
-            attempt: delivery.attemptCount,
-        },
-        data: { status, completedAt: new Date() },
     });
     return { notificationId: delivery.notificationId, event: event.type };
 }

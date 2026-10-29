@@ -1,17 +1,11 @@
 import type { TNotificationEvent } from '@pickflick/contracts';
 
+import { NOTIFICATION_COPY, UNAVAILABLE_COPY } from '../notification-copy.js';
 import { isMandatoryNotification, isMembershipEndedEvent } from '../notification-policy.js';
-import { EMAIL_COPY } from './email-copy.js';
 
 const ISO_DATE_LENGTH = 10;
 
-const UNAVAILABLE_COPY = {
-    subject: 'An update is no longer available',
-    title: 'This update is no longer available.',
-    body: 'Its target may have been removed, or your access may have changed. Open PickFlick to see your current updates.',
-    category: 'Account update',
-    action: '',
-};
+export const SUPPORT_EMAIL = 'hello@pick-flick.app';
 
 interface ITemplateInput {
     event: TNotificationEvent;
@@ -34,7 +28,7 @@ export function renderNotificationEmail(input: ITemplateInput) {
     const isMandatory = isMandatoryNotification(input.event);
     const copy =
         input.href || isMembershipEndedEvent(input.event)
-            ? EMAIL_COPY[input.event]
+            ? NOTIFICATION_COPY[input.event]
             : UNAVAILABLE_COPY;
     const href = input.href && copy.action ? new URL(input.href, input.baseUrl).href : null;
     const settings = new URL('/settings?tab=notifications', input.baseUrl).href;
@@ -49,7 +43,7 @@ export function renderNotificationEmail(input: ITemplateInput) {
         href ? `${copy.action}: ${href}` : '',
         consent,
         isMandatory ? '' : `Notification settings: ${settings}`,
-        'Questions? hello@pick-flick.app',
+        `Questions? ${SUPPORT_EMAIL}`,
     ]
         .filter(Boolean)
         .join('\n\n');
@@ -70,7 +64,7 @@ ${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;padding:14px
 </td></tr></table>
 <div style="margin-top:24px;padding:0 16px;text-align:center;color:#a6a19c;font:12px/1.6 Arial,sans-serif">
 <p>${consent}</p>${isMandatory ? '' : `<a href="${escapeHtml(settings)}" style="display:inline-block;padding:14px 0;color:#a6a19c">Notification settings</a>`}
-<p>Questions? hello@pick-flick.app</p>
+<p>Questions? ${SUPPORT_EMAIL}</p>
 </div></td></tr></table></td></tr></table></body></html>`;
     return { subject, text, html };
 }

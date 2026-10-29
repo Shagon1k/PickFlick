@@ -119,11 +119,6 @@ describe('EmailWebhook', () => {
         expect((await post(buildPayload('email.sent'))).status).toBe(204);
         expect((await post(buildPayload('email.delivery_delayed'))).status).toBe(204);
         expect((await getDelivery()).status).toBe('DELIVERED');
-        expect(
-            await api.prisma.notificationDeliveryAttempt.findMany({
-                where: { notificationId, channel: 'EMAIL' },
-            }),
-        ).toMatchObject([{ status: 'DELIVERED' }]);
     });
 
     it('should correlate a callback arriving before the send response and preserve its result', async () => {

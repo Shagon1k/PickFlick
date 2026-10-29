@@ -23,7 +23,7 @@ import {
     getInviteState,
 } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { Transactions } from '../../notifications/transactions.js';
 import {
     assertActive,
     findMembership,
@@ -53,7 +53,7 @@ async function findManagerMembership(
 export class ClubInvitationsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
     ) {}
 
     async create(
@@ -61,7 +61,7 @@ export class ClubInvitationsService {
         clubId: string,
         input: TCreateInvitation,
     ): Promise<ICreatedInvitation> {
-        return this.notifications.run(async (transaction) => {
+        return this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
@@ -136,7 +136,7 @@ export class ClubInvitationsService {
     }
 
     async revoke(userId: string, clubId: string, inviteId: string): Promise<void> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
@@ -160,7 +160,7 @@ export class ClubInvitationsService {
     }
 
     async preview(userId: string, token: string): Promise<TInvitationPreview> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) =>
                 (await inspectInvitation(transaction, userId, digestInviteToken(token))).preview,
             { isolationLevel: 'RepeatableRead' },
@@ -168,7 +168,7 @@ export class ClubInvitationsService {
     }
 
     async listPending(userId: string): Promise<IPendingClubInvitation[]> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) => {
                 const invitations = await transaction.clubInvite.findMany({
                     where: {
@@ -225,7 +225,7 @@ export class ClubInvitationsService {
         tokenDigest: string,
         decision: TInvitationDecision['decision'],
     ): Promise<TInvitationPreview> {
-        return this.notifications.run(async (transaction) => {
+        return this.transactions.write(async (transaction) => {
             const found = await transaction.clubInvite.findUnique({
                 where: { tokenDigest },
                 select: { clubId: true },

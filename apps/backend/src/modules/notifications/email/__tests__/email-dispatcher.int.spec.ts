@@ -96,11 +96,6 @@ describe('EmailDispatcher', () => {
             attemptCount: 1,
             leaseUntil: null,
         });
-        expect(
-            await prisma.notificationDeliveryAttempt.findMany({
-                where: { notificationId: notification.id, channel: 'EMAIL' },
-            }),
-        ).toMatchObject([{ status: 'ACCEPTED', attempt: 1 }]);
         expect(JSON.stringify(log.mock.calls)).not.toMatch(/PRIVATE|example.invalid|html|subject/);
     });
 
@@ -133,21 +128,12 @@ describe('EmailDispatcher', () => {
         await buildDispatcher().runOnce(new Date(now.getTime() + 120_001));
         expect(send).toHaveBeenCalledTimes(1);
         expect(
-            await finishEmail(prisma, { claim: abandoned, now, status: 'FAILED', reason: 'stale' }),
+            await finishEmail(prisma, { claim: abandoned, status: 'FAILED', reason: 'stale' }),
         ).toBe(false);
         expect(await getDelivery(notification.id)).toMatchObject({
             status: 'ACCEPTED',
             attemptCount: 2,
         });
-        expect(
-            await prisma.notificationDeliveryAttempt.findMany({
-                where: { notificationId: notification.id, channel: 'EMAIL' },
-                orderBy: { attempt: 'asc' },
-            }),
-        ).toMatchObject([
-            { status: 'FAILED', attempt: 1 },
-            { status: 'ACCEPTED', attempt: 2 },
-        ]);
     });
 
     it('should stop unknown delivery outside the idempotency window and attempt one non-recursive alert', async () => {
@@ -187,47 +173,22 @@ describe('EmailDispatcher', () => {
             status: 'FAILED',
             attemptCount: 6,
         });
-        expect(
-            await prisma.notificationDeliveryAttempt.count({
-                where: { notificationId: notification.id, channel: 'EMAIL', status: 'FAILED' },
-            }),
-        ).toBe(6);
         expect(send).toHaveBeenCalledTimes(7);
         expect((await getDelivery(notification.id)).alertSentAt).not.toBeNull();
     });
 
-    it('should fail a changed retry payload without sending to a new address', async () => {
+    it('should fail when the provider refuses a retry under the same idempotency key', async () => {
         const notification = (await record())!;
         send.mockRejectedValueOnce(new EmailDeliveryError('network_or_timeout', true));
         await buildDispatcher().runOnce();
-        await prisma.user.update({
-            where: { id: userId },
-            data: { email: `changed-${userId}@example.invalid` },
-        });
+        send.mockRejectedValueOnce(new EmailDeliveryError('provider_409', false));
         await buildDispatcher().runOnce((await getDelivery(notification.id)).nextAttemptAt);
         expect(await getDelivery(notification.id)).toMatchObject({
             status: 'FAILED',
-            reason: 'request_changed',
+            reason: 'provider_409',
+            attemptCount: 2,
         });
-        expect(send).toHaveBeenCalledTimes(2);
-        expect(send.mock.calls[1]![0].to).toBe('test@pick-flick.app');
-    });
-
-    it('should stop a changed authorization projection after an uncertain send', async () => {
-        const notification = (await record())!;
-        send.mockRejectedValueOnce(new EmailDeliveryError('network_or_timeout', true));
-        await buildDispatcher().runOnce();
-        await prisma.membership.updateMany({
-            where: { clubId, userId },
-            data: { status: 'LEFT', leftAt: new Date() },
-        });
-        await buildDispatcher().runOnce((await getDelivery(notification.id)).nextAttemptAt);
-        expect(await getDelivery(notification.id)).toMatchObject({
-            status: 'FAILED',
-            reason: 'request_changed',
-        });
-        expect(send).toHaveBeenCalledTimes(2);
-        expect(send.mock.calls[1]![0].notificationId).toBeUndefined();
+        expect(send.mock.calls[0]![0].idempotencyKey).toBe(send.mock.calls[1]![0].idempotencyKey);
     });
 
     it('should fail permanent rejection immediately and alert the configured operator inbox', async () => {

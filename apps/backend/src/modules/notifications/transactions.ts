@@ -5,20 +5,30 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationSignals } from './notification-signals.js';
 import { trackNotificationRecipients } from './notification-store.js';
 
+type TTransactionOptions = Parameters<PrismaClient['$transaction']>[1];
+
+/**
+ * Every service transaction goes through here, so a reader sees whether it writes. Writes may record
+ * Notifications (Club audit events do, see `recordAudit`); their recipients get an inbox refresh
+ * signal only after the transaction commits.
+ */
 @Injectable()
-export class NotificationTransactions {
+export class Transactions {
     constructor(
         @Inject(PrismaService) private readonly prisma: PrismaClient,
         private readonly signals: NotificationSignals,
     ) {}
 
-    async run<TResult>(
+    read<TResult>(
         action: (tx: Prisma.TransactionClient) => Promise<TResult>,
-        options?: {
-            isolationLevel?: Prisma.TransactionIsolationLevel;
-            timeout?: number;
-            maxWait?: number;
-        },
+        options?: TTransactionOptions,
+    ): Promise<TResult> {
+        return this.prisma.$transaction(action, options);
+    }
+
+    async write<TResult>(
+        action: (tx: Prisma.TransactionClient) => Promise<TResult>,
+        options?: TTransactionOptions,
     ): Promise<TResult> {
         const recipients = new Set<string>();
         const result = await this.prisma.$transaction(async (tx) => {

@@ -73,7 +73,7 @@ describe('NotificationSignals', () => {
     });
 
     const record = (recipientId = users[0]!, sourceId = randomUUID()) =>
-        first.notifications.run((tx) =>
+        first.transactions.write((tx) =>
             recordNotification(tx, { recipientId, sourceId, event: 'BILLING_SERVICE' }),
         );
 
@@ -133,7 +133,7 @@ describe('NotificationSignals', () => {
         const sourceId = randomUUID();
         try {
             await expect(
-                first.notifications.run(async (tx) => {
+                first.transactions.write(async (tx) => {
                     await recordNotification(tx, {
                         recipientId: users[0]!,
                         sourceId,
@@ -149,7 +149,7 @@ describe('NotificationSignals', () => {
                 expect([...recipients]).toEqual([users[0]]);
                 expect(await second.prisma.notification.count({ where: { sourceId } })).toBe(2);
             });
-            await first.notifications.run(async (tx) => {
+            await first.transactions.write(async (tx) => {
                 for (const occurrence of [1, 2]) {
                     await recordNotification(tx, {
                         recipientId: users[0]!,

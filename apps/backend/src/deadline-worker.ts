@@ -7,7 +7,7 @@ import {
 import { createDatabaseClient } from '@pickflick/database';
 
 import { NotificationSignals } from './modules/notifications/notification-signals.js';
-import { NotificationTransactions } from './modules/notifications/notification-transactions.js';
+import { Transactions } from './modules/notifications/transactions.js';
 import { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
 import { runPollingWorker } from './workers/polling-worker.js';
 
@@ -25,7 +25,7 @@ await runPollingWorker({
                 if (fields.event === 'deadline.failure') logger.error(fields);
                 else logger.info(fields);
             },
-            new NotificationTransactions(prisma, signals),
+            new Transactions(prisma, signals),
         );
         return {
             runOnce: (now, signal) => deadlines.runOnce(now, signal),

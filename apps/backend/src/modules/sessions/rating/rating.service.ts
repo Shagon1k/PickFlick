@@ -3,14 +3,14 @@ import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts'
 import type { Prisma } from '@pickflick/database';
 
 import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, canManage } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
 export class RatingService {
-    constructor(private readonly notifications: NotificationTransactions) {}
+    constructor(private readonly transactions: Transactions) {}
 
     async loadRating(
         tx: Prisma.TransactionClient,
@@ -66,7 +66,7 @@ export class RatingService {
     }
 
     async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
@@ -104,7 +104,7 @@ export class RatingService {
     }
 
     async close(userId: string, id: string, input: TCloseRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase === 'COMPLETED') return;

@@ -3,6 +3,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { getNotificationPolicy } from './notification-policy.js';
 
+// Recipients collected per open write transaction; `Transactions.write` signals them after commit.
 const pendingRecipients = new WeakMap<Prisma.TransactionClient, Set<string>>();
 
 export function trackNotificationRecipients(tx: Prisma.TransactionClient, recipients: Set<string>) {
@@ -20,7 +21,7 @@ export interface INotificationInput {
 }
 
 /**
- * Record inside the source's NotificationTransactions callback so intent is atomic
+ * Record inside the source's `Transactions.write` callback so intent is atomic
  * and signals follow commit.
  */
 export async function recordNotification(tx: Prisma.TransactionClient, input: INotificationInput) {
@@ -49,26 +50,6 @@ export async function recordNotification(tx: Prisma.TransactionClient, input: IN
             where: { recipientId_event_sourceId_occurrence: key },
         });
     }
-    const now = new Date();
-    await tx.notificationDeliveryAttempt.createMany({
-        data: [
-            {
-                notificationId: created.id,
-                channel: 'IN_APP',
-                attempt: 1,
-                // DELIVERED records inbox availability; SSE receipt and readAt are separate.
-                status: policy.inApp ? 'DELIVERED' : 'SUPPRESSED',
-                completedAt: now,
-            },
-            {
-                notificationId: created.id,
-                channel: 'EMAIL',
-                attempt: 1,
-                status: policy.email ? 'PENDING' : 'SUPPRESSED',
-                completedAt: policy.email ? null : now,
-            },
-        ],
-    });
     if (policy.email) {
         await tx.notificationEmailDelivery.create({ data: { notificationId: created.id } });
     }

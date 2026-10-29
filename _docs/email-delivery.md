@@ -59,10 +59,9 @@ SELECT "status", "reason", count(*)
 FROM "NotificationEmailDelivery"
 GROUP BY "status", "reason";
 
-SELECT "status", "attempt", count(*)
-FROM "NotificationDeliveryAttempt"
-WHERE "channel" = 'EMAIL'
-GROUP BY "status", "attempt";
+SELECT "status", "attemptCount", count(*)
+FROM "NotificationEmailDelivery"
+GROUP BY "status", "attemptCount";
 
 SELECT count(*) AS overdue_claims
 FROM "NotificationEmailDelivery"
@@ -96,8 +95,8 @@ first claim, within the provider's [24-hour idempotency window](https://resend.c
 A two-minute abandoned lease can be claimed by another worker; a fencing token prevents the old
 worker from overwriting the new result.
 
-`request_changed` means the recipient, authorization projection, template or sender changed after
-an uncertain request. `retry_window_exhausted` means the old result must be investigated rather than
+A retry reuses the notification's idempotency key; `provider_409` means Resend refused a changed
+payload under it, for example after the recipient's address or access changed. `retry_window_exhausted` means the old result must be investigated rather than
 resent. Correlate the notification ID with Resend's notification tag and delivery record. Never
 clear a delivery, regenerate its idempotency key or delete a suppression merely to force a retry.
 No automatic manual-resend or suppression-removal path is provided by this issue.

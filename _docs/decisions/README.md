@@ -1608,3 +1608,11 @@ or delivery guarantee is claimed for the external provider.
 
 Local/test/preview modes never claim or send email. Exact-head hosted review and real Resend sandbox
 checks remain acceptance gates; this ADR does not authorize deployment or provider configuration.
+
+### ADR-020 amendment — one delivery row, no request hash (2026-10-29)
+
+`NotificationEmailDelivery` already holds the attempt count, first attempt time and last reason,
+and the worker logs every attempt, so migration 38 drops the unread per-attempt table and the
+request hash. A retry still reuses the stable idempotency key; when the provider refuses a changed
+payload under it, the delivery fails for operator review as before. Owner approval: Phase 18
+simplification audit, decisions #2 and #3.

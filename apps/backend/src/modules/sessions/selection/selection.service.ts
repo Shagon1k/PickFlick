@@ -9,7 +9,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { Transactions } from '../../notifications/transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
@@ -19,7 +19,7 @@ import { loadSelectionOutcome } from './selection-outcome.js';
 @Injectable()
 export class SelectionService {
     constructor(
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
         private readonly movies: MoviesService,
     ) {}
 
@@ -84,7 +84,7 @@ export class SelectionService {
     }
 
     async submit(userId: string, id: string, input: TSubmitSelection): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'SELECTION')
                 throw new ConflictException({ reason: 'SELECTION_CLOSED' });
@@ -129,7 +129,7 @@ export class SelectionService {
     }
 
     async close(userId: string, id: string, input: TCloseSelection): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.selectionResult !== null) return;

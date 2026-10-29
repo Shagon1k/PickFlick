@@ -3,7 +3,6 @@ import { createPrivateKey } from 'node:crypto';
 import { z } from 'zod';
 
 import { validateEmailEnvironment } from './email-environment.js';
-import { redisUrl } from './notification-environment.schema.js';
 
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
 
@@ -76,6 +75,14 @@ function isEcP256PrivateKey(pem: string): boolean {
         return false;
     }
 }
+
+const redisUrl = z
+    .string()
+    .trim()
+    .refine((value) => {
+        const url = URL.parse(value);
+        return url && ['redis:', 'rediss:'].includes(url.protocol) && Boolean(url.hostname);
+    }, 'must be a redis(s) URL with a host');
 
 export const databaseEnvironmentSchema = z
     .object({ APP_ENV: z.enum(APP_ENVIRONMENTS), DATABASE_URL: databaseUrl })
@@ -285,3 +292,9 @@ export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
         alertTo: env.CONTACT_DELIVERY_TO,
     }));
 export type TEmailWorkerEnvironment = z.infer<typeof emailWorkerEnvironmentSchema>;
+
+/** The deadline worker publishes inbox refresh signals with only these two values. */
+export const notificationSignalEnvironmentSchema = z
+    .object({ APP_ENV: z.enum(APP_ENVIRONMENTS), REDIS_URL: redisUrl })
+    .transform((env) => ({ appEnvironment: env.APP_ENV, redisUrl: env.REDIS_URL }));
+export type TNotificationSignalEnvironment = z.infer<typeof notificationSignalEnvironmentSchema>;

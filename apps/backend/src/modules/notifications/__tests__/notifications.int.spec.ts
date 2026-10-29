@@ -115,14 +115,10 @@ describe('Notifications', () => {
         expect(new Set(results.map((row) => row!.id)).size).toBe(1);
         expect(notification).toMatchObject({ inApp: false, email: true });
         expect(
-            await api.prisma.notificationDeliveryAttempt.findMany({
+            await api.prisma.notificationEmailDelivery.findMany({
                 where: { notificationId: notification.id },
-                orderBy: { channel: 'asc' },
             }),
-        ).toMatchObject([
-            { channel: 'IN_APP', attempt: 1, status: 'SUPPRESSED' },
-            { channel: 'EMAIL', attempt: 1, status: 'PENDING' },
-        ]);
+        ).toMatchObject([{ status: 'PENDING', attemptCount: 0 }]);
         await updatePreference({ event: 'SESSION_STARTED', inApp: true, email: false });
         expect(await api.prisma.$transaction((tx) => recordNotification(tx, input))).toEqual(
             notification,
@@ -136,16 +132,11 @@ describe('Notifications', () => {
             recordNotification(tx, { ...input, recipientId: users[1]! }),
         );
         expect(other!.id).not.toBe(notification.id);
-        await expect(
-            api.prisma.notificationDeliveryAttempt.create({
-                data: {
-                    notificationId: notification.id,
-                    channel: 'EMAIL',
-                    attempt: 1,
-                    status: 'PENDING',
-                },
+        expect(
+            await api.prisma.notificationEmailDelivery.count({
+                where: { notificationId: { in: [notification.id, next!.id] } },
             }),
-        ).rejects.toThrow();
+        ).toBe(1);
         await expect(
             api.prisma.$transaction(async (tx) => {
                 await tx.club.update({

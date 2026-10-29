@@ -6,17 +6,19 @@ import type { z } from 'zod';
 import {
     databaseEnvironmentSchema,
     emailWorkerEnvironmentSchema,
+    notificationSignalEnvironmentSchema,
     runtimeEnvironmentSchema,
     type TDatabaseEnvironment,
     type TEmailWorkerEnvironment,
+    type TNotificationSignalEnvironment,
     type TRuntimeEnvironment,
 } from './environment.schema.js';
-import { notificationSignalEnvironmentSchema } from './notification-environment.schema.js';
 
 export {
     APP_ENVIRONMENTS,
     type TDatabaseEnvironment,
     type TEmailWorkerEnvironment,
+    type TNotificationSignalEnvironment,
     type TRuntimeEnvironment,
 } from './environment.schema.js';
 
@@ -86,7 +88,7 @@ export function loadRuntimeEnvironment(): TRuntimeEnvironment {
     return parseRuntimeEnvironment(process.env);
 }
 
-export function loadNotificationSignalEnvironment() {
+export function loadNotificationSignalEnvironment(): TNotificationSignalEnvironment {
     loadRepositoryEnvironmentFile();
     return parse(notificationSignalEnvironmentSchema, process.env);
 }

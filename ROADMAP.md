@@ -1261,7 +1261,7 @@ event mapping · [#61](https://github.com/Shagon1k/PickFlick/issues/61) inbox, b
 
 **Scope:**
 
-- [ ] Store Notification, delivery attempts, and per-event, per-channel preferences with explicit
+- [ ] Store Notification, delivery state, and per-event, per-channel preferences with explicit
       mandatory-service exceptions.
 - [ ] Map Session, Club, achievement, and inactivity events to safe payloads and Resend templates.
 - [ ] Implement the list, unread count, mark one or all read, pagination, and a safe fallback when
