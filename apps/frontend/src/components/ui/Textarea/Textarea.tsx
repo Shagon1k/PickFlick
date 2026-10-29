@@ -17,7 +17,7 @@ export interface ITextareaProps
         IFieldProps,
         TOmitStyling<IMantineTextareaProps, keyof IFieldProps | 'description' | 'size'> {
     /** Shows "length/maxLength" in the message line while there is no error or success. */
-    showCount?: boolean;
+    shouldShowCount?: boolean;
     size?: 'compact' | 'default' | 'large';
 }
 
@@ -27,13 +27,15 @@ export default function Textarea({
     label,
     labelHint,
     maxLength,
-    showCount = false,
+    shouldShowCount = false,
     size = 'default',
     success,
     ...props
 }: ITextareaProps) {
     const count =
-        showCount && maxLength ? `${String(props.value ?? '').length}/${maxLength}` : undefined;
+        shouldShowCount && maxLength
+            ? `${String(props.value ?? '').length}/${maxLength}`
+            : undefined;
     return (
         <MantineTextarea
             {...props}
@@ -44,7 +46,7 @@ export default function Textarea({
                 success,
                 message: (
                     <FieldMessage
-                        alignEnd={showCount}
+                        shouldAlignEnd={shouldShowCount}
                         error={error}
                         hint={count ?? hint}
                         success={success}

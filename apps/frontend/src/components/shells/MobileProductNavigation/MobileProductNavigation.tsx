@@ -130,7 +130,7 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
             </nav>
             <NotificationsPanel
                 id="shell-notifications-mobile"
-                mobile
+                isMobile
                 open={isNotificationsPanelOpen}
                 panelRef={notificationsRef}
             />

@@ -111,7 +111,7 @@ export default function SessionRoster({
                     }
                 }}
                 open={dialog !== null}
-                pending={isPending}
+                isPending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}
@@ -179,7 +179,7 @@ function KickDialog({
                     Close
                 </Button>
             }
-            dismissible={!isConfirming}
+            isDismissible={!isConfirming}
             onClose={onClose}
             open={open}
             title="Kick participants"

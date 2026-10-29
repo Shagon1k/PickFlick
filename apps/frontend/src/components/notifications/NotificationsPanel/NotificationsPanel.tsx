@@ -7,14 +7,14 @@ import NotificationItems from './NotificationItems';
 
 interface INotificationsPanelProps {
     id: string;
-    mobile?: boolean;
+    isMobile?: boolean;
     open: boolean;
     panelRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function NotificationsPanel({
     id,
-    mobile = false,
+    isMobile = false,
     open,
     panelRef,
 }: INotificationsPanelProps) {
@@ -24,7 +24,9 @@ export default function NotificationsPanel({
         <div
             aria-label="Notifications"
             className={
-                mobile ? `${styles.notifPopover} ${styles.notifPopoverMobile}` : styles.notifPopover
+                isMobile
+                    ? `${styles.notifPopover} ${styles.notifPopoverMobile}`
+                    : styles.notifPopover
             }
             data-open={open || undefined}
             id={id}

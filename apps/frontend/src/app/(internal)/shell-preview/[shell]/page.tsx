@@ -148,7 +148,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'product':
             return (
                 <ProductShell
-                    admin
+                    isAdmin
                     clubItems={previewClubItems}
                     currentArea="hub"
                     eyebrow="Authenticated product shell"
@@ -173,7 +173,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
             );
         case 'session':
             return (
-                <SessionShell admin={admin} clubItems={previewClubItems} routes={previewRoutes}>
+                <SessionShell isAdmin={admin} clubItems={previewClubItems} routes={previewRoutes}>
                     <div className={styles.sessionGrid}>
                         <ShellPlaceholder title="Phase content">
                             <p>
@@ -193,7 +193,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'settings':
             return (
                 <ControlShell
-                    admin={admin}
+                    isAdmin={admin}
                     clubItems={previewClubItems}
                     currentArea="settings"
                     description="Personal controls keep a stable reading width and move section navigation into a mobile menu."
@@ -239,7 +239,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'library':
             return (
                 <ControlShell
-                    admin={admin}
+                    isAdmin={admin}
                     clubItems={previewClubItems}
                     currentArea="library"
                     description="Personal film memory uses the product chrome, local views, and bounded dense regions."

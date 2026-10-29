@@ -24,16 +24,16 @@ const systemStateContent = {
 
 interface ISystemStateProps {
     onRetry?: () => void;
-    signedIn: boolean;
+    isSignedIn: boolean;
     variant: TSystemStateVariant;
 }
 
-export default function SystemState({ onRetry, signedIn, variant }: ISystemStateProps) {
+export default function SystemState({ onRetry, isSignedIn, variant }: ISystemStateProps) {
     const content = systemStateContent[variant];
-    const destination = signedIn
+    const destination = isSignedIn
         ? { href: '/app', label: 'Back to Hub' }
         : { href: '/', label: 'Back to main' };
-    const homeName = signedIn ? 'Hub' : 'main page';
+    const homeName = isSignedIn ? 'Hub' : 'main page';
     const description =
         variant === 'not-found'
             ? `This page was cut from the final edit. Head back to the ${homeName} and pick up where you left off.`
@@ -73,7 +73,7 @@ export default function SystemState({ onRetry, signedIn, variant }: ISystemState
         </div>
     );
 
-    return signedIn ? (
+    return isSignedIn ? (
         <ProductFrame currentArea="recovery">
             <main>{scene}</main>
         </ProductFrame>

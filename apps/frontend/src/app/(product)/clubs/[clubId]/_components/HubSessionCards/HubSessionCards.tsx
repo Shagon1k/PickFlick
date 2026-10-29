@@ -8,7 +8,7 @@ import styles from './HubSessionCards.module.scss';
 export default function HubSessionCards({ hub, actions }: { hub: IClubHub; actions?: ReactNode }) {
     return (
         <div className={styles.grid}>
-            <ActiveSessionCard actions={actions} compact hub={hub} />
+            <ActiveSessionCard actions={actions} isCompact hub={hub} />
             <ActiveRatings sessions={hub.ratingSessions} />
         </div>
     );

@@ -47,7 +47,7 @@ function ConfirmAction({
                     startTransition(() => formAction(formData));
                 }}
                 open={isOpen}
-                pending={isPending}
+                isPending={isPending}
                 status={<ActionStatus state={state} />}
                 title={title}
                 word={confirmation}

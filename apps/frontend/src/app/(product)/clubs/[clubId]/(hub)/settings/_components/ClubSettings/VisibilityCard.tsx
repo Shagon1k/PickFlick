@@ -43,7 +43,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                     })}
                 </fieldset>
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
+                    <SaveRow disabled={!canEdit} isPending={isPending} state={state} />
                 ) : null}
             </form>
         </section>

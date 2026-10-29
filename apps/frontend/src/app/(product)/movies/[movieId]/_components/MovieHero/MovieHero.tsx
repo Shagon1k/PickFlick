@@ -60,7 +60,7 @@ export default function MovieHero({ movie, title, rating, watchlistItem }: IMovi
                 </div>
             </header>
             <MovieMedia
-                hidePhonePoster
+                shouldHidePhonePoster
                 movie={movie}
                 posterCorner={<WatchlistBookmark movieId={movie.id} item={watchlistItem} />}
                 title={title}

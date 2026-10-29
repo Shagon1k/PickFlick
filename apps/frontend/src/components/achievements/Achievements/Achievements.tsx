@@ -88,7 +88,7 @@ function AchievementCard({ item }: { item: TAchievement }) {
                         label="Recorded progress"
                         value={item.progress}
                         max={item.target}
-                        compact
+                        isCompact
                     />
                     <details>
                         <summary>How this is calculated · v{item.version}</summary>

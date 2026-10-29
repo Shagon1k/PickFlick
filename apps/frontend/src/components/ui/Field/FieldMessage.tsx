@@ -6,7 +6,7 @@ export interface IFieldMessageProps {
     error?: ReactNode;
     hint?: string;
     success?: string;
-    alignEnd?: boolean;
+    shouldAlignEnd?: boolean;
 }
 
 function getMessageTone({ error, success }: IFieldMessageProps): 'danger' | 'success' | 'neutral' {
@@ -23,7 +23,7 @@ export default function FieldMessage(props: IFieldMessageProps) {
         <span
             aria-hidden={message ? undefined : true}
             className={styles.field__message}
-            data-align={props.alignEnd ? 'end' : undefined}
+            data-align={props.shouldAlignEnd ? 'end' : undefined}
             data-tone={getMessageTone(props)}
         >
             {message}

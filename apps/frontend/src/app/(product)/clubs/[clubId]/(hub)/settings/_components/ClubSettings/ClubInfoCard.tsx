@@ -71,7 +71,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     min={projection.club.selectionScaleMin}
                 />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isSaving} state={saveState} />
+                    <SaveRow disabled={!canEdit} isPending={isSaving} state={saveState} />
                 ) : null}
             </form>
         </section>

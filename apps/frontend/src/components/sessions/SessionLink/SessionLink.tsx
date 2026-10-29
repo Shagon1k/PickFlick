@@ -12,11 +12,11 @@ const COPIED_LABEL_MS = 1500;
 
 export default function SessionLink({
     sessionId,
-    cell = false,
+    isCell = false,
 }: {
     sessionId: string;
     /** The Session header's action-rail cell; its feedback floats under the cell. */
-    cell?: boolean;
+    isCell?: boolean;
 }) {
     const [message, setMessage] = useState('');
     const [isCopied, setIsCopied] = useState(false);
@@ -37,7 +37,7 @@ export default function SessionLink({
             setMessage(`Copy is unavailable. Open /sessions/${sessionId} and copy its address.`);
         }
     }
-    if (cell)
+    if (isCell)
         return (
             <div className={styles.cell}>
                 <Button onClick={handleCopy} variant="cell">

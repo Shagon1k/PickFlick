@@ -28,7 +28,7 @@ interface IMoviePickerProps {
     disabled: boolean;
     placeholder: string;
     /** The Nomination card names the task in its heading, so the field label is for assistive tech. */
-    hideLabel?: boolean;
+    isLabelHidden?: boolean;
 }
 export default function MoviePicker({
     id = 'session-movie',
@@ -39,7 +39,7 @@ export default function MoviePicker({
     error,
     disabled,
     placeholder,
-    hideLabel = false,
+    isLabelHidden = false,
 }: IMoviePickerProps) {
     const [query, setQuery] = useState('');
     const [selectedTitle, setSelectedTitle] = useState('');
@@ -88,7 +88,7 @@ export default function MoviePicker({
                     id={id}
                     label={label}
                     labelHint={required ? 'required' : 'optional'}
-                    labelProps={hideLabel ? { className: 'visually-hidden' } : undefined}
+                    labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
                     placeholder={placeholder}
                     required={required}
                     value={value ? selectedTitle : query}

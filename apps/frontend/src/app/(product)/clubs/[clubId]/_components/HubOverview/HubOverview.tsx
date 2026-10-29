@@ -15,7 +15,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
         label: string;
         value: string | number | null;
         icon: TIconName;
-        small?: boolean;
+        isSmall?: boolean;
     }[] = [
         { label: 'Sessions watched', value: stats.sessionsWatched, icon: 'film-reel' },
         { label: 'Sessions this year', value: stats.sessionsThisYear, icon: 'clapperboard' },
@@ -30,8 +30,8 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
             icon: 'stopwatch',
         },
         { label: 'Most watched genre', value: stats.topGenre, icon: 'genre' },
-        { label: 'Top director', value: stats.topDirector, icon: 'director', small: true },
-        { label: 'Top actor', value: stats.topActor, icon: 'actor', small: true },
+        { label: 'Top director', value: stats.topDirector, icon: 'director', isSmall: true },
+        { label: 'Top actor', value: stats.topActor, icon: 'actor', isSmall: true },
     ];
     const visibleTiles = hub.club.tier === 'FREE' ? tiles.slice(0, 2) : tiles;
     return (
@@ -45,7 +45,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <div className={styles.stat} key={tile.label}>
                         <Icon name={tile.icon} />
                         <div>
-                            <strong data-small={tile.small || undefined}>
+                            <strong data-small={tile.isSmall || undefined}>
                                 {tile.value ?? '—'}
                             </strong>
                             <span>{tile.label}</span>

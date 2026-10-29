@@ -37,21 +37,21 @@ async function AchievementContent() {
 
 async function LibraryContent({
     query,
-    valid,
-    authenticated,
+    isValid,
+    isAuthenticated,
 }: {
     query: TLibraryQuery;
-    valid: boolean;
-    authenticated: boolean;
+    isValid: boolean;
+    isAuthenticated: boolean;
 }) {
     const library =
-        valid && authenticated
+        isValid && isAuthenticated
             ? await loadLibraryRead(() => getLibrary(query), buildLibraryPath(query))
             : null;
     const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
         <>
-            {!valid && (
+            {!isValid && (
                 <section aria-label="Invalid Library filters">
                     <Alert tone="warning">
                         These Library filters are invalid. Clear them and try again.
@@ -60,7 +60,7 @@ async function LibraryContent({
                 </section>
             )}
             {library && <LibraryTable key={query.tab} library={library} query={query} />}
-            {valid && !library && (
+            {isValid && !library && (
                 <section aria-label={`${title} unavailable`}>
                     <Alert tone="warning">
                         {query.tab === 'watchlist'
@@ -91,15 +91,15 @@ export default async function LibraryPage({
         <LibraryShell
             current={current}
             returnPath={returnPath}
-            showStatistics={isAchievements || (parsed.success && session === 'authenticated')}
+            shouldShowStatistics={isAchievements || (parsed.success && session === 'authenticated')}
         >
             {isAchievements ? (
                 <AchievementContent />
             ) : (
                 <LibraryContent
                     query={query}
-                    valid={parsed.success}
-                    authenticated={session === 'authenticated'}
+                    isValid={parsed.success}
+                    isAuthenticated={session === 'authenticated'}
                 />
             )}
         </LibraryShell>

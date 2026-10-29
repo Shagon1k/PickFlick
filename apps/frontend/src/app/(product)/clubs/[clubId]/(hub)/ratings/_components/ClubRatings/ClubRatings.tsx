@@ -76,11 +76,11 @@ export default function ClubRatings({
                     <Table
                         caption="Club rating leaderboard"
                         columns={[
-                            { key: 'rank', header: '#', numeric: true },
+                            { key: 'rank', header: '#', isNumeric: true },
                             { key: 'film', header: 'Film' },
                             { key: 'year', header: 'Year' },
                             { key: 'genre', header: 'Genre' },
-                            { key: 'rating', header: 'Rating', numeric: true },
+                            { key: 'rating', header: 'Rating', isNumeric: true },
                         ]}
                         rows={ratings.items.map((item, index) => ({
                             id: item.movieId,

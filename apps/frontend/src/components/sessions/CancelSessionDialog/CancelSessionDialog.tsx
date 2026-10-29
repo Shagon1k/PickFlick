@@ -41,7 +41,7 @@ export default function CancelSessionDialog({
             }}
             onConfirm={handleConfirm}
             open={open}
-            pending={isPending}
+            isPending={isPending}
             status={
                 <p aria-live="polite" role="status">
                     {message}

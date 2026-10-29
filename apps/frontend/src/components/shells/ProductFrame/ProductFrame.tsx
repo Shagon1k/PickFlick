@@ -4,7 +4,7 @@ import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
 import type { IShellNavigationItem, IShellRouteMap } from '#components/shells/shell-navigation';
 
 interface IProductFrameProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems?: readonly IShellNavigationItem[];
     currentArea?: 'hub' | 'movie' | 'recovery' | 'session';
@@ -13,7 +13,7 @@ interface IProductFrameProps {
 }
 
 export default function ProductFrame({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems = [],
     currentArea = 'hub',
@@ -22,7 +22,7 @@ export default function ProductFrame({
 }: IProductFrameProps) {
     return (
         <ProductChrome
-            admin={admin}
+            isAdmin={isAdmin}
             clubItems={clubItems}
             currentArea={currentArea}
             routes={routes}

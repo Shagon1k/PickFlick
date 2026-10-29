@@ -6,7 +6,7 @@ import type { IShellNavigationItem, IShellRouteMap } from '#components/shells/sh
 import styles from '#components/shells/shells.module.scss';
 
 interface IControlShellProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems: readonly IShellNavigationItem[];
     currentArea: 'library' | 'settings';
@@ -18,7 +18,7 @@ interface IControlShellProps {
 }
 
 export default function ControlShell({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems,
     currentArea,
@@ -30,7 +30,7 @@ export default function ControlShell({
 }: IControlShellProps) {
     return (
         <ProductChrome
-            admin={admin}
+            isAdmin={isAdmin}
             clubItems={clubItems}
             currentArea={currentArea}
             libraryItems={currentArea === 'library' ? items : undefined}

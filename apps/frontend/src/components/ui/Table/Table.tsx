@@ -5,7 +5,7 @@ import styles from './Table.module.scss';
 export interface ITableColumn {
     key: string;
     header: ReactNode;
-    numeric?: boolean;
+    isNumeric?: boolean;
 }
 
 export interface ITableRow {
@@ -28,7 +28,7 @@ export default function Table({
     rows,
 }: ITableProps) {
     const getCellClass = (column: ITableColumn) =>
-        column.numeric ? styles.table__numeric : undefined;
+        column.isNumeric ? styles.table__numeric : undefined;
     return (
         <div
             aria-label={`${caption} scroll region`}

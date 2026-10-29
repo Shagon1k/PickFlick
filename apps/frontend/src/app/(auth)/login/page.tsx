@@ -61,7 +61,7 @@ export default async function LoginPage({
                         </p>
                     ) : null}
                     {session === 'unavailable' ? <RetryButton /> : null}
-                    <LoginActions appleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
+                    <LoginActions isAppleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}
                         <Link href="/legal/terms">Terms of Service</Link> and{' '}

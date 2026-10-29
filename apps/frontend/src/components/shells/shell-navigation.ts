@@ -201,14 +201,14 @@ function getHubItems(
 }
 
 export function buildMobileNavigation({
-    admin,
+    isAdmin,
     clubItems,
     currentArea,
     libraryItems,
     routes,
     settingsItems,
 }: {
-    admin: boolean;
+    isAdmin: boolean;
     clubItems: readonly IShellNavigationItem[];
     currentArea: TShellArea;
     libraryItems?: readonly IShellNavigationItem[] | undefined;
@@ -279,7 +279,7 @@ export function buildMobileNavigation({
             icon: 'settings',
             id: 'settings',
             items: [
-                ...(admin ? [adminItem] : []),
+                ...(isAdmin ? [adminItem] : []),
                 ...(settingsItems ?? defaultSettingsItems),
                 signOutItem,
             ],

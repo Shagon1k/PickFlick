@@ -9,11 +9,11 @@ import { startSocialSignIn, type TIdentityProvider } from '#lib/auth-client';
 import styles from '../../page.module.scss';
 
 interface ILoginActionsProps {
-    readonly appleSignInEnabled: boolean;
+    readonly isAppleSignInEnabled: boolean;
     readonly returnTo: string;
 }
 
-export default function LoginActions({ appleSignInEnabled, returnTo }: ILoginActionsProps) {
+export default function LoginActions({ isAppleSignInEnabled, returnTo }: ILoginActionsProps) {
     const [pendingProvider, setPendingProvider] = useState<TIdentityProvider>();
     const [error, setError] = useState('');
 
@@ -53,7 +53,7 @@ export default function LoginActions({ appleSignInEnabled, returnTo }: ILoginAct
                     </span>
                     Continue with Google
                 </Button>
-                {appleSignInEnabled ? (
+                {isAppleSignInEnabled ? (
                     <Button
                         fullWidth
                         size="large"

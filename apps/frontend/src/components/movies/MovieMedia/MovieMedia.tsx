@@ -16,21 +16,24 @@ export default function MovieMedia({
     movie,
     title,
     filmHref,
-    hidePhonePoster = false,
+    shouldHidePhonePoster = false,
     posterCorner,
 }: {
     movie: TMovieDetails;
     title: string;
     filmHref?: string;
     /** The film ticket already shows the poster on phones. */
-    hidePhonePoster?: boolean;
+    shouldHidePhonePoster?: boolean;
     /** A control over the poster's top-right corner, such as the Watchlist ribbon. */
     posterCorner?: ReactNode;
 }) {
     const poster = <MoviePoster url={movie.posterUrl} title={title} />;
     return (
         <div className={styles.heroGrid}>
-            <div className={styles.posterRegion} data-phone-hidden={hidePhonePoster || undefined}>
+            <div
+                className={styles.posterRegion}
+                data-phone-hidden={shouldHidePhonePoster || undefined}
+            >
                 {filmHref ? (
                     <Link
                         aria-label={`${title}: film details`}

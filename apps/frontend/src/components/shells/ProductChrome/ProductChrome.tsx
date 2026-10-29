@@ -24,7 +24,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 
 interface IProductChromeProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems: readonly IShellNavigationItem[];
     /** `recovery` marks error states, where no product destination is current. */
@@ -37,7 +37,7 @@ interface IProductChromeProps {
 
 /** The header, footer, and mobile navigation every signed-in shell shares. */
 export default function ProductChrome({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems,
     currentArea,
@@ -79,7 +79,7 @@ export default function ProductChrome({
                                     </span>
                                 ) : null}
                                 <ProductHeaderActions
-                                    accountItems={buildAccountNavigation(routes, admin)}
+                                    accountItems={buildAccountNavigation(routes, isAdmin)}
                                 />
                             </div>
                         </div>
@@ -90,7 +90,7 @@ export default function ProductChrome({
                     <PendingInvites />
                     <MobileProductNavigation
                         entries={buildMobileNavigation({
-                            admin,
+                            isAdmin,
                             clubItems,
                             currentArea,
                             libraryItems,

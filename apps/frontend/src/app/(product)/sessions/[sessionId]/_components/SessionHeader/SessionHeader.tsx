@@ -85,7 +85,7 @@ export default function SessionHeader({
             )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
             <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
-                <SessionLink sessionId={session.id} cell />
+                <SessionLink sessionId={session.id} isCell />
                 {items.length ? (
                     <FilmStripMenu
                         triggerLabel="Session settings"

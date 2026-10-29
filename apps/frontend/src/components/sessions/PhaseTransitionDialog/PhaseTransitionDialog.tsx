@@ -67,7 +67,7 @@ export default function PhaseTransitionDialog({
                 inputId={copy.inputId}
                 confirmLabel={copy.confirmLabel}
                 cancelLabel={copy.cancelLabel}
-                pending={isPending}
+                isPending={isPending}
                 tone="neutral"
                 status={<p role="status">{message}</p>}
             >

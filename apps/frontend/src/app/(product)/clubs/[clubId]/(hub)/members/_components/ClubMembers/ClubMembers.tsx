@@ -115,7 +115,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     }
                 }}
                 open={Boolean(selected)}
-                pending={isPending}
+                isPending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}

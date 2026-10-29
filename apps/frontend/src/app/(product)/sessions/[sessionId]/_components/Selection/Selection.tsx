@@ -111,7 +111,7 @@ export default function Selection({
                                 </div>
                                 <div className={styles.control}>
                                     <ScoreControl
-                                        compact
+                                        isCompact
                                         label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
                                         name={`score-${row.id}`}
                                         min={data.scaleMin}
@@ -127,7 +127,7 @@ export default function Selection({
                                         disabled={
                                             isPending || (!data.canSubmit && !data.submittedAt)
                                         }
-                                        submitted={Boolean(data.submittedAt)}
+                                        isSubmitted={Boolean(data.submittedAt)}
                                     />
                                 </div>
                             </li>

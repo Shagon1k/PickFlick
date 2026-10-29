@@ -100,7 +100,7 @@ export default function LibraryTable({
             <Table
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
                 columns={[
-                    { key: 'rank', header: '#', numeric: true },
+                    { key: 'rank', header: '#', isNumeric: true },
                     { key: 'film', header: 'Film' },
                     { key: 'genres', header: 'Genre' },
                     { key: 'year', header: 'Year' },

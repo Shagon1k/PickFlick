@@ -218,7 +218,7 @@ function ScreeningFilm({
             <div className={styles.film}>
                 <MovieMedia
                     filmHref={movieId ? `/movies/${movieId}` : undefined}
-                    hidePhonePoster
+                    shouldHidePhonePoster
                     movie={movie}
                     title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
                 />

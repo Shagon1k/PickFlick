@@ -175,7 +175,7 @@ function NominationPicker({
             ) : (
                 <MoviePicker
                     disabled={disabled}
-                    hideLabel
+                    isLabelHidden
                     placeholder="Search films…"
                     value={null}
                     onChange={(id, movie) =>

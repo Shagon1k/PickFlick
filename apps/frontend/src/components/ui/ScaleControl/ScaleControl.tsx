@@ -7,7 +7,7 @@ import styles from './ScaleControl.module.scss';
 
 export interface IScaleControlProps {
     label: string;
-    compact?: boolean;
+    isCompact?: boolean;
     name: string;
     min?: 0 | 1;
     max: number;
@@ -17,7 +17,7 @@ export interface IScaleControlProps {
     disabled?: boolean;
     readOnly?: boolean;
     required?: boolean;
-    submitted?: boolean;
+    isSubmitted?: boolean;
     presentation?: 'score' | 'rating';
 }
 
@@ -57,7 +57,7 @@ function getKeyboardScaleValue(
 }
 
 export default function ScaleControl({
-    compact = false,
+    isCompact = false,
     defaultValue,
     disabled = false,
     label,
@@ -68,7 +68,7 @@ export default function ScaleControl({
     presentation = 'score',
     readOnly = false,
     required = false,
-    submitted = false,
+    isSubmitted = false,
     value,
 }: IScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
@@ -78,7 +78,7 @@ export default function ScaleControl({
     const [previewValue, setPreviewValue] = useState<number | undefined>();
     const selectedValue = findScaleValue(values, value ?? internalValue);
     const activeValue = findScaleValue(values, previewValue) ?? selectedValue;
-    const isLocked = disabled || readOnly || submitted;
+    const isLocked = disabled || readOnly || isSubmitted;
     const isConstraintRequired = required && !isLocked;
     const [isConstraintInvalid, setIsConstraintInvalid] = useState(false);
     const controlsRef = useRef(new Map<number, HTMLButtonElement>());
@@ -99,14 +99,14 @@ export default function ScaleControl({
         selectedValue === undefined ? 'Not selected' : `${selectedValue} of ${max}`;
     const scaleStatus = isConstraintInvalid ? `Select a ${presentation}.` : selectionLabel;
 
-    if (submitted)
+    if (isSubmitted)
         return (
             <SubmittedScale
                 label={label}
                 values={values}
                 selectedValue={selectedValue}
                 presentation={presentation}
-                compact={compact}
+                compact={isCompact}
                 selectionLabel={selectionLabel}
             />
         );
@@ -132,7 +132,11 @@ export default function ScaleControl({
     }
 
     return (
-        <fieldset className={styles.scale} data-compact={compact || undefined} disabled={disabled}>
+        <fieldset
+            className={styles.scale}
+            data-compact={isCompact || undefined}
+            disabled={disabled}
+        >
             <legend>{label}</legend>
             {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
             <div

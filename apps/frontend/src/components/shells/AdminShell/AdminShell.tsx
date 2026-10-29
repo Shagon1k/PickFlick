@@ -24,7 +24,7 @@ export default function AdminShell({
     routes = canonicalRoutes,
 }: IAdminShellProps) {
     return (
-        <ProductChrome admin clubItems={clubItems} currentArea="admin" routes={routes}>
+        <ProductChrome isAdmin clubItems={clubItems} currentArea="admin" routes={routes}>
             <main className={`${styles.controlMain} ${styles.adminMain}`}>
                 <header className={styles.pageHeading}>
                     <div>

@@ -8,17 +8,23 @@ import ActionStatus from './ActionStatus';
 
 export default function SaveRow({
     disabled,
-    pending,
+    isPending,
     state,
 }: {
     disabled: boolean;
-    pending: boolean;
+    isPending: boolean;
     state: IClubActionState;
 }) {
     return (
         <div className={styles.saveRow}>
             <div className={styles.saveButton}>
-                <Button disabled={disabled} fullWidth loading={pending} size="small" type="submit">
+                <Button
+                    disabled={disabled}
+                    fullWidth
+                    loading={isPending}
+                    size="small"
+                    type="submit"
+                >
                     Save Changes
                 </Button>
             </div>

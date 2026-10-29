@@ -75,7 +75,7 @@ export default function RatingForm({
                     label="Comment"
                     labelHint="optional"
                     maxLength={SESSION_RATING_COMMENT_MAX_LENGTH}
-                    showCount
+                    shouldShowCount
                     disabled={isPending}
                     {...form.getInputProps('comment')}
                 />
