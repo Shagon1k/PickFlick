@@ -25,10 +25,11 @@ import {
     lockClub,
     recordAudit,
 } from './access/club-access.js';
-import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
+import { getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 import { readClubHub } from './club-hub.js';
+import { findActiveMembers, toClubMember } from './club-members.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
 @Injectable()
@@ -97,26 +98,7 @@ export class ClubsService {
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const { club, role } = membership;
-                const members = await transaction.membership.findMany({
-                    where: { clubId, status: 'ACTIVE' },
-                    orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-                    select: {
-                        id: true,
-                        role: true,
-                        joinedAt: true,
-                        user: { select: { displayName: true } },
-                        _count: {
-                            select: {
-                                sessionParticipants: {
-                                    where: {
-                                        status: 'ACCEPTED',
-                                        session: { phase: { not: 'CANCELLED' } },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                });
+                const members = await findActiveMembers(transaction, clubId);
 
                 const access = getClubAccess(
                     club.lifecycle,
@@ -137,14 +119,7 @@ export class ClubsService {
                         showRatingResults: club.showRatingResults,
                         useMonochromeMedia: club.useMonochromeMedia,
                     },
-                    members: members.map((member) => ({
-                        id: member.id,
-                        displayName: member.user.displayName,
-                        role: member.role,
-                        joinedAt: member.joinedAt.toISOString(),
-                        sessionCount: member._count.sessionParticipants,
-                        canRemove: canRemoveMember(membership, member, club.lifecycle),
-                    })),
+                    members: members.map((member) => toClubMember(membership, member)),
                 };
             },
             { isolationLevel: 'RepeatableRead' },

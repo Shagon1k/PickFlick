@@ -11,7 +11,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
-import { buildDetailsCacheKey, buildSearchCacheKey } from './catalog-cache-key.js';
+import { buildConfiguredDetailsKey, buildSearchCacheKey } from './catalog-cache-key.js';
 import { MoviesRepository } from './movies.repository.js';
 import {
     canUseStale,
@@ -82,7 +82,7 @@ export class MoviesService {
 
     async search(
         input: TMovieSearch,
-        shouldAllowStale = false,
+        options: { allowStale?: boolean } = {},
     ): Promise<TMovieResult<TMovieSearchResults>> {
         const key = buildSearchCacheKey(this.environment.catalog.provider, input);
         const cached = await this.repository.findCachedSearch(key);
@@ -96,7 +96,7 @@ export class MoviesService {
             );
             return toCachedResult({ data, fetchedAt });
         } catch (error) {
-            return this.toFailureResult(error, shouldAllowStale ? cached : null);
+            return this.toFailureResult(error, options.allowStale ? cached : null);
         }
     }
 
@@ -120,10 +120,7 @@ export class MoviesService {
     }
 
     async getCachedMetadata(ids: string[]): Promise<Map<string, TMovieDetails>> {
-        const key = buildDetailsCacheKey(
-            this.environment.catalog.provider,
-            this.environment.catalog.locale,
-        );
+        const key = buildConfiguredDetailsKey(this.environment.catalog);
         return this.repository.findCachedMetadata(ids, key);
     }
 
@@ -131,10 +128,7 @@ export class MoviesService {
         return this.repository.findCachedPoster(
             movieId,
             this.environment.catalog.provider === 'tmdb' ? 'tmdb' : 'poiskkino',
-            buildDetailsCacheKey(
-                this.environment.catalog.provider,
-                this.environment.catalog.locale,
-            ),
+            buildConfiguredDetailsKey(this.environment.catalog),
         );
     }
 
@@ -143,7 +137,7 @@ export class MoviesService {
         options: { allowStale?: boolean; forceRefresh?: boolean } = {},
     ): Promise<TMovieResult<TMovieDetails>> {
         const locale = this.environment.catalog.locale;
-        const key = buildDetailsCacheKey(this.environment.catalog.provider, locale);
+        const key = buildConfiguredDetailsKey(this.environment.catalog);
         const cached = await this.repository.findCachedDetails(movieId, key);
         if (!options.forceRefresh && cached && this.isFresh(cached)) return toCachedResult(cached);
         const lookup = await this.repository.findExternalIds(movieId);

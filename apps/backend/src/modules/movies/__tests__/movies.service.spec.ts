@@ -285,7 +285,9 @@ describe('MoviesService', () => {
         repository.findCachedSearch.mockResolvedValue({ data: emptySearch, fetchedAt: old });
         provider.search.mockRejectedValue(new MovieProviderError('UNAVAILABLE'));
         expect(await service.search(search)).toMatchObject({ state: 'unavailable' });
-        expect(await service.search(search, true)).toMatchObject({ state: 'stale' });
+        expect(await service.search(search, { allowStale: true })).toMatchObject({
+            state: 'stale',
+        });
     });
 
     it('should isolate search caches by the configured provider', async () => {

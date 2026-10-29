@@ -2,7 +2,9 @@ import {
     DeleteObjectCommand,
     GetObjectCommand,
     HeadBucketCommand,
+    HeadObjectCommand,
     NoSuchKey,
+    NotFound,
     PutObjectCommand,
     S3Client,
 } from '@aws-sdk/client-s3';
@@ -59,6 +61,17 @@ export class StorageService {
             if (error instanceof NoSuchKey) {
                 return null;
             }
+            throw error;
+        }
+    }
+
+    /** Asks for the object's metadata only, so checking does not download the body. */
+    async exists(key: string): Promise<boolean> {
+        try {
+            await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+            return true;
+        } catch (error) {
+            if (error instanceof NotFound) return false;
             throw error;
         }
     }

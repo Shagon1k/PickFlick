@@ -5,7 +5,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { findMembership } from '../clubs/access/club-access.js';
-import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
+import { buildConfiguredDetailsKey } from '../movies/catalog-cache-key.js';
 import { recordAchievementNotifications } from '../notifications/notification-producers.js';
 import { Transactions } from '../notifications/transactions.js';
 import { buildClubAchievements } from './rules/club-rules.js';
@@ -74,10 +74,7 @@ export class AchievementsService {
     }
 
     private getCacheKey() {
-        return buildDetailsCacheKey(
-            this.environment.catalog.provider,
-            this.environment.catalog.locale,
-        );
+        return buildConfiguredDetailsKey(this.environment.catalog);
     }
 
     private async recompute(

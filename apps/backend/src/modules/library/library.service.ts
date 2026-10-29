@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import {
     LIBRARY_PAGE_SIZE,
-    movieDetailsSchema,
     type TLibrary,
     type TLibraryQuery,
     type TLibraryStatistics,
@@ -11,15 +10,40 @@ import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { buildDetailsCacheKey } from '../movies/catalog-cache-key.js';
+import { readCachedDetails } from '../movies/cached-details.js';
+import { buildConfiguredDetailsKey } from '../movies/catalog-cache-key.js';
 import { buildLibraryStatistics } from './library-statistics.js';
 
-function getPagination(
+type TSort = TLibraryQuery['sort'];
+
+const WATCHLIST_ORDER: Record<TSort, Prisma.WatchlistItemOrderByWithRelationInput[]> = {
+    title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
+    year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
+    recent: [{ addedAt: 'desc' }],
+    default: [{ priority: 'desc' }, { addedAt: 'asc' }],
+};
+
+const RATINGS_ORDER: Record<TSort, Prisma.PersonalMovieRatingOrderByWithRelationInput[]> = {
+    title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
+    year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
+    recent: [{ updatedAt: 'desc' }],
+    default: [{ score: 'desc' }, { updatedAt: 'desc' }],
+};
+
+/** Clamps the requested page into range, so a list that shrank still answers its last page. */
+function paginate(
     total: number,
     requestedPage: number,
-): Pick<TLibrary, 'page' | 'pages' | 'total' | 'pageSize'> {
+): {
+    pagination: Pick<TLibrary, 'page' | 'pages' | 'pageSize' | 'total'>;
+    window: { skip: number; take: number };
+} {
     const pages = Math.max(1, Math.ceil(total / LIBRARY_PAGE_SIZE));
-    return { total, pages, page: Math.min(requestedPage, pages), pageSize: LIBRARY_PAGE_SIZE };
+    const page = Math.min(requestedPage, pages);
+    return {
+        pagination: { total, pages, page, pageSize: LIBRARY_PAGE_SIZE },
+        window: { skip: (page - 1) * LIBRARY_PAGE_SIZE, take: LIBRARY_PAGE_SIZE },
+    };
 }
 
 @Injectable()
@@ -37,19 +61,7 @@ export class LibraryService {
                     select: {
                         score: true,
                         updatedAt: true,
-                        movie: {
-                            select: {
-                                details: {
-                                    where: {
-                                        key: buildDetailsCacheKey(
-                                            this.environment.catalog.provider,
-                                            this.environment.catalog.locale,
-                                        ),
-                                    },
-                                    select: { data: true },
-                                },
-                            },
-                        },
+                        movie: { select: { details: this.selectDetails() } },
                     },
                 }),
                 this.prisma.watchlistItem.count({ where: { userId } }),
@@ -59,113 +71,101 @@ export class LibraryService {
         return buildLibraryStatistics(ratings, watchlistCount);
     }
 
-    async list(userId: string, query: TLibraryQuery): Promise<TLibrary> {
-        const movieFilter: Prisma.MovieWhereInput | undefined = query.q
-            ? { title: { contains: query.q.replaceAll(/[\\%_]/gu, '\\$&'), mode: 'insensitive' } }
-            : undefined;
-        const movie = {
-            select: {
-                title: true,
-                releaseYear: true,
-                details: {
-                    where: {
-                        key: buildDetailsCacheKey(
-                            this.environment.catalog.provider,
-                            this.environment.catalog.locale,
-                        ),
-                    },
-                    select: { data: true },
-                },
-            },
-        };
-        // Count and rows share a snapshot, including when the last page shrinks after removal.
+    /** Count and rows share a snapshot, including when the last page shrinks after a removal. */
+    list(userId: string, query: TLibraryQuery): Promise<TLibrary> {
         return this.prisma.$transaction(
-            async (transaction) => {
-                if (query.tab === 'watchlist') {
-                    const where: Prisma.WatchlistItemWhereInput = {
-                        userId,
-                        priority: query.priority || undefined,
-                        movie: movieFilter,
-                    };
-                    const pagination = getPagination(
-                        await transaction.watchlistItem.count({ where }),
-                        query.page,
-                    );
-                    const orders: Record<
-                        TLibraryQuery['sort'],
-                        Prisma.WatchlistItemOrderByWithRelationInput[]
-                    > = {
-                        title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
-                        year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
-                        recent: [{ addedAt: 'desc' }],
-                        default: [{ priority: 'desc' }, { addedAt: 'asc' }],
-                    };
-                    const orderBy: Prisma.WatchlistItemOrderByWithRelationInput[] = [
-                        ...orders[query.sort],
-                        { movieId: 'asc' },
-                    ];
-                    const items = await transaction.watchlistItem.findMany({
-                        where,
-                        orderBy,
-                        include: { movie },
-                        skip: (pagination.page - 1) * LIBRARY_PAGE_SIZE,
-                        take: LIBRARY_PAGE_SIZE,
-                    });
-                    return {
-                        tab: 'watchlist',
-                        ...pagination,
-                        items: items.map((item) => ({
-                            ...this.toMovie(item),
-                            priority: item.priority,
-                            addedAt: item.addedAt.toISOString(),
-                        })),
-                    };
-                }
-                const where: Prisma.PersonalMovieRatingWhereInput = {
-                    userId,
-                    score: query.score ? Number(query.score) : undefined,
-                    movie: movieFilter,
-                };
-                const pagination = getPagination(
-                    await transaction.personalMovieRating.count({ where }),
-                    query.page,
-                );
-                const orders: Record<
-                    TLibraryQuery['sort'],
-                    Prisma.PersonalMovieRatingOrderByWithRelationInput[]
-                > = {
-                    title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
-                    year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
-                    recent: [{ updatedAt: 'desc' }],
-                    default: [{ score: 'desc' }, { updatedAt: 'desc' }],
-                };
-                const orderBy: Prisma.PersonalMovieRatingOrderByWithRelationInput[] = [
-                    ...orders[query.sort],
-                    { movieId: 'asc' },
-                ];
-                const items = await transaction.personalMovieRating.findMany({
-                    where,
-                    orderBy,
-                    include: { movie },
-                    skip: (pagination.page - 1) * LIBRARY_PAGE_SIZE,
-                    take: LIBRARY_PAGE_SIZE,
-                });
-                return {
-                    tab: 'my-ratings',
-                    ...pagination,
-                    items: items.map((item) => ({
-                        ...this.toMovie(item),
-                        score: item.score,
-                        source: item.source,
-                        updatedAt: item.updatedAt.toISOString(),
-                    })),
-                };
-            },
+            (tx) =>
+                query.tab === 'watchlist'
+                    ? this.listWatchlist(tx, userId, query)
+                    : this.listRatings(tx, userId, query),
             { isolationLevel: 'RepeatableRead' },
         );
     }
 
-    private toMovie(item: {
+    private async listWatchlist(
+        tx: Prisma.TransactionClient,
+        userId: string,
+        query: TLibraryQuery,
+    ): Promise<TLibrary> {
+        const where: Prisma.WatchlistItemWhereInput = {
+            userId,
+            priority: query.priority || undefined,
+            movie: this.matchTitle(query.q),
+        };
+        const { pagination, window } = paginate(
+            await tx.watchlistItem.count({ where }),
+            query.page,
+        );
+        const items = await tx.watchlistItem.findMany({
+            where,
+            orderBy: [...WATCHLIST_ORDER[query.sort], { movieId: 'asc' }],
+            include: { movie: this.selectMovie() },
+            ...window,
+        });
+        return {
+            tab: 'watchlist',
+            ...pagination,
+            items: items.map((item) => ({
+                ...this.toMovieRow(item),
+                priority: item.priority,
+                addedAt: item.addedAt.toISOString(),
+            })),
+        };
+    }
+
+    private async listRatings(
+        tx: Prisma.TransactionClient,
+        userId: string,
+        query: TLibraryQuery,
+    ): Promise<TLibrary> {
+        const where: Prisma.PersonalMovieRatingWhereInput = {
+            userId,
+            score: query.score ? Number(query.score) : undefined,
+            movie: this.matchTitle(query.q),
+        };
+        const { pagination, window } = paginate(
+            await tx.personalMovieRating.count({ where }),
+            query.page,
+        );
+        const items = await tx.personalMovieRating.findMany({
+            where,
+            orderBy: [...RATINGS_ORDER[query.sort], { movieId: 'asc' }],
+            include: { movie: this.selectMovie() },
+            ...window,
+        });
+        return {
+            tab: 'my-ratings',
+            ...pagination,
+            items: items.map((item) => ({
+                ...this.toMovieRow(item),
+                score: item.score,
+                source: item.source,
+                updatedAt: item.updatedAt.toISOString(),
+            })),
+        };
+    }
+
+    /** Case-insensitive title search; `%`, `_` and `\` in the query match literally. */
+    private matchTitle(text: string): Prisma.MovieWhereInput | undefined {
+        if (!text) return undefined;
+        return {
+            title: { contains: text.replaceAll(/[\\%_]/gu, '\\$&'), mode: 'insensitive' },
+        };
+    }
+
+    private selectDetails() {
+        return {
+            where: { key: buildConfiguredDetailsKey(this.environment.catalog) },
+            select: { data: true },
+        };
+    }
+
+    private selectMovie() {
+        return { select: { title: true, releaseYear: true, details: this.selectDetails() } };
+    }
+
+    // Library never fetches providers: a missing or old cache shape simply has no genres.
+    private toMovieRow(item: {
         movieId: string;
         movie: {
             title: string | null;
@@ -173,13 +173,11 @@ export class LibraryService {
             details: { data: Prisma.JsonValue }[];
         };
     }) {
-        // Old cache shapes are misses, just as they are on Movie Details; Library never fetches providers.
-        const details = movieDetailsSchema.safeParse(item.movie.details[0]?.data);
         return {
             movieId: item.movieId,
             title: item.movie.title,
             releaseYear: item.movie.releaseYear,
-            genres: details.success ? (details.data.genres ?? []) : [],
+            genres: readCachedDetails(item.movie.details[0])?.genres ?? [],
         };
     }
 }

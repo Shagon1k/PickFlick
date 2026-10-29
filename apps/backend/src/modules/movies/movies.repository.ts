@@ -15,6 +15,7 @@ import {
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
+import { readCachedDetails } from './cached-details.js';
 import {
     MovieProviderError,
     type TProviderRecord,
@@ -78,8 +79,8 @@ export class MoviesRepository {
         });
         const result = new Map<string, TMovieDetails>();
         for (const row of rows) {
-            const parsed = movieDetailsSchema.safeParse(row.data);
-            if (parsed.success) result.set(row.movieId, parsed.data);
+            const details = readCachedDetails(row);
+            if (details) result.set(row.movieId, details);
         }
         return result;
     }
@@ -93,6 +94,9 @@ export class MoviesRepository {
             const details = await this.findCachedDetails(movieId, detailsKey);
             if (details?.data.posterUrl) return details.data.posterUrl;
         }
+        // shortcut: search pages are never pruned and this JSON lookup has no index, so it scans
+        // every cached page. Fine for UAT-sized caches; prune old rows or index posters before
+        // production traffic makes poster requests slow.
         const row = await this.prisma.movieSearchCache.findFirst({
             where: {
                 data: {

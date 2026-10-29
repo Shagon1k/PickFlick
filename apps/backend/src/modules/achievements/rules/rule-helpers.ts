@@ -1,11 +1,10 @@
-import { movieDetailsSchema } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { readCachedDetails } from '../../movies/cached-details.js';
 import type { TAchievementSession } from './rule-sources.js';
 
 export function readDetails(movie: { details: { data: Prisma.JsonValue }[] } | null) {
-    const details = movieDetailsSchema.safeParse(movie?.details[0]?.data);
-    return details.success ? details.data : null;
+    return readCachedDetails(movie?.details[0]);
 }
 
 export function getAverage(session: TAchievementSession) {

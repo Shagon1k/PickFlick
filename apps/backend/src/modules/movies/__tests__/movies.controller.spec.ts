@@ -180,7 +180,7 @@ describe('MoviesController', () => {
             redirect: 'manual',
         });
         expect(response.status).toBe(302);
-        expect(response.headers.get('cache-control')).toBe('private, no-store');
+        expect(response.headers.get('cache-control')).toBe('private, max-age=86400');
         expect(response.headers.get('location')).toBe(`/api/movies/images/${'a'.repeat(64)}`);
         expect(storeMedia).toHaveBeenCalledWith({
             posterUrl: 'https://image.tmdb.org/t/p/original/poster.jpg',
@@ -261,6 +261,9 @@ describe('MoviesController', () => {
         expect(response.status).toBe(200);
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({ state: 'unavailable', reason: 'RATE_LIMITED' });
-        expect(search).toHaveBeenCalledWith({ query: 'Film', page: 1, locale: 'en-US' }, true);
+        expect(search).toHaveBeenCalledWith(
+            { query: 'Film', page: 1, locale: 'en-US' },
+            { allowStale: true },
+        );
     });
 });

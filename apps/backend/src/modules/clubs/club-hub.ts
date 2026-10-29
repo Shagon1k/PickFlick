@@ -9,9 +9,10 @@ import { Prisma } from '@pickflick/database';
 
 import { canJoinSession } from '../sessions/session-access.js';
 import { findMembership, loadClubAccess } from './access/club-access.js';
-import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
+import { getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
+import { findActiveMembers, toClubMember } from './club-members.js';
 import { readCompletedScreenings } from './statistics/completed-screenings.js';
 
 const RECENT_LIMIT = 5;
@@ -68,20 +69,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
             include: sessionInclude,
         }),
         readCompletedScreenings(tx, clubId, membership.role),
-        tx.membership.findMany({
-            where: { clubId, status: 'ACTIVE' },
-            orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-            include: {
-                user: { select: { displayName: true } },
-                _count: {
-                    select: {
-                        sessionParticipants: {
-                            where: { status: 'ACCEPTED', session: { phase: { not: 'CANCELLED' } } },
-                        },
-                    },
-                },
-            },
-        }),
+        findActiveMembers(tx, clubId),
     ]);
     const rows = [...(active ? [active] : []), ...recent, ...ratings, ...history];
     const ids = [...new Set(rows.map(({ id }) => id))];
@@ -148,14 +136,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         permissions: getClubPermissions(membership.role, membership.club.lifecycle, access),
         memberCount,
         memberLimit: getClubEntitlements(clubId).memberLimit,
-        members: members.map((member) => ({
-            id: member.id,
-            displayName: member.user.displayName,
-            role: member.role,
-            joinedAt: member.joinedAt.toISOString(),
-            sessionCount: member._count.sessionParticipants,
-            canRemove: canRemoveMember(membership, member, membership.club.lifecycle),
-        })),
+        members: members.map((member) => toClubMember(membership, member)),
         sessionCount,
         completedSessionCount: completed.length,
         ...(active ? { activeSession: project(active) } : {}),

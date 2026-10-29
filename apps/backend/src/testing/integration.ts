@@ -115,6 +115,10 @@ class MemoryStorage {
         return this.objects.get(key) ?? null;
     }
 
+    async exists(key: string): Promise<boolean> {
+        return this.objects.has(key);
+    }
+
     async delete(key: string): Promise<void> {
         this.objects.delete(key);
     }

@@ -67,6 +67,8 @@ export class MoviesController {
         if (!posterUrl) throw new NotFoundException();
         const stored = await this.images.storeMedia({ posterUrl, backdropUrl: null });
         if (!stored.posterUrl) throw new NotFoundException();
+        // The target is named by a content hash, so the redirect may be cached like the image.
+        response.set('Cache-Control', 'private, max-age=86400');
         response.redirect(stored.posterUrl);
     }
 
@@ -74,7 +76,7 @@ export class MoviesController {
     @HttpCode(HttpStatus.OK)
     @Throttle(CATALOG_RATE_LIMIT)
     async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
-        const result = await this.movies.search(input, true);
+        const result = await this.movies.search(input, { allowStale: true });
         if (result.state === 'unavailable') return result;
         return {
             ...result,

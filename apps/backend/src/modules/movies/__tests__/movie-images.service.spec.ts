@@ -15,7 +15,11 @@ const SOURCE_URL = 'https://image.tmdb.org/t/p/original/synthetic.jpg';
 const key = createHash('sha256').update(SOURCE_URL).digest('hex');
 
 describe('MovieImagesService', () => {
-    const storage = { get: vi.fn<StorageService['get']>(), put: vi.fn<StorageService['put']>() };
+    const storage = {
+        exists: vi.fn<StorageService['exists']>(),
+        get: vi.fn<StorageService['get']>(),
+        put: vi.fn<StorageService['put']>(),
+    };
     const request = vi.fn<typeof fetch>();
     let service: MovieImagesService;
     beforeEach(async () => {
@@ -25,7 +29,7 @@ describe('MovieImagesService', () => {
         service = module.get(MovieImagesService);
         vi.resetAllMocks();
         vi.stubGlobal('fetch', request);
-        storage.get.mockResolvedValue(null);
+        storage.exists.mockResolvedValue(false);
         storage.put.mockResolvedValue();
         request.mockImplementation(() =>
             Promise.resolve(new Response(png, { headers: { 'content-type': 'text/html' } })),
@@ -54,7 +58,7 @@ describe('MovieImagesService', () => {
             })),
         );
         expect(request).toHaveBeenCalledTimes(1);
-        expect(storage.get).toHaveBeenCalledTimes(1);
+        expect(storage.exists).toHaveBeenCalledTimes(1);
         expect(storage.put).toHaveBeenCalledTimes(1);
         expect(storage.put).toHaveBeenCalledWith(`movie-images/${key}`, png, 'image/png');
         expect(request).toHaveBeenCalledWith(SOURCE_URL, {
@@ -63,6 +67,7 @@ describe('MovieImagesService', () => {
         });
     });
     it('should reuse stored media without downloading again and serve the stored object', async () => {
+        storage.exists.mockResolvedValue(true);
         storage.get.mockResolvedValue({ body: png, contentType: 'image/png' });
         expect(
             (await service.storeMedia({ ...buildCanonicalDetails(), posterUrl: SOURCE_URL }))
@@ -70,7 +75,7 @@ describe('MovieImagesService', () => {
         ).toBe(`/api/movies/images/${key}`);
         expect(request).not.toHaveBeenCalled();
         expect(await service.get(key)).toEqual({ body: png, contentType: 'image/png' });
-        expect(storage.get).toHaveBeenCalledWith(`movie-images/${key}`);
+        expect(storage.exists).toHaveBeenCalledWith(`movie-images/${key}`);
     });
     it.each(['https://evil.invalid/image.png', 'http://127.0.0.1/image.png'])(
         'should reject an unsafe image source %s before fetching',
