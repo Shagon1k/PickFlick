@@ -1,6 +1,6 @@
 import type { Prisma } from '@pickflick/database';
 
-import { NOTIFICATION_MESSAGES } from './notification-policy.js';
+import { isMembershipEndedEvent, NOTIFICATION_MESSAGES } from './notification-policy.js';
 
 const UNAVAILABLE = { message: 'This update is no longer available.', href: null };
 
@@ -15,12 +15,13 @@ export async function resolveNotification(
     });
     if (!notification) return null;
     const target = await resolveTarget(tx, notification);
+    const isAvailable = target !== null || isMembershipEndedEvent(notification.event);
     return {
         id: notification.id,
         event: notification.event,
         createdAt: notification.createdAt.toISOString(),
         readAt: notification.readAt?.toISOString() ?? null,
-        ...(target
+        ...(isAvailable
             ? { message: NOTIFICATION_MESSAGES[notification.event], href: target }
             : UNAVAILABLE),
     };

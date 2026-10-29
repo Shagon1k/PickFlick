@@ -1,6 +1,6 @@
 import type { ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 
-import { manageInvitationsAction } from '../invitation-actions';
+import { createInvitationAction, revokeInvitationAction } from '../invitation-actions';
 
 const api = vi.hoisted(() => ({
     createInvitation: vi.fn<() => Promise<ICreatedInvitation>>(),
@@ -27,7 +27,7 @@ describe('Invitation management action', () => {
     });
 
     it('should return the created token and refreshed list', async () => {
-        await expect(manageInvitationsAction(CLUB_ID)).resolves.toEqual({
+        await expect(createInvitationAction(CLUB_ID)).resolves.toEqual({
             ok: true,
             created,
             invitations,
@@ -37,7 +37,7 @@ describe('Invitation management action', () => {
     it('should preserve creation when only the list refresh fails', async () => {
         api.listInvitations.mockRejectedValue(new TypeError('fetch failed'));
 
-        await expect(manageInvitationsAction(CLUB_ID)).resolves.toEqual({
+        await expect(createInvitationAction(CLUB_ID)).resolves.toEqual({
             ok: true,
             created,
             refreshError:
@@ -49,7 +49,25 @@ describe('Invitation management action', () => {
     it('should report creation failure without fetching the list', async () => {
         api.createInvitation.mockRejectedValue(new TypeError('fetch failed'));
 
-        await expect(manageInvitationsAction(CLUB_ID)).resolves.toMatchObject({ ok: false });
+        await expect(createInvitationAction(CLUB_ID)).resolves.toMatchObject({ ok: false });
         expect(api.listInvitations).not.toHaveBeenCalled();
+    });
+
+    it('should report a revoke as done when only the list refresh fails', async () => {
+        api.listInvitations.mockRejectedValue(new TypeError('fetch failed'));
+
+        await expect(revokeInvitationAction(CLUB_ID, created.id)).resolves.toEqual({
+            ok: true,
+            refreshError:
+                'Invitation list could not be refreshed. Use Recent invitations to try again.',
+        });
+        expect(api.revokeInvitation).toHaveBeenCalledExactlyOnceWith(CLUB_ID, created.id);
+    });
+
+    it('should return the refreshed list after a revoke', async () => {
+        await expect(revokeInvitationAction(CLUB_ID, created.id)).resolves.toEqual({
+            ok: true,
+            invitations,
+        });
     });
 });

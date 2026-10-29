@@ -1,8 +1,17 @@
 import type { TNotificationEvent } from '@pickflick/contracts';
 
+import { isMembershipEndedEvent } from '../notification-policy.js';
 import { EMAIL_COPY } from './email-copy.js';
 
 const ISO_DATE_LENGTH = 10;
+
+const UNAVAILABLE_COPY = {
+    subject: 'An update is no longer available',
+    title: 'This update is no longer available.',
+    body: 'Its target may have been removed, or your access may have changed. Open PickFlick to see your current updates.',
+    category: 'Account update',
+    action: '',
+};
 
 interface ITemplateInput {
     event: TNotificationEvent;
@@ -23,15 +32,10 @@ function escapeHtml(value: string) {
 /** Email-safe tables and inline styles preserve the owner-selected Card composition. */
 export function renderNotificationEmail(input: ITemplateInput) {
     const isMandatory = input.event === 'BILLING_SERVICE';
-    const copy = input.href
-        ? EMAIL_COPY[input.event]
-        : {
-              subject: 'An update is no longer available',
-              title: 'This update is no longer available.',
-              body: 'Its target may have been removed, or your access may have changed. Open PickFlick to see your current updates.',
-              category: 'Account update',
-              action: '',
-          };
+    const copy =
+        input.href || isMembershipEndedEvent(input.event)
+            ? EMAIL_COPY[input.event]
+            : UNAVAILABLE_COPY;
     const href = input.href && copy.action ? new URL(input.href, input.baseUrl).href : null;
     const settings = new URL('/settings?tab=notifications', input.baseUrl).href;
     const consent = isMandatory

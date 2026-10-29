@@ -42,10 +42,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     if (!result || result.state === 'unavailable') {
         return <MovieUnavailable movieId={movieId} reason={result?.reason} />;
     }
-    const [rating, watchlistItem] = await Promise.all([
-        getPersonalRating(movieId),
-        getWatchlistItem(movieId),
-    ]);
+    const [rating, watchlistItem] = await loadPersonalState(movieId);
     const movie = result.data;
     const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
@@ -120,4 +117,16 @@ function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: strin
             </main>
         </ProductFrame>
     );
+}
+
+/** The rating and Watchlist controls are secondary: a failed read shows them empty, not a broken page. */
+async function loadPersonalState(movieId: string) {
+    try {
+        return await Promise.all([getPersonalRating(movieId), getWatchlistItem(movieId)]);
+    } catch (error) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+            redirect(buildLoginPath(`/movies/${movieId}`));
+        console.error('Personal film state unavailable.', { movieId, error });
+        return [null, null] as const;
+    }
 }

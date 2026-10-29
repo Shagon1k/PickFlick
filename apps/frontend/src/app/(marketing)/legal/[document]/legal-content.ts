@@ -46,5 +46,6 @@ export const legalDocuments = {
 export type TLegalDocumentName = keyof typeof legalDocuments;
 
 export function isLegalDocumentName(value: string): value is TLegalDocumentName {
-    return value in legalDocuments;
+    // `in` would also accept inherited names such as `constructor`.
+    return Object.hasOwn(legalDocuments, value);
 }

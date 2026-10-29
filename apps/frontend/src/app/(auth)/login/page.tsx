@@ -54,7 +54,7 @@ export default async function LoginPage({
                 />
                 <div className={styles.card}>
                     <h1 id="login-title">Welcome to PickFlick</h1>
-                    <p className={styles.lead}>Sign in to join your group&apos;s screening room.</p>
+                    <p className={styles.lead}>Sign in to join your Club&apos;s screening room.</p>
                     {errorMessage ? (
                         <p className={styles.errorBanner} role="alert">
                             {errorMessage}

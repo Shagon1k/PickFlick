@@ -8,7 +8,12 @@ import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Modal from '#components/ui/Modal/Modal';
 import { toIsoDate } from '#lib/format';
 
-import { loadInvitationsAction, manageInvitationsAction } from '../../invitation-actions';
+import {
+    createInvitationAction,
+    loadInvitationsAction,
+    revokeInvitationAction,
+    type TInvitationResult,
+} from '../../invitation-actions';
 import styles from '../../page.module.scss';
 import ManageModerators from './ManageModerators';
 
@@ -31,31 +36,62 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
         invitations.filter((invite) => invite.state === 'pending').length >=
         projection.entitlements.memberLimit;
 
-    async function run(kind: 'create' | 'load', inviteId?: string) {
+    async function perform(
+        request: () => Promise<TInvitationResult>,
+        onDone: (result: Extract<TInvitationResult, { ok: true }>) => void,
+    ) {
         setIsPending(true);
         setMessage('Updating invitations…');
         try {
-            const result =
-                kind === 'load'
-                    ? await loadInvitationsAction(projection.club.id)
-                    : await manageInvitationsAction(projection.club.id, inviteId);
+            const result = await request();
             if (!result.ok) {
                 setMessage(result.message);
                 return;
             }
             if (result.invitations) setInvitations(result.invitations);
-            if (kind === 'load') setHasLoaded(true);
-            if ('created' in result && result.created) {
-                showCreated(result.created, Boolean(result.invitations), result.refreshError);
-            } else {
-                if (inviteId === createdId) setLink('');
-                setMessage(inviteId ? 'Invitation revoked.' : 'Recent invitations loaded.');
-            }
+            onDone(result);
         } catch {
             setMessage('Invitations could not be updated. Check your connection and try again.');
         } finally {
             setIsPending(false);
         }
+    }
+
+    function handleLoad() {
+        void perform(
+            () => loadInvitationsAction(projection.club.id),
+            () => {
+                setHasLoaded(true);
+                setMessage('Recent invitations loaded.');
+            },
+        );
+    }
+
+    function handleCreate() {
+        void perform(
+            () => createInvitationAction(projection.club.id),
+            (result) => {
+                if (result.created)
+                    showCreated(result.created, Boolean(result.invitations), result.refreshError);
+            },
+        );
+    }
+
+    function handleRevoke(inviteId: string) {
+        void perform(
+            () => revokeInvitationAction(projection.club.id, inviteId),
+            ({ invitations: refreshed, refreshError }) => {
+                if (!refreshed) {
+                    setInvitations((current) =>
+                        current.map((invite) =>
+                            invite.id === inviteId ? { ...invite, state: 'revoked' } : invite,
+                        ),
+                    );
+                }
+                if (inviteId === createdId) setLink('');
+                setMessage(['Invitation revoked.', refreshError].filter(Boolean).join(' '));
+            },
+        );
     }
 
     /** Shows the new link once; without a refreshed list, the new link joins the current one. */
@@ -75,7 +111,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
 
     function handleOpen() {
         setIsOpen(true);
-        if (!hasLoaded) void run('load');
+        if (!hasLoaded) handleLoad();
     }
 
     async function handleCopy() {
@@ -151,7 +187,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                                 aria-label="Revoke current link"
                                 className={styles.textButton}
                                 disabled={isPending}
-                                onClick={() => run('create', createdId)}
+                                onClick={() => handleRevoke(createdId)}
                                 type="button"
                             >
                                 Revoke
@@ -162,7 +198,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 {!link && projection.permissions.createInvitations ? (
                     <Button
                         disabled={isPending || hasReachedLinkLimit || isMemberLimitReached}
-                        onClick={() => run('create')}
+                        onClick={handleCreate}
                     >
                         Create invitation
                     </Button>
@@ -171,7 +207,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                     createdId={createdId}
                     disabled={isPending}
                     invitations={invitations}
-                    onRevoke={(inviteId) => run('create', inviteId)}
+                    onRevoke={handleRevoke}
                 />
                 <p className={styles.invitationStatus} role="status">
                     {message}
@@ -209,7 +245,7 @@ function InvitationList({
                         </span>
                         {invite.state === 'pending' && invite.id !== createdId ? (
                             <button
-                                aria-label="Revoke invitation"
+                                aria-label={`Revoke invitation ${invite.id.slice(0, INVITATION_ID_LENGTH)}`}
                                 className={styles.textButton}
                                 disabled={disabled}
                                 onClick={() => onRevoke(invite.id)}

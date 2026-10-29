@@ -69,10 +69,16 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                                         {notifications?.unreadCount ? (
                                             <span
                                                 className={styles.notifBadge}
-                                                aria-label={`${notifications.unreadCount} unread`}
+                                                aria-hidden="true"
                                             />
                                         ) : null}
                                         <span>{entry.label}</span>
+                                        {/* A label on the empty badge would be skipped by screen readers. */}
+                                        {notifications?.unreadCount ? (
+                                            <span className="visually-hidden">
+                                                {`, ${notifications.unreadCount} unread`}
+                                            </span>
+                                        ) : null}
                                     </button>
                                 </div>
                             );

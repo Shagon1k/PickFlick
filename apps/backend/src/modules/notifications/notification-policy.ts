@@ -19,6 +19,16 @@ export const NOTIFICATION_MESSAGES: Record<TNotificationEvent, string> = {
     BILLING_SERVICE: 'A billing service update is available.',
 };
 
+const MEMBERSHIP_ENDED_EVENTS = new Set<TNotificationEvent>([
+    'MEMBERSHIP_REMOVED',
+    'MEMBERSHIP_LEFT',
+]);
+
+/** These notices reach a former member, so they stay readable without Club access or a link. */
+export function isMembershipEndedEvent(event: TNotificationEvent) {
+    return MEMBERSHIP_ENDED_EVENTS.has(event);
+}
+
 export function getNotificationPolicy(
     event: TNotificationEvent,
     preference?: { inApp: boolean; email: boolean } | null,

@@ -273,6 +273,35 @@ describe('Notifications', () => {
         });
     });
 
+    it('should keep the Membership-ended notice readable after the member leaves the Club', async () => {
+        await api.prisma.$transaction((tx) =>
+            recordAudit(tx, {
+                clubId,
+                actorUserId: users[0]!,
+                subjectUserId: users[1]!,
+                subjectMembershipId: memberId,
+                action: 'MEMBERSHIP_REMOVED',
+            }),
+        );
+        await api.prisma.membership.update({
+            where: { id: memberId },
+            data: { status: 'REMOVED', leftAt: new Date() },
+        });
+        const row = await api.prisma.notification.findFirstOrThrow({
+            where: { recipientId: users[1], event: 'MEMBERSHIP_REMOVED' },
+        });
+        const resolved = await resolveNotification(api.prisma, users[1]!, row.id);
+        expect(resolved).toMatchObject({
+            message: 'Your Club Membership has ended.',
+            href: null,
+        });
+        expect(JSON.stringify(resolved)).not.toContain(clubId);
+        await api.prisma.membership.update({
+            where: { id: memberId },
+            data: { status: 'ACTIVE', leftAt: null },
+        });
+    });
+
     it('should target private awards only to managers and recheck roles, owners and deleted awards', async () => {
         const award = await api.prisma.achievementAward.create({
             data: {

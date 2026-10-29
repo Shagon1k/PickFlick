@@ -35,7 +35,7 @@ export default function Achievements({ items }: TAchievements) {
                 Goals use recorded activity when you open this view. Unlocked achievements keep the
                 rules and evidence that earned them.
             </p>
-            <div className={styles.summary} aria-label="Achievement filters">
+            <div className={styles.summary} role="group" aria-label="Achievement filters">
                 {STATUSES.map(({ status, label }) => (
                     <button
                         key={status}

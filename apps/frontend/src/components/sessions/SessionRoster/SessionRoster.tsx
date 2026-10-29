@@ -27,11 +27,7 @@ export default function SessionRoster({
     const restoreFocusRef = useRef(false);
     const [message, setMessage] = useState('');
     const [isKickOpen, setIsKickOpen] = useState(false);
-    const [dialog, setDialog] = useState<{
-        action: 'leave' | 'remove';
-        participantId?: string;
-        name: string;
-    } | null>(null);
+    const [dialog, setDialog] = useState<TRosterDialog | null>(null);
     const [isPending, startTransition] = useTransition();
     const managed = roster.participants.filter(
         (participant) =>
@@ -57,10 +53,10 @@ export default function SessionRoster({
             }
         });
     }
-    const isLeave = dialog?.action === 'leave';
-    function confirm(action: 'leave' | 'remove', name: string, participantId?: string) {
+    const copy = getConfirmationCopy(dialog);
+    function confirm(next: TRosterDialog) {
         setMessage('');
-        setDialog({ action, name, participantId });
+        setDialog(next);
     }
     return (
         <>
@@ -69,7 +65,7 @@ export default function SessionRoster({
                     roster={roster}
                     disabled={isPending}
                     onJoin={() => run({ action: 'join' })}
-                    onLeave={() => confirm('leave', 'your participation')}
+                    onLeave={() => confirm({ action: 'leave' })}
                 />,
                 roster.canManage && managed.length
                     ? () => {
@@ -92,23 +88,27 @@ export default function SessionRoster({
                 onClose={() => setIsKickOpen(false)}
                 onRevoke={(inviteId) => run({ action: 'revoke', inviteId })}
                 onRemove={(participant) =>
-                    confirm('remove', participant.displayName, participant.id)
+                    confirm({
+                        action: 'remove',
+                        name: participant.displayName,
+                        participantId: participant.id,
+                    })
                 }
             />
             <ConfirmDialog
                 cancelLabel="Keep participation"
-                confirmLabel={isLeave ? 'Confirm leaving' : 'Confirm removal'}
+                confirmLabel={copy.confirmLabel}
                 inputId="session-roster-confirmation"
                 onClose={() => setDialog(null)}
                 onConfirm={(confirmation) =>
                     run(
-                        isLeave
-                            ? { action: 'leave', confirmation }
-                            : {
+                        dialog?.action === 'remove'
+                            ? {
                                   action: 'remove',
-                                  participantId: dialog?.participantId,
+                                  participantId: dialog.participantId,
                                   confirmation,
-                              },
+                              }
+                            : { action: 'leave', confirmation },
                     )
                 }
                 onExitTransitionEnd={() => {
@@ -125,19 +125,36 @@ export default function SessionRoster({
                         {message}
                     </p>
                 }
-                title={isLeave ? 'Leave Session' : 'Remove participant'}
-                word={isLeave ? 'LEAVE' : 'REMOVE'}
+                title={copy.title}
+                word={copy.word}
             >
-                <p>
-                    End {dialog?.name}? This participant will no longer count toward Session
-                    progress. Their existing history stays.
-                </p>
+                <p>{copy.body}</p>
             </ConfirmDialog>
         </>
     );
 }
 
 type TParticipant = ISessionRoster['participants'][number];
+type TRosterDialog =
+    | { action: 'leave' }
+    | { action: 'remove'; participantId: string; name: string };
+
+function getConfirmationCopy(dialog: TRosterDialog | null) {
+    if (dialog?.action === 'remove') {
+        return {
+            title: 'Remove participant',
+            word: 'REMOVE',
+            confirmLabel: 'Confirm removal',
+            body: `Remove ${dialog.name}? This participant will no longer count toward Session progress. Their existing history stays.`,
+        };
+    }
+    return {
+        title: 'Leave Session',
+        word: 'LEAVE',
+        confirmLabel: 'Confirm leaving',
+        body: 'End your participation? You will no longer count toward Session progress. Your existing history stays.',
+    };
+}
 
 function KickDialog({
     open,

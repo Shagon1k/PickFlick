@@ -42,6 +42,17 @@ describe('renderNotificationEmail', () => {
         },
     );
 
+    it.each(['MEMBERSHIP_LEFT', 'MEMBERSHIP_REMOVED'] as const)(
+        'should keep the %s notice for a former member without Club access',
+        (event) => {
+            const email = renderNotificationEmail({ ...input, event, href: null });
+            expect(email.subject).not.toContain('no longer available');
+            expect(email.text).toContain(
+                'Club content is no longer available through this notification.',
+            );
+        },
+    );
+
     it('should encode a canonical link for the HTML attribute context', () => {
         const email = renderNotificationEmail({
             ...input,

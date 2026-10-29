@@ -36,7 +36,15 @@ export default function ClubHubFrame({
         if (clubId)
             for (const { href } of buildClubNavigation(clubId, 'overview')) router.prefetch(href);
     }, [clubId, router]);
-    if (!snapshot) return <HubSnapshotContext value={publish}>{children}</HubSnapshotContext>;
+    if (!snapshot) {
+        return (
+            <HubSnapshotContext value={publish}>
+                <ProductFrame>
+                    <main>{children}</main>
+                </ProductFrame>
+            </HubSnapshotContext>
+        );
+    }
     const navigation = buildClubNavigation(snapshot.club.id, current);
     return (
         <HubSnapshotContext value={publish}>
