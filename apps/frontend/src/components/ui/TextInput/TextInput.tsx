@@ -6,10 +6,8 @@ import {
 } from '@mantine/core';
 
 import styles from '#components/ui/Field/Field.module.scss';
-import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
-import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
-import FieldLabel from '#components/ui/Field/FieldLabel';
-import FieldMessage from '#components/ui/Field/FieldMessage';
+import type { IFieldProps } from '#components/ui/Field/field.types';
+import { FIELD_CLASS_NAMES, getFieldProps } from '#components/ui/Field/field-props';
 import type { TOmitStyling } from '#components/ui/types';
 
 export interface ITextInputProps
@@ -26,25 +24,8 @@ export default function TextInput({
     return (
         <MantineTextInput
             {...props}
-            classNames={{
-                root: styles.field,
-                label: styles.field__label,
-                input: styles.control,
-                description: styles.field__description,
-            }}
-            data-state={getFieldState(error, success)}
-            description={<FieldMessage error={error} hint={hint} success={success} />}
-            error={Boolean(error)}
-            inputContainer={(input) => (
-                <>
-                    {input}
-                    <FieldAnnouncements error={error} success={success} />
-                </>
-            )}
-            inputWrapperOrder={['label', 'input', 'description']}
-            label={<FieldLabel hint={labelHint} label={label} />}
-            unstyled
-            withAsterisk={false}
+            {...getFieldProps({ error, hint, label, labelHint, success })}
+            classNames={{ ...FIELD_CLASS_NAMES, input: styles.control }}
         />
     );
 }
