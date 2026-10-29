@@ -59,7 +59,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await expect(statistics.locator('dd')).toHaveText([
             '28',
             '28',
-            '8',
+            '8.0',
             '—',
             '28',
             '—',
