@@ -270,7 +270,7 @@ describe('MoviesRepository', () => {
             prisma.movieExternalId.create({
                 data: { movieId: id, source: 'tmdb', externalId: '9999999999999' },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('MovieExternalId_movieId_source_key');
     });
     it('should avoid deadlocks for searches returning opposite movie orders', async () => {
         const records = [fixture(), fixture()];

@@ -326,14 +326,14 @@ describe('Selection completion', () => {
         expect((await state()).selectionResult).toEqual(saved.selectionResult);
         await expect(
             api.prisma.session.update({ where: { id: sessionId }, data: { selectionResult: {} } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         await expect(
             api.prisma
                 .$executeRaw`UPDATE "Session" SET "selectionResult" = NULL WHERE id = ${sessionId}::uuid`,
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         await expect(
             api.prisma.session.update({ where: { id: sessionId }, data: { movieId: movieIds[1] } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         const response = await api.request(`/sessions/${sessionId}`, { userId: users[1] });
         const body: unknown = await response.json();
         expect(sessionSchema.parse(body).selection).toBeNull();

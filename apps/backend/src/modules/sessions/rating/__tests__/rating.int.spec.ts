@@ -269,32 +269,34 @@ describe('Rating', () => {
         const data = { sessionId, participantId: participantIds[0]!, score: 8 };
         await expect(
             api.prisma.sessionRating.create({ data: { ...data, score: 11 } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_score_check');
         const other = await createSession(api.prisma, clubId, {
             type: 'PRE_SELECTED',
             phase: 'RATING',
         });
         await expect(
             api.prisma.sessionRating.create({ data: { ...data, sessionId: other.id } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_participantId_sessionId_fkey');
         await submit();
-        await expect(api.prisma.sessionRating.create({ data })).rejects.toThrow();
+        await expect(api.prisma.sessionRating.create({ data })).rejects.toThrow(
+            'SessionRating_participantId_sessionId_key',
+        );
         const before = await received();
         await expect(
             api.prisma.sessionRating.update({ where: { id: before[0]!.id }, data: { score: 1 } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Session Ratings are immutable');
         await close();
         await expect(
             api.prisma.sessionRating.update({
                 where: { id: before[0]!.id },
                 data: { comment: 'Rewrite history' },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Session Ratings are immutable');
         await expect(
             api.prisma.sessionRating.create({
                 data: { ...data, participantId: participantIds[1]! },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Live ratings require an open Rating Session and a submission time');
         expect(await received()).toEqual(before);
     });
 

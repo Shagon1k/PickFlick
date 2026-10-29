@@ -234,7 +234,7 @@ describe('Achievements API', () => {
                     evidence: {},
                 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('AchievementAward_check');
     });
 
     it('should keep archived Club reads, mask result-derived awards for Members, and deny departure', async () => {

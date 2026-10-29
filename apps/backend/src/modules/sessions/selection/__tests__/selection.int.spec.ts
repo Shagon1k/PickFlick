@@ -197,7 +197,7 @@ describe('Selection ballots', () => {
         await expect(
             api.prisma
                 .$executeRaw`UPDATE "SelectionScore" SET score = 11 WHERE "ballotId" = ${saved.id}::uuid`,
-        ).rejects.toThrow();
+        ).rejects.toThrow('SelectionScore_score_check');
     });
 
     it('should deny unauthenticated, nonmember and unaccepted participants and archived or closed writes', async () => {

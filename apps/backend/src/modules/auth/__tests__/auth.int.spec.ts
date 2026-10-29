@@ -136,7 +136,9 @@ describe('AuthService', () => {
         it('should refuse to create a session for a suspended User', async () => {
             const userId = await user('SUSPENDED');
 
-            await expect(login(userId)).rejects.toThrow();
+            await expect(login(userId)).rejects.toMatchObject({
+                body: { code: 'ACCOUNT_INACTIVE' },
+            });
             expect(await prisma.authSession.count({ where: { userId } })).toBe(0);
         });
     });

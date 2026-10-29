@@ -91,7 +91,7 @@ describe('Notifications', () => {
             api.prisma.notificationPreference.create({
                 data: { userId: users[1]!, event: 'BILLING_SERVICE', inApp: true, email: false },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('NotificationPreference_check');
     });
 
     it('should deduplicate concurrent events and preserve channel decisions across preference edits and retries', async () => {
@@ -165,7 +165,7 @@ describe('Notifications', () => {
                     occurrence: 4,
                 });
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Notification_check2');
         expect(
             (await api.prisma.club.findUniqueOrThrow({ where: { id: clubId } })).description,
         ).toBeNull();
@@ -433,7 +433,7 @@ describe('Notifications', () => {
             api.prisma.$transaction((tx) =>
                 recordNotification(tx, { ...input, event: 'SESSION_STARTED' }),
             ),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Notification_check2');
         await api.prisma.user.update({ where: { id: users[2] }, data: { status: 'SUSPENDED' } });
         expect(
             await api.prisma.$transaction((tx) =>

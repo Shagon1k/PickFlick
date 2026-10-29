@@ -427,6 +427,6 @@ describe('Past Sessions', () => {
             api.prisma.sessionRating.create({
                 data: { sessionId: live.id, participantId: participants[1]!.id, score: 5 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_participantId_sessionId_fkey');
     });
 });

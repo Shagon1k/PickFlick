@@ -460,6 +460,6 @@ describe('Past Selection evidence', () => {
                     score: 2,
                 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('PastSelectionScore_participantId_sessionId_fkey');
     });
 });

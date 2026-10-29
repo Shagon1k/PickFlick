@@ -184,19 +184,21 @@ describe('PersonalRating', () => {
     it('should enforce uniqueness, bounds and references in the database', async () => {
         const data = { userId: users[0]!, movieId, score: 7, source: 'PERSONAL' as const };
         await api.prisma.personalMovieRating.create({ data });
-        await expect(api.prisma.personalMovieRating.create({ data })).rejects.toThrow();
+        await expect(api.prisma.personalMovieRating.create({ data })).rejects.toThrow(
+            'PersonalMovieRating_pkey',
+        );
         await expect(
             api.prisma.personalMovieRating.update({
                 where: { userId_movieId: { userId: users[0]!, movieId } },
                 data: { score: 0 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('PersonalMovieRating_score_check');
         await expect(
             api.prisma.personalMovieRating.create({ data: { ...data, userId: randomUUID() } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('PersonalMovieRating_userId_fkey');
         await expect(
             api.prisma.personalMovieRating.create({ data: { ...data, movieId: randomUUID() } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('PersonalMovieRating_movieId_fkey');
         expect(await current()).toMatchObject({ score: 7 });
     });
 

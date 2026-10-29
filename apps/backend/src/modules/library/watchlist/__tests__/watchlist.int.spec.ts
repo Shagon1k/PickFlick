@@ -136,17 +136,19 @@ describe('Watchlist', () => {
     it('should enforce uniqueness, priority and references in PostgreSQL and cascade private data', async () => {
         const data = { userId: users[0]!, movieId, priority: 'LOW' as const };
         await api.prisma.watchlistItem.create({ data });
-        await expect(api.prisma.watchlistItem.create({ data })).rejects.toThrow();
+        await expect(api.prisma.watchlistItem.create({ data })).rejects.toThrow(
+            'WatchlistItem_pkey',
+        );
         await expect(
             api.prisma.watchlistItem.create({ data: { ...data, userId: randomUUID() } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('WatchlistItem_userId_fkey');
         await expect(
             api.prisma.watchlistItem.create({ data: { ...data, movieId: randomUUID() } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('WatchlistItem_movieId_fkey');
         await expect(
             api.prisma
                 .$executeRaw`UPDATE "WatchlistItem" SET "priority" = 'INVALID' WHERE "userId" = ${users[0]}::uuid`,
-        ).rejects.toThrow();
+        ).rejects.toThrow('invalid input value for enum');
         await api.prisma.user.delete({ where: { id: users[0] } });
         expect(await api.prisma.watchlistItem.count({ where: { movieId } })).toBe(0);
         await save({ priority: 'HIGH' }, 1);
