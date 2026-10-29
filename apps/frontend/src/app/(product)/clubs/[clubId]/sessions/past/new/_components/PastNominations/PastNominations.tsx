@@ -1,12 +1,17 @@
 'use client';
 
-import type { TCreatePastSession, TPastSessionMembers } from '@pickflick/contracts';
+import type {
+    TCreatePastSession,
+    TMovieSearchResults,
+    TPastSessionMembers,
+} from '@pickflick/contracts';
 import { useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import Select from '#components/ui/Select/Select';
 
+import { buildMemberNames, formatMemberName } from '../../past-members';
 import styles from './PastNominations.module.scss';
 
 type TEvidence = Pick<TCreatePastSession, 'nominations' | 'scoreMatrix'>;
@@ -33,6 +38,43 @@ export default function PastNominations({
     const [titles, setTitles] = useState<Record<string, string>>({});
     const [message, setMessage] = useState('');
     const { nominations, scoreMatrix } = evidence;
+    const memberNames = buildMemberNames(members);
+    const scoreOptions = Array.from(
+        { length: scaleMax - scaleMin + 1 },
+        (_, index) => scaleMin + index,
+    );
+    function handleNominationPick(
+        movieId: string | null,
+        movie?: TMovieSearchResults['movies'][number],
+    ) {
+        if (!movieId || !movie) return;
+        if (nominations.some((row) => row.movieId === movieId)) {
+            setMessage('This Movie is already in the nomination list.');
+            return;
+        }
+        setTitles((current) => ({
+            ...current,
+            [movieId]: movie.title ?? movie.originalTitle ?? 'Untitled film',
+        }));
+        onChange({ nominations: [...nominations, { movieId }], scoreMatrix });
+        setMessage(
+            'Nomination added. Choose a nominator if known; original submission time is unknown.',
+        );
+    }
+    function setNominator(movieId: string, nominatorMembershipId: string) {
+        onChange({
+            nominations: nominations.map((row) =>
+                row.movieId === movieId
+                    ? { movieId, nominatorMembershipId: nominatorMembershipId || undefined }
+                    : row,
+            ),
+            scoreMatrix,
+        });
+    }
+    function getScore(membershipId: string, movieId: string) {
+        const scores = scoreMatrix.find((row) => row.membershipId === membershipId)?.scores;
+        return scores?.find((cell) => cell.movieId === movieId)?.score ?? '';
+    }
     function removeNomination(movieId: string) {
         onChange({
             nominations: nominations.filter((row) => row.movieId !== movieId),
@@ -68,21 +110,7 @@ export default function PastNominations({
                 value={null}
                 disabled={disabled}
                 error={error}
-                onChange={(id, movie) => {
-                    if (!id || !movie) return;
-                    if (nominations.some((row) => row.movieId === id)) {
-                        setMessage('This Movie is already in the nomination list.');
-                        return;
-                    }
-                    setTitles((current) => ({
-                        ...current,
-                        [id]: movie.title ?? movie.originalTitle ?? 'Untitled film',
-                    }));
-                    onChange({ nominations: [...nominations, { movieId: id }], scoreMatrix });
-                    setMessage(
-                        'Nomination added. Choose a nominator if known; original submission time is unknown.',
-                    );
-                }}
+                onChange={handleNominationPick}
             />
             <p role="status">{message}</p>
             <ul className={styles.movies} aria-label="Imported nominations">
@@ -98,22 +126,10 @@ export default function PastNominations({
                                 { value: '', label: 'Unknown' },
                                 ...members.map((member) => ({
                                     value: member.id,
-                                    label: `${member.displayName}${member.status === 'ACTIVE' ? '' : ' (former member)'}`,
+                                    label: formatMemberName(member),
                                 })),
                             ]}
-                            onChange={(value) =>
-                                onChange({
-                                    nominations: nominations.map((row) =>
-                                        row.movieId === id
-                                            ? {
-                                                  movieId: id,
-                                                  nominatorMembershipId: value || undefined,
-                                              }
-                                            : row,
-                                    ),
-                                    scoreMatrix,
-                                })
-                            }
+                            onChange={(value) => setNominator(id, value ?? '')}
                         />
                         <Button
                             variant="ghost"
@@ -148,9 +164,7 @@ export default function PastNominations({
                         </thead>
                         <tbody>
                             {attendees.map((attendee) => {
-                                const name =
-                                    members.find((member) => member.id === attendee.membershipId)
-                                        ?.displayName ?? 'Attendee';
+                                const name = memberNames.get(attendee.membershipId) ?? 'Attendee';
                                 return (
                                     <tr key={attendee.membershipId}>
                                         <th scope="row">{name}</th>
@@ -159,17 +173,7 @@ export default function PastNominations({
                                                 <select
                                                     aria-label={`Selection score for ${name}: ${titles[movieId]}`}
                                                     disabled={disabled}
-                                                    value={
-                                                        scoreMatrix
-                                                            .find(
-                                                                (row) =>
-                                                                    row.membershipId ===
-                                                                    attendee.membershipId,
-                                                            )
-                                                            ?.scores.find(
-                                                                (cell) => cell.movieId === movieId,
-                                                            )?.score ?? ''
-                                                    }
+                                                    value={getScore(attendee.membershipId, movieId)}
                                                     onChange={(event) =>
                                                         setScore(
                                                             attendee.membershipId,
@@ -179,10 +183,7 @@ export default function PastNominations({
                                                     }
                                                 >
                                                     <option value="">Unknown</option>
-                                                    {Array.from(
-                                                        { length: scaleMax - scaleMin + 1 },
-                                                        (_, index) => scaleMin + index,
-                                                    ).map((score) => (
+                                                    {scoreOptions.map((score) => (
                                                         <option key={score} value={score}>
                                                             {score}
                                                         </option>

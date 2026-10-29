@@ -62,48 +62,47 @@ export default function Achievements({ items }: TAchievements) {
             )}
             <div className={styles.shelf}>
                 {visible.map((item) => (
-                    <article
-                        key={`${item.key}-${item.version}`}
-                        className={styles.card}
-                        data-status={item.status}
-                        aria-label={item.title}
-                    >
-                        <div className={styles.icon}>
-                            <Icon name="achievements" />
-                        </div>
-                        <span className={styles.status}>
-                            {STATUSES.find(({ status }) => status === item.status)?.label}
-                        </span>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
-                        {item.progress !== null ? (
-                            <Progress
-                                label="Recorded progress"
-                                value={item.progress}
-                                max={item.target}
-                                compact
-                            />
-                        ) : (
-                            <p>{item.explanation}</p>
-                        )}
-                        {item.progress !== null && (
-                            <details>
-                                <summary>How this is calculated · v{item.version}</summary>
-                                <p>{item.explanation}</p>
-                                {item.awardedAt && (
-                                    <p>
-                                        Unlocked{' '}
-                                        <time dateTime={item.awardedAt}>
-                                            {toIsoDate(item.awardedAt)}
-                                        </time>{' '}
-                                        (UTC). Earned history is retained.
-                                    </p>
-                                )}
-                            </details>
-                        )}
-                    </article>
+                    <AchievementCard key={`${item.key}-${item.version}`} item={item} />
                 ))}
             </div>
         </section>
+    );
+}
+
+function AchievementCard({ item }: { item: TAchievement }) {
+    return (
+        <article className={styles.card} data-status={item.status} aria-label={item.title}>
+            <div className={styles.icon}>
+                <Icon name="achievements" />
+            </div>
+            <span className={styles.status}>
+                {STATUSES.find(({ status }) => status === item.status)?.label}
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            {item.progress === null ? (
+                <p>{item.explanation}</p>
+            ) : (
+                <>
+                    <Progress
+                        label="Recorded progress"
+                        value={item.progress}
+                        max={item.target}
+                        compact
+                    />
+                    <details>
+                        <summary>How this is calculated · v{item.version}</summary>
+                        <p>{item.explanation}</p>
+                        {item.awardedAt && (
+                            <p>
+                                Unlocked{' '}
+                                <time dateTime={item.awardedAt}>{toIsoDate(item.awardedAt)}</time>{' '}
+                                (UTC). Earned history is retained.
+                            </p>
+                        )}
+                    </details>
+                </>
+            )}
+        </article>
     );
 }

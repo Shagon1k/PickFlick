@@ -6,8 +6,8 @@ import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { formatAverage, formatHours, formatUtcDate, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
+import ActiveRatings from '../ActiveRatings/ActiveRatings';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
-import HubSessionCards from '../HubSessionCards/HubSessionCards';
 
 export default function HubOverview({ hub }: { hub: IClubHub }) {
     const stats = hub.statistics;
@@ -81,7 +81,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                 </section>
                 <ActiveSessionCard hub={hub} />
             </div>
-            {hub.ratingSessions.length ? <HubSessionCards hub={hub} ratingsOnly /> : null}
+            {hub.ratingSessions.length ? <ActiveRatings sessions={hub.ratingSessions} /> : null}
             <SprocketDivider variant="section" />
             <section className={styles.card}>
                 <h2>Recent Activity</h2>

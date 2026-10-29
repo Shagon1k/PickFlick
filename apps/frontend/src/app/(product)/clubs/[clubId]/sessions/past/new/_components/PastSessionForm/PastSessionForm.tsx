@@ -23,6 +23,7 @@ import { useActionStatus } from '#lib/use-action-status';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { savePastSessionAction } from '../../actions';
+import { buildMemberNames, formatMemberName } from '../../past-members';
 import PastNominations from '../PastNominations/PastNominations';
 import styles from './PastSessionForm.module.scss';
 
@@ -86,6 +87,18 @@ export default function PastSessionForm({
             return { ...errors, date: scheduledAt };
         },
     });
+    const memberNames = buildMemberNames(members);
+    function setAttendance(membershipId: string, isAttending: boolean) {
+        if (isAttending) {
+            form.insertListItem('attendees', { membershipId });
+            return;
+        }
+        // A departed attendee takes their recorded Selection scores with them.
+        form.setValues({
+            attendees: form.values.attendees.filter((row) => row.membershipId !== membershipId),
+            scoreMatrix: form.values.scoreMatrix.filter((row) => row.membershipId !== membershipId),
+        });
+    }
     function save(values: IPastSessionValues) {
         run(() => savePastSessionAction(clubId, buildInput(values)), {
             pendingMessage: 'Logging Session…',
@@ -164,41 +177,25 @@ export default function PastSessionForm({
                 <legend>Who attended?</legend>
                 <p>Select only known attendees. Leave unknown ratings blank.</p>
                 <div className={styles.members}>
-                    {members.map((member) => {
-                        const index = form.values.attendees.findIndex(
-                            (row) => row.membershipId === member.id,
-                        );
-                        return (
-                            <label key={member.id}>
-                                <input
-                                    type="checkbox"
-                                    checked={index >= 0}
-                                    onChange={(event) => {
-                                        if (event.currentTarget.checked)
-                                            form.insertListItem('attendees', {
-                                                membershipId: member.id,
-                                            });
-                                        else {
-                                            form.removeListItem('attendees', index);
-                                            form.setFieldValue(
-                                                'scoreMatrix',
-                                                form.values.scoreMatrix.filter(
-                                                    (row) => row.membershipId !== member.id,
-                                                ),
-                                            );
-                                        }
-                                    }}
-                                />
-                                {member.displayName}
-                                {member.status !== 'ACTIVE' ? ' (former member)' : ''}
-                            </label>
-                        );
-                    })}
+                    {members.map((member) => (
+                        <label key={member.id}>
+                            <input
+                                type="checkbox"
+                                checked={form.values.attendees.some(
+                                    (row) => row.membershipId === member.id,
+                                )}
+                                onChange={(event) =>
+                                    setAttendance(member.id, event.currentTarget.checked)
+                                }
+                            />
+                            {formatMemberName(member)}
+                        </label>
+                    ))}
                 </div>
                 {form.values.attendees.map((attendee, index) => (
                     <div className={styles.rating} key={attendee.membershipId}>
                         <RatingControl
-                            label={`Rating for ${members.find((member) => member.id === attendee.membershipId)?.displayName ?? 'attendee'} (optional)`}
+                            label={`Rating for ${memberNames.get(attendee.membershipId) ?? 'attendee'} (optional)`}
                             name={`rating-${attendee.membershipId}`}
                             value={attendee.score ?? 0}
                             onChange={(score) =>
@@ -211,14 +208,7 @@ export default function PastSessionForm({
                                 variant="ghost"
                                 disabled={isDisabled}
                                 onClick={() =>
-                                    form.setFieldValue(
-                                        'attendees',
-                                        form.values.attendees.map((row) =>
-                                            row.membershipId === attendee.membershipId
-                                                ? { membershipId: row.membershipId }
-                                                : row,
-                                        ),
-                                    )
+                                    form.setFieldValue(`attendees.${index}.score`, undefined)
                                 }
                             >
                                 Clear rating

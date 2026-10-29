@@ -4,63 +4,8 @@
     gap: var(--gap-lg);
 }
 
-.grid[data-ratings-only] {
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.card {
-    min-width: 0;
-    padding: 24px;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-
-.card h2 {
-    margin: 0 0 16px;
-    font: 700 15px/var(--lh-title) var(--font-body);
-}
-
-.card p {
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    line-height: var(--lh-body);
-    color: var(--fg-secondary);
-}
-
-.ratings {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.ratings li {
-    padding-block: var(--gap-md);
-    border-bottom: 1px solid var(--border);
-}
-
-.ratings li:first-child {
-    padding-top: 0;
-}
-
-.ratings li:last-child {
-    border-bottom: 0;
-}
-
-.ratings a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
-    font-weight: 500;
-    text-decoration: none;
-}
-
 @media (width < 1024px) {
     .grid {
         grid-template-columns: 1fr;
     }
-}
-
-.card p:empty {
-    display: none;
 }
