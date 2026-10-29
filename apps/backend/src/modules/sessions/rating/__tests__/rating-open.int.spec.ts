@@ -69,9 +69,7 @@ describe('Watching', () => {
 
     it('should leave Watching unchanged on detail, roster, progress and participation requests', async () => {
         for (const path of ['', '/roster', '/progress']) {
-            expect(
-                (await api.request(`/sessions/${sessionId}${path}`, { userId: users[2] })).status,
-            ).toBe(200);
+            await api.expectStatus(200, `/sessions/${sessionId}${path}`, { userId: users[2] });
         }
         const join = await api.request(`/sessions/${sessionId}/participation`, {
             userId: users[1],

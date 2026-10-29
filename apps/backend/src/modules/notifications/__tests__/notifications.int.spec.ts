@@ -59,11 +59,8 @@ describe('Notifications', () => {
     it('should expose an authenticated owner-only strict preference matrix with mandatory exceptions', async () => {
         const initial = await getPreferences();
         expect(initial.items.map((item) => item.event)).toEqual(NOTIFICATION_EVENTS);
-        expect((await api.request(preferencesPath)).status).toBe(401);
-        expect(
-            (await api.request(`${preferencesPath}?userId=${users[1]}`, { userId: users[0] }))
-                .status,
-        ).toBe(400);
+        await api.expectStatus(401, preferencesPath);
+        await api.expectStatus(400, `${preferencesPath}?userId=${users[1]}`, { userId: users[0] });
         for (const body of [
             { event: 'UNKNOWN', inApp: true, email: true },
             { event: 'SESSION_STARTED', inApp: 'true', email: true },

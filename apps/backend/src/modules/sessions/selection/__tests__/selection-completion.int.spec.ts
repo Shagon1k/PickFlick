@@ -232,10 +232,10 @@ describe('Selection completion', () => {
         ).toBe(204);
         await leave();
         expect(await state()).toMatchObject({ phase: 'SELECTION', selectionResult: null });
-        expect(
-            (await api.request(`/clubs/${clubId}/reactivate`, { method: 'POST', userId: users[0] }))
-                .status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/reactivate`, {
+            method: 'POST',
+            userId: users[0],
+        });
         expect(await state()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
     });
 

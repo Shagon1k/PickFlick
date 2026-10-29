@@ -98,7 +98,7 @@ describe('Library', () => {
             expect(own.total).toBe(1);
             expect(own.items.map((item) => item.movieId)).toEqual([hidden.id]);
             expect((await read(`tab=${tab}&q=Private`)).items).toEqual([]);
-            expect((await api.request(`/library?tab=${tab}`)).status).toBe(401);
+            await api.expectStatus(401, `/library?tab=${tab}`);
         }
         for (const query of [
             `userId=${users[1]}`,
@@ -114,7 +114,7 @@ describe('Library', () => {
             'q=a&q=b',
             `q=${'x'.repeat(201)}`,
         ]) {
-            expect((await api.request(`/library?${query}`, { userId: users[0] })).status).toBe(400);
+            await api.expectStatus(400, `/library?${query}`, { userId: users[0] });
         }
     });
 

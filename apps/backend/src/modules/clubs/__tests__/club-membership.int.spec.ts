@@ -112,10 +112,8 @@ describe('Club membership boundaries', () => {
             }),
         ).toBe(1);
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
-        expect((await api.request(`/clubs/${clubId}/hub`, { userId: member })).status).toBe(404);
-        expect((await api.request(`/clubs/${clubId}/settings`, { userId: member })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/clubs/${clubId}/hub`, { userId: member });
+        await api.expectStatus(404, `/clubs/${clubId}/settings`, { userId: member });
     });
     it('should resolve promotion versus removal without stale authorization or duplicate events', async () => {
         const [role, removal] = await Promise.all([

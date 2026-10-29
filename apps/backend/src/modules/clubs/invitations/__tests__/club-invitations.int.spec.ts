@@ -103,9 +103,7 @@ describe('Club invitations', () => {
             `/clubs/${clubId}/invitations`,
             `/clubs/${clubId}/invitations/${invitation.id}/revoke`,
         ]) {
-            expect(
-                (await api.request(path, { userId: outsider, method: 'POST', json: {} })).status,
-            ).toBe(404);
+            await api.expectStatus(404, path, { userId: outsider, method: 'POST', json: {} });
         }
         expect(
             (
@@ -251,7 +249,7 @@ describe('Club invitations', () => {
             }),
         ).toBe(1);
         expect(await respond(invitation.token, 'accept', outsider)).toEqual({ state: 'invalid' });
-        expect((await api.request(`/clubs/${clubId}/hub`, { userId: recipient })).status).toBe(200);
+        await api.expectStatus(200, `/clubs/${clubId}/hub`, { userId: recipient });
     });
 
     it('should serialize different links competing for the last available seat', async () => {

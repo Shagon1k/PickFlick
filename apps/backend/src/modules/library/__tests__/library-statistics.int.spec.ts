@@ -87,11 +87,9 @@ describe('Library statistics API', () => {
             watchlistCount: 0,
             favoriteGenre: null,
         });
-        expect((await api.request('/library/statistics')).status).toBe(401);
+        await api.expectStatus(401, '/library/statistics');
         for (const query of [`userId=${users[0]}`, 'q=anything', 'page=1', 'tab=watchlist']) {
-            expect(
-                (await api.request(`/library/statistics?${query}`, { userId: users[1] })).status,
-            ).toBe(400);
+            await api.expectStatus(400, `/library/statistics?${query}`, { userId: users[1] });
         }
     });
 
@@ -131,10 +129,11 @@ describe('Library statistics API', () => {
     it('should reflect rating edits and watchlist retries without adding activity rows', async () => {
         const path = `/movies/${movieIds[1]}/personal-rating`;
         for (let retry = 0; retry < 2; retry++) {
-            expect(
-                (await api.request(path, { userId: users[0], method: 'PUT', json: { score: 8 } }))
-                    .status,
-            ).toBe(200);
+            await api.expectStatus(200, path, {
+                userId: users[0],
+                method: 'PUT',
+                json: { score: 8 },
+            });
         }
         expect(await read()).toMatchObject({ filmsRated: 2, ratedThisYear: 2, averageRating: 9 });
         for (let retry = 0; retry < 2; retry++) {

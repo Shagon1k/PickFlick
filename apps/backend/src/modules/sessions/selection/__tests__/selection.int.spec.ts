@@ -256,7 +256,7 @@ describe('Selection ballots', () => {
             where: { clubId, userId: member },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect((await api.request(`/sessions/${sessionId}`, { userId: member })).status).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}`, { userId: member });
         expect((await submit()).status).toBe(404);
     });
 

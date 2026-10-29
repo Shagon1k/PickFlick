@@ -49,7 +49,7 @@ describe('ClubsController', () => {
     });
 
     it('should reject a request without a session', async () => {
-        expect((await api.request('/clubs')).status).toBe(401);
+        await api.expectStatus(401, '/clubs');
     });
 
     describe('when creating a Club', () => {
@@ -89,9 +89,7 @@ describe('ClubsController', () => {
 
     describe('when reading settings', () => {
         it('should hide the Club from a non-member', async () => {
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: outsider })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: outsider });
         });
 
         it('should give a member a read-only view without the audit trail', async () => {
@@ -217,14 +215,12 @@ describe('ClubsController', () => {
             const served = await api.request(`/clubs/${club.id}/avatar`, { userId: member });
             expect(served.headers.get('content-type')).toBe('image/png');
 
-            expect(
-                (await api.request(`/clubs/${club.id}/avatar`, { method: 'DELETE', userId: admin }))
-                    .status,
-            ).toBe(204);
+            await api.expectStatus(204, `/clubs/${club.id}/avatar`, {
+                method: 'DELETE',
+                userId: admin,
+            });
             expect(api.storage.objects.size).toBe(0);
-            expect((await api.request(`/clubs/${club.id}/avatar`, { userId: member })).status).toBe(
-                404,
-            );
+            await api.expectStatus(404, `/clubs/${club.id}/avatar`, { userId: member });
         });
     });
 
@@ -282,9 +278,7 @@ describe('ClubsController', () => {
                 json: { confirmation: 'LEAVE' },
             });
             expect(memberLeave.status).toBe(204);
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: member })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: member });
         });
 
         it('should delete an empty Club only with its exact name', async () => {
@@ -301,9 +295,7 @@ describe('ClubsController', () => {
                 json: { confirmation: 'Midnight Society Updated' },
             });
             expect(deleted.status).toBe(204);
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: admin })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: admin });
         });
 
         it('should refuse to delete a Club with Session history', async () => {

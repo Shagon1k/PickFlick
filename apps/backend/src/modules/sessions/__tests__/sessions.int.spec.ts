@@ -120,12 +120,10 @@ describe('Session workflows', () => {
         expect((await create(member)).status).toBe(403);
         expect((await create(outsider)).status).toBe(404);
         const session = (await (await create()).json()) as TSession;
-        expect((await api.request(`/sessions/${session.id}`, { userId: outsider })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/sessions/${session.id}`, { userId: outsider });
         expect((await edit(session, member)).status).toBe(403);
         expect((await cancel(session, member)).status).toBe(403);
-        expect((await api.request(`/sessions/${session.id}`)).status).toBe(401);
+        await api.expectStatus(401, `/sessions/${session.id}`);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await edit(session)).status).toBe(409);
         expect((await cancel(session)).status).toBe(409);

@@ -92,10 +92,7 @@ describe('EmailWebhook', () => {
 
     it('should reject unsigned, modified, stale and malformed requests without requiring a browser session', async () => {
         const body = buildPayload();
-        expect(
-            (await api.request('/webhooks/resend', { method: 'POST', json: JSON.parse(body) }))
-                .status,
-        ).toBe(401);
+        await api.expectStatus(401, '/webhooks/resend', { method: 'POST', json: JSON.parse(body) });
         expect((await post(body.replace('PRIVATE SUBJECT', 'changed'), sign(body))).status).toBe(
             401,
         );

@@ -183,7 +183,7 @@ describe('Club ratings API', () => {
     });
 
     it('should reject anonymous, foreign App Admin, departed and malformed requests without Club disclosure', async () => {
-        expect((await api.request(`/clubs/${clubId}/ratings`)).status).toBe(401);
+        await api.expectStatus(401, `/clubs/${clubId}/ratings`);
         const denied = await api.request(`/clubs/${clubId}/ratings`, { userId: users[3]! });
         expect(denied.status).toBe(404);
         expect(await denied.text()).not.toContain('Analytics fixture');
@@ -194,21 +194,14 @@ describe('Club ratings API', () => {
             'page=1&page=2',
             'userId=other',
         ]) {
-            expect(
-                (await api.request(`/clubs/${clubId}/ratings?${query}`, { userId: users[0]! }))
-                    .status,
-            ).toBe(400);
+            await api.expectStatus(400, `/clubs/${clubId}/ratings?${query}`, { userId: users[0]! });
         }
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
-        expect((await api.request(`/clubs/${clubId}/ratings`, { userId: users[2]! })).status).toBe(
-            200,
-        );
+        await api.expectStatus(200, `/clubs/${clubId}/ratings`, { userId: users[2]! });
         await api.prisma.membership.update({
             where: { id: memberships[2] },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect((await api.request(`/clubs/${clubId}/ratings`, { userId: users[2]! })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/clubs/${clubId}/ratings`, { userId: users[2]! });
     });
 });

@@ -140,16 +140,17 @@ class MemoryStorage {
     async ping(): Promise<void> {}
 }
 
+type TTestRequestInit = RequestInit & { userId?: string; json?: unknown };
+
 export interface ITestApi {
     prisma: PrismaService;
     transactions: Transactions;
     signals: NotificationSignals;
     storage: MemoryStorage;
     /** Calls the API as a User; the `x-test-user` header stands in for a session cookie. */
-    request(
-        path: string,
-        init?: RequestInit & { userId?: string; json?: unknown },
-    ): Promise<Response>;
+    request(path: string, init?: TTestRequestInit): Promise<Response>;
+    /** Calls the API like `request` and fails with the response body unless it answers `status`. */
+    expectStatus(status: number, path: string, init?: TTestRequestInit): Promise<Response>;
     close(): Promise<void>;
 }
 
@@ -185,21 +186,30 @@ export async function startTestApi(): Promise<ITestApi> {
     await app.listen(0, '127.0.0.1');
     const { port } = app.getHttpServer().address() as AddressInfo;
 
+    const request = (path: string, { userId, json, headers, ...init }: TTestRequestInit = {}) =>
+        fetch(`http://127.0.0.1:${port}${path}`, {
+            ...init,
+            headers: {
+                ...(userId ? { 'x-test-user': userId } : {}),
+                ...(json === undefined ? {} : { 'content-type': 'application/json' }),
+                ...headers,
+            },
+            ...(json === undefined ? {} : { body: JSON.stringify(json) }),
+        });
     return {
         prisma: app.get(PrismaService),
         transactions: app.get(Transactions),
         signals: app.get(NotificationSignals),
         storage,
-        request: (path, { userId, json, headers, ...init } = {}) =>
-            fetch(`http://127.0.0.1:${port}${path}`, {
-                ...init,
-                headers: {
-                    ...(userId ? { 'x-test-user': userId } : {}),
-                    ...(json === undefined ? {} : { 'content-type': 'application/json' }),
-                    ...headers,
-                },
-                ...(json === undefined ? {} : { body: JSON.stringify(json) }),
-            }),
+        request,
+        expectStatus: async (status, path, init) => {
+            const response = await request(path, init);
+            if (response.status !== status)
+                throw new Error(
+                    `Expected HTTP ${status} from ${init?.method ?? 'GET'} ${path}, got ${response.status}: ${await response.text()}`,
+                );
+            return response;
+        },
         close: () => app.close(),
     };
 }

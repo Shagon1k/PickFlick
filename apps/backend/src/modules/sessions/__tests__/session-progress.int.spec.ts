@@ -163,10 +163,10 @@ describe('Session progress', () => {
         ).toBe(204);
         await leave();
         expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
-        expect(
-            (await api.request(`/clubs/${clubId}/reactivate`, { userId: users[0], method: 'POST' }))
-                .status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/reactivate`, {
+            userId: users[0],
+            method: 'POST',
+        });
         expect(await state()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2, movieId });
     });
     it('should serialize the final submission against a departure using the committed roster', async () => {
@@ -276,12 +276,10 @@ describe('Session progress', () => {
         expect(await worker.execute(sessionId, new Date(deadlineAt.getTime() + 2))).toBe('STALE');
     });
     it('should report the progress version only to current Club members', async () => {
-        expect((await api.request(`/sessions/${sessionId}/progress`)).status).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/progress`);
         const outsider = await createUser(api.prisma);
         users.push(outsider);
-        expect(
-            (await api.request(`/sessions/${sessionId}/progress`, { userId: outsider })).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}/progress`, { userId: outsider });
         const progress = async () =>
             (await api.request(`/sessions/${sessionId}/progress`, { userId: users[1] })).json();
         expect(await progress()).toEqual({ version: 1 });
@@ -291,9 +289,7 @@ describe('Session progress', () => {
             where: { id: memberships[1] },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect(
-            (await api.request(`/sessions/${sessionId}/progress`, { userId: users[1] })).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}/progress`, { userId: users[1] });
     });
     it('should let a group polling from one address stay above the default rate limit', async () => {
         const statuses = [];

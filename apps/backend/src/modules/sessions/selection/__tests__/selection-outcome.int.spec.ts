@@ -204,9 +204,7 @@ describe('Selection outcome', () => {
             ['PROGRESS', 'SELECTION'],
             ['MANUAL', 'WATCHING'],
         ]);
-        expect(
-            (await api.request(`/sessions/${sessionId}/progress`, { userId: users[2] })).status,
-        ).toBe(200);
+        await api.expectStatus(200, `/sessions/${sessionId}/progress`, { userId: users[2] });
     });
 
     it('should recheck current tier and role while keeping the Session visibility snapshot', async () => {
@@ -289,22 +287,20 @@ describe('Selection outcome', () => {
                 ).status,
             ).toBe(409);
         }
-        expect((await api.request(`/sessions/${sessionId}`, { userId: users[2] })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/sessions/${sessionId}`, { userId: users[2] });
     });
 
     it('should deny unauthenticated, nonmember and departed access to results and progress', async () => {
         await close();
         await api.prisma.user.update({ where: { id: users[3] }, data: { appRole: 'APP_ADMIN' } });
         for (const path of [`/sessions/${sessionId}`, `/sessions/${sessionId}/progress`]) {
-            expect((await api.request(path)).status).toBe(401);
-            expect((await api.request(path, { userId: users[3] })).status).toBe(404);
+            await api.expectStatus(401, path);
+            await api.expectStatus(404, path, { userId: users[3] });
             await api.prisma.membership.updateMany({
                 where: { clubId, userId: users[2] },
                 data: { status: 'LEFT', leftAt: new Date() },
             });
-            expect((await api.request(path, { userId: users[2] })).status).toBe(404);
+            await api.expectStatus(404, path, { userId: users[2] });
         }
     });
 });

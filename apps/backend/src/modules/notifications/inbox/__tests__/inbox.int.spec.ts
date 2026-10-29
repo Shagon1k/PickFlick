@@ -40,16 +40,12 @@ describe('Inbox', () => {
     it('should isolate recipients, reject selectors and scope cursors and read actions', async () => {
         const own = (await create())!;
         const foreign = (await create(users[1]))!;
-        expect((await api.request('/notifications')).status).toBe(401);
-        expect((await api.request('/notifications/stream')).status).toBe(401);
+        await api.expectStatus(401, '/notifications');
+        await api.expectStatus(401, '/notifications/stream');
         for (const query of ['?userId=other', '?limit=0', '?limit=51', '?cursor=invalid']) {
-            expect((await api.request(`/notifications${query}`, { userId: users[0] })).status).toBe(
-                400,
-            );
+            await api.expectStatus(400, `/notifications${query}`, { userId: users[0] });
         }
-        expect(
-            (await api.request(`/notifications?cursor=${foreign.id}`, { userId: users[0] })).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/notifications?cursor=${foreign.id}`, { userId: users[0] });
         expect((await list()).items.map((item) => item.id)).toContain(own.id);
         expect((await list()).items.map((item) => item.id)).not.toContain(foreign.id);
         expect(
@@ -70,9 +66,7 @@ describe('Inbox', () => {
                 })
             ).status,
         ).toBe(400);
-        expect(
-            (await api.request('/notifications/stream?userId=other', { userId: users[0] })).status,
-        ).toBe(400);
+        await api.expectStatus(400, '/notifications/stream?userId=other', { userId: users[0] });
     });
 
     it('should stream only recipient-authorized refresh signals without proxy buffering', async () => {

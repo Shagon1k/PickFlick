@@ -141,7 +141,7 @@ describe('PersonalRating', () => {
         ]) {
             expect((await save(json)).status).toBe(400);
         }
-        expect((await api.request(`/movies/${movieId}/personal-rating`)).status).toBe(401);
+        await api.expectStatus(401, `/movies/${movieId}/personal-rating`);
         expect(
             (
                 await api.request(`/movies/${movieId}/personal-rating`, {
@@ -159,9 +159,7 @@ describe('PersonalRating', () => {
                 })
             ).status,
         ).toBe(404);
-        expect(
-            (await api.request('/movies/invalid/personal-rating', { userId: users[0] })).status,
-        ).toBe(400);
+        await api.expectStatus(400, '/movies/invalid/personal-rating', { userId: users[0] });
         expect(
             (
                 await api.request(`/sessions/${sessionId}/rating`, {

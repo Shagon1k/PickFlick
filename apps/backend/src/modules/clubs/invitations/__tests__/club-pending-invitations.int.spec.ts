@@ -73,7 +73,7 @@ describe('Pending Club invitations', () => {
             },
         ]);
         expect(JSON.stringify(pending)).not.toContain(targeted.token);
-        expect((await api.request('/club-invitations/pending')).status).toBe(401);
+        await api.expectStatus(401, '/club-invitations/pending');
         expect(await (await respond(other, targeted.id)).json()).toEqual({ state: 'invalid' });
         expect(await (await respond(target, randomUUID())).json()).toEqual({ state: 'invalid' });
     });

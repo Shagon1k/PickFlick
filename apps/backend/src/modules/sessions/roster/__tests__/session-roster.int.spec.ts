@@ -147,9 +147,7 @@ describe('Session roster', () => {
                 })
             ).status,
         ).toBe(401);
-        expect(
-            (await api.request(`/sessions/${sessionId}/roster`, { userId: outsider })).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}/roster`, { userId: outsider });
         await api.request(`/clubs/${clubId}/leave`, {
             userId: member,
             method: 'POST',
