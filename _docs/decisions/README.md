@@ -1486,6 +1486,13 @@ gaps or reconnects. Polling covers unavailable streams. Recipient snapshots reta
 intent; inbox/email delivery remains later work. No broker, queue library, dispatcher or process
 is added. This extends the implementation without changing the accepted deadline-job decision.
 
+### ADR-018 amendment — recipient intent replaced by Notifications (2026-10-29)
+
+Phase 17 records deadline and phase-change recipients as `Notification` rows in the decision
+transaction, so the `NominationDeadlineNotification` intent table had no reader. Migration 36
+drops it. `NominationDeadlineDecision` stays the automatic audit record; recipients and delivery
+follow ADR-019 and ADR-020. Owner approval: Phase 18 simplification audit, decision D4.
+
 ## ADR-019 — Distribute notification invalidation through Redis Pub/Sub
 
 - **Status:** Accepted

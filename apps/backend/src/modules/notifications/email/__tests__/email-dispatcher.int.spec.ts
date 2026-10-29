@@ -104,19 +104,6 @@ describe('EmailDispatcher', () => {
         expect(JSON.stringify(log.mock.calls)).not.toMatch(/PRIVATE|example.invalid|html|subject/);
     });
 
-    it('should recover pending intent committed by an old API instance after migration backfill', async () => {
-        const notification = (await record())!;
-        await prisma.notificationEmailDelivery.delete({
-            where: { notificationId: notification.id },
-        });
-        await buildDispatcher().runOnce();
-        expect(await getDelivery(notification.id)).toMatchObject({
-            status: 'ACCEPTED',
-            attemptCount: 1,
-        });
-        expect(send).toHaveBeenCalledTimes(1);
-    });
-
     it('should retry temporary failure after backoff with exactly the same key and payload after a restart', async () => {
         const notification = (await record())!;
         send.mockRejectedValueOnce(new EmailDeliveryError('network_or_timeout', true));

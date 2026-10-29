@@ -1,9 +1,4 @@
-import type {
-    TSaveWatchlist,
-    TWatchlist,
-    TWatchlistItem,
-    TWatchlistResponse,
-} from '@pickflick/contracts';
+import type { TSaveWatchlist, TWatchlistItem, TWatchlistResponse } from '@pickflick/contracts';
 
 import {
     readJson,
@@ -31,7 +26,7 @@ export function handleWatchlist(
     token: string | undefined,
 ): boolean {
     const match = /^\/movies\/([0-9a-f-]{36})\/watchlist$/u.exec(pathname);
-    if (pathname !== '/watchlist' && !match) return false;
+    if (!match) return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'request-watchlist');
         return true;
@@ -45,18 +40,7 @@ export function handleWatchlist(
     }
     const items = itemsBySession.get(token) ?? new Map<string, TWatchlistItem>();
     itemsBySession.set(token, items);
-    if (pathname === '/watchlist') {
-        const body: TWatchlist = {
-            items: [...items.values()].map((item) => ({
-                ...item,
-                title: 'The Grand Budapest Hotel',
-                releaseYear: 2014,
-            })),
-        };
-        sendJson(response, 200, body);
-        return true;
-    }
-    const movieId = match![1]!;
+    const movieId = match[1]!;
     if (request.method === 'GET') {
         const body: TWatchlistResponse = { item: items.get(movieId) ?? null };
         sendJson(response, 200, body);

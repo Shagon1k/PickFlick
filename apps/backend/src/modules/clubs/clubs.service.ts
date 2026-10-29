@@ -30,8 +30,6 @@ import { toClubSummary } from './club.mapper.js';
 import { readClubHub } from './club-hub.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
-const AUDIT_EVENTS_LIMIT = 20;
-
 @Injectable()
 export class ClubsService {
     constructor(
@@ -100,36 +98,26 @@ export class ClubsService {
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const { club, role } = membership;
-                const [members, auditEvents] = await Promise.all([
-                    transaction.membership.findMany({
-                        where: { clubId, status: 'ACTIVE' },
-                        orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-                        select: {
-                            id: true,
-                            role: true,
-                            joinedAt: true,
-                            user: { select: { displayName: true } },
-                            _count: {
-                                select: {
-                                    sessionParticipants: {
-                                        where: {
-                                            status: 'ACCEPTED',
-                                            session: { phase: { not: 'CANCELLED' } },
-                                        },
+                const members = await transaction.membership.findMany({
+                    where: { clubId, status: 'ACTIVE' },
+                    orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+                    select: {
+                        id: true,
+                        role: true,
+                        joinedAt: true,
+                        user: { select: { displayName: true } },
+                        _count: {
+                            select: {
+                                sessionParticipants: {
+                                    where: {
+                                        status: 'ACCEPTED',
+                                        session: { phase: { not: 'CANCELLED' } },
                                     },
                                 },
                             },
                         },
-                    }),
-                    role === 'ADMIN'
-                        ? transaction.clubAuditEvent.findMany({
-                              where: { clubId },
-                              orderBy: { createdAt: 'desc' },
-                              take: AUDIT_EVENTS_LIMIT,
-                              select: { id: true, action: true, createdAt: true },
-                          })
-                        : [],
-                ]);
+                    },
+                });
 
                 const access = getClubAccess(
                     club.lifecycle,
@@ -157,10 +145,6 @@ export class ClubsService {
                         joinedAt: member.joinedAt.toISOString(),
                         sessionCount: member._count.sessionParticipants,
                         canRemove: canRemoveMember(membership, member, club.lifecycle),
-                    })),
-                    auditEvents: auditEvents.map((event) => ({
-                        ...event,
-                        createdAt: event.createdAt.toISOString(),
                     })),
                 };
             },

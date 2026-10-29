@@ -17,13 +17,3 @@ export type TWatchlistItem = z.infer<typeof watchlistItemSchema>;
 
 export const watchlistResponseSchema = z.strictObject({ item: watchlistItemSchema.nullable() });
 export type TWatchlistResponse = z.infer<typeof watchlistResponseSchema>;
-
-export const watchlistSchema = z.strictObject({
-    items: z.array(
-        watchlistItemSchema.extend({
-            title: z.string().nullable(),
-            releaseYear: z.number().int().nullable(),
-        }),
-    ),
-});
-export type TWatchlist = z.infer<typeof watchlistSchema>;

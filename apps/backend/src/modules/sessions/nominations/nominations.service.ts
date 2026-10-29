@@ -6,7 +6,7 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager } from '../session-access.js';
@@ -27,7 +27,7 @@ export class NominationsService {
         session: Prisma.SessionGetPayload<object>,
         viewer: {
             userId: string;
-            membership: Awaited<ReturnType<typeof findMembership>>;
+            membership: TMembership;
             canManage: boolean;
         },
     ): Promise<TNominations> {

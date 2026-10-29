@@ -101,7 +101,6 @@ describe('ClubsController', () => {
 
             expect(settings.permissions).toMatchObject({ manageSettings: false, leaveClub: true });
             expect(settings.members).toHaveLength(2);
-            expect(settings.auditEvents).toEqual([]);
         });
     });
 
@@ -127,7 +126,11 @@ describe('ClubsController', () => {
 
             expect(saved.club.name).toBe('Midnight Society Updated');
             expect(saved.visibility.showRatingResults).toBe(false);
-            expect(saved.auditEvents[0]?.action).toBe('CLUB_SETTINGS_UPDATED');
+            expect(
+                await api.prisma.clubAuditEvent.findFirst({
+                    where: { clubId: club.id, action: 'CLUB_SETTINGS_UPDATED' },
+                }),
+            ).not.toBeNull();
         });
 
         it('should refuse a member', async () => {

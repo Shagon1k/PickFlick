@@ -245,4 +245,39 @@ describe('database constraints', () => {
             });
         }, 'AuthSession_token_key');
     });
+
+    const probeAward = (owner: { userId?: string; clubId?: string }) => ({
+        key: 'constraint-probe',
+        version: 1,
+        title: 'Probe',
+        description: 'Probe',
+        explanation: 'Probe',
+        target: 1,
+        progress: 1,
+        evidence: {},
+        ...owner,
+    });
+
+    it.each([{}, { userId: SYNTHETIC_FIXTURES.users[0].id, clubId: SYNTHETIC_FIXTURES.club.id }])(
+        'should reject an achievement award without exactly one owner: %j',
+        async (owner) => {
+            await expectConstraint(
+                (transaction) => transaction.achievementAward.create({ data: probeAward(owner) }),
+                'AchievementAward_check',
+            );
+        },
+    );
+
+    it.each([
+        [{ userId: SYNTHETIC_FIXTURES.users[0].id }, 'AchievementAward_key_version_userId_key'],
+        [{ clubId: SYNTHETIC_FIXTURES.club.id }, 'AchievementAward_key_version_clubId_key'],
+    ])('should award each key and version once per owner: %j', async (owner, constraint) => {
+        await expectConstraint(
+            (transaction) =>
+                transaction.achievementAward.createMany({
+                    data: [probeAward(owner), probeAward(owner)],
+                }),
+            constraint,
+        );
+    });
 });

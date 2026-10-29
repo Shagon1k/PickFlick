@@ -1,8 +1,13 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TCloseSelection, TSelection, TSubmitSelection } from '@pickflick/contracts';
+import {
+    selectionScaleMinSchema,
+    type TCloseSelection,
+    type TSelection,
+    type TSubmitSelection,
+} from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
@@ -21,7 +26,7 @@ export class SelectionService {
     async loadOutcome(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        membership: TMembership,
     ) {
         return session.type === 'PAST'
             ? loadPastSelection(tx, session, membership, this.movies)
@@ -31,7 +36,7 @@ export class SelectionService {
     async loadSelection(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        membership: TMembership,
     ): Promise<TSelection> {
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
@@ -56,7 +61,7 @@ export class SelectionService {
             nominations.map((row) => row.movieId),
         );
         return {
-            scaleMin: session.selectionScaleMin === 0 ? 0 : 1,
+            scaleMin: selectionScaleMinSchema.parse(session.selectionScaleMin),
             scaleMax: session.selectionScaleMax,
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.selectionBallot).length,

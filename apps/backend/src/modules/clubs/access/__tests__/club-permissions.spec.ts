@@ -15,7 +15,6 @@ describe('getClubPermissions', () => {
             manageRoles: true,
             manageSettings: true,
             manageLifecycle: true,
-            viewAudit: true,
         });
     });
 

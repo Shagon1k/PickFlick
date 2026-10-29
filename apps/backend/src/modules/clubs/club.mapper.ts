@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { IClubSummary, TClubRole } from '@pickflick/contracts';
+import { type IClubSummary, selectionScaleMinSchema, type TClubRole } from '@pickflick/contracts';
 
 import { getClubEntitlements } from './access/club-tiers.js';
 
@@ -35,7 +35,7 @@ export function toClubSummary(club: IClubRow, role: TClubRole): IClubSummary {
             : {}),
         lifecycle: club.lifecycle,
         membershipRole: role,
-        selectionScaleMin: club.selectionScaleMin === 1 ? 1 : 0,
+        selectionScaleMin: selectionScaleMinSchema.parse(club.selectionScaleMin),
         selectionScaleMax: club.selectionScaleMax,
         tier: getClubEntitlements(club.id).tier,
     };

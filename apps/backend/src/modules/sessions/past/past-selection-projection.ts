@@ -1,4 +1,4 @@
-import type { TImportedSelectionOutcome } from '@pickflick/contracts';
+import { selectionScaleMinSchema, type TImportedSelectionOutcome } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import type { TMembership } from '../../clubs/access/club-access.js';
@@ -29,7 +29,7 @@ export async function loadPastSelection(
     );
     return {
         source: 'IMPORTED',
-        scaleMin: session.selectionScaleMin === 0 ? 0 : 1,
+        scaleMin: selectionScaleMinSchema.parse(session.selectionScaleMin),
         scaleMax: session.selectionScaleMax,
         nominations: canSeeBreakdown
             ? visible.map((row) => ({

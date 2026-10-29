@@ -25,8 +25,7 @@ No BullMQ, new dependency, Web Push, inactivity producer or billing producer is 
 
 Migration 35 creates one email delivery per opted-in Notification, address-hash suppression and
 webhook receipt records. It also queues previously pending email intent. Source transactions
-create new jobs atomically. Each claim also materializes pending intent from old API instances
-that can still write during a rolling migration. Workers claim one due row using `SKIP LOCKED`, a two-minute lease and a
+create new jobs atomically. Workers claim one due row using `SKIP LOCKED`, a two-minute lease and a
 fencing token. Expired claims recover after restart. Six attempts use 1-minute, 5-minute,
 30-minute, 2-hour and 6-hour backoff, within 23 hours from the first claim. The stable provider key
 and request hash prevent changed retries; expired or changed requests fail for operator review.

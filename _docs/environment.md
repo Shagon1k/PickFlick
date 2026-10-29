@@ -137,8 +137,8 @@ toolchain:
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL, Redis and MinIO, migrations, seed,
   `pnpm test:integration`, `pnpm test:e2e` against the built frontend and backend, and
-  `pnpm test:journeys` (browser journeys through the real web app and API). CI layers
-  `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
+  `pnpm test:journeys` (browser journeys through the real web app and API). CI starts the same
+  `compose.local.yaml` services as local development.
 - **UI** — one matrix job on the digest-pinned Linux Playwright image. PRs run `smoke`
   (`pnpm test:ui:smoke`: security headers, CSP, public accessibility and interaction, product
   navigation, 1024px overflow). `main` pushes and manual runs run `contract`
@@ -166,13 +166,12 @@ with the short revision.
 | File                   | Purpose                                                                                                                                              |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL, Redis and MinIO.                                                                                                                   |
-| `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                             |
 | `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.                              |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL, Redis and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
 Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
-`cgr.dev/chainguard/minio-client` pair already selected in `compose.ci.yaml`, replacing the
-inaccessible Quay release tags. Sharing these pins keeps CI, local development, and previews on
+`cgr.dev/chainguard/minio-client` pair, replacing the inaccessible Quay release tags. CI uses
+`compose.local.yaml` too. Sharing these pins keeps CI, local development, and previews on
 the same tested storage binaries. These are
 [Chainguard's Wolfi-based MinIO images](https://edu.chainguard.dev/chainguard/containers/getting-started/web-and-data-services/minio/);
 their OCI labels identify Chainguard as vendor and link its image sources.

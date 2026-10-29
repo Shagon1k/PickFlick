@@ -139,7 +139,7 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
-`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
+`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
 and `NotificationDeliveryAttempt`. Database-enforced invariants:
@@ -519,10 +519,11 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, `NominationDeadlineDecision` audit records without a
-human actor, and recipient-specific `NominationDeadlineNotification` intent. Migration 22 removed
-the separate `NominationDeadlineJob` scheduling table: the Session row is the schedule. Notification
-delivery remains Proposed for the later notification phase; these rows do not send messages.
+Migration 18 adds Session `deadlineVersion` and `NominationDeadlineDecision` audit records without a
+human actor. Migration 22 removed the separate `NominationDeadlineJob` scheduling table: the Session
+row is the schedule. The decision transaction records `NOMINATION_STALLED` or the phase-change
+Notification rows; migration 36 dropped the earlier write-only `NominationDeadlineNotification`
+recipient intent, which nothing read once Notifications existed.
 
 Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
 Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
@@ -917,8 +918,9 @@ Session transitions, audited Membership/Club changes and new achievement awards 
 their existing transaction. Notification writes failing roll back the source mutation. The
 per-recipient/event/source UUID/occurrence unique index handles concurrent replay; phase/deadline
 versions distinguish repeated Session events. First-write preferences and attempts survive retries.
-Existing SessionProgressEvent and NominationDeadlineNotification records retain their existing
-roles; neither is a second inbox. Only future writes produce Notifications.
+Existing SessionProgressEvent records retain their role (live progress and the Early Bird
+achievement's Selection opening time); they are not a second inbox. Only future writes produce
+Notifications.
 
 The authenticated preference GET/PUT API is private/no-store, derives identity from the session,
 and validates strict shared contracts. Optional defaults are in-app on/email off; transactional

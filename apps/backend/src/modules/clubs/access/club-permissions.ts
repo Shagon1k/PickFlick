@@ -27,7 +27,6 @@ export function getClubPermissions(
         manageRoles: isActive && isAdmin,
         manageSettings: isActive && isAdmin,
         manageLifecycle: isAdmin,
-        viewAudit: isAdmin,
     };
 }
 

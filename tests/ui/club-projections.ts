@@ -57,7 +57,6 @@ export function settingsProjection(
             manageRoles: isActive && isAdmin,
             manageSettings: isActive && isAdmin,
             manageLifecycle: isAdmin,
-            viewAudit: isAdmin,
         },
         entitlements: {
             tier: 'FREE',
@@ -81,15 +80,6 @@ export function settingsProjection(
                 member.role !== role &&
                 (isAdmin || member.role === 'MEMBER'),
         })),
-        auditEvents: isAdmin
-            ? [
-                  {
-                      id: '50000000-0000-4000-8000-000000000031',
-                      action: 'CLUB_SETTINGS_UPDATED',
-                      createdAt: '2026-09-18T12:00:00.000Z',
-                  },
-              ]
-            : [],
     };
 }
 

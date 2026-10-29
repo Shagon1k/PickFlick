@@ -172,7 +172,7 @@ model Club {
   description                 String?
   avatarObjectKey             String?
   lifecycle                   ClubLifecycle      @default(ACTIVE)
-  selectionScaleMin           Int                @default(1)
+  selectionScaleMin           Int                @default(0)
   selectionScaleMax           Int                @default(5)
   showNominationAuthors       Boolean            @default(true)
   showNominationsBeforeSubmit Boolean            @default(true)
@@ -212,21 +212,20 @@ model AchievementAward {
 }
 
 model Membership {
-  deadlineNotifications NominationDeadlineNotification[]
-  id                    String                           @id @db.Uuid
-  clubId                String                           @db.Uuid
-  userId                String                           @db.Uuid
-  role                  ClubRole                         @default(MEMBER)
-  status                MembershipStatus                 @default(ACTIVE)
-  joinedAt              DateTime                         @default(now()) @db.Timestamptz(3)
-  leftAt                DateTime?                        @db.Timestamptz(3)
-  updatedAt             DateTime                         @updatedAt @db.Timestamptz(3)
-  club                  Club                             @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  user                  User                             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id                    String               @id @db.Uuid
+  clubId                String               @db.Uuid
+  userId                String               @db.Uuid
+  role                  ClubRole             @default(MEMBER)
+  status                MembershipStatus     @default(ACTIVE)
+  joinedAt              DateTime             @default(now()) @db.Timestamptz(3)
+  leftAt                DateTime?            @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @db.Timestamptz(3)
+  club                  Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
   auditEvents           ClubAuditEvent[]
   sessionParticipants   SessionParticipant[]
   pastNominations       PastNomination[]
-  createdSessionInvites SessionInvite[]                  @relation("SessionInviteCreator")
+  createdSessionInvites SessionInvite[]      @relation("SessionInviteCreator")
 
   @@unique([id, clubId])
   // PostgreSQL migration owns the partial unique index for one ACTIVE row per User/Club.
@@ -480,29 +479,17 @@ enum NominationDeadlineOutcome {
 
 // Automatic decisions have no human actor; this is their immutable audit record.
 model NominationDeadlineDecision {
-  sessionId       String                           @db.Uuid
+  sessionId       String                    @db.Uuid
   deadlineVersion Int
   outcome         NominationDeadlineOutcome
   nominationCount Int
-  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
-  session         Session                          @relation(fields: [sessionId], references: [id], onDelete: Restrict)
-  notifications   NominationDeadlineNotification[]
+  createdAt       DateTime                  @default(now()) @db.Timestamptz(3)
+  session         Session                   @relation(fields: [sessionId], references: [id], onDelete: Restrict)
 
   @@id([sessionId, deadlineVersion])
 }
 
 // Recipient intent only. Delivery is owned by the later notification phase.
-model NominationDeadlineNotification {
-  sessionId       String                     @db.Uuid
-  deadlineVersion Int
-  membershipId    String                     @db.Uuid
-  decision        NominationDeadlineDecision @relation(fields: [sessionId, deadlineVersion], references: [sessionId, deadlineVersion], onDelete: Restrict)
-  membership      Membership                 @relation(fields: [membershipId], references: [id], onDelete: Restrict)
-
-  @@id([sessionId, deadlineVersion, membershipId])
-  @@index([membershipId])
-}
-
 model SessionProgressEvent {
   sessionId      String       @db.Uuid
   version        Int

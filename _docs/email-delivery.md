@@ -21,8 +21,7 @@ records the required configuration without authorizing a deployment or provider 
    into chat, logs, a PR or the email worker. The live API refuses to start without it.
 5. Apply migrations through 35 before starting this revision. The new `email-worker` service uses
    the existing worker image with `node dist/email-worker.js`, waits for release and backend
-   readiness, and has no port or Redis connection. Claims also recover pending intent committed by
-   old API instances after the migration backfill. Local/test/preview modes never claim jobs.
+   readiness, and has no port or Redis connection. Local/test/preview modes never claim jobs.
 
 The worker uses a sending-only key and never calls provider management APIs. The API verifies the
 raw webhook body using the installed SDK before parsing supported fields. Receipt IDs prevent

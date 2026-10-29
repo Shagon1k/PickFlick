@@ -12,7 +12,6 @@ export const CLUB_PERMISSIONS = [
     'manageRoles',
     'manageSettings',
     'manageLifecycle',
-    'viewAudit',
 ] as const;
 
 export type TClubPermission = (typeof CLUB_PERMISSIONS)[number];
@@ -57,41 +56,6 @@ export interface IClubMember {
     canRemove: boolean;
 }
 
-export const CLUB_AUDIT_ACTIONS = [
-    'SESSION_CREATED',
-    'SESSION_UPDATED',
-    'SESSION_CANCELLED',
-    'SESSION_NOMINATION_CLOSED',
-    'SESSION_SELECTION_CLOSED',
-    'SESSION_RATING_OPENED',
-    'SESSION_RATING_CLOSED',
-    'SESSION_INVITE_CREATED',
-    'SESSION_INVITE_REVOKED',
-    'SESSION_INVITE_RESPONDED',
-    'SESSION_PARTICIPANT_LEFT',
-    'SESSION_PARTICIPANT_REMOVED',
-    'MEMBERSHIP_ROLE_CHANGED',
-    'ADMIN_TRANSFERRED',
-    'CLUB_SETTINGS_UPDATED',
-    'CLUB_AVATAR_UPDATED',
-    'CLUB_ARCHIVED',
-    'CLUB_REACTIVATED',
-    'MEMBERSHIP_LEFT',
-    'MEMBERSHIP_REMOVED',
-    'CLUB_DELETED',
-    'CLUB_INVITE_CREATED',
-    'CLUB_INVITE_REVOKED',
-    'MEMBERSHIP_JOINED',
-] as const;
-
-export type TClubAuditAction = (typeof CLUB_AUDIT_ACTIONS)[number];
-
-export interface IClubAuditEvent {
-    id: string;
-    action: TClubAuditAction;
-    createdAt: string;
-}
-
 /** Everything the Manage Club page renders for the signed-in member. */
 export interface IClubAccess {
     adminless: boolean;
@@ -109,7 +73,6 @@ export interface IClubSettings {
     entitlements: IClubEntitlements;
     visibility: IClubVisibility;
     members: IClubMember[];
-    auditEvents: IClubAuditEvent[];
 }
 
 export interface IClubHubMovie {

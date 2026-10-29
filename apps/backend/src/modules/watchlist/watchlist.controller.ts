@@ -20,12 +20,6 @@ import { WatchlistService } from './watchlist.service.js';
 export class WatchlistController {
     constructor(private readonly watchlist: WatchlistService) {}
 
-    @Get('watchlist')
-    @Header('Cache-Control', 'private, no-store')
-    list(@CurrentUser() user: IAuthUser) {
-        return this.watchlist.list(user.id);
-    }
-
     @Get('movies/:movieId/watchlist')
     @Header('Cache-Control', 'private, no-store')
     async get(

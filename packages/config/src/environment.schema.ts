@@ -220,7 +220,6 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             apiKey: env.RESEND_API_KEY,
             webhookSecret: env.RESEND_WEBHOOK_SECRET,
             from: env.RESEND_FROM,
-            deliveryMode: env.RESEND_DELIVERY_MODE,
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
         },
         contact: { deliveryTo: env.CONTACT_DELIVERY_TO },

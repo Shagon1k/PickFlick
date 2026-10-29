@@ -29,11 +29,6 @@ export function getRetryAt(claim: TEmailClaim, now: Date) {
 
 export async function claimEmail(prisma: PrismaClient, now: Date) {
     return prisma.$transaction(async (tx) => {
-        // Old API instances can still commit email intent during a rolling migration.
-        await tx.$executeRaw`INSERT INTO "NotificationEmailDelivery" ("notificationId", "nextAttemptAt")
-            SELECT "notificationId", ${now} FROM "NotificationDeliveryAttempt"
-            WHERE "channel" = 'EMAIL' AND "status" = 'PENDING' AND "attempt" = 1
-            ON CONFLICT ("notificationId") DO NOTHING`;
         const token = randomUUID();
         const leaseUntil = new Date(now.getTime() + LEASE_MS);
         const [claim] = await tx.$queryRaw<TEmailClaim[]>`

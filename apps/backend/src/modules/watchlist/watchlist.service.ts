@@ -14,15 +14,6 @@ export class WatchlistService {
         return item ? this.toResponse(item) : null;
     }
 
-    async list(userId: string) {
-        const items = await this.prisma.watchlistItem.findMany({
-            where: { userId },
-            include: { movie: { select: { title: true, releaseYear: true } } },
-            orderBy: [{ priority: 'desc' }, { addedAt: 'asc' }, { movieId: 'asc' }],
-        });
-        return { items: items.map((item) => ({ ...this.toResponse(item), ...item.movie })) };
-    }
-
     async save(userId: string, movieId: string, input: TSaveWatchlist) {
         if (!(await this.prisma.movie.findUnique({ where: { id: movieId }, select: { id: true } })))
             throw new NotFoundException();

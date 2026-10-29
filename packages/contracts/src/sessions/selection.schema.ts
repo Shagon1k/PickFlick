@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { CLUB_SELECTION_SCALE_CEILING } from '../clubs/club.schema.js';
+import {
+    CLUB_SELECTION_SCALE_CEILING,
+    selectionScaleMaxSchema,
+    selectionScaleMinSchema,
+} from '../clubs/club.schema.js';
 import { nominationMovieSchema } from './nomination.schema.js';
 import { importedSelectionOutcomeSchema } from './past-selection.schema.js';
 
@@ -38,8 +42,8 @@ export const liveSelectionOutcomeSchema = z.strictObject({
     closure: z.enum(['AUTOMATIC', 'MANUAL']),
     breakdown: z
         .strictObject({
-            scaleMin: z.union([z.literal(0), z.literal(1)]),
-            scaleMax: z.int().min(1).max(CLUB_SELECTION_SCALE_CEILING),
+            scaleMin: selectionScaleMinSchema,
+            scaleMax: selectionScaleMaxSchema,
             ballotCount: z.int().nonnegative(),
             reason: selectionReasonSchema,
             ranking: z.array(
@@ -63,8 +67,8 @@ export const selectionOutcomeSchema = z.discriminatedUnion('source', [
 export type TSelectionOutcome = z.infer<typeof selectionOutcomeSchema>;
 
 export const selectionSchema = z.strictObject({
-    scaleMin: z.union([z.literal(0), z.literal(1)]),
-    scaleMax: z.int().min(1).max(CLUB_SELECTION_SCALE_CEILING),
+    scaleMin: selectionScaleMinSchema,
+    scaleMax: selectionScaleMaxSchema,
     acceptedCount: z.int().nonnegative(),
     submittedCount: z.int().nonnegative(),
     canSubmit: z.boolean(),

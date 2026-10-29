@@ -1,4 +1,8 @@
-import { selectionReasonSchema, type TLiveSelectionOutcome } from '@pickflick/contracts';
+import {
+    selectionReasonSchema,
+    selectionScaleMinSchema,
+    type TLiveSelectionOutcome,
+} from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 import { z } from 'zod';
 
@@ -14,7 +18,7 @@ export const snapshotSchema = z.object({
     closure: z.object({ kind: z.enum(['AUTOMATIC', 'MANUAL']) }),
     reason: selectionReasonSchema,
     inputs: z.object({
-        scaleMin: z.union([z.literal(0), z.literal(1)]),
+        scaleMin: selectionScaleMinSchema,
         scaleMax: z.int(),
         ballots: z.array(z.object({})),
     }),

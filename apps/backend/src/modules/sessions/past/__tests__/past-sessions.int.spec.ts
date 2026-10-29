@@ -60,7 +60,7 @@ describe('Past Sessions', () => {
             phase: 'COMPLETED',
             deadlineAt: null,
             selection: null,
-            selectionOutcome: { source: 'IMPORTED', scaleMin: 1, scaleMax: 5, nominations: [] },
+            selectionOutcome: { source: 'IMPORTED', scaleMin: 0, scaleMax: 5, nominations: [] },
             nominations: null,
             canEdit: false,
             canCancel: false,

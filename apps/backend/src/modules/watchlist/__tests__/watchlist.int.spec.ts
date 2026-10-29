@@ -1,10 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-    watchlistItemSchema,
-    watchlistResponseSchema,
-    watchlistSchema,
-} from '@pickflick/contracts';
+import { librarySchema, watchlistItemSchema, watchlistResponseSchema } from '@pickflick/contracts';
 
 import {
     createUser,
@@ -37,7 +33,10 @@ describe('Watchlist', () => {
     });
     const read = (index = 0) =>
         api.request(`/movies/${movieId}/watchlist`, { userId: users[index] });
-    const list = (index = 0) => api.request('/watchlist', { userId: users[index] });
+    const listMovieIds = async (index = 0) => {
+        const response = await api.request('/library?tab=watchlist', { userId: users[index] });
+        return librarySchema.parse(await response.json()).items.map((item) => item.movieId);
+    };
     const save = (json: unknown = { priority: 'MEDIUM' }, index = 0) =>
         api.request(`/movies/${movieId}/watchlist`, { userId: users[index], method: 'PUT', json });
     const remove = (index = 0) =>
@@ -59,18 +58,12 @@ describe('Watchlist', () => {
                 priority: 'HIGH',
             });
         }
-        const response = await list();
-        expect(response.headers.get('cache-control')).toBe('private, no-store');
-        expect(watchlistSchema.parse(await response.json())).toEqual({
-            items: [
-                { ...original, priority: 'HIGH', title: 'Watchlist screening', releaseYear: 2024 },
-            ],
-        });
+        expect(await listMovieIds()).toEqual([movieId]);
         expect(await api.prisma.watchlistItem.count({ where: { movieId } })).toBe(1);
         const removals = await Promise.all([remove(), remove()]);
         expect(removals.map((response) => response.status)).toEqual([204, 204]);
         expect(await (await read()).json()).toEqual({ item: null });
-        expect(await (await list()).json()).toEqual({ items: [] });
+        expect(await listMovieIds()).toEqual([]);
         expect((await save({ priority: 'LOW' })).status).toBe(200);
         expect(await (await read()).json()).toMatchObject({ item: { priority: 'LOW' } });
     });
@@ -78,7 +71,7 @@ describe('Watchlist', () => {
     it('should isolate reads, edits and deletes by the authenticated user', async () => {
         await save({ priority: 'HIGH' });
         expect(await (await read(1)).json()).toEqual({ item: null });
-        expect(await (await list(1)).json()).toEqual({ items: [] });
+        expect(await listMovieIds(1)).toEqual([]);
         expect((await save({ priority: 'LOW', userId: users[0] }, 1)).status).toBe(400);
         expect((await save({ priority: 'LOW' }, 1)).status).toBe(200);
         expect(await (await read()).json()).toMatchObject({ item: { priority: 'HIGH' } });
@@ -88,7 +81,7 @@ describe('Watchlist', () => {
             json: { userId: users[0] },
         });
         expect(await (await read()).json()).toMatchObject({ item: { priority: 'HIGH' } });
-        expect(await (await list(1)).json()).toEqual({ items: [] });
+        expect(await listMovieIds(1)).toEqual([]);
         expect(
             (
                 await api.request(`/users/${users[0]}/watchlist/${movieId}`, {
@@ -128,7 +121,6 @@ describe('Watchlist', () => {
                 ).status,
             ).toBe(400);
         }
-        expect((await api.request('/watchlist')).status).toBe(401);
         expect(
             (
                 await api.request(`/movies/${randomUUID()}/watchlist`, {

@@ -2,14 +2,11 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { isOpenSessionPhase, type TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, loadClubAccess } from '../clubs/access/club-access.js';
+import { loadClubAccess, type TMembership } from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
 import { getClubEntitlements } from '../clubs/access/club-tiers.js';
 
-export async function canManage(
-    transaction: Prisma.TransactionClient,
-    membership: Awaited<ReturnType<typeof findMembership>>,
-) {
+export async function canManage(transaction: Prisma.TransactionClient, membership: TMembership) {
     const { access } = await loadClubAccess(transaction, membership.club);
     return getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
@@ -23,7 +20,7 @@ export function assertOpen(phase: string) {
  */
 export async function assertManager(
     transaction: Prisma.TransactionClient,
-    membership: Awaited<ReturnType<typeof findMembership>>,
+    membership: TMembership,
 ) {
     if (membership.role === 'MEMBER') throw new ForbiddenException();
     if (!(await canManage(transaction, membership)))
@@ -32,7 +29,7 @@ export async function assertManager(
 
 export function canViewSelectionBreakdown(
     session: Pick<Prisma.SessionGetPayload<object>, 'clubId' | 'showVoteResults'>,
-    membership: Pick<Awaited<ReturnType<typeof findMembership>>, 'role'>,
+    membership: Pick<TMembership, 'role'>,
 ) {
     return (
         membership.role !== 'MEMBER' ||

@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager, canManage } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
@@ -15,7 +15,7 @@ export class RatingService {
     async loadRating(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        membership: TMembership,
     ): Promise<TRating> {
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
