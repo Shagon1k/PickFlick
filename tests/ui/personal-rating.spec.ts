@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
@@ -14,14 +15,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 viewport: { width, height: 900 },
                 hasTouch: true,
             });
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: `valid-personal-${width}`,
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, `valid-personal-${width}`);
             const page = await context.newPage();
             try {
                 await page.route('**/api/movies/images/**', (route) => route.abort());
@@ -87,14 +81,7 @@ test(
     'Personal Rating retains selection offline and after failed saves, then recovers',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-rating-failure',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-rating-failure');
         await page.route('**/api/movies/images/**', (route) => route.abort());
         await page.goto(`/movies/${MOVIE_ID}`);
         await page.getByRole('button', { name: 'Rate this film' }).click();
@@ -110,14 +97,7 @@ test(
             dialog.getByText('We could not save your rating.', { exact: false }),
         ).toBeVisible();
         await expect(dialog.getByRole('radio', { name: '8 of 10' })).toBeChecked();
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-rating-recovery',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-rating-recovery');
         await dialog.getByRole('button', { name: 'Save rating' }).click();
         await expect(dialog.getByText('Personal Rating saved.')).toBeVisible();
     },

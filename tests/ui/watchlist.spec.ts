@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
@@ -15,14 +16,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-watchlist-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-watchlist-${width}`);
                 const page = await context.newPage();
                 await page.route('**/api/movies/images/**', (route) => route.abort());
                 await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
@@ -145,14 +139,7 @@ test(
     'Library gives a retry on read failure and redirects anonymous visitors',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-watchlist-unavailable',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-watchlist-unavailable');
         await page.goto('/library?tab=watchlist');
         await expect(page.getByText('Your Watchlist is temporarily unavailable.')).toBeVisible();
         await expect(page.getByRole('link', { name: 'Try again' })).toBeVisible();

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -28,13 +29,7 @@ const invitationPath = (state: keyof typeof tokens = 'valid') =>
     `/invite/club/${tokens[state].repeat(43)}`;
 
 async function signIn(context: BrowserContext, name: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-invitation-${name}`,
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, `valid-invitation-${name}-${crypto.randomUUID()}`);
 }
 
 test(

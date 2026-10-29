@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -13,14 +14,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-library-stats-final-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-library-stats-final-${width}`);
                 const page = await context.newPage();
                 await page.goto('/library?q=Grand&score=8');
                 const statistics = page.getByRole('region', {
@@ -84,14 +78,7 @@ test(
     'Personal statistics timeouts preserve the Library table and filters',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-statistics-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-statistics-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics unavailable' }),
@@ -135,14 +122,7 @@ test(
     'Library starts statistics and tab content concurrently',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-parallel-library',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-parallel-library');
         await page.goto('/library');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),
@@ -155,14 +135,7 @@ test(
     'Library table timeouts preserve statistics and show the existing recovery state',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-table-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-table-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),

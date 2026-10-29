@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
@@ -14,14 +15,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-hub-achievements-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-hub-achievements-${width}`);
                 const page = await context.newPage();
                 for (const path of [
                     '/library?tab=achievements',
@@ -86,47 +80,19 @@ test(
     'Achievement views recover from read failures and handle empty and denied states',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-achievements-transient',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-achievements-transient');
         await page.goto('/library?tab=achievements');
         await expect(page.getByRole('region', { name: 'Achievements unavailable' })).toBeVisible();
         await page.getByRole('button', { name: 'Try again', exact: true }).click();
         await expect(page.getByRole('article')).toHaveCount(6);
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-achievements-empty',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-achievements-empty');
         await page.goto('/library?tab=achievements');
         await expect(page.getByRole('status')).toHaveText('0 of 0 achievements shown');
         await expect(page.getByText('0%', { exact: true })).toBeVisible();
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-hub-achievements-denied',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-hub-achievements-denied');
         await page.goto(`/clubs/${CLUB_ID}/achievements`);
         await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-achievements-stats-unavailable',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-achievements-stats-unavailable');
         await page.goto('/library?tab=achievements');
         await expect(page.getByRole('article')).toHaveCount(6);
         await expect(

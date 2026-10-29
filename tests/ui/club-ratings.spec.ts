@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
@@ -16,14 +17,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-hub-ratings-pro-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-hub-ratings-pro-${width}`);
                 const page = await context.newPage();
                 await page.goto(PATH, { waitUntil: 'load' });
                 await expect(page.getByRole('row')).toHaveCount(26);
@@ -95,9 +89,7 @@ test(
             ['valid-hub-ratings-unavailable', 'Club Ratings are temporarily unavailable'],
             ['valid-hub-ratings-denied', 'Club access unavailable'],
         ]) {
-            await context.addCookies([
-                { name: 'pickflick.session_token', value: token!, domain: '127.0.0.1', path: '/' },
-            ]);
+            await signInMock(context, token!);
             await page.goto(PATH);
             await expect(page.getByText(copy!, { exact: false })).toBeVisible();
         }
@@ -118,14 +110,7 @@ test('Club Ratings can retry an API failure and Overview follows the plan', asyn
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-hub-ratings-pro-ratings-transient-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, `valid-hub-ratings-pro-ratings-transient-${crypto.randomUUID()}`);
     await page.goto(PATH);
     await expect(
         page.getByRole('heading', { name: 'Club Ratings are temporarily unavailable' }),
@@ -137,14 +122,7 @@ test('Club Ratings can retry an API failure and Overview follows the plan', asyn
     await expect(
         page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
     ).toHaveCount(7);
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-hub-ratings-free',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-hub-ratings-free');
     await page.reload();
     await expect(
         page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
@@ -155,14 +133,7 @@ test('Ratings navigation keeps the Hub frame and shows its loading boundary', as
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-hub-ratings-pro-loading',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-hub-ratings-pro-loading');
     const isPrefetch = (headers: Record<string, string>) =>
         Object.keys(headers).some((name) => name.includes('prefetch'));
     const prefetched = page.waitForResponse(

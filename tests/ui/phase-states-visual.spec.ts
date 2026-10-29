@@ -1,5 +1,6 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { screenshotViewports } from './viewports';
 
@@ -61,14 +62,7 @@ const STATES = [
 ];
 
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `${token}-phase-visual-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, `${token}-phase-visual-${crypto.randomUUID()}`);
 }
 
 for (const viewport of screenshotViewports) {

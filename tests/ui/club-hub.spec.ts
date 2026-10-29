@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
@@ -9,16 +10,7 @@ const FIRST_CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const SECOND_CLUB_ID = '10000000-0000-4000-8000-000000000032';
 
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, token);
 }
 
 test(

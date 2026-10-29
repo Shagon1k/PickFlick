@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
@@ -8,16 +9,7 @@ import { canonicalViewports } from './viewports';
 const SESSION_ID = '30000000-0000-4000-8000-000000000041';
 const INVITATION_PATH = `/invite/session/${'s'.repeat(43)}`;
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-session-roster-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-session-roster-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(

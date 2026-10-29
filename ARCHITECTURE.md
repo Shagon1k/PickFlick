@@ -200,6 +200,8 @@ listed for a recipient. Existing unsafe-state privacy rules apply to both flows.
 Hub and Manage Club projections carry `IClubAccess` (`adminless`, `newWorkAllowed`, and restriction
 `reasons`) and role permissions. Manage Club also identifies the caller's Membership. The access
 resolver currently uses lifecycle, active administration, member count, and fixture plan limits.
+The limits per plan are `CLUB_TIER_ENTITLEMENTS` in `@pickflick/contracts`, which the public
+pricing pages also read, so the advertised and enforced limits cannot drift.
 Phase 20 can replace entitlement input without making browser state an authorization boundary.
 `MEMBER_LIMIT` means excess roster size: history and existing participation stay available, and removal
 and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.

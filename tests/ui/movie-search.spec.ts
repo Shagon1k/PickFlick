@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
@@ -11,14 +12,7 @@ for (const width of [390, 768, 1024, 1440]) {
         { tag: '@smoke' },
         async ({ context, page }) => {
             await page.setViewportSize({ width, height: 900 });
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: `valid-search-${width}`,
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, `valid-search-${width}`);
             await page.goto('/app', { waitUntil: 'load' });
             await settle(page);
             const trigger = page
@@ -74,14 +68,7 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-states',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-search-states');
     await page.goto('/app', { waitUntil: 'load' });
     await settle(page);
     const trigger = page
@@ -134,14 +121,7 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
     const moviePath = `/movies/${MOVIE_ID}`;
     await page.goto(moviePath);
     await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-touch',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-search-touch');
     await page.goto('/app', { waitUntil: 'load' });
     await settle(page);
     await page
@@ -158,14 +138,7 @@ test('search renders available same-origin posters and preserves film rows when 
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-posters',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-search-posters');
     await page.route('**/api/movies/*/poster', (route) =>
         route.fulfill({
             status: 200,

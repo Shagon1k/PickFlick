@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -13,14 +14,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-library-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-library-${width}`);
                 const page = await context.newPage();
                 await page.goto('/library', { waitUntil: 'load' });
                 await expect(page.getByRole('table')).toHaveCount(1);
@@ -150,14 +144,7 @@ for (const destination of [
                     callbackURL: destination,
                 });
 
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: 'valid-library-sign-in',
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, 'valid-library-sign-in');
             await page.reload();
             await expect(page).toHaveURL(destination);
             await expect(
