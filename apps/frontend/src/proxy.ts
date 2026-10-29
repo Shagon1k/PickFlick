@@ -16,7 +16,7 @@ const CLUB_PATH =
 
 /**
  * Gives every page response a fresh CSP nonce. Next.js reads the policy from the request headers
- * and stamps the nonce on its own scripts; the root layout reads `x-nonce` for the theme script.
+ * and stamps the nonce on its own scripts; the root layout keeps every page dynamic for that.
  *
  * Component and shell previews ship in every image because one image is promoted from UAT to
  * production. Production answers them with the ordinary 404 at request time.
@@ -25,7 +25,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
     const policy = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', policy);
 
     const shouldHidePreview =
@@ -41,24 +40,29 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         response.headers.set('Referrer-Policy', 'no-referrer');
         response.headers.set('Cache-Control', 'private, no-store');
     }
+    await rememberLastClub(request, response);
+    return response;
+}
+
+/** Saves a directly visited Club as `/app`'s default once the API confirms the Membership. */
+async function rememberLastClub(request: NextRequest, response: NextResponse): Promise<void> {
     const clubId = CLUB_PATH.exec(request.nextUrl.pathname)?.[1];
     if (
-        clubId &&
-        request.method === 'GET' &&
-        request.cookies.get(LAST_CLUB_COOKIE)?.value !== clubId
-    ) {
-        try {
-            await getClubHub(clubId, request.headers);
-        } catch (error) {
-            if (!(error instanceof ApiError && PAGE_HANDLED_STATUSES.includes(error.status))) {
-                console.error('Club preference authorization failed.');
-            }
-            // The page owns access and service-failure states; keep the previous preference.
-            return response;
+        !clubId ||
+        request.method !== 'GET' ||
+        request.cookies.get(LAST_CLUB_COOKIE)?.value === clubId
+    )
+        return;
+    try {
+        await getClubHub(clubId, request.headers);
+    } catch (error) {
+        if (!(error instanceof ApiError && PAGE_HANDLED_STATUSES.includes(error.status))) {
+            console.error('Club preference authorization failed.');
         }
-        response.cookies.set(LAST_CLUB_COOKIE, clubId, LAST_CLUB_COOKIE_OPTIONS);
+        // The page owns access and service-failure states; keep the previous preference.
+        return;
     }
-    return response;
+    response.cookies.set(LAST_CLUB_COOKIE, clubId, LAST_CLUB_COOKIE_OPTIONS);
 }
 
 export const config = {

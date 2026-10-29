@@ -53,10 +53,8 @@ describe('proxy', () => {
         const first = await proxy(new NextRequest('https://pick-flick.app/pricing'));
         const second = await proxy(new NextRequest('https://pick-flick.app/pricing'));
         const policy = first.headers.get('Content-Security-Policy');
-        const nonce = first.headers.get('x-middleware-request-x-nonce');
 
-        expect(nonce).toBeTruthy();
-        expect(policy).toContain(`'nonce-${nonce}'`);
+        expect(policy).toMatch(/'nonce-[A-Za-z0-9+/=]+'/u);
         expect(first.headers.get('x-middleware-request-content-security-policy')).toBe(policy);
         expect(second.headers.get('Content-Security-Policy')).not.toBe(policy);
     });
