@@ -50,7 +50,8 @@ export const changeMemberRole = (
         json: input,
     });
 
-export type TClubLifecycleAction = 'archive' | 'reactivate' | 'leave' | 'delete';
+export const CLUB_LIFECYCLE_ACTIONS = ['archive', 'reactivate', 'leave', 'delete'] as const;
+export type TClubLifecycleAction = (typeof CLUB_LIFECYCLE_ACTIONS)[number];
 
 export const changeClubLifecycle = (
     clubId: string,

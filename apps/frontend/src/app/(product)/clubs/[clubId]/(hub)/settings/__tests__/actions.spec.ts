@@ -19,7 +19,10 @@ const navigation = vi.hoisted(() => ({ redirect: vi.fn() }));
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => navigation);
-vi.mock('#api/clubs.server', () => api);
+vi.mock('#api/clubs.server', () => ({
+    ...api,
+    CLUB_LIFECYCLE_ACTIONS: ['archive', 'reactivate', 'leave', 'delete'],
+}));
 vi.mock('#lib/api.server', () => ({
     ApiError: class extends Error {
         constructor(
@@ -169,6 +172,21 @@ describe('Club settings actions', () => {
             message: expect.stringContaining('most active Clubs your plan allows'),
             status: 'error',
         });
+    });
+
+    it('should refuse a lifecycle action that is not one of the four Club actions', async () => {
+        await expect(
+            changeClubLifecycleAction(
+                CLUB_ID,
+                'invitations' as 'archive',
+                previous,
+                formData({ confirmation: 'x' }),
+            ),
+        ).resolves.toMatchObject({
+            status: 'error',
+            message: 'This Club action is not available.',
+        });
+        expect(api.changeClubLifecycle).not.toHaveBeenCalled();
     });
 
     it('should leave the settings page after deleting the Club', async () => {

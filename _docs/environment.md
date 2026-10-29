@@ -22,7 +22,7 @@ variable, never its value.
 | `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                          | No     |
 | `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                               | No     |
 | `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                                    | Yes    |
-| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode, blank in local/test/preview.                                 | Yes    |
+| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode and by the deploy Compose file, blank in local/test/preview.  | Yes    |
 | `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                      | No     |
 | `CONTACT_DELIVERY_TO`                              | Contact and final email-failure alert inbox: `hello@pick-flick.app` in production; approved test inbox in UAT.                 | Yes\*  |
 | `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                          | No     |

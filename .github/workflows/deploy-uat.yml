@@ -30,17 +30,13 @@ jobs:
     env:
       UAT_URL: https://uat.pick-flick.app
       SOURCE_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
-      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
-      DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
-      DOKPLOY_UAT_COMPOSE_ID: ${{ vars.DOKPLOY_UAT_COMPOSE_ID }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.SOURCE_REVISION }}
           fetch-depth: 0
+          persist-credentials: false
 
       # A newer successful CI run owns UAT once main moves on.
       - name: Confirm main has not advanced
@@ -61,7 +57,15 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      # Only this step talks to Dokploy, so only it receives the deployment credentials;
+      # dependency install scripts and the browser smoke never see them.
       - name: Deploy the UAT Compose resource
+        env:
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_UAT_COMPOSE_ID: ${{ vars.DOKPLOY_UAT_COMPOSE_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
 

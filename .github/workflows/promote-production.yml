@@ -112,11 +112,6 @@ jobs:
       PRODUCTION_URL: https://pick-flick.app
       RELEASE_SHA: ${{ needs.validate.outputs.release_sha }}
       RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
-      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
-      DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
-      DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
     steps:
       - uses: actions/checkout@v7
@@ -152,6 +147,12 @@ jobs:
           git push origin "refs/tags/${RELEASE_VERSION}"
 
       - name: Pin Dokploy to the tag and deploy it
+        env:
+          DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_PRODUCTION_COMPOSE_ID: ${{ vars.DOKPLOY_PRODUCTION_COMPOSE_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
 

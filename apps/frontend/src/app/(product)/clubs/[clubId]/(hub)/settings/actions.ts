@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 import {
     changeClubLifecycle,
     changeMemberRole,
+    CLUB_LIFECYCLE_ACTIONS,
     removeClubAvatar,
     removeClubMember,
     replaceClubAvatar,
@@ -106,6 +107,10 @@ export async function changeClubLifecycleAction(
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
+    // Server actions are public endpoints: the action becomes a backend path segment.
+    if (!CLUB_LIFECYCLE_ACTIONS.includes(action)) {
+        return next(previous, 'error', 'This Club action is not available.');
+    }
     const confirmation = readFormText(formData, 'confirmation');
     const result = await run(
         previous,

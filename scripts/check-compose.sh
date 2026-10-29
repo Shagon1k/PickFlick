@@ -3,6 +3,8 @@
 set -eu
 
 docker compose --env-file .env.example -f compose.local.yaml config -q
+# Deployed live email requires a webhook signing secret, which .env.example leaves blank.
+export RESEND_WEBHOOK_SECRET=synthetic-webhook-signing-secret
 for environment in uat production; do
     APP_ENV="$environment" docker compose --env-file .env.example -f compose.deploy.yaml config -q
     APP_ENV="$environment" node --input-type=module -e '
@@ -39,7 +41,12 @@ for environment in uat production; do
                 assert.equal(service.depends_on.release.condition, "service_completed_successfully");
             }
         }
-        console.log(`${environment}: private Redis topology and existing application connections verified.`);
+        // The email worker gets only what it reads: no OAuth, storage, Redis or webhook secrets.
+        assert.deepEqual(Object.keys(config.services["email-worker"].environment).sort(), [
+            "APP_ENV", "AUTH_BASE_URL", "CONTACT_DELIVERY_TO", "DATABASE_URL",
+            "RESEND_API_KEY", "RESEND_DELIVERY_MODE", "RESEND_FROM",
+        ]);
+        console.log(`${environment}: private Redis topology, application connections and email-worker secrets verified.`);
     '
 done
 SOURCE_REVISION=0000000000000000000000000000000000000000 PREVIEW_BACKEND_PORT=3001 PREVIEW_FRONTEND_PORT=3000 \
