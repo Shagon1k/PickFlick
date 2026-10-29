@@ -10,7 +10,7 @@ import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import { formatCount, formatUtcDateTime } from '#lib/format';
 
 import Rating from '../Rating/Rating';
-import { SELECTION_REASONS } from '../SelectionOutcome/selection-reasons';
+import SelectionSummary, { HIDDEN_BREAKDOWN_COPY } from '../SelectionOutcome/SelectionSummary';
 import styles from './Completed.module.scss';
 
 export default function Completed({ session }: { session: TSession }) {
@@ -129,18 +129,10 @@ function NominationHistory({
 }
 
 function HistoricalVotes({ breakdown }: { breakdown: TLiveSelectionOutcome['breakdown'] }) {
-    if (!breakdown)
-        return (
-            <p>Vote breakdowns are hidden by this Club’s plan or Session visibility settings.</p>
-        );
+    if (!breakdown) return <p>{HIDDEN_BREAKDOWN_COPY}</p>;
     return (
         <>
-            <p>
-                {formatCount(breakdown.ballotCount, 'ballot')} received · Scale {breakdown.scaleMin}
-                –{breakdown.scaleMax}.
-            </p>
-            <p>{SELECTION_REASONS[breakdown.reason]}.</p>
-            {breakdown.ballotCount === 0 ? <p>No ballots were received.</p> : null}
+            <SelectionSummary breakdown={breakdown} />
             <ol className={styles.ranking} aria-label="Historical nominations">
                 {breakdown.ranking.map((row, index) => (
                     <li key={row.id}>

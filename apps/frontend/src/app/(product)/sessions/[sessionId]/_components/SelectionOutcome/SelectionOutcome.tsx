@@ -1,10 +1,10 @@
 import type { TLiveSelectionOutcome } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import { formatCount, formatUtcDateTime } from '#lib/format';
+import { formatUtcDateTime } from '#lib/format';
 
-import { SELECTION_REASONS } from './selection-reasons';
 import styles from './SelectionOutcome.module.scss';
+import SelectionSummary, { HIDDEN_BREAKDOWN_COPY } from './SelectionSummary';
 
 interface ISelectionOutcomeProps {
     data: TLiveSelectionOutcome;
@@ -33,17 +33,7 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
             {data.breakdown ? (
                 <>
                     <h3>Selection results</h3>
-                    <p>
-                        {formatCount(data.breakdown.ballotCount, 'ballot')} received · Scale{' '}
-                        {data.breakdown.scaleMin}–{data.breakdown.scaleMax}.
-                    </p>
-                    <p>{SELECTION_REASONS[data.breakdown.reason]}.</p>
-                    {data.breakdown.ballotCount === 0 ? (
-                        <p>
-                            No ballots were received. All totals are zero; the tie-break rules chose
-                            the winner.
-                        </p>
-                    ) : null}
+                    <SelectionSummary breakdown={data.breakdown} />
                     <ol className={styles.ranking} aria-label="Selection ranking">
                         {data.breakdown.ranking.map((row) => (
                             <li key={row.id}>
@@ -72,9 +62,7 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                     </ol>
                 </>
             ) : (
-                <p>
-                    Vote breakdowns are hidden by this Club’s plan or Session visibility settings.
-                </p>
+                <p>{HIDDEN_BREAKDOWN_COPY}</p>
             )}
         </section>
     );
