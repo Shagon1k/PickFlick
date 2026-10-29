@@ -1,4 +1,4 @@
-import type { TNotificationEvent } from '@pickflick/contracts';
+import type { TNotificationEvent, TNotificationList } from '@pickflick/contracts';
 import Link from 'next/link';
 import type { RefObject } from 'react';
 
@@ -6,6 +6,7 @@ import { useNotifications } from '#components/notifications/notifications-contex
 import styles from '#components/shells/product-navigation.module.scss';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import { formatUtcShortDateTime } from '#lib/format';
 
 const NOTIFICATION_ICONS: Partial<Record<TNotificationEvent, TIconName>> = {
     SESSION_STARTED: 'clapperboard',
@@ -20,65 +21,28 @@ const NOTIFICATION_ICONS: Partial<Record<TNotificationEvent, TIconName>> = {
     BILLING_SERVICE: 'credit-card',
 };
 
+type TNotificationItem = TNotificationList['items'][number];
+
 interface INotificationItemsProps {
     panelRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function NotificationItems({ panelRef }: INotificationItemsProps) {
-    const { closeOverlay } = useProductOverlay();
-    const { data, isLoading, isSaving, markRead, loadMore } = useNotifications();
-    return data?.items.length ? (
+    const { data, isLoading, markRead, loadMore } = useNotifications();
+    if (!data?.items.length) return null;
+    return (
         <div className={styles.notifList} aria-busy={isLoading}>
             <ul>
-                {data.items.map((item) => {
-                    const body = (
-                        <>
-                            <p>{item.message}</p>
-                            <time dateTime={item.createdAt}>
-                                {new Date(item.createdAt).toLocaleString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    timeZone: 'UTC',
-                                })}
-                            </time>
-                        </>
-                    );
-                    return (
-                        <li className={styles.notifItem} key={item.id}>
-                            <Icon
-                                className={styles.notifIcon}
-                                name={NOTIFICATION_ICONS[item.event] ?? 'bell'}
-                            />
-                            {item.href ? (
-                                <Link
-                                    className={styles.notifBody}
-                                    href={item.href}
-                                    onClick={() => closeOverlay(false)}
-                                >
-                                    {body}
-                                </Link>
-                            ) : (
-                                <div className={styles.notifBody}>{body}</div>
-                            )}
-                            {item.readAt === null ? (
-                                <button
-                                    className={styles.notifRead}
-                                    disabled={isSaving}
-                                    aria-label={`Mark as read: ${item.message}`}
-                                    onClick={() => {
-                                        panelRef.current?.focus({ preventScroll: true });
-                                        void markRead(item.id);
-                                    }}
-                                    type="button"
-                                >
-                                    <span />
-                                </button>
-                            ) : null}
-                        </li>
-                    );
-                })}
+                {data.items.map((item) => (
+                    <NotificationItem
+                        key={item.id}
+                        item={item}
+                        onRead={() => {
+                            panelRef.current?.focus({ preventScroll: true });
+                            void markRead(item.id);
+                        }}
+                    />
+                ))}
             </ul>
             {data.nextCursor ? (
                 <button
@@ -94,5 +58,43 @@ export default function NotificationItems({ panelRef }: INotificationItemsProps)
                 </button>
             ) : null}
         </div>
-    ) : null;
+    );
+}
+
+function NotificationItem({ item, onRead }: { item: TNotificationItem; onRead: () => void }) {
+    const { closeOverlay } = useProductOverlay();
+    const { isSaving } = useNotifications();
+    const body = (
+        <>
+            <p>{item.message}</p>
+            <time dateTime={item.createdAt}>{formatUtcShortDateTime(item.createdAt)}</time>
+        </>
+    );
+    return (
+        <li className={styles.notifItem}>
+            <Icon className={styles.notifIcon} name={NOTIFICATION_ICONS[item.event] ?? 'bell'} />
+            {item.href ? (
+                <Link
+                    className={styles.notifBody}
+                    href={item.href}
+                    onClick={() => closeOverlay({ shouldReturnFocus: false })}
+                >
+                    {body}
+                </Link>
+            ) : (
+                <div className={styles.notifBody}>{body}</div>
+            )}
+            {item.readAt === null ? (
+                <button
+                    className={styles.notifRead}
+                    disabled={isSaving}
+                    aria-label={`Mark as read: ${item.message}`}
+                    onClick={onRead}
+                    type="button"
+                >
+                    <span />
+                </button>
+            ) : null}
+        </li>
+    );
 }

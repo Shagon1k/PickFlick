@@ -28,8 +28,13 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
         : null;
     const isNotificationsPanelOpen = activeOverlay === 'notifications-mobile';
 
-    useOverlayDismissal(activeMenu !== null, navigationRef, closeOverlay);
-    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal({ isOpen: activeMenu !== null, rootRef: navigationRef, closeOverlay });
+    useOverlayDismissal({
+        isOpen: isNotificationsPanelOpen,
+        rootRef: notificationsRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
 
     useAnchoredMenus(activeMenu, navigationRef);
 

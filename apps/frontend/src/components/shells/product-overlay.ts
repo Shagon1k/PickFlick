@@ -12,9 +12,14 @@ const VIEWPORT_MARGIN_PX = 8;
 type THeaderOverlay = 'account' | 'notifications' | 'notifications-mobile' | 'search' | 'invites';
 export type TProductOverlay = THeaderOverlay | `mobile:${string}` | `section:${string}`;
 
+export interface ICloseOverlayOptions {
+    /** False when the visitor moved on, such as by following a link or clicking elsewhere. */
+    shouldReturnFocus?: boolean;
+}
+
 interface IProductOverlayContextValue {
     readonly activeOverlay: TProductOverlay | null;
-    readonly closeOverlay: (returnFocus?: boolean) => void;
+    readonly closeOverlay: (options?: ICloseOverlayOptions) => void;
     readonly toggleOverlay: (overlay: TProductOverlay, trigger: HTMLElement) => void;
 }
 
@@ -32,12 +37,17 @@ export function useProductOverlay() {
 }
 
 /** Closes an open overlay on Escape or an outside pointer, optionally keeping Tab inside it. */
-export function useOverlayDismissal(
-    isOpen: boolean,
-    rootRef: RefObject<HTMLElement | null>,
-    closeOverlay: (returnFocus?: boolean) => void,
+export function useOverlayDismissal({
+    isOpen,
+    rootRef,
+    closeOverlay,
     shouldTrapFocus = false,
-) {
+}: {
+    isOpen: boolean;
+    rootRef: RefObject<HTMLElement | null>;
+    closeOverlay: (options?: ICloseOverlayOptions) => void;
+    shouldTrapFocus?: boolean;
+}) {
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -84,7 +94,7 @@ export function useOverlayDismissal(
                 !rootRef.current?.contains(target) &&
                 !target.closest('[data-product-overlay-control]')
             ) {
-                closeOverlay(false);
+                closeOverlay({ shouldReturnFocus: false });
             }
         };
         document.addEventListener('keydown', handleKeyboard);

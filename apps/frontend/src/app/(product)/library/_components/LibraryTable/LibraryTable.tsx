@@ -2,7 +2,7 @@
 
 import type { TLibrary, TLibraryQuery } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
@@ -42,7 +42,12 @@ export default function LibraryTable({
     const emptyMessage = hasFilters
         ? 'No films match your search or filters. Clear them to see all your films.'
         : emptyLibraryMessage;
-    const rows = library.items.map((item, index) => ({
+    const toRow = (
+        item: TLibrary['items'][number],
+        index: number,
+        date: string,
+        action: ReactNode,
+    ) => ({
         id: item.movieId,
         cells: {
             rank: (library.page - 1) * library.pageSize + index + 1,
@@ -55,20 +60,33 @@ export default function LibraryTable({
             ),
             genres: item.genres.join(', ') || '—',
             year: item.releaseYear ?? '—',
-            date: formatUtcDate('addedAt' in item ? item.addedAt : item.updatedAt),
-            action:
-                'priority' in item ? (
-                    <WatchlistBookmark
-                        movieId={item.movieId}
-                        item={item}
-                        variant="table"
-                        onSaved={handleSaved}
-                    />
-                ) : (
-                    <PersonalRating movieId={item.movieId} rating={item} onSaved={handleSaved} />
-                ),
+            date: formatUtcDate(date),
+            action,
         },
-    }));
+    });
+    const rows =
+        library.tab === 'watchlist'
+            ? library.items.map((item, index) =>
+                  toRow(
+                      item,
+                      index,
+                      item.addedAt,
+                      <WatchlistBookmark
+                          movieId={item.movieId}
+                          item={item}
+                          variant="table"
+                          onSaved={handleSaved}
+                      />,
+                  ),
+              )
+            : library.items.map((item, index) =>
+                  toRow(
+                      item,
+                      index,
+                      item.updatedAt,
+                      <PersonalRating movieId={item.movieId} rating={item} onSaved={handleSaved} />,
+                  ),
+              );
     return (
         <section aria-labelledby="library-heading" className={styles.libraryTable}>
             <h2 id="library-heading" ref={headingRef} tabIndex={-1}>

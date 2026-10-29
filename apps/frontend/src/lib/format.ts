@@ -36,6 +36,17 @@ export function formatHours(value: number): string {
     return HOURS_FORMAT.format(value);
 }
 
+/** A compact UTC date and time for lists, such as `Oct 30, 07:45 PM`. */
+export function formatUtcShortDateTime(value: string): string {
+    return new Date(value).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+    });
+}
+
 /** A runtime such as `2h 46m`, or null when the provider sent none. */
 export function formatRuntime(minutes: number | null): string | null {
     if (!minutes) return null;

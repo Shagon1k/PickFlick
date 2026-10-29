@@ -22,7 +22,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    useOverlayDismissal(isOpen, containerRef, closeOverlay);
+    useOverlayDismissal({ isOpen, rootRef: containerRef, closeOverlay });
 
     useEffect(() => {
         if (isOpen) {

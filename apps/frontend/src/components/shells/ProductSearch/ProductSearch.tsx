@@ -38,7 +38,7 @@ export default function ProductSearch() {
         }
     }
 
-    useOverlayDismissal(isOpen, rootRef, closeOverlay, true);
+    useOverlayDismissal({ isOpen, rootRef, closeOverlay, shouldTrapFocus: true });
 
     useEffect(() => {
         if (isOpen) inputRef.current?.focus({ preventScroll: true });
@@ -54,7 +54,7 @@ export default function ProductSearch() {
         if (event.key === 'Enter' && movies[activeIndex]) {
             event.preventDefault();
             router.push(`/movies/${movies[activeIndex].id}`);
-            closeOverlay(false);
+            closeOverlay({ shouldReturnFocus: false });
         }
     }
 
@@ -126,7 +126,7 @@ export default function ProductSearch() {
                                 href={`/movies/${movie.id}`}
                                 id={`movie-search-${index}`}
                                 key={movie.id}
-                                onClick={() => closeOverlay(false)}
+                                onClick={() => closeOverlay({ shouldReturnFocus: false })}
                                 prefetch={false}
                                 role="option"
                             >

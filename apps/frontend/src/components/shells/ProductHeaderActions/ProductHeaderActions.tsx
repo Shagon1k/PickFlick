@@ -40,8 +40,18 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const initials = getInitials(session?.user.name);
     const { data: notifications } = useNotifications();
 
-    useOverlayDismissal(isAccountMenuOpen, accountRef, closeOverlay, true);
-    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal({
+        isOpen: isAccountMenuOpen,
+        rootRef: accountRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
+    useOverlayDismissal({
+        isOpen: isNotificationsPanelOpen,
+        rootRef: notificationsRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
 
     useAnchoredMenus(isAccountMenuOpen ? 'account' : null, actionsRef);
 
