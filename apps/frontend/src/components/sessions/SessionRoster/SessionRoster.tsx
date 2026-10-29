@@ -1,7 +1,7 @@
 'use client';
 
 import type { ISessionRoster } from '@pickflick/contracts';
-import { type ReactNode, type RefObject, useRef, useState, useTransition } from 'react';
+import { type ReactNode, type RefObject, useRef, useState } from 'react';
 
 import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
@@ -9,7 +9,7 @@ import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
 import Modal from '#components/ui/Modal/Modal';
 import { getMonogram } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import styles from './SessionRoster.module.scss';
 
@@ -25,32 +25,24 @@ export default function SessionRoster({
 }) {
     const closeRef = useRef<HTMLButtonElement>(null);
     const restoreFocusRef = useRef(false);
-    const [message, setMessage] = useState('');
     const [isKickOpen, setIsKickOpen] = useState(false);
     const [dialog, setDialog] = useState<TRosterDialog | null>(null);
-    const [isPending, startTransition] = useTransition();
+    const { message, setMessage, isPending, run } = useActionStatus();
     const managed = roster.participants.filter(
         (participant) =>
             participant.canRemove ||
             (roster.canManage && participant.invitation?.state === 'pending'),
     );
-    function run(input: unknown) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        startTransition(async () => {
-            try {
-                const result = await changeRosterAction(sessionId, input);
+    function send(input: unknown) {
+        run(() => changeRosterAction(sessionId, input), {
+            unreachableMessage: 'We could not reach PickFlick. Check your connection and retry.',
+            onResult: (result) => {
                 setMessage(result.message);
                 if (result.ok) {
                     if (dialog) restoreFocusRef.current = true;
                     setDialog(null);
                 }
-            } catch {
-                setMessage('We could not reach PickFlick. Check your connection and retry.');
-            }
+            },
         });
     }
     const copy = getConfirmationCopy(dialog);
@@ -64,7 +56,7 @@ export default function SessionRoster({
                 <Participation
                     roster={roster}
                     disabled={isPending}
-                    onJoin={() => run({ action: 'join' })}
+                    onJoin={() => send({ action: 'join' })}
                     onLeave={() => confirm({ action: 'leave' })}
                 />,
                 roster.canManage && managed.length
@@ -86,7 +78,7 @@ export default function SessionRoster({
                 isConfirming={dialog !== null}
                 closeRef={closeRef}
                 onClose={() => setIsKickOpen(false)}
-                onRevoke={(inviteId) => run({ action: 'revoke', inviteId })}
+                onRevoke={(inviteId) => send({ action: 'revoke', inviteId })}
                 onRemove={(participant) =>
                     confirm({
                         action: 'remove',
@@ -101,7 +93,7 @@ export default function SessionRoster({
                 inputId="session-roster-confirmation"
                 onClose={() => setDialog(null)}
                 onConfirm={(confirmation) =>
-                    run(
+                    send(
                         dialog?.action === 'remove'
                             ? {
                                   action: 'remove',

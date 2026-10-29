@@ -8,6 +8,7 @@ import { useState, useTransition } from 'react';
 import Button from '#components/ui/Button/Button';
 import Select from '#components/ui/Select/Select';
 import Table from '#components/ui/Table/Table';
+import { formatAverage, formatCount } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 
 import styles from './ClubRatings.module.scss';
@@ -38,7 +39,7 @@ export default function ClubRatings({
             ),
         );
     }
-    const count = `${ratings.total} rated ${ratings.total === 1 ? 'film' : 'films'}`;
+    const count = formatCount(ratings.total, 'rated film');
     const status = isPending ? 'Loading Club ratings…' : count;
     return (
         <section
@@ -97,10 +98,7 @@ export default function ClubRatings({
                                 genre: item.genres.join(', ') || '—',
                                 rating: (
                                     <span className={styles.clubRatings__rating}>
-                                        {new Intl.NumberFormat('en', {
-                                            minimumFractionDigits: 1,
-                                            maximumFractionDigits: 1,
-                                        }).format(item.averageRating)}
+                                        {formatAverage(item.averageRating)}
                                     </span>
                                 ),
                             },

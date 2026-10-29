@@ -8,7 +8,7 @@ import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Table from '#components/ui/Table/Table';
-import { formatUtcDate } from '#lib/format';
+import { formatCount, formatUtcDate } from '#lib/format';
 
 import { buildLibraryPath } from '../../library-path';
 import LibraryFilters from '../LibraryFilters/LibraryFilters';
@@ -77,7 +77,7 @@ export default function LibraryTable({
             <LibraryFilters key={buildLibraryPath(query)} query={query} />
             <p role="status">
                 {message && `${message} `}
-                {`${library.total} ${library.total === 1 ? 'film' : 'films'} ${isWatchlist ? 'queued' : 'rated'}`}
+                {`${formatCount(library.total, 'film')} ${isWatchlist ? 'queued' : 'rated'}`}
             </p>
             <Table
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}

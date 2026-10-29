@@ -4,7 +4,7 @@ import Link from 'next/link';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { formatCount, formatUtcDate } from '#lib/format';
+import { formatAverage, formatCount, formatUtcDate } from '#lib/format';
 
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessions.module.scss';
@@ -87,7 +87,9 @@ function SessionScore({ session }: { session: IClubHubSession }) {
     if (session.phase === 'CANCELLED') return <>Cancelled</>;
     return (
         <>
-            <span>{session.ratingAverage?.toFixed(1) ?? '—'}</span>
+            <span>
+                {session.ratingAverage === null ? '—' : formatAverage(session.ratingAverage)}
+            </span>
             <small>Club score</small>
         </>
     );

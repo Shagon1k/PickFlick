@@ -1,20 +1,18 @@
 'use client';
 
 import type { TSessionInvitationPreview } from '@pickflick/contracts';
-import { useState, useSyncExternalStore, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import { formatUtcDate, formatUtcDateTime } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondSessionInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
 
 type TView = TSessionInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
 const messages = {
     valid: 'Join your Club for this screening.',
     accepted: 'Your participation is confirmed.',
@@ -29,7 +27,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     const [view, setView] = useState(initial);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isReady = useIsHydrated();
     function respond(decision: 'accept' | 'decline') {
         const offlineMessage = getOfflineMessage();
         if (offlineMessage) {
@@ -71,7 +69,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         </p>
                         <p>{view.location}</p>
                         <p>Invited by {view.inviterName}</p>
-                        <p>Expires {toIsoDate(view.expiresAt)}</p>
+                        <p>Expires {formatUtcDate(view.expiresAt)}</p>
                     </div>
                     <div className={styles.actions}>
                         <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>

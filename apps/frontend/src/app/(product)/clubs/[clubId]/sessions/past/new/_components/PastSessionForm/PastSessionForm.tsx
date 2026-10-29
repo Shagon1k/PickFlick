@@ -10,7 +10,7 @@ import {
     type TPastSessionMembers,
     type TSession,
 } from '@pickflick/contracts';
-import { useRef, useState, useSyncExternalStore, useTransition } from 'react';
+import { useRef, useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
@@ -19,7 +19,8 @@ import RatingControl from '#components/ui/ScaleControl/RatingControl';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { savePastSessionAction } from '../../actions';
 import PastNominations from '../PastNominations/PastNominations';
@@ -36,10 +37,6 @@ interface IPastSessionValues {
     scoreMatrix: TCreatePastSession['scoreMatrix'];
 }
 
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 export default function PastSessionForm({
     clubId,
     members,
@@ -51,11 +48,10 @@ export default function PastSessionForm({
     scaleMin: number;
     scaleMax: number;
 }) {
-    const [isPending, startTransition] = useTransition();
+    const { message, setMessage, isPending, run } = useActionStatus();
     // Early input would be lost when React first updates these controlled fields.
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isReady = useIsHydrated();
     const isDisabled = !isReady || isPending;
-    const [message, setMessage] = useState('');
     const [created, setCreated] = useState<TSession | null>(null);
     const submissionIdRef = useRef<string | null>(null);
     function buildInput({ date, ...values }: IPastSessionValues) {
@@ -91,22 +87,14 @@ export default function PastSessionForm({
         },
     });
     function save(values: IPastSessionValues) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        setMessage('Logging Session…');
-        startTransition(async () => {
-            const result = await savePastSessionAction(clubId, buildInput(values)).catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Your entries are still here; try again.',
-            }));
-            if (!result.ok) {
-                setMessage(result.message);
-                return;
-            }
-            setCreated(result.session);
+        run(() => savePastSessionAction(clubId, buildInput(values)), {
+            pendingMessage: 'Logging Session…',
+            unreachableMessage:
+                'We could not reach PickFlick. Your entries are still here; try again.',
+            onResult: (result) => {
+                if (result.ok) setCreated(result.session);
+                else setMessage(result.message);
+            },
         });
     }
     if (created)

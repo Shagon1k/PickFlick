@@ -1,12 +1,13 @@
 'use client';
 
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
 import styles from '../../page.module.scss';
@@ -45,15 +46,11 @@ const messages = {
     'already-member': ['You are already a member', 'Open your Club to continue.'],
 } as const;
 
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isReady = useIsHydrated();
     const [failure, setFailure] = useState('');
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));

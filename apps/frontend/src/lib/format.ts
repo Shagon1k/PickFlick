@@ -1,5 +1,10 @@
 const ISO_DATE_LENGTH = 10;
 const MINUTES_PER_HOUR = 60;
+const AVERAGE_FORMAT = new Intl.NumberFormat('en', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+});
+const HOURS_FORMAT = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
 
 /** The `YYYY-MM-DD` part of an ISO timestamp, as date inputs and compact labels show it. */
 export function toIsoDate(value: string): string {
@@ -19,6 +24,16 @@ export function formatUtcDateTime(value: string): string {
         timeZone: 'UTC',
     });
     return `${formatted} UTC`;
+}
+
+/** A rating average, always with one decimal: `8.0`, `7.5`. */
+export function formatAverage(value: number): string {
+    return AVERAGE_FORMAT.format(value);
+}
+
+/** A number of hours with at most one decimal: `12`, `12.5`. */
+export function formatHours(value: number): string {
+    return HOURS_FORMAT.format(value);
 }
 
 /** A runtime such as `2h 46m`, or null when the provider sent none. */

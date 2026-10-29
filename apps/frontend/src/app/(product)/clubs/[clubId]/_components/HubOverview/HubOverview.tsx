@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatUtcDate, getMonogram } from '#lib/format';
+import { formatAverage, formatHours, formatUtcDate, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
@@ -19,10 +19,14 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
     }[] = [
         { label: 'Sessions watched', value: stats.sessionsWatched, icon: 'film-reel' },
         { label: 'Sessions this year', value: stats.sessionsThisYear, icon: 'clapperboard' },
-        { label: 'Avg club rating', value: formatNumber(stats.averageRating), icon: 'star-circle' },
+        {
+            label: 'Avg club rating',
+            value: stats.averageRating === null ? null : formatAverage(stats.averageRating),
+            icon: 'star-circle',
+        },
         {
             label: 'Total watch time, h',
-            value: formatNumber(stats.totalWatchHours),
+            value: stats.totalWatchHours === null ? null : formatHours(stats.totalWatchHours),
             icon: 'stopwatch',
         },
         { label: 'Most watched genre', value: stats.topGenre, icon: 'genre' },
@@ -116,10 +120,4 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
             ) : null}
         </div>
     );
-}
-
-function formatNumber(value: number | null) {
-    return value === null
-        ? null
-        : new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
 }

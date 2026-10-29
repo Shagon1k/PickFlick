@@ -8,13 +8,10 @@ import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import Icon from '#components/ui/Icon/Icon';
+import { formatAverage } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
-const ratingFormat = new Intl.NumberFormat('en', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-});
 const voteFormat = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 // One rating keeps the header calm: IMDb first, then Kinopoisk, then whatever the source sent.
@@ -92,7 +89,7 @@ function Rating({ ratings }: { ratings: TMovieDetails['ratings'] }) {
             <Icon name="globe" />
             <span className="visually-hidden">{label} rating</span>
             <span>
-                <strong>{ratingFormat.format(rating.value)}</strong>
+                <strong>{formatAverage(rating.value)}</strong>
                 <span className="visually-hidden"> out of {rating.scale}</span>
                 {rating.voteCount === null ? null : (
                     <small>

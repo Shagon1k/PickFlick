@@ -2,11 +2,10 @@
 
 import type { TSession } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
 
 import { cancelSessionAction } from '#components/sessions/session-actions';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 /** Session cancellation with typed `CANCEL`, from the Session page or Manage Club. */
 export default function CancelSessionDialog({
@@ -19,24 +18,16 @@ export default function CancelSessionDialog({
     onClose: () => void;
 }) {
     const router = useRouter();
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
+    const { message, setMessage, isPending, run } = useActionStatus();
     function handleConfirm(confirmation: string) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        startTransition(async () => {
-            const result = await cancelSessionAction(session.id, {
-                version: session.version,
-                confirmation,
-            }).catch(() => ({ ok: false, message: 'We could not reach PickFlick. Try again.' }));
-            setMessage(result.message);
-            if (result.ok) {
-                onClose();
-                router.refresh();
-            }
+        run(() => cancelSessionAction(session.id, { version: session.version, confirmation }), {
+            onResult: (result) => {
+                setMessage(result.message);
+                if (result.ok) {
+                    onClose();
+                    router.refresh();
+                }
+            },
         });
     }
     return (

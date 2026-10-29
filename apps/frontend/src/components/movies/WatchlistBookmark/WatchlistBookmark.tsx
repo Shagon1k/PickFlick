@@ -2,11 +2,11 @@
 
 import type { TWatchlistItem, TWatchlistPriority } from '@pickflick/contracts';
 import clsx from 'clsx';
-import { useId, useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { WATCHLIST_PRIORITIES } from '#components/movies/watchlist-priority';
 import Popover from '#components/ui/Popover/Popover';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import { setWatchlistAction } from './actions';
 import styles from './WatchlistBookmark.module.scss';
@@ -29,30 +29,23 @@ export default function WatchlistBookmark({
     const id = useId();
     const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
+    const { message, setMessage, isPending, run } = useActionStatus();
     const label = item ? 'Edit watchlist priority' : 'Add to watchlist';
 
     function handleSave(priority: TWatchlistPriority | null, shouldClose = true) {
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        setMessage('Updating your Watchlist…');
-        startTransition(async () => {
-            const result = await setWatchlistAction(movieId, priority).catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Try again.',
-            }));
-            if (result.ok) {
-                setMessage(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
+        run(() => setWatchlistAction(movieId, priority), {
+            pendingMessage: 'Updating your Watchlist…',
+            onResult: (result) => {
+                if (!result.ok) {
+                    setMessage(result.message);
+                    feedbackRef.current?.focus();
+                    return;
+                }
+                const savedMessage = priority ? 'Watchlist saved.' : 'Removed from Watchlist.';
+                setMessage(savedMessage);
                 if (shouldClose) setIsOpen(false);
-                onSaved?.(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
-            } else {
-                setMessage(result.message);
-                feedbackRef.current?.focus();
-            }
+                onSaved?.(savedMessage);
+            },
         });
     }
 

@@ -8,7 +8,7 @@ import {
     type TSelection,
 } from '@pickflick/contracts';
 import Link from 'next/link';
-import { type ReactNode, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import {
@@ -17,7 +17,7 @@ import {
 } from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Selection.module.scss';
@@ -32,8 +32,7 @@ export default function Selection({
     header: ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
+    const { message, setMessage, isPending, run } = useActionStatus();
     const form = useForm<{ scores: { nominationId: string; score: number | undefined }[] }>({
         initialValues: {
             scores: data.nominations.map((row) => ({ nominationId: row.id, score: undefined })),
@@ -47,20 +46,14 @@ export default function Selection({
     function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
         form.onSubmit(
             (values) => {
-                const offline = getOfflineMessage();
-                if (offline) {
-                    setMessage(offline);
-                    return;
-                }
-                setMessage('Saving your ballot…');
-                startTransition(async () => {
-                    const result = await submitSelectionAction(sessionId, values).catch(() => ({
-                        ok: false as const,
-                        message:
-                            'We could not reach PickFlick. Your scores are still here; try again.',
-                    }));
-                    setMessage(result.ok ? 'Ballot submitted.' : result.message);
-                    if (result.ok) headingRef.current?.focus();
+                run(() => submitSelectionAction(sessionId, values), {
+                    pendingMessage: 'Saving your ballot…',
+                    unreachableMessage:
+                        'We could not reach PickFlick. Your scores are still here; try again.',
+                    onResult: (result) => {
+                        setMessage(result.ok ? 'Ballot submitted.' : result.message);
+                        if (result.ok) headingRef.current?.focus();
+                    },
                 });
             },
             (_errors, _values, event) => {
@@ -74,18 +67,9 @@ export default function Selection({
         )(event);
     }
     function handleRefresh() {
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        startTransition(async () => {
-            try {
-                await refreshSelectionAction(sessionId);
-                setMessage('Selection refreshed.');
-            } catch {
-                setMessage('We could not refresh Selection. Try again.');
-            }
+        run(() => refreshSelectionAction(sessionId).then(() => ({ ok: true as const })), {
+            unreachableMessage: 'We could not refresh Selection. Try again.',
+            onResult: (result) => setMessage(result.ok ? 'Selection refreshed.' : result.message),
         });
     }
     return (

@@ -2,14 +2,14 @@
 
 import { getPosterPath, type TNominationMovie, type TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
-import { type ReactNode, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import { nominateAction, refreshNominationsAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
@@ -25,35 +25,28 @@ export default function Nomination({
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
-    function run(action: 'submit' | 'refresh') {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');
-        startTransition(async () => {
-            const request =
+    const { message, setMessage, isPending, run } = useActionStatus();
+    function send(action: 'submit' | 'refresh') {
+        run(
+            () =>
                 action === 'submit'
                     ? nominateAction(sessionId, { movieId: chosen?.id })
-                    : refreshNominationsAction(sessionId);
-            const result = await request.catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Try again.',
-            }));
-            setMessage(result.message);
-            if (!result.ok) return;
-            if (action === 'submit') headingRef.current?.focus();
-        });
+                    : refreshNominationsAction(sessionId),
+            {
+                pendingMessage: action === 'refresh' ? 'Refreshing nominations…' : 'Saving…',
+                onResult: (result) => {
+                    setMessage(result.message);
+                    if (result.ok && action === 'submit') headingRef.current?.focus();
+                },
+            },
+        );
     }
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
             <PhaseProgress
                 refreshLabel="Refresh nominations"
                 disabled={isPending}
-                onRefresh={() => run('refresh')}
+                onRefresh={() => send('refresh')}
             >
                 Nomination in progress — {data.nominatedCount} of {data.acceptedCount} participants
                 have nominated.
@@ -70,7 +63,7 @@ export default function Nomination({
                             disabled={isPending}
                             suggestions={data.suggestions}
                             onChoose={setChosen}
-                            onSubmit={() => run('submit')}
+                            onSubmit={() => send('submit')}
                         />
                     ) : (
                         <SubmissionState movie={data.ownMovie} />

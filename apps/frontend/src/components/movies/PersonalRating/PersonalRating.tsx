@@ -1,13 +1,13 @@
 'use client';
 
 import { formatRatingScore, RATING_SCALE, type TPersonalMovieRating } from '@pickflick/contracts';
-import { useId, useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import { savePersonalRatingAction } from './actions';
 import styles from './PersonalRating.module.scss';
@@ -25,28 +25,22 @@ export default function PersonalRating({
     const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [score, setScore] = useState(rating?.score);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
+    const { message, setMessage, isPending, run } = useActionStatus();
 
     function handleSave(event: React.SubmitEvent<HTMLFormElement>) {
         event.preventDefault();
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        setMessage('Saving your rating…');
-        startTransition(async () => {
-            const result = await savePersonalRatingAction(movieId, { score }).catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Your selection is still here; try again.',
-            }));
-            setMessage(result.ok ? 'Personal Rating saved.' : result.message);
-            feedbackRef.current?.focus();
-            if (result.ok && onSaved) {
-                setIsOpen(false);
-                onSaved('Personal Rating saved.');
-            }
+        run(() => savePersonalRatingAction(movieId, { score }), {
+            pendingMessage: 'Saving your rating…',
+            unreachableMessage:
+                'We could not reach PickFlick. Your selection is still here; try again.',
+            onResult: (result) => {
+                setMessage(result.ok ? 'Personal Rating saved.' : result.message);
+                feedbackRef.current?.focus();
+                if (result.ok && onSaved) {
+                    setIsOpen(false);
+                    onSaved('Personal Rating saved.');
+                }
+            },
         });
     }
 

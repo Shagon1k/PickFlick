@@ -1,9 +1,9 @@
 'use client';
 
-import { type ReactNode, useState, useTransition } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 interface IPhaseTransitionDialogProps {
     sessionId: string;
@@ -38,22 +38,14 @@ export default function PhaseTransitionDialog({
     children,
 }: IPhaseTransitionDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
+    const { message, setMessage, isPending, run } = useActionStatus();
     function handleConfirm(confirmation: string) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        setMessage(copy.pendingMessage);
-        startTransition(async () => {
-            const result = await action(sessionId, { phaseVersion, confirmation }).catch(() => ({
-                ok: false,
-                message: 'We could not reach PickFlick. Try again.',
-            }));
-            setMessage(result.message ?? '');
-            if (result.ok) setIsOpen(false);
+        run(() => action(sessionId, { phaseVersion, confirmation }), {
+            pendingMessage: copy.pendingMessage,
+            onResult: (result) => {
+                setMessage(result.message ?? '');
+                if (result.ok) setIsOpen(false);
+            },
         });
     }
     return (
