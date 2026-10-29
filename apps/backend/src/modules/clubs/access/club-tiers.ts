@@ -1,18 +1,12 @@
-import type { IClubEntitlements, TClubTier } from '@pickflick/contracts';
+import {
+    CLUB_TIER_ENTITLEMENTS,
+    type IClubEntitlements,
+    type TClubTier,
+} from '@pickflick/contracts';
 import { SYNTHETIC_FIXTURES } from '@pickflick/database';
 
-const TIERS: Record<TClubTier, IClubEntitlements> = {
-    FREE: { tier: 'FREE', adminClubLimit: 1, memberLimit: 8, voteResultVisibility: 'ADMIN_HIDDEN' },
-    PRO: {
-        tier: 'PRO',
-        adminClubLimit: 5,
-        memberLimit: 16,
-        voteResultVisibility: 'ADMIN_CONFIGURABLE',
-    },
-};
-
 export function getTierEntitlements(tier: TClubTier): IClubEntitlements {
-    return TIERS[tier];
+    return CLUB_TIER_ENTITLEMENTS[tier];
 }
 
 /** Every Club is Free until billing (Phase 20); the seeded demo Club is Pro so both paths show. */

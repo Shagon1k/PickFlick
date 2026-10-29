@@ -207,9 +207,3 @@
         bottom: calc(80px + var(--gap-md) + env(safe-area-inset-bottom, 0px));
     }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .ticket {
-        transition-duration: 0.01ms;
-    }
-}

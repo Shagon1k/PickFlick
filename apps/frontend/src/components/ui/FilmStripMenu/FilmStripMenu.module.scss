@@ -83,8 +83,8 @@
     border: 0;
     border-bottom: 1px solid var(--border);
     transition:
-        color 0.16s ease,
-        background-color 0.16s ease;
+        color var(--motion-local) ease,
+        background-color var(--motion-local) ease;
 }
 
 .menu__item:last-child {
@@ -145,13 +145,6 @@
 
     .menu__dropdown {
         width: 210px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .menu__dropdown {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
     }
 }
 

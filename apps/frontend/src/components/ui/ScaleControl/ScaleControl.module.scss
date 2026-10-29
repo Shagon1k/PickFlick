@@ -107,17 +107,6 @@
     animation: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .scale__option {
-        transition-duration: 0.01ms;
-    }
-
-    .scale__option[data-selected] {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
 @keyframes pip-pop {
     0% {
         transform: scale(0.85);

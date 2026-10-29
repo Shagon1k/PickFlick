@@ -80,10 +80,3 @@
         transform: translate(calc(-50% + var(--tip-shift, 0px)), 4px);
     }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .infoTip__trigger,
-    .infoTip__bubble {
-        transition-duration: 0.01ms;
-    }
-}

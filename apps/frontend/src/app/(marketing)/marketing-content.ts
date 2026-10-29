@@ -1,3 +1,5 @@
+import { CLUB_TIER_ENTITLEMENTS } from '@pickflick/contracts';
+
 export const landingSteps = [
     {
         title: 'Nominate',
@@ -60,6 +62,8 @@ export const landingFeatures = [
     },
 ] as const;
 
+const { FREE, PRO } = CLUB_TIER_ENTITLEMENTS;
+
 /** `limited` marks a Free-plan restriction; `upgrade` marks what Pro adds over Free. */
 export interface IPlanFeature {
     readonly label: string;
@@ -67,8 +71,8 @@ export interface IPlanFeature {
 }
 
 export const freePlanFeatures: readonly IPlanFeature[] = [
-    { label: '1 administered Club' },
-    { label: 'Up to 8 members per Club' },
+    { label: `${FREE.adminClubLimit} administered Club` },
+    { label: `Up to ${FREE.memberLimit} members per Club` },
     { label: '1 blocking Session per Club' },
     { label: 'Unlimited open Rating Sessions' },
     { label: 'Unlimited Session history' },
@@ -79,8 +83,8 @@ export const freePlanFeatures: readonly IPlanFeature[] = [
 ];
 
 export const proPlanFeatures: readonly IPlanFeature[] = [
-    { label: '5 administered Clubs', tone: 'upgrade' },
-    { label: 'Up to 16 members per Club', tone: 'upgrade' },
+    { label: `${PRO.adminClubLimit} administered Clubs`, tone: 'upgrade' },
+    { label: `Up to ${PRO.memberLimit} members per Club`, tone: 'upgrade' },
     { label: '1 blocking Session per Club' },
     { label: 'Unlimited open Rating Sessions' },
     { label: 'Unlimited Session history' },
@@ -91,9 +95,17 @@ export const proPlanFeatures: readonly IPlanFeature[] = [
 ];
 
 export const comparisonRows = [
-    { feature: 'Administered Clubs', free: '1', pro: '5' },
+    {
+        feature: 'Administered Clubs',
+        free: String(FREE.adminClubLimit),
+        pro: String(PRO.adminClubLimit),
+    },
     { feature: 'Clubs joined as Member or Moderator', free: 'Unlimited', pro: 'Unlimited' },
-    { feature: 'Members per Club', free: 'Up to 8', pro: 'Up to 16' },
+    {
+        feature: 'Members per Club',
+        free: `Up to ${FREE.memberLimit}`,
+        pro: `Up to ${PRO.memberLimit}`,
+    },
     { feature: 'Blocking Sessions per Club', free: '1', pro: '1' },
     { feature: 'Open Rating Sessions per Club', free: 'Unlimited', pro: 'Unlimited' },
     { feature: 'Session history', free: 'Unlimited', pro: 'Unlimited' },

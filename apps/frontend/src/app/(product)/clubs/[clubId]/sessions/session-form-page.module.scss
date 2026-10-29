@@ -80,7 +80,7 @@
     overflow-wrap: anywhere;
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .main {
         padding: 72px var(--gutter) var(--gap-lg);
     }

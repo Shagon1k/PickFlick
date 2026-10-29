@@ -25,6 +25,17 @@ export interface IClubEntitlements {
     voteResultVisibility: 'ADMIN_HIDDEN' | 'ADMIN_CONFIGURABLE';
 }
 
+/** Plan limits the API enforces and the public pricing pages describe. */
+export const CLUB_TIER_ENTITLEMENTS: Record<TClubTier, IClubEntitlements> = {
+    FREE: { tier: 'FREE', adminClubLimit: 1, memberLimit: 8, voteResultVisibility: 'ADMIN_HIDDEN' },
+    PRO: {
+        tier: 'PRO',
+        adminClubLimit: 5,
+        memberLimit: 16,
+        voteResultVisibility: 'ADMIN_CONFIGURABLE',
+    },
+};
+
 export interface IClubSummary {
     id: string;
     name: string;

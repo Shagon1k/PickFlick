@@ -206,7 +206,7 @@
     animation: spin 700ms linear infinite;
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .button.m-small {
         min-height: var(--hit);
     }
@@ -215,17 +215,6 @@
 @media (pointer: coarse) {
     .button.m-small {
         min-height: var(--hit);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .button {
-        transition-duration: 0.01ms;
-    }
-
-    .spinner {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
     }
 }
 

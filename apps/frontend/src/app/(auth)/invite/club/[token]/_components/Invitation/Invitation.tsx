@@ -3,7 +3,7 @@
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
 import { useState } from 'react';
 
-import styles from '#app/(auth)/invite/invite.module.scss';
+import invite from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
@@ -12,7 +12,7 @@ import { getOfflineMessage } from '#lib/offline';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
-import localStyles from './Invitation.module.scss';
+import styles from './Invitation.module.scss';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const messages = {
@@ -80,22 +80,22 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     }
 
     return (
-        <div aria-busy={isPending || view.state === 'loading'} className={styles.card}>
-            <div aria-live="polite" className={styles.intro}>
+        <div aria-busy={isPending || view.state === 'loading'} className={invite.card}>
+            <div aria-live="polite" className={invite.intro}>
                 <h1>{title}</h1>
                 <p data-error={Boolean(failure)} role="status">
                     {failure || description}
                 </p>
             </div>
-            <div className={styles.preview}>
+            <div className={invite.preview}>
                 {view.state === 'valid' ? (
                     <>
                         <h2>{view.clubName}</h2>
-                        <p className={localStyles.previewMeta}>
+                        <p className={styles.previewMeta}>
                             <Icon name="members" />
                             {formatCount(view.memberCount, 'member')}
                         </p>
-                        <p className={localStyles.previewMeta}>
+                        <p className={styles.previewMeta}>
                             <Icon name="profile" />
                             <span>
                                 Invited by <strong>{view.inviterName}</strong>
@@ -108,7 +108,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     </p>
                 )}
             </div>
-            <div className={styles.actions}>
+            <div className={invite.actions}>
                 {view.state === 'valid' ? (
                     <>
                         <Button

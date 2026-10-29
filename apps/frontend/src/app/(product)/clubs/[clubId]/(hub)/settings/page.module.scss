@@ -46,7 +46,7 @@
     font-weight: 500;
     color: var(--fg-secondary);
     white-space: nowrap;
-    transition: color 0.18s ease;
+    transition: color var(--motion-local) ease;
 }
 
 .tabs a::after {
@@ -59,8 +59,8 @@
     background: var(--fg);
     border-radius: var(--radius-pill);
     transition:
-        left 0.18s ease,
-        right 0.18s ease;
+        left var(--motion-local) ease,
+        right var(--motion-local) ease;
 }
 
 .tabs a:hover,
@@ -528,20 +528,20 @@
     }
 }
 
-@media (width <= 1023px) {
+@media (width < 1024px) {
     .grid {
         grid-template-columns: 1fr;
         gap: var(--gap-md);
     }
 }
 
-@media (width <= 767px) {
+@media (width < 768px) {
     .hero h1 {
         font-size: clamp(38px, 10vw, 52px);
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .layout {
         gap: var(--gap-md);
         padding-top: var(--gap-lg);

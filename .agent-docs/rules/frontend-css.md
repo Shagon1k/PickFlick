@@ -12,18 +12,21 @@
 ## CSS Modules
 
 - One `.module.scss` per component or route. No shared component stylesheets.
-- Import it as `import styles from './Name.module.scss'`, always named `styles`.
+- Import it as `import styles from './Name.module.scss'`, always named `styles`. A second, shared
+  sheet in the same file is named after that sheet (`invite`, `ticket`).
 - A route's styles sit next to it (`page.module.scss`) and its `_components` may use them. A
   stylesheet shared by several routes of one group sits at the group root
   (`(marketing)/marketing.module.scss`). Never import another route's or feature's module.
 - `components/shells` is one layout system. Each shell and navigation piece has its own folder,
   but they share `shells.module.scss` and `product-navigation.module.scss`, because their
   selectors cross components (`.productHeader .brand`, `.accountPopover .filmStrip`).
+- `components/movies/film-ticket.module.scss` is the other shared sheet: the film ticket's
+  selectors cross the Movie and Session headers. Import it as `ticket`.
 - No inline `style={{ }}` for static values. Inline styles are for runtime values only.
 - No `!important` (reduced motion in `globals.scss` is the exception) and no id selectors; lower a
   default's specificity with `:where()` instead. A `stylelint-disable` needs a reason after `--`.
-- Media queries use only the design-contract boundaries 576, 768, 1024, and 1400px (or one pixel
-  below); Stylelint enforces them.
+- Media queries use only the design-contract boundaries 576, 768, 1024, and 1400px, written as
+  `(width < 768px)` or `(width >= 768px)`; Stylelint enforces the boundaries.
 - Declarations follow the recess group order (position, box model, typography, visuals, motion);
   `pnpm lint:fix` sorts them.
 - Use tokens for every colour, shadow, radius, and spacing value. Never hard-code a near-duplicate.
