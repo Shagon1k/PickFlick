@@ -3,7 +3,7 @@
 import type { ISessionRoster } from '@pickflick/contracts';
 import { type ReactNode, type RefObject, useRef, useState, useTransition } from 'react';
 
-import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
+import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';

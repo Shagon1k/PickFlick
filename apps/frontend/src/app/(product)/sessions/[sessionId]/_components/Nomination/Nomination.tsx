@@ -6,11 +6,11 @@ import { type ReactNode, useRef, useState, useTransition } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import { nominateAction, refreshNominationsAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { getOfflineMessage } from '#lib/offline';
 
-import { nominateAction, refreshNominationsAction } from '../../nomination-actions';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
 

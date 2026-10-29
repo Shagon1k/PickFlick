@@ -4,7 +4,7 @@ import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pi
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState, useTransition } from 'react';
 
-import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
+import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';

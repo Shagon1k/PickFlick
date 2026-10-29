@@ -4,13 +4,12 @@ import { useForm } from '@mantine/form';
 import { SESSION_RATING_COMMENT_MAX_LENGTH, submitRatingSchema } from '@pickflick/contracts';
 import { useState, useTransition } from 'react';
 
+import { submitRatingAction } from '#components/sessions/rating-actions';
 import Button from '#components/ui/Button/Button';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
 import Textarea from '#components/ui/Textarea/Textarea';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
 import { getOfflineMessage } from '#lib/offline';
-
-import { submitRatingAction } from '../../rating-actions';
 
 export default function RatingForm({
     sessionId,

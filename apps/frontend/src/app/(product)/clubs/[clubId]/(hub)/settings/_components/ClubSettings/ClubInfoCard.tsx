@@ -8,12 +8,15 @@ import {
 } from '@pickflick/contracts';
 import { useActionState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import {
+    removeClubAvatarAction,
+    saveClubInfoAction,
+} from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
-import { initialClubActionState } from '../../action-state';
-import { removeClubAvatarAction, saveClubInfoAction } from '../../actions';
 import styles from '../../page.module.scss';
 import { isWritable } from './club-settings';
 import ClubAvatarField from './ClubAvatarField';

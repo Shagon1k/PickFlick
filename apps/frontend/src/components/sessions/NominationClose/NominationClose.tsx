@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState, useTransition } from 'react';
 
-import { closeNominationsAction } from '#app/(product)/sessions/[sessionId]/nomination-actions';
+import { closeNominationsAction } from '#components/sessions/nomination-actions';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import { getOfflineMessage } from '#lib/offline';
 

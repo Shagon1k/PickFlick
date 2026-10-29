@@ -6,7 +6,7 @@ import {
     removeClubAvatarAction,
     saveClubInfoAction,
     updateClubSettingsAction,
-} from '../actions';
+} from '../club-actions';
 
 const api = vi.hoisted(() => ({
     changeClubLifecycle: vi.fn(),

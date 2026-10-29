@@ -1,6 +1,7 @@
 'use client';
 
-import { type IClubActionState } from '../../action-state';
+import { type IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+
 import styles from '../../page.module.scss';
 
 export default function ActionStatus({ state }: { state: IClubActionState }) {

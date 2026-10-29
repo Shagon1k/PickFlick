@@ -1,4 +1,4 @@
-import { getSessionState } from '#api/session.server';
+import { getSessionState } from '#api/auth-session.server';
 import SystemState from '#components/shells/SystemState/SystemState';
 
 export default async function NotFound() {

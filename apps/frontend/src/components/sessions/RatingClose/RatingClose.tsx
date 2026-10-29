@@ -3,7 +3,7 @@
 import type { TRating } from '@pickflick/contracts';
 import { type ReactNode, useState, useTransition } from 'react';
 
-import { closeRatingAction } from '#app/(product)/sessions/[sessionId]/rating-actions';
+import { closeRatingAction } from '#components/sessions/rating-actions';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import { getOfflineMessage } from '#lib/offline';
 

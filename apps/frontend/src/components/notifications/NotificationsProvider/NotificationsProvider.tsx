@@ -3,11 +3,11 @@
 import type { TNotificationList } from '@pickflick/contracts';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
-import { NotificationsContext } from '#components/shells/notifications-context';
+import { NotificationsContext } from '#components/notifications/notifications-context';
 import {
     loadNotifications,
     readNotifications,
-} from '#components/shells/NotificationsPanel/actions';
+} from '#components/notifications/NotificationsPanel/actions';
 import { getOfflineMessage } from '#lib/offline';
 
 const RECONCILE_MS = 5 * 60_000;

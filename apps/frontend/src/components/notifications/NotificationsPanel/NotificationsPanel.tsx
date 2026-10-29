@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 
-import { useNotifications } from '#components/shells/notifications-context';
+import { useNotifications } from '#components/notifications/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
 
 import NotificationItems from './NotificationItems';

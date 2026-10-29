@@ -1,4 +1,4 @@
-import styles from '../../new/page.module.scss';
+import styles from '../../session-form-page.module.scss';
 
 export default function LoadingPastSession() {
     return (

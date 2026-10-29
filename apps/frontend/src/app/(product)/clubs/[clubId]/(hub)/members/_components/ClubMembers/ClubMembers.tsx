@@ -3,8 +3,8 @@
 import type { IClubMember, IClubSettings } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
-import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/settings/action-state';
-import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/settings/actions';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';

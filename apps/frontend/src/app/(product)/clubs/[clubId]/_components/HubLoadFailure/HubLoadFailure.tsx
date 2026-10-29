@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '@pickflick/contracts';
 import { redirect } from 'next/navigation';
 
-import { buildLoginPath } from '#api/session.server';
+import { buildLoginPath } from '#api/auth-session.server';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';

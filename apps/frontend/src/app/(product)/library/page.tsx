@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { getPersonalAchievements } from '#api/achievements.server';
+import { buildLoginPath, getSessionState } from '#api/auth-session.server';
 import { getLibrary } from '#api/library.server';
-import { buildLoginPath, getSessionState } from '#api/session.server';
 import Achievements from '#components/achievements/Achievements/Achievements';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import Alert from '#components/ui/Alert/Alert';

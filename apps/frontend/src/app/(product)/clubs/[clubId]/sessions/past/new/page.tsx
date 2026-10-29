@@ -2,8 +2,8 @@ import { HTTP_STATUS } from '@pickflick/contracts';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
+import { buildLoginPath } from '#api/auth-session.server';
 import { getClubHub } from '#api/clubs.server';
-import { buildLoginPath } from '#api/session.server';
 import { getPastSessionMembers } from '#api/sessions.server';
 import BackLink from '#components/navigation/BackLink/BackLink';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
@@ -11,7 +11,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
 
-import styles from '../../new/page.module.scss';
+import styles from '../../session-form-page.module.scss';
 import PastSessionForm from './_components/PastSessionForm/PastSessionForm';
 
 export const metadata = { title: 'Log a Past Session — PickFlick' };

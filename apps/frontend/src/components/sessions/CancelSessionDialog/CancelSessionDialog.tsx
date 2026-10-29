@@ -4,7 +4,7 @@ import type { TSession } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { cancelSessionAction } from '#app/(product)/sessions/[sessionId]/actions';
+import { cancelSessionAction } from '#components/sessions/session-actions';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import { getOfflineMessage } from '#lib/offline';
 

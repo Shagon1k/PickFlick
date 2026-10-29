@@ -177,6 +177,7 @@ export default [
                         'achievements',
                         'movies',
                         'navigation',
+                        'notifications',
                         'sessions',
                         'shells',
                         'ui',

@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { buildLoginPath, getSessionState } from '#api/auth-session.server';
 import { getMovieDetails } from '#api/movies.server';
 import { getPersonalRating } from '#api/personal-rating.server';
-import { buildLoginPath, getSessionState } from '#api/session.server';
 import { getWatchlistItem } from '#api/watchlist.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';

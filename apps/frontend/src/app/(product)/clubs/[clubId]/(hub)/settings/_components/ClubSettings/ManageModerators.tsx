@@ -3,12 +3,12 @@
 import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
 import { useActionState, useState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { changeClubMemberRoleAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
 import Modal from '#components/ui/Modal/Modal';
 import { formatUtcDate, getMonogram } from '#lib/format';
 
-import { initialClubActionState } from '../../action-state';
-import { changeClubMemberRoleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 

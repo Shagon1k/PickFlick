@@ -2,7 +2,7 @@ import type { TNotificationEvent } from '@pickflick/contracts';
 import Link from 'next/link';
 import type { RefObject } from 'react';
 
-import { useNotifications } from '#components/shells/notifications-context';
+import { useNotifications } from '#components/notifications/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';

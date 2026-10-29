@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 
-import { getSessionProgressAction } from '../../progress-actions';
+import { getSessionProgressAction } from '#components/sessions/progress-actions';
 
 const POLL_MS = 5000;
 

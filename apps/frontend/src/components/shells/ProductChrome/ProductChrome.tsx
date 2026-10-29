@@ -2,10 +2,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
+import NotificationsProvider from '#components/notifications/NotificationsProvider/NotificationsProvider';
 import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
-import NotificationsProvider from '#components/shells/NotificationsProvider/NotificationsProvider';
 import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
 import ProductOverlayProvider from '#components/shells/ProductOverlayProvider/ProductOverlayProvider';
 import ProductSearch from '#components/shells/ProductSearch/ProductSearch';

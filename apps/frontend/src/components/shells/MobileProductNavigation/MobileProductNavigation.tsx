@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
+import { useNotifications } from '#components/notifications/notifications-context';
+import NotificationsPanel from '#components/notifications/NotificationsPanel/NotificationsPanel';
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
-import { useNotifications } from '#components/shells/notifications-context';
-import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,

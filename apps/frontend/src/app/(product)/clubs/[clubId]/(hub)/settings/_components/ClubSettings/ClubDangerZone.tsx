@@ -3,12 +3,12 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import { startTransition, useActionState, useState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { changeClubLifecycleAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 
-import { initialClubActionState } from '../../action-state';
-import { changeClubLifecycleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 

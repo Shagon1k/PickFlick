@@ -11,11 +11,14 @@ import Link from 'next/link';
 import { type ReactNode, useRef, useState, useTransition } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import {
+    refreshSelectionAction,
+    submitSelectionAction,
+} from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { getOfflineMessage } from '#lib/offline';
 
-import { refreshSelectionAction, submitSelectionAction } from '../../selection-actions';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Selection.module.scss';
 

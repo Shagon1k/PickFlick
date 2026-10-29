@@ -2,8 +2,8 @@ import { HTTP_STATUS, isFilmSessionPhase, type TSession } from '@pickflick/contr
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
+import { buildLoginPath } from '#api/auth-session.server';
 import { getMovieDetails } from '#api/movies.server';
-import { buildLoginPath } from '#api/session.server';
 import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';

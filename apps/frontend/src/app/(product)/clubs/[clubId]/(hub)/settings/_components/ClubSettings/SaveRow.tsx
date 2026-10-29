@@ -1,8 +1,8 @@
 'use client';
 
+import { type IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import Button from '#components/ui/Button/Button';
 
-import { type IClubActionState } from '../../action-state';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 

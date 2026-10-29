@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
+import { buildLoginPath } from '#api/auth-session.server';
 import { getClubHub } from '#api/clubs.server';
-import { buildLoginPath } from '#api/session.server';
 import BackLink from '#components/navigation/BackLink/BackLink';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
@@ -12,7 +12,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
 
-import styles from './page.module.scss';
+import styles from '../session-form-page.module.scss';
 
 export const metadata: Metadata = { title: 'Create a Session — PickFlick' };
 export default async function CreateSessionPage({

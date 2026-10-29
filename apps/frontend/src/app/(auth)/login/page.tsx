@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getSessionState, isAppleSignInEnabled } from '#api/session.server';
+import { getSessionState, isAppleSignInEnabled } from '#api/auth-session.server';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Icon from '#components/ui/Icon/Icon';

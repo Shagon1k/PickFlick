@@ -1,4 +1,4 @@
-import { getSessionState } from '../session.server';
+import { getSessionState } from '../auth-session.server';
 
 const incoming = vi.hoisted(() => ({ headers: new Headers() }));
 vi.mock('next/headers', () => ({ headers: () => Promise.resolve(incoming.headers) }));
