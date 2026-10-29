@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
+import { configureApplication } from '../../../config/configure-application.js';
 import { buildCanonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
@@ -34,11 +35,17 @@ describe('MoviesController', () => {
                     useValue: {
                         resolveUser: (headers: Record<string, unknown>) =>
                             headers['x-test-user'] ? { id: 'user' } : null,
+                        handler: vi.fn(),
                     },
                 },
             ],
         }).compile();
-        app = module.createNestApplication<NestExpressApplication>({ logger: false });
+        app = module.createNestApplication<NestExpressApplication>({
+            bodyParser: false,
+            logger: false,
+        });
+        // The shared configuration owns the default Cache-Control the poster route overrides.
+        configureApplication(app);
         app.useGlobalGuards(app.get(AuthGuard));
         await app.listen(0, '127.0.0.1');
         url = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}/movies/search`;

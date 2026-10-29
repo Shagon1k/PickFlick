@@ -1,10 +1,9 @@
 import type { IncomingHttpHeaders } from 'node:http';
 
 import { Controller, Query, Req, Sse, UnauthorizedException } from '@nestjs/common';
-import { notificationPreferencesQuerySchema } from '@pickflick/contracts';
 import { concatMap, interval, map, merge, of } from 'rxjs';
 
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { EMPTY_REQUEST } from '../../common/pipes/zod-validation.pipe.js';
 import { AuthService } from '../auth/auth.service.js';
 import type { IAuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -21,7 +20,7 @@ export class NotificationStreamController {
 
     @Sse('stream')
     stream(
-        @Query(new ZodValidationPipe(notificationPreferencesQuerySchema))
+        @Query(EMPTY_REQUEST)
         query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
         @Req() request: { headers: IncomingHttpHeaders },

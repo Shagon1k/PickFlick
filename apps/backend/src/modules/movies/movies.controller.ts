@@ -46,7 +46,6 @@ export class MoviesController {
     }
 
     @Get(':movieId')
-    @Header('Cache-Control', 'private, no-store')
     @Throttle(CATALOG_RATE_LIMIT)
     async getDetails(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
         const response = await this.movies.getDetailsResponse(movieId);
@@ -59,7 +58,6 @@ export class MoviesController {
     }
 
     @Get(':movieId/poster')
-    @Header('Cache-Control', 'private, no-store')
     async getPoster(
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
         @Res() response: Response,
@@ -73,7 +71,6 @@ export class MoviesController {
 
     @Post('search')
     @HttpCode(HttpStatus.OK)
-    @Header('Cache-Control', 'private, no-store')
     @Throttle(CATALOG_RATE_LIMIT)
     async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
         const result = await this.movies.search(input, true);

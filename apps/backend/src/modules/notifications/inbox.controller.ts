@@ -1,14 +1,13 @@
-import { Body, Controller, Get, Header, HttpCode, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
     HTTP_STATUS,
     notificationIdSchema,
     notificationListQuerySchema,
-    notificationPreferencesQuerySchema,
     type TNotificationListQuery,
 } from '@pickflick/contracts';
 
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { EMPTY_REQUEST, ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { IAuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { InboxService } from './inbox.service.js';
@@ -22,7 +21,6 @@ export class InboxController {
 
     @Get()
     @Throttle(INBOX_RATE_LIMIT)
-    @Header('Cache-Control', 'private, no-store')
     list(
         @CurrentUser() user: IAuthUser,
         @Query(new ZodValidationPipe(notificationListQuerySchema)) query: TNotificationListQuery,
@@ -32,11 +30,10 @@ export class InboxController {
 
     @Post('read')
     @HttpCode(HTTP_STATUS.NO_CONTENT)
-    @Header('Cache-Control', 'private, no-store')
     markAllRead(
-        @Body(new ZodValidationPipe(notificationPreferencesQuerySchema))
+        @Body(EMPTY_REQUEST)
         body: Record<string, never>,
-        @Query(new ZodValidationPipe(notificationPreferencesQuerySchema))
+        @Query(EMPTY_REQUEST)
         query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
     ) {
@@ -45,12 +42,11 @@ export class InboxController {
 
     @Post(':id/read')
     @HttpCode(HTTP_STATUS.NO_CONTENT)
-    @Header('Cache-Control', 'private, no-store')
     markRead(
-        @Body(new ZodValidationPipe(notificationPreferencesQuerySchema))
+        @Body(EMPTY_REQUEST)
         body: Record<string, never>,
         @Param('id', new ZodValidationPipe(notificationIdSchema)) id: string,
-        @Query(new ZodValidationPipe(notificationPreferencesQuerySchema))
+        @Query(EMPTY_REQUEST)
         query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
     ) {

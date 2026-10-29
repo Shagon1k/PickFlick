@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Param, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 import {
     movieIdSchema,
     savePersonalRatingSchema,
@@ -15,7 +15,6 @@ export class PersonalRatingController {
     constructor(private readonly ratings: PersonalRatingService) {}
 
     @Get()
-    @Header('Cache-Control', 'private, no-store')
     async get(
         @CurrentUser() user: IAuthUser,
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
@@ -24,7 +23,6 @@ export class PersonalRatingController {
     }
 
     @Put()
-    @Header('Cache-Control', 'private, no-store')
     save(
         @CurrentUser() user: IAuthUser,
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,

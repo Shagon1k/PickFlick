@@ -1,14 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Header,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Put,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Put } from '@nestjs/common';
 import { movieIdSchema, saveWatchlistSchema, type TSaveWatchlist } from '@pickflick/contracts';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
@@ -21,7 +11,6 @@ export class WatchlistController {
     constructor(private readonly watchlist: WatchlistService) {}
 
     @Get('movies/:movieId/watchlist')
-    @Header('Cache-Control', 'private, no-store')
     async get(
         @CurrentUser() user: IAuthUser,
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
@@ -30,7 +19,6 @@ export class WatchlistController {
     }
 
     @Put('movies/:movieId/watchlist')
-    @Header('Cache-Control', 'private, no-store')
     save(
         @CurrentUser() user: IAuthUser,
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
@@ -41,7 +29,6 @@ export class WatchlistController {
 
     @Delete('movies/:movieId/watchlist')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @Header('Cache-Control', 'private, no-store')
     remove(
         @CurrentUser() user: IAuthUser,
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,

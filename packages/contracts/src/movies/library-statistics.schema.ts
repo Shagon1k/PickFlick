@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-export const libraryStatisticsQuerySchema = z.strictObject({});
 export const libraryStatisticsSchema = z.strictObject({
     filmsRated: z.number().int().nonnegative(),
     ratedThisYear: z.number().int().nonnegative(),

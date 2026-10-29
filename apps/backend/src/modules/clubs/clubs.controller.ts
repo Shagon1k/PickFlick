@@ -8,7 +8,6 @@ import {
     HttpCode,
     HttpStatus,
     Param,
-    ParseUUIDPipe,
     Patch,
     Post,
     Put,
@@ -30,14 +29,12 @@ import {
 } from '@pickflick/contracts';
 import type { Response } from 'express';
 
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UUID_PARAM, ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import type { IAuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { ClubAvatarService } from './club-avatar.service.js';
 import { ClubLifecycleService } from './club-lifecycle.service.js';
 import { ClubsService } from './clubs.service.js';
-
-const uuidParam = new ParseUUIDPipe({ version: '4' });
 
 const PRIVATE = ['Cache-Control', 'private, no-store'] as const;
 
@@ -59,7 +56,7 @@ export class ClubsController {
     @Header(...PRIVATE)
     getHub(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
     ): Promise<IClubHub> {
         return this.clubsService.getHub(user.id, clubId);
     }
@@ -76,7 +73,7 @@ export class ClubsController {
     @Header(...PRIVATE)
     getSettings(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
     ): Promise<IClubSettings> {
         return this.clubsService.getSettings(user.id, clubId);
     }
@@ -84,7 +81,7 @@ export class ClubsController {
     @Patch(':clubId/settings')
     updateSettings(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body(new ZodValidationPipe(updateClubSettingsSchema)) input: TUpdateClubSettingsRequest,
     ): Promise<IClubSettings> {
         return this.clubsService.updateSettings(user.id, clubId, input);
@@ -94,8 +91,8 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     changeMemberRole(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
-        @Param('membershipId', uuidParam) membershipId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
+        @Param('membershipId', UUID_PARAM) membershipId: string,
         @Body(new ZodValidationPipe(changeMemberRoleSchema)) input: TChangeMemberRoleRequest,
     ): Promise<void> {
         return this.clubsService.changeMemberRole(user.id, clubId, membershipId, input);
@@ -105,8 +102,8 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     removeMember(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
-        @Param('membershipId', uuidParam) membershipId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
+        @Param('membershipId', UUID_PARAM) membershipId: string,
         @Body(new ZodValidationPipe(confirmClubActionSchema))
         { confirmation }: TConfirmClubActionRequest,
     ): Promise<void> {
@@ -117,7 +114,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     archive(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body(new ZodValidationPipe(confirmClubActionSchema))
         { confirmation }: TConfirmClubActionRequest,
     ): Promise<void> {
@@ -128,7 +125,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     reactivate(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
     ): Promise<void> {
         return this.lifecycleService.reactivate(user.id, clubId);
     }
@@ -137,7 +134,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     leave(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body(new ZodValidationPipe(confirmClubActionSchema))
         { confirmation }: TConfirmClubActionRequest,
     ): Promise<void> {
@@ -148,7 +145,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     delete(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body(new ZodValidationPipe(confirmClubActionSchema))
         { confirmation }: TConfirmClubActionRequest,
     ): Promise<void> {
@@ -159,7 +156,7 @@ export class ClubsController {
     @Header(...PRIVATE)
     async getAvatar(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Res({ passthrough: true }) response: Response,
     ): Promise<StreamableFile> {
         const avatar = await this.avatarService.get(user.id, clubId);
@@ -171,7 +168,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     replaceAvatar(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body() body: unknown,
         @Headers('content-type') contentType?: string,
     ): Promise<void> {
@@ -182,7 +179,7 @@ export class ClubsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     removeAvatar(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuidParam) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
     ): Promise<void> {
         return this.avatarService.remove(user.id, clubId);
     }
