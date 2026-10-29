@@ -2,9 +2,9 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager, canManage } from '../session-access.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceRating, completeRating } from './rating-completion.js';
@@ -16,8 +16,9 @@ export class RatingService {
     async loadRating(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: TMembership,
+        viewer: { membership: TMembership; canManage: boolean },
     ): Promise<TRating> {
+        const { membership } = viewer;
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
             include: {
@@ -52,7 +53,7 @@ export class RatingService {
                 membership.club.lifecycle === 'ACTIVE' &&
                 own?.status === 'ACCEPTED' &&
                 !own.rating,
-            canClose: isOpen && (await canManage(tx, membership)),
+            canClose: isOpen && viewer.canManage,
             own: own?.rating ? toRating(own.rating) : null,
             results: canSeeResults
                 ? {
@@ -83,14 +84,7 @@ export class RatingService {
                     detailsVersion: { increment: 1 },
                 },
             });
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_RATING_OPENED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_OPENED');
             await publishProgress(tx, id, 'MANUAL');
         });
     }
@@ -141,14 +135,7 @@ export class RatingService {
             if (session.phase !== 'RATING' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'RATING_CHANGED' });
             await advanceRating(tx, id, 'MANUAL');
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_RATING_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_CLOSED');
         });
     }
 }

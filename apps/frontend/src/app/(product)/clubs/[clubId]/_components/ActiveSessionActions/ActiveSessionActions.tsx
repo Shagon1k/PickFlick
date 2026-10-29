@@ -42,7 +42,7 @@ export default function ActiveSessionActions({
             {selection ? (
                 <SelectionClose
                     acceptedCount={selection.acceptedCount}
-                    canClose={session.canEdit && selection.nominations.length > 0}
+                    canClose={session.canManage && selection.nominations.length > 0}
                     phaseVersion={session.phaseVersion}
                     sessionId={session.id}
                     submittedCount={selection.submittedCount}
@@ -52,7 +52,7 @@ export default function ActiveSessionActions({
             ) : null}
             {session.phase === 'WATCHING' ? (
                 <OpenRating
-                    canOpen={session.canEdit}
+                    canOpen={session.canManage}
                     phaseVersion={session.phaseVersion}
                     sessionId={session.id}
                 >
@@ -74,7 +74,7 @@ export default function ActiveSessionActions({
                         ) : null
                     }
                 </SessionRoster>
-                {session.canCancel ? (
+                {session.canManage ? (
                     <Button
                         fullWidth
                         onClick={() => setIsCancelOpen(true)}

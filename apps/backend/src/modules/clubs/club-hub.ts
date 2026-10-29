@@ -8,7 +8,7 @@ import {
 import { Prisma } from '@pickflick/database';
 
 import { canJoinSession } from '../sessions/session-access.js';
-import { findMembership, loadClubAccess } from './access/club-access.js';
+import { findMembership, loadClubAccess, type TMembership } from './access/club-access.js';
 import { getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
@@ -34,18 +34,43 @@ type THubSessionRow = Prisma.SessionGetPayload<{ include: typeof sessionInclude 
 
 export async function readClubHub(tx: Prisma.TransactionClient, userId: string, clubId: string) {
     const membership = await findMembership(tx, userId, clubId);
-    const [
-        { access, memberCount },
+    const [{ access, memberCount }, sessionCount, sessions, completed, members] = await Promise.all(
+        [
+            loadClubAccess(tx, membership.club),
+            tx.session.count({ where: { clubId, phase: { not: 'CANCELLED' } } }),
+            loadHubSessions(tx, clubId),
+            readCompletedScreenings(tx, clubId, membership.role),
+            findActiveMembers(tx, clubId),
+        ],
+    );
+    const { active, recent, ratings, history } = sessions;
+    const toHubSession = await createHubSessionProjection(tx, membership, [
+        ...(active ? [active] : []),
+        ...recent,
+        ...ratings,
+        ...history,
+    ]);
+    // Statistics need cached Movie metadata, which the caller reads outside this transaction.
+    const hub: Omit<IClubHub, 'statistics'> = {
+        club: toClubSummary(membership.club, membership.role),
+        access,
+        permissions: getClubPermissions(membership.role, membership.club.lifecycle, access),
+        memberCount,
+        memberLimit: getClubEntitlements(clubId).memberLimit,
+        members: members.map((member) => toClubMember(membership, member)),
         sessionCount,
-        active,
-        recent,
-        ratings,
-        history,
-        completed,
-        members,
-    ] = await Promise.all([
-        loadClubAccess(tx, membership.club),
-        tx.session.count({ where: { clubId, phase: { not: 'CANCELLED' } } }),
+        completedSessionCount: completed.length,
+        ...(active ? { activeSession: toHubSession(active) } : {}),
+        recentSessions: recent.map(toHubSession),
+        ratingSessions: ratings.map(toHubSession),
+        historySessions: history.map(toHubSession),
+    };
+    return { hub, completed };
+}
+
+async function loadHubSessions(tx: Prisma.TransactionClient, clubId: string) {
+    const newestFirst = [{ updatedAt: 'desc' as const }, { id: 'desc' as const }];
+    const [active, recent, ratings, history] = await Promise.all([
         tx.session.findFirst({
             where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
             orderBy: { createdAt: 'desc' },
@@ -53,55 +78,54 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         }),
         tx.session.findMany({
             where: { clubId, phase: { not: 'CANCELLED' } },
-            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+            orderBy: newestFirst,
             take: RECENT_LIMIT,
             include: sessionInclude,
         }),
         tx.session.findMany({
             where: { clubId, phase: 'RATING' },
-            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+            orderBy: newestFirst,
             include: sessionInclude,
         }),
         tx.session.findMany({
             where: { clubId, phase: { in: ['COMPLETED', 'CANCELLED'] } },
-            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+            orderBy: newestFirst,
             take: HUB_HISTORY_LIMIT,
             include: sessionInclude,
         }),
-        readCompletedScreenings(tx, clubId, membership.role),
-        findActiveMembers(tx, clubId),
     ]);
-    const rows = [...(active ? [active] : []), ...recent, ...ratings, ...history];
+    return { active, recent, ratings, history };
+}
+
+/** Reads what every listed Session card needs beyond its own row, then maps rows to cards. */
+async function createHubSessionProjection(
+    tx: Prisma.TransactionClient,
+    membership: TMembership,
+    rows: THubSessionRow[],
+) {
     const ids = [...new Set(rows.map(({ id }) => id))];
-    // Cancellation never changes a Session's number. Existing history is never renumbered.
-    const ordinals = ids.length
-        ? await tx.$queryRaw<{ id: string; ordinal: bigint }[]>`
-        SELECT id, ordinal FROM (
-            SELECT id, row_number() OVER (ORDER BY "createdAt", id) AS ordinal
-            FROM "Session" WHERE "clubId" = ${clubId}::uuid
-        ) numbered WHERE id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))})
-    `
-        : [];
-    const ordinalById = new Map(ordinals.map((row) => [row.id, Number(row.ordinal)]));
-    const own = await tx.sessionParticipant.findMany({
-        where: { membershipId: membership.id, sessionId: { in: ids } },
-        select: { sessionId: true, status: true },
-    });
-    const statusBySession = new Map(own.map((row) => [row.sessionId, row.status]));
-    const visibleRatingIds = history
+    const visibleRatingIds = rows
         .filter(
             (row) =>
                 row.phase === 'COMPLETED' &&
                 (membership.role !== 'MEMBER' || row.showRatingResults),
         )
         .map((row) => row.id);
-    const averages = await tx.sessionRating.groupBy({
-        by: ['sessionId'],
-        where: { sessionId: { in: visibleRatingIds } },
-        _avg: { score: true },
-    });
+    const [ordinalById, own, averages] = await Promise.all([
+        readOrdinals(tx, membership.club.id, ids),
+        tx.sessionParticipant.findMany({
+            where: { membershipId: membership.id, sessionId: { in: ids } },
+            select: { sessionId: true, status: true },
+        }),
+        tx.sessionRating.groupBy({
+            by: ['sessionId'],
+            where: { sessionId: { in: visibleRatingIds } },
+            _avg: { score: true },
+        }),
+    ]);
+    const statusBySession = new Map(own.map((row) => [row.sessionId, row.status]));
     const averageById = new Map(averages.map((row) => [row.sessionId, row._avg.score]));
-    const project = (row: THubSessionRow): IClubHubSession => ({
+    return (row: THubSessionRow): IClubHubSession => ({
         id: row.id,
         ordinal: ordinalById.get(row.id)!,
         phase: row.phase,
@@ -129,22 +153,18 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
               }
             : null,
     });
-    // Statistics need cached Movie metadata, which the caller reads outside this transaction.
-    const hub: Omit<IClubHub, 'statistics'> = {
-        club: toClubSummary(membership.club, membership.role),
-        access,
-        permissions: getClubPermissions(membership.role, membership.club.lifecycle, access),
-        memberCount,
-        memberLimit: getClubEntitlements(clubId).memberLimit,
-        members: members.map((member) => toClubMember(membership, member)),
-        sessionCount,
-        completedSessionCount: completed.length,
-        ...(active ? { activeSession: project(active) } : {}),
-        recentSessions: recent.map(project),
-        ratingSessions: ratings.map(project),
-        historySessions: history.map(project),
-    };
-    return { hub, completed };
+}
+
+/** A Session's number counts every Session the Club created, so cancellation never renumbers. */
+async function readOrdinals(tx: Prisma.TransactionClient, clubId: string, ids: string[]) {
+    if (!ids.length) return new Map<string, number>();
+    const rows = await tx.$queryRaw<{ id: string; ordinal: bigint }[]>`
+        SELECT id, ordinal FROM (
+            SELECT id, row_number() OVER (ORDER BY "createdAt", id) AS ordinal
+            FROM "Session" WHERE "clubId" = ${clubId}::uuid
+        ) numbered WHERE id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))})
+    `;
+    return new Map(rows.map((row) => [row.id, Number(row.ordinal)]));
 }
 
 function getProgressCount(row: THubSessionRow) {

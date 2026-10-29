@@ -263,8 +263,7 @@ describe('Selection outcome', () => {
         ).toEqual(rosterBefore);
         expect(before).toMatchObject({
             phase: 'COMPLETED',
-            canEdit: false,
-            canCancel: false,
+            canManage: false,
             rating: { receivedCount: 1, results: { average: 8 } },
         });
         for (const [path, json] of [

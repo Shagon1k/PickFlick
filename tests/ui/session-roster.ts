@@ -27,7 +27,7 @@ const MEMBERSHIP_ID = '50000000-0000-4000-8000-000000000041';
 const INVITE_ID = '60000000-0000-4000-8000-000000000041';
 const states = new Map<string, IRosterState>();
 const EXPIRES_AT = '2026-12-01T12:00:00.000Z';
-const session: Omit<TSession, 'canEdit' | 'canCancel'> = {
+const session: Omit<TSession, 'canManage'> = {
     id: SESSION_ID,
     clubId: CLUB_ID,
     clubName: 'Midnight Society',
@@ -168,7 +168,7 @@ export function handleSessionRoster(
     const state = stateFor(token);
     if (isDetailRoute) {
         const isManager = !token.includes('member');
-        const projection: TSession = { ...session, canEdit: isManager, canCancel: isManager };
+        const projection: TSession = { ...session, canManage: isManager };
         sendJson(response, 200, projection);
     } else if (pathname === '/session-invitations/pending') {
         const isPending =

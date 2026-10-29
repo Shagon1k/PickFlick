@@ -114,7 +114,7 @@ export default function SessionDetails({
                 <OpenRating
                     sessionId={session.id}
                     phaseVersion={session.phaseVersion}
-                    canOpen={session.phase === 'WATCHING' && session.canEdit}
+                    canOpen={session.phase === 'WATCHING' && session.canManage}
                 >
                     {(onOpen) => (
                         <>
@@ -154,7 +154,7 @@ export default function SessionDetails({
                     phaseVersion={session.phaseVersion}
                     submittedCount={selection.submittedCount}
                     acceptedCount={selection.acceptedCount}
-                    canClose={session.canEdit && selection.nominations.length > 0}
+                    canClose={session.canManage && selection.nominations.length > 0}
                 >
                     {(onClose) => (
                         <Selection

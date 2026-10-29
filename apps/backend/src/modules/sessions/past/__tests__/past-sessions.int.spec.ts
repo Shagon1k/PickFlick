@@ -62,8 +62,7 @@ describe('Past Sessions', () => {
             selection: null,
             selectionOutcome: { source: 'IMPORTED', scaleMin: 0, scaleMax: 5, nominations: [] },
             nominations: null,
-            canEdit: false,
-            canCancel: false,
+            canManage: false,
         });
         expect(session.rating).toMatchObject({
             acceptedCount: 0,

@@ -32,7 +32,7 @@ export async function findMembership(
 ) {
     const membership = await database.membership.findFirst({
         where: { userId, clubId, status: 'ACTIVE', club: { deletedAt: null } },
-        select: { id: true, role: true, club: { select: clubColumns } },
+        select: { id: true, userId: true, role: true, club: { select: clubColumns } },
     });
     if (!membership) {
         throw new NotFoundException();

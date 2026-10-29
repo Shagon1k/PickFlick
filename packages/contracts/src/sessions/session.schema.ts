@@ -101,8 +101,8 @@ export const sessionSchema = z.strictObject({
     selection: selectionSchema.nullable(),
     rating: ratingSchema.nullable(),
     selectionOutcome: selectionOutcomeSchema.nullable(),
-    canEdit: z.boolean(),
-    canCancel: z.boolean(),
+    /** The viewer may edit, advance and cancel this open Session. */
+    canManage: z.boolean(),
 });
 export type TSession = z.infer<typeof sessionSchema>;
 

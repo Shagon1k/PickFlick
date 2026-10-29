@@ -7,11 +7,11 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { Transactions } from '../../notifications/transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
-import { assertManager } from '../session-access.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceSelection, completeSelection } from './selection-completion.js';
 import { loadSelectionOutcome } from './selection-outcome.js';
@@ -136,14 +136,7 @@ export class SelectionService {
             if (session.phase !== 'SELECTION' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'SELECTION_CHANGED' });
             await advanceSelection(tx, session, { kind: 'MANUAL', membershipId: membership.id });
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_SELECTION_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_SELECTION_CLOSED');
         });
     }
 }

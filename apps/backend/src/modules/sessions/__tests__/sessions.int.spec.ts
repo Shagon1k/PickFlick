@@ -130,7 +130,7 @@ describe('Session workflows', () => {
         expect((await cancel(session)).status).toBe(409);
         expect(
             await (await api.request(`/sessions/${session.id}`, { userId: admin })).json(),
-        ).toMatchObject({ canEdit: false, canCancel: false });
+        ).toMatchObject({ canManage: false });
     });
     it('should reject invalid payloads and unknown Movies without inserting or auditing', async () => {
         expect((await create(admin, { type: 'PRE_SELECTED' })).status).toBe(400);
@@ -183,7 +183,7 @@ describe('Session workflows', () => {
         ).toBe(1);
         expect(
             await (await api.request(`/sessions/${session.id}`, { userId: member })).json(),
-        ).toMatchObject({ phase: 'CANCELLED', notes: details.notes, version: 2, canEdit: false });
+        ).toMatchObject({ phase: 'CANCELLED', notes: details.notes, version: 2, canManage: false });
         expect((await edit(session)).status).toBe(409);
         expect((await create()).status).toBe(201);
         const hub = (await (

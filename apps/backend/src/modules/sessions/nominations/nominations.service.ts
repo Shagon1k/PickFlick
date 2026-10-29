@@ -6,10 +6,10 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager } from '../session-access.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
@@ -121,14 +121,7 @@ export class NominationsService {
                 select: { movieId: true },
             });
             if (!nominations.length) throw new ConflictException({ reason: 'NO_NOMINATIONS' });
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_NOMINATION_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_NOMINATION_CLOSED');
             await advanceNomination(tx, session, nominations, 'MANUAL');
         });
     }

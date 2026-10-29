@@ -154,11 +154,11 @@ function getMenuItems(
             icon: 'chevron-right',
             onSelect: actions.onClosePhase,
         });
-    if (session.canEdit)
+    if (session.canManage)
         items.push({ id: 'edit', label: 'Edit Session', icon: 'edit', onSelect: actions.onEdit });
     if (actions.onKick)
         items.push({ id: 'kick', label: 'Kick', icon: 'user-x', onSelect: actions.onKick });
-    if (session.canCancel)
+    if (session.canManage)
         items.push({
             id: 'cancel',
             label: 'Cancel Session',

@@ -120,8 +120,7 @@ export function handleSelection(
         selection: isClosed ? null : buildSelection(token, ballot),
         selectionOutcome: isClosed ? buildOutcome(token) : null,
         rating: null,
-        canEdit: token.includes('operator'),
-        canCancel: false,
+        canManage: token.includes('operator'),
     };
     sendJson(response, 200, detail);
     return true;

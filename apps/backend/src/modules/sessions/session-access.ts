@@ -2,7 +2,12 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { isOpenSessionPhase, type TClubLifecycle, type TSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { loadClubAccess, type TMembership } from '../clubs/access/club-access.js';
+import {
+    loadClubAccess,
+    recordAudit,
+    type TAuditEvent,
+    type TMembership,
+} from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
 import { getClubEntitlements } from '../clubs/access/club-tiers.js';
 
@@ -50,4 +55,21 @@ export function canJoinSession(input: {
         input.ownStatus !== 'ACCEPTED' &&
         input.ownStatus !== 'REMOVED'
     );
+}
+
+/** A Session action the member took on their own behalf: they are both actor and subject. */
+export async function recordSessionAction(
+    transaction: Prisma.TransactionClient,
+    sessionId: string,
+    membership: TMembership,
+    action: TAuditEvent['action'],
+) {
+    await recordAudit(transaction, {
+        clubId: membership.club.id,
+        sessionId,
+        actorUserId: membership.userId,
+        subjectUserId: membership.userId,
+        subjectMembershipId: membership.id,
+        action,
+    });
 }
