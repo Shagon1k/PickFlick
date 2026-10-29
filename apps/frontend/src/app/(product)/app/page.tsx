@@ -10,6 +10,7 @@ import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
+import { LAST_CLUB_COOKIE } from '#lib/last-club';
 
 import styles from '../onboarding.module.scss';
 
@@ -78,7 +79,7 @@ export default async function AppPage() {
         }
         return <ClubsUnavailable />;
     }
-    const lastClubId = (await cookies()).get('pickflick.last_club')?.value;
+    const lastClubId = (await cookies()).get(LAST_CLUB_COOKIE)?.value;
     const club = clubs.find(({ id }) => id === lastClubId) ?? clubs[0];
     if (!club) {
         return <NoClubs />;

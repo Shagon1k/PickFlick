@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 
 import { getClubHub, listClubs } from '#api/clubs.server';
 import { ApiError } from '#lib/api.server';
+import { LAST_CLUB_COOKIE, LAST_CLUB_COOKIE_OPTIONS } from '#lib/last-club';
 
 /** Save the preference only after both the list and the Hub authorize this Membership. */
 export async function selectClubAction(formData: FormData): Promise<void> {
@@ -23,11 +24,6 @@ export async function selectClubAction(formData: FormData): Promise<void> {
         }
         throw error;
     }
-    (await cookies()).set('pickflick.last_club', club.id, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-    });
+    (await cookies()).set(LAST_CLUB_COOKIE, club.id, LAST_CLUB_COOKIE_OPTIONS);
     redirect(`/clubs/${club.id}`);
 }

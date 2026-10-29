@@ -18,6 +18,12 @@ describe('getFailureMessage', () => {
         );
     });
 
+    it('should ignore a reason that only matches an inherited property', () => {
+        expect(getFailureMessage(new ApiError(409, 'CONFLICT', '__proto__'), copy)).toBe(
+            'Changed.',
+        );
+    });
+
     it('should use the first status group that lists the status', () => {
         expect(getFailureMessage(new ApiError(404), copy)).toBe('Access lost.');
         expect(getFailureMessage(new ApiError(409, 'CONFLICT', 'UNKNOWN'), copy)).toBe('Changed.');

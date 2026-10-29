@@ -4,7 +4,6 @@ import {
     changeMemberRoleSchema,
     CLUB_AVATAR_MAX_BYTES,
     CLUB_AVATAR_MEDIA_TYPES,
-    HTTP_STATUS,
     updateClubSettingsSchema,
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
@@ -21,11 +20,11 @@ import {
     updateClubSettings,
 } from '#api/clubs.server';
 import { readClubValues } from '#components/clubs/club-form.validation';
-import { ApiError } from '#lib/api.server';
+import { getFailureMessage } from '#lib/action-failure';
 import { readFormText } from '#lib/form-data';
 
 import type { IClubActionState } from './club-action-state';
-import { getClubFailureMessage } from './club-errors';
+import { CLUB_FAILURE } from './club-errors';
 
 function next(
     previous: IClubActionState,
@@ -45,9 +44,7 @@ async function run(
         await request();
         return next(previous, 'success', successMessage);
     } catch (error) {
-        return error instanceof ApiError
-            ? next(previous, 'error', getClubFailureMessage(error.status, error.reason))
-            : next(previous, 'error', getClubFailureMessage(HTTP_STATUS.SERVICE_UNAVAILABLE));
+        return next(previous, 'error', getFailureMessage(error, CLUB_FAILURE));
     }
 }
 

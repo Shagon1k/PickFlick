@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getClubHub } from '#api/clubs.server';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
+import { LAST_CLUB_COOKIE, LAST_CLUB_COOKIE_OPTIONS } from '#lib/last-club';
 import { buildContentSecurityPolicy } from '#lib/security-headers';
 
 // The page itself answers these; any other failure is unexpected here.
@@ -44,7 +45,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (
         clubId &&
         request.method === 'GET' &&
-        request.cookies.get('pickflick.last_club')?.value !== clubId
+        request.cookies.get(LAST_CLUB_COOKIE)?.value !== clubId
     ) {
         try {
             await getClubHub(clubId, request.headers);
@@ -55,12 +56,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
             // The page owns access and service-failure states; keep the previous preference.
             return response;
         }
-        response.cookies.set('pickflick.last_club', clubId, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-        });
+        response.cookies.set(LAST_CLUB_COOKIE, clubId, LAST_CLUB_COOKIE_OPTIONS);
     }
     return response;
 }
