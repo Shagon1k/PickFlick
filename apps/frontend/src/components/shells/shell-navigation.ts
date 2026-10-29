@@ -13,12 +13,15 @@ export type TShellArea =
 export interface IShellNavigationItem {
     readonly href: string;
     readonly label: string;
+    /** Shown in film strips and section navigation; items without one show a plain dot. */
+    readonly icon?: TIconName;
     readonly current?: boolean;
 }
 
 interface IShellActionItem {
     readonly action: 'sign-out';
     readonly label: string;
+    readonly icon: TIconName;
     readonly current?: never;
 }
 
@@ -96,18 +99,30 @@ export function buildPublicNavigation(
     return [
         { href: routes.howItWorks, label: 'How it works' },
         { href: routes.features, label: 'Features' },
-        { href: routes.pricing, label: 'Pricing', current: currentPage === 'pricing' },
+        {
+            href: routes.pricing,
+            label: 'Pricing',
+            icon: 'pricing',
+            current: currentPage === 'pricing',
+        },
     ];
 }
 
-export function buildProductNavigation(routes: IShellRouteMap): readonly IShellNavigationItem[] {
+export function buildProductNavigation(
+    routes: IShellRouteMap,
+    currentArea: TShellArea,
+): readonly IShellNavigationItem[] {
     return [
-        { href: routes.product, label: 'Hub' },
-        { href: routes.library, label: 'My Library' },
+        {
+            href: routes.product,
+            label: 'Hub',
+            current: currentArea === 'hub' || currentArea === 'session',
+        },
+        { href: routes.library, label: 'My Library', current: currentArea === 'library' },
     ];
 }
 
-const signOutItem: IShellActionItem = { action: 'sign-out', label: 'Sign out' };
+const signOutItem: IShellActionItem = { action: 'sign-out', label: 'Sign out', icon: 'sign-out' };
 
 function buildSectionHref(route: string, tab: string): string {
     return `${route}${route.includes('?') ? '&' : '?'}tab=${tab}`;
@@ -118,11 +133,11 @@ export function buildAccountNavigation(
     isAdmin: boolean,
 ): readonly TShellMenuItem[] {
     return [
-        ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel' }] : []),
-        { href: routes.settings, label: 'Settings' },
-        { href: routes.privacy, label: 'Privacy & data' },
-        { href: routes.pricing, label: 'Pricing' },
-        { href: routes.contact, label: 'Contact Us' },
+        ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel', icon: 'admin' } as const] : []),
+        { href: routes.settings, label: 'Settings', icon: 'settings' },
+        { href: routes.privacy, label: 'Privacy & data', icon: 'privacy' },
+        { href: routes.pricing, label: 'Pricing', icon: 'pricing' },
+        { href: routes.contact, label: 'Contact Us', icon: 'contact' },
         signOutItem,
     ];
 }
@@ -134,12 +149,37 @@ export function buildClubNavigation(
 ): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [
-        { href: hub, label: 'Overview', current: current === 'overview' },
-        { href: `${hub}/sessions`, label: 'Sessions', current: current === 'sessions' },
-        { href: `${hub}/ratings`, label: 'Ratings', current: current === 'ratings' },
-        { href: `${hub}/members`, label: 'Members', current: current === 'members' },
-        { href: `${hub}/achievements`, label: 'Achievements', current: current === 'achievements' },
-        { href: `${hub}/settings`, label: 'Manage Club', current: current === 'manage' },
+        { href: hub, label: 'Overview', icon: 'overview', current: current === 'overview' },
+        {
+            href: `${hub}/sessions`,
+            label: 'Sessions',
+            icon: 'sessions',
+            current: current === 'sessions',
+        },
+        {
+            href: `${hub}/ratings`,
+            label: 'Ratings',
+            icon: 'ratings',
+            current: current === 'ratings',
+        },
+        {
+            href: `${hub}/members`,
+            label: 'Members',
+            icon: 'members',
+            current: current === 'members',
+        },
+        {
+            href: `${hub}/achievements`,
+            label: 'Achievements',
+            icon: 'achievements',
+            current: current === 'achievements',
+        },
+        {
+            href: `${hub}/settings`,
+            label: 'Manage Club',
+            icon: 'settings',
+            current: current === 'manage',
+        },
     ];
 }
 
@@ -154,8 +194,8 @@ function getHubItems(
         return clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }));
     if (currentArea === 'hub')
         return [
-            { href: routes.createClub, label: 'Create a Club' },
-            { href: routes.joinClub, label: 'Join a Club' },
+            { href: routes.createClub, label: 'Create a Club', icon: 'overview' },
+            { href: routes.joinClub, label: 'Join a Club', icon: 'user-plus' },
         ];
     return [{ href: routes.product, label: 'Club Hub' }];
 }
@@ -178,6 +218,43 @@ export function buildMobileNavigation({
     const isHubArea = currentArea === 'hub' || currentArea === 'session';
     const currentClubItem = isHubArea ? clubItems.find((item) => item.current) : undefined;
     const hubItems = getHubItems(clubItems, currentArea, isHubArea, routes);
+    const defaultLibraryItems: readonly IShellNavigationItem[] = [
+        {
+            href: buildSectionHref(routes.library, 'my-ratings'),
+            label: 'My Ratings',
+            icon: 'ratings',
+        },
+        {
+            href: buildSectionHref(routes.library, 'watchlist'),
+            label: 'Watchlist',
+            icon: 'watchlist',
+        },
+        {
+            href: buildSectionHref(routes.library, 'achievements'),
+            label: 'Achievements',
+            icon: 'achievements',
+        },
+    ];
+    const adminItem: IShellNavigationItem = {
+        href: routes.admin,
+        label: 'Admin Panel',
+        icon: 'admin',
+        current: currentArea === 'admin',
+    };
+    const defaultSettingsItems: readonly IShellNavigationItem[] = [
+        { href: routes.settings, label: 'Profile', icon: 'profile' },
+        {
+            href: buildSectionHref(routes.settings, 'notifications'),
+            label: 'Notifications',
+            icon: 'bell',
+        },
+        {
+            href: buildSectionHref(routes.settings, 'subscription'),
+            label: 'Subscription',
+            icon: 'credit-card',
+        },
+        { href: routes.privacy, label: 'Privacy & data', icon: 'privacy' },
+    ];
 
     return [
         {
@@ -192,11 +269,7 @@ export function buildMobileNavigation({
             current: currentArea === 'library',
             icon: 'library',
             id: 'library',
-            items: libraryItems ?? [
-                { href: buildSectionHref(routes.library, 'my-ratings'), label: 'My Ratings' },
-                { href: buildSectionHref(routes.library, 'watchlist'), label: 'Watchlist' },
-                { href: buildSectionHref(routes.library, 'achievements'), label: 'Achievements' },
-            ],
+            items: libraryItems ?? defaultLibraryItems,
             label: 'My Library',
             name: 'My Library',
         },
@@ -206,27 +279,8 @@ export function buildMobileNavigation({
             icon: 'settings',
             id: 'settings',
             items: [
-                ...(admin
-                    ? [
-                          {
-                              href: routes.admin,
-                              label: 'Admin Panel',
-                              current: currentArea === 'admin',
-                          },
-                      ]
-                    : []),
-                ...(settingsItems ?? [
-                    { href: routes.settings, label: 'Profile' },
-                    {
-                        href: buildSectionHref(routes.settings, 'notifications'),
-                        label: 'Notifications',
-                    },
-                    {
-                        href: buildSectionHref(routes.settings, 'subscription'),
-                        label: 'Subscription',
-                    },
-                    { href: routes.privacy, label: 'Privacy & data' },
-                ]),
+                ...(admin ? [adminItem] : []),
+                ...(settingsItems ?? defaultSettingsItems),
                 signOutItem,
             ],
             label: 'Settings',

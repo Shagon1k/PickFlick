@@ -1,8 +1,9 @@
 'use client';
 
-import type { TSessionInvitationPreview } from '@pickflick/contracts';
+import { resolveAuthReturnTarget, type TSessionInvitationPreview } from '@pickflick/contracts';
 import { useState, useTransition } from 'react';
 
+import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { formatUtcDate, formatUtcDateTime } from '#lib/format';
@@ -10,7 +11,6 @@ import { getOfflineMessage } from '#lib/offline';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondSessionInvitationAction } from '../../actions';
-import styles from '../../page.module.scss';
 
 type TView = TSessionInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const messages = {
@@ -50,7 +50,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
             }
         });
     }
-    const returnPath = encodeURIComponent(`/invite/session/${token}`);
+    const returnPath = encodeURIComponent(resolveAuthReturnTarget(`/invite/session/${token}`));
     return (
         <div className={styles.card}>
             <div className={styles.intro}>
@@ -90,6 +90,11 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
             ) : null}
             {view.state === 'sign-in' ? (
                 <ButtonLink href={`/login?returnTo=${returnPath}`}>Sign in</ButtonLink>
+            ) : null}
+            {view.state === 'error' ? (
+                <Button fullWidth onClick={() => globalThis.location.reload()}>
+                    Try again
+                </Button>
             ) : null}
             {!['valid', 'loading', 'sign-in', 'accepted'].includes(view.state) ? (
                 <ButtonLink href="/app" variant="secondary">

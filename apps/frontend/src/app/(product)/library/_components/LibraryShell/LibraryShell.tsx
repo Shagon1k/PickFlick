@@ -41,16 +41,19 @@ export default function LibraryShell({
             items={[
                 {
                     label: 'My Ratings',
+                    icon: 'ratings',
                     href: '/library?tab=my-ratings',
                     current: current === 'my-ratings',
                 },
                 {
                     label: 'Watchlist',
+                    icon: 'watchlist',
                     href: '/library?tab=watchlist',
                     current: current === 'watchlist',
                 },
                 {
                     label: 'Achievements',
+                    icon: 'achievements',
                     href: '/library?tab=achievements',
                     current: current === 'achievements',
                 },

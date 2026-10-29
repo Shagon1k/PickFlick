@@ -3,14 +3,16 @@
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
 import { useState } from 'react';
 
+import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
-import styles from '../../page.module.scss';
+import localStyles from './Invitation.module.scss';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const messages = {
@@ -56,6 +58,11 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
 
     async function respond(decision: 'accept' | 'decline') {
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setFailure(offlineMessage);
+            return;
+        }
         setIsPending(true);
         setFailure('');
         try {
@@ -84,11 +91,11 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 {view.state === 'valid' ? (
                     <>
                         <h2>{view.clubName}</h2>
-                        <p className={styles.previewMeta}>
+                        <p className={localStyles.previewMeta}>
                             <Icon name="members" />
                             {formatCount(view.memberCount, 'member')}
                         </p>
-                        <p className={styles.previewMeta}>
+                        <p className={localStyles.previewMeta}>
                             <Icon name="profile" />
                             <span>
                                 Invited by <strong>{view.inviterName}</strong>

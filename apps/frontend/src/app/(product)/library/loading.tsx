@@ -8,9 +8,9 @@ export default function LibraryLoading() {
             currentArea="library"
             clubItems={[]}
             items={[
-                { label: 'My Ratings', href: '/library?tab=my-ratings' },
-                { label: 'Watchlist', href: '/library?tab=watchlist' },
-                { label: 'Achievements', href: '/library?tab=achievements' },
+                { label: 'My Ratings', icon: 'ratings', href: '/library?tab=my-ratings' },
+                { label: 'Watchlist', icon: 'watchlist', href: '/library?tab=watchlist' },
+                { label: 'Achievements', icon: 'achievements', href: '/library?tab=achievements' },
             ]}
         >
             <p role="status">Loading your Library…</p>

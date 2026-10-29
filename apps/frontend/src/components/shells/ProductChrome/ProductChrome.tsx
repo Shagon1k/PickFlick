@@ -46,14 +46,8 @@ export default function ProductChrome({
     sessionBackHref,
     settingsItems,
 }: IProductChromeProps) {
-    const desktopItems = (currentArea === 'session' ? [] : buildProductNavigation(routes)).map(
-        (item) => ({
-            ...item,
-            current:
-                (item.label === 'Hub' && ['hub', 'session'].includes(currentArea)) ||
-                (item.label === 'My Library' && currentArea === 'library'),
-        }),
-    );
+    const desktopItems =
+        currentArea === 'session' ? [] : buildProductNavigation(routes, currentArea);
     return (
         <ProductOverlayProvider>
             <NotificationsProvider>
