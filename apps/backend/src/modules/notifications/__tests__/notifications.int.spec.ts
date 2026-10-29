@@ -9,11 +9,12 @@ import {
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
-import { recordAudit } from '../../clubs/access/club-access.js';
+import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
 import { publishProgress } from '../../sessions/session-progress.js';
 import { recordAchievementNotifications } from '../notification-producers.js';
 import { resolveNotification } from '../notification-resolver.js';
@@ -291,6 +292,45 @@ describe('Notifications', () => {
             where: { id: memberId },
             data: { status: 'ACTIVE', leftAt: null },
         });
+    });
+
+    it('should notify both sides of an Admin transfer and every active member of a lifecycle change', async () => {
+        const record = (event: Omit<TAuditEvent, 'clubId' | 'actorUserId'>) =>
+            api.prisma.$transaction((tx) =>
+                recordAudit(tx, { clubId, actorUserId: users[0]!, ...event }),
+            );
+        await record({
+            subjectUserId: users[1]!,
+            subjectMembershipId: memberId,
+            action: 'ADMIN_TRANSFERRED',
+            previousRole: 'MEMBER',
+            nextRole: 'ADMIN',
+        });
+        const admin = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: users[0] },
+        });
+        await record({
+            subjectUserId: users[0]!,
+            subjectMembershipId: admin.id,
+            action: 'CLUB_ARCHIVED',
+            previousLifecycle: 'ACTIVE',
+            nextLifecycle: 'ARCHIVED',
+        });
+        const audits = await api.prisma.clubAuditEvent.findMany({
+            where: { clubId, action: { in: ['ADMIN_TRANSFERRED', 'CLUB_ARCHIVED'] } },
+        });
+        const sourceOf = (action: string) => audits.find((audit) => audit.action === action)!.id;
+        const members = users.slice(0, 2).toSorted((a, b) => a.localeCompare(b));
+        expect(
+            await findNotifiedUsers(
+                api.prisma,
+                sourceOf('ADMIN_TRANSFERRED'),
+                'MEMBERSHIP_ROLE_CHANGED',
+            ),
+        ).toEqual(members);
+        expect(
+            await findNotifiedUsers(api.prisma, sourceOf('CLUB_ARCHIVED'), 'CLUB_ARCHIVED'),
+        ).toEqual(members);
     });
 
     it('should target private awards only to managers and recheck roles, owners and deleted awards', async () => {

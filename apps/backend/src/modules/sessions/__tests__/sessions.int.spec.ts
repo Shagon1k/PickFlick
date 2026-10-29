@@ -6,6 +6,7 @@ import { snapshotSessionSettings } from '@pickflick/database';
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     removeUsers,
     startTestApi,
@@ -173,6 +174,12 @@ describe('Session workflows', () => {
     });
     it('should cancel once, preserve details and history and release the blocking slot', async () => {
         const session = (await (await create()).json()) as TSession;
+        const { id: membershipId } = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: member },
+        });
+        await api.prisma.sessionParticipant.create({
+            data: { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' },
+        });
         expect((await cancel(session, admin, { confirmation: '' })).status).toBe(400);
         const results = await Promise.all([cancel(session), cancel(session, moderator)]);
         expect(results.map((response) => response.status)).toEqual([201, 201]);
@@ -181,6 +188,10 @@ describe('Session workflows', () => {
                 where: { sessionId: session.id, action: 'SESSION_CANCELLED' },
             }),
         ).toBe(1);
+        // Only accepted participants hear about the cancellation, not every Club member.
+        expect(await findNotifiedUsers(api.prisma, session.id, 'SESSION_CANCELLED')).toEqual([
+            member,
+        ]);
         expect(
             await (await api.request(`/sessions/${session.id}`, { userId: member })).json(),
         ).toMatchObject({ phase: 'CANCELLED', notes: details.notes, version: 2, canManage: false });

@@ -5,6 +5,7 @@ import { sessionSchema } from '@pickflick/contracts';
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     removeUsers,
     startTestApi,
@@ -33,15 +34,8 @@ describe('NominationDeadlines', () => {
     const session = () => api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
     const decisions = () =>
         api.prisma.nominationDeadlineDecision.findMany({ where: { sessionId } });
-    const notifiedUsers = async (event: 'NOMINATION_STALLED' | 'SELECTION_CLOSED') =>
-        (
-            await api.prisma.notification.findMany({
-                where: { sourceId: sessionId, event },
-                select: { recipientId: true },
-            })
-        )
-            .map(({ recipientId }) => recipientId)
-            .toSorted((a, b) => a.localeCompare(b));
+    const notifiedUsers = (event: 'NOMINATION_STALLED' | 'SELECTION_CLOSED') =>
+        findNotifiedUsers(api.prisma, sessionId, event);
     beforeAll(async () => {
         api = await startTestApi();
     });

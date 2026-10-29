@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { loadRuntimeEnvironment, type TRuntimeEnvironment } from '@pickflick/config/environment';
+import type { TNotificationEvent } from '@pickflick/contracts';
 import {
     assertSafeSeedOrResetTarget,
     type Prisma,
@@ -72,6 +73,19 @@ export async function createSession(
             ...data,
         },
     });
+}
+
+/** The users notified of `event` for a Session or audit source, sorted for stable comparison. */
+export async function findNotifiedUsers(
+    prisma: PrismaClient,
+    sourceId: string,
+    event: TNotificationEvent,
+): Promise<string[]> {
+    const rows = await prisma.notification.findMany({
+        where: { sourceId, event },
+        select: { recipientId: true },
+    });
+    return rows.map(({ recipientId }) => recipientId).toSorted((a, b) => a.localeCompare(b));
 }
 
 /** Removes the users and every Club, Membership, Session, and audit row tied to them. */

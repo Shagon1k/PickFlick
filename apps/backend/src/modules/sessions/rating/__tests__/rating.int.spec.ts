@@ -6,6 +6,7 @@ import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     removeUsers,
     startTestApi,
@@ -110,6 +111,9 @@ describe('Rating', () => {
         });
         expect(events).toHaveLength(1);
         expect(events[0]!.kind).toBe('AUTOMATIC');
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'RATING_CLOSED')).toEqual(
+            users.slice(0, 3).toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await close()).status).toBe(201);
         expect(
             await api.prisma.clubAuditEvent.count({
@@ -136,6 +140,9 @@ describe('Rating', () => {
                 where: { sessionId, action: 'SESSION_RATING_CLOSED' },
             }),
         ).toBe(1);
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'RATING_CLOSED')).toEqual(
+            users.slice(0, 3).toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await detail(2)).rating).toMatchObject({
             canSubmit: false,
             canClose: false,

@@ -141,6 +141,43 @@ describe('AuthService', () => {
         });
     });
 
+    describe('when writing provider sign-in records', () => {
+        it('should refuse to create a User whose provider has not verified the email', async () => {
+            const { internalAdapter } = await service.auth.$context;
+            const email = `unverified-${crypto.randomUUID()}@example.test`;
+
+            await expect(
+                internalAdapter.createUser(
+                    { email, name: 'Unverified', emailVerified: false },
+                    { method: 'oauth', oauth: { providerId: 'google' } },
+                ),
+            ).rejects.toMatchObject({ body: { code: 'EMAIL_NOT_VERIFIED' } });
+            expect(await prisma.user.count({ where: { email } })).toBe(0);
+        });
+
+        it('should store a provider account without its tokens on create and update', async () => {
+            const { internalAdapter } = await service.auth.$context;
+            const userId = await user();
+            const tokens = {
+                accessToken: 'access',
+                refreshToken: 'refresh',
+                idToken: 'id',
+                scope: 'email',
+            };
+            const account = await internalAdapter.createAccount({
+                userId,
+                providerId: 'google',
+                accountId: crypto.randomUUID(),
+                ...tokens,
+            });
+            await internalAdapter.updateAccount(account.id, tokens);
+
+            expect(
+                await prisma.providerAccount.findUniqueOrThrow({ where: { id: account.id } }),
+            ).toMatchObject({ accessToken: null, refreshToken: null, idToken: null, scope: null });
+        });
+    });
+
     describe('when signing out', () => {
         it('should revoke the session', async () => {
             const userId = await user();

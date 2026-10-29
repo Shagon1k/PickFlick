@@ -7,6 +7,7 @@ import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     removeUsers,
     startTestApi,
@@ -132,6 +133,9 @@ describe('Selection completion', () => {
                 reason: 'TOTAL',
             });
             expect((await events()).filter((event) => event.phase === 'WATCHING')).toHaveLength(1);
+            expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_CLOSED')).toEqual(
+                users.slice(0, 2).toSorted((a, b) => a.localeCompare(b)),
+            );
             expect((await close()).status).toBe(201);
             expect((await close(users[2])).status).toBe(201);
             expect((await submit(users[1])).status).toBe(409);
