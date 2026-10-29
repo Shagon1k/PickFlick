@@ -77,97 +77,103 @@ export class AchievementsService {
         return buildConfiguredDetailsKey(this.environment.catalog);
     }
 
-    private async recompute(
-        tx: Prisma.TransactionClient,
-        input: {
-            scope: IAchievementDefinition['scope'];
-            hidePrivate?: boolean;
-            subjectId: string;
-            metrics: Record<string, number>;
-            evidence: Prisma.InputJsonObject;
-        },
-    ): Promise<TAchievement[]> {
+    /** Awards every goal the current facts reach, then lists earned and pending cards. */
+    private async recompute(tx: Prisma.TransactionClient, input: IRecomputeInput) {
         const definitions = ACHIEVEMENT_DEFINITIONS.filter(
             (definition) => definition.scope === input.scope,
         );
         const owner =
             input.scope === 'PERSONAL' ? { userId: input.subjectId } : { clubId: input.subjectId };
+        await this.awardReachedGoals(tx, definitions, owner, input);
+        const earned = await tx.achievementAward.findMany({ where: owner });
+        return toAchievementCards(definitions, earned, input);
+    }
+
+    // Each key/version is earned once per owner; skipDuplicates keeps earlier awards untouched.
+    private async awardReachedGoals(
+        tx: Prisma.TransactionClient,
+        definitions: IAchievementDefinition[],
+        owner: { userId: string } | { clubId: string },
+        input: IRecomputeInput,
+    ) {
         const created = await tx.achievementAward.createManyAndReturn({
             data: definitions
-                .filter((definition) => input.metrics[definition.key]! >= definition.target)
-                .map(
-                    ({
-                        key,
-                        version,
-                        title,
-                        description,
-                        explanation,
-                        target,
-                        private: isPrivate,
-                    }) => ({
-                        ...owner,
-                        key,
-                        version,
-                        title,
-                        description,
-                        explanation,
-                        target,
-                        private: isPrivate ?? false,
-                        progress: input.metrics[key]!,
-                        evidence: input.evidence,
-                    }),
-                ),
-            skipDuplicates: true,
-        });
-        await recordAchievementNotifications(tx, created);
-        const rows = await tx.achievementAward.findMany({ where: owner });
-        const visibleRows = rows.filter((row) => !input.hidePrivate || !row.private);
-        const items: TAchievement[] = visibleRows.map((row) => ({
-            key: row.key,
-            version: row.version,
-            title: row.title,
-            description: row.description,
-            explanation: row.explanation,
-            target: row.target,
-            progress: row.progress,
-            status: 'unlocked',
-            awardedAt: row.awardedAt.toISOString(),
-        }));
-        for (const definition of definitions) {
-            if (input.hidePrivate && definition.private) {
-                items.push({
+                .filter((definition) => getProgress(input, definition) >= definition.target)
+                .map((definition) => ({
+                    ...owner,
                     key: definition.key,
                     version: definition.version,
                     title: definition.title,
                     description: definition.description,
+                    explanation: definition.explanation,
                     target: definition.target,
-                    progress: null,
-                    status: 'not-started',
-                    awardedAt: null,
-                    explanation:
-                        'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.',
-                });
-                continue;
-            }
-            if (
-                visibleRows.some(
-                    (row) => row.key === definition.key && row.version === definition.version,
-                )
-            )
-                continue;
-            const progress = input.metrics[definition.key]!;
-            items.push({
-                key: definition.key,
-                version: definition.version,
-                title: definition.title,
-                description: definition.description,
-                explanation: definition.explanation,
-                target: definition.target,
-                progress,
-                status: progress ? 'in-progress' : 'not-started',
-                awardedAt: null,
-            });
-        }
-        return items.sort((a, b) => a.key.localeCompare(b.key) || a.version - b.version);
+                    private: definition.private ?? false,
+                    progress: getProgress(input, definition),
+                    evidence: input.evidence,
+                })),
+            skipDuplicates: true,
+        });
+        await recordAchievementNotifications(tx, created);
     }
+}
+
+interface IRecomputeInput {
+    scope: IAchievementDefinition['scope'];
+    hidePrivate?: boolean;
+    subjectId: string;
+    metrics: Record<string, number>;
+    evidence: Prisma.InputJsonObject;
+}
+
+function getProgress(input: IRecomputeInput, definition: IAchievementDefinition) {
+    return input.metrics[definition.key] ?? 0;
+}
+
+const PRIVATE_EXPLANATION =
+    'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.';
+
+/** Earned cards keep their snapshot; current definitions add pending or private placeholders. */
+function toAchievementCards(
+    definitions: IAchievementDefinition[],
+    earned: Prisma.AchievementAwardGetPayload<object>[],
+    input: IRecomputeInput,
+): TAchievement[] {
+    const visibleAwards = earned.filter((award) => !input.hidePrivate || !award.private);
+    const cards: TAchievement[] = visibleAwards.map((award) => ({
+        key: award.key,
+        version: award.version,
+        title: award.title,
+        description: award.description,
+        explanation: award.explanation,
+        target: award.target,
+        progress: award.progress,
+        status: 'unlocked',
+        awardedAt: award.awardedAt.toISOString(),
+    }));
+    for (const definition of definitions) {
+        const { key, version, title, description, target } = definition;
+        if (input.hidePrivate && definition.private) {
+            cards.push({
+                ...{ key, version, title, description, target },
+                progress: null,
+                status: 'not-started',
+                awardedAt: null,
+                explanation: PRIVATE_EXPLANATION,
+            });
+            continue;
+        }
+        const isEarned = visibleAwards.some(
+            (award) => award.key === key && award.version === version,
+        );
+        if (isEarned) continue;
+        const progress = getProgress(input, definition);
+        cards.push({
+            ...{ key, version, title, description, target },
+            explanation: definition.explanation,
+            progress,
+            status: progress ? 'in-progress' : 'not-started',
+            awardedAt: null,
+        });
+    }
+    return cards.sort((a, b) => a.key.localeCompare(b.key) || a.version - b.version);
 }

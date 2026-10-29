@@ -1,4 +1,5 @@
-import { snapshotSchema } from '../../sessions/selection/selection-outcome.js';
+import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
+import type { TClubAchievementKey } from './rule-catalog.js';
 import {
     getAverage,
     getLargestBucket,
@@ -80,7 +81,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     const genres = new Set(screenings.flatMap(({ details }) => details?.genres ?? []));
     const selections = sessions.flatMap((session) => {
         if (session.type !== 'FULL_CYCLE') return [];
-        const parsed = snapshotSchema.safeParse(session.selectionResult);
+        const parsed = selectionResultSchema.safeParse(session.selectionResult);
         return parsed.success ? [{ id: session.id, ranking: parsed.data.ranking }] : [];
     });
     const hasMargin = selections.some(
@@ -89,7 +90,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     const countries = new Set(
         screenings.flatMap(({ details }) => details?.productionCountries ?? []),
     );
-    const metrics: Record<string, number> = {
+    const metrics: Record<TClubAchievementKey, number> = {
         'first-screening': completed.length,
         'full-house': Number(hasFullHouse),
         'critics-circle': Number(hasCriticsCircle),

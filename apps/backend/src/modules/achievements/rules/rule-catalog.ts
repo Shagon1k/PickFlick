@@ -9,6 +9,8 @@ export interface IAchievementDefinition {
     private?: boolean;
 }
 
+type TDefinitionData = Omit<IAchievementDefinition, 'scope'>;
+
 const CLUB_ACHIEVEMENTS = [
     {
         key: 'first-screening',
@@ -147,7 +149,7 @@ const CLUB_ACHIEVEMENTS = [
         explanation: 'A gap of at least 30 days between consecutive known scheduled screenings.',
         target: 1,
     },
-];
+] as const satisfies TDefinitionData[];
 
 const PERSONAL_ACHIEVEMENTS = [
     {
@@ -276,7 +278,11 @@ const PERSONAL_ACHIEVEMENTS = [
             'Absolute difference of at least two from the received historical average, including your own rating. Only currently accessible, visible Completed results qualify.',
         target: 1,
     },
-];
+] as const satisfies TDefinitionData[];
+
+/** Every rule must report a metric under its exact key; the compiler checks both rule files. */
+export type TClubAchievementKey = (typeof CLUB_ACHIEVEMENTS)[number]['key'];
+export type TPersonalAchievementKey = (typeof PERSONAL_ACHIEVEMENTS)[number]['key'];
 
 export const ACHIEVEMENT_DEFINITIONS: IAchievementDefinition[] = [
     ...CLUB_ACHIEVEMENTS.map((definition) => ({ ...definition, scope: 'CLUB' as const })),
