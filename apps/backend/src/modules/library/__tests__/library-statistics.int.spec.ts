@@ -6,10 +6,10 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
 import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
 
 describe('Library statistics API', () => {

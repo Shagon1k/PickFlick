@@ -11,9 +11,9 @@ import {
     createUser,
     findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
 import { publishProgress } from '../../sessions/session-progress.js';
 import { recordAchievementNotifications } from '../notification-producers.js';

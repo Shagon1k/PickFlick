@@ -12,9 +12,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { readRoster } from '../session-roster-projection.js';
 
 const unavailable = { state: 'unavailable' };

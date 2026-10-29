@@ -7,13 +7,13 @@ import { type Browser, expect, type Page, test } from '@playwright/test';
 import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/catalog-cache-key.ts';
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import { createDatabaseClient } from '../../packages/database/src/index.ts';
 import { settle } from '../ui/settle.ts';
 import { canonicalViewports } from '../ui/viewports.ts';
+import { openVisitor } from './visitors';
 
 async function createPastJourney(browser: Browser) {
     const backend = await connectJourneyBackend();
-    const prisma = createDatabaseClient(loadRuntimeEnvironment().databaseUrl);
+    const { prisma } = backend;
     const clubId = randomUUID();
     const movieId = randomUUID();
     const rivalId = randomUUID();
@@ -80,11 +80,7 @@ async function createPastJourney(browser: Browser) {
             data: metadata,
         },
     });
-    const context = await browser.newContext({
-        hasTouch: true,
-        extraHTTPHeaders: { 'x-forwarded-for': `2001:db8:${randomUUID().slice(0, 4)}::1` },
-    });
-    await context.addCookies(await backend.cookiesFor(users[0]!, '127.0.0.1'));
+    const context = await openVisitor(browser, backend, users[0]!, { hasTouch: true });
     return {
         clubId,
         movieId,
@@ -98,20 +94,8 @@ async function createPastJourney(browser: Browser) {
         },
         cleanup: async () => {
             await context.close();
-            await prisma.clubAuditEvent.deleteMany({ where: { clubId } });
-            await prisma.sessionRating.deleteMany({ where: { session: { clubId } } });
-            await prisma.pastSelectionScore.deleteMany({
-                where: { nomination: { session: { clubId } } },
-            });
-            await prisma.pastNomination.deleteMany({ where: { session: { clubId } } });
-            await prisma.sessionParticipant.deleteMany({ where: { clubId } });
-            await prisma.session.deleteMany({ where: { clubId } });
-            await prisma.membership.deleteMany({ where: { clubId } });
-            await prisma.club.delete({ where: { id: clubId } });
-            await prisma.movieDetailsCache.deleteMany({ where: { movieId } });
-            await prisma.movie.deleteMany({ where: { id: { in: [movieId, rivalId] } } });
-            await prisma.user.deleteMany({ where: { id: { in: users } } });
-            await prisma.$disconnect();
+            await backend.removeUsers(users);
+            await backend.removeMovies([movieId, rivalId]);
             await backend.close();
         },
     };

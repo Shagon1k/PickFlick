@@ -8,9 +8,9 @@ import {
     createUser,
     findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 
 const details = {
     scheduledAt: '2026-12-01T00:00:00.000Z',

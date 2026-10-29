@@ -6,9 +6,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 
 const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1]);
 

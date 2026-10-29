@@ -3,15 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { type Browser, type BrowserContext, expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import {
-    createDatabaseClient,
-    snapshotSessionSettings,
-} from '../../packages/database/src/index.ts';
+import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 async function createRatingJourney(browser: Browser) {
     const backend = await connectJourneyBackend();
-    const prisma = createDatabaseClient(loadRuntimeEnvironment().databaseUrl);
+    const { prisma } = backend;
     const clubId = randomUUID();
     const users: string[] = [];
     const contexts: BrowserContext[] = [];
@@ -31,15 +28,8 @@ async function createRatingJourney(browser: Browser) {
     });
     async function cleanup() {
         for (const context of contexts) await context.close();
-        await prisma.clubAuditEvent.deleteMany({ where: { clubId } });
-        await prisma.sessionRating.deleteMany({ where: { sessionId: session.id } });
-        await prisma.sessionParticipant.deleteMany({ where: { clubId } });
-        await prisma.session.deleteMany({ where: { clubId } });
-        await prisma.membership.deleteMany({ where: { clubId } });
-        await prisma.club.delete({ where: { id: clubId } });
-        await prisma.movie.delete({ where: { id: movie.id } });
-        await prisma.user.deleteMany({ where: { id: { in: users } } });
-        await prisma.$disconnect();
+        await backend.removeUsers(users);
+        await backend.removeMovies([movie.id]);
         await backend.close();
     }
     try {
@@ -57,11 +47,7 @@ async function createRatingJourney(browser: Browser) {
                     status: 'ACCEPTED',
                 },
             });
-            const context = await browser.newContext({
-                extraHTTPHeaders: { 'x-forwarded-for': `2001:db8:${randomUUID().slice(0, 4)}::1` },
-            });
-            contexts.push(context);
-            await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
+            contexts.push(await openVisitor(browser, backend, userId));
         }
         const pages = await Promise.all(contexts.map((context) => context.newPage()));
         for (const page of pages) {

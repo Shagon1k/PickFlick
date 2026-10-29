@@ -7,9 +7,9 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { recordNotification } from '../notification-store.js';
 
 async function openStream(api: ITestApi, recipient: string) {

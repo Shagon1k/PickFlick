@@ -6,8 +6,8 @@ import {
     addMember,
     createUser,
     loadIntegrationEnvironment,
-    removeUsers,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import type { IEmailMessage } from '../../../email/email.types.js';
 import { EmailDeliveryError } from '../../../email/resend-email.client.js';
 import { recordNotification } from '../../notification-store.js';

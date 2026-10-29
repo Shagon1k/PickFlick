@@ -4,14 +4,14 @@ import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/cata
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { buildCanonicalDetails } from '../../apps/backend/src/testing/movie-fixtures.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import { createDatabaseClient } from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 test('Library filters, pages and Movie mutations persist through the real API', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
     const environment = loadRuntimeEnvironment();
-    const prisma = createDatabaseClient(environment.databaseUrl);
+    const { prisma } = backend;
     const userId = await backend.createUser('Library viewer');
     const otherUserId = await backend.createUser('Other viewer');
     const movies = await prisma.movie.createManyAndReturn({
@@ -21,7 +21,9 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         })),
     });
     const movie = movies.find((item) => item.title === 'Library journey 00')!;
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const context = await openVisitor(browser, backend, userId, {
+        viewport: { width: 1440, height: 900 },
+    });
     try {
         await prisma.personalMovieRating.createMany({
             data: movies.map((item) => ({
@@ -50,7 +52,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
                 },
             },
         });
-        await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
         const page = await context.newPage();
         await page.goto('/library?sort=title');
         await expect(page.getByRole('row')).toHaveCount(26);
@@ -114,9 +115,8 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         ).toMatchObject({ score: 2 });
     } finally {
         await context.close();
-        await prisma.user.deleteMany({ where: { id: { in: [userId, otherUserId] } } });
-        await prisma.movie.deleteMany({ where: { id: { in: movies.map((item) => item.id) } } });
-        await prisma.$disconnect();
+        await backend.removeUsers([userId, otherUserId]);
+        await backend.removeMovies(movies.map((item) => item.id));
         await backend.close();
     }
 });

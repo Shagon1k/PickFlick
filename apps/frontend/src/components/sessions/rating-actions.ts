@@ -1,12 +1,48 @@
 'use server';
 
-import { closeRatingSchema, HTTP_STATUS, submitRatingSchema } from '@pickflick/contracts';
+import {
+    closeRatingSchema,
+    HTTP_STATUS,
+    openRatingSchema,
+    submitRatingSchema,
+} from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 
 import { closeRating, submitRating } from '#api/rating.server';
+import { openRating } from '#api/sessions.server';
 import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
 import type { TFormResult } from '#lib/form-errors';
 import { ACCESS_LOST_STATUSES } from '#lib/http-status';
+
+export async function openRatingAction(id: string, input: unknown) {
+    const parsed = openRatingSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, message: 'Type OPEN to confirm.' };
+    try {
+        await openRating(id, parsed.data);
+        revalidatePath(`/sessions/${id}`);
+        revalidatePath('/clubs/[clubId]', 'layout');
+        return { ok: true, message: 'Rating is open.' };
+    } catch (error) {
+        return {
+            ok: false,
+            message: getFailureMessage(error, {
+                reasons: {
+                    WATCHING_CHANGED: 'This Session changed. Refresh before opening Rating.',
+                    CLUB_READ_ONLY: 'This Club is read-only. Rating cannot be opened right now.',
+                },
+                statuses: [
+                    [ACCESS_LOST_STATUSES, 'You no longer have permission to open Rating.'],
+                    [
+                        [HTTP_STATUS.CONFLICT],
+                        'This Session changed. Refresh before opening Rating.',
+                    ],
+                ],
+                fallback: 'We could not open Rating. Try again.',
+                request: 'Open Rating',
+            }),
+        };
+    }
+}
 
 const RATING_FAILURE: IFailureCopy = {
     reasons: {

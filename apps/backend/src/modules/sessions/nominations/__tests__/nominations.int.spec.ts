@@ -10,10 +10,10 @@ import {
     findNotifiedUsers,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
 import { buildMovieDetails } from '../../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { MoviesRepository } from '../../../movies/movies.repository.js';
 import { MoviesService } from '../../../movies/movies.service.js';
 import type { IMovieProvider } from '../../../movies/providers/movie-provider.js';

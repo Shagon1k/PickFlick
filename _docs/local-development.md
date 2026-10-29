@@ -52,6 +52,10 @@ or a shared package changes. The worker watches that compiled output. Apply migr
 the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email dispatch remains disabled locally.
 Generate synthetic templates with `pnpm email:preview`; see [Email delivery operations](email-delivery.md).
 
+After pulling a schema change, run `pnpm install` again; it regenerates the Prisma Client. Then restart
+your editor's ESLint and TypeScript servers. Editors that keep the old client report
+`@typescript-eslint/no-unsafe-*` errors that `pnpm lint` does not.
+
 ## Enable the movie catalog
 
 The example environment disables external catalog calls. In the ignored root `.env`, set

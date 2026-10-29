@@ -7,9 +7,9 @@ import {
     createUser,
     findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { NominationDeadlines } from '../nomination-deadlines.js';
 
 describe('NominationDeadlines', () => {

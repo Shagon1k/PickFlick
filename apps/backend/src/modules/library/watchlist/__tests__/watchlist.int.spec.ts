@@ -2,12 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import { librarySchema, watchlistItemSchema, watchlistResponseSchema } from '@pickflick/contracts';
 
-import {
-    createUser,
-    type ITestApi,
-    removeUsers,
-    startTestApi,
-} from '../../../../testing/integration.js';
+import { createUser, type ITestApi, startTestApi } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Watchlist', () => {
     let api: ITestApi;

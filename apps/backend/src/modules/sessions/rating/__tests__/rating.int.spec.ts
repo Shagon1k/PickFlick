@@ -8,9 +8,9 @@ import {
     createUser,
     findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Rating', () => {
     let api: ITestApi;
