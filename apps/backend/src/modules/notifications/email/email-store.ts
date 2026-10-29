@@ -1,6 +1,11 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import type { Prisma, PrismaClient } from '@pickflick/database';
+
+/** Suppression must match however Resend or our records wrote the address, so both sides hash alike. */
+export function hashEmailAddress(address: string) {
+    return createHash('sha256').update(address.trim().toLowerCase()).digest('hex');
+}
 
 export const RETRY_WINDOW_MS = 23 * 60 * 60 * 1000;
 export const MAX_ATTEMPTS = 6;

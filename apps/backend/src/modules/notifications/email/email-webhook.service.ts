@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 import { RUNTIME_ENVIRONMENT } from '../../../config/runtime.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { hashEmailValue } from './email-dispatcher.js';
+import { hashEmailAddress } from './email-store.js';
 
 interface IWebhookHeaders {
     id: string;
@@ -70,7 +70,7 @@ async function applyWebhook(
     event: z.infer<typeof emailWebhookSchema>,
     receiptId: string,
 ) {
-    const addressHash = hashEmailValue(event.data.to[0]!.trim().toLowerCase());
+    const addressHash = hashEmailAddress(event.data.to[0]!);
     const notificationId = z.uuid().safeParse(event.data.tags?.notification_id).data;
 
     const [receipt] = await tx.notificationEmailWebhook.createManyAndReturn({

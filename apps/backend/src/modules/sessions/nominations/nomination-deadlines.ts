@@ -4,7 +4,6 @@ import { lockClub } from '../../clubs/access/club-access.js';
 import { recordSessionNotifications } from '../../notifications/notification-producers.js';
 import { type NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { lockSession } from '../session-lock.js';
-import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';
 
 interface IDeadlineEvent {
@@ -145,8 +144,7 @@ export class NominationDeadlines {
                 await recordSessionNotifications(tx, session, 'NOMINATION_STALLED');
             }
             if (outcome !== 'EMPTY') {
-                await advanceNomination(tx, session, nominations);
-                await publishProgress(tx, sessionId, 'DEADLINE');
+                await advanceNomination(tx, session, nominations, 'DEADLINE');
             }
             return outcome;
         });

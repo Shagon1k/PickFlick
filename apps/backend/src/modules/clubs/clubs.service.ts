@@ -10,7 +10,6 @@ import {
     type TMovieDetails,
     type TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
-import type { Prisma } from '@pickflick/database';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
@@ -19,13 +18,14 @@ import { NotificationTransactions } from '../notifications/notification-transact
 import {
     assertActive,
     assertAdmin,
+    assertBelowAdminLimit,
     findMembership,
     getClubAccess,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
 import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
-import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
+import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 import { readClubHub } from './club-hub.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
@@ -81,10 +81,9 @@ export class ClubsService {
     }
 
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
-        const { adminClubLimit } = getTierEntitlements('FREE');
         return this.notifications.run(async (transaction) => {
             await lockKey(transaction, `club-admin:${userId}`);
-            await assertBelowAdminLimit(transaction, userId, adminClubLimit);
+            await assertBelowAdminLimit(transaction, userId);
             const club = await transaction.club.create({
                 data: {
                     id: randomUUID(),
@@ -232,24 +231,5 @@ export class ClubsService {
                 nextRole: role,
             });
         });
-    }
-}
-
-/** Free Admins may run one active Club; the lock makes concurrent creations count each other. */
-export async function assertBelowAdminLimit(
-    transaction: Prisma.TransactionClient,
-    userId: string,
-    limit: number,
-): Promise<void> {
-    const administered = await transaction.membership.count({
-        where: {
-            userId,
-            role: 'ADMIN',
-            status: 'ACTIVE',
-            club: { lifecycle: 'ACTIVE', deletedAt: null },
-        },
-    });
-    if (administered >= limit) {
-        throw new ConflictException({ reason: 'ADMIN_CLUB_LIMIT_REACHED' });
     }
 }

@@ -49,6 +49,10 @@ export async function changeRosterAction(id: string, input: unknown) {
         };
     } catch (error) {
         const message = getFailureMessage(error, {
+            reasons: {
+                CLUB_ARCHIVED:
+                    'This Club is archived. Session changes are paused until it is reactivated.',
+            },
             statuses: [
                 [
                     STALE_ACTION_STATUSES,

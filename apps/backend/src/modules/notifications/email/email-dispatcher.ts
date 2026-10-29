@@ -11,13 +11,14 @@ import {
     claimEmail,
     finishEmail,
     getRetryAt,
+    hashEmailAddress,
     MAX_ATTEMPTS,
     RETRY_WINDOW_MS,
     type TEmailClaim,
 } from './email-store.js';
 import { renderNotificationEmail } from './email-template.js';
 
-export function hashEmailValue(value: string) {
+function hashEmailValue(value: string) {
     return createHash('sha256').update(value).digest('hex');
 }
 
@@ -117,7 +118,7 @@ export class EmailDispatcher {
             await this.finish(claim, now, 'SUPPRESSED', 'recipient_ineligible');
             return null;
         }
-        const recipientHash = hashEmailValue(notification.recipient.email.trim().toLowerCase());
+        const recipientHash = hashEmailAddress(notification.recipient.email);
         if (
             await this.prisma.notificationEmailSuppression.findUnique({
                 where: { addressHash: recipientHash },

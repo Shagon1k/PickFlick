@@ -10,7 +10,12 @@ import type { Prisma } from '@pickflick/database';
 
 import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { lockClub, recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
+import {
+    assertActive,
+    lockClub,
+    recordAudit,
+    type TAuditEvent,
+} from '../../clubs/access/club-access.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager, assertOpen } from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
@@ -39,8 +44,7 @@ export class SessionRosterService {
         return this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
+            assertActive(membership);
             const existing = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
             });

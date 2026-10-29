@@ -96,6 +96,8 @@ export interface IClubAuditEvent {
 export interface IClubAccess {
     adminless: boolean;
     newWorkAllowed: boolean;
+    /** Every member place is taken, so no invitation can be created. */
+    isAtCapacity: boolean;
     reasons: ('ARCHIVED' | 'ADMINLESS' | 'MEMBER_LIMIT')[];
 }
 

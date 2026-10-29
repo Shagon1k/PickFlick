@@ -8,7 +8,8 @@ import {
 } from '../../../../testing/integration.js';
 import type { IEmailMessage } from '../../../email/email.types.js';
 import { recordNotification } from '../../notification-store.js';
-import { EmailDispatcher, hashEmailValue } from '../email-dispatcher.js';
+import { EmailDispatcher } from '../email-dispatcher.js';
+import { hashEmailAddress } from '../email-store.js';
 
 const WEBHOOK_SECRET = 'pf62-synthetic-webhook-only';
 
@@ -77,7 +78,7 @@ describe('EmailWebhook', () => {
     beforeEach(async () => {
         await api.prisma.notification.deleteMany({ where: { recipientId: userId } });
         await api.prisma.notificationEmailSuppression.deleteMany({
-            where: { addressHash: hashEmailValue(`it-${userId}@example.invalid`) },
+            where: { addressHash: hashEmailAddress(`it-${userId}@example.invalid`) },
         });
         providerId = randomUUID();
         send.mockReset().mockResolvedValue(providerId);

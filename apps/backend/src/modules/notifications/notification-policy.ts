@@ -29,11 +29,16 @@ export function isMembershipEndedEvent(event: TNotificationEvent) {
     return MEMBERSHIP_ENDED_EVENTS.has(event);
 }
 
+/** Service notices the recipient cannot switch off on either channel. */
+export function isMandatoryNotification(event: TNotificationEvent) {
+    return event === 'BILLING_SERVICE';
+}
+
 export function getNotificationPolicy(
     event: TNotificationEvent,
     preference?: { inApp: boolean; email: boolean } | null,
 ) {
-    const isMandatory = event === 'BILLING_SERVICE';
+    const isMandatory = isMandatoryNotification(event);
     return {
         event,
         inApp: isMandatory || (preference?.inApp ?? true),

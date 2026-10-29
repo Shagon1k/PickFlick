@@ -6,7 +6,7 @@ import {
 } from '@pickflick/contracts';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { getNotificationPolicy } from './notification-policy.js';
+import { getNotificationPolicy, isMandatoryNotification } from './notification-policy.js';
 
 @Injectable()
 export class NotificationsService {
@@ -25,7 +25,7 @@ export class NotificationsService {
     }
 
     async updatePreference(userId: string, input: TUpdateNotificationPreference) {
-        if (input.event === 'BILLING_SERVICE' && (!input.inApp || !input.email)) {
+        if (isMandatoryNotification(input.event) && (!input.inApp || !input.email)) {
             throw new ConflictException({ reason: 'MANDATORY_NOTIFICATION' });
         }
         await this.prisma.notificationPreference.upsert({

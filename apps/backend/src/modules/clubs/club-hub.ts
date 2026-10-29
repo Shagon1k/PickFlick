@@ -1,11 +1,7 @@
-import {
-    BLOCKING_SESSION_PHASES,
-    type IClubHub,
-    type IClubHubSession,
-    isOpenSessionPhase,
-} from '@pickflick/contracts';
+import { BLOCKING_SESSION_PHASES, type IClubHub, type IClubHubSession } from '@pickflick/contracts';
 import { Prisma } from '@pickflick/database';
 
+import { canJoinSession } from '../sessions/session-access.js';
 import { findMembership, loadClubAccess } from './access/club-access.js';
 import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
@@ -124,10 +120,11 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         nominatedCount: row._count.nominations,
         progressCount: getProgressCount(row),
         ratingAverage: averageById.get(row.id) ?? null,
-        canJoin:
-            membership.club.lifecycle === 'ACTIVE' &&
-            isOpenSessionPhase(row.phase) &&
-            !['ACCEPTED', 'REMOVED'].includes(statusBySession.get(row.id) ?? ''),
+        canJoin: canJoinSession({
+            phase: row.phase,
+            clubLifecycle: membership.club.lifecycle,
+            ownStatus: statusBySession.get(row.id),
+        }),
         movie: row.movie
             ? {
                   id: row.movie.id,

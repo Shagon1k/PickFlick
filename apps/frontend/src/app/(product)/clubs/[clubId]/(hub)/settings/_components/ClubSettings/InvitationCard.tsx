@@ -31,7 +31,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
     const isAllowed = projection.permissions.manageMembers;
     const canManageRoles =
         projection.club.membershipRole === 'ADMIN' && projection.club.lifecycle === 'ACTIVE';
-    const isMemberLimitReached = projection.members.length >= projection.entitlements.memberLimit;
+    const isMemberLimitReached = projection.access.isAtCapacity;
     const hasReachedLinkLimit =
         invitations.filter((invite) => invite.state === 'pending').length >=
         projection.entitlements.memberLimit;
@@ -162,7 +162,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         The member limit is reached; a seat must free up before the next invitation.
                     </p>
                 ) : null}
-                {projection.permissions.createInvitations ? null : (
+                {projection.permissions.createInvitations || isMemberLimitReached ? null : (
                     <p>New invitations are paused. Existing links can still be revoked.</p>
                 )}
                 {link ? (
@@ -195,7 +195,8 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                         </p>
                     </div>
                 ) : null}
-                {!link && projection.permissions.createInvitations ? (
+                {/* A full Club keeps the button visible but disabled, next to its explanation. */}
+                {!link && (projection.permissions.createInvitations || isMemberLimitReached) ? (
                     <Button
                         disabled={isPending || hasReachedLinkLimit || isMemberLimitReached}
                         onClick={handleCreate}

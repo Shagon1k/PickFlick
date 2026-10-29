@@ -1,6 +1,6 @@
 import type { TNotificationEvent } from '@pickflick/contracts';
 
-import { isMembershipEndedEvent } from '../notification-policy.js';
+import { isMandatoryNotification, isMembershipEndedEvent } from '../notification-policy.js';
 import { EMAIL_COPY } from './email-copy.js';
 
 const ISO_DATE_LENGTH = 10;
@@ -31,7 +31,7 @@ function escapeHtml(value: string) {
 
 /** Email-safe tables and inline styles preserve the owner-selected Card composition. */
 export function renderNotificationEmail(input: ITemplateInput) {
-    const isMandatory = input.event === 'BILLING_SERVICE';
+    const isMandatory = isMandatoryNotification(input.event);
     const copy =
         input.href || isMembershipEndedEvent(input.event)
             ? EMAIL_COPY[input.event]

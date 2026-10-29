@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, type findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager, canManage } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
@@ -68,8 +68,7 @@ export class RatingService {
     async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
         await this.notifications.run(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { rating: true },

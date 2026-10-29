@@ -11,8 +11,8 @@ import {
 import type { IEmailMessage } from '../../../email/email.types.js';
 import { EmailDeliveryError } from '../../../email/resend-email.client.js';
 import { recordNotification } from '../../notification-store.js';
-import { EmailDispatcher, hashEmailValue } from '../email-dispatcher.js';
-import { claimEmail, finishEmail } from '../email-store.js';
+import { EmailDispatcher } from '../email-dispatcher.js';
+import { claimEmail, finishEmail, hashEmailAddress } from '../email-store.js';
 
 describe('EmailDispatcher', () => {
     let prisma: PrismaClient;
@@ -59,7 +59,7 @@ describe('EmailDispatcher', () => {
     beforeEach(async () => {
         await prisma.notification.deleteMany({ where: { recipientId: userId } });
         await prisma.notificationEmailSuppression.deleteMany({
-            where: { addressHash: hashEmailValue(`it-${userId}@example.invalid`) },
+            where: { addressHash: hashEmailAddress(`it-${userId}@example.invalid`) },
         });
         await prisma.user.update({
             where: { id: userId },
@@ -302,7 +302,7 @@ describe('EmailDispatcher', () => {
         const suppressed = (await record('BILLING_SERVICE'))!;
         await prisma.notificationEmailSuppression.create({
             data: {
-                addressHash: hashEmailValue(`it-${userId}@example.invalid`),
+                addressHash: hashEmailAddress(`it-${userId}@example.invalid`),
                 reason: 'email.bounced',
             },
         });

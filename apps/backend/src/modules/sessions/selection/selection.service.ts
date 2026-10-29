@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseSelection, TSelection, TSubmitSelection } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, type findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
@@ -83,8 +83,7 @@ export class SelectionService {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'SELECTION')
                 throw new ConflictException({ reason: 'SELECTION_CLOSED' });
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { selectionBallot: true },

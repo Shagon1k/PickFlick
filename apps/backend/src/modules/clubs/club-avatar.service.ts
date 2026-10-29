@@ -6,7 +6,13 @@ import { CLUB_AVATAR_MAX_BYTES, type TClubAvatarMediaType } from '@pickflick/con
 import { detectImageType } from '../../common/image-type.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { type IStoredObject, StorageService } from '../storage/storage.service.js';
-import { assertActive, assertAdmin, findMembership, recordAudit } from './access/club-access.js';
+import {
+    assertActive,
+    assertAdmin,
+    findMembership,
+    lockClub,
+    recordAudit,
+} from './access/club-access.js';
 
 const EXTENSIONS: Record<TClubAvatarMediaType, string> = {
     'image/png': 'png',
@@ -21,7 +27,8 @@ interface IAvatarUpload {
 }
 
 function isAvatarMediaType(value: string | undefined): value is TClubAvatarMediaType {
-    return value !== undefined && value in EXTENSIONS;
+    // `in` would also accept inherited names such as `constructor`.
+    return value !== undefined && Object.hasOwn(EXTENSIONS, value);
 }
 
 /** Accepts a PNG, JPEG, or WebP no larger than 512 KiB whose bytes match its declared type. */
@@ -83,6 +90,8 @@ export class ClubAvatarService {
 
     private async setAvatarKey(userId: string, clubId: string, key: string | null): Promise<void> {
         const previousKey = await this.prisma.$transaction(async (transaction) => {
+            // Serialized with delete and archive, so a key never lands on a removed or archived Club.
+            await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);

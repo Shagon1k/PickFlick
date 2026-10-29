@@ -27,6 +27,7 @@ export function settingsProjection(
         access: {
             adminless: isAdminless,
             newWorkAllowed: isNewWorkAllowed,
+            isAtCapacity: isOverLimit,
             reasons: [
                 ...(isActive ? [] : (['ARCHIVED'] as const)),
                 ...(isAdminless ? (['ADMINLESS'] as const) : []),

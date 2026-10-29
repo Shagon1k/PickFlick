@@ -11,6 +11,7 @@ import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 const SELECTION_FAILURE: IFailureCopy = {
     reasons: {
         ALREADY_SUBMITTED: 'Your ballot was already submitted. Refresh to see your saved scores.',
+        CLUB_ARCHIVED: 'This Club is archived. Session changes are paused until it is reactivated.',
         INCOMPLETE_BALLOT: 'Score every nomination exactly once before submitting.',
         SCORE_OUT_OF_RANGE: 'Choose scores within this Session’s scale.',
         SELECTION_CHANGED: 'Selection changed. Refresh before trying to close it.',

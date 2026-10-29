@@ -10,13 +10,12 @@ import { StorageService } from '../storage/storage.service.js';
 import {
     assertActive,
     assertAdmin,
+    assertBelowAdminLimit,
     findMembership,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
 import { canRemoveMember } from './access/club-permissions.js';
-import { getClubEntitlements } from './access/club-tiers.js';
-import { assertBelowAdminLimit } from './clubs.service.js';
 
 function assertConfirmed(confirmation: string, expected: string): void {
     if (confirmation !== expected) {
@@ -154,11 +153,7 @@ export class ClubLifecycleService {
                 return;
             }
             if (next === 'ACTIVE') {
-                await assertBelowAdminLimit(
-                    transaction,
-                    userId,
-                    getClubEntitlements(clubId).adminClubLimit,
-                );
+                await assertBelowAdminLimit(transaction, userId);
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });
             const sessions = await transaction.session.findMany({

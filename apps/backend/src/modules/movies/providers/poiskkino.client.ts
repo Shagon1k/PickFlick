@@ -22,6 +22,14 @@ const ISO_DATE_LENGTH = 10;
 
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
+// One malformed field drops to unknown instead of failing every film on the search page.
+const imdbId = z
+    .string()
+    .regex(/^tt\d{7,12}$/u)
+    .nullish()
+    .catch(null);
+const releaseYear = z.number().int().min(1800).max(3000).nullish().catch(null);
+const minutes = z.number().int().positive().nullish().catch(null);
 // Yandex's mirror serves the same paths as its canonical, already allowlisted image host.
 const imageUrl = z.preprocess(
     (value) =>
@@ -43,12 +51,10 @@ const wire = z.object({
     enName: text,
     name: text,
     alternativeName: text,
-    externalId: z
-        .object({ imdb: z.string().nullish(), tmdb: z.number().int().positive().nullish() })
-        .nullish(),
-    year: number,
+    externalId: z.object({ imdb: imdbId, tmdb: z.number().int().positive().nullish() }).nullish(),
+    year: releaseYear,
     ageRating: number,
-    movieLength: number,
+    movieLength: minutes,
     poster: image,
     backdrop: image,
     rating: z.object({ kp: number, imdb: number, tmdb: number }).nullish(),

@@ -6,12 +6,11 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, findMembership, recordAudit } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { NotificationTransactions } from '../../notifications/notification-transactions.js';
 import { assertManager } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
-import { publishProgress } from '../session-progress.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
 const MAX_SUGGESTIONS = 12;
@@ -94,8 +93,7 @@ export class NominationsService {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'NOMINATION')
                 throw new ConflictException({ reason: 'NOMINATION_CLOSED' });
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { nomination: true },
@@ -131,8 +129,7 @@ export class NominationsService {
                 subjectMembershipId: membership.id,
                 action: 'SESSION_NOMINATION_CLOSED',
             });
-            await advanceNomination(tx, session, nominations);
-            await publishProgress(tx, id, 'MANUAL');
+            await advanceNomination(tx, session, nominations, 'MANUAL');
         });
     }
 }

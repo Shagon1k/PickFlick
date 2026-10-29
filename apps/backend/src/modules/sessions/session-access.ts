@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { isOpenSessionPhase } from '@pickflick/contracts';
+import { isOpenSessionPhase, type TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { type findMembership, loadClubAccess } from '../clubs/access/club-access.js';
@@ -38,5 +38,19 @@ export function canViewSelectionBreakdown(
         membership.role !== 'MEMBER' ||
         (getClubEntitlements(session.clubId).voteResultVisibility === 'ADMIN_CONFIGURABLE' &&
             session.showVoteResults)
+    );
+}
+
+/** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
+export function canJoinSession(input: {
+    phase: string;
+    clubLifecycle: TClubLifecycle;
+    ownStatus: string | undefined;
+}) {
+    return (
+        isOpenSessionPhase(input.phase) &&
+        input.clubLifecycle === 'ACTIVE' &&
+        input.ownStatus !== 'ACCEPTED' &&
+        input.ownStatus !== 'REMOVED'
     );
 }

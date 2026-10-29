@@ -164,6 +164,7 @@ describe('Club membership boundaries', () => {
         expect(settings.access).toEqual({
             adminless: true,
             newWorkAllowed: false,
+            isAtCapacity: false,
             reasons: ['ADMINLESS'],
         });
         expect(settings.permissions).toMatchObject({

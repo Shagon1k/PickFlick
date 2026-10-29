@@ -10,6 +10,7 @@ import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 const NOMINATION_FAILURE: IFailureCopy = {
     reasons: {
         ALREADY_NOMINATED: 'You already nominated a Movie. Refresh to see your nomination.',
+        CLUB_ARCHIVED: 'This Club is archived. Session changes are paused until it is reactivated.',
     },
     statuses: [
         [
