@@ -535,7 +535,7 @@ hidden from normal history unless product copy exposes it.
 | Apple Sign in         | Registered identity after approved activation.                                                     | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
 | Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
 | Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
-| Resend                | Transactional and opted-in email.                                                                  | Contact delivery built; notifications planned                                            |
+| Resend                | Transactional and opted-in email.                                                                  | Contact and notification delivery built; live sandbox acceptance pending                 |
 | S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club avatars and catalog images built; User avatars and exports planned                  |
 | Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
 | IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
@@ -1700,7 +1700,7 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
 | 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
 | 13 — Watching, Rating & Completion                     | In progress | Manual Watching → Rating delivery is active; Rating submission/completion and phase acceptance remain open.        |
-| 14–17                                                  | In progress | Notification persistence and preferences are active; inbox/SSE and email delivery remain open.                     |
+| 14–17                                                  | In progress | Notification inbox, live refresh and email delivery are built; hosted and sandbox acceptance remain open.          |
 | 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
 | 19–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |

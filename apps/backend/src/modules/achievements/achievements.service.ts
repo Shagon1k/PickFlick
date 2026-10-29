@@ -37,6 +37,8 @@ export class AchievementsService {
         });
     }
 
+    // shortcut: each view rereads the member's whole history to evaluate goals. Fine for personal
+    // and Club histories of hundreds of Sessions; keep running totals if views slow down.
     async listPersonal(userId: string): Promise<TAchievements> {
         return this.transactions.write(async (tx) => {
             const user = await tx.user.findUniqueOrThrow({

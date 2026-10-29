@@ -23,6 +23,9 @@ export interface INotificationInput {
 /**
  * Record inside the source's `Transactions.write` callback so intent is atomic
  * and signals follow commit.
+ *
+ * shortcut: a few queries per recipient inside the source's locks (about 80 for a full Pro
+ * Club). Fine for at most 16 members; batch the inserts if member limits grow.
  */
 export async function recordNotification(tx: Prisma.TransactionClient, input: INotificationInput) {
     const user = await tx.user.findFirst({

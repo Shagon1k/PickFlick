@@ -141,7 +141,8 @@ toolchain:
   `compose.local.yaml` services as local development.
 - **UI** — one matrix job on the digest-pinned Linux Playwright image. PRs run `smoke`
   (`pnpm test:ui:smoke`: security headers, CSP, public accessibility and interaction, product
-  navigation, 1024px overflow). `main` pushes and manual runs run `contract`
+  navigation, 1024px overflow) and `visual` for the affected areas (see
+  [UI quality](ui-quality.md)). `main` pushes and manual runs run `contract`
   (`pnpm test:ui:contract`: accessibility, interaction, CSP, responsive behavior) and `visual`
   (`pnpm test:ui:visual`). Failures upload screenshots, diffs, traces, and the HTML report.
 - **Images** — `pnpm build:images`.
@@ -159,14 +160,14 @@ forces the fixed version; remove the entry once Prisma catches up.
 ## Images and Compose
 
 `Dockerfile` builds four targets from the locked workspace: `frontend` (Next.js standalone, port
-3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), `worker` (backend package, independent deadline entrypoint, no public port), and `release` (runs
+3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), `worker` (backend package with the deadline and email worker entrypoints, no public port), and `release` (runs
 migrations, then the required seed step). `pnpm build:images` builds them from a clean checkout and tags them
 with the short revision.
 
 | File                   | Purpose                                                                                                                                              |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL, Redis and MinIO.                                                                                                                   |
-| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.                              |
+| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `email-worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.              |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL, Redis and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
 Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
@@ -231,16 +232,16 @@ Archived Clubs pause. Completed empty decisions are preserved until the deadline
 Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
 seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
 disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and finish the current
-transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
-transport and inbox delivery are not implemented.
+transaction before Prisma disconnects. Decision and recipient records are durable intent that the
+inbox and the email worker deliver.
 
 ## Session progress
 
 `GET /sessions/:sessionId/progress` returns the committed progress version to current Club members
 with `Cache-Control: private, no-store`. The Session page polls it every five seconds while visible
 and on focus and online events; a failed poll shows feedback and the next poll retries.
-Migration 19 must precede updated API and worker images. There is no new service, runtime variable
-or notification transport; the PostgreSQL outbox retains later notification intent.
+Migration 19 must precede updated API and worker images. Progress polling adds no service or runtime
+variable.
 
 ## Notification invalidation broker
 

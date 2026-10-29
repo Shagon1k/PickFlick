@@ -4,11 +4,9 @@ import type { TLibrary, TLibraryQuery, TLibraryStatistics } from '@pickflick/con
 
 import { requestApi } from '#lib/api.server';
 
-export function getLibrary(query: TLibraryQuery) {
+export const getLibrary = (query: TLibraryQuery) => {
     const search = new URLSearchParams({ ...query, page: String(query.page) });
     return requestApi<TLibrary>(`/library?${search}`);
-}
+};
 
-export function getLibraryStatistics() {
-    return requestApi<TLibraryStatistics>('/library/statistics');
-}
+export const getLibraryStatistics = () => requestApi<TLibraryStatistics>('/library/statistics');

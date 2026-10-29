@@ -53,6 +53,8 @@ export class LibraryService {
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
     ) {}
 
+    // shortcut: statistics load every Personal Rating with its cached details into memory. Fine for
+    // a personal library of a few thousand films; aggregate in SQL beyond that.
     async getStatistics(userId: string): Promise<TLibraryStatistics> {
         const [ratings, watchlistCount] = await this.prisma.$transaction(
             [

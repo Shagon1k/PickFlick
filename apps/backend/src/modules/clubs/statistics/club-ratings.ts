@@ -34,6 +34,8 @@ export function buildClubRatings(
         if (date !== null && (row.latest === null || date > row.latest)) row.latest = date;
         movies.set(row.movie.id, row);
     }
+    // shortcut: every Completed Session is grouped, sorted and paged in memory. Fine for a Club's
+    // screening history (hundreds of films); move sorting into SQL if Clubs reach thousands.
     const rows = [...movies.values()].sort((a, b) => compareMovies(a, b, query.sort));
     const pages = Math.max(1, Math.ceil(rows.length / CLUB_RATINGS_PAGE_SIZE));
     const page = Math.min(query.page, pages);
