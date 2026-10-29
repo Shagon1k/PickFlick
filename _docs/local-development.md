@@ -99,7 +99,7 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Full Playwright behavior checks             | `pnpm test:ui:contract` |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
 | Both Playwright selections                  | `pnpm test:ui`          |
-| Smoke the built deadline worker             | `pnpm test:worker`      |
+| Smoke the built deadline and email workers  | `pnpm test:worker`      |
 | Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
 `pnpm test:integration` needs the local services running. Run it and `pnpm test:journeys` against

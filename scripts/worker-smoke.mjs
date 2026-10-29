@@ -48,7 +48,33 @@ async function run() {
     throw new Error('Worker did not execute the overdue deadline.');
 }
 
+/** The email worker must load its environment, start its cycle and stop cleanly on SIGTERM. */
+async function smokeEmailWorker() {
+    const worker = spawn(process.execPath, ['apps/backend/dist/email-worker.js'], {
+        env: process.env,
+        stdio: ['ignore', 'pipe', 'inherit'],
+    });
+    const started = new Promise((resolve) =>
+        worker.stdout.on('data', (chunk) => {
+            if (chunk.toString().includes('email.worker.started')) resolve('started');
+        }),
+    );
+    const exited = new Promise((resolve) => worker.once('exit', (code) => resolve(code)));
+    const first = await Promise.race([
+        started,
+        exited,
+        setTimeout(10000, 'timeout', { ref: false }),
+    ]);
+    if (first !== 'started') {
+        worker.kill('SIGKILL');
+        throw new Error('Email worker did not start.');
+    }
+    worker.kill('SIGTERM');
+    if ((await exited) !== 0) throw new Error('Email worker shutdown failed.');
+}
+
 try {
+    await smokeEmailWorker();
     await prisma.club.create({ data: { id: clubId, name: 'Worker smoke fixture' } });
     await prisma.session.create({
         data: {
@@ -67,7 +93,7 @@ try {
     const count = await prisma.nominationDeadlineDecision.count({ where: { sessionId } });
     if (count !== 1) throw new Error('Restart repeated the empty deadline decision.');
     console.log(
-        'Deadline worker smoke passed: overdue decision, durable empty decision, restart, SIGTERM shutdown.',
+        'Worker smoke passed: email worker start and shutdown; deadline overdue decision, durable empty decision, restart, SIGTERM shutdown.',
     );
 } finally {
     await stop();

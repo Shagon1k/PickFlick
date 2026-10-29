@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@pickflick/database';
 
+import { describeError } from '../../../common/describe-error.js';
 import { lockClub } from '../../clubs/access/club-access.js';
 import { recordSessionNotifications } from '../../notifications/notification-producers.js';
 import { type NotificationTransactions } from '../../notifications/notification-transactions.js';
@@ -14,6 +15,8 @@ interface IDeadlineEvent {
     latenessMs?: number;
     reason?: string;
     due?: number;
+    errorName?: string;
+    errorCode?: string;
 }
 
 /**
@@ -64,13 +67,14 @@ export class NominationDeadlines {
                     outcome,
                     latenessMs: Math.max(0, now.getTime() - (session.deadlineAt?.getTime() ?? 0)),
                 });
-            } catch {
+            } catch (error) {
                 // Database/provider messages can contain user data or connection credentials.
                 this.log({
                     event: 'deadline.failure',
                     sessionId: session.id,
                     deadlineVersion: session.deadlineVersion,
                     reason: 'TRANSACTION_FAILED',
+                    ...describeError(error),
                 });
             }
         }

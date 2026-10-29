@@ -218,8 +218,8 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 The worker validates `APP_ENV` and `DATABASE_URL` through the database schema, plus `REDIS_URL`
 through the notification signal schema. Database-only migration tools do not require Redis.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
-`pnpm test:worker` checks built-process overdue decisions, restart idempotence and graceful shutdown
-against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
+`pnpm test:worker` starts and stops the built email worker, then checks deadline overdue decisions,
+restart idempotence and graceful shutdown against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
 
 The worker polls every five seconds and processes database-only transactions sequentially.
 `deadline.cycle` records each cycle's due count; `deadline.outcome` and `deadline.stale` identify

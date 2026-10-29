@@ -1,38 +1,24 @@
 import 'reflect-metadata';
 
-import { constants } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import {
-    getSafeEnvironmentValidationFailures,
     loadDatabaseEnvironment,
     loadNotificationSignalEnvironment,
 } from '@pickflick/config/environment';
 import { createDatabaseClient } from '@pickflick/database';
-import pino from 'pino';
 
-import { runDeadlineWorker } from './deadline-worker-loop.js';
 import { NotificationSignals } from './modules/notifications/notification-signals.js';
 import { NotificationTransactions } from './modules/notifications/notification-transactions.js';
 import { NominationDeadlines } from './modules/sessions/nominations/nomination-deadlines.js';
+import { runPollingWorker } from './workers/polling-worker.js';
 
-const OWNER_READ_WRITE = 0o600;
-
-const logger = pino({ base: { service: 'deadline-worker' } });
-const shutdown = new AbortController();
-process.once('SIGTERM', () => shutdown.abort());
-process.once('SIGINT', () => shutdown.abort());
-
-try {
-    const environment = loadDatabaseEnvironment();
-    const prisma = createDatabaseClient(environment.databaseUrl);
-    const signals = new NotificationSignals(loadNotificationSignalEnvironment());
-    signals.onModuleInit();
-    try {
+await runPollingWorker({
+    name: 'deadline',
+    start: async (logger) => {
+        const prisma = createDatabaseClient(loadDatabaseEnvironment().databaseUrl);
+        const signals = new NotificationSignals(loadNotificationSignalEnvironment());
+        // Outside Nest, the worker calls the module lifecycle hooks itself.
+        signals.onModuleInit();
         await prisma.$queryRaw`SELECT 1`;
-        logger.info({ event: 'deadline.worker.started' });
         const deadlines = new NominationDeadlines(
             prisma,
             (fields) => {
@@ -41,36 +27,12 @@ try {
             },
             new NotificationTransactions(prisma, signals),
         );
-        await runDeadlineWorker(
-            {
-                runOnce: async (now, signal) => {
-                    await deadlines.runOnce(now, signal);
-                    await writeFile(
-                        join(tmpdir(), 'pickflick-deadline-worker'),
-                        String(Date.now()),
-                        {
-                            flag:
-                                constants.O_CREAT |
-                                constants.O_WRONLY |
-                                constants.O_TRUNC |
-                                constants.O_NOFOLLOW,
-                            mode: OWNER_READ_WRITE,
-                        },
-                    );
-                },
+        return {
+            runOnce: (now, signal) => deadlines.runOnce(now, signal),
+            stop: async () => {
+                signals.onModuleDestroy();
+                await prisma.$disconnect();
             },
-            shutdown.signal,
-            (event) => logger.error({ event }),
-        );
-    } finally {
-        signals.onModuleDestroy();
-        await prisma.$disconnect();
-        logger.info({ event: 'deadline.worker.stopped' });
-    }
-} catch (error) {
-    logger.fatal({
-        event: 'deadline.worker.failed',
-        failures: getSafeEnvironmentValidationFailures(error),
-    });
-    process.exitCode = 1;
-}
+        };
+    },
+});

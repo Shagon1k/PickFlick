@@ -3,7 +3,7 @@ import type { TNotificationList, TNotificationListQuery } from '@pickflick/contr
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
-import { resolveNotification } from './notification-resolver.js';
+import { projectNotification } from './notification-resolver.js';
 import { NotificationSignals } from './notification-signals.js';
 
 @Injectable()
@@ -38,11 +38,10 @@ export class InboxService {
                     where,
                     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
                     take: query.limit + 1,
-                    select: { id: true },
                 });
                 const page = rows.slice(0, query.limit);
                 const items = await Promise.all(
-                    page.map(async (row) => (await resolveNotification(tx, userId, row.id))!),
+                    page.map((notification) => projectNotification(tx, notification)),
                 );
                 return {
                     items,

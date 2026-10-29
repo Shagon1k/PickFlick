@@ -13,7 +13,14 @@ export async function resolveNotification(
     const notification = await tx.notification.findFirst({
         where: { id: notificationId, recipientId, recipient: { status: 'ACTIVE' } },
     });
-    if (!notification) return null;
+    return notification ? projectNotification(tx, notification) : null;
+}
+
+/** Projects a recipient's own Notification row with the access they have now. */
+export async function projectNotification(
+    tx: Prisma.TransactionClient,
+    notification: Prisma.NotificationGetPayload<object>,
+) {
     const target = await resolveTarget(tx, notification);
     const isAvailable = target !== null || isMembershipEndedEvent(notification.event);
     return {
