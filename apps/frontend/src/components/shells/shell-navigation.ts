@@ -43,6 +43,14 @@ interface IMobileNavigationAlerts {
 
 export type TMobileNavigationEntry = IMobileNavigationAlerts | IMobileNavigationMenu;
 
+export type THubSection =
+    | 'overview'
+    | 'sessions'
+    | 'ratings'
+    | 'members'
+    | 'achievements'
+    | 'manage';
+
 export interface IShellRouteMap {
     readonly admin: string;
     readonly contact: string;
@@ -122,7 +130,7 @@ export function buildAccountNavigation(
 /** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
 export function buildClubNavigation(
     clubId: string,
-    current: 'overview' | 'sessions' | 'ratings' | 'members' | 'achievements' | 'manage' | null,
+    current: THubSection | null,
 ): readonly IShellNavigationItem[] {
     const hub = `/clubs/${clubId}`;
     return [

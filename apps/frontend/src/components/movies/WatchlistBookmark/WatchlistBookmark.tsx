@@ -4,6 +4,7 @@ import type { TWatchlistItem, TWatchlistPriority } from '@pickflick/contracts';
 import clsx from 'clsx';
 import { useId, useRef, useState, useTransition } from 'react';
 
+import { WATCHLIST_PRIORITIES } from '#components/movies/watchlist-priority';
 import Popover from '#components/ui/Popover/Popover';
 import { getOfflineMessage } from '#lib/offline';
 
@@ -11,11 +12,6 @@ import { setWatchlistAction } from './actions';
 import styles from './WatchlistBookmark.module.scss';
 
 const RIBBON = 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z';
-const PRIORITIES: { value: TWatchlistPriority; label: string }[] = [
-    { value: 'LOW', label: 'Low' },
-    { value: 'MEDIUM', label: 'Medium' },
-    { value: 'HIGH', label: 'High' },
-];
 
 interface IWatchlistBookmarkProps {
     movieId: string;
@@ -94,15 +90,16 @@ export default function WatchlistBookmark({
                                 <path d={RIBBON} />
                             </svg>
                         ) : (
-                            (PRIORITIES.find((priority) => priority.value === item?.priority)
-                                ?.label ?? 'Save')
+                            (WATCHLIST_PRIORITIES.find(
+                                (priority) => priority.value === item?.priority,
+                            )?.label ?? 'Save')
                         )}
                     </button>
                 }
             >
                 <div className={styles.editor}>
                     <strong>Watchlist priority</strong>
-                    {PRIORITIES.map((priority) => (
+                    {WATCHLIST_PRIORITIES.map((priority) => (
                         <button
                             key={priority.value}
                             type="button"

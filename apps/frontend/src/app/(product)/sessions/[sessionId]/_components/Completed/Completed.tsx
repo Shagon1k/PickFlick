@@ -1,7 +1,8 @@
-import type {
-    TImportedSelectionOutcome,
-    TLiveSelectionOutcome,
-    TSession,
+import {
+    getPosterPath,
+    type TImportedSelectionOutcome,
+    type TLiveSelectionOutcome,
+    type TSession,
 } from '@pickflick/contracts';
 import Link from 'next/link';
 
@@ -146,7 +147,7 @@ function HistoricalVotes({ breakdown }: { breakdown: TLiveSelectionOutcome['brea
                         <div className={styles.nominee}>
                             <SearchPoster
                                 className={styles.poster}
-                                url={`/api/movies/${row.movie.id}/poster`}
+                                url={getPosterPath(row.movie.id)}
                             />
                             <div>
                                 <Link href={`/movies/${row.movie.id}`}>

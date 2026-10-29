@@ -1,3 +1,4 @@
+import type { TSessionPhase } from '../sessions/session.schema.js';
 export type TClubRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
 export type TClubLifecycle = 'ACTIVE' | 'ARCHIVED';
 export type TClubTier = 'FREE' | 'PRO';
@@ -93,7 +94,7 @@ export interface IClubHubSession {
     ratingAverage: number | null;
     canJoin: boolean;
     movie: IClubHubMovie | null;
-    phase: 'NOMINATION' | 'SELECTION' | 'WATCHING' | 'RATING' | 'COMPLETED' | 'CANCELLED';
+    phase: TSessionPhase;
     topic?: string;
     scheduledAt?: string;
     location?: string;
@@ -137,3 +138,6 @@ export const CLUB_CONFLICT_REASONS = [
 ] as const;
 
 export type TClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
+
+/** The Club Hub lists this many most recent closed Sessions as history. */
+export const HUB_HISTORY_LIMIT = 20;

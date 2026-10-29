@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
+    getPosterPath,
     movieIdSchema,
     movieSearchSchema,
     movieStoredImageKeySchema,
@@ -81,7 +82,7 @@ export class MoviesController {
                 ...result.data,
                 movies: result.data.movies.map((movie) => ({
                     ...movie,
-                    posterUrl: movie.posterUrl ? `/api/movies/${movie.id}/poster` : null,
+                    posterUrl: movie.posterUrl ? getPosterPath(movie.id) : null,
                     backdropUrl: null,
                 })),
             },

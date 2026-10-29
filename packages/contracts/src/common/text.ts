@@ -1,16 +1,10 @@
 import { z } from 'zod';
 
-const TAB = 0x09;
-const LINE_FEED = 0x0a;
-const FIRST_PRINTABLE = 0x20;
-const DELETE = 0x7f;
-
-// Tab and newline are the only control characters user text may contain.
-const isSafeText = (value: string): boolean =>
-    [...value].every((character) => {
-        const code = character.codePointAt(0) ?? 0;
-        return code === TAB || code === LINE_FEED || (code >= FIRST_PRINTABLE && code !== DELETE);
-    });
+// Tab and newline are the only control characters user text may contain (C0, DEL and C1 are not).
+const UNSAFE_CONTROL = /(?![\t\n])\p{Cc}/u;
+const isSafeText = (value: string): boolean => !UNSAFE_CONTROL.test(value);
+// Unicode line and paragraph separators break a line as surely as a newline does.
+const LINE_BREAK = /[\r\n\u2028\u2029]/u;
 
 /** Trimmed single-line text such as a name. */
 export function singleLineText(min: number, max: number) {
@@ -20,7 +14,7 @@ export function singleLineText(min: number, max: number) {
         .min(min)
         .max(max)
         .refine(
-            (value) => isSafeText(value) && !/[\r\n]/u.test(value),
+            (value) => isSafeText(value) && !LINE_BREAK.test(value),
             'Use a single line of text.',
         );
 }

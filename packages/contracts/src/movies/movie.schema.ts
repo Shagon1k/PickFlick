@@ -256,3 +256,8 @@ export const movieDetailsResponseSchema = z.strictObject({
     }),
 });
 export type TMovieDetailsResponse = z.infer<typeof movieDetailsResponseSchema>;
+
+/** The same-origin route that serves a Movie's stored poster. */
+export function getPosterPath(movieId: string) {
+    return `/api/movies/${movieId}/poster`;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import type { TNominationMovie, TNominations } from '@pickflick/contracts';
+import { getPosterPath, type TNominationMovie, type TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
 import { type ReactNode, useRef, useState, useTransition } from 'react';
 
@@ -117,10 +117,7 @@ function NominationList({ data }: { data: TNominations }) {
             {data.nominations.map((row, index) => (
                 // eslint-disable-next-line @eslint-react/no-array-index-key -- several participants may nominate the same Movie; rows are only appended
                 <li key={`${row.movie.id}-${index}`}>
-                    <SearchPoster
-                        className={styles.poster}
-                        url={`/api/movies/${row.movie.id}/poster`}
-                    />
+                    <SearchPoster className={styles.poster} url={getPosterPath(row.movie.id)} />
                     <div className={styles.movieInfo}>
                         <Link
                             aria-label={formatMovieLabel(row.movie)}
@@ -216,7 +213,7 @@ function NominationPicker({
                             >
                                 <SearchPoster
                                     className={styles.suggestionPoster}
-                                    url={`/api/movies/${movie.id}/poster`}
+                                    url={getPosterPath(movie.id)}
                                 />
                                 <strong>{movie.title ?? 'Movie title unavailable'}</strong>
                                 {movie.year ? <span>{movie.year}</span> : null}

@@ -2,6 +2,7 @@
 
 import { useForm } from '@mantine/form';
 import {
+    getPosterPath,
     submitSelectionSchema,
     type TNominationMovie,
     type TSelection,
@@ -111,7 +112,7 @@ export default function Selection({
                             <li key={row.id} className={styles.movie}>
                                 <SearchPoster
                                     className={styles.poster}
-                                    url={`/api/movies/${row.movie.id}/poster`}
+                                    url={getPosterPath(row.movie.id)}
                                 />
                                 <div className={styles.info}>
                                     <h3>

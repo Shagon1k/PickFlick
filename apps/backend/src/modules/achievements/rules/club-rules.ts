@@ -5,11 +5,11 @@ import {
     getLongestRun,
     getMembersAtScreening,
     readDetails,
+    toUtcDayKey,
+    toUtcMonthKey,
 } from './rule-helpers.js';
 import type { TAchievementSession } from './rule-sources.js';
 
-const DATE_LENGTH = 10;
-const MONTH_LENGTH = 7;
 const EVENING_HOUR = 18;
 const DECADE = 10;
 const COMEBACK_MS = 30 * 24 * 60 * 60 * 1000;
@@ -56,19 +56,19 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     );
     const double = getLargestBucket(
         evenings.map(({ session }) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
+            bucket: toUtcDayKey(session.scheduledAt!),
             value: 1,
         })),
     );
     const runtime = getLargestBucket(
         evenings.map(({ session, details }) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
+            bucket: toUtcDayKey(session.scheduledAt!),
             value: details?.runtime ?? 0,
         })),
     );
     const month = getLargestBucket(
         dated.map((session) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, MONTH_LENGTH),
+            bucket: toUtcMonthKey(session.scheduledAt!),
             value: 1,
         })),
     );

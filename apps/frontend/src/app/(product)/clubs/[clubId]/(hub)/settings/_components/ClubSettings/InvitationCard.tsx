@@ -1,6 +1,11 @@
 'use client';
 
-import type { IClubSettings, ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
+import {
+    CLUB_INVITATION_LIFETIME_HOURS,
+    type IClubSettings,
+    type ICreatedInvitation,
+    type IManagedInvitation,
+} from '@pickflick/contracts';
 import { useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
@@ -128,7 +133,8 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
             <div className={styles.cardTitle}>
                 <h2 id="club-members-title">Members</h2>
                 <InfoTip label="About invitations">
-                    Each invitation link admits one person and expires after 12 hours.
+                    Each invitation link admits one person and expires after{' '}
+                    {CLUB_INVITATION_LIFETIME_HOURS} hours.
                 </InfoTip>
             </div>
             <p className={styles.cardLead}>
@@ -156,7 +162,9 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                 open={isOpen}
                 title="Invite to this Club"
             >
-                <p className={styles.explanation}>A single-use join link, valid for 12 hours.</p>
+                <p className={styles.explanation}>
+                    A single-use join link, valid for {CLUB_INVITATION_LIFETIME_HOURS} hours.
+                </p>
                 {isMemberLimitReached ? (
                     <p>
                         The member limit is reached; a seat must free up before the next invitation.
@@ -182,7 +190,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
                             </Button>
                         </div>
                         <p>
-                            Single use · expires in 12 hours ·{' '}
+                            Single use · expires in {CLUB_INVITATION_LIFETIME_HOURS} hours ·{' '}
                             <button
                                 aria-label="Revoke current link"
                                 className={styles.textButton}

@@ -1,6 +1,6 @@
 'use client';
 
-import type { TPersonalMovieRating } from '@pickflick/contracts';
+import { formatRatingScore, RATING_SCALE, type TPersonalMovieRating } from '@pickflick/contracts';
 import { useId, useRef, useState, useTransition } from 'react';
 
 import Button from '#components/ui/Button/Button';
@@ -62,13 +62,13 @@ export default function PersonalRating({
                     variant="cell"
                     aria-label={
                         rating
-                            ? `Your rating: ${rating.score} out of 10. Edit rating`
+                            ? `Your rating: ${rating.score} out of ${RATING_SCALE.max}. Edit rating`
                             : 'Rate this film'
                     }
                     onClick={() => setIsOpen(!isOpen)}
                 >
                     <Icon name="ratings" />
-                    {rating ? `${rating.score}/10` : 'Rate'}
+                    {rating ? formatRatingScore(rating.score) : 'Rate'}
                 </Button>
             }
         >
@@ -84,7 +84,7 @@ export default function PersonalRating({
                     disabled={isPending}
                     required
                 />
-                <p>{score === undefined ? 'Choose a rating' : `${score}/10`}</p>
+                <p>{score === undefined ? 'Choose a rating' : formatRatingScore(score)}</p>
                 <p>Your current opinion. Session and Club history stay unchanged.</p>
                 <Button type="submit" loading={isPending}>
                     Save rating

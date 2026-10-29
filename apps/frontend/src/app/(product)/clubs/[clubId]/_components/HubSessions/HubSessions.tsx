@@ -1,10 +1,10 @@
-import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
+import { HUB_HISTORY_LIMIT, type IClubHub, type IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { formatCount } from '#lib/format';
+import { formatCount, formatUtcDate } from '#lib/format';
 
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessions.module.scss';
@@ -26,7 +26,10 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
             </section>
             <section aria-labelledby="session-history-heading">
                 <h2 id="session-history-heading">History</h2>
-                <p>The latest 20 closed Sessions. Open a screening for its permitted results.</p>
+                <p>
+                    The latest {HUB_HISTORY_LIMIT} closed Sessions. Open a screening for its
+                    permitted results.
+                </p>
                 <SessionRows sessions={hub.historySessions} empty="No completed Sessions yet." />
             </section>
         </div>
@@ -50,10 +53,7 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
                             </strong>
                             <span>
                                 {session.scheduledAt
-                                    ? new Intl.DateTimeFormat('en', {
-                                          dateStyle: 'medium',
-                                          timeZone: 'UTC',
-                                      }).format(new Date(session.scheduledAt))
+                                    ? formatUtcDate(session.scheduledAt)
                                     : 'Not scheduled'}
                                 {session.location ? ` · ${session.location}` : ''} ·{' '}
                                 {formatCount(session.acceptedCount, 'attendee')}

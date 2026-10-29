@@ -1,15 +1,19 @@
 'use client';
 
-import { LIBRARY_SEARCH_MAX_LENGTH, type TLibraryQuery } from '@pickflick/contracts';
+import {
+    formatRatingScore,
+    LIBRARY_SEARCH_MAX_LENGTH,
+    RATING_SCORES,
+    type TLibraryQuery,
+} from '@pickflick/contracts';
 
+import { WATCHLIST_PRIORITIES } from '#components/movies/watchlist-priority';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Select from '#components/ui/Select/Select';
 import TextInput from '#components/ui/TextInput/TextInput';
 
 import styles from './LibraryFilters.module.scss';
-
-const MAX_RATING = 10;
 
 export default function LibraryFilters({ query }: { query: TLibraryQuery }) {
     const isWatchlist = query.tab === 'watchlist';
@@ -35,9 +39,7 @@ export default function LibraryFilters({ query }: { query: TLibraryQuery }) {
                     defaultValue={query.priority}
                     data={[
                         { value: '', label: 'All priorities' },
-                        { value: 'HIGH', label: 'High' },
-                        { value: 'MEDIUM', label: 'Medium' },
-                        { value: 'LOW', label: 'Low' },
+                        ...WATCHLIST_PRIORITIES.toReversed(),
                     ]}
                 />
             ) : (
@@ -48,9 +50,9 @@ export default function LibraryFilters({ query }: { query: TLibraryQuery }) {
                     defaultValue={query.score}
                     data={[
                         { value: '', label: 'All ratings' },
-                        ...Array.from({ length: MAX_RATING }, (_, index) => ({
-                            value: String(index + 1),
-                            label: `${index + 1}/10`,
+                        ...RATING_SCORES.map((score) => ({
+                            value: String(score),
+                            label: formatRatingScore(score),
                         })),
                     ]}
                 />

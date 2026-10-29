@@ -5,11 +5,11 @@ import { useState } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
 import Progress from '#components/ui/Progress/Progress';
+import { toIsoDate } from '#lib/format';
 
 import styles from './Achievements.module.scss';
 
 const PERCENT = 100;
-const DATE_LENGTH = 10;
 
 const STATUSES: { status: TAchievement['status']; label: string }[] = [
     { status: 'unlocked', label: 'Unlocked' },
@@ -94,7 +94,7 @@ export default function Achievements({ items }: TAchievements) {
                                     <p>
                                         Unlocked{' '}
                                         <time dateTime={item.awardedAt}>
-                                            {item.awardedAt.slice(0, DATE_LENGTH)}
+                                            {toIsoDate(item.awardedAt)}
                                         </time>{' '}
                                         (UTC). Earned history is retained.
                                     </p>

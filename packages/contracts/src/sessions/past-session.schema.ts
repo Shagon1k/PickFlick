@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ratingScoreSchema } from '../common/rating-scale.js';
 import { sessionDetailsSchema } from './session.schema.js';
 
 export const createPastSessionSchema = sessionDetailsSchema
@@ -13,7 +14,7 @@ export const createPastSessionSchema = sessionDetailsSchema
         attendees: z.array(
             z.strictObject({
                 membershipId: z.uuid(),
-                score: z.int().min(1).max(10).optional(),
+                score: ratingScoreSchema.optional(),
             }),
         ),
         nominations: z
@@ -59,22 +60,20 @@ export const createPastSessionSchema = sessionDetailsSchema
                 path: ['scoreMatrix'],
                 message: 'Supply each participant row once.',
             });
+        const attendeeIds = new Set(input.attendees.map((attendee) => attendee.membershipId));
+        const nominatedIds = new Set(input.nominations.map((nomination) => nomination.movieId));
         for (const [index, row] of input.scoreMatrix.entries()) {
-            if (
-                !input.attendees.some((attendee) => attendee.membershipId === row.membershipId) ||
-                new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length ||
-                row.scores.some(
-                    (cell) =>
-                        !input.nominations.some(
-                            (nomination) => nomination.movieId === cell.movieId,
-                        ),
-                )
-            )
+            const path = ['scoreMatrix', index];
+            if (!attendeeIds.has(row.membershipId))
                 context.addIssue({
                     code: 'custom',
-                    path: ['scoreMatrix', index],
-                    message: 'Use selected attendees and unique nominated Movies only.',
+                    path,
+                    message: 'Score only selected attendees.',
                 });
+            if (new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length)
+                context.addIssue({ code: 'custom', path, message: 'Score each Movie once.' });
+            if (row.scores.some((cell) => !nominatedIds.has(cell.movieId)))
+                context.addIssue({ code: 'custom', path, message: 'Score only nominated Movies.' });
         }
     });
 export type TCreatePastSession = z.infer<typeof createPastSessionSchema>;

@@ -40,3 +40,12 @@ export function getMembersAtScreening(session: TAchievementSession) {
           )
         : [];
 }
+
+/** UTC calendar keys: `2026-10-01` for a day, `2026-10` for a month. */
+export function toUtcDayKey(date: Date) {
+    return date.toISOString().slice(0, 'YYYY-MM-DD'.length);
+}
+
+export function toUtcMonthKey(date: Date) {
+    return date.toISOString().slice(0, 'YYYY-MM'.length);
+}

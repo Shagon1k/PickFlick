@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
 import {
+    getPosterPath,
     type IClubHub,
     type IClubSettings,
     type IClubSummary,
@@ -70,9 +71,7 @@ export class ClubsService {
                 selected.title = details.data.title ?? selected.title;
                 selected.runtime = details.data.runtime;
                 selected.genres = details.data.genres ?? [];
-                selected.posterUrl = details.data.posterUrl
-                    ? `/api/movies/${selected.id}/poster`
-                    : null;
+                selected.posterUrl = details.data.posterUrl ? getPosterPath(selected.id) : null;
             }
         }
         return hub;

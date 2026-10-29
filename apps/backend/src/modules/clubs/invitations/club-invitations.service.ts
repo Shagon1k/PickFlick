@@ -6,14 +6,15 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import type {
-    ICreatedInvitation,
-    IManagedInvitation,
-    IPendingClubInvitation,
-    TCreateInvitation,
-    TInvitationDecision,
-    TInvitationPreview,
-    TRespondInvitation,
+import {
+    CLUB_INVITATION_LIFETIME_HOURS,
+    type ICreatedInvitation,
+    type IManagedInvitation,
+    type IPendingClubInvitation,
+    type TCreateInvitation,
+    type TInvitationDecision,
+    type TInvitationPreview,
+    type TRespondInvitation,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -35,7 +36,7 @@ import { getClubEntitlements } from '../access/club-tiers.js';
 import { inspectInvitation } from './club-invitation-access.js';
 
 const RECENT_INVITATIONS_LIMIT = 20;
-const CLUB_INVITE_LIFETIME_MS = 12 * 60 * 60 * 1000;
+const CLUB_INVITE_LIFETIME_MS = CLUB_INVITATION_LIFETIME_HOURS * 60 * 60 * 1000;
 
 async function findManagerMembership(
     transaction: Prisma.TransactionClient,

@@ -1,4 +1,10 @@
-import { BLOCKING_SESSION_PHASES, type IClubHub, type IClubHubSession } from '@pickflick/contracts';
+import {
+    BLOCKING_SESSION_PHASES,
+    getPosterPath,
+    HUB_HISTORY_LIMIT,
+    type IClubHub,
+    type IClubHubSession,
+} from '@pickflick/contracts';
 import { Prisma } from '@pickflick/database';
 
 import { canJoinSession } from '../sessions/session-access.js';
@@ -9,7 +15,6 @@ import { toClubSummary } from './club.mapper.js';
 import { readCompletedScreenings } from './statistics/completed-screenings.js';
 
 const RECENT_LIMIT = 5;
-const HISTORY_LIMIT = 20;
 const sessionInclude = {
     movie: { select: { id: true, title: true, releaseYear: true } },
     _count: {
@@ -59,7 +64,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
         tx.session.findMany({
             where: { clubId, phase: { in: ['COMPLETED', 'CANCELLED'] } },
             orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-            take: HISTORY_LIMIT,
+            take: HUB_HISTORY_LIMIT,
             include: sessionInclude,
         }),
         readCompletedScreenings(tx, clubId, membership.role),
@@ -132,7 +137,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
                   year: row.movie.releaseYear,
                   runtime: null,
                   genres: [],
-                  posterUrl: `/api/movies/${row.movie.id}/poster`,
+                  posterUrl: getPosterPath(row.movie.id),
               }
             : null,
     });

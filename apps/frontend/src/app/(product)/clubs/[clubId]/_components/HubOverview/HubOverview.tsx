@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getMonogram } from '#lib/format';
+import { formatUtcDate, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
@@ -90,10 +90,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                                 </Link>{' '}
                                 · {session.phase.toLowerCase()} ·{' '}
                                 <time dateTime={session.updatedAt}>
-                                    {new Intl.DateTimeFormat('en', {
-                                        dateStyle: 'medium',
-                                        timeZone: 'UTC',
-                                    }).format(new Date(session.updatedAt))}
+                                    {formatUtcDate(session.updatedAt)}
                                 </time>
                             </li>
                         ))}

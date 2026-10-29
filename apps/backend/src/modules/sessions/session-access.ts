@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { isOpenSessionPhase, type TClubLifecycle } from '@pickflick/contracts';
+import { isOpenSessionPhase, type TClubLifecycle, type TSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { loadClubAccess, type TMembership } from '../clubs/access/club-access.js';
@@ -11,7 +11,7 @@ export async function canManage(transaction: Prisma.TransactionClient, membershi
     return getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
 
-export function assertOpen(phase: string) {
+export function assertOpen(phase: TSessionPhase) {
     if (!isOpenSessionPhase(phase)) throw new ConflictException({ reason: 'SESSION_CLOSED' });
 }
 /**
@@ -40,7 +40,7 @@ export function canViewSelectionBreakdown(
 
 /** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
 export function canJoinSession(input: {
-    phase: string;
+    phase: TSessionPhase;
     clubLifecycle: TClubLifecycle;
     ownStatus: string | undefined;
 }) {

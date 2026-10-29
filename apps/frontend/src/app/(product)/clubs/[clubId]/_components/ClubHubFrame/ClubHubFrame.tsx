@@ -7,7 +7,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
-import { buildClubNavigation } from '#components/shells/shell-navigation';
+import { buildClubNavigation, type THubSection } from '#components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
 import CallSheet from '../CallSheet/CallSheet';
@@ -96,9 +96,7 @@ export default function ClubHubFrame({
     );
 }
 
-function getSection(
-    pathname: string,
-): 'overview' | 'sessions' | 'ratings' | 'members' | 'achievements' | 'manage' {
+function getSection(pathname: string): THubSection {
     if (pathname.endsWith('/sessions')) return 'sessions';
     if (pathname.endsWith('/ratings')) return 'ratings';
     if (pathname.endsWith('/achievements')) return 'achievements';

@@ -1,14 +1,12 @@
 'use client';
 
-import type { TRating } from '@pickflick/contracts';
+import { formatRatingScore, RATING_SCALE, type TRating } from '@pickflick/contracts';
 import { useRef } from 'react';
 
 import { getMonogram } from '#lib/format';
 
 import styles from './Rating.module.scss';
 import RatingForm from './RatingForm';
-
-const RATING_SCALE_LENGTH = 10;
 
 export default function Rating({
     sessionId,
@@ -32,7 +30,7 @@ export default function Rating({
         response = (
             <div className={styles.saved} role="status">
                 <p>Your rating is saved</p>
-                <strong>{data.own.score}/10</strong>
+                <strong>{formatRatingScore(data.own.score)}</strong>
                 {data.own.comment ? <p className={styles.comment}>{data.own.comment}</p> : null}
                 <p>This screening response is final.</p>
             </div>
@@ -67,7 +65,7 @@ export default function Rating({
                                         <span>{rating.author}</span>
                                         <span className={styles.bars} aria-hidden="true">
                                             {Array.from(
-                                                { length: RATING_SCALE_LENGTH },
+                                                { length: RATING_SCALE.max },
                                                 (_, index) => (
                                                     <i
                                                         key={index}
@@ -78,7 +76,7 @@ export default function Rating({
                                                 ),
                                             )}
                                         </span>
-                                        <strong>{rating.score}/10</strong>
+                                        <strong>{formatRatingScore(rating.score)}</strong>
                                     </div>
                                     {rating.comment ? (
                                         <p className={styles.comment}>{rating.comment}</p>

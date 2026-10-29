@@ -2,6 +2,8 @@ import type { IClubHub } from '@pickflick/contracts';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { formatUtcDate } from '#lib/format';
+
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessionCards.module.scss';
 
@@ -28,10 +30,7 @@ export default function HubSessionCards({
                                 </Link>
                                 <p>
                                     {session.scheduledAt
-                                        ? new Intl.DateTimeFormat('en', {
-                                              dateStyle: 'medium',
-                                              timeZone: 'UTC',
-                                          }).format(new Date(session.scheduledAt))
+                                        ? formatUtcDate(session.scheduledAt)
                                         : 'Not scheduled'}{' '}
                                     · {session.progressCount ?? 0} of {session.acceptedCount} rated
                                 </p>

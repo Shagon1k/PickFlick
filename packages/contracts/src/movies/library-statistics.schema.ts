@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
+import { RATING_SCALE } from '../common/rating-scale.js';
+
 export const libraryStatisticsSchema = z.strictObject({
     filmsRated: z.number().int().nonnegative(),
     ratedThisYear: z.number().int().nonnegative(),
-    averageRating: z.number().min(1).max(10).nullable(),
+    averageRating: z.number().min(RATING_SCALE.min).max(RATING_SCALE.max).nullable(),
     totalWatchHours: z.number().nonnegative().nullable(),
     watchlistCount: z.number().int().nonnegative(),
     favoriteGenre: z.string().nullable(),
