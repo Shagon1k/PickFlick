@@ -16,7 +16,7 @@ const CLUB_PATH =
 
 /**
  * Gives every page response a fresh CSP nonce. Next.js reads the policy from the request headers
- * and stamps the nonce on its own scripts; the root layout keeps every page dynamic for that.
+ * and stamps the nonce on its own scripts; the root layout reads `x-nonce` for the theme script.
  *
  * Component and shell previews ship in every image because one image is promoted from UAT to
  * production. Production answers them with the ordinary 404 at request time.
@@ -25,6 +25,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
     const policy = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
     const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', policy);
 
     const shouldHidePreview =

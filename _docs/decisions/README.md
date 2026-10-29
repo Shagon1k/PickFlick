@@ -1176,13 +1176,6 @@ proxied responses.
 - [MDN: Content-Security-Policy](https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy)
 - [OWASP HTTP Headers Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
 
-### Amendment — 2026-10-29: no inline theme script
-
-Projector Noir forces the dark scheme, so Mantine's theme script only repeated the
-`data-mantine-color-scheme` attribute the server already renders. The script and the `x-nonce`
-request header are removed. The root layout calls `connection()` instead of reading headers, which
-keeps every page rendered per request so Next.js can stamp the nonce on its own scripts.
-
 ## ADR-016 — Use a PostgreSQL queue for Movie refresh
 
 - **Status:** Proposed; developer approval required before queue implementation

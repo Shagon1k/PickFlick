@@ -23,7 +23,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 });
                 await expect(statistics.locator('dt')).toHaveCount(8);
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
-                await expect(statistics.locator('dd').nth(2)).toHaveText('8');
+                await expect(statistics.locator('dd').nth(2)).toHaveText('8.0');
                 await expect(
                     statistics.getByText('DirectorWithAVeryLongUnbrokenName'.repeat(4)),
                 ).toBeVisible();

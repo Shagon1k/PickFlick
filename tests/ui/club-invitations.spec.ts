@@ -101,8 +101,11 @@ test('Club invitation declines without membership and keeps network failures ret
     await page.goto(invitationPath());
     await page.context().setOffline(true);
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
-    await expect(page.getByRole('status')).toContainText('could not be updated');
+    await expect(page.getByRole('status')).toContainText('You appear to be offline');
     await page.context().setOffline(false);
+    await page.route('**/invite/club/**', (route) => route.abort('failed'), { times: 1 });
+    await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
+    await expect(page.getByRole('status')).toContainText('could not be updated');
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
     await expect(page.getByRole('heading', { name: 'Invitation declined' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open Screening Room' })).toHaveCount(0);
