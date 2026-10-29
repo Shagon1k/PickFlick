@@ -7,9 +7,9 @@ import {
     type TNotificationListQuery,
 } from '@pickflick/contracts';
 
-import { EMPTY_REQUEST, ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import type { IAuthUser } from '../auth/auth.types.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { EMPTY_REQUEST, ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
+import type { IAuthUser } from '../../auth/auth.types.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { InboxService } from './inbox.service.js';
 
 // Open tabs and members of one watch party may share a client address.

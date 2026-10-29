@@ -4,14 +4,14 @@ import {
     updateNotificationPreferenceSchema,
 } from '@pickflick/contracts';
 
-import { EMPTY_REQUEST, ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import type { IAuthUser } from '../auth/auth.types.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
-import { NotificationsService } from './notifications.service.js';
+import { EMPTY_REQUEST, ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
+import type { IAuthUser } from '../../auth/auth.types.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import { NotificationPreferencesService } from './preferences.service.js';
 
 @Controller('notifications/preferences')
-export class NotificationsController {
-    constructor(private readonly notifications: NotificationsService) {}
+export class NotificationPreferencesController {
+    constructor(private readonly preferences: NotificationPreferencesService) {}
 
     @Get()
     getPreferences(
@@ -19,7 +19,7 @@ export class NotificationsController {
         query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
     ) {
-        return this.notifications.getPreferences(user.id);
+        return this.preferences.getPreferences(user.id);
     }
 
     @Put()
@@ -30,6 +30,6 @@ export class NotificationsController {
         @Body(new ZodValidationPipe(updateNotificationPreferenceSchema))
         input: TUpdateNotificationPreference,
     ) {
-        return this.notifications.updatePreference(user.id, input);
+        return this.preferences.updatePreference(user.id, input);
     }
 }

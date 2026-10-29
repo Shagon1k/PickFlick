@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { TPersonalMovieRating, TSavePersonalRating } from '@pickflick/contracts';
 
-import { PrismaService } from '../../database/prisma.service.js';
+import { PrismaService } from '../../../database/prisma.service.js';
 
 @Injectable()
 export class PersonalRatingService {

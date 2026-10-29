@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { TNotificationList, TNotificationListQuery } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { PrismaService } from '../../database/prisma.service.js';
-import { projectNotification } from './notification-resolver.js';
-import { NotificationSignals } from './notification-signals.js';
+import { PrismaService } from '../../../database/prisma.service.js';
+import { projectNotification } from '../notification-resolver.js';
+import { NotificationSignals } from '../notification-signals.js';
 
 @Injectable()
 export class InboxService {

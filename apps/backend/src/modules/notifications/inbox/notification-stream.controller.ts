@@ -3,11 +3,11 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { Controller, Query, Req, Sse, UnauthorizedException } from '@nestjs/common';
 import { concatMap, interval, map, merge, of } from 'rxjs';
 
-import { EMPTY_REQUEST } from '../../common/pipes/zod-validation.pipe.js';
-import { AuthService } from '../auth/auth.service.js';
-import type { IAuthUser } from '../auth/auth.types.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
-import { NotificationSignals } from './notification-signals.js';
+import { EMPTY_REQUEST } from '../../../common/pipes/zod-validation.pipe.js';
+import { AuthService } from '../../auth/auth.service.js';
+import type { IAuthUser } from '../../auth/auth.types.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import { NotificationSignals } from '../notification-signals.js';
 
 const HEARTBEAT_MS = 30_000;
 

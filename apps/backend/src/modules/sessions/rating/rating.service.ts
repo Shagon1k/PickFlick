@@ -1,11 +1,12 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
+import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { assertActive, recordAudit, type TMembership } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, canManage } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { publishProgress } from '../session-progress.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
@@ -63,6 +64,35 @@ export class RatingService {
                   }
                 : null,
         };
+    }
+
+    /** Watching → Rating moves only by hand (ROADMAP); it frees the Club's blocking Session slot. */
+    async open(userId: string, id: string, input: TOpenRating): Promise<void> {
+        await this.transactions.write(async (tx) => {
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
+            await assertManager(tx, membership);
+            if (session.phase === 'RATING') return;
+            if (session.phase !== 'WATCHING' || session.phaseVersion !== input.phaseVersion)
+                throw new ConflictException({ reason: 'WATCHING_CHANGED' });
+            // Leaving Watching releases the partial unique index's Club slot in this transaction.
+            await tx.session.update({
+                where: { id },
+                data: {
+                    phase: 'RATING',
+                    phaseVersion: { increment: 1 },
+                    detailsVersion: { increment: 1 },
+                },
+            });
+            await recordAudit(tx, {
+                clubId: session.clubId,
+                sessionId: id,
+                actorUserId: userId,
+                subjectUserId: userId,
+                subjectMembershipId: membership.id,
+                action: 'SESSION_RATING_OPENED',
+            });
+            await publishProgress(tx, id, 'MANUAL');
+        });
     }
 
     async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {

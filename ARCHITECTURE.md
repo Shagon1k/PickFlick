@@ -84,12 +84,11 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                            | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
 | storage                          | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
 | health                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
 | sessions                         | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
-| library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
+| library                          | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
+| notifications                    | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -831,8 +830,7 @@ LOW/MEDIUM/HIGH priority enum and `addedAt`. Foreign keys cascade private saved 
 User or Movie is deleted. The migration is additive, changes no existing rows, and must precede
 the updated API.
 
-The authenticated Watchlist module exposes private/no-store `GET /watchlist` and
-`GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
+The Library module's Watchlist exposes private/no-store `GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
 from the session; reads and writes always include that User ID. `PUT` accepts only `{ priority }`,
 requires an existing Movie and uses the database's atomic upsert. Duplicate saves and priority
 edits retain the original added date; repeat deletes succeed. Concurrent different priorities use

@@ -2,8 +2,8 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { firstValueFrom, Subject } from 'rxjs';
 
-import { AuthService } from '../../auth/auth.service.js';
-import { NotificationSignals } from '../notification-signals.js';
+import { AuthService } from '../../../auth/auth.service.js';
+import { NotificationSignals } from '../../notification-signals.js';
 import { NotificationStreamController } from '../notification-stream.controller.js';
 
 describe('NotificationStreamController', () => {

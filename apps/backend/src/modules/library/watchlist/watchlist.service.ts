@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { TSaveWatchlist, TWatchlistItem } from '@pickflick/contracts';
 
-import { PrismaService } from '../../database/prisma.service.js';
+import { PrismaService } from '../../../database/prisma.service.js';
 
 @Injectable()
 export class WatchlistService {

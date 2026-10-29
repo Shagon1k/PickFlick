@@ -9,7 +9,7 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
+} from '../../../../testing/integration.js';
 
 describe('PersonalRating', () => {
     let api: ITestApi;

@@ -5,11 +5,11 @@ import {
     type TUpdateNotificationPreference,
 } from '@pickflick/contracts';
 
-import { PrismaService } from '../../database/prisma.service.js';
-import { getNotificationPolicy, isMandatoryNotification } from './notification-policy.js';
+import { PrismaService } from '../../../database/prisma.service.js';
+import { getNotificationPolicy, isMandatoryNotification } from '../notification-policy.js';
 
 @Injectable()
-export class NotificationsService {
+export class NotificationPreferencesService {
     constructor(private readonly prisma: PrismaService) {}
 
     async getPreferences(userId: string): Promise<TNotificationPreferences> {

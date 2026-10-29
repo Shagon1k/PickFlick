@@ -7,8 +7,8 @@ import {
     type ITestApi,
     removeUsers,
     startTestApi,
-} from '../../../testing/integration.js';
-import { recordNotification } from '../notification-store.js';
+} from '../../../../testing/integration.js';
+import { recordNotification } from '../../notification-store.js';
 
 describe('Inbox', () => {
     let api: ITestApi;

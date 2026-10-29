@@ -4,7 +4,7 @@ import { loadEmailWorkerEnvironment } from '@pickflick/config/environment';
 import { createDatabaseClient } from '@pickflick/database';
 
 import { ResendEmailClient } from './modules/email/resend-email.client.js';
-import { EmailDispatcher } from './modules/notifications/email/email-dispatcher.js';
+import { EmailDispatcher } from './modules/notifications/email-delivery/email-dispatcher.js';
 import { runPollingWorker } from './workers/polling-worker.js';
 
 const ERROR_EVENTS = new Set(['email.failed', 'email.alert_failed']);
