@@ -82,14 +82,22 @@ function formatMovieLabel(movie: TNominationMovie) {
     return `${movie.title ?? 'Movie title unavailable'}${year}`;
 }
 
+/** After nominating, the prototype's faded "Your pick" card stands in for the search. */
 function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
-    if (!movie)
-        return <p>Only Session participants can nominate. Join the Session to add your film.</p>;
+    if (!movie) return <p>Join the Session to nominate a film.</p>;
     return (
-        <p role="status">
-            Your nomination: <Link href={`/movies/${movie.id}`}>{formatMovieLabel(movie)}</Link>.
-            Your submission is locked.
-        </p>
+        <div className={styles.ownPick}>
+            <SearchPoster className={styles.poster} url={getPosterPath(movie.id)} />
+            <div className={styles.movieInfo}>
+                <Link
+                    aria-label={`Your pick: ${formatMovieLabel(movie)}`}
+                    href={`/movies/${movie.id}`}
+                >
+                    {movie.title ?? 'Movie title unavailable'}
+                </Link>
+                <p>by you</p>
+            </div>
+        </div>
     );
 }
 
