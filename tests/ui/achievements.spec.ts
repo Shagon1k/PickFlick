@@ -45,8 +45,19 @@ for (const width of [390, 768, 1024, 1440]) {
                     await unlocked.focus();
                     await page.keyboard.press('Enter');
                     await expect(unlocked).toHaveAttribute('aria-pressed', 'false');
-                    await shelf.getByRole('button', { name: '2 In progress', exact: true }).tap();
-                    await shelf.getByRole('button', { name: '3 Not started', exact: true }).tap();
+                    await settle(page);
+                    const inProgress = shelf.getByRole('button', {
+                        name: '2 In progress',
+                        exact: true,
+                    });
+                    await inProgress.tap();
+                    await expect(inProgress).toHaveAttribute('aria-pressed', 'false');
+                    const notStarted = shelf.getByRole('button', {
+                        name: '3 Not started',
+                        exact: true,
+                    });
+                    await notStarted.tap();
+                    await expect(notStarted).toHaveAttribute('aria-pressed', 'false');
                     await expect(
                         shelf.getByText('Select a status above to show its achievements.'),
                     ).toBeVisible();

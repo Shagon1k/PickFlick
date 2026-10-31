@@ -255,8 +255,12 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`club-invite-ticket-${viewport.name}.png`);
             await page.keyboard.press('Escape');
-            await page.getByRole('button', { name: 'Manage Moderators' }).click();
+            await expect(page.getByRole('dialog')).toHaveCount(0);
             await settle(page);
+            await page.getByRole('button', { name: 'Manage Moderators' }).click();
+            await expect(page.getByRole('dialog')).toHaveCSS('opacity', '1');
+            await settle(page);
+            await page.mouse.move(0, 0);
             await expect(page).toHaveScreenshot(`club-moderators-${viewport.name}.png`);
         },
     );
