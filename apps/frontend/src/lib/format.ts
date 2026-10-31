@@ -28,19 +28,48 @@ export function toScreeningTime(value: string): string | null {
     return time === '00:00' ? null : time;
 }
 
-export type TInstantFormat = 'date' | 'dateTime' | 'short';
+export type TInstantFormat = 'date' | 'dateTime' | 'short' | 'relative';
 
 const INSTANT_FORMATS: Record<TInstantFormat, Intl.DateTimeFormatOptions> = {
     date: { dateStyle: 'medium' },
     dateTime: { dateStyle: 'medium', timeStyle: 'short' },
     short: { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' },
+    // Server markup cannot know the viewer's clock, so it carries the date until hydration.
+    relative: { dateStyle: 'medium' },
 };
+
+const RELATIVE_FORMAT = new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' });
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+    ['year', 31_536_000],
+    ['month', 2_592_000],
+    ['week', 604_800],
+    ['day', 86_400],
+    ['hour', 3600],
+    ['minute', 60],
+];
+const SECOND_MS = 1000;
+
+/** `5 min. ago`, `yesterday`, `3 days ago`: the largest whole unit since `value`. */
+function formatRelative(value: string, now: number): string {
+    const seconds = (new Date(value).getTime() - now) / SECOND_MS;
+    for (const [unit, size] of RELATIVE_UNITS) {
+        if (Math.abs(seconds) >= size)
+            return RELATIVE_FORMAT.format(Math.trunc(seconds / size), unit);
+    }
+    return 'just now';
+}
 
 /**
  * A moment such as a closing or creation time: `Oct 30, 2026, 7:45 PM`. Without `timeZone` it
  * reads in the viewer's own zone; render it through `LocalTime` so hydration stays stable.
  */
-export function formatInstant(value: string, format: TInstantFormat, timeZone?: string): string {
+export function formatInstant(
+    value: string,
+    format: TInstantFormat,
+    timeZone?: string,
+    now = Date.now(),
+): string {
+    if (format === 'relative' && !timeZone) return formatRelative(value, now);
     return new Date(value).toLocaleString('en', { ...INSTANT_FORMATS[format], timeZone });
 }
 

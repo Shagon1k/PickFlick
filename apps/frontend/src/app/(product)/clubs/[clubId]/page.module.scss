@@ -176,9 +176,13 @@
 }
 
 .activity a {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--fg);
     text-decoration: none;
+}
+
+.activity a:hover {
+    text-decoration: underline;
 }
 
 .activity time {

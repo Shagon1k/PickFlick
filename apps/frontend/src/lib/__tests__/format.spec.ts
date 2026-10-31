@@ -1,4 +1,4 @@
-import { formatAverage, formatHours } from '../format';
+import { formatAverage, formatHours, formatInstant } from '../format';
 
 describe('number formats', () => {
     it('should always show one decimal for a rating average', () => {
@@ -7,5 +7,15 @@ describe('number formats', () => {
 
     it('should show at most one decimal for hours', () => {
         expect([12, 12.54].map(formatHours)).toEqual(['12', '12.5']);
+    });
+});
+
+describe('formatInstant relative', () => {
+    const now = Date.parse('2026-10-31T12:00:00Z');
+    it('should name the largest whole unit in the viewer clock and the date on the server', () => {
+        expect(formatInstant('2026-10-31T11:59:30Z', 'relative', undefined, now)).toBe('just now');
+        expect(formatInstant('2026-10-31T10:00:00Z', 'relative', undefined, now)).toBe('2 hr. ago');
+        expect(formatInstant('2026-10-30T11:00:00Z', 'relative', undefined, now)).toBe('yesterday');
+        expect(formatInstant('2026-10-31T10:00:00Z', 'relative', 'UTC', now)).toBe('Oct 31, 2026');
     });
 });

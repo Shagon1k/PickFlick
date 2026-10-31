@@ -76,19 +76,21 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                 <h2>Recent Activity</h2>
                 {hub.recentSessions.length ? (
                     <ul className={styles.activity}>
-                        {hub.recentSessions.map((session) => (
-                            <li key={session.id}>
-                                <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                    <strong>
+                        {hub.recentSessions.map((session) => {
+                            const [before, after] = describeActivity(session);
+                            return (
+                                <li key={session.id}>
+                                    {before}
+                                    <Link href={`/sessions/${session.id}`} prefetch={false}>
                                         {session.movie?.title ??
                                             session.topic ??
                                             'Untitled Session'}
-                                    </strong>
-                                </Link>{' '}
-                                {describeActivity(session)} ·{' '}
-                                <LocalTime format="date" value={session.updatedAt} />
-                            </li>
-                        ))}
+                                    </Link>
+                                    {after} ·{' '}
+                                    <LocalTime format="relative" value={session.updatedAt} />
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p>No Session activity yet.</p>
@@ -98,18 +100,19 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
     );
 }
 
-const ACTIVITY: Record<IClubHubSession['phase'], string> = {
-    NOMINATION: 'is open for nominations',
-    SELECTION: 'is in Selection',
-    WATCHING: 'was picked for the screening',
-    RATING: 'is open for ratings',
-    COMPLETED: 'was completed',
-    CANCELLED: 'was cancelled',
+/** The words around the Session's title, the way the member event feed will read later. */
+const ACTIVITY: Record<IClubHubSession['phase'], [string, string]> = {
+    NOMINATION: ['Nominations opened for ', ''],
+    SELECTION: ['Selection opened for ', ''],
+    WATCHING: ['', ' was picked for the screening'],
+    RATING: ['Rating opened for ', ''],
+    COMPLETED: ['Screened ', ''],
+    CANCELLED: ['Cancelled ', ''],
 };
 
 /** A Session's latest step in words, with the Club score once it is known. */
-function describeActivity(session: IClubHubSession): string {
+function describeActivity(session: IClubHubSession): [string, string] {
     if (session.phase === 'COMPLETED' && session.ratingAverage !== null)
-        return `was rated ${formatAverage(session.ratingAverage)}`;
+        return ['Screened ', `, rated ${formatAverage(session.ratingAverage)}`];
     return ACTIVITY[session.phase];
 }
