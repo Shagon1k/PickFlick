@@ -38,6 +38,19 @@
     box-shadow: var(--shadow-popover);
 }
 
+/* When there is no room below, the strip opens upward and its tab moves under it, toward the trigger. */
+.menu__dropdown[data-position^='top'] .menu__tail {
+    top: auto;
+    bottom: -10px;
+    border-top: 0;
+    border-bottom: 1px solid var(--border-lit);
+    border-radius: 0 0 10px 10px;
+}
+
+.menu__dropdown[data-position^='top'] .menu__strip {
+    border-radius: 7px 7px 3px 3px;
+}
+
 .menu__strip::before,
 .menu__strip::after {
     position: absolute;
