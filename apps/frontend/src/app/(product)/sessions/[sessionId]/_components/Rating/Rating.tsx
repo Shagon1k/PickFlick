@@ -20,12 +20,10 @@ export default function Rating({
     sessionId,
     data,
     isCompleted,
-    isImported = false,
 }: {
     sessionId: string;
     data: TRating;
     isCompleted: boolean;
-    isImported?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const isRating = !data.own && data.canSubmit;
@@ -42,12 +40,6 @@ export default function Rating({
                 <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />
             ) : null}
             {!data.own && !data.canSubmit && !isCompleted ? <p>Join the Session to rate.</p> : null}
-            {isImported ? (
-                <p>
-                    Imported historical ratings. Original submission times are unknown; missing
-                    ratings remain unrecorded.
-                </p>
-            ) : null}
             <RatingList data={data} />
         </section>
     );

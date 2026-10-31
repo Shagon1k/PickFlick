@@ -11,6 +11,7 @@ import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
 import Icon from '#components/ui/Icon/Icon';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
@@ -80,7 +81,18 @@ export default function SessionHeader({
                     className={clsx(styles.phaseStamp, ticket.corner)}
                     data-live={session.phase === 'WATCHING' || undefined}
                 >
-                    {session.phase.toLowerCase()}
+                    {session.type === 'PAST' ? (
+                        <>
+                            logged
+                            {/* One note carries every caveat a reconstructed record has. */}
+                            <InfoTip label="About logged Sessions">
+                                Logged after the screening. It holds what was recorded; anything
+                                left out, and when it was first submitted, is unknown.
+                            </InfoTip>
+                        </>
+                    ) : (
+                        session.phase.toLowerCase()
+                    )}
                 </span>
             )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}

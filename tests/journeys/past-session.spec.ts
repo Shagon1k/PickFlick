@@ -155,7 +155,7 @@ test('A minimal past Session waits for hydration, retains input after a request 
         expect(await prisma.sessionParticipant.findMany({ where: { clubId } })).toEqual([]);
         expect(await prisma.sessionRating.findMany({ where: { session: { clubId } } })).toEqual([]);
         await page.getByRole('link', { name: 'Open Session', exact: true }).click();
-        await expect(page.getByText('No attendance record is available.')).toBeVisible();
+        await expect(page.getByText('Not recorded', { exact: true })).toBeVisible();
         await expect(page.getByText('No ratings were received.')).toBeVisible();
         await journey.signInMember();
         await page.goto(path);
@@ -359,26 +359,19 @@ for (const viewport of canonicalViewports) {
                     ),
                 ).toBeVisible();
                 await page.getByRole('link', { name: 'Open Session', exact: true }).click();
-                await expect(page.getByText('completed', { exact: true })).toBeVisible();
+                // A logged Session carries one LOGGED note instead of per-section caveats.
+                await expect(
+                    page.getByRole('button', { name: 'About logged Sessions' }),
+                ).toBeVisible();
                 await expect(page.getByText(/This session has ended/)).toBeVisible();
                 await page.getByRole('list', { name: 'Session ratings' }).scrollIntoViewIfNeeded();
                 await expect(page.getByText('9/10', { exact: true })).toBeVisible();
-                await expect(page.getByText(/Original submission times are unknown/)).toBeVisible();
                 const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
                 await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
-                await expect(rivals.getByText(/0 recorded total · 1 recorded score/)).toBeVisible();
-                await expect(
-                    rivals.getByText('Selection scores unknown.', { exact: true }),
-                ).toBeVisible();
+                await expect(rivals.getByText('0 total · 1 score', { exact: true })).toBeVisible();
                 await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
                 await expect(
-                    rivals.getByText(/Original submission times and Selection closure are unknown/),
-                ).toBeVisible();
-                await expect(
                     rivals.getByText('Nominated by Former attendee', { exact: true }),
-                ).toBeVisible();
-                await expect(
-                    rivals.getByText('Nominator unknown or hidden.', { exact: true }),
                 ).toBeVisible();
                 await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
                 expect(

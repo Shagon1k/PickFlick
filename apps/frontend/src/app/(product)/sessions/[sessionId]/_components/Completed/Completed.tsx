@@ -11,12 +11,7 @@ export default function Completed({ session }: { session: TSession }) {
     return (
         <div className={styles.grid}>
             {session.rating ? (
-                <Rating
-                    sessionId={session.id}
-                    data={session.rating}
-                    isCompleted
-                    isImported={session.type === 'PAST'}
-                />
+                <Rating sessionId={session.id} data={session.rating} isCompleted />
             ) : (
                 <section className={styles.panel}>
                     <h2>Ratings</h2>
@@ -45,6 +40,7 @@ export default function Completed({ session }: { session: TSession }) {
     );
 }
 
+/** A logged Session shows only what was recorded; the header's LOGGED note covers the rest. */
 function ImportedNominations({
     evidence,
     movieId,
@@ -52,53 +48,27 @@ function ImportedNominations({
     evidence: TImportedSelectionOutcome;
     movieId: string | null;
 }) {
-    if (evidence.nominations === null)
-        return (
-            <p>
-                Imported nomination and vote evidence is hidden by this Club’s plan or Session
-                visibility settings.
-            </p>
-        );
-    if (evidence.nominations.length === 0)
-        return (
-            <p>
-                No nomination or Selection score evidence was imported. The original nominations and
-                votes are unknown.
-            </p>
-        );
+    if (evidence.nominations === null) return <p>Votes are hidden for this Session.</p>;
+    if (evidence.nominations.length === 0) return <p>No votes were recorded.</p>;
     return (
-        <>
-            <p>
-                Imported historical evidence · Scale {evidence.scaleMin}–{evidence.scaleMax}.
-            </p>
-            <p>
-                The list and scores may be incomplete. Original submission times and Selection
-                closure are unknown. Recorded totals do not establish a ranking or why this Movie
-                was screened.
-            </p>
-            <ul className={styles.ranking} aria-label="Imported historical nominations">
-                {evidence.nominations.map((row) => (
-                    <li key={row.movie.id}>
-                        <Link href={`/movies/${row.movie.id}`}>
-                            {row.movie.title ?? 'Movie title unavailable'}
-                        </Link>
-                        {row.movie.id === movieId ? (
-                            <span className={styles.winner}>Screened Movie</span>
-                        ) : null}
+        <ul className={styles.ranking} aria-label="Logged nominations">
+            {evidence.nominations.map((row) => (
+                <li key={row.movie.id}>
+                    <Link href={`/movies/${row.movie.id}`}>
+                        {row.movie.title ?? 'Movie title unavailable'}
+                    </Link>
+                    {row.movie.id === movieId ? (
+                        <span className={styles.winner}>Screened Movie</span>
+                    ) : null}
+                    {row.author === null ? null : <p>Nominated by {row.author}</p>}
+                    {row.total === null ? null : (
                         <p>
-                            {row.author === null
-                                ? 'Nominator unknown or hidden.'
-                                : `Nominated by ${row.author}`}
+                            {row.total} total · {formatCount(row.scoreCount, 'score')}
                         </p>
-                        <p>
-                            {row.total === null
-                                ? 'Selection scores unknown.'
-                                : `${row.total} recorded total · ${formatCount(row.scoreCount, 'recorded score')}. Other scores are unknown.`}
-                        </p>
-                    </li>
-                ))}
-            </ul>
-        </>
+                    )}
+                </li>
+            ))}
+        </ul>
     );
 }
 

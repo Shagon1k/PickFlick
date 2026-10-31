@@ -57,7 +57,7 @@ export default function SessionFacts({
                                 .map((participant) => participant.displayName)
                                 .join(' • ') ||
                                 (session.type === 'PAST'
-                                    ? 'No attendance record is available.'
+                                    ? 'Not recorded'
                                     : 'No accepted participants')}
                         </dd>
                     </div>
