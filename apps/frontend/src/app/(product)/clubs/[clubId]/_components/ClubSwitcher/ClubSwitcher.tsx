@@ -2,6 +2,7 @@
 
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
@@ -28,6 +29,7 @@ export default function ClubSwitcher({
 }) {
     const [isCreating, setIsCreating] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
     const choices = clubs.some(({ id }) => id === current.id) ? clubs : [current, ...clubs];
     const currentIndex = choices.findIndex(({ id }) => id === current.id);
     const index = isCreating ? choices.length : currentIndex;
@@ -39,7 +41,11 @@ export default function ClubSwitcher({
         if (!club || club.id === current.id) return;
         const form = new FormData();
         form.set('clubId', club.id);
-        startTransition(() => selectClubAction(form));
+        // A redirect from the action would scroll to the new Hub segment; the switcher stays put.
+        startTransition(async () => {
+            const href = await selectClubAction(form);
+            router.push(href, { scroll: false });
+        });
     }
     const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
     const handlePrevious = () => select((index + choices.length) % (choices.length + 1));
