@@ -433,4 +433,23 @@ describe('Club invitations', () => {
             ).status,
         ).toBe(201);
     });
+
+    it('should close the links of a Moderator who can no longer invite', async () => {
+        const moderator = await createUser(api.prisma);
+        users.push(moderator);
+        await addMember(api.prisma, clubId, moderator, 'MODERATOR');
+        const response = await api.request(`/clubs/${clubId}/invitations`, {
+            userId: moderator,
+            method: 'POST',
+            json: {},
+        });
+        const { token } = (await response.json()) as ICreatedInvitation;
+        expect((await preview(token)).state).toBe('valid');
+        await api.prisma.membership.updateMany({
+            where: { clubId, userId: moderator },
+            data: { role: 'MEMBER' },
+        });
+        expect(await preview(token)).toEqual({ state: 'revoked' });
+        expect(await respond(token)).toEqual({ state: 'revoked' });
+    });
 });
