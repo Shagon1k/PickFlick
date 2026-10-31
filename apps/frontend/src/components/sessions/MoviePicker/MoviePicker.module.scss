@@ -26,6 +26,26 @@
     box-shadow: var(--shadow-popover);
 }
 
+.searchStatus {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 20;
+    padding: var(--gap-sm) 14px;
+    margin: 0;
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-popover);
+}
+
+.searchStatus:empty {
+    display: none;
+}
+
 .results button {
     display: flex;
     gap: var(--gap-sm);

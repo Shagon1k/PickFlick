@@ -126,6 +126,14 @@ export default function MoviePicker({
                         </button>
                     ))}
                 </div>
+                {/* Searching and empty results show in the results popover; a list speaks for
+                    itself, so then the count is for assistive technology only. */}
+                <p
+                    className={movies.length ? 'visually-hidden' : styles.searchStatus}
+                    role="status"
+                >
+                    {getSearchMessage(term, result)}
+                </p>
             </div>
             {value ? (
                 <Button
@@ -139,10 +147,6 @@ export default function MoviePicker({
                     Remove selected Movie
                 </Button>
             ) : null}
-            {/* Results speak for themselves on screen; the count stays available to assistive tech. */}
-            <p className={movies.length ? 'visually-hidden' : undefined} role="status">
-                {getSearchMessage(term, result)}
-            </p>
             {result && 'data' in result ? <SearchCredits movies={result.data.movies} /> : null}
         </div>
     );
