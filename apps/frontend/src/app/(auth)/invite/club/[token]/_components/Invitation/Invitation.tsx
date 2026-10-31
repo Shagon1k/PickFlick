@@ -14,8 +14,19 @@ import { useIsHydrated } from '#lib/use-is-hydrated';
 import { respondInvitationAction } from '../../actions';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
+/** A closed link shows as a voided ticket; the stamp names why, never which Club. */
+const STAMPS: Partial<Record<TView['state'], string>> = {
+    invalid: 'Void',
+    used: 'Used',
+    expired: 'Expired',
+    revoked: 'Revoked',
+    'over-limit': 'Full',
+    unavailable: 'Paused',
+    declined: 'Declined',
+};
 const messages = {
     invalid: ['Invitation unavailable', 'Ask the Club Admin for a new invitation.'],
+    used: ['Invitation used', 'Someone already used this link. Ask the Club Admin for a new one.'],
     expired: ['Invitation expired', 'This link has expired. Ask the Club Admin for a new one.'],
     revoked: [
         'Invitation revoked',
@@ -86,26 +97,8 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     {failure || description}
                 </p>
             </div>
-            <div className={invite.preview}>
-                {view.state === 'valid' ? (
-                    <>
-                        <h2>{view.clubName}</h2>
-                        <p className={invite.previewMeta}>
-                            <Icon name="members" />
-                            {formatCount(view.memberCount, 'member')}
-                        </p>
-                        <p className={invite.previewMeta}>
-                            <Icon name="profile" />
-                            <span>
-                                Invited by <strong>{view.inviterName}</strong>
-                            </span>
-                        </p>
-                    </>
-                ) : (
-                    <p>
-                        {view.state === 'loading' ? 'Please wait.' : 'Your choice stays private.'}
-                    </p>
-                )}
+            <div className={invite.preview} data-voided={STAMPS[view.state] ? true : undefined}>
+                <PreviewContent view={view} />
             </div>
             <div className={invite.actions}>
                 {view.state === 'valid' ? (
@@ -146,11 +139,39 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     </Button>
                 ) : null}
                 {!['valid', 'loading'].includes(view.state) ? (
-                    <ButtonLink href="/app" variant="ghost">
+                    <ButtonLink href="/app" variant={STAMPS[view.state] ? 'secondary' : 'ghost'}>
                         Back to your Clubs
                     </ButtonLink>
                 ) : null}
             </div>
         </div>
+    );
+}
+
+function PreviewContent({ view }: { view: TView }) {
+    const stamp = STAMPS[view.state];
+    if (stamp)
+        return (
+            <>
+                <span className={invite.voidKicker}>Club invitation</span>
+                <span className={invite.stamp}>{stamp}</span>
+            </>
+        );
+    if (view.state !== 'valid')
+        return <p>{view.state === 'loading' ? 'Please wait.' : 'Your choice stays private.'}</p>;
+    return (
+        <>
+            <h2>{view.clubName}</h2>
+            <p className={invite.previewMeta}>
+                <Icon name="members" />
+                {formatCount(view.memberCount, 'member')}
+            </p>
+            <p className={invite.previewMeta}>
+                <Icon name="profile" />
+                <span>
+                    Invited by <strong>{view.inviterName}</strong>
+                </span>
+            </p>
+        </>
     );
 }

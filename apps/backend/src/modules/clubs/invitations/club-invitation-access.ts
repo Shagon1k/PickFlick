@@ -39,9 +39,9 @@ export async function inspectInvitation(
     });
     if (membership) return buildInspection({ state: 'already-member', clubId: invitation.clubId });
     if (invitation.respondedAt) {
+        // Saying a real link was used reveals nothing about its Club.
         return buildInspection({
-            state:
-                invitation.responderId === userId && !invitation.accepted ? 'declined' : 'invalid',
+            state: invitation.responderId === userId && !invitation.accepted ? 'declined' : 'used',
         });
     }
     if (invitation.club.lifecycle !== 'ACTIVE') return buildInspection({ state: 'unavailable' });

@@ -25,6 +25,14 @@ const titles = {
     invalid: 'Invitation unavailable',
     error: 'Please try again',
 };
+/** A closed link is a voided ticket stamped with the reason. */
+const stamps = {
+    expired: 'Expired',
+    revoked: 'Revoked',
+    full: 'Full',
+    paused: 'Paused',
+    invalid: 'Void',
+} as const;
 const invitationPath = (state: keyof typeof tokens = 'valid') =>
     `/invite/club/${tokens[state].repeat(43)}`;
 
@@ -346,3 +354,14 @@ for (const viewport of screenshotViewports) {
         );
     }
 }
+
+test('Closed Club invitations show a voided ticket stamped with the reason', async ({
+    context,
+    page,
+}) => {
+    await signIn(context, 'stamps');
+    for (const [state, stamp] of Object.entries(stamps)) {
+        await page.goto(invitationPath(state as keyof typeof stamps));
+        await expect(page.getByText(stamp, { exact: true })).toBeVisible();
+    }
+});

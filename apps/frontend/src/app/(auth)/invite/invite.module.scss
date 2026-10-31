@@ -129,6 +129,32 @@
 }
 
 /* One icon-led fact per line in an invitation preview. */
+.preview[data-voided] {
+    position: relative;
+    align-items: center;
+    background: linear-gradient(135deg, var(--surface-lit), var(--surface));
+    border-color: var(--border-lit);
+}
+
+.voidKicker {
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
+
+/* A rubber stamp across the dead ticket, in the danger tone without shouting. */
+.stamp {
+    padding: 4px var(--gap-sm);
+    font: 700 var(--fs-card-title)/1 var(--font-mono);
+    color: var(--danger-text);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    border: 2px solid var(--danger-border);
+    border-radius: var(--radius);
+    transform: rotate(-6deg);
+}
+
 .previewMeta {
     display: inline-flex;
     gap: 6px;

@@ -248,7 +248,7 @@ describe('Club invitations', () => {
                 where: { clubId, action: 'MEMBERSHIP_JOINED' },
             }),
         ).toBe(1);
-        expect(await respond(invitation.token, 'accept', outsider)).toEqual({ state: 'invalid' });
+        expect(await respond(invitation.token, 'accept', outsider)).toEqual({ state: 'used' });
         await api.expectStatus(200, `/clubs/${clubId}/hub`, { userId: recipient });
     });
 

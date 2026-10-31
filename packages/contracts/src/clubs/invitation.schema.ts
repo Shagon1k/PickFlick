@@ -23,7 +23,15 @@ export const invitationPreviewSchema = z.discriminatedUnion('state', [
     }),
     z.object({ state: z.enum(['already-member', 'accepted']), clubId: z.uuid() }),
     z.object({
-        state: z.enum(['invalid', 'expired', 'revoked', 'over-limit', 'unavailable', 'declined']),
+        state: z.enum([
+            'invalid',
+            'used',
+            'expired',
+            'revoked',
+            'over-limit',
+            'unavailable',
+            'declined',
+        ]),
     }),
 ]);
 export type TInvitationPreview = z.infer<typeof invitationPreviewSchema>;
