@@ -1,22 +1,24 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
+import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
-import { assertManager, canManage } from '../session-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
+import { Transactions } from '../../notifications/transactions.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { publishProgress } from '../session-progress.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
 export class RatingService {
-    constructor(private readonly notifications: NotificationTransactions) {}
+    constructor(private readonly transactions: Transactions) {}
 
     async loadRating(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        viewer: { membership: TMembership; canManage: boolean },
     ): Promise<TRating> {
+        const { membership } = viewer;
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
             include: {
@@ -51,7 +53,7 @@ export class RatingService {
                 membership.club.lifecycle === 'ACTIVE' &&
                 own?.status === 'ACCEPTED' &&
                 !own.rating,
-            canClose: isOpen && (await canManage(tx, membership)),
+            canClose: isOpen && viewer.canManage,
             own: own?.rating ? toRating(own.rating) : null,
             results: canSeeResults
                 ? {
@@ -65,11 +67,32 @@ export class RatingService {
         };
     }
 
-    async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+    /** Watching → Rating moves only by hand (ROADMAP); it frees the Club's blocking Session slot. */
+    async open(userId: string, id: string, input: TOpenRating): Promise<void> {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            await assertManager(tx, membership);
+            if (session.phase === 'RATING') return;
+            if (session.phase !== 'WATCHING' || session.phaseVersion !== input.phaseVersion)
+                throw new ConflictException({ reason: 'WATCHING_CHANGED' });
+            // Leaving Watching releases the partial unique index's Club slot in this transaction.
+            await tx.session.update({
+                where: { id },
+                data: {
+                    phase: 'RATING',
+                    phaseVersion: { increment: 1 },
+                    detailsVersion: { increment: 1 },
+                },
+            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_OPENED');
+            await publishProgress(tx, id, 'MANUAL');
+        });
+    }
+
+    async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
+        await this.transactions.write(async (tx) => {
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { rating: true },
@@ -105,21 +128,14 @@ export class RatingService {
     }
 
     async close(userId: string, id: string, input: TCloseRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase === 'COMPLETED') return;
             if (session.phase !== 'RATING' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'RATING_CHANGED' });
             await advanceRating(tx, id, 'MANUAL');
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_RATING_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_CLOSED');
         });
     }
 }

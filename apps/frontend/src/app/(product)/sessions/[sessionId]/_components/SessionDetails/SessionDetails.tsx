@@ -24,15 +24,14 @@ import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatCount } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import Completed from '../Completed/Completed';
 import Nomination from '../Nomination/Nomination';
+import NominationRivals from '../NominationRivals/NominationRivals';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Rating from '../Rating/Rating';
 import Selection from '../Selection/Selection';
-import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
 import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
 
@@ -73,10 +72,8 @@ export default function SessionDetails({
             return (
                 <>
                     <PhaseProgress>
-                        {session.type === 'PAST' ? 'Imported past screening. ' : ''}
-                        Session complete —{' '}
-                        {formatCount(session.rating?.receivedCount ?? 0, 'rating')} received. This
-                        screening record is closed.
+                        This session has ended. The results are available{' '}
+                        <a href="#rating-heading">below</a>.
                     </PhaseProgress>
                     {header(participation)}
                     <ScreeningFilm movie={movie} movieId={session.movieId} />
@@ -94,8 +91,13 @@ export default function SessionDetails({
                         <>
                             <PhaseProgress>
                                 Rating in progress — {rating.submittedCount} of{' '}
-                                {rating.acceptedCount} participants have rated. Rating never blocks
-                                the next Session.
+                                {rating.acceptedCount} members have rated.
+                                {rating.canSubmit ? (
+                                    <>
+                                        {' '}
+                                        Please <a href="#rating-heading">rate</a>.
+                                    </>
+                                ) : null}
                             </PhaseProgress>
                             {header(participation, onKick, onClose)}
                             <ScreeningFilm movie={movie} movieId={session.movieId} />
@@ -114,7 +116,7 @@ export default function SessionDetails({
                 <OpenRating
                     sessionId={session.id}
                     phaseVersion={session.phaseVersion}
-                    canOpen={session.phase === 'WATCHING' && session.canEdit}
+                    canOpen={session.phase === 'WATCHING' && session.canManage}
                 >
                     {(onOpen) => (
                         <>
@@ -154,7 +156,7 @@ export default function SessionDetails({
                     phaseVersion={session.phaseVersion}
                     submittedCount={selection.submittedCount}
                     acceptedCount={selection.acceptedCount}
-                    canClose={session.canEdit && selection.nominations.length > 0}
+                    canClose={session.canManage && selection.nominations.length > 0}
                 >
                     {(onClose) => (
                         <Selection
@@ -174,8 +176,12 @@ export default function SessionDetails({
                     <>
                         {renderPhase(participation, onKick)}
                         {session.selectionOutcome?.source === 'LIVE' &&
+                        session.selectionOutcome.breakdown &&
                         session.phase !== 'COMPLETED' ? (
-                            <SelectionOutcome data={session.selectionOutcome} />
+                            <NominationRivals
+                                outcome={session.selectionOutcome}
+                                breakdown={session.selectionOutcome.breakdown}
+                            />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">
                             <SprocketDivider variant="section" />
@@ -218,7 +224,7 @@ function ScreeningFilm({
             <div className={styles.film}>
                 <MovieMedia
                     filmHref={movieId ? `/movies/${movieId}` : undefined}
-                    hidePhonePoster
+                    shouldHidePhonePoster
                     movie={movie}
                     title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
                 />

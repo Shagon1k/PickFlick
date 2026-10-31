@@ -43,7 +43,7 @@ export class MovieImagesService {
         if (!url) return null;
         const key = createHash('sha256').update(url).digest('hex');
         const objectKey = `movie-images/${key}`;
-        if (await this.storage.get(objectKey)) return `/api/movies/images/${key}`;
+        if (await this.storage.exists(objectKey)) return `/api/movies/images/${key}`;
         let body: Buffer;
         let contentType: string;
         try {

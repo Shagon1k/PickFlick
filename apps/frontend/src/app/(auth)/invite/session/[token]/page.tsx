@@ -14,8 +14,8 @@ import Icon from '#components/ui/Icon/Icon';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
 
+import styles from '../../invite.module.scss';
 import Invitation from './_components/Invitation/Invitation';
-import styles from './page.module.scss';
 
 export const metadata: Metadata = {
     title: 'Session invitation — PickFlick',

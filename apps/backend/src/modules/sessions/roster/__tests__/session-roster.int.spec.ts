@@ -12,9 +12,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { readRoster } from '../session-roster-projection.js';
 
 const unavailable = { state: 'unavailable' };
@@ -147,9 +147,7 @@ describe('Session roster', () => {
                 })
             ).status,
         ).toBe(401);
-        expect(
-            (await api.request(`/sessions/${sessionId}/roster`, { userId: outsider })).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}/roster`, { userId: outsider });
         await api.request(`/clubs/${clubId}/leave`, {
             userId: member,
             method: 'POST',
@@ -269,6 +267,30 @@ describe('Session roster', () => {
             }),
         ).toBe(1);
     });
+    it('should let Moderators remove only Members, and nobody the Admin', async () => {
+        const join = (userId: string) =>
+            api.request(`/sessions/${sessionId}/participation`, {
+                userId,
+                method: 'POST',
+                json: { decision: 'accept' },
+            });
+        for (const userId of [admin, moderator, member])
+            expect((await join(userId)).status).toBe(200);
+        const idOf = async (userId: string) =>
+            (
+                await api.prisma.sessionParticipant.findFirstOrThrow({
+                    where: { sessionId, membership: { userId } },
+                })
+            ).id;
+        const removable = (await roster(moderator)).participants
+            .filter((participant) => participant.canRemove)
+            .map((participant) => participant.id);
+        expect(removable).toEqual([await idOf(member)]);
+        expect((await remove(await idOf(admin))).status).toBe(403);
+        expect((await remove(await idOf(moderator), admin)).status).toBe(204);
+        expect((await remove(await idOf(member))).status).toBe(204);
+    });
+
     it('should return the progress version from the roster snapshot across a departure', async () => {
         const invitation = await createInvite();
         await respond(invitation.token);

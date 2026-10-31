@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { getSessionState, isAppleSignInEnabled } from '#api/session.server';
+import { getSessionState, isAppleSignInEnabled } from '#api/auth-session.server';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Icon from '#components/ui/Icon/Icon';
@@ -54,14 +54,14 @@ export default async function LoginPage({
                 />
                 <div className={styles.card}>
                     <h1 id="login-title">Welcome to PickFlick</h1>
-                    <p className={styles.lead}>Sign in to join your group&apos;s screening room.</p>
+                    <p className={styles.lead}>Sign in to join your Club&apos;s screening room.</p>
                     {errorMessage ? (
                         <p className={styles.errorBanner} role="alert">
                             {errorMessage}
                         </p>
                     ) : null}
                     {session === 'unavailable' ? <RetryButton /> : null}
-                    <LoginActions appleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
+                    <LoginActions isAppleSignInEnabled={isAppleEnabled} returnTo={returnTo} />
                     <p className={styles.legal}>
                         By continuing, you agree to PickFlick&apos;s{' '}
                         <Link href="/legal/terms">Terms of Service</Link> and{' '}

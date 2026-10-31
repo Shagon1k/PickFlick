@@ -1,14 +1,4 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Header,
-    HttpCode,
-    HttpStatus,
-    Param,
-    ParseUUIDPipe,
-    Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import {
     createInvitationSchema,
     invitationDecisionSchema,
@@ -19,30 +9,26 @@ import {
     type TRespondInvitation,
 } from '@pickflick/contracts';
 
-import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
+import { UUID_PARAM, ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
 import type { IAuthUser } from '../../auth/auth.types.js';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { ClubInvitationsService } from './club-invitations.service.js';
-
-const uuid = new ParseUUIDPipe({ version: '4' });
 
 @Controller()
 export class ClubInvitationsController {
     constructor(private readonly invitations: ClubInvitationsService) {}
 
     @Post('clubs/:clubId/invitations')
-    @Header('Cache-Control', 'private, no-store')
     create(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuid) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
         @Body(new ZodValidationPipe(createInvitationSchema)) input: TCreateInvitation,
     ) {
         return this.invitations.create(user.id, clubId, input);
     }
 
     @Get('clubs/:clubId/invitations')
-    @Header('Cache-Control', 'private, no-store')
-    list(@CurrentUser() user: IAuthUser, @Param('clubId', uuid) clubId: string) {
+    list(@CurrentUser() user: IAuthUser, @Param('clubId', UUID_PARAM) clubId: string) {
         return this.invitations.list(user.id, clubId);
     }
 
@@ -50,24 +36,22 @@ export class ClubInvitationsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     revoke(
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', uuid) clubId: string,
-        @Param('inviteId', uuid) inviteId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
+        @Param('inviteId', UUID_PARAM) inviteId: string,
     ) {
         return this.invitations.revoke(user.id, clubId, inviteId);
     }
 
     @Get('club-invitations/pending')
-    @Header('Cache-Control', 'private, no-store')
     listPending(@CurrentUser() user: IAuthUser) {
         return this.invitations.listPending(user.id);
     }
 
     @Post('club-invitations/:inviteId/respond')
     @HttpCode(HttpStatus.OK)
-    @Header('Cache-Control', 'private, no-store')
     respondPending(
         @CurrentUser() user: IAuthUser,
-        @Param('inviteId', uuid) inviteId: string,
+        @Param('inviteId', UUID_PARAM) inviteId: string,
         @Body(new ZodValidationPipe(invitationDecisionSchema)) input: TInvitationDecision,
     ) {
         return this.invitations.respondPending(user.id, inviteId, input);
@@ -75,7 +59,6 @@ export class ClubInvitationsController {
 
     @Post('club-invitations/preview')
     @HttpCode(HttpStatus.OK)
-    @Header('Cache-Control', 'private, no-store')
     preview(
         @CurrentUser() user: IAuthUser,
         @Body(new ZodValidationPipe(previewInvitationSchema))
@@ -86,7 +69,6 @@ export class ClubInvitationsController {
 
     @Post('club-invitations/respond')
     @HttpCode(HttpStatus.OK)
-    @Header('Cache-Control', 'private, no-store')
     respond(
         @CurrentUser() user: IAuthUser,
         @Body(new ZodValidationPipe(respondInvitationSchema)) input: TRespondInvitation,

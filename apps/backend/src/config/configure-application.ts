@@ -13,8 +13,10 @@ const TRUSTED_PROXY_HOPS = 2;
 /**
  * Next.js does not add its own headers to responses it proxies, so the API sends its own. API
  * responses are data, never a page, so their policy allows nothing to load or frame them.
+ * Responses are personal and never cached; a route that may be cached sets its own Cache-Control.
  */
 const API_SECURITY_HEADERS = {
+    'Cache-Control': 'private, no-store',
     'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
     'Referrer-Policy': 'no-referrer',
     'Strict-Transport-Security': 'max-age=31536000',

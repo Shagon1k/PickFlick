@@ -115,7 +115,7 @@ specs run directly; feature baseline updates select their area too. Shared compo
 layouts, UI fixtures, contracts, configuration, dependencies, the selector and CI changes run all
 smoke and visual checks. Unmapped frontend or UI test paths also run both full selections.
 Documentation/backend-only changes skip mock UI checks; the other CI jobs still run.
-The shared authentication adapter `src/api/session.server.ts` runs both full selections.
+The shared authentication adapter `src/api/auth-session.server.ts` runs both full selections.
 A selected area with no tests carrying that suite's tag succeeds without starting the app.
 The Git comparison trusts only the current checkout directory for that command because the CI
 container user differs from the checkout owner. It does not change stored Git configuration.

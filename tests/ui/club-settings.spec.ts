@@ -1,22 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/settings`;
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, token);
 }
 
 async function open(
@@ -183,7 +175,6 @@ for (const state of ['admin-over-limit', 'adminless']) {
             const card = page.getByRole('dialog', { name: 'Invite to this Club' });
             await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
             // Opening the dialog loads the recent invitations.
-            await expect(card.getByRole('status')).toHaveText('Recent invitations loaded.');
             await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
             // Mantine fades dialogs in; axe would measure contrast through the partial opacity.
             await expect(card).toHaveCSS('opacity', '1');
@@ -306,3 +297,10 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         },
     );
 }
+
+test('Delete Club is offered only while the Club has no Sessions', async ({ context, page }) => {
+    await authenticate(context, 'valid-settings-history');
+    await open(page, { width: 1440, height: 900 });
+    await expect(page.getByRole('button', { name: 'Archive Club' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete Club' })).toHaveCount(0);
+});

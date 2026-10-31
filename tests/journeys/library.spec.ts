@@ -4,14 +4,14 @@ import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/cata
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { buildCanonicalDetails } from '../../apps/backend/src/testing/movie-fixtures.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import { createDatabaseClient } from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 test('Library filters, pages and Movie mutations persist through the real API', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
     const environment = loadRuntimeEnvironment();
-    const prisma = createDatabaseClient(environment.databaseUrl);
+    const { prisma } = backend;
     const userId = await backend.createUser('Library viewer');
     const otherUserId = await backend.createUser('Other viewer');
     const movies = await prisma.movie.createManyAndReturn({
@@ -21,7 +21,9 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         })),
     });
     const movie = movies.find((item) => item.title === 'Library journey 00')!;
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const context = await openVisitor(browser, backend, userId, {
+        viewport: { width: 1440, height: 900 },
+    });
     try {
         await prisma.personalMovieRating.createMany({
             data: movies.map((item) => ({
@@ -50,7 +52,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
                 },
             },
         });
-        await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
         const page = await context.newPage();
         await page.goto('/library?sort=title');
         await expect(page.getByRole('row')).toHaveCount(26);
@@ -58,7 +59,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await expect(statistics.locator('dd')).toHaveText([
             '28',
             '28',
-            '8',
+            '8.0',
             '—',
             '28',
             '—',
@@ -71,7 +72,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByLabel('Search rated films').fill('Library journey 00');
         await page.getByRole('combobox', { name: 'Rating', exact: true }).click();
         await page.getByRole('option', { name: '8/10', exact: true }).click();
-        await page.getByRole('button', { name: 'Apply', exact: true }).click();
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(statistics.locator('dd').first()).toHaveText('28');
         await expect(page.getByText('Page 1 of 1')).toBeVisible();
@@ -80,7 +80,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
         await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
         await expect(
             page.getByText('No films match your search or filters.', { exact: false }),
         ).toBeVisible();
@@ -114,9 +113,8 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         ).toMatchObject({ score: 2 });
     } finally {
         await context.close();
-        await prisma.user.deleteMany({ where: { id: { in: [userId, otherUserId] } } });
-        await prisma.movie.deleteMany({ where: { id: { in: movies.map((item) => item.id) } } });
-        await prisma.$disconnect();
+        await backend.removeUsers([userId, otherUserId]);
+        await backend.removeMovies(movies.map((item) => item.id));
         await backend.close();
     }
 });

@@ -9,11 +9,12 @@ import {
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
-import { recordAudit } from '../../clubs/access/club-access.js';
+import { removeUsers } from '../../../testing/remove-users.js';
+import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
 import { publishProgress } from '../../sessions/session-progress.js';
 import { recordAchievementNotifications } from '../notification-producers.js';
 import { resolveNotification } from '../notification-resolver.js';
@@ -58,11 +59,8 @@ describe('Notifications', () => {
     it('should expose an authenticated owner-only strict preference matrix with mandatory exceptions', async () => {
         const initial = await getPreferences();
         expect(initial.items.map((item) => item.event)).toEqual(NOTIFICATION_EVENTS);
-        expect((await api.request(preferencesPath)).status).toBe(401);
-        expect(
-            (await api.request(`${preferencesPath}?userId=${users[1]}`, { userId: users[0] }))
-                .status,
-        ).toBe(400);
+        await api.expectStatus(401, preferencesPath);
+        await api.expectStatus(400, `${preferencesPath}?userId=${users[1]}`, { userId: users[0] });
         for (const body of [
             { event: 'UNKNOWN', inApp: true, email: true },
             { event: 'SESSION_STARTED', inApp: 'true', email: true },
@@ -90,7 +88,7 @@ describe('Notifications', () => {
             api.prisma.notificationPreference.create({
                 data: { userId: users[1]!, event: 'BILLING_SERVICE', inApp: true, email: false },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('NotificationPreference_check');
     });
 
     it('should deduplicate concurrent events and preserve channel decisions across preference edits and retries', async () => {
@@ -115,14 +113,10 @@ describe('Notifications', () => {
         expect(new Set(results.map((row) => row!.id)).size).toBe(1);
         expect(notification).toMatchObject({ inApp: false, email: true });
         expect(
-            await api.prisma.notificationDeliveryAttempt.findMany({
+            await api.prisma.notificationEmailDelivery.findMany({
                 where: { notificationId: notification.id },
-                orderBy: { channel: 'asc' },
             }),
-        ).toMatchObject([
-            { channel: 'IN_APP', attempt: 1, status: 'SUPPRESSED' },
-            { channel: 'EMAIL', attempt: 1, status: 'PENDING' },
-        ]);
+        ).toMatchObject([{ status: 'PENDING', attemptCount: 0 }]);
         await updatePreference({ event: 'SESSION_STARTED', inApp: true, email: false });
         expect(await api.prisma.$transaction((tx) => recordNotification(tx, input))).toEqual(
             notification,
@@ -136,16 +130,11 @@ describe('Notifications', () => {
             recordNotification(tx, { ...input, recipientId: users[1]! }),
         );
         expect(other!.id).not.toBe(notification.id);
-        await expect(
-            api.prisma.notificationDeliveryAttempt.create({
-                data: {
-                    notificationId: notification.id,
-                    channel: 'EMAIL',
-                    attempt: 1,
-                    status: 'PENDING',
-                },
+        expect(
+            await api.prisma.notificationEmailDelivery.count({
+                where: { notificationId: { in: [notification.id, next!.id] } },
             }),
-        ).rejects.toThrow();
+        ).toBe(1);
         await expect(
             api.prisma.$transaction(async (tx) => {
                 await tx.club.update({
@@ -173,7 +162,7 @@ describe('Notifications', () => {
                     occurrence: 4,
                 });
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Notification_check2');
         expect(
             (await api.prisma.club.findUniqueOrThrow({ where: { id: clubId } })).description,
         ).toBeNull();
@@ -186,7 +175,7 @@ describe('Notifications', () => {
             json: {
                 type: 'FULL_CYCLE',
                 movieId: null,
-                scheduledAt: '2026-12-01T19:00:00Z',
+                scheduledAt: '2090-12-01T19:00:00Z',
                 location: 'PRIVATE LOCATION',
                 notes: 'PRIVATE NOTES',
                 deadlineAt: null,
@@ -271,6 +260,74 @@ describe('Notifications', () => {
             where: { id: clubId },
             data: { deletedAt: null, lifecycle: 'ACTIVE' },
         });
+    });
+
+    it('should keep the Membership-ended notice readable after the member leaves the Club', async () => {
+        await api.prisma.$transaction((tx) =>
+            recordAudit(tx, {
+                clubId,
+                actorUserId: users[0]!,
+                subjectUserId: users[1]!,
+                subjectMembershipId: memberId,
+                action: 'MEMBERSHIP_REMOVED',
+            }),
+        );
+        await api.prisma.membership.update({
+            where: { id: memberId },
+            data: { status: 'REMOVED', leftAt: new Date() },
+        });
+        const row = await api.prisma.notification.findFirstOrThrow({
+            where: { recipientId: users[1], event: 'MEMBERSHIP_REMOVED' },
+        });
+        const resolved = await resolveNotification(api.prisma, users[1]!, row.id);
+        expect(resolved).toMatchObject({
+            message: 'Your Club Membership has ended.',
+            href: null,
+        });
+        expect(JSON.stringify(resolved)).not.toContain(clubId);
+        await api.prisma.membership.update({
+            where: { id: memberId },
+            data: { status: 'ACTIVE', leftAt: null },
+        });
+    });
+
+    it('should notify both sides of an Admin transfer and every active member of a lifecycle change', async () => {
+        const record = (event: Omit<TAuditEvent, 'clubId' | 'actorUserId'>) =>
+            api.prisma.$transaction((tx) =>
+                recordAudit(tx, { clubId, actorUserId: users[0]!, ...event }),
+            );
+        await record({
+            subjectUserId: users[1]!,
+            subjectMembershipId: memberId,
+            action: 'ADMIN_TRANSFERRED',
+            previousRole: 'MEMBER',
+            nextRole: 'ADMIN',
+        });
+        const admin = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: users[0] },
+        });
+        await record({
+            subjectUserId: users[0]!,
+            subjectMembershipId: admin.id,
+            action: 'CLUB_ARCHIVED',
+            previousLifecycle: 'ACTIVE',
+            nextLifecycle: 'ARCHIVED',
+        });
+        const audits = await api.prisma.clubAuditEvent.findMany({
+            where: { clubId, action: { in: ['ADMIN_TRANSFERRED', 'CLUB_ARCHIVED'] } },
+        });
+        const sourceOf = (action: string) => audits.find((audit) => audit.action === action)!.id;
+        const members = users.slice(0, 2).toSorted((a, b) => a.localeCompare(b));
+        expect(
+            await findNotifiedUsers(
+                api.prisma,
+                sourceOf('ADMIN_TRANSFERRED'),
+                'MEMBERSHIP_ROLE_CHANGED',
+            ),
+        ).toEqual(members);
+        expect(
+            await findNotifiedUsers(api.prisma, sourceOf('CLUB_ARCHIVED'), 'CLUB_ARCHIVED'),
+        ).toEqual(members);
     });
 
     it('should target private awards only to managers and recheck roles, owners and deleted awards', async () => {
@@ -373,7 +430,7 @@ describe('Notifications', () => {
             api.prisma.$transaction((tx) =>
                 recordNotification(tx, { ...input, event: 'SESSION_STARTED' }),
             ),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Notification_check2');
         await api.prisma.user.update({ where: { id: users[2] }, data: { status: 'SUSPENDED' } });
         expect(
             await api.prisma.$transaction((tx) =>

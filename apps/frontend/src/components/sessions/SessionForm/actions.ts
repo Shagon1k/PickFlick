@@ -18,8 +18,10 @@ const SAVE_FAILURE: IFailureCopy = {
         SESSION_CHANGED: 'This Session changed. Reload to see the latest details before editing.',
         SESSION_CLOSED: 'This Session is closed. Reload to view its current state.',
         CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
-        MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
+        MOVIE_UNAVAILABLE: 'That film is unavailable. Choose another one.',
         DEADLINE_PAST: 'The nomination deadline has passed. Choose a new deadline.',
+        SCHEDULED_PAST: 'Choose today or a later date.',
+        DEADLINE_AFTER_SCREENING: 'Nomination must end before the screening day is over.',
     },
     statuses: [
         [

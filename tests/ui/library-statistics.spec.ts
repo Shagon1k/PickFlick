@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -13,14 +14,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-library-stats-final-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-library-stats-final-${width}`);
                 const page = await context.newPage();
                 await page.goto('/library?q=Grand&score=8');
                 const statistics = page.getByRole('region', {
@@ -29,7 +23,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 });
                 await expect(statistics.locator('dt')).toHaveCount(8);
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
-                await expect(statistics.locator('dd').nth(2)).toHaveText('8');
+                await expect(statistics.locator('dd').nth(2)).toHaveText('8.0');
                 await expect(
                     statistics.getByText('DirectorWithAVeryLongUnbrokenName'.repeat(4)),
                 ).toBeVisible();
@@ -63,14 +57,14 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
                 await page.goto('/library');
                 await page.getByLabel('Search rated films').fill('Grand');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
+                await expect(page).toHaveURL(/q=Grand/u);
                 await page
                     .getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' })
                     .focus();
                 await page.keyboard.press('Enter');
                 const dialog = page.getByRole('dialog');
                 await dialog.getByRole('radio', { name: '10 of 10', exact: true }).check();
-                await dialog.getByRole('button', { name: 'Save rating', exact: true }).tap();
                 await expect(dialog).toHaveCount(0);
                 await expect(statistics.locator('dd').nth(2)).toHaveText('8.1');
             } finally {
@@ -84,14 +78,7 @@ test(
     'Personal statistics timeouts preserve the Library table and filters',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-statistics-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-statistics-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics unavailable' }),
@@ -105,7 +92,7 @@ test(
         await expect(page.getByRole('table')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(page.getByLabel('Search rated films')).toHaveValue('Grand');
-        await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
+        await expect(page.getByLabel('Search rated films')).toBeEnabled();
     },
 );
 
@@ -135,14 +122,7 @@ test(
     'Library starts statistics and tab content concurrently',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-parallel-library',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-parallel-library');
         await page.goto('/library');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),
@@ -155,14 +135,7 @@ test(
     'Library table timeouts preserve statistics and show the existing recovery state',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-table-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-table-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),

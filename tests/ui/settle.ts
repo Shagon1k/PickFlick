@@ -6,6 +6,17 @@ import type { Page } from '@playwright/test';
  * after `goto`.
  */
 export async function settle(page: Page) {
+    // The pending-invites ticket slides in only after its invitations load, so it may start
+    // moving after the animations below are counted: wait until it has loaded and come to rest.
+    await page.waitForFunction(() => {
+        const ticket = globalThis.document.querySelector('[data-invite-ticket]');
+        if (!ticket) return true;
+        const isShown = ticket.hasAttribute('data-shown');
+        // A failed load also shows the ticket, with "—" in place of the count.
+        const isLoaded =
+            isShown || ticket.querySelector('[data-invite-count]')?.textContent !== '—';
+        return isLoaded && (!isShown || getComputedStyle(ticket).right === '0px');
+    });
     await page.evaluate(async () => {
         await globalThis.document.fonts.ready;
         // A lazy image hidden at this width (such as the Session poster) never loads, so skip it.

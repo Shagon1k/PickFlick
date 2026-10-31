@@ -21,13 +21,7 @@ participant bound to its Session, Membership, and Club. Session participants and
 invites use composite foreign keys to stay within one Club. Current API workflows enforce authorization, participation and invite responses; these internal
 persistence helpers do not replace those checks.
 
-`src/__tests__/session.int.spec.ts` proves concurrent blocking creation/transitions, Rating
-coexistence, settings snapshots, roster serialization/rollback, and member-only invite storage.
-
-Migration 25 adds Session `selectionResult` JSON and `SESSION_SELECTION_CLOSED`. Closure stores
-the inputs, ranking and explanation with the selected Movie in one transaction. A PostgreSQL
-trigger freezes the saved snapshot and selected Movie; existing history is not backfilled.
-
-Migration 26 adds `SESSION_RATING_OPENED`. The manual Watching → Rating API writes the phase,
-audit and progress event atomically; the existing blocking-Session index releases the Club slot
-at commit. No table or existing history changes.
+Invariants that live in the SQL migrations (constraints, triggers and partial indexes) are tested
+in `src/__tests__/constraints.int.spec.ts`, `src/__tests__/session.int.spec.ts` and the integration
+specs of the backend module that owns each table. Each check names the constraint or trigger
+message it expects.

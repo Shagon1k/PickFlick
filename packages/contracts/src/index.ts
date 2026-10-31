@@ -7,6 +7,8 @@ export * from './clubs/ratings.schema.js';
 export * from './common/errors.js';
 export * from './common/health.js';
 export * from './common/http-status.js';
+export * from './common/pagination.js';
+export * from './common/rating-scale.js';
 export * from './common/text.js';
 export * from './contact/contact.schema.js';
 export * from './movies/library.schema.js';

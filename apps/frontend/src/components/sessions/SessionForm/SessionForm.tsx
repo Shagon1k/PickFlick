@@ -8,7 +8,7 @@ import {
     type TSession,
 } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
@@ -18,8 +18,9 @@ import Switch from '#components/ui/Switch/Switch';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '#lib/form-errors';
-import { formatUtcDateTime } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import { formatInstant } from '#lib/format';
+import { useActionStatus } from '#lib/use-action-status';
+import { useViewerTimeZone } from '#lib/use-is-hydrated';
 
 import { saveSessionAction } from './actions';
 import {
@@ -49,41 +50,33 @@ export default function SessionForm({
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
+    const { message, setMessage, isPending, run } = useActionStatus();
+    const timeZone = useViewerTimeZone();
     const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
         initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
     });
     function save(values: ISessionValues, element?: HTMLFormElement) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
         const input = buildSessionInput(values, getNextDeadline(values, session), session);
-        setMessage('Saving Session…');
-        startTransition(async () => {
-            const result = await saveSessionAction(clubId, session?.id ?? null, input).catch(
-                () => ({
-                    ok: false as const,
-                    message:
-                        'We could not reach PickFlick. Your entries are still here; try again.',
-                }),
-            );
-            if (!result.ok) {
-                setMessage(result.message);
-                focusFirstInvalid(element);
-                return;
-            }
-            setMessage(session ? 'Session details saved.' : 'Session created.');
-            if (!session) {
-                setCreated(result.session);
-                return;
-            }
-            onSaved?.();
-            router.refresh();
+        run(() => saveSessionAction(clubId, session?.id ?? null, input), {
+            pendingMessage: 'Saving Session…',
+            unreachableMessage:
+                'We could not reach PickFlick. Your entries are still here; try again.',
+            onResult: (result) => {
+                if (!result.ok) {
+                    setMessage(result.message);
+                    focusFirstInvalid(element);
+                    return;
+                }
+                setMessage(session ? 'Session details saved.' : 'Session created.');
+                if (!session) {
+                    setCreated(result.session);
+                    return;
+                }
+                onSaved?.();
+                router.refresh();
+            },
         });
     }
     const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) =>
@@ -163,12 +156,8 @@ export default function SessionForm({
                     label="Nomination phase ends in"
                     labelHint="optional"
                     maxLength={DURATION_INPUT_LENGTH}
-                    placeholder="hh:mm"
-                    hint={
-                        session?.deadlineAt
-                            ? `Current deadline: ${formatUtcDateTime(session.deadlineAt)}. Leave blank to keep it.`
-                            : 'hh:mm from now. Leave blank for no deadline.'
-                    }
+                    placeholder="hh:mm from now"
+                    hint={describeDeadline(session?.deadlineAt, timeZone)}
                 />
             ) : null}
             {session?.phase === 'NOMINATION' && session.deadlineAt ? (
@@ -285,4 +274,9 @@ function SessionResult({ session }: { session: TSession }) {
             <ButtonLink href={`/clubs/${session.clubId}`}>Back to Club Hub</ButtonLink>
         </div>
     );
+}
+
+function describeDeadline(deadlineAt: string | null | undefined, timeZone: string | undefined) {
+    if (!deadlineAt) return undefined;
+    return `Ends ${formatInstant(deadlineAt, 'dateTime', timeZone)}. Leave blank to keep it.`;
 }

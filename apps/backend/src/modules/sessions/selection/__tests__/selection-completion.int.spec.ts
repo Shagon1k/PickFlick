@@ -7,10 +7,11 @@ import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Selection completion', () => {
     let api: ITestApi;
@@ -132,6 +133,9 @@ describe('Selection completion', () => {
                 reason: 'TOTAL',
             });
             expect((await events()).filter((event) => event.phase === 'WATCHING')).toHaveLength(1);
+            expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_CLOSED')).toEqual(
+                users.slice(0, 2).toSorted((a, b) => a.localeCompare(b)),
+            );
             expect((await close()).status).toBe(201);
             expect((await close(users[2])).status).toBe(201);
             expect((await submit(users[1])).status).toBe(409);
@@ -228,10 +232,10 @@ describe('Selection completion', () => {
         ).toBe(204);
         await leave();
         expect(await state()).toMatchObject({ phase: 'SELECTION', selectionResult: null });
-        expect(
-            (await api.request(`/clubs/${clubId}/reactivate`, { method: 'POST', userId: users[0] }))
-                .status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/reactivate`, {
+            method: 'POST',
+            userId: users[0],
+        });
         expect(await state()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
     });
 
@@ -322,14 +326,14 @@ describe('Selection completion', () => {
         expect((await state()).selectionResult).toEqual(saved.selectionResult);
         await expect(
             api.prisma.session.update({ where: { id: sessionId }, data: { selectionResult: {} } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         await expect(
             api.prisma
                 .$executeRaw`UPDATE "Session" SET "selectionResult" = NULL WHERE id = ${sessionId}::uuid`,
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         await expect(
             api.prisma.session.update({ where: { id: sessionId }, data: { movieId: movieIds[1] } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Selection result and winner are immutable');
         const response = await api.request(`/sessions/${sessionId}`, { userId: users[1] });
         const body: unknown = await response.json();
         expect(sessionSchema.parse(body).selection).toBeNull();

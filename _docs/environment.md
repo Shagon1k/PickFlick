@@ -22,7 +22,7 @@ variable, never its value.
 | `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                          | No     |
 | `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                               | No     |
 | `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                                    | Yes    |
-| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode, blank in local/test/preview.                                 | Yes    |
+| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode and by the deploy Compose file, blank in local/test/preview.  | Yes    |
 | `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                      | No     |
 | `CONTACT_DELIVERY_TO`                              | Contact and final email-failure alert inbox: `hello@pick-flick.app` in production; approved test inbox in UAT.                 | Yes\*  |
 | `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                          | No     |
@@ -137,11 +137,12 @@ toolchain:
   Vitest, workspace build, artifact drift.
 - **Integration** — `pnpm deploy:check`, isolated PostgreSQL, Redis and MinIO, migrations, seed,
   `pnpm test:integration`, `pnpm test:e2e` against the built frontend and backend, and
-  `pnpm test:journeys` (browser journeys through the real web app and API). CI layers
-  `compose.ci.yaml` over the local file; both use the same pinned MinIO images.
+  `pnpm test:journeys` (browser journeys through the real web app and API). CI starts the same
+  `compose.local.yaml` services as local development.
 - **UI** — one matrix job on the digest-pinned Linux Playwright image. PRs run `smoke`
   (`pnpm test:ui:smoke`: security headers, CSP, public accessibility and interaction, product
-  navigation, 1024px overflow). `main` pushes and manual runs run `contract`
+  navigation, 1024px overflow) and `visual` for the affected areas (see
+  [UI quality](ui-quality.md)). `main` pushes and manual runs run `contract`
   (`pnpm test:ui:contract`: accessibility, interaction, CSP, responsive behavior) and `visual`
   (`pnpm test:ui:visual`). Failures upload screenshots, diffs, traces, and the HTML report.
 - **Images** — `pnpm build:images`.
@@ -159,20 +160,19 @@ forces the fixed version; remove the entry once Prisma catches up.
 ## Images and Compose
 
 `Dockerfile` builds four targets from the locked workspace: `frontend` (Next.js standalone, port
-3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), `worker` (backend package, independent deadline entrypoint, no public port), and `release` (runs
+3000), `backend` (NestJS, port 3001, exports the embedded `SOURCE_REVISION`), `worker` (backend package with the deadline and email worker entrypoints, no public port), and `release` (runs
 migrations, then the required seed step). `pnpm build:images` builds them from a clean checkout and tags them
 with the short revision.
 
 | File                   | Purpose                                                                                                                                              |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `compose.local.yaml`   | Local PostgreSQL, Redis and MinIO.                                                                                                                   |
-| `compose.ci.yaml`      | MinIO image and health-check overrides for isolated CI integration, matching the local and preview pins.                                             |
-| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.                              |
+| `compose.deploy.yaml`  | UAT and production: `release`, `backend`, `worker`, `email-worker`, `frontend` and ephemeral Redis. Dokploy manages PostgreSQL/storage.              |
 | `compose.preview.yaml` | Pre-UAT previews: the same app plus PostgreSQL, Redis and MinIO, `preview` email, loopback ports `PREVIEW_BACKEND_PORT` and `PREVIEW_FRONTEND_PORT`. |
 
 Local and preview MinIO use the exact digest-pinned `cgr.dev/chainguard/minio` and
-`cgr.dev/chainguard/minio-client` pair already selected in `compose.ci.yaml`, replacing the
-inaccessible Quay release tags. Sharing these pins keeps CI, local development, and previews on
+`cgr.dev/chainguard/minio-client` pair, replacing the inaccessible Quay release tags. CI uses
+`compose.local.yaml` too. Sharing these pins keeps CI, local development, and previews on
 the same tested storage binaries. These are
 [Chainguard's Wolfi-based MinIO images](https://edu.chainguard.dev/chainguard/containers/getting-started/web-and-data-services/minio/);
 their OCI labels identify Chainguard as vendor and link its image sources.
@@ -219,8 +219,8 @@ not supply Apple values while `APPLE_SIGN_IN_ENABLED=false`.
 The worker validates `APP_ENV` and `DATABASE_URL` through the database schema, plus `REDIS_URL`
 through the notification signal schema. Database-only migration tools do not require Redis.
 Run `pnpm start:worker` after building and migrating; `pnpm dev` and `pnpm start` include the worker.
-`pnpm test:worker` checks built-process overdue decisions, restart idempotence and graceful shutdown
-against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
+`pnpm test:worker` starts and stops the built email worker, then checks deadline overdue decisions,
+restart idempotence and graceful shutdown against a positively identified local/test database. CI runs it after migration, seeding and integration tests.
 
 The worker polls every five seconds and processes database-only transactions sequentially.
 `deadline.cycle` records each cycle's due count; `deadline.outcome` and `deadline.stale` identify
@@ -232,16 +232,16 @@ Archived Clubs pause. Completed empty decisions are preserved until the deadline
 Compose checks `/tmp/pickflick-deadline-worker` every five seconds; a heartbeat older than thirty
 seconds fails health. The worker writes it after a completed cycle, with mode 0600 and symlink following
 disabled. Each container has its own tmpfs. SIGTERM/SIGINT stop new work and finish the current
-transaction before Prisma disconnects. Decision/recipient records are durable intent; notification
-transport and inbox delivery are not implemented.
+transaction before Prisma disconnects. Decision and recipient records are durable intent that the
+inbox and the email worker deliver.
 
 ## Session progress
 
 `GET /sessions/:sessionId/progress` returns the committed progress version to current Club members
 with `Cache-Control: private, no-store`. The Session page polls it every five seconds while visible
 and on focus and online events; a failed poll shows feedback and the next poll retries.
-Migration 19 must precede updated API and worker images. There is no new service, runtime variable
-or notification transport; the PostgreSQL outbox retains later notification intent.
+Migration 19 must precede updated API and worker images. Progress polling adds no service or runtime
+variable.
 
 ## Notification invalidation broker
 

@@ -82,6 +82,7 @@ function handleRoster(
         progressVersion: version,
         acceptedCount: hasDeparted ? 2 : 3,
         canJoin: false,
+        isRemoved: false,
         canInvite: false,
         canManage: false,
         canLeave: false,
@@ -144,8 +145,7 @@ export function handleNominations(
                 selection: null,
                 selectionOutcome: null,
                 rating: null,
-                canEdit: token.includes('operator'),
-                canCancel: token.includes('operator'),
+                canManage: token.includes('operator'),
             };
             sendJson(response, 200, detail);
         };

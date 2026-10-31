@@ -1,14 +1,12 @@
 'use client';
 
-import type { TRating } from '@pickflick/contracts';
+import { formatRatingScore, RATING_SCALE, type TRating } from '@pickflick/contracts';
 import { useRef } from 'react';
 
 import { getMonogram } from '#lib/format';
 
 import styles from './Rating.module.scss';
 import RatingForm from './RatingForm';
-
-const RATING_SCALE_LENGTH = 10;
 
 export default function Rating({
     sessionId,
@@ -22,21 +20,21 @@ export default function Rating({
     isImported?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const unavailable = isCompleted
-        ? 'This Session is complete. No more ratings can be added.'
-        : 'Join this Session in an active Club to submit a rating.';
-    let response = <p>{unavailable}</p>;
-    if (data.canSubmit)
-        response = <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />;
-    if (data.own)
-        response = (
-            <div className={styles.saved} role="status">
-                <p>Your rating is saved</p>
-                <strong>{data.own.score}/10</strong>
-                {data.own.comment ? <p className={styles.comment}>{data.own.comment}</p> : null}
-                <p>This screening response is final.</p>
-            </div>
-        );
+    function renderOwnRating() {
+        // A saved rating is final, so it wins over a still-open form.
+        if (data.own)
+            return (
+                <div className={styles.saved} role="status">
+                    <p>Your rating is saved</p>
+                    <strong>{formatRatingScore(data.own.score)}</strong>
+                    {data.own.comment ? <p className={styles.comment}>{data.own.comment}</p> : null}
+                    <p>This screening response is final.</p>
+                </div>
+            );
+        if (data.canSubmit)
+            return <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />;
+        return isCompleted ? null : <p>Join the Session to rate.</p>;
+    }
     return (
         <section
             className={styles.rating}
@@ -44,9 +42,9 @@ export default function Rating({
             aria-labelledby="rating-heading"
         >
             <h2 id="rating-heading" ref={headingRef} tabIndex={-1}>
-                Your rating
+                {data.own || data.canSubmit || !isCompleted ? 'Your rating' : 'Ratings'}
             </h2>
-            {response}
+            {renderOwnRating()}
             {isImported ? (
                 <p>
                     Imported historical ratings. Original submission times are unknown; missing
@@ -59,44 +57,34 @@ export default function Rating({
                     {data.results.entries.length ? (
                         <ul>
                             {data.results.entries.map((rating) => (
-                                <li key={rating.id}>
-                                    <div>
-                                        <span className={styles.avatar} aria-hidden="true">
-                                            {getMonogram(rating.author)}
-                                        </span>
-                                        <span>{rating.author}</span>
-                                        <span className={styles.bars} aria-hidden="true">
-                                            {Array.from(
-                                                { length: RATING_SCALE_LENGTH },
-                                                (_, index) => (
-                                                    <i
-                                                        key={index}
-                                                        data-filled={
-                                                            index < rating.score || undefined
-                                                        }
-                                                    />
-                                                ),
-                                            )}
-                                        </span>
-                                        <strong>{rating.score}/10</strong>
-                                    </div>
-                                    {rating.comment ? (
-                                        <p className={styles.comment}>{rating.comment}</p>
-                                    ) : null}
-                                </li>
+                                <RatingEntry key={rating.id} rating={rating} />
                             ))}
                         </ul>
                     ) : (
                         <p>No ratings were received.</p>
                     )}
                 </div>
-            ) : (
-                <p>
-                    {isCompleted
-                        ? 'Club rating results are hidden by this Session’s visibility setting.'
-                        : 'Club rating results are available after completion, when permitted.'}
-                </p>
-            )}
+            ) : null}
         </section>
+    );
+}
+
+function RatingEntry({ rating }: { rating: NonNullable<TRating['results']>['entries'][number] }) {
+    return (
+        <li>
+            <div>
+                <span className={styles.avatar} aria-hidden="true">
+                    {getMonogram(rating.author)}
+                </span>
+                <span>{rating.author}</span>
+                <span className={styles.bars} aria-hidden="true">
+                    {Array.from({ length: RATING_SCALE.max }, (_, index) => (
+                        <i key={index} data-filled={index < rating.score || undefined} />
+                    ))}
+                </span>
+                <strong>{formatRatingScore(rating.score)}</strong>
+            </div>
+            {rating.comment ? <p className={styles.comment}>{rating.comment}</p> : null}
+        </li>
     );
 }

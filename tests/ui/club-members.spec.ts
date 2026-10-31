@@ -1,21 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, token);
 }
 
 test(
@@ -136,7 +128,9 @@ for (const viewport of screenshotViewports) {
         await expect(close).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(dialog).toHaveCount(0);
-        await expect(trigger).toBeFocused();
+        // The emptied ticket slides away, so focus lands on the page instead.
+        await expect(trigger).toBeHidden();
+        await expect(page.locator('main')).toBeFocused();
     });
 }
 
@@ -273,6 +267,8 @@ for (const viewport of screenshotViewports) {
             await page.setViewportSize(viewport);
             await page.goto(`/clubs/${CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
+            // The popover anchors to the ticket, so wait until its slide-in has finished.
+            await expect(page.locator('[data-invite-ticket]')).toHaveCSS('right', '0px');
             await page.getByRole('button', { name: 'Open pending invites' }).click();
             await expect(
                 page

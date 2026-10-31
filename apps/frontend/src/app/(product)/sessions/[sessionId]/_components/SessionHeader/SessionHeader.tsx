@@ -1,4 +1,4 @@
-import type { TMovieDetails, TSession } from '@pickflick/contracts';
+import { isOpenSessionPhase, type TMovieDetails, type TSession } from '@pickflick/contracts';
 import clsx from 'clsx';
 import Link from 'next/link';
 import type { ReactNode, RefObject } from 'react';
@@ -85,7 +85,10 @@ export default function SessionHeader({
             )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
             <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
-                <SessionLink sessionId={session.id} cell />
+                {/* Joining closes with the Session, so its link is shared only while it is open. */}
+                {isOpenSessionPhase(session.phase) ? (
+                    <SessionLink sessionId={session.id} isCell />
+                ) : null}
                 {items.length ? (
                     <FilmStripMenu
                         triggerLabel="Session settings"
@@ -154,11 +157,11 @@ function getMenuItems(
             icon: 'chevron-right',
             onSelect: actions.onClosePhase,
         });
-    if (session.canEdit)
+    if (session.canManage)
         items.push({ id: 'edit', label: 'Edit Session', icon: 'edit', onSelect: actions.onEdit });
     if (actions.onKick)
         items.push({ id: 'kick', label: 'Kick', icon: 'user-x', onSelect: actions.onKick });
-    if (session.canCancel)
+    if (session.canManage)
         items.push({
             id: 'cancel',
             label: 'Cancel Session',

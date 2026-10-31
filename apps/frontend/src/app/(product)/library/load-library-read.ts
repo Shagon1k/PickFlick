@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '@pickflick/contracts';
 import { redirect } from 'next/navigation';
 
-import { buildLoginPath } from '#api/session.server';
+import { buildLoginPath } from '#api/auth-session.server';
 import { ApiError } from '#lib/api.server';
 
 export async function loadLibraryRead<TData>(request: () => Promise<TData>, returnPath: string) {

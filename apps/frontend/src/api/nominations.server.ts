@@ -4,9 +4,7 @@ import { type TCloseNomination, type TSubmitNomination } from '@pickflick/contra
 
 import { apiPath, requestApi } from '#lib/api.server';
 
-export async function submitNomination(id: string, input: TSubmitNomination) {
-    return requestApi(apiPath`/sessions/${id}/nominations`, { method: 'POST', json: input });
-}
-export async function closeNominations(id: string, input: TCloseNomination) {
-    return requestApi(apiPath`/sessions/${id}/nominations/close`, { method: 'POST', json: input });
-}
+export const submitNomination = (id: string, input: TSubmitNomination) =>
+    requestApi(apiPath`/sessions/${id}/nominations`, { method: 'POST', json: input });
+export const closeNominations = (id: string, input: TCloseNomination) =>
+    requestApi(apiPath`/sessions/${id}/nominations/close`, { method: 'POST', json: input });

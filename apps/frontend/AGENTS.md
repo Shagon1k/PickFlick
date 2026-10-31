@@ -28,8 +28,8 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
   `src/components/<group>/<Name>/<Name>.tsx`, such as `shells/PublicShell`; lint enforces the
   folder names, and a new group joins the rule's `ignoreWords`.
 - Pages wrap themselves in `shells/PublicShell` (marketing) or `shells/ProductFrame` (signed in).
-  `AdminShell`, `ControlShell`, `ProductShell`, `SessionShell`, and `SetupShell` are layouts for
-  later phases; only the `/shell-preview` gallery renders them.
+  My Library uses `shells/ControlShell`. `AdminShell`, `ProductShell`, `SessionShell`, and
+  `SetupShell` are layouts for later phases; only the `/shell-preview` gallery renders them.
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Build API paths with `apiPath` so each ID stays one segment. A server action maps a failed

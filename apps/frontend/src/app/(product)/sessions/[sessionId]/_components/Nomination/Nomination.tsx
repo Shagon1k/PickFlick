@@ -1,16 +1,17 @@
 'use client';
 
-import type { TNominationMovie, TNominations } from '@pickflick/contracts';
+import { getPosterPath, type TNominationMovie, type TNominations } from '@pickflick/contracts';
 import Link from 'next/link';
-import { type ReactNode, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import { nominateAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getOfflineMessage } from '#lib/offline';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
+import { useActionStatus } from '#lib/use-action-status';
 
-import { nominateAction, refreshNominationsAction } from '../../nomination-actions';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
 
@@ -25,38 +26,24 @@ export default function Nomination({
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
-    function run(action: 'submit' | 'refresh') {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        setMessage(action === 'refresh' ? 'Refreshing nominations…' : 'Saving…');
-        startTransition(async () => {
-            const request =
-                action === 'submit'
-                    ? nominateAction(sessionId, { movieId: chosen?.id })
-                    : refreshNominationsAction(sessionId);
-            const result = await request.catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Try again.',
-            }));
-            setMessage(result.message);
-            if (!result.ok) return;
-            if (action === 'submit') headingRef.current?.focus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
+    function handleSubmit() {
+        run(() => nominateAction(sessionId, { movieId: chosen?.id }), {
+            pendingMessage: 'Saving…',
+            onResult: (result) => {
+                if (result.ok) {
+                    announceSuccess(result.message);
+                    headingRef.current?.focus();
+                } else setMessage(result.message);
+            },
         });
     }
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
-            <PhaseProgress
-                refreshLabel="Refresh nominations"
-                disabled={isPending}
-                onRefresh={() => run('refresh')}
-            >
-                Nomination in progress — {data.nominatedCount} of {data.acceptedCount} participants
-                have nominated.
+            <PhaseProgress>
+                {data.acceptedCount
+                    ? `Nomination in progress — ${data.nominatedCount} of ${data.acceptedCount} participants have nominated.`
+                    : 'Nomination in progress — no one has joined yet.'}
             </PhaseProgress>
             {header}
             <div className={styles.columns}>
@@ -70,19 +57,16 @@ export default function Nomination({
                             disabled={isPending}
                             suggestions={data.suggestions}
                             onChoose={setChosen}
-                            onSubmit={() => run('submit')}
+                            onSubmit={handleSubmit}
                         />
                     ) : (
                         <SubmissionState movie={data.ownMovie} />
                     )}
-                    <p
+                    <StatusLine
                         className={styles.feedback}
-                        aria-atomic="true"
-                        aria-live="polite"
-                        role="status"
-                    >
-                        {message}
-                    </p>
+                        isSuccess={isSuccess}
+                        message={message}
+                    />
                 </section>
                 <section className={styles.card} aria-labelledby="nominations-heading">
                     <h2 id="nominations-heading">Current Nominations</h2>
@@ -98,29 +82,34 @@ function formatMovieLabel(movie: TNominationMovie) {
     return `${movie.title ?? 'Movie title unavailable'}${year}`;
 }
 
+/** After nominating, the prototype's faded "Your pick" card stands in for the search. */
 function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
-    if (!movie)
-        return <p>Only Session participants can nominate. Join the Session to add your film.</p>;
+    if (!movie) return <p>Join the Session to nominate a film.</p>;
     return (
-        <p role="status">
-            Your nomination: <Link href={`/movies/${movie.id}`}>{formatMovieLabel(movie)}</Link>.
-            Your submission is locked.
-        </p>
+        <div className={styles.ownPick}>
+            <SearchPoster className={styles.poster} url={getPosterPath(movie.id)} />
+            <div className={styles.movieInfo}>
+                <Link
+                    aria-label={`Your pick: ${formatMovieLabel(movie)}`}
+                    href={`/movies/${movie.id}`}
+                >
+                    {movie.title ?? 'Movie title unavailable'}
+                </Link>
+                <p>by you</p>
+            </div>
+        </div>
     );
 }
 
 function NominationList({ data }: { data: TNominations }) {
-    if (data.hidden) return <p>Nominations are hidden until you submit your own Movie.</p>;
+    if (data.hidden) return <p>Nominations stay hidden until you nominate.</p>;
     if (!data.nominations.length) return <p>No nominations yet.</p>;
     return (
         <ul className={styles.movies}>
             {data.nominations.map((row, index) => (
                 // eslint-disable-next-line @eslint-react/no-array-index-key -- several participants may nominate the same Movie; rows are only appended
                 <li key={`${row.movie.id}-${index}`}>
-                    <SearchPoster
-                        className={styles.poster}
-                        url={`/api/movies/${row.movie.id}/poster`}
-                    />
+                    <SearchPoster className={styles.poster} url={getPosterPath(row.movie.id)} />
                     <div className={styles.movieInfo}>
                         <Link
                             aria-label={formatMovieLabel(row.movie)}
@@ -185,7 +174,7 @@ function NominationPicker({
             ) : (
                 <MoviePicker
                     disabled={disabled}
-                    hideLabel
+                    isLabelHidden
                     placeholder="Search films…"
                     value={null}
                     onChange={(id, movie) =>
@@ -216,7 +205,7 @@ function NominationPicker({
                             >
                                 <SearchPoster
                                     className={styles.suggestionPoster}
-                                    url={`/api/movies/${movie.id}/poster`}
+                                    url={getPosterPath(movie.id)}
                                 />
                                 <strong>{movie.title ?? 'Movie title unavailable'}</strong>
                                 {movie.year ? <span>{movie.year}</span> : null}
@@ -225,7 +214,7 @@ function NominationPicker({
                     ))}
                 </ul>
             ) : (
-                <p>No past losing nominations in this Club yet. Search for a Movie above.</p>
+                <p>No earlier nominations yet. Search for a film above.</p>
             )}
         </>
     );

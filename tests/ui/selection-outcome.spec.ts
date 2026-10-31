@@ -1,21 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000045';
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-selection-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-selection-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -48,12 +40,10 @@ test(
         await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
         await page.getByLabel('Type CLOSE to confirm').press('Enter');
         await expect(dialog).toHaveCount(0);
-        await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
+        await expect(page.getByRole('region', { name: 'Nomination Rivals' })).toBeVisible();
         await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
-        await expect(page.getByRole('list', { name: 'Selection ranking' })).toBeVisible();
-        await expect(page.getByText('No ballots were received.', { exact: false })).toBeVisible();
         await page.reload();
-        await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
+        await expect(page.getByRole('region', { name: 'Nomination Rivals' })).toBeVisible();
         await expect(page.getByRole('menuitem', { name: 'Close Selection early' })).toHaveCount(0);
     },
 );
@@ -87,16 +77,10 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(PATH, { waitUntil: 'load' });
             await settle(page);
-            await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-            await expect(page.getByRole('list', { name: 'Selection ranking' })).toHaveCount(
-                visibility === 'visible' ? 1 : 0,
-            );
-            await expect(
-                page.getByText('Vote breakdowns are hidden', { exact: false }),
-            ).toHaveCount(visibility === 'visible' ? 0 : 1);
-            await expect(page.getByText('Nominated by', { exact: false })).toHaveCount(
-                visibility === 'visible' ? 3 : 0,
-            );
+            // Hidden votes leave no Rivals card at all, so nothing about other nominees shows.
+            const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
+            await expect(rivals).toHaveCount(visibility === 'visible' ? 1 : 0);
+            await expect(rivals.getByText(/^by /u)).toHaveCount(visibility === 'visible' ? 2 : 0);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             expect(
                 await page.evaluate(

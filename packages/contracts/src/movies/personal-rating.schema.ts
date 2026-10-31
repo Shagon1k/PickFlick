@@ -1,10 +1,12 @@
 import { z } from 'zod';
 
-export const savePersonalRatingSchema = z.strictObject({ score: z.number().int().min(1).max(10) });
+import { ratingScoreSchema } from '../common/rating-scale.js';
+
+export const savePersonalRatingSchema = z.strictObject({ score: ratingScoreSchema });
 export type TSavePersonalRating = z.infer<typeof savePersonalRatingSchema>;
 
 export const personalMovieRatingSchema = z.strictObject({
-    score: z.number().int().min(1).max(10),
+    score: ratingScoreSchema,
     source: z.enum(['PERSONAL', 'SESSION']),
     updatedAt: z.iso.datetime(),
 });

@@ -6,7 +6,7 @@ import { createInvitation, listInvitations, revokeInvitation } from '#api/invita
 import { getFailureMessage, type IFailureCopy } from '#lib/action-failure';
 import { ACCESS_LOST_STATUSES } from '#lib/http-status';
 
-type TInvitationResult =
+export type TInvitationResult =
     | { ok: false; message: string }
     | {
           ok: true;
@@ -26,25 +26,25 @@ const INVITATION_FAILURE: IFailureCopy = {
     request: 'Club invitation request',
 };
 
-export async function manageInvitationsAction(
+const REFRESH_ERROR =
+    'Invitation list could not be refreshed. Use Recent invitations to try again.';
+
+export async function createInvitationAction(clubId: string): Promise<TInvitationResult> {
+    try {
+        const created = await createInvitation(clubId);
+        return { ok: true as const, created, ...(await refreshInvitations(clubId)) };
+    } catch (error) {
+        return { ok: false as const, message: getFailureMessage(error, INVITATION_FAILURE) };
+    }
+}
+
+export async function revokeInvitationAction(
     clubId: string,
-    inviteId?: string,
+    inviteId: string,
 ): Promise<TInvitationResult> {
     try {
-        if (inviteId) {
-            await revokeInvitation(clubId, inviteId);
-            return { ok: true as const, invitations: await listInvitations(clubId) };
-        }
-        const created = await createInvitation(clubId);
-        const refreshed = await loadInvitationsAction(clubId);
-        return refreshed.ok
-            ? { ok: true as const, created, invitations: refreshed.invitations }
-            : {
-                  ok: true as const,
-                  created,
-                  refreshError:
-                      'Invitation list could not be refreshed. Use Recent invitations to try again.',
-              };
+        await revokeInvitation(clubId, inviteId);
+        return { ok: true as const, ...(await refreshInvitations(clubId)) };
     } catch (error) {
         return { ok: false as const, message: getFailureMessage(error, INVITATION_FAILURE) };
     }
@@ -56,4 +56,10 @@ export async function loadInvitationsAction(clubId: string): Promise<TInvitation
     } catch (error) {
         return { ok: false as const, message: getFailureMessage(error, INVITATION_FAILURE) };
     }
+}
+
+// The change already happened; a failed list refresh must not report it as failed.
+async function refreshInvitations(clubId: string) {
+    const refreshed = await loadInvitationsAction(clubId);
+    return refreshed.ok ? { invitations: refreshed.invitations } : { refreshError: REFRESH_ERROR };
 }

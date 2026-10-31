@@ -7,6 +7,21 @@
     width: calc(184px + 18px);
     padding-right: 18px;
     overflow: clip;
+    transition:
+        right var(--motion-menu) var(--ease-menu),
+        visibility 0s;
+}
+
+/*
+ * Without invitations the ticket slides past the screen edge, and back in when one arrives. It
+ * moves by `right`: a transform would trap the fixed-position popover inside the sliding widget.
+ */
+.widget:not([data-shown]) {
+    right: calc(-184px - 18px);
+    visibility: hidden;
+    transition:
+        right var(--motion-menu) var(--ease-menu),
+        visibility 0s linear var(--motion-menu);
 }
 
 .ticket {
@@ -195,21 +210,21 @@
     color: var(--fg-secondary);
 }
 
+.rowError {
+    margin: var(--gap-xs) 0 0;
+    font-size: var(--fs-caption);
+    color: var(--danger-text);
+}
+
 .actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--gap-xs);
-    justify-content: flex-end;
     margin-top: var(--gap-sm);
 }
 
 @media (width < 1024px) {
     .widget {
         bottom: calc(80px + var(--gap-md) + env(safe-area-inset-bottom, 0px));
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ticket {
-        transition-duration: 0.01ms;
     }
 }

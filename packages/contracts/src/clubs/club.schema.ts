@@ -11,11 +11,15 @@ export const CLUB_AVATAR_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
 export type TClubAvatarMediaType = (typeof CLUB_AVATAR_MEDIA_TYPES)[number];
 
+/** Selection scales start at 0 for new Clubs; Clubs created earlier may keep their stored 1. */
+export const selectionScaleMinSchema = z.union([z.literal(0), z.literal(1)]);
+export const selectionScaleMaxSchema = z.int().min(1).max(CLUB_SELECTION_SCALE_CEILING);
+
 const clubDetailsShape = {
     name: singleLineText(CLUB_NAME_MIN_LENGTH, CLUB_NAME_MAX_LENGTH),
     description: optionalText(multilineText(1, CLUB_DESCRIPTION_MAX_LENGTH)),
-    selectionScaleMin: z.union([z.literal(0), z.literal(1)]),
-    selectionScaleMax: z.int().min(1).max(CLUB_SELECTION_SCALE_CEILING),
+    selectionScaleMin: selectionScaleMinSchema,
+    selectionScaleMax: selectionScaleMaxSchema,
 };
 
 const scaleIsIncreasing = {

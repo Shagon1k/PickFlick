@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { IClubHub } from '@pickflick/contracts';
+import { HUB_HISTORY_LIMIT, type IClubHub } from '@pickflick/contracts';
 import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
@@ -9,10 +9,10 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
 import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
 
 describe('Club Hub projection', () => {
@@ -323,6 +323,40 @@ describe('Club Hub projection', () => {
             ).toBe(9);
         } finally {
             await removeUsers(api.prisma, users);
+        }
+    });
+
+    it('should keep the average of a recent Completed Session that newer cancellations push out of history', async () => {
+        const owner = await createUser(api.prisma);
+        const clubId = randomUUID();
+        await api.prisma.club.create({ data: { id: clubId, name: 'Recent average' } });
+        try {
+            const membershipId = await addMember(api.prisma, clubId, owner, 'ADMIN');
+            const completed = await createSession(api.prisma, clubId, {
+                type: 'PRE_SELECTED',
+                phase: 'RATING',
+            });
+            const participant = await api.prisma.sessionParticipant.create({
+                data: { sessionId: completed.id, clubId, membershipId, status: 'ACCEPTED' },
+            });
+            await api.prisma.sessionRating.create({
+                data: { sessionId: completed.id, participantId: participant.id, score: 8 },
+            });
+            await api.prisma.session.update({
+                where: { id: completed.id },
+                data: { phase: 'COMPLETED' },
+            });
+            for (let index = 0; index < HUB_HISTORY_LIMIT; index++)
+                await createSession(api.prisma, clubId, { type: 'PAST', phase: 'CANCELLED' });
+
+            const hub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: owner })
+            ).json()) as IClubHub;
+
+            expect(hub.historySessions.map(({ id }) => id)).not.toContain(completed.id);
+            expect(hub.recentSessions).toMatchObject([{ id: completed.id, ratingAverage: 8 }]);
+        } finally {
+            await removeUsers(api.prisma, [owner]);
         }
     });
 });

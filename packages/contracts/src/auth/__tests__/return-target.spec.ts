@@ -19,6 +19,9 @@ describe('resolveAuthReturnTarget', () => {
         '/clubs/new',
         '/clubs/10000000-0000-4000-8000-000000000031',
         '/clubs/10000000-0000-4000-8000-000000000031/settings',
+        '/clubs/10000000-0000-4000-8000-000000000031/members',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions/past/new',
     ])('should keep the allowed target %s', (target) => {
         expect(resolveAuthReturnTarget(target)).toBe(target);
     });

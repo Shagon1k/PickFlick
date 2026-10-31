@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
@@ -29,26 +30,14 @@ test('Login is accessible with Google while dormant Apple Sign In stays hidden',
 });
 
 test('Login redirects an authenticated User to the app', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'valid');
 
     await page.goto('/login');
     await expect(page).toHaveURL(/\/app$/);
 });
 
 test('Login remains available for a forged session cookie', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'forged',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'forged');
 
     await openLogin(page);
     await expect(
@@ -142,13 +131,7 @@ test('Login can recheck the current account after a session service failure', as
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'session-api-unavailable',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'session-api-unavailable');
     await openLogin(page);
     await expect(
         page.getByRole('alert').filter({ hasText: 'We could not check your session' }),

@@ -138,7 +138,7 @@
     letter-spacing: var(--tracking-caps);
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .scene {
         padding-inline: var(--gutter);
         padding-top: 56px;

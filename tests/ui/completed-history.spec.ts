@@ -43,11 +43,14 @@ for (const viewport of canonicalViewports) {
             await expect(page.getByText('A memorable screening.')).toBeVisible();
             const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
             await expect(rivals.getByText('The rival nomination')).toBeVisible();
-            await expect(rivals.getByText('Highest total score.', { exact: true })).toBeVisible();
-            const summary = rivals.locator('summary').filter({ hasText: '12 total' });
-            await summary.focus();
-            await page.keyboard.press('Enter');
-            await expect(rivals.locator('details[open]')).toContainText('Top-score votes');
+            const score = rivals
+                .getByRole('button', { name: /^Average vote .* Show votes$/u })
+                .first();
+            await score.press('Enter');
+            await expect(page.getByRole('dialog').filter({ hasText: 'Top scores' })).toBeVisible();
+            await page.keyboard.press('Escape');
+            // Axe would otherwise measure the popover's fading text.
+            await expect(page.getByRole('dialog')).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
             expect(
@@ -74,7 +77,7 @@ for (const viewport of canonicalViewports) {
             ).toContainText('Nomination');
             const ratings = page.getByRole('region', { name: 'Active Ratings' });
             await expect(ratings.getByRole('link')).toHaveCount(2);
-            await expect(ratings.getByText('1 of 2 rated', { exact: true })).toBeVisible();
+            await expect(ratings.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
             const history = page.getByRole('region', { name: 'History', exact: true });
             await expect(history.getByRole('link')).toHaveCount(2);
             await expect(history.getByText('8.0', { exact: true })).toBeVisible();
@@ -97,7 +100,7 @@ test('Completed hidden results disclose no other comments, nominees or vote tota
 }) => {
     await authenticate(context, 'valid-rating-history-hidden-completed');
     await page.goto(SESSION_ROUTE);
-    await expect(page.getByText(/Vote breakdowns are hidden/)).toBeVisible();
+    await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
     await expect(page.getByText('A memorable screening.')).toHaveCount(0);
     await expect(page.getByText('The rival nomination')).toHaveCount(0);
     await expect(page.getByText(/Winner nominated by/)).toHaveCount(0);

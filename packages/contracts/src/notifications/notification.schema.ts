@@ -35,4 +35,3 @@ export const updateNotificationPreferenceSchema = notificationPreferenceSchema.o
     mandatory: true,
 });
 export type TUpdateNotificationPreference = z.infer<typeof updateNotificationPreferenceSchema>;
-export const notificationPreferencesQuerySchema = z.strictObject({});

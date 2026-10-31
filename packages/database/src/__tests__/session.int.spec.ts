@@ -167,14 +167,14 @@ describe('Session foundation', () => {
 
     it('should reject invalid score snapshots and nonpositive versions', async () => {
         const session = await createSession('RATING');
-        for (const data of [
-            { selectionScaleMax: 11 },
-            { selectionScaleMin: 1, selectionScaleMax: 1 },
-            { phaseVersion: 0 },
-        ]) {
+        for (const [data, constraint] of [
+            [{ selectionScaleMax: 11 }, 'Session_selection_scale_check'],
+            [{ selectionScaleMin: 1, selectionScaleMax: 1 }, 'Session_selection_scale_check'],
+            [{ phaseVersion: 0 }, 'Session_phase_version_check'],
+        ] as const) {
             await expect(
                 database.session.update({ where: { id: session.id }, data }),
-            ).rejects.toThrow();
+            ).rejects.toThrow(constraint);
         }
     });
 
@@ -209,13 +209,15 @@ describe('Session foundation', () => {
         const session = await createSession('NOMINATION');
         const data = { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' as const };
         const participant = await database.sessionParticipant.create({ data });
-        await expect(database.sessionParticipant.create({ data })).rejects.toThrow();
+        await expect(database.sessionParticipant.create({ data })).rejects.toThrow(
+            'SessionParticipant_sessionId_membershipId_key',
+        );
         await expect(
             database.sessionParticipant.update({
                 where: { id: participant.id },
                 data: { membershipId: otherMembershipId },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionParticipant identity is immutable');
         const abort = async (transaction: Prisma.TransactionClient) => {
             await transaction.sessionParticipant.update({
                 where: { id: participant.id },
@@ -235,7 +237,7 @@ describe('Session foundation', () => {
             database.sessionParticipant.create({
                 data: { sessionId: session.id, clubId, membershipId: otherMembershipId },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionParticipant_membershipId_clubId_fkey');
         const participant = await database.sessionParticipant.create({
             data: { sessionId: session.id, clubId, membershipId },
         });
@@ -247,7 +249,9 @@ describe('Session foundation', () => {
             expiresAt: new Date(Date.now() + 60_000),
         };
         await database.sessionInvite.create({ data: invite });
-        await expect(database.sessionInvite.create({ data: invite })).rejects.toThrow();
+        await expect(database.sessionInvite.create({ data: invite })).rejects.toThrow(
+            'SessionInvite_tokenDigest_key',
+        );
         await expect(
             database.sessionInvite.create({
                 data: {
@@ -256,20 +260,20 @@ describe('Session foundation', () => {
                     inviterMembershipId: otherMembershipId,
                 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionInvite_inviterMembershipId_clubId_fkey');
         await expect(
             database.sessionInvite.create({ data: { ...invite, tokenDigest: 'raw-token' } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionInvite_digest_check');
         await expect(
             database.sessionInvite.create({
                 data: { ...invite, tokenDigest: 'c'.repeat(64), expiresAt: new Date(0) },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionInvite_expiry_check');
         await expect(
             database.sessionInvite.create({
                 data: { ...invite, tokenDigest: 'd'.repeat(64), accepted: true },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionInvite_response_check');
         expect(await database.membership.count({ where: { clubId } })).toBe(1);
     });
 });

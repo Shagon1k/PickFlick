@@ -3,7 +3,7 @@ import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { recordAuditNotifications } from '../../notifications/notification-producers.js';
-import { getClubEntitlements } from './club-tiers.js';
+import { getClubEntitlements, getTierEntitlements } from './club-tiers.js';
 
 const clubColumns = {
     id: true,
@@ -32,7 +32,7 @@ export async function findMembership(
 ) {
     const membership = await database.membership.findFirst({
         where: { userId, clubId, status: 'ACTIVE', club: { deletedAt: null } },
-        select: { id: true, role: true, club: { select: clubColumns } },
+        select: { id: true, userId: true, role: true, club: { select: clubColumns } },
     });
     if (!membership) {
         throw new NotFoundException();
@@ -86,7 +86,12 @@ export function getClubAccess(
     if (lifecycle === 'ARCHIVED') reasons.push('ARCHIVED');
     if (!hasAdmin) reasons.push('ADMINLESS');
     if (memberCount > memberLimit) reasons.push('MEMBER_LIMIT');
-    return { adminless: !hasAdmin, newWorkAllowed: reasons.length === 0, reasons };
+    return {
+        adminless: !hasAdmin,
+        newWorkAllowed: reasons.length === 0,
+        isAtCapacity: memberCount >= memberLimit,
+        reasons,
+    };
 }
 
 /** Counts active members and checks for an active Admin, then derives the Club's access state. */
@@ -106,4 +111,26 @@ export async function loadClubAccess(
         access: getClubAccess(club.lifecycle, Boolean(admin), memberCount, memberLimit),
         memberCount,
     };
+}
+
+/**
+ * The administered-Club limit belongs to the Admin, so creation and reactivation count the same way.
+ * Callers take the `club-admin:<userId>` lock first so concurrent requests count each other.
+ * shortcut: every Admin is on the Free limit until billing (Phase 20) gives Users a plan.
+ */
+export async function assertBelowAdminLimit(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+): Promise<void> {
+    const administered = await transaction.membership.count({
+        where: {
+            userId,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            club: { lifecycle: 'ACTIVE', deletedAt: null },
+        },
+    });
+    if (administered >= getTierEntitlements('FREE').adminClubLimit) {
+        throw new ConflictException({ reason: 'ADMIN_CLUB_LIMIT_REACHED' });
+    }
 }

@@ -235,3 +235,17 @@
 .card > div[aria-hidden='true'] {
     margin-block: var(--gap-md);
 }
+
+/* Your own nomination, faded as in the prototype once it is locked in. */
+.ownPick {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+
+    .poster {
+        opacity: 0.5;
+    }
+}

@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-import NavigationItemIcon from '#components/shells/NavigationItemIcon/NavigationItemIcon';
 import styles from '#components/shells/product-navigation.module.scss';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import type { TShellMenuItem } from '#components/shells/shell-navigation';
+import Icon from '#components/ui/Icon/Icon';
 import { authClient } from '#lib/auth-client';
 
 function FilmMenuItem({ item }: { item: TShellMenuItem }) {
@@ -14,7 +14,7 @@ function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     const { closeOverlay } = useProductOverlay();
     const content = (
         <>
-            <NavigationItemIcon label={item.label} />
+            <Icon className={styles.menuIcon} name={item.icon ?? 'circle'} />
             <b>{item.label}</b>
         </>
     );

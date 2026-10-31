@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { loadRuntimeEnvironment, type TRuntimeEnvironment } from '@pickflick/config/environment';
+import type { TNotificationEvent } from '@pickflick/contracts';
 import {
     assertSafeSeedOrResetTarget,
     type Prisma,
@@ -17,7 +18,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { AuthService } from '../modules/auth/auth.service.js';
 import type { IAuthUser } from '../modules/auth/auth.types.js';
 import { NotificationSignals } from '../modules/notifications/notification-signals.js';
-import { NotificationTransactions } from '../modules/notifications/notification-transactions.js';
+import { Transactions } from '../modules/notifications/transactions.js';
 import { type IStoredObject, StorageService } from '../modules/storage/storage.service.js';
 
 /** Loads the local or test environment and refuses to run against any other database. */
@@ -74,37 +75,17 @@ export async function createSession(
     });
 }
 
-/** Removes the users and every Club, Membership, Session, and audit row tied to them. */
-export async function removeUsers(prisma: PrismaClient, userIds: string[]): Promise<void> {
-    const memberships = await prisma.membership.findMany({
-        where: { userId: { in: userIds } },
-        select: { clubId: true },
+/** The users notified of `event` for a Session or audit source, sorted for stable comparison. */
+export async function findNotifiedUsers(
+    prisma: PrismaClient,
+    sourceId: string,
+    event: TNotificationEvent,
+): Promise<string[]> {
+    const rows = await prisma.notification.findMany({
+        where: { sourceId, event },
+        select: { recipientId: true },
     });
-    const clubIds = [...new Set(memberships.map(({ clubId }) => clubId))];
-    await prisma.clubInvite.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.clubAuditEvent.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.sessionInvite.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.sessionRating.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
-    await prisma.pastSelectionScore.deleteMany({
-        where: { nomination: { session: { clubId: { in: clubIds } } } },
-    });
-    await prisma.pastNomination.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
-    await prisma.selectionScore.deleteMany({
-        where: { ballot: { session: { clubId: { in: clubIds } } } },
-    });
-    await prisma.selectionBallot.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
-    await prisma.nomination.deleteMany({ where: { session: { clubId: { in: clubIds } } } });
-    await prisma.sessionParticipant.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.nominationDeadlineNotification.deleteMany({
-        where: { decision: { session: { clubId: { in: clubIds } } } },
-    });
-    await prisma.nominationDeadlineDecision.deleteMany({
-        where: { session: { clubId: { in: clubIds } } },
-    });
-    await prisma.session.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.membership.deleteMany({ where: { clubId: { in: clubIds } } });
-    await prisma.club.deleteMany({ where: { id: { in: clubIds } } });
-    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    return rows.map(({ recipientId }) => recipientId).toSorted((a, b) => a.localeCompare(b));
 }
 
 class MemoryStorage {
@@ -118,6 +99,10 @@ class MemoryStorage {
         return this.objects.get(key) ?? null;
     }
 
+    async exists(key: string): Promise<boolean> {
+        return this.objects.has(key);
+    }
+
     async delete(key: string): Promise<void> {
         this.objects.delete(key);
     }
@@ -125,16 +110,17 @@ class MemoryStorage {
     async ping(): Promise<void> {}
 }
 
+type TTestRequestInit = RequestInit & { userId?: string; json?: unknown };
+
 export interface ITestApi {
     prisma: PrismaService;
-    notifications: NotificationTransactions;
+    transactions: Transactions;
     signals: NotificationSignals;
     storage: MemoryStorage;
     /** Calls the API as a User; the `x-test-user` header stands in for a session cookie. */
-    request(
-        path: string,
-        init?: RequestInit & { userId?: string; json?: unknown },
-    ): Promise<Response>;
+    request(path: string, init?: TTestRequestInit): Promise<Response>;
+    /** Calls the API like `request` and fails with the response body unless it answers `status`. */
+    expectStatus(status: number, path: string, init?: TTestRequestInit): Promise<Response>;
     close(): Promise<void>;
 }
 
@@ -170,21 +156,30 @@ export async function startTestApi(): Promise<ITestApi> {
     await app.listen(0, '127.0.0.1');
     const { port } = app.getHttpServer().address() as AddressInfo;
 
+    const request = (path: string, { userId, json, headers, ...init }: TTestRequestInit = {}) =>
+        fetch(`http://127.0.0.1:${port}${path}`, {
+            ...init,
+            headers: {
+                ...(userId ? { 'x-test-user': userId } : {}),
+                ...(json === undefined ? {} : { 'content-type': 'application/json' }),
+                ...headers,
+            },
+            ...(json === undefined ? {} : { body: JSON.stringify(json) }),
+        });
     return {
         prisma: app.get(PrismaService),
-        notifications: app.get(NotificationTransactions),
+        transactions: app.get(Transactions),
         signals: app.get(NotificationSignals),
         storage,
-        request: (path, { userId, json, headers, ...init } = {}) =>
-            fetch(`http://127.0.0.1:${port}${path}`, {
-                ...init,
-                headers: {
-                    ...(userId ? { 'x-test-user': userId } : {}),
-                    ...(json === undefined ? {} : { 'content-type': 'application/json' }),
-                    ...headers,
-                },
-                ...(json === undefined ? {} : { body: JSON.stringify(json) }),
-            }),
+        request,
+        expectStatus: async (status, path, init) => {
+            const response = await request(path, init);
+            if (response.status !== status)
+                throw new Error(
+                    `Expected HTTP ${status} from ${init?.method ?? 'GET'} ${path}, got ${response.status}: ${await response.text()}`,
+                );
+            return response;
+        },
         close: () => app.close(),
     };
 }

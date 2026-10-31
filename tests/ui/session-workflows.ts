@@ -117,8 +117,7 @@ export function handleSessionWorkflow(
                 selection: null,
                 selectionOutcome: null,
                 rating: null,
-                canEdit: true,
-                canCancel: true,
+                canManage: true,
                 topic: input.topic ?? null,
                 notes: input.notes ?? null,
             };
@@ -129,8 +128,7 @@ export function handleSessionWorkflow(
                 ? {
                       ...session,
                       phase: 'CANCELLED',
-                      canEdit: false,
-                      canCancel: false,
+                      canManage: false,
                       version: session.version + 1,
                   }
                 : { ...session, ...input, version: session.version + 1 };

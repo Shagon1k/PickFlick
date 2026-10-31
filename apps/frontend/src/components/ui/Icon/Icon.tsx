@@ -10,7 +10,6 @@ export type TIconName =
     | 'calendar'
     | 'pin'
     | 'info'
-    | 'refresh'
     | 'film-reel'
     | 'clapperboard'
     | 'star-circle'
@@ -50,7 +49,6 @@ export type TIconName =
     | 'pricing'
     | 'privacy'
     | 'profile'
-    | 'question'
     | 'pulse'
     | 'ratings'
     | 'search'
@@ -234,11 +232,6 @@ const glyphs: Record<TIconName, ReactNode> = {
     pulse: (
         <>
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-        </>
-    ),
-    question: (
-        <>
-            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01" />
         </>
     ),
     ratings: (

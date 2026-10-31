@@ -11,7 +11,7 @@ import {
 import styles from '#components/shells/shells.module.scss';
 
 interface IProductShellProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems: readonly IShellNavigationItem[];
     currentArea: TShellArea;
@@ -21,7 +21,7 @@ interface IProductShellProps {
 }
 
 export default function ProductShell({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems,
     currentArea,
@@ -31,7 +31,7 @@ export default function ProductShell({
 }: IProductShellProps) {
     return (
         <ProductChrome
-            admin={admin}
+            isAdmin={isAdmin}
             clubItems={clubItems}
             currentArea={currentArea}
             routes={routes}

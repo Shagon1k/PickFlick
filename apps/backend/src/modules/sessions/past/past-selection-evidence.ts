@@ -32,37 +32,6 @@ export async function assertPastNominators(
         throw new ConflictException({ reason: 'NOMINATOR_UNAVAILABLE' });
 }
 
-export async function assertPastSelectionReplay(
-    tx: Prisma.TransactionClient,
-    sessionId: string,
-    input: TCreatePastSession,
-) {
-    const saved = await tx.pastNomination.findMany({
-        where: { sessionId },
-        include: { scores: { include: { participant: { select: { membershipId: true } } } } },
-    });
-    const savedCells = saved.flatMap((nomination) =>
-        nomination.scores.map(
-            (cell) => `${cell.participant.membershipId}:${nomination.movieId}:${cell.score}`,
-        ),
-    );
-    const inputCells = input.scoreMatrix.flatMap((row) =>
-        row.scores.map((cell) => `${row.membershipId}:${cell.movieId}:${cell.score}`),
-    );
-    if (
-        JSON.stringify(
-            saved.map((row) => `${row.movieId}:${row.nominatorMembershipId ?? ''}`).toSorted(),
-        ) !==
-            JSON.stringify(
-                input.nominations
-                    .map((row) => `${row.movieId}:${row.nominatorMembershipId ?? ''}`)
-                    .toSorted(),
-            ) ||
-        JSON.stringify(savedCells.toSorted()) !== JSON.stringify(inputCells.toSorted())
-    )
-        throw new ConflictException({ reason: 'SUBMISSION_MISMATCH' });
-}
-
 export async function createPastSelection(
     tx: Prisma.TransactionClient,
     sessionId: string,

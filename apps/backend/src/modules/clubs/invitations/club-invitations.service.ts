@@ -6,14 +6,15 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import type {
-    ICreatedInvitation,
-    IManagedInvitation,
-    IPendingClubInvitation,
-    TCreateInvitation,
-    TInvitationDecision,
-    TInvitationPreview,
-    TRespondInvitation,
+import {
+    CLUB_INVITATION_LIFETIME_HOURS,
+    type ICreatedInvitation,
+    type IManagedInvitation,
+    type IPendingClubInvitation,
+    type TCreateInvitation,
+    type TInvitationDecision,
+    type TInvitationPreview,
+    type TRespondInvitation,
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
@@ -23,7 +24,7 @@ import {
     getInviteState,
 } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { Transactions } from '../../notifications/transactions.js';
 import {
     assertActive,
     findMembership,
@@ -35,7 +36,7 @@ import { getClubEntitlements } from '../access/club-tiers.js';
 import { inspectInvitation } from './club-invitation-access.js';
 
 const RECENT_INVITATIONS_LIMIT = 20;
-const CLUB_INVITE_LIFETIME_MS = 12 * 60 * 60 * 1000;
+const CLUB_INVITE_LIFETIME_MS = CLUB_INVITATION_LIFETIME_HOURS * 60 * 60 * 1000;
 
 async function findManagerMembership(
     transaction: Prisma.TransactionClient,
@@ -53,7 +54,7 @@ async function findManagerMembership(
 export class ClubInvitationsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
     ) {}
 
     async create(
@@ -61,7 +62,7 @@ export class ClubInvitationsService {
         clubId: string,
         input: TCreateInvitation,
     ): Promise<ICreatedInvitation> {
-        return this.notifications.run(async (transaction) => {
+        return this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
@@ -136,7 +137,7 @@ export class ClubInvitationsService {
     }
 
     async revoke(userId: string, clubId: string, inviteId: string): Promise<void> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findManagerMembership(transaction, userId, clubId);
             assertActive(membership);
@@ -160,7 +161,7 @@ export class ClubInvitationsService {
     }
 
     async preview(userId: string, token: string): Promise<TInvitationPreview> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) =>
                 (await inspectInvitation(transaction, userId, digestInviteToken(token))).preview,
             { isolationLevel: 'RepeatableRead' },
@@ -168,7 +169,7 @@ export class ClubInvitationsService {
     }
 
     async listPending(userId: string): Promise<IPendingClubInvitation[]> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) => {
                 const invitations = await transaction.clubInvite.findMany({
                     where: {
@@ -225,7 +226,7 @@ export class ClubInvitationsService {
         tokenDigest: string,
         decision: TInvitationDecision['decision'],
     ): Promise<TInvitationPreview> {
-        return this.notifications.run(async (transaction) => {
+        return this.transactions.write(async (transaction) => {
             const found = await transaction.clubInvite.findUnique({
                 where: { tokenDigest },
                 select: { clubId: true },

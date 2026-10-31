@@ -6,6 +6,7 @@ describe('getClubAccess', () => {
         expect(getClubAccess('ACTIVE', true, 8, 8)).toEqual({
             adminless: false,
             newWorkAllowed: true,
+            isAtCapacity: true,
             reasons: [],
         });
         const access = getClubAccess('ACTIVE', true, 9, 8);
@@ -20,7 +21,12 @@ describe('getClubAccess', () => {
     });
     it('should preserve participation and leaving in an adminless Club while disabling new work', () => {
         const access = getClubAccess('ACTIVE', false, 2, 8);
-        expect(access).toEqual({ adminless: true, newWorkAllowed: false, reasons: ['ADMINLESS'] });
+        expect(access).toEqual({
+            adminless: true,
+            newWorkAllowed: false,
+            isAtCapacity: false,
+            reasons: ['ADMINLESS'],
+        });
         expect(getClubPermissions('MODERATOR', 'ACTIVE', access)).toMatchObject({
             viewClub: true,
             participate: true,

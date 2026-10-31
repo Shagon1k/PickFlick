@@ -1,11 +1,45 @@
+/* The prototype's star popover: a mono value label over one row of stars. */
 .personalRating {
     display: grid;
-    gap: var(--gap-sm);
+    gap: var(--gap-xs);
     min-width: 0;
 }
 
-.personalRating p {
+.label {
     margin: 0;
-    font-size: var(--fs-body-sm);
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory-muted);
+    text-align: center;
+}
+
+.status {
+    margin: 0;
+    font-size: var(--fs-caption);
     color: var(--fg-secondary);
+    text-align: center;
+}
+
+.status:empty {
+    display: none;
+}
+
+/* The ticket pill: the viewer's score with "You", as on Movie Details in the prototype. */
+.pill {
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+}
+
+.pill strong {
+    font: 700 var(--fs-body)/1 var(--font-mono);
+}
+
+.pill small {
+    font-size: var(--fs-caption);
+    color: var(--ivory-muted);
+}
+
+.tableScore {
+    font: 700 var(--fs-body) var(--font-mono);
+    color: var(--gold-light);
 }

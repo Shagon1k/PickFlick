@@ -1,8 +1,9 @@
 import type { PrismaClient } from '@pickflick/database';
 
+import { describeError } from '../../../common/describe-error.js';
 import { lockClub } from '../../clubs/access/club-access.js';
 import { recordSessionNotifications } from '../../notifications/notification-producers.js';
-import { type NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { type Transactions } from '../../notifications/transactions.js';
 import { lockSession } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';
@@ -15,6 +16,8 @@ interface IDeadlineEvent {
     latenessMs?: number;
     reason?: string;
     due?: number;
+    errorName?: string;
+    errorCode?: string;
 }
 
 /**
@@ -26,7 +29,7 @@ export class NominationDeadlines {
     constructor(
         private readonly prisma: PrismaClient,
         private readonly log: (event: IDeadlineEvent) => void,
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
     ) {}
 
     async runOnce(now = new Date(), signal?: AbortSignal): Promise<void> {
@@ -65,13 +68,14 @@ export class NominationDeadlines {
                     outcome,
                     latenessMs: Math.max(0, now.getTime() - (session.deadlineAt?.getTime() ?? 0)),
                 });
-            } catch {
+            } catch (error) {
                 // Database/provider messages can contain user data or connection credentials.
                 this.log({
                     event: 'deadline.failure',
                     sessionId: session.id,
                     deadlineVersion: session.deadlineVersion,
                     reason: 'TRANSACTION_FAILED',
+                    ...describeError(error),
                 });
             }
         }
@@ -83,7 +87,7 @@ export class NominationDeadlines {
             where: { id: sessionId },
             select: { clubId: true },
         });
-        return this.notifications.run(async (tx) => {
+        return this.transactions.write(async (tx) => {
             await lockClub(tx, initial.clubId);
             await lockSession(tx, sessionId);
             const session = await tx.session.findUniqueOrThrow({
@@ -115,22 +119,6 @@ export class NominationDeadlines {
             let outcome: 'EMPTY' | 'WATCHING' | 'SELECTION' = 'EMPTY';
             if (nominations.length === 1) outcome = 'WATCHING';
             if (nominations.length > 1) outcome = 'SELECTION';
-            const recipients =
-                outcome === 'EMPTY'
-                    ? (
-                          await tx.membership.findMany({
-                              where: {
-                                  clubId: session.clubId,
-                                  status: 'ACTIVE',
-                                  role: { in: ['ADMIN', 'MODERATOR'] },
-                              },
-                              select: { id: true },
-                          })
-                      ).map(({ id }) => ({ membershipId: id }))
-                    : await tx.sessionParticipant.findMany({
-                          where: { sessionId, status: 'ACCEPTED' },
-                          select: { membershipId: true },
-                      });
             await tx.nominationDeadlineDecision.create({
                 data: {
                     sessionId,
@@ -138,15 +126,15 @@ export class NominationDeadlines {
                     outcome,
                     nominationCount: nominations.length,
                     createdAt: now,
-                    notifications: { create: recipients },
                 },
             });
             if (outcome === 'EMPTY') {
+                // Nomination stays open without a deadline; an operator may set a new one.
+                await tx.session.update({ where: { id: sessionId }, data: { deadlineAt: null } });
+                await publishProgress(tx, sessionId, 'DETAILS');
                 await recordSessionNotifications(tx, session, 'NOMINATION_STALLED');
-            }
-            if (outcome !== 'EMPTY') {
-                await advanceNomination(tx, session, nominations);
-                await publishProgress(tx, sessionId, 'DEADLINE');
+            } else {
+                await advanceNomination(tx, session, nominations, 'DEADLINE');
             }
             return outcome;
         });

@@ -1,15 +1,17 @@
 'use client';
 
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 
+import invite from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
-import styles from '../../page.module.scss';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 const messages = {
@@ -45,20 +47,21 @@ const messages = {
     'already-member': ['You are already a member', 'Open your Club to continue.'],
 } as const;
 
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isReady = useIsHydrated();
     const [failure, setFailure] = useState('');
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
 
     async function respond(decision: 'accept' | 'decline') {
+        const offlineMessage = getOfflineMessage();
+        if (offlineMessage) {
+            setFailure(offlineMessage);
+            return;
+        }
         setIsPending(true);
         setFailure('');
         try {
@@ -76,22 +79,22 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     }
 
     return (
-        <div aria-busy={isPending || view.state === 'loading'} className={styles.card}>
-            <div aria-live="polite" className={styles.intro}>
+        <div aria-busy={isPending || view.state === 'loading'} className={invite.card}>
+            <div aria-live="polite" className={invite.intro}>
                 <h1>{title}</h1>
                 <p data-error={Boolean(failure)} role="status">
                     {failure || description}
                 </p>
             </div>
-            <div className={styles.preview}>
+            <div className={invite.preview}>
                 {view.state === 'valid' ? (
                     <>
                         <h2>{view.clubName}</h2>
-                        <p className={styles.previewMeta}>
+                        <p className={invite.previewMeta}>
                             <Icon name="members" />
                             {formatCount(view.memberCount, 'member')}
                         </p>
-                        <p className={styles.previewMeta}>
+                        <p className={invite.previewMeta}>
                             <Icon name="profile" />
                             <span>
                                 Invited by <strong>{view.inviterName}</strong>
@@ -104,7 +107,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     </p>
                 )}
             </div>
-            <div className={styles.actions}>
+            <div className={invite.actions}>
                 {view.state === 'valid' ? (
                     <>
                         <Button

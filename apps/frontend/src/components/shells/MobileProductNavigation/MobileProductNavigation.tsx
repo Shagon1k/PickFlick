@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
+import { useNotifications } from '#components/notifications/notifications-context';
+import NotificationsPanel from '#components/notifications/NotificationsPanel/NotificationsPanel';
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
-import { useNotifications } from '#components/shells/notifications-context';
-import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
@@ -28,8 +28,13 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
         : null;
     const isNotificationsPanelOpen = activeOverlay === 'notifications-mobile';
 
-    useOverlayDismissal(activeMenu !== null, navigationRef, closeOverlay);
-    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal({ isOpen: activeMenu !== null, rootRef: navigationRef, closeOverlay });
+    useOverlayDismissal({
+        isOpen: isNotificationsPanelOpen,
+        rootRef: notificationsRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
 
     useAnchoredMenus(activeMenu, navigationRef);
 
@@ -69,10 +74,16 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
                                         {notifications?.unreadCount ? (
                                             <span
                                                 className={styles.notifBadge}
-                                                aria-label={`${notifications.unreadCount} unread`}
+                                                aria-hidden="true"
                                             />
                                         ) : null}
                                         <span>{entry.label}</span>
+                                        {/* A label on the empty badge would be skipped by screen readers. */}
+                                        {notifications?.unreadCount ? (
+                                            <span className="visually-hidden">
+                                                {`, ${notifications.unreadCount} unread`}
+                                            </span>
+                                        ) : null}
                                     </button>
                                 </div>
                             );
@@ -119,7 +130,7 @@ export default function MobileProductNavigation({ entries }: IMobileProductNavig
             </nav>
             <NotificationsPanel
                 id="shell-notifications-mobile"
-                mobile
+                isMobile
                 open={isNotificationsPanelOpen}
                 panelRef={notificationsRef}
             />

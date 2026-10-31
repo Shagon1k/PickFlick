@@ -1,22 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/sessions/new`;
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `${token}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `${token}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -31,19 +23,19 @@ test(
                 .getByRole('region', { name: 'Active Session', exact: true })
                 .getByRole('link', { name: 'Open Session', exact: true }),
         ).toHaveCount(0);
-        await page.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await page.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByLabel('Topic').fill('Noir night');
         await page.getByLabel('Nomination phase ends in').fill('01:30');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByText('Session created. Nomination is open.')).toBeVisible();
         await page.goBack();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
-            0,
-        );
+        await expect(
+            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
+        ).toHaveCount(0);
         await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
         await page.keyboard.press('Enter');
         await expect(
@@ -89,9 +81,10 @@ test(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
         await page.getByRole('link', { name: 'Back to Hub' }).click();
-        await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
+        await expect(
+            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
+        ).toBeVisible();
     },
 );
 
@@ -103,7 +96,7 @@ test(
         await page.goto(ROUTE);
         await page.getByRole('radio', { name: 'Pre-selected Movie' }).check();
         await expect(page.getByLabel('Nomination phase ends in')).toHaveCount(0);
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         const search = page.getByRole('combobox', { name: 'Select a Movie' });
         await search.fill('film');
@@ -140,7 +133,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
 }) => {
     await authenticate(context, 'valid-session-workflow-failure');
     await page.goto(ROUTE);
-    await page.getByLabel('Date').fill('2026-12-01');
+    await page.getByLabel('Date').fill('2090-12-01');
     await page.getByLabel('Location').fill('Room A');
     await page.getByLabel('Topic').fill('API failure');
     await page.getByRole('button', { name: 'Create Session', exact: true }).click();
@@ -174,7 +167,7 @@ for (const viewport of canonicalViewports) {
             path: `test-results/session-create-${viewport.name}.png`,
             fullPage: true,
         });
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await page.getByRole('link', { name: 'Open Session' }).click();

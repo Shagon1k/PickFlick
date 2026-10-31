@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
     BLOCKING_SESSION_PHASES,
     isOpenSessionPhase,
@@ -12,29 +12,26 @@ import {
 } from '@pickflick/contracts';
 import { Prisma, snapshotSessionSettings } from '@pickflick/database';
 
-import { PrismaService } from '../../database/prisma.service.js';
-import { findMembership, lockClub, recordAudit } from '../clubs/access/club-access.js';
-import { NotificationTransactions } from '../notifications/notification-transactions.js';
+import { findMembership, lockClub } from '../clubs/access/club-access.js';
+import { Transactions } from '../notifications/transactions.js';
 import { NominationsService } from './nominations/nominations.service.js';
 import { RatingService } from './rating/rating.service.js';
 import { SelectionService } from './selection/selection.service.js';
-import { assertManager, assertOpen, canManage } from './session-access.js';
+import { assertManager, assertOpen, canManage, recordSessionAction } from './session-access.js';
 import { lockSessionForMember } from './session-lock.js';
 import { publishProgress } from './session-progress.js';
 
 @Injectable()
 export class SessionsService {
-    @Inject(NotificationTransactions)
-    private readonly notifications!: NotificationTransactions;
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly transactions: Transactions,
         private readonly nominations: NominationsService,
         private readonly selection: SelectionService,
         private readonly rating: RatingService,
     ) {}
 
     async get(userId: string, id: string): Promise<TSession> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) => {
                 const session = await transaction.session.findUnique({ where: { id } });
                 if (!session) throw new NotFoundException();
@@ -44,7 +41,10 @@ export class SessionsService {
                     ...toSession(session, membership.club.name, canManageSession),
                     rating:
                         session.phase === 'RATING' || session.phase === 'COMPLETED'
-                            ? await this.rating.loadRating(transaction, session, membership)
+                            ? await this.rating.loadRating(transaction, session, {
+                                  membership,
+                                  canManage: canManageSession,
+                              })
                             : null,
                     selectionOutcome: await this.selection.loadOutcome(
                         transaction,
@@ -70,23 +70,26 @@ export class SessionsService {
     }
 
     async getProgress(userId: string, id: string): Promise<TSessionProgress> {
-        const session = await this.prisma.session.findUnique({
-            where: { id },
-            select: { clubId: true, progressVersion: true },
+        return this.transactions.read(async (transaction) => {
+            const session = await transaction.session.findUnique({
+                where: { id },
+                select: { clubId: true, progressVersion: true },
+            });
+            if (!session) throw new NotFoundException();
+            await findMembership(transaction, userId, session.clubId);
+            return { version: session.progressVersion };
         });
-        if (!session) throw new NotFoundException();
-        await findMembership(this.prisma, userId, session.clubId);
-        return { version: session.progressVersion };
     }
 
     async create(userId: string, clubId: string, input: TCreateSession): Promise<TSession> {
         const id = randomUUID();
         try {
-            await this.notifications.run(async (transaction) => {
+            await this.transactions.write(async (transaction) => {
                 await lockClub(transaction, clubId);
                 const membership = await findMembership(transaction, userId, clubId);
                 await assertManager(transaction, membership);
                 validateDeadline(input.deadlineAt);
+                validateSchedule(input.scheduledAt, input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
                     where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
                     select: { id: true },
@@ -109,13 +112,7 @@ export class SessionsService {
                         ...(await snapshotSessionSettings(transaction, clubId)),
                     },
                 });
-                await recordSessionAudit(transaction, {
-                    clubId,
-                    sessionId: id,
-                    membershipId: membership.id,
-                    userId,
-                    action: 'SESSION_CREATED',
-                });
+                await recordSessionAction(transaction, id, membership, 'SESSION_CREATED');
             });
         } catch (error) {
             // The partial unique index is the last guard for one blocking Session per Club.
@@ -128,25 +125,27 @@ export class SessionsService {
     }
 
     async update(userId: string, id: string, input: TUpdateSession): Promise<TSession> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             const { session, membership } = await loadWritableSession(transaction, userId, id);
             assertOpen(session.phase);
-            const data = {
+            const data: TSessionDetails = {
                 scheduledAt: new Date(input.scheduledAt),
                 location: input.location,
                 topic: input.topic ?? null,
                 notes: input.notes ?? null,
                 deadlineAt: input.deadlineAt ? new Date(input.deadlineAt) : null,
             };
-            if (matchesDetails(session, input)) return;
+            if (matchesDetails(session, data)) return;
             if (session.detailsVersion !== input.version)
                 throw new ConflictException({ reason: 'SESSION_CHANGED' });
-            const hasDeadlineChanged = data.deadlineAt?.getTime() !== session.deadlineAt?.getTime();
+            const hasDeadlineChanged = !isSameTime(session.deadlineAt, data.deadlineAt);
             if (hasDeadlineChanged) {
                 if (session.phase !== 'NOMINATION' && input.deadlineAt !== null)
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
             }
+            if (hasDeadlineChanged || !isSameTime(session.scheduledAt, data.scheduledAt))
+                validateSchedule(input.scheduledAt, input.deadlineAt);
             await transaction.session.update({
                 where: { id },
                 data: {
@@ -155,20 +154,14 @@ export class SessionsService {
                     deadlineVersion: hasDeadlineChanged ? { increment: 1 } : undefined,
                 },
             });
-            await recordSessionAudit(transaction, {
-                clubId: session.clubId,
-                sessionId: id,
-                membershipId: membership.id,
-                userId,
-                action: 'SESSION_UPDATED',
-            });
+            await recordSessionAction(transaction, id, membership, 'SESSION_UPDATED');
             await publishProgress(transaction, id, 'DETAILS');
         });
         return this.get(userId, id);
     }
 
     async cancel(userId: string, id: string, input: TCancelSession): Promise<TSession> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             const { session, membership } = await loadWritableSession(transaction, userId, id);
             if (session.phase === 'CANCELLED') return;
             if (session.phase === 'COMPLETED')
@@ -189,13 +182,7 @@ export class SessionsService {
                 where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
                 data: { revokedAt: new Date() },
             });
-            await recordSessionAudit(transaction, {
-                clubId: session.clubId,
-                sessionId: id,
-                membershipId: membership.id,
-                userId,
-                action: 'SESSION_CANCELLED',
-            });
+            await recordSessionAction(transaction, id, membership, 'SESSION_CANCELLED');
             await publishProgress(transaction, id, 'CANCELLED');
         });
         return this.get(userId, id);
@@ -215,6 +202,21 @@ async function loadWritableSession(
 function validateDeadline(value: string | null) {
     if (value && new Date(value) <= new Date())
         throw new ConflictException({ reason: 'DEADLINE_PAST' });
+}
+
+const DAY_MS = 86_400_000;
+// UTC−12 is the last zone to finish a calendar day.
+const LAST_ZONE_LAG_MS = 12 * 3_600_000;
+
+/**
+ * A Session day is stored at midnight UTC. It is too early once that day has ended in every zone,
+ * and a Nomination deadline may not run past it.
+ */
+function validateSchedule(scheduledAt: string, deadlineAt: string | null) {
+    const dayEnd = new Date(scheduledAt).getTime() + DAY_MS + LAST_ZONE_LAG_MS;
+    if (dayEnd <= Date.now()) throw new ConflictException({ reason: 'SCHEDULED_PAST' });
+    if (deadlineAt && new Date(deadlineAt).getTime() >= dayEnd)
+        throw new ConflictException({ reason: 'DEADLINE_AFTER_SCREENING' });
 }
 
 function toSession(
@@ -238,39 +240,25 @@ function toSession(
         version: session.detailsVersion,
         phaseVersion: session.phaseVersion,
         progressVersion: session.progressVersion,
-        canEdit: canManageSession && isOpen,
-        canCancel: canManageSession && isOpen,
+        canManage: canManageSession && isOpen,
     };
 }
 
-/** Session lifecycle events record the acting member as their own subject. */
-async function recordSessionAudit(
-    transaction: Prisma.TransactionClient,
-    event: {
-        clubId: string;
-        sessionId: string;
-        membershipId: string;
-        userId: string;
-        action: 'SESSION_CREATED' | 'SESSION_UPDATED' | 'SESSION_CANCELLED';
-    },
-) {
-    await recordAudit(transaction, {
-        clubId: event.clubId,
-        sessionId: event.sessionId,
-        actorUserId: event.userId,
-        subjectUserId: event.userId,
-        subjectMembershipId: event.membershipId,
-        action: event.action,
-    });
+type TSessionDetails = Pick<
+    Prisma.SessionGetPayload<object>,
+    'scheduledAt' | 'location' | 'topic' | 'notes' | 'deadlineAt'
+>;
+
+function matchesDetails(session: TSessionDetails, data: TSessionDetails): boolean {
+    return (
+        isSameTime(session.scheduledAt, data.scheduledAt) &&
+        session.location === data.location &&
+        session.topic === data.topic &&
+        session.notes === data.notes &&
+        isSameTime(session.deadlineAt, data.deadlineAt)
+    );
 }
 
-function matchesDetails(session: Prisma.SessionGetPayload<object>, input: TUpdateSession): boolean {
-    return (
-        session.scheduledAt?.getTime() === new Date(input.scheduledAt).getTime() &&
-        session.location === input.location &&
-        session.topic === (input.topic ?? null) &&
-        session.notes === (input.notes ?? null) &&
-        (session.deadlineAt?.getTime() ?? null) ===
-            (input.deadlineAt ? new Date(input.deadlineAt).getTime() : null)
-    );
+function isSameTime(left: Date | null, right: Date | null): boolean {
+    return left?.getTime() === right?.getTime();
 }

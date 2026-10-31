@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
+    getPosterPath,
     movieIdSchema,
     movieSearchSchema,
     movieStoredImageKeySchema,
@@ -46,7 +47,6 @@ export class MoviesController {
     }
 
     @Get(':movieId')
-    @Header('Cache-Control', 'private, no-store')
     @Throttle(CATALOG_RATE_LIMIT)
     async getDetails(@Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string) {
         const response = await this.movies.getDetailsResponse(movieId);
@@ -59,7 +59,6 @@ export class MoviesController {
     }
 
     @Get(':movieId/poster')
-    @Header('Cache-Control', 'private, no-store')
     async getPoster(
         @Param('movieId', new ZodValidationPipe(movieIdSchema)) movieId: string,
         @Res() response: Response,
@@ -68,15 +67,16 @@ export class MoviesController {
         if (!posterUrl) throw new NotFoundException();
         const stored = await this.images.storeMedia({ posterUrl, backdropUrl: null });
         if (!stored.posterUrl) throw new NotFoundException();
+        // The target is named by a content hash, so the redirect may be cached like the image.
+        response.set('Cache-Control', 'private, max-age=86400');
         response.redirect(stored.posterUrl);
     }
 
     @Post('search')
     @HttpCode(HttpStatus.OK)
-    @Header('Cache-Control', 'private, no-store')
     @Throttle(CATALOG_RATE_LIMIT)
     async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
-        const result = await this.movies.search(input, true);
+        const result = await this.movies.search(input, { allowStale: true });
         if (result.state === 'unavailable') return result;
         return {
             ...result,
@@ -84,7 +84,7 @@ export class MoviesController {
                 ...result.data,
                 movies: result.data.movies.map((movie) => ({
                     ...movie,
-                    posterUrl: movie.posterUrl ? `/api/movies/${movie.id}/poster` : null,
+                    posterUrl: movie.posterUrl ? getPosterPath(movie.id) : null,
                     backdropUrl: null,
                 })),
             },

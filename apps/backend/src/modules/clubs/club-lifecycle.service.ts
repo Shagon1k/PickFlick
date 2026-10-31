@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger } from '@nest
 import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 
 import { lockKey } from '../../database/advisory-lock.js';
-import { NotificationTransactions } from '../notifications/notification-transactions.js';
+import { Transactions } from '../notifications/transactions.js';
 import { departSessions } from '../sessions/roster/session-departure.js';
 import { completeSessionPhase } from '../sessions/session-completion.js';
 import { lockSession } from '../sessions/session-lock.js';
@@ -10,13 +10,12 @@ import { StorageService } from '../storage/storage.service.js';
 import {
     assertActive,
     assertAdmin,
+    assertBelowAdminLimit,
     findMembership,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
 import { canRemoveMember } from './access/club-permissions.js';
-import { getClubEntitlements } from './access/club-tiers.js';
-import { assertBelowAdminLimit } from './clubs.service.js';
 
 function assertConfirmed(confirmation: string, expected: string): void {
     if (confirmation !== expected) {
@@ -30,7 +29,7 @@ export class ClubLifecycleService {
     private readonly logger = new Logger(ClubLifecycleService.name);
 
     constructor(
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
         private readonly storage: StorageService,
     ) {}
 
@@ -45,7 +44,7 @@ export class ClubLifecycleService {
 
     async leave(userId: string, clubId: string, confirmation: string): Promise<void> {
         assertConfirmed(confirmation, 'LEAVE');
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             if (membership.role === 'ADMIN') {
@@ -74,7 +73,7 @@ export class ClubLifecycleService {
         confirmation: string,
     ): Promise<void> {
         assertConfirmed(confirmation, 'REMOVE');
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const actor = await findMembership(transaction, userId, clubId);
             if (actor.role === 'MEMBER') throw new ForbiddenException();
@@ -104,7 +103,7 @@ export class ClubLifecycleService {
 
     /** Deletes an empty Club: members lose access, while the audit trail stays. */
     async delete(userId: string, clubId: string, confirmation: string): Promise<void> {
-        const avatarKey = await this.notifications.run(async (transaction) => {
+        const avatarKey = await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
@@ -142,7 +141,7 @@ export class ClubLifecycleService {
         clubId: string,
         next: 'ACTIVE' | 'ARCHIVED',
     ): Promise<void> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             if (next === 'ACTIVE') {
                 await lockKey(transaction, `club-admin:${userId}`);
             }
@@ -154,11 +153,7 @@ export class ClubLifecycleService {
                 return;
             }
             if (next === 'ACTIVE') {
-                await assertBelowAdminLimit(
-                    transaction,
-                    userId,
-                    getClubEntitlements(clubId).adminClubLimit,
-                );
+                await assertBelowAdminLimit(transaction, userId);
             }
             await transaction.club.update({ where: { id: clubId }, data: { lifecycle: next } });
             const sessions = await transaction.session.findMany({

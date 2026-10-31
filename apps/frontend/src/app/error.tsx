@@ -19,5 +19,7 @@ export default function ApplicationError({
         globalThis.document.getElementById('system-state-title')?.focus({ preventScroll: true });
     }, [isSignedIn]);
 
-    return <SystemState onRetry={handleRetry} signedIn={isSignedIn} variant="application-error" />;
+    return (
+        <SystemState onRetry={handleRetry} isSignedIn={isSignedIn} variant="application-error" />
+    );
 }

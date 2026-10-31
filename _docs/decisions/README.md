@@ -1486,6 +1486,13 @@ gaps or reconnects. Polling covers unavailable streams. Recipient snapshots reta
 intent; inbox/email delivery remains later work. No broker, queue library, dispatcher or process
 is added. This extends the implementation without changing the accepted deadline-job decision.
 
+### ADR-018 amendment — recipient intent replaced by Notifications (2026-10-29)
+
+Phase 17 records deadline and phase-change recipients as `Notification` rows in the decision
+transaction, so the `NominationDeadlineNotification` intent table had no reader. Migration 36
+drops it. `NominationDeadlineDecision` stays the automatic audit record; recipients and delivery
+follow ADR-019 and ADR-020. Owner approval: Phase 18 simplification audit, decision D4.
+
 ## ADR-019 — Distribute notification invalidation through Redis Pub/Sub
 
 - **Status:** Accepted
@@ -1601,3 +1608,11 @@ or delivery guarantee is claimed for the external provider.
 
 Local/test/preview modes never claim or send email. Exact-head hosted review and real Resend sandbox
 checks remain acceptance gates; this ADR does not authorize deployment or provider configuration.
+
+### ADR-020 amendment — one delivery row, no request hash (2026-10-29)
+
+`NotificationEmailDelivery` already holds the attempt count, first attempt time and last reason,
+and the worker logs every attempt, so migration 38 drops the unread per-attempt table and the
+request hash. A retry still reuses the stable idempotency key; when the provider refuses a changed
+payload under it, the delivery fails for operator review as before. Owner approval: Phase 18
+simplification audit, decisions #2 and #3.

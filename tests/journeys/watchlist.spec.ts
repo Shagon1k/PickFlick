@@ -4,19 +4,19 @@ import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/cata
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { buildCanonicalDetails } from '../../apps/backend/src/testing/movie-fixtures.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import { createDatabaseClient } from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 test('Watchlist persists from Movie to Library and back through the real API', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
     const environment = loadRuntimeEnvironment();
-    const prisma = createDatabaseClient(environment.databaseUrl);
+    const { prisma } = backend;
     const userId = await backend.createUser('Watchlist viewer');
     const movie = await prisma.movie.create({
         data: { title: 'Watchlist journey', releaseYear: 2024 },
     });
-    const context = await browser.newContext();
+    const context = await openVisitor(browser, backend, userId);
     try {
         const fetchedAt = new Date();
         await prisma.movieDetailsCache.create({
@@ -31,7 +31,6 @@ test('Watchlist persists from Movie to Library and back through the real API', a
                 },
             },
         });
-        await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
         const page = await context.newPage();
         await page.goto(`/movies/${movie.id}`);
         await page.getByRole('button', { name: 'Add to watchlist', exact: true }).click();
@@ -84,9 +83,8 @@ test('Watchlist persists from Movie to Library and back through the real API', a
         expect(await prisma.watchlistItem.findMany({ where: { userId } })).toEqual([]);
     } finally {
         await context.close();
-        await prisma.movie.delete({ where: { id: movie.id } });
-        await prisma.user.delete({ where: { id: userId } });
-        await prisma.$disconnect();
+        await backend.removeUsers([userId]);
+        await backend.removeMovies([movie.id]);
         await backend.close();
     }
 });

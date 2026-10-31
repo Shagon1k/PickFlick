@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 
 import styles from './Popover.module.scss';
 
-const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '560px', watchlist: '208px' };
+const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '400px', watchlist: '208px' };
 
 export default function Popover({
     children,
@@ -29,6 +29,10 @@ export default function Popover({
         <MantinePopover
             id={id}
             floatingStrategy="fixed"
+            // The invite ticket opens while it may still be sliding in from the screen edge.
+            hideDetached={false}
+            // The invite ticket sits at the screen's foot, so its panel always opens above it.
+            middlewares={{ flip: variant !== 'invites', shift: true }}
             width={`min(${POPOVER_WIDTHS[variant]}, calc(100vw - var(--gap-md) * 2))`}
             opened={open}
             onChange={onChange}

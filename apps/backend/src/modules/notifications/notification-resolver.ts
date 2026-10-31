@@ -1,8 +1,7 @@
 import type { Prisma } from '@pickflick/database';
 
-import { NOTIFICATION_MESSAGES } from './notification-policy.js';
-
-const UNAVAILABLE = { message: 'This update is no longer available.', href: null };
+import { getInboxMessage, UNAVAILABLE_COPY } from './notification-copy.js';
+import { isMembershipEndedEvent } from './notification-policy.js';
 
 /** Recheck current authorization before projecting either inbox copy or email content. */
 export async function resolveNotification(
@@ -13,16 +12,24 @@ export async function resolveNotification(
     const notification = await tx.notification.findFirst({
         where: { id: notificationId, recipientId, recipient: { status: 'ACTIVE' } },
     });
-    if (!notification) return null;
+    return notification ? projectNotification(tx, notification) : null;
+}
+
+/** Projects a recipient's own Notification row with the access they have now. */
+export async function projectNotification(
+    tx: Prisma.TransactionClient,
+    notification: Prisma.NotificationGetPayload<object>,
+) {
     const target = await resolveTarget(tx, notification);
+    const isAvailable = target !== null || isMembershipEndedEvent(notification.event);
     return {
         id: notification.id,
         event: notification.event,
         createdAt: notification.createdAt.toISOString(),
         readAt: notification.readAt?.toISOString() ?? null,
-        ...(target
-            ? { message: NOTIFICATION_MESSAGES[notification.event], href: target }
-            : UNAVAILABLE),
+        ...(isAvailable
+            ? { message: getInboxMessage(notification.event), href: target }
+            : { message: UNAVAILABLE_COPY.title, href: null }),
     };
 }
 

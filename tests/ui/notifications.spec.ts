@@ -33,9 +33,9 @@ for (const width of [390, 1440]) {
             );
             await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
             await expect(panel).toBeFocused();
+            // An update without a destination is marked read by activating its row.
             await panel
-                .getByRole('button', { name: /^Mark as read:/u })
-                .first()
+                .getByRole('button', { name: /^This update is no longer available\./u })
                 .focus();
             await page.keyboard.press('Enter');
             await expect(panel.getByText('2 unread', { exact: true })).toBeVisible();

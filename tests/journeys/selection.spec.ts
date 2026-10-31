@@ -4,11 +4,8 @@ import { sessionSchema } from '@pickflick/contracts';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import {
-    createDatabaseClient,
-    snapshotSessionSettings,
-} from '../../packages/database/src/index.ts';
+import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 async function submitScores(page: Page, sessionId: string, score: number) {
     await page.goto(`/sessions/${sessionId}`);
@@ -29,7 +26,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
     browser,
 }) => {
     const backend = await connectJourneyBackend();
-    const prisma = createDatabaseClient(loadRuntimeEnvironment().databaseUrl);
+    const { prisma } = backend;
     const userIds: string[] = [];
     const movieIds: string[] = [];
     const contexts: BrowserContext[] = [];
@@ -70,14 +67,9 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         movieIds.push(...movies.map((movie) => movie.id));
         await backend.seedMovieSearch(query, movies);
         const pages = [];
-        for (const [index, userId] of [adminId, memberId].entries()) {
-            const context = await browser.newContext({
-                extraHTTPHeaders: {
-                    'x-forwarded-for': `2001:db8:${randomUUID().slice(0, 4)}:${index}::1`,
-                },
-            });
+        for (const userId of [adminId, memberId]) {
+            const context = await openVisitor(browser, backend, userId);
             contexts.push(context);
-            await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
             const page = await context.newPage();
             pages.push(page);
             await page.goto(`/sessions/${session.id}`);
@@ -96,9 +88,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
             pages[1]!.getByText('0 of 2 participants have submitted.', { exact: false }),
         ).toBeVisible();
         await submitScores(firstPage, session.id, 0);
-        await expect(
-            firstPage.getByText('Your ballot is saved. Your scores are locked.'),
-        ).toBeVisible();
+        await expect(firstPage.getByText('Your ballot is locked.')).toBeVisible();
         await expect(
             pages[1]!.getByText('1 of 2 participants have submitted.', { exact: false }),
         ).toBeVisible({ timeout: 20000 });
@@ -107,7 +97,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         await expect(firstPage.getByText('Submitted: 0 of 10', { exact: true })).toBeVisible();
         await contexts[0]!.setOffline(true);
         await submitScores(pages[1]!, session.id, 1);
-        await expect(pages[1]!.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
+        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
         await contexts[0]!.setOffline(false);
         await firstPage.evaluate(() => window.dispatchEvent(new Event('online')));
         for (const page of pages) {
@@ -118,13 +108,10 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 'href',
                 `/movies/${movies[1]!.id}`,
             );
-            await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
         }
-        await expect(firstPage.getByRole('list', { name: 'Selection ranking' })).toBeVisible();
-        await expect(pages[1]!.getByRole('list', { name: 'Selection ranking' })).toHaveCount(0);
-        await expect(
-            pages[1]!.getByText('Vote breakdowns are hidden', { exact: false }),
-        ).toBeVisible();
+        // Operators see the Rivals card; members with hidden votes see none of it.
+        await expect(firstPage.getByRole('region', { name: 'Nomination Rivals' })).toBeVisible();
+        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
         const readOutcome = async () =>
             sessionSchema.parse(
                 await (await contexts[0]!.request.get(`/api/sessions/${session.id}`)).json(),
@@ -143,28 +130,12 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         expect(retry.status()).toBe(201);
         expect(await readOutcome()).toEqual(saved);
         await pages[1]!.reload();
-        await expect(pages[1]!.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-        await expect(pages[1]!.getByRole('list', { name: 'Selection ranking' })).toHaveCount(0);
+        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
+        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
     } finally {
         for (const context of contexts) await context.close();
-        await prisma.clubAuditEvent.deleteMany({ where: { clubId } });
-        await prisma.selectionScore.deleteMany({ where: { ballot: { session: { clubId } } } });
-        await prisma.selectionBallot.deleteMany({ where: { session: { clubId } } });
-        await prisma.nomination.deleteMany({ where: { session: { clubId } } });
-        await prisma.sessionParticipant.deleteMany({ where: { clubId } });
-        await prisma.session.deleteMany({ where: { clubId } });
-        await prisma.membership.deleteMany({ where: { clubId } });
-        await prisma.club.deleteMany({ where: { id: clubId } });
-        await prisma.user.deleteMany({ where: { id: { in: userIds } } });
-        await prisma.movieSearchCache.deleteMany({
-            where: {
-                OR: movieIds.map((id) => ({
-                    data: { path: ['movies'], array_contains: [{ id }] },
-                })),
-            },
-        });
-        await prisma.movie.deleteMany({ where: { id: { in: movieIds } } });
-        await prisma.$disconnect();
+        await backend.removeUsers(userIds);
+        await backend.removeMovies(movieIds);
         await backend.close();
     }
 });

@@ -1,20 +1,20 @@
 'use client';
 
-import type { TSessionInvitationPreview } from '@pickflick/contracts';
-import { useState, useSyncExternalStore, useTransition } from 'react';
+import { resolveAuthReturnTarget, type TSessionInvitationPreview } from '@pickflick/contracts';
+import { useState, useTransition } from 'react';
 
+import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { formatUtcDateTime, toIsoDate } from '#lib/format';
+import Icon from '#components/ui/Icon/Icon';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
+import { formatCalendarDate } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondSessionInvitationAction } from '../../actions';
-import styles from '../../page.module.scss';
 
 type TView = TSessionInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
 const messages = {
     valid: 'Join your Club for this screening.',
     accepted: 'Your participation is confirmed.',
@@ -22,14 +22,13 @@ const messages = {
     'sign-in': 'Sign in to review this invitation.',
     loading: 'Loading invitation…',
     error: 'We could not load this invitation. Try again shortly.',
-    unavailable:
-        'This invitation is unavailable. You must already belong to the Club. Ask the organizer for a Club invitation if you need to join.',
+    unavailable: 'Only members of the Club can join. Ask a member for a Club invitation.',
 };
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+    const isReady = useIsHydrated();
     function respond(decision: 'accept' | 'decline') {
         const offlineMessage = getOfflineMessage();
         if (offlineMessage) {
@@ -52,7 +51,7 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
             }
         });
     }
-    const returnPath = encodeURIComponent(`/invite/session/${token}`);
+    const returnPath = encodeURIComponent(resolveAuthReturnTarget(`/invite/session/${token}`));
     return (
         <div className={styles.card}>
             <div className={styles.intro}>
@@ -60,44 +59,70 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                 <p>{messages[view.state]}</p>
             </div>
             {view.state === 'valid' ? (
-                <>
-                    <div className={styles.preview}>
-                        <h2>{view.clubName}</h2>
-                        <p>{view.topic ?? 'Untitled Session'}</p>
-                        <p>
-                            {view.scheduledAt
-                                ? formatUtcDateTime(view.scheduledAt)
-                                : 'Not scheduled'}
-                        </p>
-                        <p>{view.location}</p>
-                        <p>Invited by {view.inviterName}</p>
-                        <p>Expires {toIsoDate(view.expiresAt)}</p>
-                    </div>
-                    <div className={styles.actions}>
-                        <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>
+                <div className={styles.preview}>
+                    <h2>{view.topic ?? 'Untitled Session'}</h2>
+                    <p className={styles.previewMeta}>
+                        <Icon name="club-building" />
+                        {view.clubName}
+                    </p>
+                    <p className={styles.previewMeta}>
+                        <Icon name="calendar" />
+                        {view.scheduledAt ? formatCalendarDate(view.scheduledAt) : 'Not scheduled'}
+                        {view.location ? ` · ${view.location}` : ''}
+                    </p>
+                    <p className={styles.previewMeta}>
+                        <Icon name="profile" />
+                        <span>
+                            Invited by <strong>{view.inviterName}</strong> · expires{' '}
+                            <LocalTime format="date" value={view.expiresAt} />
+                        </span>
+                    </p>
+                </div>
+            ) : null}
+            <div className={styles.actions}>
+                {view.state === 'valid' ? (
+                    <>
+                        <Button
+                            disabled={!isReady}
+                            fullWidth
+                            loading={isPending}
+                            size="large"
+                            onClick={() => respond('accept')}
+                        >
+                            <Icon name="check" />
                             Accept invitation
                         </Button>
                         <Button
                             disabled={!isReady || isPending}
-                            variant="secondary"
+                            fullWidth
+                            variant="ghost"
                             onClick={() => respond('decline')}
                         >
                             Decline invitation
                         </Button>
-                    </div>
-                </>
-            ) : null}
-            {view.state === 'accepted' ? (
-                <ButtonLink href={`/sessions/${view.sessionId}`}>Open Session</ButtonLink>
-            ) : null}
-            {view.state === 'sign-in' ? (
-                <ButtonLink href={`/login?returnTo=${returnPath}`}>Sign in</ButtonLink>
-            ) : null}
-            {!['valid', 'loading', 'sign-in', 'accepted'].includes(view.state) ? (
-                <ButtonLink href="/app" variant="secondary">
-                    Back to your Clubs
-                </ButtonLink>
-            ) : null}
+                    </>
+                ) : null}
+                {view.state === 'accepted' ? (
+                    <ButtonLink fullWidth href={`/sessions/${view.sessionId}`} variant="primary">
+                        Open Session
+                    </ButtonLink>
+                ) : null}
+                {view.state === 'sign-in' ? (
+                    <ButtonLink fullWidth href={`/login?returnTo=${returnPath}`} variant="primary">
+                        Sign in
+                    </ButtonLink>
+                ) : null}
+                {view.state === 'error' ? (
+                    <Button fullWidth onClick={() => globalThis.location.reload()}>
+                        Try again
+                    </Button>
+                ) : null}
+                {!['valid', 'loading', 'sign-in', 'accepted'].includes(view.state) ? (
+                    <ButtonLink fullWidth href="/app" variant="ghost">
+                        Back to your Clubs
+                    </ButtonLink>
+                ) : null}
+            </div>
             <p role="status" aria-live="polite">
                 {message}
             </p>

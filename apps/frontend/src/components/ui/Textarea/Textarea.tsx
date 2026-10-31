@@ -7,9 +7,8 @@ import {
 import clsx from 'clsx';
 
 import styles from '#components/ui/Field/Field.module.scss';
-import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
-import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
-import FieldLabel from '#components/ui/Field/FieldLabel';
+import type { IFieldProps } from '#components/ui/Field/field.types';
+import { FIELD_CLASS_NAMES, getFieldProps } from '#components/ui/Field/field-props';
 import FieldMessage from '#components/ui/Field/FieldMessage';
 import type { TOmitStyling } from '#components/ui/types';
 
@@ -18,7 +17,7 @@ export interface ITextareaProps
         IFieldProps,
         TOmitStyling<IMantineTextareaProps, keyof IFieldProps | 'description' | 'size'> {
     /** Shows "length/maxLength" in the message line while there is no error or success. */
-    showCount?: boolean;
+    shouldShowCount?: boolean;
     size?: 'compact' | 'default' | 'large';
 }
 
@@ -27,48 +26,44 @@ export default function Textarea({
     hint,
     label,
     labelHint,
+    isLabelHidden,
     maxLength,
-    showCount = false,
+    shouldShowCount = false,
     size = 'default',
     success,
     ...props
 }: ITextareaProps) {
     const count =
-        showCount && maxLength ? `${String(props.value ?? '').length}/${maxLength}` : undefined;
+        shouldShowCount && maxLength
+            ? `${String(props.value ?? '').length}/${maxLength}`
+            : undefined;
     return (
         <MantineTextarea
             {...props}
+            {...getFieldProps({
+                error,
+                isLabelHidden,
+                label,
+                labelHint,
+                success,
+                message: (
+                    <FieldMessage
+                        shouldAlignEnd={shouldShowCount}
+                        error={error}
+                        hint={count ?? hint}
+                        success={success}
+                    />
+                ),
+            })}
             classNames={{
-                root: styles.field,
-                label: styles.field__label,
+                ...FIELD_CLASS_NAMES,
                 input: clsx(
                     styles.control,
                     styles['m-textarea'],
                     size !== 'default' && styles[`m-${size}`],
                 ),
-                description: styles.field__description,
             }}
-            data-state={getFieldState(error, success)}
-            description={
-                <FieldMessage
-                    alignEnd={showCount}
-                    error={error}
-                    hint={count ?? hint}
-                    success={success}
-                />
-            }
-            error={Boolean(error)}
-            inputContainer={(input) => (
-                <>
-                    {input}
-                    <FieldAnnouncements error={error} success={success} />
-                </>
-            )}
-            inputWrapperOrder={['label', 'input', 'description']}
-            label={<FieldLabel hint={labelHint} label={label} />}
             maxLength={maxLength}
-            unstyled
-            withAsterisk={false}
         />
     );
 }

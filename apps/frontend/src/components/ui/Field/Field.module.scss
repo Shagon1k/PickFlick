@@ -112,9 +112,3 @@
 .field__message[data-tone='success'] {
     color: var(--success-text);
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .control {
-        transition-duration: 0.01ms;
-    }
-}

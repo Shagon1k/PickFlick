@@ -84,12 +84,11 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                            | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
 | storage                          | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
 | health                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
 | sessions                         | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
-| library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
+| library                          | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
+| notifications                    | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -139,10 +138,10 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
-`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
+`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
-and `NotificationDeliveryAttempt`. Database-enforced invariants:
+and `NotificationEmailDelivery`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -201,6 +200,8 @@ listed for a recipient. Existing unsafe-state privacy rules apply to both flows.
 Hub and Manage Club projections carry `IClubAccess` (`adminless`, `newWorkAllowed`, and restriction
 `reasons`) and role permissions. Manage Club also identifies the caller's Membership. The access
 resolver currently uses lifecycle, active administration, member count, and fixture plan limits.
+The limits per plan are `CLUB_TIER_ENTITLEMENTS` in `@pickflick/contracts`, which the public
+pricing pages also read, so the advertised and enforced limits cannot drift.
 Phase 20 can replace entitlement input without making browser state an authorization boundary.
 `MEMBER_LIMIT` means excess roster size: history and existing participation stay available, and removal
 and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.
@@ -263,12 +264,12 @@ backend package and adds no dependency or environment variable.
 
 Notification email uses one PostgreSQL `NotificationEmailDelivery` per opted-in Notification,
 created with intent in the source transaction. Migration 35 backfills pending email intent and adds
-address-hash suppression and webhook receipts. Claims also materialize pending intent written
-by older API instances during rollout. The separate `email-worker` process polls one due row
-every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. Existing attempts
-record each claim and outcome. It sends through the shared email adapter, bounded to fifteen seconds.
-Six attempts and a 23-hour first-claim window bound provider idempotency. Request hashes stop changed
-payloads without storing bodies. The current authorization projection supplies static copy and safe
+address-hash suppression and webhook receipts. The separate `email-worker` process polls one due row
+every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. The delivery row
+keeps the attempt count, first attempt and last reason; each attempt is in the structured log. It
+sends through the shared email adapter, bounded to fifteen seconds. Six attempts and a 23-hour
+first-claim window bound provider idempotency: a retry reuses the idempotency key, and a provider
+that refuses a changed payload under it ends the delivery as `FAILED`. The current authorization projection supplies static copy and safe
 links before every request; preference decisions remain those captured at event creation.
 
 `POST /webhooks/resend` is public to the provider and verifies signatures on the raw body before
@@ -519,10 +520,11 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, `NominationDeadlineDecision` audit records without a
-human actor, and recipient-specific `NominationDeadlineNotification` intent. Migration 22 removed
-the separate `NominationDeadlineJob` scheduling table: the Session row is the schedule. Notification
-delivery remains Proposed for the later notification phase; these rows do not send messages.
+Migration 18 adds Session `deadlineVersion` and `NominationDeadlineDecision` audit records without a
+human actor. Migration 22 removed the separate `NominationDeadlineJob` scheduling table: the Session
+row is the schedule. The decision transaction records `NOMINATION_STALLED` or the phase-change
+Notification rows; migration 36 dropped the earlier write-only `NominationDeadlineNotification`
+recipient intent, which nothing read once Notifications existed.
 
 Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
 Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
@@ -830,8 +832,7 @@ LOW/MEDIUM/HIGH priority enum and `addedAt`. Foreign keys cascade private saved 
 User or Movie is deleted. The migration is additive, changes no existing rows, and must precede
 the updated API.
 
-The authenticated Watchlist module exposes private/no-store `GET /watchlist` and
-`GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
+The Library module's Watchlist exposes private/no-store `GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
 from the session; reads and writes always include that User ID. `PUT` accepts only `{ priority }`,
 requires an existing Movie and uses the database's atomic upsert. Duplicate saves and priority
 edits retain the original added date; repeat deletes succeed. Concurrent different priorities use
@@ -848,8 +849,8 @@ The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership a
 repeatable-read Completed Session projections. A Member's rating query selects only responses from
 Sessions with saved `showRatingResults`; Admins and Moderators may aggregate all Completed results.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
-caching. Free returns a BASIC projection without ranking rows; Pro returns EXTENDED analytics.
-The existing entitlement adapter supplies the plan; this adds no billing behavior.
+caching. Every plan gets the ranking rows; the Hub's extended statistics stay Pro. The existing
+entitlement adapter supplies the plan; this adds no billing behavior.
 
 The shared pure calculators count completed screenings, group received historical ratings by
 canonical Movie and weight every response equally. Departed participants and partial PAST imports
@@ -911,14 +912,16 @@ owner visual acceptance are still pending.
 
 ### Durable notification intent
 
-Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt. Apply it
+Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt; migration 38
+drops the per-attempt table and the email request hash in favour of the delivery row. Apply it
 before the updated API and deadline worker. It is additive, with no historical backfill. Source
 Session transitions, audited Membership/Club changes and new achievement awards record intent in
 their existing transaction. Notification writes failing roll back the source mutation. The
 per-recipient/event/source UUID/occurrence unique index handles concurrent replay; phase/deadline
 versions distinguish repeated Session events. First-write preferences and attempts survive retries.
-Existing SessionProgressEvent and NominationDeadlineNotification records retain their existing
-roles; neither is a second inbox. Only future writes produce Notifications.
+Existing SessionProgressEvent records retain their role (live progress and the Early Bird
+achievement's Selection opening time); they are not a second inbox. Only future writes produce
+Notifications.
 
 The authenticated preference GET/PUT API is private/no-store, derives identity from the session,
 and validates strict shared contracts. Optional defaults are in-app on/email off; transactional

@@ -20,3 +20,8 @@ export function buildSearchCacheKey(provider: string, search: TMovieSearch): str
 export function buildDetailsCacheKey(provider: string, locale: string): string {
     return buildCatalogCacheKey(provider, locale);
 }
+
+/** The details key of the configured catalog provider and locale. */
+export function buildConfiguredDetailsKey(catalog: { provider: string; locale: string }): string {
+    return buildDetailsCacheKey(catalog.provider, catalog.locale);
+}

@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import PublicShell from '#components/shells/PublicShell/PublicShell';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';
@@ -7,6 +5,7 @@ import Icon from '#components/ui/Icon/Icon';
 import { createPublicMetadata } from '#lib/public-metadata';
 
 import LandingReveal from './_components/LandingReveal/LandingReveal';
+import PlanHandoff from './_components/PlanHandoff/PlanHandoff';
 import styles from './marketing.module.scss';
 import { landingFeatures, landingSteps } from './marketing-content';
 
@@ -16,7 +15,7 @@ export const metadata = createPublicMetadata({
     path: '/',
 });
 
-function SprocketDivider() {
+function SectionDivider() {
     return <div aria-hidden="true" className={styles.divider} />;
 }
 
@@ -49,7 +48,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <SprocketDivider />
+                <SectionDivider />
 
                 <section
                     aria-labelledby="journey-title"
@@ -76,7 +75,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <SprocketDivider />
+                <SectionDivider />
 
                 <section
                     aria-labelledby="features-title"
@@ -109,7 +108,7 @@ export default function HomePage() {
                     </div>
                 </section>
 
-                <SprocketDivider />
+                <SectionDivider />
 
                 <section
                     aria-label="PickFlick promise"
@@ -121,41 +120,16 @@ export default function HomePage() {
                     </p>
                 </section>
 
-                <section
-                    aria-labelledby="landing-handoff-title"
-                    className={`${styles.handoff} ${styles.reveal}`}
-                >
-                    <div className={styles.handoffInner}>
-                        <div>
-                            <h2 id="landing-handoff-title">
-                                Stop arguing.{' '}
-                                <span className={styles.warmLine}>Start watching.</span>
-                            </h2>
-                            <ul aria-label="Free plan includes" className={styles.handoffFacts}>
-                                <li>
-                                    <strong>1</strong> administered Club
-                                </li>
-                                <li>
-                                    Up to <strong>8</strong> members
-                                </li>
-                                <li>Unlimited Session history</li>
-                            </ul>
-                        </div>
-                        <div className={styles.handoffAction}>
-                            <div className={styles.handoffPrice}>
-                                <strong>€0</strong>
-                                <span>to start</span>
-                            </div>
-                            <p className={styles.handoffNote}>No credit card required.</p>
-                            <ButtonLink href="/login" variant="primary">
-                                Create your first Club
-                            </ButtonLink>
-                            <Link className={styles.handoffLink} href="/pricing">
-                                Compare plans
-                            </Link>
-                        </div>
-                    </div>
-                </section>
+                <PlanHandoff
+                    titleId="landing-handoff-title"
+                    title={
+                        <>
+                            Stop arguing. <span className={styles.warmLine}>Start watching.</span>
+                        </>
+                    }
+                    className={styles.reveal}
+                    shouldLinkPricing
+                />
             </LandingReveal>
         </PublicShell>
     );

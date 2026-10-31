@@ -23,7 +23,7 @@ import styles from './page.module.scss';
 const tableColumns: ITableColumn[] = [
     { key: 'member', header: 'Member' },
     { key: 'state', header: 'State' },
-    { key: 'score', header: 'Score', numeric: true },
+    { key: 'score', header: 'Score', isNumeric: true },
 ];
 
 const tableRows: ITableRow[] = [

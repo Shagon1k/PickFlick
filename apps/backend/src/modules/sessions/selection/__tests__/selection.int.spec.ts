@@ -7,9 +7,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Selection ballots', () => {
     let api: ITestApi;
@@ -197,7 +197,7 @@ describe('Selection ballots', () => {
         await expect(
             api.prisma
                 .$executeRaw`UPDATE "SelectionScore" SET score = 11 WHERE "ballotId" = ${saved.id}::uuid`,
-        ).rejects.toThrow();
+        ).rejects.toThrow('SelectionScore_score_check');
     });
 
     it('should deny unauthenticated, nonmember and unaccepted participants and archived or closed writes', async () => {
@@ -256,7 +256,7 @@ describe('Selection ballots', () => {
             where: { clubId, userId: member },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect((await api.request(`/sessions/${sessionId}`, { userId: member })).status).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}`, { userId: member });
         expect((await submit()).status).toBe(404);
     });
 

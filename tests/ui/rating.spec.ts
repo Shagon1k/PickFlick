@@ -1,21 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const ROUTE = '/sessions/30000000-0000-4000-8000-000000000050';
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-rating-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-rating-${scenario}-${crypto.randomUUID()}`);
 }
 
 for (const viewport of canonicalViewports) {
@@ -30,9 +22,10 @@ for (const viewport of canonicalViewports) {
             await expect(page.getByText(/Rating in progress — 1 of 3/)).toBeVisible();
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const first = page.getByRole('radio', { name: '1 of 10', exact: true });
-            expect(
-                await first.evaluate((element) => element.getBoundingClientRect().width),
-            ).toBeGreaterThanOrEqual(44);
+            // Ten stars share one row, so a star narrows on phones but keeps a 44px height.
+            const box = await first.evaluate((element) => element.getBoundingClientRect());
+            expect(box.width).toBeGreaterThanOrEqual(24);
+            expect(box.height).toBeGreaterThanOrEqual(44);
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(first).toBeFocused();
             await page.keyboard.press('End');
@@ -171,8 +164,5 @@ test('Completed Rating explains an empty result without inventing responses', as
     await authenticate(context, 'empty-completed');
     await page.goto(ROUTE);
     await expect(page.getByText('No ratings were received.')).toBeVisible();
-    await expect(
-        page.getByText('This Session is complete. No more ratings can be added.'),
-    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
 });

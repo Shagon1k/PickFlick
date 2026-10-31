@@ -7,12 +7,13 @@ import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
 import { buildMovieDetails } from '../../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { MoviesRepository } from '../../../movies/movies.repository.js';
 import { MoviesService } from '../../../movies/movies.service.js';
 import type { IMovieProvider } from '../../../movies/providers/movie-provider.js';
@@ -308,6 +309,9 @@ describe('Nominations', () => {
                 where: { sessionId, action: 'SESSION_NOMINATION_CLOSED' },
             }),
         ).toBe(1);
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_CLOSED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await submit(admin)).status).toBe(409);
     });
     it('should automatically open Selection with multiple nominations and keep the winner unresolved', async () => {
@@ -318,6 +322,9 @@ describe('Nominations', () => {
             phase: 'SELECTION',
             movieId: null,
         });
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_OPENED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
     });
     it('should prevent linking a participant from another Session through a direct database write', async () => {
         const session = await createSession(api.prisma, clubId, {

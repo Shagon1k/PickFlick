@@ -48,19 +48,19 @@ const previewRoutes: IShellRouteMap = {
 };
 
 const previewClubItems = [
-    { href: '/shell-preview/product#overview', label: 'Overview', current: true },
-    { href: '/shell-preview/product#sessions', label: 'Sessions' },
-    { href: '/shell-preview/product#ratings', label: 'Ratings' },
-    { href: '/shell-preview/product#members', label: 'Members' },
-    { href: '/shell-preview/product#achievements', label: 'Achievements' },
-    { href: '/shell-preview/product#manage', label: 'Manage Club' },
+    { href: '/shell-preview/product#overview', label: 'Overview', icon: 'overview', current: true },
+    { href: '/shell-preview/product#sessions', label: 'Sessions', icon: 'sessions' },
+    { href: '/shell-preview/product#ratings', label: 'Ratings', icon: 'ratings' },
+    { href: '/shell-preview/product#members', label: 'Members', icon: 'members' },
+    { href: '/shell-preview/product#achievements', label: 'Achievements', icon: 'achievements' },
+    { href: '/shell-preview/product#manage', label: 'Manage Club', icon: 'settings' },
 ] as const;
 
 const previewAdminItems = [
-    { href: '/shell-preview/admin#overview', label: 'Overview', current: true },
-    { href: '/shell-preview/admin#users', label: 'Users' },
-    { href: '/shell-preview/admin#clubs', label: 'Clubs' },
-    { href: '/shell-preview/admin#application', label: 'Application settings' },
+    { href: '/shell-preview/admin#overview', label: 'Overview', icon: 'overview', current: true },
+    { href: '/shell-preview/admin#users', label: 'Users', icon: 'members' },
+    { href: '/shell-preview/admin#clubs', label: 'Clubs', icon: 'club-building' },
+    { href: '/shell-preview/admin#application', label: 'Application settings', icon: 'settings' },
 ] as const;
 
 function isPreviewShellName(value: string): value is TPreviewShellName {
@@ -148,7 +148,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'product':
             return (
                 <ProductShell
-                    admin
+                    isAdmin
                     clubItems={previewClubItems}
                     currentArea="hub"
                     eyebrow="Authenticated product shell"
@@ -173,7 +173,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
             );
         case 'session':
             return (
-                <SessionShell admin={admin} clubItems={previewClubItems} routes={previewRoutes}>
+                <SessionShell isAdmin={admin} clubItems={previewClubItems} routes={previewRoutes}>
                     <div className={styles.sessionGrid}>
                         <ShellPlaceholder title="Phase content">
                             <p>
@@ -193,21 +193,36 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'settings':
             return (
                 <ControlShell
-                    admin={admin}
+                    isAdmin={admin}
                     clubItems={previewClubItems}
                     currentArea="settings"
                     description="Personal controls keep a stable reading width and move section navigation into a mobile menu."
                     items={[
-                        { href: '/shell-preview/settings', label: 'Profile', current: true },
+                        {
+                            href: '/shell-preview/settings',
+                            label: 'Profile',
+                            icon: 'profile',
+                            current: true,
+                        },
                         {
                             href: '/shell-preview/settings?tab=notifications',
                             label: 'Notifications',
+                            icon: 'bell',
                         },
-                        { href: '/shell-preview/settings?tab=subscription', label: 'Subscription' },
-                        { href: '/shell-preview/settings?tab=privacy', label: 'Privacy & data' },
+                        {
+                            href: '/shell-preview/settings?tab=subscription',
+                            label: 'Subscription',
+                            icon: 'credit-card',
+                        },
+                        {
+                            href: '/shell-preview/settings?tab=privacy',
+                            label: 'Privacy & data',
+                            icon: 'privacy',
+                        },
                         {
                             href: '/shell-preview/settings?tab=import-export',
                             label: 'Import & Export',
+                            icon: 'import-export',
                         },
                     ]}
                     routes={previewRoutes}
@@ -224,7 +239,7 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
         case 'library':
             return (
                 <ControlShell
-                    admin={admin}
+                    isAdmin={admin}
                     clubItems={previewClubItems}
                     currentArea="library"
                     description="Personal film memory uses the product chrome, local views, and bounded dense regions."
@@ -232,10 +247,19 @@ export default async function ShellPreviewPage({ params }: { params: Promise<{ s
                         {
                             href: '/shell-preview/library?tab=my-ratings',
                             label: 'My Ratings',
+                            icon: 'ratings',
                             current: true,
                         },
-                        { href: '/shell-preview/library?tab=watchlist', label: 'Watchlist' },
-                        { href: '/shell-preview/library?tab=achievements', label: 'Achievements' },
+                        {
+                            href: '/shell-preview/library?tab=watchlist',
+                            label: 'Watchlist',
+                            icon: 'watchlist',
+                        },
+                        {
+                            href: '/shell-preview/library?tab=achievements',
+                            label: 'Achievements',
+                            icon: 'achievements',
+                        },
                     ]}
                     routes={previewRoutes}
                     title="My Library"

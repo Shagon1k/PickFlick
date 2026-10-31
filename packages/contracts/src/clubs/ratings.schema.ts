@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { createPaginationSchema } from '../common/pagination.js';
+
 export const CLUB_RATINGS_PAGE_SIZE = 25;
 
 export const clubRatingsQuerySchema = z.strictObject({
@@ -8,8 +10,7 @@ export const clubRatingsQuerySchema = z.strictObject({
 });
 export type TClubRatingsQuery = z.infer<typeof clubRatingsQuerySchema>;
 
-export const clubRatingsSchema = z.object({
-    analytics: z.enum(['BASIC', 'EXTENDED']),
+export const clubRatingsSchema = createPaginationSchema(CLUB_RATINGS_PAGE_SIZE).extend({
     items: z
         .array(
             z.object({
@@ -21,9 +22,5 @@ export const clubRatingsSchema = z.object({
             }),
         )
         .max(CLUB_RATINGS_PAGE_SIZE),
-    total: z.number().int().nonnegative(),
-    page: z.number().int().positive(),
-    pages: z.number().int().positive(),
-    pageSize: z.literal(CLUB_RATINGS_PAGE_SIZE),
 });
 export type TClubRatings = z.infer<typeof clubRatingsSchema>;

@@ -36,7 +36,7 @@ export default function TrailerPlayer({
                 Trailer
             </h2>
             {trailer ? null : (
-                <p className={styles.empty}>Our film sources have no trailer for this Movie.</p>
+                <p className={styles.empty}>Our film sources have no trailer for this film.</p>
             )}
             {trailer && isPlaying ? (
                 <iframe

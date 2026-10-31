@@ -45,3 +45,6 @@ export interface IPendingClubInvitation {
     inviterName: string;
     expiresAt: string;
 }
+
+/** A Club invitation link admits one person and expires after this many hours. */
+export const CLUB_INVITATION_LIFETIME_HOURS = 12;

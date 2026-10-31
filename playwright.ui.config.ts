@@ -32,6 +32,8 @@ export default defineConfig({
     use: {
         baseURL: BASE_URL,
         colorScheme: 'dark',
+        // Instants render in the viewer's zone; one fixed zone keeps text and screenshots stable.
+        timezoneId: 'UTC',
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
         video: 'retain-on-failure',

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
@@ -8,16 +9,7 @@ import { canonicalViewports } from './viewports';
 const SESSION_ID = '30000000-0000-4000-8000-000000000041';
 const INVITATION_PATH = `/invite/session/${'s'.repeat(43)}`;
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-session-roster-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-session-roster-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -31,10 +23,15 @@ test(
         );
         await authenticate(context, 'outsider');
         await page.reload();
-        await expect(page.getByText(/You must already belong to the Club/)).toBeVisible();
+        await expect(page.getByText(/Only members of the Club can join/)).toBeVisible();
         await expect(page.getByText('Private noir night')).toHaveCount(0);
         await expect(page.getByText('Midnight Society')).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Accept invitation' })).toHaveCount(0);
+        // The API answers 404 for Sessions outside the viewer's Clubs, as for missing ones.
+        await page.goto('/sessions/30000000-0000-4000-8000-0000000000ff');
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Members Only');
+        await expect(page.getByText(/Ask a member for a Club invitation/u)).toBeVisible();
+        await expect(page.getByText('Private noir night')).toHaveCount(0);
     },
 );
 
@@ -76,7 +73,7 @@ test(
         await page.getByRole('menuitem', { name: 'Kick', exact: true }).click();
         const kickDialog = page.getByRole('dialog', { name: 'Kick participants' });
         await kickDialog.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
-        await expect(kickDialog.getByText('invited · invitation revoked')).toBeVisible();
+        await expect(kickDialog.getByText('Invited · invite revoked')).toBeVisible();
         await kickDialog.getByRole('button', { name: 'Remove Jordan Member' }).click();
         const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
         await expect(removalDialog.getByLabel('Type REMOVE to confirm')).toBeFocused();

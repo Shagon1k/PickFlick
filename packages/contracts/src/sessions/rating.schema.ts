@@ -1,10 +1,11 @@
 import { z } from 'zod';
 
+import { ratingScoreSchema } from '../common/rating-scale.js';
 import { multilineText, optionalText } from '../common/text.js';
 
 export const SESSION_RATING_COMMENT_MAX_LENGTH = 2000;
 export const submitRatingSchema = z.strictObject({
-    score: z.int().min(1).max(10),
+    score: ratingScoreSchema,
     comment: optionalText(multilineText(0, SESSION_RATING_COMMENT_MAX_LENGTH)),
 });
 export type TSubmitRating = z.infer<typeof submitRatingSchema>;
@@ -16,7 +17,7 @@ export const closeRatingSchema = z.strictObject({
 export type TCloseRating = z.infer<typeof closeRatingSchema>;
 
 const sessionRatingSchema = z.strictObject({
-    score: z.int().min(1).max(10),
+    score: ratingScoreSchema,
     comment: z.string().nullable(),
     submittedAt: z.iso.datetime().nullable(),
 });

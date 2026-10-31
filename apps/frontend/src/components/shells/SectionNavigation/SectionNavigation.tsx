@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
-import NavigationItemIcon from '#components/shells/NavigationItemIcon/NavigationItemIcon';
 import styles from '#components/shells/product-navigation.module.scss';
 import { useOverlayDismissal, useProductOverlay } from '#components/shells/product-overlay';
 import type { IShellNavigationItem } from '#components/shells/shell-navigation';
+import Icon from '#components/ui/Icon/Icon';
 
 interface ISectionNavigationProps {
     items: readonly IShellNavigationItem[];
@@ -22,7 +22,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    useOverlayDismissal(isOpen, containerRef, closeOverlay);
+    useOverlayDismissal({ isOpen, rootRef: containerRef, closeOverlay });
 
     useEffect(() => {
         if (isOpen) {
@@ -40,7 +40,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
                             href={item.href}
                             key={item.label}
                         >
-                            <NavigationItemIcon label={item.label} />
+                            <Icon className={styles.menuIcon} name={item.icon ?? 'circle'} />
                             {item.label}
                         </Link>
                     ))}

@@ -1,13 +1,14 @@
-import type { IClubHub } from '@pickflick/contracts';
+import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getMonogram } from '#lib/format';
+import { formatAverage, formatHours, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
+import ActiveRatings from '../ActiveRatings/ActiveRatings';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
-import HubSessionCards from '../HubSessionCards/HubSessionCards';
 
 export default function HubOverview({ hub }: { hub: IClubHub }) {
     const stats = hub.statistics;
@@ -15,19 +16,23 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
         label: string;
         value: string | number | null;
         icon: TIconName;
-        small?: boolean;
+        isSmall?: boolean;
     }[] = [
         { label: 'Sessions watched', value: stats.sessionsWatched, icon: 'film-reel' },
         { label: 'Sessions this year', value: stats.sessionsThisYear, icon: 'clapperboard' },
-        { label: 'Avg club rating', value: formatNumber(stats.averageRating), icon: 'star-circle' },
+        {
+            label: 'Avg club rating',
+            value: stats.averageRating === null ? null : formatAverage(stats.averageRating),
+            icon: 'star-circle',
+        },
         {
             label: 'Total watch time, h',
-            value: formatNumber(stats.totalWatchHours),
+            value: stats.totalWatchHours === null ? null : formatHours(stats.totalWatchHours),
             icon: 'stopwatch',
         },
         { label: 'Most watched genre', value: stats.topGenre, icon: 'genre' },
-        { label: 'Top director', value: stats.topDirector, icon: 'director', small: true },
-        { label: 'Top actor', value: stats.topActor, icon: 'actor', small: true },
+        { label: 'Top director', value: stats.topDirector, icon: 'director', isSmall: true },
+        { label: 'Top actor', value: stats.topActor, icon: 'actor', isSmall: true },
     ];
     const visibleTiles = hub.club.tier === 'FREE' ? tiles.slice(0, 2) : tiles;
     return (
@@ -41,7 +46,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <div className={styles.stat} key={tile.label}>
                         <Icon name={tile.icon} />
                         <div>
-                            <strong data-small={tile.small || undefined}>
+                            <strong data-small={tile.isSmall || undefined}>
                                 {tile.value ?? '—'}
                             </strong>
                             <span>{tile.label}</span>
@@ -49,14 +54,6 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     </div>
                 ))}
             </section>
-            {hub.club.tier === 'FREE' ? (
-                <p>Extended Club analytics and the ratings leaderboard are available with Pro.</p>
-            ) : (
-                <p>
-                    Ratings use completed results you can view. Metadata summaries need film details
-                    for every completed screening.
-                </p>
-            )}
             <div className={styles.cards}>
                 <section className={styles.card}>
                     <div className={styles.cardHeading}>
@@ -75,9 +72,10 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                         ))}
                     </ul>
                 </section>
-                <ActiveSessionCard hub={hub} />
+                {/* With nothing scheduled, the call sheet above already offers Schedule. */}
+                {hub.activeSession ? <ActiveSessionCard hub={hub} /> : null}
             </div>
-            {hub.ratingSessions.length ? <HubSessionCards hub={hub} ratingsOnly /> : null}
+            {hub.ratingSessions.length ? <ActiveRatings sessions={hub.ratingSessions} /> : null}
             <SprocketDivider variant="section" />
             <section className={styles.card}>
                 <h2>Recent Activity</h2>
@@ -86,15 +84,14 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                         {hub.recentSessions.map((session) => (
                             <li key={session.id}>
                                 <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
+                                    <strong>
+                                        {session.movie?.title ??
+                                            session.topic ??
+                                            'Untitled Session'}
+                                    </strong>
                                 </Link>{' '}
-                                · {session.phase.toLowerCase()} ·{' '}
-                                <time dateTime={session.updatedAt}>
-                                    {new Intl.DateTimeFormat('en', {
-                                        dateStyle: 'medium',
-                                        timeZone: 'UTC',
-                                    }).format(new Date(session.updatedAt))}
-                                </time>
+                                {describeActivity(session)} ·{' '}
+                                <LocalTime format="date" value={session.updatedAt} />
                             </li>
                         ))}
                     </ul>
@@ -102,27 +99,22 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <p>No Session activity yet.</p>
                 )}
             </section>
-            {hub.historySessions.length ? (
-                <details className={styles.history}>
-                    <summary>Session history</summary>
-                    <ul className={styles.activity}>
-                        {hub.historySessions.map((session) => (
-                            <li key={session.id}>
-                                <Link href={`/sessions/${session.id}`}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
-                                </Link>{' '}
-                                · {session.phase.toLowerCase()}
-                            </li>
-                        ))}
-                    </ul>
-                </details>
-            ) : null}
         </div>
     );
 }
 
-function formatNumber(value: number | null) {
-    return value === null
-        ? null
-        : new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
+const ACTIVITY: Record<IClubHubSession['phase'], string> = {
+    NOMINATION: 'is open for nominations',
+    SELECTION: 'is in Selection',
+    WATCHING: 'was picked for the screening',
+    RATING: 'is open for ratings',
+    COMPLETED: 'was completed',
+    CANCELLED: 'was cancelled',
+};
+
+/** A Session's latest step in words, with the Club score once it is known. */
+function describeActivity(session: IClubHubSession): string {
+    if (session.phase === 'COMPLETED' && session.ratingAverage !== null)
+        return `was rated ${formatAverage(session.ratingAverage)}`;
+    return ACTIVITY[session.phase];
 }

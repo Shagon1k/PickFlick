@@ -3,10 +3,10 @@
 import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
 import { type ReactNode, useEffect, useState } from 'react';
 
+import type { IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import { getMonogram } from '#lib/format';
 
-import type { IClubActionState } from '../../action-state';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 

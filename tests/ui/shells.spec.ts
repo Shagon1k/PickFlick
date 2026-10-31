@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -46,6 +47,9 @@ for (const shell of shellRoutes) {
                     animations: 'disabled',
                     caret: 'hide',
                     fullPage: true,
+                    // Signed out, the invite ticket shows its load error and renders unevenly;
+                    // the pending-invite captures cover the ticket itself.
+                    mask: [page.locator('[data-invite-ticket]')],
                     scale: 'css',
                 });
             },
@@ -54,14 +58,7 @@ for (const shell of shellRoutes) {
 }
 
 test('header overlays are mutually exclusive and return focus', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-shell-overlays',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-shell-overlays');
     await openShell(page, 'product', canonicalViewports[2]);
 
     const searchTrigger = page.getByRole('button', { name: 'Search films' });

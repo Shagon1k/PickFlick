@@ -44,7 +44,7 @@
     cursor: pointer;
     background: transparent;
     border: 0;
-    transition: color 0.18s ease;
+    transition: color var(--motion-local) ease;
 }
 
 .roundButton::before,
@@ -55,7 +55,7 @@
     content: '';
     border: 1px solid var(--border-lit);
     border-radius: 50%;
-    transition: border-color 0.18s ease;
+    transition: border-color var(--motion-local) ease;
 }
 
 .roundButton,
@@ -232,6 +232,19 @@
     background: var(--accent-soft);
 }
 
+/* The prototype's unread dot, at the row's right edge. */
+.notifItem[data-unread]::after {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    width: 6px;
+    height: 6px;
+    content: '';
+    background: var(--gold);
+    border-radius: 50%;
+    transform: translateY(-50%);
+}
+
 .notifIcon {
     flex: 0 0 20px;
     width: 20px;
@@ -253,8 +266,26 @@
 .notifBody {
     display: block;
     min-height: 44px;
+    padding: 0;
+    font: inherit;
     color: var(--fg);
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+div.notifBody {
+    cursor: default;
+}
+
+/* A link or button stretches over the whole row, icon included. */
+a.notifBody::before,
+button.notifBody::before {
+    position: absolute;
+    inset: 0;
+    content: '';
 }
 
 .notifBody time {
@@ -262,28 +293,6 @@
     margin-top: 5px;
     font-size: var(--fs-micro);
     color: var(--fg-secondary);
-}
-
-.notifRead {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    transform: translateY(-50%);
-}
-
-.notifRead span {
-    width: 6px;
-    height: 6px;
-    background: var(--gold);
-    border-radius: 50%;
 }
 
 .notifStatus,
@@ -482,8 +491,8 @@
     border: 0;
     border-bottom: 1px solid var(--border);
     transition:
-        color 0.16s ease,
-        background-color 0.16s ease;
+        color var(--motion-local) ease,
+        background-color var(--motion-local) ease;
 }
 
 .filmFrame:last-child {
@@ -576,7 +585,7 @@
     clip-path: inset(0 0 82% 0 round 0 0 7px 7px);
     transform: translateX(var(--menu-shift)) translateY(8px);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear var(--motion-menu),
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -589,7 +598,7 @@
     clip-path: inset(0 0 0 0 round 0 0 7px 7px);
     transform: translateX(var(--menu-shift)) translateY(0);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear 0s,
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -704,7 +713,7 @@
     cursor: pointer;
     background: transparent;
     border: 0;
-    transition: color 0.18s ease;
+    transition: color var(--motion-local) ease;
 }
 
 .navTrigger span {
@@ -749,7 +758,7 @@
     clip-path: inset(82% 0 0 0 round 7px 7px 0 0);
     transform: translateX(calc(-50% + var(--menu-shift))) translateY(14px);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear var(--motion-menu),
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -762,7 +771,7 @@
     clip-path: inset(0 0 0 0 round 7px 7px 0 0);
     transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear 0s,
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -817,29 +826,15 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .headerActions {
         grid-column: 3;
     }
 }
 
-@media (width <= 1023px) {
+@media (width < 1024px) {
     .headerActions {
         position: static;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .filmMenu,
-    .accountPopover,
-    .globalSearch,
-    .navTrigger,
-    .filmFrame {
-        transition-duration: 0.01ms;
-    }
-
-    .sectionMobileMenu {
-        animation-duration: 0.01ms;
     }
 }
 

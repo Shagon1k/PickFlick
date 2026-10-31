@@ -52,6 +52,10 @@ or a shared package changes. The worker watches that compiled output. Apply migr
 the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email dispatch remains disabled locally.
 Generate synthetic templates with `pnpm email:preview`; see [Email delivery operations](email-delivery.md).
 
+After pulling a schema change, run `pnpm install` again; it regenerates the Prisma Client. Then restart
+your editor's ESLint and TypeScript servers. Editors that keep the old client report
+`@typescript-eslint/no-unsafe-*` errors that `pnpm lint` does not.
+
 ## Enable the movie catalog
 
 The example environment disables external catalog calls. In the ignored root `.env`, set
@@ -99,7 +103,7 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Full Playwright behavior checks             | `pnpm test:ui:contract` |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
 | Both Playwright selections                  | `pnpm test:ui`          |
-| Smoke the built deadline worker             | `pnpm test:worker`      |
+| Smoke the built deadline and email workers  | `pnpm test:worker`      |
 | Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
 `pnpm test:integration` needs the local services running. Run it and `pnpm test:journeys` against

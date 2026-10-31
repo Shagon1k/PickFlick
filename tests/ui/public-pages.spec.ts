@@ -302,9 +302,9 @@ test('pricing publishes corrected limits and keeps checkout unavailable', async 
         'page',
     );
 
-    const upgrade = page.getByRole('button', { name: 'Upgrade unavailable' });
+    const upgrade = page.getByRole('button', { name: 'Upgrade to Pro', exact: true });
     await expect(upgrade).toBeDisabled();
-    await expect(page.getByText('Pro checkout opens in the Paddle billing phase.')).toBeVisible();
+    await expect(page.getByText('Pro checkout is coming soon.', { exact: true })).toBeVisible();
     await expect(page.getByRole('row', { name: /Blocking Sessions per Club 1 1/ })).toBeVisible();
     await expect(page.getByRole('rowheader', { name: 'Blocking Sessions per Club' })).toBeVisible();
     await expect(page.getByRole('row', { name: /Price €0 €5 \/ month/ })).toBeVisible();

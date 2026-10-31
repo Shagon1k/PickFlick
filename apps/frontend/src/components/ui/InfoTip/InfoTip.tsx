@@ -2,8 +2,6 @@
 
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
-import Icon from '#components/ui/Icon/Icon';
-
 import styles from './InfoTip.module.scss';
 
 export interface IInfoTipProps {
@@ -13,7 +11,7 @@ export interface IInfoTipProps {
 }
 
 /**
- * A quiet "?" trigger that reveals a short explanation on hover, keyboard focus, or tap.
+ * A quiet italic "i" mark that reveals a short explanation on hover, keyboard focus, or tap.
  * The explanation stays in the DOM as the trigger's accessible description.
  */
 const EDGE_GAP_PX = 8;
@@ -74,7 +72,7 @@ export default function InfoTip({ children, label }: IInfoTipProps) {
                 onFocus={() => setIsOpen(true)}
                 type="button"
             >
-                <Icon className={styles.infoTip__icon} name="question" />
+                i
             </button>
             <span
                 className={styles.infoTip__bubble}

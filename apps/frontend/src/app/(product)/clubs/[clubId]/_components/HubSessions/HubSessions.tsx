@@ -4,7 +4,7 @@ import Link from 'next/link';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { formatCount } from '#lib/format';
+import { formatAverage, formatCalendarDate, formatCount } from '#lib/format';
 
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessions.module.scss';
@@ -18,15 +18,13 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
                     Log a Past Session
                 </ButtonLink>
             ) : null}
-            <p>One screening at a time. Open Rating Sessions never block the next screening.</p>
-            <ActiveSessionCard hub={hub} />
+            {hub.activeSession ? <ActiveSessionCard hub={hub} /> : null}
             <section aria-labelledby="active-ratings-heading">
                 <h2 id="active-ratings-heading">Active Ratings</h2>
                 <SessionRows sessions={hub.ratingSessions} empty="No Sessions awaiting ratings." />
             </section>
             <section aria-labelledby="session-history-heading">
                 <h2 id="session-history-heading">History</h2>
-                <p>The latest 20 closed Sessions. Open a screening for its permitted results.</p>
                 <SessionRows sessions={hub.historySessions} empty="No completed Sessions yet." />
             </section>
         </div>
@@ -50,20 +48,13 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
                             </strong>
                             <span>
                                 {session.scheduledAt
-                                    ? new Intl.DateTimeFormat('en', {
-                                          dateStyle: 'medium',
-                                          timeZone: 'UTC',
-                                      }).format(new Date(session.scheduledAt))
+                                    ? formatCalendarDate(session.scheduledAt)
                                     : 'Not scheduled'}
                                 {session.location ? ` · ${session.location}` : ''} ·{' '}
                                 {formatCount(session.acceptedCount, 'attendee')}
                             </span>
                             {session.phase === 'RATING' ? (
                                 <>
-                                    <span>
-                                        {session.progressCount ?? 0} of {session.acceptedCount}{' '}
-                                        rated
-                                    </span>
                                     <FilmProgress
                                         value={session.progressCount ?? 0}
                                         max={session.acceptedCount}
@@ -83,11 +74,21 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
 }
 
 function SessionScore({ session }: { session: IClubHubSession }) {
-    if (session.phase === 'RATING') return <>Rating</>;
+    if (session.phase === 'RATING')
+        return (
+            <>
+                <span>
+                    {session.progressCount ?? 0}/{session.acceptedCount}
+                </span>
+                <small>rated</small>
+            </>
+        );
     if (session.phase === 'CANCELLED') return <>Cancelled</>;
     return (
         <>
-            <span>{session.ratingAverage?.toFixed(1) ?? '—'}</span>
+            <span>
+                {session.ratingAverage === null ? '—' : formatAverage(session.ratingAverage)}
+            </span>
             <small>Club score</small>
         </>
     );

@@ -10,9 +10,14 @@ import type { Prisma } from '@pickflick/database';
 
 import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { lockClub, recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
-import { assertManager, assertOpen } from '../session-access.js';
+import {
+    assertActive,
+    lockClub,
+    recordAudit,
+    type TAuditEvent,
+} from '../../clubs/access/club-access.js';
+import { Transactions } from '../../notifications/transactions.js';
+import { assertManager, assertOpen, assertRemovable, getOwnStatus } from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
@@ -22,11 +27,11 @@ import { readRoster } from './session-roster-projection.js';
 export class SessionRosterService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
     ) {}
 
     async get(userId: string, sessionId: string): Promise<ISessionRoster> {
-        return this.notifications.run((tx) => readRoster(tx, userId, sessionId), {
+        return this.transactions.read((tx) => readRoster(tx, userId, sessionId), {
             isolationLevel: 'RepeatableRead',
         });
     }
@@ -36,18 +41,20 @@ export class SessionRosterService {
         sessionId: string,
         decision: 'accept' | 'decline',
     ): Promise<TSessionInvitationPreview> {
-        return this.notifications.run(async (tx) => {
+        return this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
-            const existing = await tx.sessionParticipant.findUnique({
-                where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
+            assertActive(membership);
+            const own = await tx.sessionParticipant.findMany({
+                where: { sessionId, membership: { userId } },
             });
-            if (existing?.status === 'REMOVED')
-                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
+            const existing = own.find((row) => row.membershipId === membership.id);
             if (existing?.status === 'ACCEPTED')
                 return { state: 'accepted', sessionId, clubId: session.clubId };
+            // Removed, or already counted under a Membership from before the member rejoined.
+            const ownStatus = getOwnStatus(own, membership.id);
+            if (ownStatus === 'REMOVED' || ownStatus === 'ACCEPTED')
+                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             const status = decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
             if (existing?.status !== status) {
                 const participant = await tx.sessionParticipant.upsert({
@@ -81,7 +88,7 @@ export class SessionRosterService {
         sessionId: string,
         membershipId: string,
     ): Promise<ICreatedInvitation> {
-        return this.notifications.run(async (tx) => {
+        return this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             await assertManager(tx, membership);
@@ -94,11 +101,10 @@ export class SessionRosterService {
                 },
             });
             if (!target) throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
-            const existing = await tx.sessionParticipant.findUnique({
-                where: { sessionId_membershipId: { sessionId, membershipId } },
+            const earlier = await tx.sessionParticipant.findFirst({
+                where: { sessionId, status: 'ACCEPTED', membership: { userId: target.userId } },
             });
-            if (existing?.status === 'ACCEPTED')
-                throw new ConflictException({ reason: 'ALREADY_PARTICIPATING' });
+            if (earlier) throw new ConflictException({ reason: 'ALREADY_PARTICIPATING' });
             const participant = await tx.sessionParticipant.upsert({
                 where: { sessionId_membershipId: { sessionId, membershipId } },
                 create: { sessionId, membershipId, clubId: session.clubId },
@@ -128,7 +134,7 @@ export class SessionRosterService {
     }
 
     async revoke(userId: string, sessionId: string, inviteId: string) {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             await assertManager(tx, membership);
@@ -158,7 +164,7 @@ export class SessionRosterService {
         sessionId: string,
         input: { confirmation: 'LEAVE' } | { confirmation: 'REMOVE'; participantId: string },
     ) {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             const isRemoving = input.confirmation === 'REMOVE';
@@ -170,8 +176,7 @@ export class SessionRosterService {
                 include: { membership: true },
             });
             if (!participant) throw new NotFoundException();
-            if (isRemoving && participant.membershipId === membership.id)
-                throw new ConflictException({ reason: 'USE_LEAVE' });
+            if (isRemoving) assertRemovable(membership, participant.membership);
             const status = isRemoving ? 'REMOVED' : 'LEFT';
             if (participant.status === status) return;
             if (
@@ -193,7 +198,7 @@ export class SessionRosterService {
     }
 
     async preview(userId: string, token: string): Promise<TSessionInvitationPreview> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (tx) =>
                 toInvitationPreview(
                     await tx.sessionInvite.findUnique({
@@ -238,7 +243,7 @@ export class SessionRosterService {
         selector: { token: string } | { id: string },
         decision: 'accept' | 'decline',
     ): Promise<TSessionInvitationPreview> {
-        return this.notifications.run(async (tx) => {
+        return this.transactions.write(async (tx) => {
             const where =
                 'token' in selector
                     ? { tokenDigest: digestInviteToken(selector.token) }

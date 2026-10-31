@@ -1,0 +1,37 @@
+.panel {
+    display: grid;
+    align-content: center;
+    width: min(100% - 2rem, 72rem);
+    min-height: 100vh;
+    padding-block: 4rem;
+    margin: 0 auto;
+}
+
+.eyebrow {
+    margin: 0 0 1rem;
+    font: 0.75rem/1.2 var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.panel h1 {
+    margin: 0;
+    font: clamp(3rem, 12vw, 6.5rem) / 0.95 var(--font-display);
+    letter-spacing: -0.025em;
+}
+
+.body {
+    max-width: 36rem;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    line-height: 1.55;
+    color: var(--fg-secondary);
+    border-top: 1px solid var(--gold-border);
+}
+
+@media (width >= 768px) {
+    .panel {
+        width: min(100% - 3rem, 72rem);
+    }
+}

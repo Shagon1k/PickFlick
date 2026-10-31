@@ -62,7 +62,7 @@ describe('buildClubAchievements', () => {
             buildScreening({ phase: 'CANCELLED' }),
             buildScreening({ phase: 'RATING' }),
         ]);
-        expect(metrics['first-ten']!).toBe(1);
+        expect(metrics['first-ten']).toBe(1);
         for (const key of [
             'full-house',
             'critics-circle',
@@ -74,9 +74,9 @@ describe('buildClubAchievements', () => {
             'shared-taste',
             'packed-calendar',
             'comeback',
-        ])
-            expect(metrics[key]!).toBe(0);
-        expect(buildClubAchievements([]).metrics['first-screening']!).toBe(0);
+        ] as const)
+            expect(metrics[key]).toBe(0);
+        expect(buildClubAchievements([]).metrics['first-screening']).toBe(0);
     });
 
     it('should exclude date-only entries from evening rules and unknown attendance from Full House', () => {
@@ -93,16 +93,16 @@ describe('buildClubAchievements', () => {
             ],
         });
         const { metrics } = buildClubAchievements([session]);
-        expect(metrics['full-house']!).toBe(0);
-        expect(metrics['double-feature']!).toBe(0);
-        expect(metrics['critics-circle']!).toBe(1);
+        expect(metrics['full-house']).toBe(0);
+        expect(metrics['double-feature']).toBe(0);
+        expect(metrics['critics-circle']).toBe(1);
     });
 
     it('should ignore imported score matrices as Selection outcome evidence', () => {
         expect(
             buildClubAchievements([
                 buildScreening({ selectionResult: { ranking: [{ total: 9 }, { total: 8 }] } }),
-            ]).metrics['perfect-split']!,
+            ]).metrics['perfect-split'],
         ).toBe(0);
     });
 

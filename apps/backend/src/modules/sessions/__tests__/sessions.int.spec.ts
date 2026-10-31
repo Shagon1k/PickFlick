@@ -6,13 +6,14 @@ import { snapshotSessionSettings } from '@pickflick/database';
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 
 const details = {
-    scheduledAt: '2026-12-01T00:00:00.000Z',
+    scheduledAt: '2090-12-01T00:00:00.000Z',
     location: 'Room A',
     topic: 'Noir night',
     notes: 'Bring snacks.',
@@ -119,18 +120,16 @@ describe('Session workflows', () => {
         expect((await create(member)).status).toBe(403);
         expect((await create(outsider)).status).toBe(404);
         const session = (await (await create()).json()) as TSession;
-        expect((await api.request(`/sessions/${session.id}`, { userId: outsider })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/sessions/${session.id}`, { userId: outsider });
         expect((await edit(session, member)).status).toBe(403);
         expect((await cancel(session, member)).status).toBe(403);
-        expect((await api.request(`/sessions/${session.id}`)).status).toBe(401);
+        await api.expectStatus(401, `/sessions/${session.id}`);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await edit(session)).status).toBe(409);
         expect((await cancel(session)).status).toBe(409);
         expect(
             await (await api.request(`/sessions/${session.id}`, { userId: admin })).json(),
-        ).toMatchObject({ canEdit: false, canCancel: false });
+        ).toMatchObject({ canManage: false });
     });
     it('should reject invalid payloads and unknown Movies without inserting or auditing', async () => {
         expect((await create(admin, { type: 'PRE_SELECTED' })).status).toBe(400);
@@ -173,6 +172,12 @@ describe('Session workflows', () => {
     });
     it('should cancel once, preserve details and history and release the blocking slot', async () => {
         const session = (await (await create()).json()) as TSession;
+        const { id: membershipId } = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: member },
+        });
+        await api.prisma.sessionParticipant.create({
+            data: { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' },
+        });
         expect((await cancel(session, admin, { confirmation: '' })).status).toBe(400);
         const results = await Promise.all([cancel(session), cancel(session, moderator)]);
         expect(results.map((response) => response.status)).toEqual([201, 201]);
@@ -181,9 +186,13 @@ describe('Session workflows', () => {
                 where: { sessionId: session.id, action: 'SESSION_CANCELLED' },
             }),
         ).toBe(1);
+        // Only accepted participants hear about the cancellation, not every Club member.
+        expect(await findNotifiedUsers(api.prisma, session.id, 'SESSION_CANCELLED')).toEqual([
+            member,
+        ]);
         expect(
             await (await api.request(`/sessions/${session.id}`, { userId: member })).json(),
-        ).toMatchObject({ phase: 'CANCELLED', notes: details.notes, version: 2, canEdit: false });
+        ).toMatchObject({ phase: 'CANCELLED', notes: details.notes, version: 2, canManage: false });
         expect((await edit(session)).status).toBe(409);
         expect((await create()).status).toBe(201);
         const hub = (await (
@@ -236,6 +245,25 @@ describe('Session workflows', () => {
         ).json()) as TSession;
         expect((await edit(watching, admin, { deadlineAt })).status).toBe(409);
     });
+    it('should refuse a past screening day and a deadline after the screening', async () => {
+        const dayMs = 86_400_000;
+        const today = new Date(Math.floor(Date.now() / dayMs) * dayMs);
+        const twoDaysAgo = new Date(today.getTime() - 2 * dayMs).toISOString();
+        const past = await create(admin, { scheduledAt: twoDaysAgo });
+        expect(past.status).toBe(409);
+        expect(await past.json()).toMatchObject({ error: { reason: 'SCHEDULED_PAST' } });
+        const late = await create(admin, {
+            scheduledAt: today.toISOString(),
+            deadlineAt: new Date(today.getTime() + 3 * dayMs).toISOString(),
+        });
+        expect(await late.json()).toMatchObject({ error: { reason: 'DEADLINE_AFTER_SCREENING' } });
+        const session = (await (
+            await create(admin, { scheduledAt: today.toISOString() })
+        ).json()) as TSession;
+        expect(session.phase).toBe('NOMINATION');
+        expect((await edit(session, admin, { scheduledAt: twoDaysAgo })).status).toBe(409);
+    });
+
     it('should prohibit new Sessions in adminless or over-limit Clubs', async () => {
         await api.prisma.membership.updateMany({
             where: { clubId, userId: admin },

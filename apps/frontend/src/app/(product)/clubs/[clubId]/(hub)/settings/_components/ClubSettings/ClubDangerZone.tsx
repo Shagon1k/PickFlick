@@ -3,12 +3,12 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import { startTransition, useActionState, useState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { changeClubLifecycleAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 
-import { initialClubActionState } from '../../action-state';
-import { changeClubLifecycleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
@@ -47,7 +47,7 @@ function ConfirmAction({
                     startTransition(() => formAction(formData));
                 }}
                 open={isOpen}
-                pending={isPending}
+                isPending={isPending}
                 status={<ActionStatus state={state} />}
                 title={title}
                 word={confirmation}
@@ -80,7 +80,7 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
             action="delete"
             clubId={clubId}
             confirmation={projection.club.name}
-            description="This removes every active Membership and cannot be undone from the Club UI. Clubs with Session history cannot be deleted."
+            description="This removes every active Membership and cannot be undone from the Club UI."
             label="Delete Club"
             title="Delete this Club?"
         />
@@ -98,11 +98,6 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                         : 'Leaving ends your Membership immediately. Shared Club history remains for its members.'}
                 </InfoTip>
             </div>
-            <p className={styles.cardLead}>
-                {isAdmin
-                    ? 'Archiving makes the Club read-only; deleting cannot be undone.'
-                    : 'Leaving ends your Membership in this Club.'}
-            </p>
             {isAdmin ? (
                 <div className={styles.cardActions}>
                     {isActive ? (
@@ -117,7 +112,7 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                     ) : (
                         <ReactivateAction clubId={clubId} />
                     )}
-                    {deleteAction}
+                    {projection.canDelete ? deleteAction : null}
                 </div>
             ) : (
                 <div className={styles.cardActions}>

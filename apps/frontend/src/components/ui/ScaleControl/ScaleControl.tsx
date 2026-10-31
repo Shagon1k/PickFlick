@@ -7,7 +7,7 @@ import styles from './ScaleControl.module.scss';
 
 export interface IScaleControlProps {
     label: string;
-    compact?: boolean;
+    isCompact?: boolean;
     name: string;
     min?: 0 | 1;
     max: number;
@@ -17,7 +17,7 @@ export interface IScaleControlProps {
     disabled?: boolean;
     readOnly?: boolean;
     required?: boolean;
-    submitted?: boolean;
+    isSubmitted?: boolean;
     presentation?: 'score' | 'rating';
 }
 
@@ -27,6 +27,15 @@ function findScaleValue(
     candidate: number | undefined,
 ): number | undefined {
     return candidate !== undefined && values.includes(candidate) ? candidate : undefined;
+}
+
+/** Rating stars fill up to the value; a score marks only the chosen option. */
+function isFilled(
+    presentation: IScaleControlProps['presentation'],
+    scaleValue: number,
+    target: number | undefined,
+): boolean {
+    return presentation === 'rating' && target !== undefined && scaleValue <= target;
 }
 
 /** Radio-group keys: arrows step within the scale, Home and End jump to its ends. */
@@ -48,7 +57,7 @@ function getKeyboardScaleValue(
 }
 
 export default function ScaleControl({
-    compact = false,
+    isCompact = false,
     defaultValue,
     disabled = false,
     label,
@@ -59,7 +68,7 @@ export default function ScaleControl({
     presentation = 'score',
     readOnly = false,
     required = false,
-    submitted = false,
+    isSubmitted = false,
     value,
 }: IScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
@@ -69,7 +78,7 @@ export default function ScaleControl({
     const [previewValue, setPreviewValue] = useState<number | undefined>();
     const selectedValue = findScaleValue(values, value ?? internalValue);
     const activeValue = findScaleValue(values, previewValue) ?? selectedValue;
-    const isLocked = disabled || readOnly || submitted;
+    const isLocked = disabled || readOnly || isSubmitted;
     const isConstraintRequired = required && !isLocked;
     const [isConstraintInvalid, setIsConstraintInvalid] = useState(false);
     const controlsRef = useRef(new Map<number, HTMLButtonElement>());
@@ -86,41 +95,21 @@ export default function ScaleControl({
         setIsConstraintInvalid(false);
     }
 
-    // Rating stars fill up to the value; a score marks only the chosen option.
-    const isFilled = (scaleValue: number, target: number | undefined) =>
-        presentation === 'rating' && target !== undefined && scaleValue <= target;
     const selectionLabel =
         selectedValue === undefined ? 'Not selected' : `${selectedValue} of ${max}`;
     const scaleStatus = isConstraintInvalid ? `Select a ${presentation}.` : selectionLabel;
 
-    if (submitted) {
+    if (isSubmitted)
         return (
-            <fieldset
-                className={styles.scale}
-                data-compact={compact || undefined}
-                data-submitted="true"
-            >
-                <legend>{label}</legend>
-                <div
-                    aria-hidden="true"
-                    className={styles.scale__rail}
-                    data-presentation={presentation}
-                >
-                    {values.map((scaleValue) => (
-                        <span
-                            className={styles.scale__option}
-                            data-active={isFilled(scaleValue, selectedValue) || undefined}
-                            data-selected={scaleValue === selectedValue || undefined}
-                            key={scaleValue}
-                        >
-                            {presentation === 'rating' ? '★' : scaleValue}
-                        </span>
-                    ))}
-                </div>
-                <p className="visually-hidden">Submitted: {selectionLabel}</p>
-            </fieldset>
+            <SubmittedScale
+                label={label}
+                values={values}
+                selectedValue={selectedValue}
+                presentation={presentation}
+                compact={isCompact}
+                selectionLabel={selectionLabel}
+            />
         );
-    }
 
     function select(nextValue: number): void {
         if (isLocked) {
@@ -143,7 +132,11 @@ export default function ScaleControl({
     }
 
     return (
-        <fieldset className={styles.scale} data-compact={compact || undefined} disabled={disabled}>
+        <fieldset
+            className={styles.scale}
+            data-compact={isCompact || undefined}
+            disabled={disabled}
+        >
             <legend>{label}</legend>
             {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
             <div
@@ -164,7 +157,7 @@ export default function ScaleControl({
             >
                 {values.map((scaleValue) => {
                     const isSelected = scaleValue === selectedValue;
-                    const isActive = isFilled(scaleValue, activeValue);
+                    const isActive = isFilled(presentation, scaleValue, activeValue);
                     return (
                         <button
                             aria-checked={isSelected}
@@ -229,9 +222,54 @@ export default function ScaleControl({
                     value={selectedValue ?? ''}
                 />
             ) : null}
-            <output aria-live="polite" className={styles.scale__value} id={feedbackId}>
+            {/* The rail already shows the choice, so only a missing choice is printed. */}
+            <output
+                aria-live="polite"
+                className={isConstraintInvalid ? styles.scale__value : 'visually-hidden'}
+                id={feedbackId}
+            >
                 {scaleStatus}
             </output>
+        </fieldset>
+    );
+}
+
+/** The read-only result after submission: the same rail, without radios or focus. */
+function SubmittedScale({
+    label,
+    values,
+    selectedValue,
+    presentation,
+    compact,
+    selectionLabel,
+}: {
+    label: string;
+    values: readonly number[];
+    selectedValue: number | undefined;
+    presentation: IScaleControlProps['presentation'];
+    compact: boolean;
+    selectionLabel: string;
+}) {
+    return (
+        <fieldset
+            className={styles.scale}
+            data-compact={compact || undefined}
+            data-submitted="true"
+        >
+            <legend>{label}</legend>
+            <div aria-hidden="true" className={styles.scale__rail} data-presentation={presentation}>
+                {values.map((scaleValue) => (
+                    <span
+                        className={styles.scale__option}
+                        data-active={isFilled(presentation, scaleValue, selectedValue) || undefined}
+                        data-selected={scaleValue === selectedValue || undefined}
+                        key={scaleValue}
+                    >
+                        {presentation === 'rating' ? '★' : scaleValue}
+                    </span>
+                ))}
+            </div>
+            <p className="visually-hidden">Submitted: {selectionLabel}</p>
         </fieldset>
     );
 }

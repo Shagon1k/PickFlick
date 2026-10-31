@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { expectMobileAdminEntry, openShell } from './shell-fixtures';
 import { canonicalViewports } from './viewports';
 
@@ -135,29 +136,16 @@ test('Library and Settings menus expose distinct subsection destinations', async
     await mobileNavigation.getByRole('button', { name: 'Settings' }).click();
     const settingsNavigation = page.getByRole('navigation', { name: 'Settings sections' });
     const settingsLinks = settingsNavigation.getByRole('link');
-    await expect(settingsLinks).toHaveText([
-        'Admin Panel',
-        'Profile',
-        'Notifications',
-        'Subscription',
-        'Privacy & data',
-    ]);
+    // Profile, notification, subscription and privacy pages arrive in Phase 19.
+    await expect(settingsLinks).toHaveText(['Admin Panel', 'Pricing', 'Contact Us']);
     expect(
         new Set(
             await settingsLinks.evaluateAll((links) =>
                 links.map((link) => link.getAttribute('href')),
             ),
         ).size,
-    ).toBe(5);
+    ).toBe(3);
     await expect(settingsNavigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
-    await expect(settingsNavigation.getByRole('link', { name: 'Subscription' })).toHaveAttribute(
-        'href',
-        '/shell-preview/settings?tab=subscription',
-    );
-    await expect(settingsNavigation.getByRole('link', { name: 'Privacy & data' })).toHaveAttribute(
-        'href',
-        '/shell-preview/settings?tab=privacy',
-    );
 });
 
 test('Club and Admin section navigation exposes distinct destinations and current state', async ({
@@ -349,35 +337,32 @@ test('a failed Sign out keeps the session UI and allows a successful retry', asy
 });
 
 test('section mobile menus focus their first item and return focus', async ({ page }) => {
-    await openShell(page, 'settings', canonicalViewports[0]);
-    const sectionTrigger = page.getByRole('button', { name: /Settings sections Profile/ });
+    await openShell(page, 'admin', canonicalViewports[0]);
+    const sectionTrigger = page.getByRole('button', { name: /Admin sections Overview/ });
     await sectionTrigger.click();
     await expect(
-        page
-            .getByRole('navigation', { name: 'Settings sections mobile' })
-            .getByRole('link')
-            .first(),
+        page.getByRole('navigation', { name: 'Admin sections mobile' }).getByRole('link').first(),
     ).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(sectionTrigger).toBeFocused();
 });
 
 test('section menus share the product overlay state', async ({ page }) => {
-    await openShell(page, 'settings', canonicalViewports[0]);
-    const sectionTrigger = page.getByRole('button', { name: /Settings sections Profile/ });
+    await openShell(page, 'admin', canonicalViewports[0]);
+    const sectionTrigger = page.getByRole('button', { name: /Admin sections Overview/ });
     const mobileNavigation = page.getByRole('navigation', { name: 'Mobile product navigation' });
 
     await sectionTrigger.click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toBeVisible();
     await mobileNavigation.getByRole('button', { name: 'Alerts' }).click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toHaveCount(0);
     await expect(page.locator('#shell-notifications-mobile')).toBeVisible();
 
     await sectionTrigger.click();
     await expect(page.locator('#shell-notifications-mobile')).toBeHidden();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toBeVisible();
     await mobileNavigation.getByRole('button', { name: 'My Library' }).click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'My Library sections' })).toBeVisible();
 });
 
@@ -403,3 +388,29 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         await expect(header).not.toHaveAttribute('data-hidden');
     });
 }
+
+test('the mobile Hub menu lists the same Club sections outside a Club', async ({
+    context,
+    page,
+}) => {
+    await signInMock(context, 'valid-library-hub-menu');
+    await page.setViewportSize(canonicalViewports[0]);
+    await page.goto('/library');
+    await page
+        .getByRole('navigation', { name: 'Mobile product navigation' })
+        .getByRole('button', { name: 'Hub' })
+        .click();
+    const sections = page.getByRole('navigation', { name: 'Hub sections' }).getByRole('link');
+    await expect(sections).toHaveText([
+        'Overview',
+        'Sessions',
+        'Ratings',
+        'Members',
+        'Achievements',
+        'Manage Club',
+    ]);
+    await expect(sections.filter({ hasText: 'Sessions' })).toHaveAttribute(
+        'href',
+        '/app?section=sessions',
+    );
+});

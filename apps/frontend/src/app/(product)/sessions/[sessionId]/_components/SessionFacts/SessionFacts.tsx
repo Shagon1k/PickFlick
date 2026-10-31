@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
+import { formatAverage } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -111,10 +112,11 @@ function getCompanion(session: TSession, roster: ISessionRoster): ReactNode {
                 <small>Coming soon</small>
             </div>
         );
+    const average = session.rating?.results?.average ?? null;
     if (session.phase === 'RATING' || session.phase === 'COMPLETED')
         return (
             <div className={styles.metric}>
-                <strong>{session.rating?.results?.average?.toFixed(1) ?? '—'}</strong>
+                <strong>{average === null ? '—' : formatAverage(average)}</strong>
                 <span>Club score</span>
             </div>
         );

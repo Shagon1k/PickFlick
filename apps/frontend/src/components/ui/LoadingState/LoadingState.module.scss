@@ -179,18 +179,6 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .loadingState__line,
-    .loadingState__title,
-    .film__actions,
-    .film__poster,
-    .film__trailer,
-    .film__credits {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
 @keyframes skeleton {
     from {
         background-position: 200% 0;

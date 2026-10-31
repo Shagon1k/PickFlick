@@ -5,19 +5,30 @@ import { nominationsSchema } from './nomination.schema.js';
 import { ratingSchema } from './rating.schema.js';
 import { selectionOutcomeSchema, selectionSchema } from './selection.schema.js';
 
+export const SESSION_PHASES = [
+    'NOMINATION',
+    'SELECTION',
+    'WATCHING',
+    'RATING',
+    'COMPLETED',
+    'CANCELLED',
+] as const;
+export const sessionPhaseSchema = z.enum(SESSION_PHASES);
+export type TSessionPhase = z.infer<typeof sessionPhaseSchema>;
+
 /** Phases that hold a Club's single active slot; Rating Sessions are non-blocking. */
 export const BLOCKING_SESSION_PHASES = ['NOMINATION', 'SELECTION', 'WATCHING'] as const;
 /** Phases in which a Session still accepts roster and participation changes. */
 export const OPEN_SESSION_PHASES = [...BLOCKING_SESSION_PHASES, 'RATING'] as const;
-export function isBlockingSessionPhase(phase: string | undefined): boolean {
+export function isBlockingSessionPhase(phase: TSessionPhase | undefined): boolean {
     return BLOCKING_SESSION_PHASES.some((blocking) => blocking === phase);
 }
-export function isOpenSessionPhase(phase: string): boolean {
+export function isOpenSessionPhase(phase: TSessionPhase): boolean {
     return OPEN_SESSION_PHASES.some((open) => open === phase);
 }
 /** Phases after the film is chosen: the Session is about one Movie from Watching on. */
 export const FILM_SESSION_PHASES = ['WATCHING', 'RATING', 'COMPLETED'] as const;
-export function isFilmSessionPhase(phase: string): boolean {
+export function isFilmSessionPhase(phase: TSessionPhase): boolean {
     return FILM_SESSION_PHASES.some((film) => film === phase);
 }
 
@@ -76,7 +87,7 @@ export const sessionSchema = z.strictObject({
     clubId: z.uuid(),
     clubName: z.string(),
     type: z.enum(['FULL_CYCLE', 'PRE_SELECTED', 'PAST']),
-    phase: z.enum(['NOMINATION', 'SELECTION', 'WATCHING', 'RATING', 'COMPLETED', 'CANCELLED']),
+    phase: sessionPhaseSchema,
     scheduledAt: z.iso.datetime().nullable(),
     location: z.string().nullable(),
     topic: z.string().nullable(),
@@ -90,8 +101,8 @@ export const sessionSchema = z.strictObject({
     selection: selectionSchema.nullable(),
     rating: ratingSchema.nullable(),
     selectionOutcome: selectionOutcomeSchema.nullable(),
-    canEdit: z.boolean(),
-    canCancel: z.boolean(),
+    /** The viewer may edit, advance and cancel this open Session. */
+    canManage: z.boolean(),
 });
 export type TSession = z.infer<typeof sessionSchema>;
 

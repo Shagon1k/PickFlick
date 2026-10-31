@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -13,14 +14,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-library-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-library-${width}`);
                 const page = await context.newPage();
                 await page.goto('/library', { waitUntil: 'load' });
                 await expect(page.getByRole('table')).toHaveCount(1);
@@ -56,7 +50,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     'true',
                 );
                 await page.getByLabel('Search rated films').fill('Grand Budapest');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
                 await expect(page.getByRole('row')).toHaveCount(2);
                 await expect(page.getByText('Page 1 of 1')).toBeVisible();
                 await page.reload();
@@ -65,7 +59,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.getByRole('option', { name: '8/10', exact: true }).click();
                 await page.getByRole('combobox', { name: 'Sort by', exact: true }).click();
                 await page.getByRole('option', { name: 'Film A to Z' }).click();
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
                 const editor = page.getByRole('button', {
                     name: 'Your rating: 8 out of 10. Edit rating',
                 });
@@ -74,7 +67,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 const dialog = page.getByRole('dialog');
                 await expect(dialog).toBeVisible();
                 await dialog.getByRole('radio', { name: '9 of 10', exact: true }).check();
-                await dialog.getByRole('button', { name: 'Save rating', exact: true }).tap();
                 await expect(
                     page.getByText('No films match your search or filters.', { exact: false }),
                 ).toBeVisible();
@@ -84,7 +76,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.getByRole('link', { name: 'Clear', exact: true }).click();
                 await expect(page.getByRole('row')).toHaveCount(26);
                 await page.getByLabel('Search rated films').fill('missing film');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
                 await expect(
                     page.getByText('No films match your search or filters.', { exact: false }),
                 ).toBeVisible();
@@ -150,14 +142,7 @@ for (const destination of [
                     callbackURL: destination,
                 });
 
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: 'valid-library-sign-in',
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, 'valid-library-sign-in');
             await page.reload();
             await expect(page).toHaveURL(destination);
             await expect(
@@ -176,18 +161,19 @@ test(
         await page.goto('/library?q=Grand');
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
-        await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
+        const nine = dialog.getByRole('radio', { name: '9 of 10', exact: true });
+        // A chosen star saves itself; choosing it again retries.
         await context.setOffline(true);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(dialog.getByText(/offline/iu)).toBeVisible();
         await context.setOffline(false);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(
             dialog.getByText('We could not save your rating.', { exact: false }),
         ).toBeVisible();
-        await expect(dialog.getByRole('radio', { name: '9 of 10', exact: true })).toBeChecked();
+        await expect(nine).toBeChecked();
         await context.addCookies([{ ...cookie, value: 'valid-library-recovered' }]);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'My Ratings', exact: true })).toBeFocused();
         await expect(

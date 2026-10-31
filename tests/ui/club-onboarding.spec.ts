@@ -1,20 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, token);
 }
 
 async function open(page: Page, route: string, viewport: { height: number; width: number }) {
@@ -42,16 +34,7 @@ test('Create Club and Login surface an unavailable session API instead of signin
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'session-api-unavailable',
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, 'session-api-unavailable');
     await page.goto('/clubs/new');
     await expect(page).toHaveURL(/\/clubs\/new$/u);
     await expect(
@@ -69,16 +52,7 @@ test('Create Club and Login surface an unavailable session API instead of signin
 });
 
 test('signed-in Login returns to the requested allowed target', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-login-return',
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, 'valid-login-return');
     await page.goto('/login?returnTo=/clubs/new');
     await expect(page).toHaveURL(/\/clubs\/new$/u);
 });

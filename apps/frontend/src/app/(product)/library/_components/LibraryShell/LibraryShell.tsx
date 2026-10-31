@@ -23,34 +23,36 @@ async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) 
 export default function LibraryShell({
     current,
     returnPath,
-    showStatistics,
+    shouldShowStatistics,
     children,
 }: {
     current: 'my-ratings' | 'watchlist' | 'achievements';
     returnPath: string;
-    showStatistics: boolean;
+    shouldShowStatistics: boolean;
     children: ReactNode;
 }) {
     return (
         <ControlShell
             title="My Library"
-            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
-            summary={showStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}
+            summary={shouldShowStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}
             items={[
                 {
                     label: 'My Ratings',
+                    icon: 'ratings',
                     href: '/library?tab=my-ratings',
                     current: current === 'my-ratings',
                 },
                 {
                     label: 'Watchlist',
+                    icon: 'watchlist',
                     href: '/library?tab=watchlist',
                     current: current === 'watchlist',
                 },
                 {
                     label: 'Achievements',
+                    icon: 'achievements',
                     href: '/library?tab=achievements',
                     current: current === 'achievements',
                 },

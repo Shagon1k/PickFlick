@@ -32,6 +32,11 @@
     display: none;
 }
 
+/* A closed Session can leave a viewer no actions at all; the rail then disappears. */
+.rail:not(:has(> :not(:empty))) {
+    display: none;
+}
+
 /* An unavailable cell reads quieter than the live ones but stays legible. */
 .railCell button:disabled {
     color: var(--fg-secondary);

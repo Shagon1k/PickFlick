@@ -6,6 +6,10 @@ import {
     parseDatabaseEnvironment,
     parseRuntimeEnvironment,
 } from '../environment.js';
+import {
+    emailWorkerEnvironmentSchema,
+    notificationSignalEnvironmentSchema,
+} from '../environment.schema.js';
 
 const local = {
     APP_ENV: 'local',
@@ -285,5 +289,47 @@ describe('parseDatabaseEnvironment', () => {
         expect(failuresOf({ ...local, CATALOG_LOCALE: 'ru-RU' }).join(' ')).toContain(
             'CATALOG_LOCALE',
         );
+    });
+});
+
+describe('email worker environment', () => {
+    const worker = {
+        APP_ENV: 'local',
+        DATABASE_URL: local.DATABASE_URL,
+        AUTH_BASE_URL: local.AUTH_BASE_URL,
+        RESEND_DELIVERY_MODE: 'disabled',
+        RESEND_API_KEY: 'local-disabled',
+        RESEND_FROM: local.RESEND_FROM,
+        CONTACT_DELIVERY_TO: local.CONTACT_DELIVERY_TO,
+    };
+
+    it('should start from its seven variables without runtime secrets', () => {
+        expect(emailWorkerEnvironmentSchema.parse(worker)).toEqual({
+            databaseUrl: local.DATABASE_URL,
+            baseUrl: local.AUTH_BASE_URL,
+            from: local.RESEND_FROM,
+            apiKey: 'local-disabled',
+            deliveryEnabled: false,
+            alertTo: local.CONTACT_DELIVERY_TO,
+        });
+    });
+
+    it('should apply the shared email rules', () => {
+        expect(
+            emailWorkerEnvironmentSchema.safeParse({ ...worker, RESEND_DELIVERY_MODE: 'live' })
+                .success,
+        ).toBe(false);
+    });
+});
+
+describe('notification signal environment', () => {
+    it('should read only the environment name and Redis URL', () => {
+        expect(
+            notificationSignalEnvironmentSchema.parse({
+                APP_ENV: 'uat',
+                REDIS_URL: 'redis://pickflick-uat-redis:6379',
+                STORAGE_SECRET_KEY: 'ignored',
+            }),
+        ).toEqual({ appEnvironment: 'uat', redisUrl: 'redis://pickflick-uat-redis:6379' });
     });
 });

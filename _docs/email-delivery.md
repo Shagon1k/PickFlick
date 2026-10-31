@@ -21,8 +21,7 @@ records the required configuration without authorizing a deployment or provider 
    into chat, logs, a PR or the email worker. The live API refuses to start without it.
 5. Apply migrations through 35 before starting this revision. The new `email-worker` service uses
    the existing worker image with `node dist/email-worker.js`, waits for release and backend
-   readiness, and has no port or Redis connection. Claims also recover pending intent committed by
-   old API instances after the migration backfill. Local/test/preview modes never claim jobs.
+   readiness, and has no port or Redis connection. Local/test/preview modes never claim jobs.
 
 The worker uses a sending-only key and never calls provider management APIs. The API verifies the
 raw webhook body using the installed SDK before parsing supported fields. Receipt IDs prevent
@@ -60,10 +59,9 @@ SELECT "status", "reason", count(*)
 FROM "NotificationEmailDelivery"
 GROUP BY "status", "reason";
 
-SELECT "status", "attempt", count(*)
-FROM "NotificationDeliveryAttempt"
-WHERE "channel" = 'EMAIL'
-GROUP BY "status", "attempt";
+SELECT "status", "attemptCount", count(*)
+FROM "NotificationEmailDelivery"
+GROUP BY "status", "attemptCount";
 
 SELECT count(*) AS overdue_claims
 FROM "NotificationEmailDelivery"
@@ -97,8 +95,8 @@ first claim, within the provider's [24-hour idempotency window](https://resend.c
 A two-minute abandoned lease can be claimed by another worker; a fencing token prevents the old
 worker from overwriting the new result.
 
-`request_changed` means the recipient, authorization projection, template or sender changed after
-an uncertain request. `retry_window_exhausted` means the old result must be investigated rather than
+A retry reuses the notification's idempotency key; `provider_409` means Resend refused a changed
+payload under it, for example after the recipient's address or access changed. `retry_window_exhausted` means the old result must be investigated rather than
 resent. Correlate the notification ID with Resend's notification tag and delivery record. Never
 clear a delivery, regenerate its idempotency key or delete a suppression merely to force a retry.
 No automatic manual-resend or suppression-removal path is provided by this issue.

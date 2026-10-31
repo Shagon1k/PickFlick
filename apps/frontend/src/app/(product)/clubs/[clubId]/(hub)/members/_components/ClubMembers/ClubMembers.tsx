@@ -3,8 +3,8 @@
 import type { IClubMember, IClubSettings } from '@pickflick/contracts';
 import { useRef, useState } from 'react';
 
-import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/settings/action-state';
-import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/settings/actions';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
@@ -15,6 +15,7 @@ import styles from '../../page.module.scss';
 export default function ClubMembers({ projection }: { projection: IClubSettings }) {
     const [selected, setSelected] = useState<IClubMember | null>(null);
     const [message, setMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const returnToHeadingRef = useRef(false);
@@ -33,11 +34,13 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 formData,
             );
             setMessage(result.message);
+            setIsSuccess(result.status === 'success');
             if (result.status === 'success') {
                 returnToHeadingRef.current = true;
                 setSelected(null);
             }
         } catch {
+            setIsSuccess(false);
             setMessage(
                 'Member removal could not be confirmed. Reload to check the roster, then retry.',
             );
@@ -45,23 +48,23 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
             setIsPending(false);
         }
     }
-    const roleExplanation = {
-        ADMIN: 'Manage Moderator roles in Manage Club. You can remove Members and Moderators.',
-        MODERATOR: 'You can remove Members. Only the Admin manages roles or removes Moderators.',
-        MEMBER: 'You can view the roster and leave from Manage Club.',
-    }[club.membershipRole];
     return (
         <section className={styles.layout} aria-label="Club members">
             <div className={styles.sectionHeading}>
                 <h2 ref={headingRef} tabIndex={-1}>
                     Members
                 </h2>
-                <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
-                    {permissions.createInvitations ? '+ Invite' : 'Club settings'}
-                </ButtonLink>
+                {permissions.createInvitations ? (
+                    <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
+                        + Invite
+                    </ButtonLink>
+                ) : null}
             </div>
-            <p className={styles.explanation}>{roleExplanation}</p>
-            <p className={styles.feedback} aria-live="polite" role="status">
+            <p
+                className={isSuccess ? 'visually-hidden' : styles.feedback}
+                aria-live="polite"
+                role="status"
+            >
                 {selected ? '' : message}
             </p>
             <ul className={styles.memberList}>
@@ -115,7 +118,7 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     }
                 }}
                 open={Boolean(selected)}
-                pending={isPending}
+                isPending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}

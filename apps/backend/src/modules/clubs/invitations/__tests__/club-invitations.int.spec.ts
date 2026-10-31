@@ -6,9 +6,9 @@ import {
     addMember,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Club invitations', () => {
     let api: ITestApi;
@@ -103,9 +103,7 @@ describe('Club invitations', () => {
             `/clubs/${clubId}/invitations`,
             `/clubs/${clubId}/invitations/${invitation.id}/revoke`,
         ]) {
-            expect(
-                (await api.request(path, { userId: outsider, method: 'POST', json: {} })).status,
-            ).toBe(404);
+            await api.expectStatus(404, path, { userId: outsider, method: 'POST', json: {} });
         }
         expect(
             (
@@ -251,7 +249,7 @@ describe('Club invitations', () => {
             }),
         ).toBe(1);
         expect(await respond(invitation.token, 'accept', outsider)).toEqual({ state: 'invalid' });
-        expect((await api.request(`/clubs/${clubId}/hub`, { userId: recipient })).status).toBe(200);
+        await api.expectStatus(200, `/clubs/${clubId}/hub`, { userId: recipient });
     });
 
     it('should serialize different links competing for the last available seat', async () => {
@@ -434,5 +432,24 @@ describe('Club invitations', () => {
                 })
             ).status,
         ).toBe(201);
+    });
+
+    it('should close the links of a Moderator who can no longer invite', async () => {
+        const moderator = await createUser(api.prisma);
+        users.push(moderator);
+        await addMember(api.prisma, clubId, moderator, 'MODERATOR');
+        const response = await api.request(`/clubs/${clubId}/invitations`, {
+            userId: moderator,
+            method: 'POST',
+            json: {},
+        });
+        const { token } = (await response.json()) as ICreatedInvitation;
+        expect((await preview(token)).state).toBe('valid');
+        await api.prisma.membership.updateMany({
+            where: { clubId, userId: moderator },
+            data: { role: 'MEMBER' },
+        });
+        expect(await preview(token)).toEqual({ state: 'revoked' });
+        expect(await respond(token)).toEqual({ state: 'revoked' });
     });
 });

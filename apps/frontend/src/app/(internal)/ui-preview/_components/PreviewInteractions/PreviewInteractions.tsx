@@ -29,7 +29,7 @@ export default function PreviewInteractions() {
                 label="Submitted score"
                 max={5}
                 name="submitted-score"
-                submitted
+                isSubmitted
             />
             <ScoreControl
                 defaultValue={5}

@@ -25,7 +25,7 @@
 .choice {
     flex: 0 1 auto;
     max-width: 18ch;
-    min-height: 32px;
+    min-height: var(--hit);
     padding: 0 10px;
     overflow: hidden;
     text-overflow: ellipsis;

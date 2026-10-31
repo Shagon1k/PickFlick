@@ -8,10 +8,10 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
 import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
 import { ACHIEVEMENT_DEFINITIONS } from '../rules/rule-catalog.js';
 
@@ -88,14 +88,11 @@ describe('Achievements API', () => {
                 where: { userId: users[0], key: 'archivist' },
             }),
         ).toBe(1);
-        expect((await api.request('/library/achievements')).status).toBe(401);
-        expect(
-            (await api.request(`/library/achievements?userId=${users[0]}`, { userId: users[1] }))
-                .status,
-        ).toBe(400);
-        expect(
-            (await api.request(`/clubs/${clubId}/achievements`, { userId: users[1] })).status,
-        ).toBe(404);
+        await api.expectStatus(401, '/library/achievements');
+        await api.expectStatus(400, `/library/achievements?userId=${users[0]}`, {
+            userId: users[1],
+        });
+        await api.expectStatus(404, `/clubs/${clubId}/achievements`, { userId: users[1] });
     });
 
     it('should preserve earned evidence and rule history when facts and definitions change', async () => {
@@ -234,7 +231,7 @@ describe('Achievements API', () => {
                     evidence: {},
                 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('AchievementAward_check');
     });
 
     it('should keep archived Club reads, mask result-derived awards for Members, and deny departure', async () => {
@@ -256,14 +253,12 @@ describe('Achievements API', () => {
             status: 'not-started',
         });
         expect(JSON.stringify(member)).not.toContain('participantId');
-        expect((await api.request(`${path}?scope=PERSONAL`, { userId: users[0] })).status).toBe(
-            400,
-        );
+        await api.expectStatus(400, `${path}?scope=PERSONAL`, { userId: users[0] });
         await api.prisma.membership.updateMany({
             where: { clubId, userId: users[1] },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect((await api.request(path, { userId: users[1] })).status).toBe(404);
+        await api.expectStatus(404, path, { userId: users[1] });
     });
     it('should explain Early Bird from immutable evidence after its ballot and Session are removed', async () => {
         const member = await api.prisma.membership.findFirstOrThrow({

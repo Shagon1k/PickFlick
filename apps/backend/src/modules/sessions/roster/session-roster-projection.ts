@@ -4,7 +4,12 @@ import type { Prisma } from '@pickflick/database';
 
 import { getInviteState } from '../../../common/invite-token.js';
 import { findMembership } from '../../clubs/access/club-access.js';
-import { canManage } from '../session-access.js';
+import {
+    canJoinSession,
+    canManage,
+    canRemoveParticipant,
+    getOwnStatus,
+} from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -15,7 +20,6 @@ export async function readRoster(
     if (!session) throw new NotFoundException();
     const membership = await findMembership(tx, userId, session.clubId);
     const isOpen = isOpenSessionPhase(session.phase);
-    const isActive = membership.club.lifecycle === 'ACTIVE';
     // One rule decides every roster control: invite, revoke, and remove.
     const isManager = isOpen && (await canManage(tx, membership));
     const participants = await tx.sessionParticipant.findMany({
@@ -26,20 +30,22 @@ export async function readRoster(
             invitations: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
     });
+    const ownStatus = getOwnStatus(
+        participants.filter((participant) => participant.membership.userId === userId),
+        membership.id,
+    );
     return {
         progressVersion: session.progressVersion,
         acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
             .length,
         canInvite: isManager,
         canManage: isManager,
-        canJoin:
-            isOpen &&
-            isActive &&
-            !participants.some(
-                (participant) =>
-                    participant.membershipId === membership.id &&
-                    ['ACCEPTED', 'REMOVED'].includes(participant.status),
-            ),
+        canJoin: canJoinSession({
+            phase: session.phase,
+            clubLifecycle: membership.club.lifecycle,
+            ownStatus,
+        }),
+        isRemoved: ownStatus === 'REMOVED',
         canLeave:
             isOpen &&
             participants.some(
@@ -61,6 +67,7 @@ export async function readRoster(
                 canRemove:
                     isManager &&
                     participant.membershipId !== membership.id &&
+                    canRemoveParticipant(membership.role, participant.membership.role) &&
                     ['INVITED', 'ACCEPTED'].includes(participant.status),
                 invitation:
                     isManager && participant.invitations[0]

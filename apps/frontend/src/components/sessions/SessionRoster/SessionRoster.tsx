@@ -1,16 +1,15 @@
 'use client';
 
 import type { ISessionRoster } from '@pickflick/contracts';
-import { type ReactNode, type RefObject, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
-import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
+import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
-import Modal from '#components/ui/Modal/Modal';
-import { getMonogram } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
+import KickDialog from './KickDialog';
 import styles from './SessionRoster.module.scss';
 
 /** Join/Leave for the header and, for operators, the gear menu's Kick dialog. */
@@ -25,42 +24,31 @@ export default function SessionRoster({
 }) {
     const closeRef = useRef<HTMLButtonElement>(null);
     const restoreFocusRef = useRef(false);
-    const [message, setMessage] = useState('');
     const [isKickOpen, setIsKickOpen] = useState(false);
-    const [dialog, setDialog] = useState<{
-        action: 'leave' | 'remove';
-        participantId?: string;
-        name: string;
-    } | null>(null);
-    const [isPending, startTransition] = useTransition();
+    const [dialog, setDialog] = useState<TRosterDialog | null>(null);
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const managed = roster.participants.filter(
         (participant) =>
             participant.canRemove ||
             (roster.canManage && participant.invitation?.state === 'pending'),
     );
-    function run(input: unknown) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
-        startTransition(async () => {
-            try {
-                const result = await changeRosterAction(sessionId, input);
-                setMessage(result.message);
+    function send(input: unknown) {
+        run(() => changeRosterAction(sessionId, input), {
+            unreachableMessage: 'We could not reach PickFlick. Check your connection and retry.',
+            onResult: (result) => {
+                if (result.ok) announceSuccess(result.message);
+                else setMessage(result.message);
                 if (result.ok) {
                     if (dialog) restoreFocusRef.current = true;
                     setDialog(null);
                 }
-            } catch {
-                setMessage('We could not reach PickFlick. Check your connection and retry.');
-            }
+            },
         });
     }
-    const isLeave = dialog?.action === 'leave';
-    function confirm(action: 'leave' | 'remove', name: string, participantId?: string) {
+    const copy = getConfirmationCopy(dialog);
+    function confirm(next: TRosterDialog) {
         setMessage('');
-        setDialog({ action, name, participantId });
+        setDialog(next);
     }
     return (
         <>
@@ -68,8 +56,8 @@ export default function SessionRoster({
                 <Participation
                     roster={roster}
                     disabled={isPending}
-                    onJoin={() => run({ action: 'join' })}
-                    onLeave={() => confirm('leave', 'your participation')}
+                    onJoin={() => send({ action: 'join' })}
+                    onLeave={() => confirm({ action: 'leave' })}
                 />,
                 roster.canManage && managed.length
                     ? () => {
@@ -87,28 +75,33 @@ export default function SessionRoster({
                 canRevoke={roster.canManage}
                 disabled={isPending}
                 status={dialog ? '' : message}
+                isSuccess={isSuccess}
                 isConfirming={dialog !== null}
                 closeRef={closeRef}
                 onClose={() => setIsKickOpen(false)}
-                onRevoke={(inviteId) => run({ action: 'revoke', inviteId })}
+                onRevoke={(inviteId) => send({ action: 'revoke', inviteId })}
                 onRemove={(participant) =>
-                    confirm('remove', participant.displayName, participant.id)
+                    confirm({
+                        action: 'remove',
+                        name: participant.displayName,
+                        participantId: participant.id,
+                    })
                 }
             />
             <ConfirmDialog
-                cancelLabel="Keep participation"
-                confirmLabel={isLeave ? 'Confirm leaving' : 'Confirm removal'}
+                cancelLabel={copy.cancelLabel}
+                confirmLabel={copy.confirmLabel}
                 inputId="session-roster-confirmation"
                 onClose={() => setDialog(null)}
                 onConfirm={(confirmation) =>
-                    run(
-                        isLeave
-                            ? { action: 'leave', confirmation }
-                            : {
+                    send(
+                        dialog?.action === 'remove'
+                            ? {
                                   action: 'remove',
-                                  participantId: dialog?.participantId,
+                                  participantId: dialog.participantId,
                                   confirmation,
-                              },
+                              }
+                            : { action: 'leave', confirmation },
                     )
                 }
                 onExitTransitionEnd={() => {
@@ -119,135 +112,42 @@ export default function SessionRoster({
                     }
                 }}
                 open={dialog !== null}
-                pending={isPending}
+                isPending={isPending}
                 status={
                     <p aria-live="polite" role="status">
                         {message}
                     </p>
                 }
-                title={isLeave ? 'Leave Session' : 'Remove participant'}
-                word={isLeave ? 'LEAVE' : 'REMOVE'}
+                title={copy.title}
+                word={copy.word}
             >
-                <p>
-                    End {dialog?.name}? This participant will no longer count toward Session
-                    progress. Their existing history stays.
-                </p>
+                <p>{copy.body}</p>
             </ConfirmDialog>
         </>
     );
 }
 
-type TParticipant = ISessionRoster['participants'][number];
+type TRosterDialog =
+    | { action: 'leave' }
+    | { action: 'remove'; participantId: string; name: string };
 
-function KickDialog({
-    open,
-    participants,
-    canRevoke,
-    disabled,
-    status,
-    isConfirming,
-    closeRef,
-    onClose,
-    onRevoke,
-    onRemove,
-}: {
-    open: boolean;
-    participants: TParticipant[];
-    canRevoke: boolean;
-    disabled: boolean;
-    status: string;
-    /** Escape then belongs to the confirmation stacked above, not to this list. */
-    isConfirming: boolean;
-    closeRef: RefObject<HTMLButtonElement | null>;
-    onClose: () => void;
-    onRevoke: (inviteId: string) => void;
-    onRemove: (participant: TParticipant) => void;
-}) {
-    return (
-        <Modal
-            actions={
-                <Button ref={closeRef} onClick={onClose} variant="secondary">
-                    Close
-                </Button>
-            }
-            dismissible={!isConfirming}
-            onClose={onClose}
-            open={open}
-            title="Kick participants"
-        >
-            {participants.length ? (
-                <ul className={styles.list}>
-                    {participants.map((participant) => (
-                        <KickRow
-                            key={participant.id}
-                            participant={participant}
-                            canRevoke={canRevoke}
-                            disabled={disabled}
-                            onRevoke={onRevoke}
-                            onRemove={() => onRemove(participant)}
-                        />
-                    ))}
-                </ul>
-            ) : (
-                <p>No participants can be removed.</p>
-            )}
-            <p aria-live="polite" role="status">
-                {open ? status : ''}
-            </p>
-        </Modal>
-    );
-}
-
-function KickRow({
-    participant,
-    canRevoke,
-    disabled,
-    onRevoke,
-    onRemove,
-}: {
-    participant: TParticipant;
-    canRevoke: boolean;
-    disabled: boolean;
-    onRevoke: (inviteId: string) => void;
-    onRemove: () => void;
-}) {
-    const { displayName, invitation, status } = participant;
-    return (
-        <li className={styles.row}>
-            <span aria-hidden="true" className={styles.avatar}>
-                {getMonogram(displayName)}
-            </span>
-            <span className={styles.name}>
-                {displayName}
-                <small>
-                    {status.toLowerCase()}
-                    {status === 'INVITED' && invitation ? ` · invitation ${invitation.state}` : ''}
-                </small>
-            </span>
-            {invitation?.state === 'pending' && canRevoke ? (
-                <Button
-                    aria-label={`Revoke invite for ${displayName}`}
-                    disabled={disabled}
-                    onClick={() => onRevoke(invitation.id)}
-                    size="small"
-                    variant="secondary"
-                >
-                    Revoke
-                </Button>
-            ) : null}
-            {participant.canRemove ? (
-                <Button
-                    aria-label={`Remove ${displayName}`}
-                    disabled={disabled}
-                    onClick={onRemove}
-                    size="small"
-                    variant="secondary-danger"
-                >
-                    Kick
-                </Button>
-            ) : null}
-        </li>
-    );
+function getConfirmationCopy(dialog: TRosterDialog | null) {
+    if (dialog?.action === 'remove') {
+        return {
+            title: 'Remove participant',
+            word: 'REMOVE',
+            confirmLabel: 'Confirm removal',
+            cancelLabel: 'Cancel',
+            body: `Remove ${dialog.name}? This participant will no longer count toward Session progress. Their existing history stays.`,
+        };
+    }
+    return {
+        title: 'Leave Session',
+        word: 'LEAVE',
+        confirmLabel: 'Confirm leaving',
+        cancelLabel: 'Keep participation',
+        body: 'End your participation? You will no longer count toward Session progress. Your existing history stays.',
+    };
 }
 
 function Participation({
@@ -273,6 +173,15 @@ function Participation({
                     <Icon name="check" />
                     Join
                 </Button>
+            ) : null}
+            {roster.isRemoved ? (
+                <p className={styles.removed}>
+                    <Icon name="user-x" />
+                    Removed
+                    <span className="visually-hidden">
+                        : an operator removed you from this Session.
+                    </span>
+                </p>
             ) : null}
             {roster.canLeave ? (
                 <Button

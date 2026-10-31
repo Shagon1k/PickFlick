@@ -3,11 +3,11 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import { useActionState, useId } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { updateClubSettingsAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Pill from '#components/ui/Pill/Pill';
 
-import { initialClubActionState } from '../../action-state';
-import { updateClubSettingsAction } from '../../actions';
 import styles from '../../page.module.scss';
 import { isWritable, visibilityOptions } from './club-settings';
 import SaveRow from './SaveRow';
@@ -43,7 +43,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                     })}
                 </fieldset>
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
+                    <SaveRow disabled={!canEdit} isPending={isPending} state={state} />
                 ) : null}
             </form>
         </section>

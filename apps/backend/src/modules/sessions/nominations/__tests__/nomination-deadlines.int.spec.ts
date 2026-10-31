@@ -5,10 +5,11 @@ import { sessionSchema } from '@pickflick/contracts';
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { NominationDeadlines } from '../nomination-deadlines.js';
 
 describe('NominationDeadlines', () => {
@@ -32,10 +33,9 @@ describe('NominationDeadlines', () => {
     const log = vi.fn();
     const session = () => api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
     const decisions = () =>
-        api.prisma.nominationDeadlineDecision.findMany({
-            where: { sessionId },
-            include: { notifications: true },
-        });
+        api.prisma.nominationDeadlineDecision.findMany({ where: { sessionId } });
+    const notifiedUsers = (event: 'NOMINATION_STALLED' | 'SELECTION_CLOSED') =>
+        findNotifiedUsers(api.prisma, sessionId, event);
     beforeAll(async () => {
         api = await startTestApi();
     });
@@ -74,7 +74,7 @@ describe('NominationDeadlines', () => {
             });
         }
         movieId = (await api.prisma.movie.create({ data: {} })).id;
-        worker = new NominationDeadlines(api.prisma, log, api.notifications);
+        worker = new NominationDeadlines(api.prisma, log, api.transactions);
     });
     afterEach(async () => {
         vi.restoreAllMocks();
@@ -112,22 +112,24 @@ describe('NominationDeadlines', () => {
     it('should stay open with zero nominations and alert only operators once across restarts and unrelated edits', async () => {
         const moderator = await createUser(api.prisma);
         users.push(moderator);
-        const operator = await addMember(api.prisma, clubId, moderator, 'MODERATOR');
+        await addMember(api.prisma, clubId, moderator, 'MODERATOR');
         await worker.runOnce(due);
         expect(await session()).toMatchObject({
             phase: 'NOMINATION',
             phaseVersion: 1,
             detailsVersion: 1,
             deadlineVersion: 1,
-            deadlineAt: deadline,
+            // The passed deadline is cleared, so the header stops counting down.
+            deadlineAt: null,
         });
-        expect((await edit({ topic: 'Edited topic' })).status).toBe(200);
-        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
+        expect((await edit({ topic: 'Edited topic', deadlineAt: null })).status).toBe(200);
+        await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         const result = await decisions();
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'EMPTY', nominationCount: 0 });
-        expect(result[0]!.notifications).toHaveLength(2);
-        expect(result[0]!.notifications.map((row) => row.membershipId)).toContain(operator);
+        expect(await notifiedUsers('NOMINATION_STALLED')).toEqual(
+            [admin, moderator].toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await submit()).status).toBe(201);
         await worker.runOnce(due);
         expect((await session()).phase).toBe('NOMINATION');
@@ -155,7 +157,9 @@ describe('NominationDeadlines', () => {
         const result = await decisions();
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'WATCHING', nominationCount: 1 });
-        expect(result[0]!.notifications).toHaveLength(2);
+        expect(await notifiedUsers('SELECTION_CLOSED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
     });
     it('should count repeated Movies as multiple nominations and open Selection', async () => {
         await submit();
@@ -294,9 +298,7 @@ describe('NominationDeadlines', () => {
             await worker.runOnce(due);
             expect(await session()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
             expect(await decisions()).toHaveLength(0);
-            expect(
-                await api.prisma.nominationDeadlineNotification.count({ where: { sessionId } }),
-            ).toBe(0);
+            expect(await notifiedUsers('SELECTION_CLOSED')).toEqual([]);
             expect(log).toHaveBeenCalledWith(
                 expect.objectContaining({
                     event: 'deadline.failure',
@@ -310,7 +312,7 @@ describe('NominationDeadlines', () => {
             );
             await api.prisma.$executeRawUnsafe('DROP FUNCTION pf43_fail_completion()');
         }
-        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
+        await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
         expect(await decisions()).toHaveLength(1);
     });

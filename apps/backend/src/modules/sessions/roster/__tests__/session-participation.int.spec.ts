@@ -11,9 +11,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Session participation', () => {
     let api: ITestApi;
@@ -84,6 +84,30 @@ describe('Session participation', () => {
         ).toBe(1);
         expect(await pending()).toEqual([]);
         expect((await roster()).canJoin).toBe(false);
+    });
+
+    it('should count one participation for a member who left the Club and rejoined', async () => {
+        expect((await participate()).status).toBe(200);
+        await api.prisma.membership.update({
+            where: { id: membershipId },
+            data: { status: 'LEFT', leftAt: new Date() },
+        });
+        await addMember(api.prisma, clubId, member);
+        expect((await roster()).canJoin).toBe(false);
+        expect((await participate()).status).toBe(409);
+        expect(
+            await api.prisma.sessionParticipant.count({ where: { sessionId, status: 'ACCEPTED' } }),
+        ).toBe(1);
+    });
+
+    it('should tell a removed member that they were removed and keep Join closed', async () => {
+        expect((await participate()).status).toBe(200);
+        await api.prisma.sessionParticipant.updateMany({
+            where: { sessionId },
+            data: { status: 'REMOVED' },
+        });
+        expect(await roster()).toMatchObject({ isRemoved: true, canJoin: false, canLeave: false });
+        expect((await participate()).status).toBe(409);
     });
 
     it('should allow joining in every open phase without reopening a completed phase', async () => {

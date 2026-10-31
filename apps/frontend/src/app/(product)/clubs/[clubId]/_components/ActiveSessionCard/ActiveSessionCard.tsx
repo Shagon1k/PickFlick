@@ -4,7 +4,7 @@ import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pi
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState, useTransition } from 'react';
 
-import { changeRosterAction } from '#app/(product)/sessions/[sessionId]/roster-actions';
+import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
@@ -15,11 +15,11 @@ import styles from './ActiveSessionCard.module.scss';
 /** Overview shows the large card; Manage Club lists it among its compact 15px panels. */
 export default function ActiveSessionCard({
     hub,
-    compact = false,
+    isCompact = false,
     actions,
 }: {
     hub: IClubHub;
-    compact?: boolean;
+    isCompact?: boolean;
     /** Operator controls that replace the open or join button in Manage Club. */
     actions?: ReactNode;
 }) {
@@ -71,7 +71,7 @@ export default function ActiveSessionCard({
         <section
             className={styles.card}
             aria-label="Active Session"
-            data-compact={compact || undefined}
+            data-compact={isCompact || undefined}
         >
             <h2>Active Session</h2>
             {session ? (

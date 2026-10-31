@@ -67,7 +67,7 @@ export default function CallSheet({
                     {time ? (
                         <div>
                             <dt>Call time</dt>
-                            <dd title="Scheduled time in UTC">{time}</dd>
+                            <dd>{time}</dd>
                         </div>
                     ) : (
                         <div className={styles.location}>
@@ -127,13 +127,8 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
                 <div className={styles.waiting}>
                     <p className={styles.waitingKicker}>Next screening</p>
                     <h2>No screening scheduled</h2>
-                    <p>
-                        {scheduleHref
-                            ? 'Pick a date and a place; the call sheet fills in as the Session moves.'
-                            : 'When your Club schedules a Session, its call time, place and film appear here.'}
-                    </p>
                     {scheduleHref ? (
-                        <ButtonLink href={scheduleHref} size="small" variant="primary">
+                        <ButtonLink fullWidth href={scheduleHref} variant="primary">
                             Schedule a Session
                         </ButtonLink>
                     ) : null}

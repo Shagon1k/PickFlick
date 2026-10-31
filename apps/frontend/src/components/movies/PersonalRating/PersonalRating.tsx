@@ -1,53 +1,60 @@
 'use client';
 
-import type { TPersonalMovieRating } from '@pickflick/contracts';
-import { useId, useRef, useState, useTransition } from 'react';
+import { RATING_SCALE, type TPersonalMovieRating } from '@pickflick/contracts';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import { savePersonalRatingAction } from './actions';
 import styles from './PersonalRating.module.scss';
 
+// Arrow keys step through several stars; only the one the viewer settles on is saved.
+const SAVE_DELAY_MS = 400;
+
+/** The prototype's compact rating: a pill in the film ticket and a row of stars that saves itself. */
 export default function PersonalRating({
     movieId,
     rating,
     onSaved,
+    isInTable = false,
 }: {
     movieId: string;
     rating: TPersonalMovieRating | null;
     onSaved?: (message: string) => void;
+    /** A Library table cell shows the plain score, as the prototype's Rating column does. */
+    isInTable?: boolean;
 }) {
     const id = useId();
-    const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [score, setScore] = useState(rating?.score);
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const { message, isSuccess, setMessage, announceSuccess, run } = useActionStatus();
+    useEffect(() => () => clearTimeout(saveTimerRef.current), []);
 
-    function handleSave(event: React.SubmitEvent<HTMLFormElement>) {
-        event.preventDefault();
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        setMessage('Saving your rating…');
-        startTransition(async () => {
-            const result = await savePersonalRatingAction(movieId, { score }).catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Your selection is still here; try again.',
-            }));
-            setMessage(result.ok ? 'Personal Rating saved.' : result.message);
-            feedbackRef.current?.focus();
-            if (result.ok && onSaved) {
-                setIsOpen(false);
-                onSaved('Personal Rating saved.');
-            }
+    function save(value: number) {
+        run(() => savePersonalRatingAction(movieId, { score: value }), {
+            pendingMessage: 'Saving…',
+            unreachableMessage: 'We could not reach PickFlick. Choose your rating again to retry.',
+            onResult: (result) => {
+                if (!result.ok) return setMessage(result.message);
+                announceSuccess('Personal Rating saved.');
+                if (onSaved) {
+                    setIsOpen(false);
+                    onSaved('Personal Rating saved.');
+                }
+            },
         });
+    }
+
+    function handleChange(value: number) {
+        setScore(value);
+        setMessage('');
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => save(value), SAVE_DELAY_MS);
     }
 
     return (
@@ -59,40 +66,44 @@ export default function PersonalRating({
             onChange={setIsOpen}
             trigger={
                 <Button
-                    variant="cell"
+                    variant={isInTable ? 'ghost' : 'cell'}
+                    size={isInTable ? 'small' : 'default'}
                     aria-label={
                         rating
-                            ? `Your rating: ${rating.score} out of 10. Edit rating`
+                            ? `Your rating: ${rating.score} out of ${RATING_SCALE.max}. Edit rating`
                             : 'Rate this film'
                     }
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    <Icon name="ratings" />
-                    {rating ? `${rating.score}/10` : 'Rate'}
+                    {isInTable ? null : <Icon name="ratings" />}
+                    {rating && isInTable ? (
+                        <strong className={styles.tableScore}>{rating.score}</strong>
+                    ) : null}
+                    {rating && !isInTable ? (
+                        <span className={styles.pill}>
+                            <strong>{rating.score}</strong>
+                            <small>You</small>
+                        </span>
+                    ) : null}
+                    {rating ? null : 'Rate'}
                 </Button>
             }
         >
-            <form className={styles.personalRating} onSubmit={handleSave}>
+            <div className={styles.personalRating}>
+                <p aria-hidden="true" className={styles.label}>
+                    {score === undefined ? 'Rate' : `${score}/${RATING_SCALE.max}`}
+                </p>
                 <RatingControl
+                    isCompact
                     name="personal-rating"
                     label="Your rating"
                     value={score}
-                    onChange={(value) => {
-                        setScore(value);
-                        setMessage('');
-                    }}
-                    disabled={isPending}
-                    required
+                    onChange={handleChange}
                 />
-                <p>{score === undefined ? 'Choose a rating' : `${score}/10`}</p>
-                <p>Your current opinion. Session and Club history stay unchanged.</p>
-                <Button type="submit" loading={isPending}>
-                    Save rating
-                </Button>
-                <p role="status" ref={feedbackRef} tabIndex={-1}>
+                <p className={isSuccess ? 'visually-hidden' : styles.status} role="status">
                     {message}
                 </p>
-            </form>
+            </div>
         </Popover>
     );
 }

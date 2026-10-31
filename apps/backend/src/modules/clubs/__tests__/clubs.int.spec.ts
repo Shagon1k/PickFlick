@@ -6,9 +6,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 
 const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1]);
 
@@ -49,7 +49,7 @@ describe('ClubsController', () => {
     });
 
     it('should reject a request without a session', async () => {
-        expect((await api.request('/clubs')).status).toBe(401);
+        await api.expectStatus(401, '/clubs');
     });
 
     describe('when creating a Club', () => {
@@ -89,9 +89,7 @@ describe('ClubsController', () => {
 
     describe('when reading settings', () => {
         it('should hide the Club from a non-member', async () => {
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: outsider })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: outsider });
         });
 
         it('should give a member a read-only view without the audit trail', async () => {
@@ -101,7 +99,6 @@ describe('ClubsController', () => {
 
             expect(settings.permissions).toMatchObject({ manageSettings: false, leaveClub: true });
             expect(settings.members).toHaveLength(2);
-            expect(settings.auditEvents).toEqual([]);
         });
     });
 
@@ -127,7 +124,11 @@ describe('ClubsController', () => {
 
             expect(saved.club.name).toBe('Midnight Society Updated');
             expect(saved.visibility.showRatingResults).toBe(false);
-            expect(saved.auditEvents[0]?.action).toBe('CLUB_SETTINGS_UPDATED');
+            expect(
+                await api.prisma.clubAuditEvent.findFirst({
+                    where: { clubId: club.id, action: 'CLUB_SETTINGS_UPDATED' },
+                }),
+            ).not.toBeNull();
         });
 
         it('should refuse a member', async () => {
@@ -214,14 +215,12 @@ describe('ClubsController', () => {
             const served = await api.request(`/clubs/${club.id}/avatar`, { userId: member });
             expect(served.headers.get('content-type')).toBe('image/png');
 
-            expect(
-                (await api.request(`/clubs/${club.id}/avatar`, { method: 'DELETE', userId: admin }))
-                    .status,
-            ).toBe(204);
+            await api.expectStatus(204, `/clubs/${club.id}/avatar`, {
+                method: 'DELETE',
+                userId: admin,
+            });
             expect(api.storage.objects.size).toBe(0);
-            expect((await api.request(`/clubs/${club.id}/avatar`, { userId: member })).status).toBe(
-                404,
-            );
+            await api.expectStatus(404, `/clubs/${club.id}/avatar`, { userId: member });
         });
     });
 
@@ -279,9 +278,7 @@ describe('ClubsController', () => {
                 json: { confirmation: 'LEAVE' },
             });
             expect(memberLeave.status).toBe(204);
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: member })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: member });
         });
 
         it('should delete an empty Club only with its exact name', async () => {
@@ -298,16 +295,22 @@ describe('ClubsController', () => {
                 json: { confirmation: 'Midnight Society Updated' },
             });
             expect(deleted.status).toBe(204);
-            expect(
-                (await api.request(`/clubs/${club.id}/settings`, { userId: admin })).status,
-            ).toBe(404);
+            await api.expectStatus(404, `/clubs/${club.id}/settings`, { userId: admin });
         });
 
         it('should refuse to delete a Club with Session history', async () => {
             const [second] = (await (
                 await api.request('/clubs', { userId: admin })
             ).json()) as IClubSummary[];
+            const canDelete = async () =>
+                (
+                    (await (
+                        await api.request(`/clubs/${second!.id}/settings`, { userId: admin })
+                    ).json()) as IClubSettings
+                ).canDelete;
+            expect(await canDelete()).toBe(true);
             await createSession(api.prisma, second!.id, { type: 'PAST', phase: 'COMPLETED' });
+            expect(await canDelete()).toBe(false);
 
             const response = await api.request(`/clubs/${second!.id}/delete`, {
                 method: 'POST',

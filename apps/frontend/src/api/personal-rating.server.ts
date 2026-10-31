@@ -15,9 +15,8 @@ export async function getPersonalRating(movieId: string) {
     return response.rating;
 }
 
-export function savePersonalRating(movieId: string, input: TSavePersonalRating) {
-    return requestApi<TPersonalMovieRating>(apiPath`/movies/${movieId}/personal-rating`, {
+export const savePersonalRating = (movieId: string, input: TSavePersonalRating) =>
+    requestApi<TPersonalMovieRating>(apiPath`/movies/${movieId}/personal-rating`, {
         method: 'PUT',
         json: input,
     });
-}

@@ -1,7 +1,6 @@
-import { Controller, Get, Header, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { achievementQuerySchema } from '@pickflick/contracts';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { EMPTY_REQUEST, UUID_PARAM } from '../../common/pipes/zod-validation.pipe.js';
 import type { IAuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { AchievementsService } from './achievements.service.js';
@@ -11,20 +10,18 @@ export class AchievementsController {
     constructor(private readonly achievements: AchievementsService) {}
 
     @Get('library/achievements')
-    @Header('Cache-Control', 'private, no-store')
     listPersonal(
-        @Query(new ZodValidationPipe(achievementQuerySchema)) query: Record<string, never>,
+        @Query(EMPTY_REQUEST) query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
     ) {
         return this.achievements.listPersonal(user.id);
     }
 
     @Get('clubs/:clubId/achievements')
-    @Header('Cache-Control', 'private, no-store')
     listClub(
-        @Query(new ZodValidationPipe(achievementQuerySchema)) query: Record<string, never>,
+        @Query(EMPTY_REQUEST) query: Record<string, never>,
         @CurrentUser() user: IAuthUser,
-        @Param('clubId', new ParseUUIDPipe({ version: '4' })) clubId: string,
+        @Param('clubId', UUID_PARAM) clubId: string,
     ) {
         return this.achievements.listClub(user.id, clubId);
     }

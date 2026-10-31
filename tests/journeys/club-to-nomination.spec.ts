@@ -7,6 +7,7 @@ import {
     type IJourneyBackend,
 } from '../../apps/backend/src/testing/journeys.ts';
 import { acceptedParticipants } from '../ui/session-facts';
+import { openVisitor } from './visitors';
 
 let backend: IJourneyBackend;
 
@@ -18,19 +19,9 @@ test.afterAll(async () => {
     await backend.close();
 });
 
-// Better Auth limits each client address (an IPv6 /64) per minute and keeps the counts in the
-// database, so every visitor of every run gets its own documentation-range network.
-const runNetwork = randomUUID().slice(0, 4);
-let visitors = 0;
-
 async function signedInPage(browser: Browser, displayName: string): Promise<Page> {
     const userId = await backend.createUser(displayName);
-    visitors += 1;
-    const context = await browser.newContext({
-        extraHTTPHeaders: { 'x-forwarded-for': `2001:db8:${runNetwork}:${visitors}::1` },
-    });
-    await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
-    return context.newPage();
+    return (await openVisitor(browser, backend, userId)).newPage();
 }
 
 /** A date 30 days ahead in the `YYYY-MM-DD` form the date input accepts. */
@@ -70,7 +61,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
 
     await test.step('the member joins the shared Session link, which an outsider cannot use', async () => {
         await admin.goto(clubPath);
-        await admin.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await admin.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
         await admin.getByLabel('Date').fill(upcomingDate());
         await admin.getByLabel('Location').fill('Room A');
         await admin.getByLabel('Topic').fill('Journey night');

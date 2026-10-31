@@ -46,7 +46,7 @@
         "start:worker": "pnpm --filter @pickflick/backend start:worker",
         "start:email-worker": "pnpm --filter @pickflick/backend start:email-worker",
         "email:preview": "pnpm build:packages && pnpm --filter @pickflick/backend build && node scripts/preview-emails.mjs",
-        "test:worker": "node scripts/deadline-worker-smoke.mjs"
+        "test:worker": "node scripts/worker-smoke.mjs"
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",

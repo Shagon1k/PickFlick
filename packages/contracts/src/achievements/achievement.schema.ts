@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-export const achievementQuerySchema = z.strictObject({});
 export const achievementSchema = z.object({
     key: z.string(),
     version: z.int().positive(),

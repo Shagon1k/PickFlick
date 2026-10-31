@@ -1,21 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000042';
 async function authenticate(context: BrowserContext, scenario = '', token?: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token ?? `valid-nomination-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, token ?? `valid-nomination-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -24,9 +16,7 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'hidden-anonymous');
         await page.goto(PATH);
-        await expect(
-            page.getByText('Nominations are hidden until you submit your own Movie.'),
-        ).toBeVisible();
+        await expect(page.getByText('Nominations stay hidden until you nominate.')).toBeVisible();
         await expect(page.getByText('Current private film')).toHaveCount(0);
         await page.getByRole('button', { name: 'Past losing nomination (2020)' }).focus();
         await page.keyboard.press('Enter');
@@ -37,8 +27,6 @@ test(
         await expect(page.getByRole('button', { name: 'Nominate This' })).toHaveCount(0);
         await expect(page.getByText('2 of 3 participants have nominated.')).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Find & Nominate a Movie' })).toBeFocused();
-        await page.getByRole('button', { name: 'Refresh nominations' }).click();
-        await expect(page.getByText('Nominations refreshed.')).toBeVisible();
         await expect(page.getByText('by Jordan Member')).toHaveCount(0);
     },
 );

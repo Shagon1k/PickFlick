@@ -67,7 +67,7 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .publicHero,
     .publicSections {
         width: calc(100% - 32px);

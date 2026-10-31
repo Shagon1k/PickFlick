@@ -1,4 +1,5 @@
-import { snapshotSchema } from '../../sessions/selection/selection-outcome.js';
+import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
+import type { TPersonalAchievementKey } from './rule-catalog.js';
 import { getAverage, getLongestRun, getMembersAtScreening, readDetails } from './rule-helpers.js';
 import type { TAchievementSession } from './rule-sources.js';
 
@@ -66,7 +67,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     );
     const wins = sessions.flatMap((session) => {
         if (session.type !== 'FULL_CYCLE') return [];
-        const result = snapshotSchema.safeParse(session.selectionResult);
+        const result = selectionResultSchema.safeParse(session.selectionResult);
         return result.success
             ? nominations
                   .filter((nomination) => nomination.id === result.data.winnerNominationId)
@@ -129,7 +130,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
                     average,
                 }));
         });
-    const metrics: Record<string, number> = {
+    const metrics: Record<TPersonalAchievementKey, number> = {
         'opening-credits': Number(facts.hasProfile),
         'first-vote': ballots.length,
         'reliable-viewer': streak,
@@ -151,8 +152,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
                 (session) =>
                     isAttendee(session) &&
                     session.scheduledAt &&
-                    session.scheduledAt.getUTCHours() === NIGHT_HOUR &&
-                    session.scheduledAt.getTime() % HOUR_MS > 0,
+                    isStrictlyAfterElevenUtc(session.scheduledAt),
             ),
         ),
         'early-bird': Number(hasEarlyBallot),
@@ -176,4 +176,9 @@ function canReadAverage(session: TAchievementSession, userId: string) {
         (membership) => membership.userId === userId && membership.status === 'ACTIVE',
     );
     return member && (member.role !== 'MEMBER' || session.showRatingResults);
+}
+
+/** Night Owl: strictly after 23:00 on its UTC date, so 23:00 exactly does not count. */
+function isStrictlyAfterElevenUtc(date: Date) {
+    return date.getUTCHours() === NIGHT_HOUR && date.getTime() % HOUR_MS > 0;
 }

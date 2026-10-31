@@ -43,6 +43,12 @@ describe('createPastSessionSchema', () => {
         const input = { ...minimal, attendees: [{ membershipId }], nominations: [{ movieId }] };
         for (const patch of [
             { nominations: [{ movieId }, { movieId, nominatorMembershipId: membershipId }] },
+            {
+                nominations: [
+                    { movieId, nominatorMembershipId: membershipId },
+                    { movieId: randomUUID(), nominatorMembershipId: membershipId },
+                ],
+            },
             { nominations: [movieId] },
             { nominations: [{ movieId, nominatorMembershipId: 'invalid' }] },
             { nominations: [{ movieId, nominatorMembershipId: null }] },

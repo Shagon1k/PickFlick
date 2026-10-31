@@ -15,12 +15,6 @@
     font-size: var(--fs-card-title);
 }
 
-.explanation {
-    margin-bottom: var(--gap-md);
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-}
-
 .feedback:empty {
     display: none;
 }

@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
+import { useNotifications } from '#components/notifications/notifications-context';
+import NotificationsPanel from '#components/notifications/NotificationsPanel/NotificationsPanel';
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
-import { useNotifications } from '#components/shells/notifications-context';
-import NotificationsPanel from '#components/shells/NotificationsPanel/NotificationsPanel';
 import styles from '#components/shells/product-navigation.module.scss';
 import {
     useAnchoredMenus,
@@ -40,8 +40,18 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const initials = getInitials(session?.user.name);
     const { data: notifications } = useNotifications();
 
-    useOverlayDismissal(isAccountMenuOpen, accountRef, closeOverlay, true);
-    useOverlayDismissal(isNotificationsPanelOpen, notificationsRef, closeOverlay, true);
+    useOverlayDismissal({
+        isOpen: isAccountMenuOpen,
+        rootRef: accountRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
+    useOverlayDismissal({
+        isOpen: isNotificationsPanelOpen,
+        rootRef: notificationsRef,
+        closeOverlay,
+        shouldTrapFocus: true,
+    });
 
     useAnchoredMenus(isAccountMenuOpen ? 'account' : null, actionsRef);
 

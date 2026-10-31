@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
+import { configureApplication } from '../../../config/configure-application.js';
 import { buildCanonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
@@ -34,11 +35,17 @@ describe('MoviesController', () => {
                     useValue: {
                         resolveUser: (headers: Record<string, unknown>) =>
                             headers['x-test-user'] ? { id: 'user' } : null,
+                        handler: vi.fn(),
                     },
                 },
             ],
         }).compile();
-        app = module.createNestApplication<NestExpressApplication>({ logger: false });
+        app = module.createNestApplication<NestExpressApplication>({
+            bodyParser: false,
+            logger: false,
+        });
+        // The shared configuration owns the default Cache-Control the poster route overrides.
+        configureApplication(app);
         app.useGlobalGuards(app.get(AuthGuard));
         await app.listen(0, '127.0.0.1');
         url = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}/movies/search`;
@@ -173,7 +180,7 @@ describe('MoviesController', () => {
             redirect: 'manual',
         });
         expect(response.status).toBe(302);
-        expect(response.headers.get('cache-control')).toBe('private, no-store');
+        expect(response.headers.get('cache-control')).toBe('private, max-age=86400');
         expect(response.headers.get('location')).toBe(`/api/movies/images/${'a'.repeat(64)}`);
         expect(storeMedia).toHaveBeenCalledWith({
             posterUrl: 'https://image.tmdb.org/t/p/original/poster.jpg',
@@ -254,6 +261,9 @@ describe('MoviesController', () => {
         expect(response.status).toBe(200);
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({ state: 'unavailable', reason: 'RATE_LIMITED' });
-        expect(search).toHaveBeenCalledWith({ query: 'Film', page: 1, locale: 'en-US' }, true);
+        expect(search).toHaveBeenCalledWith(
+            { query: 'Film', page: 1, locale: 'en-US' },
+            { allowStale: true },
+        );
     });
 });

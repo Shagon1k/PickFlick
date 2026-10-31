@@ -28,7 +28,7 @@ interface IMoviePickerProps {
     disabled: boolean;
     placeholder: string;
     /** The Nomination card names the task in its heading, so the field label is for assistive tech. */
-    hideLabel?: boolean;
+    isLabelHidden?: boolean;
 }
 export default function MoviePicker({
     id = 'session-movie',
@@ -39,7 +39,7 @@ export default function MoviePicker({
     error,
     disabled,
     placeholder,
-    hideLabel = false,
+    isLabelHidden = false,
 }: IMoviePickerProps) {
     const [query, setQuery] = useState('');
     const [selectedTitle, setSelectedTitle] = useState('');
@@ -88,7 +88,7 @@ export default function MoviePicker({
                     id={id}
                     label={label}
                     labelHint={required ? 'required' : 'optional'}
-                    labelProps={hideLabel ? { className: 'visually-hidden' } : undefined}
+                    labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
                     placeholder={placeholder}
                     required={required}
                     value={value ? selectedTitle : query}
@@ -126,6 +126,14 @@ export default function MoviePicker({
                         </button>
                     ))}
                 </div>
+                {/* Searching and empty results show in the results popover; a list speaks for
+                    itself, so then the count is for assistive technology only. */}
+                <p
+                    className={movies.length ? 'visually-hidden' : styles.searchStatus}
+                    role="status"
+                >
+                    {getSearchMessage(term, result)}
+                </p>
             </div>
             {value ? (
                 <Button
@@ -139,10 +147,6 @@ export default function MoviePicker({
                     Remove selected Movie
                 </Button>
             ) : null}
-            {/* Results speak for themselves on screen; the count stays available to assistive tech. */}
-            <p className={movies.length ? 'visually-hidden' : undefined} role="status">
-                {getSearchMessage(term, result)}
-            </p>
             {result && 'data' in result ? <SearchCredits movies={result.data.movies} /> : null}
         </div>
     );

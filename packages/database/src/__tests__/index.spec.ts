@@ -1,10 +1,7 @@
 import { type AddressInfo, createServer, type Socket } from 'node:net';
 
-import {
-    assertSafeSeedOrResetTarget,
-    checkDatabaseReadiness,
-    SYNTHETIC_FIXTURES,
-} from '../index.js';
+import { checkDatabaseReadiness } from '../client.js';
+import { assertSafeSeedOrResetTarget, SYNTHETIC_FIXTURES } from '../index.js';
 
 describe('database safety', () => {
     it('should allow only the positively identified local database', () => {

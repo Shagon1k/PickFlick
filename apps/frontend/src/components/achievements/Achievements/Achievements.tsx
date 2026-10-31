@@ -3,13 +3,13 @@
 import type { TAchievement, TAchievements } from '@pickflick/contracts';
 import { useState } from 'react';
 
-import Icon from '#components/ui/Icon/Icon';
-import Progress from '#components/ui/Progress/Progress';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 
+import { ACHIEVEMENT_ICONS } from './achievement-icons';
 import styles from './Achievements.module.scss';
 
 const PERCENT = 100;
-const DATE_LENGTH = 10;
 
 const STATUSES: { status: TAchievement['status']; label: string }[] = [
     { status: 'unlocked', label: 'Unlocked' },
@@ -31,11 +31,7 @@ export default function Achievements({ items }: TAchievements) {
     return (
         <section className={styles.achievements} aria-labelledby="achievements-title">
             <h2 id="achievements-title">Achievements</h2>
-            <p>
-                Goals use recorded activity when you open this view. Unlocked achievements keep the
-                rules and evidence that earned them.
-            </p>
-            <div className={styles.summary} aria-label="Achievement filters">
+            <div className={styles.summary} role="group" aria-label="Achievement filters">
                 {STATUSES.map(({ status, label }) => (
                     <button
                         key={status}
@@ -43,6 +39,7 @@ export default function Achievements({ items }: TAchievements) {
                         aria-pressed={selected.includes(status)}
                         onClick={() => handleToggle(status)}
                     >
+                        <span aria-hidden="true" className={styles.check} />
                         <strong>{items.filter((item) => item.status === status).length}</strong>
                         <span>{label}</span>
                     </button>
@@ -54,56 +51,68 @@ export default function Achievements({ items }: TAchievements) {
                     <span>Completion</span>
                 </div>
             </div>
-            <p role="status">
+            <p className="visually-hidden" role="status">
                 {visible.length} of {items.length} achievements shown
             </p>
-            {visible.length === 0 && (
-                <p>No achievements match these filters. Select a status above to show its goals.</p>
-            )}
+            {visible.length === 0 && <p>Select a status above to show its achievements.</p>}
             <div className={styles.shelf}>
                 {visible.map((item) => (
-                    <article
-                        key={`${item.key}-${item.version}`}
-                        className={styles.card}
-                        data-status={item.status}
-                        aria-label={item.title}
-                    >
-                        <div className={styles.icon}>
-                            <Icon name="achievements" />
-                        </div>
-                        <span className={styles.status}>
-                            {STATUSES.find(({ status }) => status === item.status)?.label}
-                        </span>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
-                        {item.progress !== null ? (
-                            <Progress
-                                label="Recorded progress"
-                                value={item.progress}
-                                max={item.target}
-                                compact
-                            />
-                        ) : (
-                            <p>{item.explanation}</p>
-                        )}
-                        {item.progress !== null && (
-                            <details>
-                                <summary>How this is calculated · v{item.version}</summary>
-                                <p>{item.explanation}</p>
-                                {item.awardedAt && (
-                                    <p>
-                                        Unlocked{' '}
-                                        <time dateTime={item.awardedAt}>
-                                            {item.awardedAt.slice(0, DATE_LENGTH)}
-                                        </time>{' '}
-                                        (UTC). Earned history is retained.
-                                    </p>
-                                )}
-                            </details>
-                        )}
-                    </article>
+                    <AchievementCard key={`${item.key}-${item.version}`} item={item} />
                 ))}
             </div>
         </section>
+    );
+}
+
+function AchievementCard({ item }: { item: TAchievement }) {
+    return (
+        <article className={styles.card} data-status={item.status} aria-label={item.title}>
+            <span className={styles.about}>
+                <InfoTip label={`How ${item.title} is counted`}>
+                    {item.explanation}
+                    {item.awardedAt ? (
+                        <>
+                            {' '}
+                            Unlocked <LocalTime format="date" value={item.awardedAt} />.
+                        </>
+                    ) : null}
+                </InfoTip>
+            </span>
+            <div className={styles.icon}>
+                <svg
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.8"
+                    viewBox="0 0 24 24"
+                >
+                    {ACHIEVEMENT_ICONS[item.key] ?? ACHIEVEMENT_ICONS['first-screening']}
+                </svg>
+            </div>
+            <span className={styles.status}>
+                {STATUSES.find(({ status }) => status === item.status)?.label}
+            </span>
+            <h3 title={item.title}>{item.title}</h3>
+            <p className={styles.description}>{item.description}</p>
+            {item.progress === null ? null : (
+                <div className={styles.progress}>
+                    <span>
+                        {item.progress} / {item.target}
+                    </span>
+                    <span
+                        aria-label={`${item.progress} of ${item.target}`}
+                        aria-valuemax={item.target}
+                        aria-valuemin={0}
+                        aria-valuenow={item.progress}
+                        className={styles.bar}
+                        role="progressbar"
+                    >
+                        <i style={{ width: `${(item.progress / item.target) * PERCENT}%` }} />
+                    </span>
+                </div>
+            )}
+        </article>
     );
 }

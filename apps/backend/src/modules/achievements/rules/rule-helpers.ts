@@ -1,11 +1,10 @@
-import { movieDetailsSchema } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { readCachedDetails } from '../../movies/cached-details.js';
 import type { TAchievementSession } from './rule-sources.js';
 
 export function readDetails(movie: { details: { data: Prisma.JsonValue }[] } | null) {
-    const details = movieDetailsSchema.safeParse(movie?.details[0]?.data);
-    return details.success ? details.data : null;
+    return readCachedDetails(movie?.details[0]);
 }
 
 export function getAverage(session: TAchievementSession) {
@@ -39,4 +38,13 @@ export function getMembersAtScreening(session: TAchievementSession) {
               (member) => member.joinedAt <= date && (!member.leftAt || member.leftAt > date),
           )
         : [];
+}
+
+/** UTC calendar keys: `2026-10-01` for a day, `2026-10` for a month. */
+export function toUtcDayKey(date: Date) {
+    return date.toISOString().slice(0, 'YYYY-MM-DD'.length);
+}
+
+export function toUtcMonthKey(date: Date) {
+    return date.toISOString().slice(0, 'YYYY-MM'.length);
 }

@@ -1,0 +1,78 @@
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin: 34px 0 var(--gap-lg);
+    overflow-x: auto;
+}
+
+.tabsInner {
+    display: flex;
+    flex: 0 1 auto;
+    gap: 0;
+    padding-inline: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabs a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: var(--hit);
+    padding: 14px 22px;
+    font: 500 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+    color: var(--fg-secondary);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color var(--motion-local);
+}
+
+.tabs a::after {
+    position: absolute;
+    right: 50%;
+    bottom: -1px;
+    left: 50%;
+    height: 2px;
+    content: '';
+    background: var(--fg);
+    border-radius: var(--radius-pill);
+    transition:
+        left var(--motion-local),
+        right var(--motion-local);
+}
+
+.tabs a:hover,
+.tabs a:focus-visible,
+.tabs a[aria-current='page'] {
+    color: var(--fg);
+}
+
+.tabs a:hover::after,
+.tabs a:focus-visible::after,
+.tabs a[aria-current='page']::after {
+    right: 0;
+    left: 0;
+}
+
+.tabs a:focus-visible {
+    outline: 0;
+    border-radius: 7px 7px 0 0;
+    box-shadow: inset 0 0 0 1px var(--focus);
+}
+
+@media (width < 768px) {
+    /* Phones switch sections from the bottom bar's strip, as in the prototype. */
+    .tabs {
+        display: none;
+    }
+
+    .tabs + * {
+        margin-top: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tabs a,
+    .tabs a::after {
+        transition: none;
+    }
+}

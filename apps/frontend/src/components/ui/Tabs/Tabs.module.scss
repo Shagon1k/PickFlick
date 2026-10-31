@@ -63,13 +63,6 @@
     box-shadow: var(--focus-ring);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .tabs__panel {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
 @keyframes fade-in {
     from {
         opacity: 0;

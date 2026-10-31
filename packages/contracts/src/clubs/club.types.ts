@@ -1,3 +1,4 @@
+import type { TSessionPhase } from '../sessions/session.schema.js';
 export type TClubRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
 export type TClubLifecycle = 'ACTIVE' | 'ARCHIVED';
 export type TClubTier = 'FREE' | 'PRO';
@@ -12,7 +13,6 @@ export const CLUB_PERMISSIONS = [
     'manageRoles',
     'manageSettings',
     'manageLifecycle',
-    'viewAudit',
 ] as const;
 
 export type TClubPermission = (typeof CLUB_PERMISSIONS)[number];
@@ -24,6 +24,17 @@ export interface IClubEntitlements {
     memberLimit: number;
     voteResultVisibility: 'ADMIN_HIDDEN' | 'ADMIN_CONFIGURABLE';
 }
+
+/** Plan limits the API enforces and the public pricing pages describe. */
+export const CLUB_TIER_ENTITLEMENTS: Record<TClubTier, IClubEntitlements> = {
+    FREE: { tier: 'FREE', adminClubLimit: 1, memberLimit: 8, voteResultVisibility: 'ADMIN_HIDDEN' },
+    PRO: {
+        tier: 'PRO',
+        adminClubLimit: 5,
+        memberLimit: 16,
+        voteResultVisibility: 'ADMIN_CONFIGURABLE',
+    },
+};
 
 export interface IClubSummary {
     id: string;
@@ -57,45 +68,12 @@ export interface IClubMember {
     canRemove: boolean;
 }
 
-export const CLUB_AUDIT_ACTIONS = [
-    'SESSION_CREATED',
-    'SESSION_UPDATED',
-    'SESSION_CANCELLED',
-    'SESSION_NOMINATION_CLOSED',
-    'SESSION_SELECTION_CLOSED',
-    'SESSION_RATING_OPENED',
-    'SESSION_RATING_CLOSED',
-    'SESSION_INVITE_CREATED',
-    'SESSION_INVITE_REVOKED',
-    'SESSION_INVITE_RESPONDED',
-    'SESSION_PARTICIPANT_LEFT',
-    'SESSION_PARTICIPANT_REMOVED',
-    'MEMBERSHIP_ROLE_CHANGED',
-    'ADMIN_TRANSFERRED',
-    'CLUB_SETTINGS_UPDATED',
-    'CLUB_AVATAR_UPDATED',
-    'CLUB_ARCHIVED',
-    'CLUB_REACTIVATED',
-    'MEMBERSHIP_LEFT',
-    'MEMBERSHIP_REMOVED',
-    'CLUB_DELETED',
-    'CLUB_INVITE_CREATED',
-    'CLUB_INVITE_REVOKED',
-    'MEMBERSHIP_JOINED',
-] as const;
-
-export type TClubAuditAction = (typeof CLUB_AUDIT_ACTIONS)[number];
-
-export interface IClubAuditEvent {
-    id: string;
-    action: TClubAuditAction;
-    createdAt: string;
-}
-
 /** Everything the Manage Club page renders for the signed-in member. */
 export interface IClubAccess {
     adminless: boolean;
     newWorkAllowed: boolean;
+    /** Every member place is taken, so no invitation can be created. */
+    isAtCapacity: boolean;
     reasons: ('ARCHIVED' | 'ADMINLESS' | 'MEMBER_LIMIT')[];
 }
 
@@ -104,10 +82,11 @@ export interface IClubSettings {
     currentMembershipId: string;
     club: IClubSummary;
     permissions: TClubPermissions;
+    /** An Admin may delete the Club only while it has no Sessions. */
+    canDelete: boolean;
     entitlements: IClubEntitlements;
     visibility: IClubVisibility;
     members: IClubMember[];
-    auditEvents: IClubAuditEvent[];
 }
 
 export interface IClubHubMovie {
@@ -128,7 +107,7 @@ export interface IClubHubSession {
     ratingAverage: number | null;
     canJoin: boolean;
     movie: IClubHubMovie | null;
-    phase: 'NOMINATION' | 'SELECTION' | 'WATCHING' | 'RATING' | 'COMPLETED' | 'CANCELLED';
+    phase: TSessionPhase;
     topic?: string;
     scheduledAt?: string;
     location?: string;
@@ -172,3 +151,6 @@ export const CLUB_CONFLICT_REASONS = [
 ] as const;
 
 export type TClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
+
+/** The Club Hub lists this many most recent closed Sessions as history. */
+export const HUB_HISTORY_LIMIT = 20;

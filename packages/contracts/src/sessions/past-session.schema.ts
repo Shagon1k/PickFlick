@@ -1,19 +1,25 @@
 import { z } from 'zod';
 
+import { ratingScoreSchema } from '../common/rating-scale.js';
 import { sessionDetailsSchema } from './session.schema.js';
+
+// UTC+14 is the first zone to start a calendar day, so its "today" may be tomorrow in UTC.
+const FIRST_ZONE_LEAD_MS = 14 * 3_600_000;
 
 export const createPastSessionSchema = sessionDetailsSchema
     .omit({ deadlineAt: true })
     .extend({
         submissionId: z.uuidv4(),
-        scheduledAt: z.iso.datetime().refine((value) => new Date(value).getTime() <= Date.now(), {
-            message: 'Choose a date in the past.',
-        }),
+        scheduledAt: z.iso
+            .datetime()
+            .refine((value) => new Date(value).getTime() <= Date.now() + FIRST_ZONE_LEAD_MS, {
+                message: 'Choose a date in the past.',
+            }),
         movieId: z.uuid(),
         attendees: z.array(
             z.strictObject({
                 membershipId: z.uuid(),
-                score: z.int().min(1).max(10).optional(),
+                score: ratingScoreSchema.optional(),
             }),
         ),
         nominations: z
@@ -50,6 +56,16 @@ export const createPastSessionSchema = sessionDetailsSchema
                 path: ['nominations'],
                 message: 'Add each nominated Movie once.',
             });
+        // As in a live Session, each participant nominates one Movie.
+        const nominators = input.nominations.flatMap((row) =>
+            row.nominatorMembershipId ? [row.nominatorMembershipId] : [],
+        );
+        if (new Set(nominators).size !== nominators.length)
+            context.addIssue({
+                code: 'custom',
+                path: ['nominations'],
+                message: 'Choose each nominator for one Movie only.',
+            });
         if (
             new Set(input.scoreMatrix.map((row) => row.membershipId)).size !==
             input.scoreMatrix.length
@@ -59,22 +75,20 @@ export const createPastSessionSchema = sessionDetailsSchema
                 path: ['scoreMatrix'],
                 message: 'Supply each participant row once.',
             });
+        const attendeeIds = new Set(input.attendees.map((attendee) => attendee.membershipId));
+        const nominatedIds = new Set(input.nominations.map((nomination) => nomination.movieId));
         for (const [index, row] of input.scoreMatrix.entries()) {
-            if (
-                !input.attendees.some((attendee) => attendee.membershipId === row.membershipId) ||
-                new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length ||
-                row.scores.some(
-                    (cell) =>
-                        !input.nominations.some(
-                            (nomination) => nomination.movieId === cell.movieId,
-                        ),
-                )
-            )
+            const path = ['scoreMatrix', index];
+            if (!attendeeIds.has(row.membershipId))
                 context.addIssue({
                     code: 'custom',
-                    path: ['scoreMatrix', index],
-                    message: 'Use selected attendees and unique nominated Movies only.',
+                    path,
+                    message: 'Score only selected attendees.',
                 });
+            if (new Set(row.scores.map((cell) => cell.movieId)).size !== row.scores.length)
+                context.addIssue({ code: 'custom', path, message: 'Score each Movie once.' });
+            if (row.scores.some((cell) => !nominatedIds.has(cell.movieId)))
+                context.addIssue({ code: 'custom', path, message: 'Score only nominated Movies.' });
         }
     });
 export type TCreatePastSession = z.infer<typeof createPastSessionSchema>;

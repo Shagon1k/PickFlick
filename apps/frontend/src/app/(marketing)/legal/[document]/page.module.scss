@@ -165,7 +165,7 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .page {
         padding-inline: 16px;
         padding-top: 56px;

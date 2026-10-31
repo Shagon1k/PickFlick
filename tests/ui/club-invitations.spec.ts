@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -28,13 +29,7 @@ const invitationPath = (state: keyof typeof tokens = 'valid') =>
     `/invite/club/${tokens[state].repeat(43)}`;
 
 async function signIn(context: BrowserContext, name: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-invitation-${name}`,
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, `valid-invitation-${name}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -106,8 +101,11 @@ test('Club invitation declines without membership and keeps network failures ret
     await page.goto(invitationPath());
     await page.context().setOffline(true);
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
-    await expect(page.getByRole('status')).toContainText('could not be updated');
+    await expect(page.getByRole('status')).toContainText('You appear to be offline');
     await page.context().setOffline(false);
+    await page.route('**/invite/club/**', (route) => route.abort('failed'), { times: 1 });
+    await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
+    await expect(page.getByRole('status')).toContainText('could not be updated');
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
     await expect(page.getByRole('heading', { name: 'Invitation declined' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open Screening Room' })).toHaveCount(0);
@@ -240,8 +238,8 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
     const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
-    // Opening the dialog loads the recent invitations once.
-    await expect(dialog.getByRole('status')).toHaveText('Recent invitations loaded.');
+    // Opening the dialog loads the recent invitations once; creation waits for that load.
+    await expect(dialog.getByRole('button', { name: 'Create invitation' })).toBeEnabled();
     await dialog.getByRole('button', { name: 'Create invitation' }).click();
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
