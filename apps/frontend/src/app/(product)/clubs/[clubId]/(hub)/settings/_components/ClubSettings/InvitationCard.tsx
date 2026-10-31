@@ -67,7 +67,7 @@ export default function InvitationCard({ projection }: { projection: IClubSettin
             () => loadInvitationsAction(projection.club.id),
             () => {
                 setHasLoaded(true);
-                setMessage('Recent invitations loaded.');
+                setMessage('');
             },
         );
     }

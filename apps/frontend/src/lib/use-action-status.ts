@@ -18,9 +18,13 @@ interface IRunOptions<TResult> {
 /**
  * The status line of a server-action mutation: it refuses to send while offline, shows progress
  * while the request runs and turns a lost request into copy. `onResult` decides everything else.
+ * A message set with `announceSuccess` is for assistive technology only: render it with
+ * `visually-hidden` while `isSuccess` is true.
  */
 export function useActionStatus() {
-    const [message, setMessage] = useState('');
+    const [status, setStatus] = useState({ message: '', isSuccess: false });
+    const setMessage = (message: string) => setStatus({ message, isSuccess: false });
+    const announceSuccess = (message: string) => setStatus({ message, isSuccess: true });
     const [isPending, startTransition] = useTransition();
     function run<TResult>(
         request: () => Promise<TResult>,
@@ -44,5 +48,5 @@ export function useActionStatus() {
             onResult(result);
         });
     }
-    return { message, setMessage, isPending, run };
+    return { ...status, setMessage, announceSuccess, isPending, run };
 }

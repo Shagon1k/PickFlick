@@ -238,8 +238,8 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
     const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
-    // Opening the dialog loads the recent invitations once.
-    await expect(dialog.getByRole('status')).toHaveText('Recent invitations loaded.');
+    // Opening the dialog loads the recent invitations once; creation waits for that load.
+    await expect(dialog.getByRole('button', { name: 'Create invitation' })).toBeEnabled();
     await dialog.getByRole('button', { name: 'Create invitation' }).click();
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);

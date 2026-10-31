@@ -29,7 +29,7 @@ export default function WatchlistBookmark({
     const id = useId();
     const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const { message, setMessage, isPending, run } = useActionStatus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const label = item ? 'Edit watchlist priority' : 'Add to watchlist';
 
     function handleSave(priority: TWatchlistPriority | null, shouldClose = true) {
@@ -42,7 +42,7 @@ export default function WatchlistBookmark({
                     return;
                 }
                 const savedMessage = priority ? 'Watchlist saved.' : 'Removed from Watchlist.';
-                setMessage(savedMessage);
+                announceSuccess(savedMessage);
                 if (shouldClose) setIsOpen(false);
                 onSaved?.(savedMessage);
             },
@@ -114,7 +114,13 @@ export default function WatchlistBookmark({
                             Remove from watchlist
                         </button>
                     ) : null}
-                    <p role="status" ref={feedbackRef} tabIndex={-1}>
+                    {/* The filled bookmark shows a save, so only progress and failures stay visible. */}
+                    <p
+                        className={isSuccess ? 'visually-hidden' : undefined}
+                        role="status"
+                        ref={feedbackRef}
+                        tabIndex={-1}
+                    >
                         {message}
                     </p>
                 </div>

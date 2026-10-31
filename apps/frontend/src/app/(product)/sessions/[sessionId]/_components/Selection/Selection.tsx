@@ -14,6 +14,7 @@ import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import { submitSelectionAction } from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -29,7 +30,7 @@ export default function Selection({
     header: ReactNode;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const { message, setMessage, isPending, run } = useActionStatus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const form = useForm<{ scores: { nominationId: string; score: number | undefined }[] }>({
         initialValues: {
             scores: data.nominations.map((row) => ({ nominationId: row.id, score: undefined })),
@@ -48,8 +49,9 @@ export default function Selection({
                     unreachableMessage:
                         'We could not reach PickFlick. Your scores are still here; try again.',
                     onResult: (result) => {
-                        setMessage(result.ok ? 'Ballot submitted.' : result.message);
-                        if (result.ok) headingRef.current?.focus();
+                        if (!result.ok) return setMessage(result.message);
+                        announceSuccess('Ballot submitted.');
+                        headingRef.current?.focus();
                     },
                 });
             },
@@ -143,9 +145,7 @@ export default function Selection({
                                 active Club.
                             </p>
                         ) : null}
-                        <p aria-live="polite" aria-atomic="true" role="status">
-                            {message}
-                        </p>
+                        <StatusLine isSuccess={isSuccess} message={message} />
                     </div>
                 </form>
             )}

@@ -9,6 +9,7 @@ import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import { nominateAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -25,13 +26,15 @@ export default function Nomination({
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
-    const { message, setMessage, isPending, run } = useActionStatus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     function handleSubmit() {
         run(() => nominateAction(sessionId, { movieId: chosen?.id }), {
             pendingMessage: 'Saving…',
             onResult: (result) => {
-                setMessage(result.message);
-                if (result.ok) headingRef.current?.focus();
+                if (result.ok) {
+                    announceSuccess(result.message);
+                    headingRef.current?.focus();
+                } else setMessage(result.message);
             },
         });
     }
@@ -59,14 +62,11 @@ export default function Nomination({
                     ) : (
                         <SubmissionState movie={data.ownMovie} />
                     )}
-                    <p
+                    <StatusLine
                         className={styles.feedback}
-                        aria-atomic="true"
-                        aria-live="polite"
-                        role="status"
-                    >
-                        {message}
-                    </p>
+                        isSuccess={isSuccess}
+                        message={message}
+                    />
                 </section>
                 <section className={styles.card} aria-labelledby="nominations-heading">
                     <h2 id="nominations-heading">Current Nominations</h2>

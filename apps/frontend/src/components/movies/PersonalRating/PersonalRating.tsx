@@ -25,7 +25,7 @@ export default function PersonalRating({
     const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [score, setScore] = useState(rating?.score);
-    const { message, setMessage, isPending, run } = useActionStatus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
 
     function handleSave(event: React.SubmitEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -34,7 +34,8 @@ export default function PersonalRating({
             unreachableMessage:
                 'We could not reach PickFlick. Your selection is still here; try again.',
             onResult: (result) => {
-                setMessage(result.ok ? 'Personal Rating saved.' : result.message);
+                if (result.ok) announceSuccess('Personal Rating saved.');
+                else setMessage(result.message);
                 feedbackRef.current?.focus();
                 if (result.ok && onSaved) {
                     setIsOpen(false);
@@ -83,7 +84,12 @@ export default function PersonalRating({
                 <Button type="submit" loading={isPending}>
                     Save rating
                 </Button>
-                <p role="status" ref={feedbackRef} tabIndex={-1}>
+                <p
+                    className={isSuccess ? 'visually-hidden' : undefined}
+                    role="status"
+                    ref={feedbackRef}
+                    tabIndex={-1}
+                >
                     {message}
                 </p>
             </form>

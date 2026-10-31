@@ -6,6 +6,7 @@ import { SESSION_RATING_COMMENT_MAX_LENGTH, submitRatingSchema } from '@pickflic
 import { submitRatingAction } from '#components/sessions/rating-actions';
 import Button from '#components/ui/Button/Button';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import Textarea from '#components/ui/Textarea/Textarea';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
 import { useActionStatus } from '#lib/use-action-status';
@@ -17,7 +18,7 @@ export default function RatingForm({
     sessionId: string;
     onSaved: () => void;
 }) {
-    const { message, setMessage, isPending, run } = useActionStatus();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const form = useForm<{ score: number | undefined; comment: string }>({
         initialValues: { score: undefined, comment: '' },
         validate: (values) => {
@@ -38,8 +39,12 @@ export default function RatingForm({
                     unreachableMessage:
                         'We could not reach PickFlick. Your input is still here; try again.',
                     onResult: (result) => {
-                        setMessage(result.ok ? 'Rating submitted.' : result.message);
-                        if (result.ok) onSaved();
+                        if (!result.ok) {
+                            setMessage(result.message);
+                            return;
+                        }
+                        announceSuccess('Rating submitted.');
+                        onSaved();
                     },
                 });
             },
@@ -84,7 +89,7 @@ export default function RatingForm({
                     Submit Rating
                 </Button>
             </form>
-            <p role="status">{message}</p>
+            <StatusLine isSuccess={isSuccess} message={message} />
         </>
     );
 }

@@ -15,6 +15,7 @@ import styles from '../../page.module.scss';
 export default function ClubMembers({ projection }: { projection: IClubSettings }) {
     const [selected, setSelected] = useState<IClubMember | null>(null);
     const [message, setMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const returnToHeadingRef = useRef(false);
@@ -33,11 +34,13 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 formData,
             );
             setMessage(result.message);
+            setIsSuccess(result.status === 'success');
             if (result.status === 'success') {
                 returnToHeadingRef.current = true;
                 setSelected(null);
             }
         } catch {
+            setIsSuccess(false);
             setMessage(
                 'Member removal could not be confirmed. Reload to check the roster, then retry.',
             );
@@ -61,7 +64,11 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 </ButtonLink>
             </div>
             <p className={styles.explanation}>{roleExplanation}</p>
-            <p className={styles.feedback} aria-live="polite" role="status">
+            <p
+                className={isSuccess ? 'visually-hidden' : styles.feedback}
+                aria-live="polite"
+                role="status"
+            >
                 {selected ? '' : message}
             </p>
             <ul className={styles.memberList}>
