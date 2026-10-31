@@ -267,6 +267,8 @@ for (const viewport of screenshotViewports) {
             await page.setViewportSize(viewport);
             await page.goto(`/clubs/${CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
+            // The popover anchors to the ticket, so wait until its slide-in has finished.
+            await expect(page.locator('[data-invite-ticket]')).toHaveCSS('right', '0px');
             await page.getByRole('button', { name: 'Open pending invites' }).click();
             await expect(
                 page
