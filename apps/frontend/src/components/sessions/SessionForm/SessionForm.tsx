@@ -8,10 +8,8 @@ import {
     type TSession,
 } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
-import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Switch from '#components/ui/Switch/Switch';
@@ -52,7 +50,6 @@ export default function SessionForm({
     const router = useRouter();
     const { message, setMessage, isPending, run } = useActionStatus();
     const timeZone = useViewerTimeZone();
-    const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
         initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
@@ -69,11 +66,11 @@ export default function SessionForm({
                     focusFirstInvalid(element);
                     return;
                 }
-                setMessage(session ? 'Session details saved.' : 'Session created.');
                 if (!session) {
-                    setCreated(result.session);
+                    router.push(`/sessions/${result.session.id}?created=1`);
                     return;
                 }
+                setMessage('Session details saved.');
                 onSaved?.();
                 router.refresh();
             },
@@ -87,7 +84,6 @@ export default function SessionForm({
                 focusFirstInvalid(invalidEvent?.currentTarget);
             },
         )(event);
-    if (created) return <SessionResult session={created} />;
     if (creationRestriction)
         return (
             <>
@@ -269,22 +265,6 @@ const CREATION_RESTRICTIONS = {
     blocking: 'This Club already has a Session in Nomination, Selection, or Watching.',
     permission: 'You cannot create a Session in this Club right now.',
 } as const;
-
-function SessionResult({ session }: { session: TSession }) {
-    let phaseMessage = `Current phase: ${session.phase.toLowerCase()}.`;
-    if (session.phase === 'NOMINATION') phaseMessage = 'Nomination is open.';
-    else if (session.phase === 'WATCHING') phaseMessage = 'Your Movie is ready for Watching.';
-    return (
-        <div className={styles.result}>
-            <p role="status">Session created. {phaseMessage}</p>
-            <SessionLink sessionId={session.id} />
-            <ButtonLink href={`/sessions/${session.id}`} variant="primary">
-                Open Session
-            </ButtonLink>
-            <ButtonLink href={`/clubs/${session.clubId}`}>Back to Club Hub</ButtonLink>
-        </div>
-    );
-}
 
 function describeDeadline(deadlineAt: string | null | undefined, timeZone: string | undefined) {
     if (!deadlineAt) return undefined;

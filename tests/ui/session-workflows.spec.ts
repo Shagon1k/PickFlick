@@ -31,8 +31,13 @@ test(
         await page.getByLabel('Topic').fill('Noir night');
         await page.getByLabel('Nomination phase ends in').fill('01:30');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(page.getByText('Session created. Nomination is open.')).toBeVisible();
-        await page.goBack();
+        // Scheduling opens the new Session and offers its link once.
+        const share = page.getByRole('complementary', { name: 'Share this Session' });
+        await expect(share.getByRole('button', { name: 'Copy link' })).toBeVisible();
+        await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+        await share.getByRole('button', { name: 'Dismiss' }).click();
+        await expect(share).toHaveCount(0);
+        await page.goto(`/clubs/${CLUB_ID}`);
         await expect(
             page.getByRole('link', { name: 'Schedule a Session', exact: true }),
         ).toHaveCount(0);
@@ -105,10 +110,6 @@ test(
         await search.press('Enter');
         await expect(search).toHaveValue('<script>alert(1)</script> & Film');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(
-            page.getByText('Session created. Your Movie is ready for Watching.'),
-        ).toBeVisible();
-        await page.getByRole('link', { name: 'Open Session' }).click();
         await expect(page.getByText('watching', { exact: true })).toBeVisible();
         await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
@@ -170,7 +171,7 @@ for (const viewport of canonicalViewports) {
         await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await page.getByRole('link', { name: 'Open Session' }).click();
+        await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
         await settle(page);
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

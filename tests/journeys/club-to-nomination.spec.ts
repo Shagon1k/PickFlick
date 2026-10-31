@@ -66,9 +66,10 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await admin.getByLabel('Location').fill('Room A');
         await admin.getByLabel('Topic').fill('Journey night');
         await admin.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(admin.getByText('Session created. Nomination is open.')).toBeVisible();
-        await admin.getByRole('link', { name: 'Open Session' }).click();
         await expect(admin).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+        await expect(
+            admin.getByRole('complementary', { name: 'Share this Session' }),
+        ).toBeVisible();
         const link = admin.url();
         await outsider.goto(link);
         await expect(outsider.getByText(clubName)).toHaveCount(0);

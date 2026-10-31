@@ -12,13 +12,21 @@ import SystemState from '#components/shells/SystemState/SystemState';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
+import SessionCreatedToast from './_components/SessionCreatedToast/SessionCreatedToast';
 import SessionDetails from './_components/SessionDetails/SessionDetails';
 import SessionProgress from './_components/SessionProgress/SessionProgress';
 
 export const metadata = { title: 'Session — PickFlick' };
-export default async function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default async function SessionPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ sessionId: string }>;
+    searchParams: Promise<{ created?: string }>;
+}) {
     await connection();
     const { sessionId } = await params;
+    const { created } = await searchParams;
     let session;
     let roster;
     try {
@@ -57,6 +65,7 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
                 movie={movie}
                 renderedAt={renderedAt}
             />
+            {created ? <SessionCreatedToast sessionId={session.id} /> : null}
         </ProductFrame>
     );
 }

@@ -10,14 +10,8 @@ import styles from './SessionLink.module.scss';
 // The prototype Invite button confirms the copy in its own label for a moment.
 const COPIED_LABEL_MS = 1500;
 
-export default function SessionLink({
-    sessionId,
-    isCell = false,
-}: {
-    sessionId: string;
-    /** The Session header's action-rail cell; its feedback floats under the cell. */
-    isCell?: boolean;
-}) {
+/** The Session header's Invite cell; its feedback floats under the cell. */
+export default function SessionLink({ sessionId }: { sessionId: string }) {
     const [message, setMessage] = useState('');
     const [isCopied, setIsCopied] = useState(false);
     useEffect(() => {
@@ -37,28 +31,15 @@ export default function SessionLink({
             setMessage(`Copy is unavailable. Open /sessions/${sessionId} and copy its address.`);
         }
     }
-    if (isCell)
-        return (
-            <div className={styles.cell}>
-                <Button onClick={handleCopy} variant="cell">
-                    <Icon name="user-plus" />
-                    {isCopied ? 'Copied!' : 'Invite'}
-                </Button>
-                <span className={isCopied ? 'visually-hidden' : styles.feedback} role="status">
-                    {message}
-                </span>
-            </div>
-        );
     return (
-        <div>
-            <Button onClick={handleCopy} variant="secondary">
-                Copy Session link
+        <div className={styles.cell}>
+            <Button onClick={handleCopy} variant="cell">
+                <Icon name="user-plus" />
+                {isCopied ? 'Copied!' : 'Invite'}
             </Button>
-            <p>
-                Any Club member can use this link. Joining stays open until the Session is completed
-                or cancelled.
-            </p>
-            <p role="status">{message}</p>
+            <span className={isCopied ? 'visually-hidden' : styles.feedback} role="status">
+                {message}
+            </span>
         </div>
     );
 }

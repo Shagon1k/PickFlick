@@ -86,9 +86,7 @@ export default function SessionHeader({
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
             <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
                 {/* Joining closes with the Session, so its link is shared only while it is open. */}
-                {isOpenSessionPhase(session.phase) ? (
-                    <SessionLink sessionId={session.id} isCell />
-                ) : null}
+                {isOpenSessionPhase(session.phase) ? <SessionLink sessionId={session.id} /> : null}
                 {items.length ? (
                     <FilmStripMenu
                         triggerLabel="Session settings"
