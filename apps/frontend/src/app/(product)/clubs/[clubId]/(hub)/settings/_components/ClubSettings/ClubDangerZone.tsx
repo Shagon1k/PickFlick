@@ -98,11 +98,6 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                         : 'Leaving ends your Membership immediately. Shared Club history remains for its members.'}
                 </InfoTip>
             </div>
-            <p className={styles.cardLead}>
-                {isAdmin
-                    ? 'Archiving makes the Club read-only; deleting cannot be undone.'
-                    : 'Leaving ends your Membership in this Club.'}
-            </p>
             {isAdmin ? (
                 <div className={styles.cardActions}>
                     {isActive ? (

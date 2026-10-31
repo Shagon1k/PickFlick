@@ -48,22 +48,18 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
             setIsPending(false);
         }
     }
-    const roleExplanation = {
-        ADMIN: 'Manage Moderator roles in Manage Club. You can remove Members and Moderators.',
-        MODERATOR: 'You can remove Members. Only the Admin manages roles or removes Moderators.',
-        MEMBER: 'You can view the roster and leave from Manage Club.',
-    }[club.membershipRole];
     return (
         <section className={styles.layout} aria-label="Club members">
             <div className={styles.sectionHeading}>
                 <h2 ref={headingRef} tabIndex={-1}>
                     Members
                 </h2>
-                <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
-                    {permissions.createInvitations ? '+ Invite' : 'Club settings'}
-                </ButtonLink>
+                {permissions.createInvitations ? (
+                    <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
+                        + Invite
+                    </ButtonLink>
+                ) : null}
             </div>
-            <p className={styles.explanation}>{roleExplanation}</p>
             <p
                 className={isSuccess ? 'visually-hidden' : styles.feedback}
                 aria-live="polite"

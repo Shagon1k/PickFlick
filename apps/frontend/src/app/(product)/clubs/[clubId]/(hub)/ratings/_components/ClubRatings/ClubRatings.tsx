@@ -48,10 +48,6 @@ export default function ClubRatings({
             aria-busy={isPending}
         >
             <h2 id="club-ratings-heading">Club Ratings</h2>
-            <p>
-                Average received ratings from completed screenings you can view. Repeat screenings
-                count together; missing ratings stay unknown.
-            </p>
             <div className={styles.clubRatings__sort}>
                 <Select
                     id="club-ratings-sort"
@@ -68,7 +64,9 @@ export default function ClubRatings({
                     }}
                 />
             </div>
-            <p role="status">{message || status}</p>
+            <p className={message ? undefined : 'visually-hidden'} role="status">
+                {message || status}
+            </p>
             <Table
                 caption="Club rating leaderboard"
                 columns={[
@@ -99,7 +97,7 @@ export default function ClubRatings({
                         ),
                     },
                 }))}
-                emptyMessage="No published ratings yet. Complete a Session with visible ratings to see films here."
+                emptyMessage="No rated films yet."
             />
             <nav aria-label="Club Ratings pages" className={styles.clubRatings__pagination}>
                 <Button
