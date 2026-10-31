@@ -5,6 +5,7 @@ import { lockClub } from '../../clubs/access/club-access.js';
 import { recordSessionNotifications } from '../../notifications/notification-producers.js';
 import { type Transactions } from '../../notifications/transactions.js';
 import { lockSession } from '../session-lock.js';
+import { publishProgress } from '../session-progress.js';
 import { advanceNomination } from './nomination-completion.js';
 
 interface IDeadlineEvent {
@@ -128,6 +129,9 @@ export class NominationDeadlines {
                 },
             });
             if (outcome === 'EMPTY') {
+                // Nomination stays open without a deadline; an operator may set a new one.
+                await tx.session.update({ where: { id: sessionId }, data: { deadlineAt: null } });
+                await publishProgress(tx, sessionId, 'DETAILS');
                 await recordSessionNotifications(tx, session, 'NOMINATION_STALLED');
             } else {
                 await advanceNomination(tx, session, nominations, 'DEADLINE');

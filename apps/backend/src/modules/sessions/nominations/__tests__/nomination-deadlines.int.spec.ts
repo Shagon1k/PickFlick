@@ -119,9 +119,10 @@ describe('NominationDeadlines', () => {
             phaseVersion: 1,
             detailsVersion: 1,
             deadlineVersion: 1,
-            deadlineAt: deadline,
+            // The passed deadline is cleared, so the header stops counting down.
+            deadlineAt: null,
         });
-        expect((await edit({ topic: 'Edited topic' })).status).toBe(200);
+        expect((await edit({ topic: 'Edited topic', deadlineAt: null })).status).toBe(200);
         await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         const result = await decisions();
         expect(result).toHaveLength(1);
