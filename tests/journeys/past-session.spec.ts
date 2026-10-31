@@ -360,7 +360,7 @@ for (const viewport of canonicalViewports) {
                 ).toBeVisible();
                 await page.getByRole('link', { name: 'Open Session', exact: true }).click();
                 await expect(page.getByText('completed', { exact: true })).toBeVisible();
-                await expect(page.getByText(/Imported past screening/)).toBeVisible();
+                await expect(page.getByText(/This session has ended/)).toBeVisible();
                 await page
                     .getByRole('heading', { name: 'Individual Ratings' })
                     .scrollIntoViewIfNeeded();

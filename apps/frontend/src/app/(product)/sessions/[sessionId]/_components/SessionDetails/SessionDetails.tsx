@@ -24,7 +24,6 @@ import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatCount } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import Completed from '../Completed/Completed';
@@ -73,10 +72,8 @@ export default function SessionDetails({
             return (
                 <>
                     <PhaseProgress>
-                        {session.type === 'PAST' ? 'Imported past screening. ' : ''}
-                        Session complete —{' '}
-                        {formatCount(session.rating?.receivedCount ?? 0, 'rating')} received. This
-                        screening record is closed.
+                        This session has ended. The results are available{' '}
+                        <a href="#rating-heading">below</a>.
                     </PhaseProgress>
                     {header(participation)}
                     <ScreeningFilm movie={movie} movieId={session.movieId} />
@@ -94,8 +91,13 @@ export default function SessionDetails({
                         <>
                             <PhaseProgress>
                                 Rating in progress — {rating.submittedCount} of{' '}
-                                {rating.acceptedCount} participants have rated. Rating never blocks
-                                the next Session.
+                                {rating.acceptedCount} members have rated.
+                                {rating.canSubmit ? (
+                                    <>
+                                        {' '}
+                                        Please <a href="#rating-heading">rate</a>.
+                                    </>
+                                ) : null}
                             </PhaseProgress>
                             {header(participation, onKick, onClose)}
                             <ScreeningFilm movie={movie} movieId={session.movieId} />
