@@ -216,12 +216,13 @@
     border-top: 1px solid var(--border);
 }
 
+/* Phones keep the wordmark and links in one row; only the narrowest wrap the links under it. */
 .publicFooterInner {
     display: flex;
-    flex-direction: column;
     gap: var(--gap-sm);
-    align-items: flex-start;
-    padding-block: var(--gap-lg);
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--gap-sm);
 }
 
 .footerBrand {
@@ -244,6 +245,7 @@
 }
 
 .footerBrand p {
+    display: none;
     margin: 0;
     font-size: var(--fs-body-sm);
     color: var(--muted);
@@ -252,9 +254,10 @@
 .publicFooter nav {
     display: flex;
     flex-wrap: wrap;
-    column-gap: var(--gap-xs);
+    column-gap: var(--gap-sm);
     align-items: center;
-    font-size: var(--fs-body-sm);
+    justify-content: flex-end;
+    font-size: var(--fs-meta);
     color: var(--fg-secondary);
 }
 
@@ -271,6 +274,7 @@
 }
 
 .publicFooter nav span {
+    display: none;
     user-select: none;
 }
 
@@ -472,10 +476,21 @@
 
 @media (width >= 768px) {
     .publicFooterInner {
-        flex-direction: row;
         gap: var(--gap-lg);
-        align-items: center;
-        justify-content: space-between;
+        padding-block: var(--gap-lg);
+    }
+
+    .footerBrand p {
+        display: block;
+    }
+
+    .publicFooter nav {
+        column-gap: var(--gap-xs);
+        font-size: var(--fs-body-sm);
+    }
+
+    .publicFooter nav span {
+        display: inline;
     }
 }
 
