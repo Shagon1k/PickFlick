@@ -82,10 +82,6 @@ test(
     async ({ context, page }) => {
         for (const [token, copy] of [
             ['valid-hub-ratings-pro-empty', 'No published ratings yet.'],
-            [
-                'valid-hub-ratings-free',
-                'Extended Club analytics and the ratings leaderboard are available with Pro.',
-            ],
             ['valid-hub-ratings-unavailable', 'Club Ratings are temporarily unavailable'],
             ['valid-hub-ratings-denied', 'Club access unavailable'],
         ]) {

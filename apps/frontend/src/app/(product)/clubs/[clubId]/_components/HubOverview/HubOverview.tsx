@@ -55,7 +55,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                 ))}
             </section>
             {hub.club.tier === 'FREE' ? (
-                <p>Extended Club analytics and the ratings leaderboard are available with Pro.</p>
+                <p>Extended Club analytics are available with Pro.</p>
             ) : (
                 <p>
                     Ratings use completed results you can view. Metadata summaries need film details

@@ -105,10 +105,10 @@ export default function PricingPage() {
                                     <span>/ month</span>
                                 </div>
                                 <Button aria-describedby="pro-checkout-note" disabled>
-                                    Upgrade unavailable
+                                    Upgrade to Pro
                                 </Button>
                                 <p className={styles.checkoutNote} id="pro-checkout-note">
-                                    Pro checkout opens in the Paddle billing phase.
+                                    Pro checkout is coming soon.
                                 </p>
                                 <hr className={styles.planRule} />
                                 <PlanFeatures features={proPlanFeatures} />

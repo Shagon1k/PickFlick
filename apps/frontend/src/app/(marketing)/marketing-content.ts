@@ -77,7 +77,7 @@ export const freePlanFeatures: readonly IPlanFeature[] = [
     { label: 'Unlimited open Rating Sessions' },
     { label: 'Unlimited Session history' },
     { label: 'Club customization' },
-    { label: 'Basic counters' },
+    { label: 'Basic counters and the Club ratings leaderboard' },
     { label: 'Vote results hidden from ordinary members', tone: 'limited' },
     { label: '90-day inactivity grace', tone: 'limited' },
 ];
@@ -112,6 +112,7 @@ export const comparisonRows = [
     { feature: 'Club customization', free: 'Included', pro: 'Included' },
     { feature: 'Vote-result visibility', free: 'Always hidden', pro: 'Admin-configurable' },
     { feature: 'Inactivity grace', free: '90 days', pro: '180 days' },
+    { feature: 'Club ratings leaderboard', free: 'Included', pro: 'Included' },
     { feature: 'Analytics', free: 'Basic counters', pro: 'Extended deterministic' },
     { feature: 'Price', free: '€0', pro: '€5 / month' },
 ] as const;
@@ -139,6 +140,6 @@ export const pricingFaqs = [
     },
     {
         question: 'Can I upgrade to Pro now?',
-        answer: 'Not yet. Pro checkout will open in the Paddle billing phase. Until then, you can start on Free without entering payment details.',
+        answer: 'Not yet. Pro checkout is coming soon. Until then, you can start on Free without entering payment details.',
     },
 ] as const;

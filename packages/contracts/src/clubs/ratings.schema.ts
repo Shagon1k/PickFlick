@@ -11,7 +11,6 @@ export const clubRatingsQuerySchema = z.strictObject({
 export type TClubRatingsQuery = z.infer<typeof clubRatingsQuerySchema>;
 
 export const clubRatingsSchema = createPaginationSchema(CLUB_RATINGS_PAGE_SIZE).extend({
-    analytics: z.enum(['BASIC', 'EXTENDED']),
     items: z
         .array(
             z.object({

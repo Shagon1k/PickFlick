@@ -38,8 +38,8 @@ describe('public plan contract', () => {
         const publicPricingCopy = JSON.stringify({ comparisonRows, pricingFaqs, proPlanFeatures });
 
         expect(publicPricingCopy).not.toMatch(/AI analytics|AI movie recommendations/i);
-        expect(pricingFaqs.at(-1)?.answer).toMatch(
-            /checkout will open in the Paddle billing phase/i,
-        );
+        expect(pricingFaqs.at(-1)?.answer).toMatch(/checkout is coming soon/i);
+        // Delivery phases and vendor names are internal and stay out of public copy.
+        expect(publicPricingCopy).not.toMatch(/Paddle|phase/i);
     });
 });

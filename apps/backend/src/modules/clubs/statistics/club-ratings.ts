@@ -40,7 +40,6 @@ export function buildClubRatings(
     const pages = Math.max(1, Math.ceil(rows.length / CLUB_RATINGS_PAGE_SIZE));
     const page = Math.min(query.page, pages);
     return {
-        analytics: 'EXTENDED',
         items: rows
             .slice((page - 1) * CLUB_RATINGS_PAGE_SIZE, page * CLUB_RATINGS_PAGE_SIZE)
             .map((row) => ({

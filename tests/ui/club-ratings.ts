@@ -51,7 +51,6 @@ export function handleClubRatings(
     const pages = Math.max(1, Math.ceil(items.length / CLUB_RATINGS_PAGE_SIZE));
     const page = Math.min(query.page, pages);
     const body: TClubRatings = {
-        analytics: isPro ? 'EXTENDED' : 'BASIC',
         items: items.slice((page - 1) * CLUB_RATINGS_PAGE_SIZE, page * CLUB_RATINGS_PAGE_SIZE),
         total: items.length,
         page,

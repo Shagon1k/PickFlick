@@ -154,13 +154,13 @@ describe('Club ratings API', () => {
         expect((await read(1)).total).toBe(2);
     });
 
-    it('should project only basic analytics for every Free role while preserving history', async () => {
+    it('should keep the ratings leaderboard on Free but only basic statistics', async () => {
         isPro = false;
         for (const userId of users.slice(0, 3)) {
             const result = clubRatingsSchema.parse(
                 await (await api.request(`/clubs/${clubId}/ratings`, { userId })).json(),
             );
-            expect(result).toMatchObject({ analytics: 'BASIC', items: [], total: 0 });
+            expect(result.total).toBeGreaterThan(0);
             const hub = (await (
                 await api.request(`/clubs/${clubId}/hub`, { userId })
             ).json()) as IClubHub;
