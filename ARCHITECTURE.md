@@ -849,8 +849,8 @@ The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership a
 repeatable-read Completed Session projections. A Member's rating query selects only responses from
 Sessions with saved `showRatingResults`; Admins and Moderators may aggregate all Completed results.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
-caching. Free returns a BASIC projection without ranking rows; Pro returns EXTENDED analytics.
-The existing entitlement adapter supplies the plan; this adds no billing behavior.
+caching. Every plan gets the ranking rows; the Hub's extended statistics stay Pro. The existing
+entitlement adapter supplies the plan; this adds no billing behavior.
 
 The shared pure calculators count completed screenings, group received historical ratings by
 canonical Movie and weight every response equally. Departed participants and partial PAST imports
