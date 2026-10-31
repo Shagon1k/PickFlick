@@ -134,8 +134,7 @@ export function buildAccountNavigation(
 ): readonly TShellMenuItem[] {
     return [
         ...(isAdmin ? [{ href: routes.admin, label: 'Admin Panel', icon: 'admin' } as const] : []),
-        { href: routes.settings, label: 'Settings', icon: 'settings' },
-        { href: routes.privacy, label: 'Privacy & data', icon: 'privacy' },
+        // Settings and Privacy & data join the menu with their pages in Phase 19.
         { href: routes.pricing, label: 'Pricing', icon: 'pricing' },
         { href: routes.contact, label: 'Contact Us', icon: 'contact' },
         signOutItem,
@@ -192,8 +191,8 @@ function getHubItems(
         return clubItems.map((item) => ({ ...item, current: isHubArea && item.current === true }));
     if (currentArea === 'hub')
         return [
+            // Joining needs an invitation link, so there is no Join a Club page to open.
             { href: routes.createClub, label: 'Create a Club', icon: 'overview' },
-            { href: routes.joinClub, label: 'Join a Club', icon: 'user-plus' },
         ];
     return buildLastClubNavigation(routes);
 }
@@ -239,19 +238,10 @@ export function buildMobileNavigation({
         icon: 'admin',
         current: currentArea === 'admin',
     };
+    // Profile, notification, subscription and privacy pages arrive in Phase 19.
     const defaultSettingsItems: readonly IShellNavigationItem[] = [
-        { href: routes.settings, label: 'Profile', icon: 'profile' },
-        {
-            href: buildSectionHref(routes.settings, 'notifications'),
-            label: 'Notifications',
-            icon: 'bell',
-        },
-        {
-            href: buildSectionHref(routes.settings, 'subscription'),
-            label: 'Subscription',
-            icon: 'credit-card',
-        },
-        { href: routes.privacy, label: 'Privacy & data', icon: 'privacy' },
+        { href: routes.pricing, label: 'Pricing', icon: 'pricing' },
+        { href: routes.contact, label: 'Contact Us', icon: 'contact' },
     ];
 
     return [
