@@ -1,4 +1,4 @@
-import type { IClubHub } from '@pickflick/contracts';
+import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
@@ -54,14 +54,6 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     </div>
                 ))}
             </section>
-            {hub.club.tier === 'FREE' ? (
-                <p>Extended Club analytics are available with Pro.</p>
-            ) : (
-                <p>
-                    Ratings use completed results you can view. Metadata summaries need film details
-                    for every completed screening.
-                </p>
-            )}
             <div className={styles.cards}>
                 <section className={styles.card}>
                     <div className={styles.cardHeading}>
@@ -91,12 +83,14 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                         {hub.recentSessions.map((session) => (
                             <li key={session.id}>
                                 <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
+                                    <strong>
+                                        {session.movie?.title ??
+                                            session.topic ??
+                                            'Untitled Session'}
+                                    </strong>
                                 </Link>{' '}
-                                · {session.phase.toLowerCase()} ·{' '}
-                                <time dateTime={session.updatedAt}>
-                                    <LocalTime format="date" value={session.updatedAt} />
-                                </time>
+                                {describeActivity(session)} ·{' '}
+                                <LocalTime format="date" value={session.updatedAt} />
                             </li>
                         ))}
                     </ul>
@@ -104,21 +98,22 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <p>No Session activity yet.</p>
                 )}
             </section>
-            {hub.historySessions.length ? (
-                <details className={styles.history}>
-                    <summary>Session history</summary>
-                    <ul className={styles.activity}>
-                        {hub.historySessions.map((session) => (
-                            <li key={session.id}>
-                                <Link href={`/sessions/${session.id}`}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
-                                </Link>{' '}
-                                · {session.phase.toLowerCase()}
-                            </li>
-                        ))}
-                    </ul>
-                </details>
-            ) : null}
         </div>
     );
+}
+
+const ACTIVITY: Record<IClubHubSession['phase'], string> = {
+    NOMINATION: 'is open for nominations',
+    SELECTION: 'is in Selection',
+    WATCHING: 'was picked for the screening',
+    RATING: 'is open for ratings',
+    COMPLETED: 'was completed',
+    CANCELLED: 'was cancelled',
+};
+
+/** A Session's latest step in words, with the Club score once it is known. */
+function describeActivity(session: IClubHubSession): string {
+    if (session.phase === 'COMPLETED' && session.ratingAverage !== null)
+        return `was rated ${formatAverage(session.ratingAverage)}`;
+    return ACTIVITY[session.phase];
 }

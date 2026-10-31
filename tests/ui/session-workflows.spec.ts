@@ -81,7 +81,6 @@ test(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
         await page.getByRole('link', { name: 'Back to Hub' }).click();
-        await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
         await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
     },
