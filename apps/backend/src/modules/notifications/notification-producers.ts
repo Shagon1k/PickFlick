@@ -23,12 +23,16 @@ export async function recordAuditNotifications(
     if (audit.action === 'SESSION_CREATED' && audit.sessionId) {
         const session = await tx.session.findUniqueOrThrow({ where: { id: audit.sessionId } });
         if (session.type !== 'PAST') {
-            await recordClubNotifications(tx, {
-                event: 'SESSION_STARTED',
-                sourceId: session.id,
-                clubId: audit.clubId,
-                sessionId: session.id,
-            });
+            await recordClubNotifications(
+                tx,
+                {
+                    event: 'SESSION_STARTED',
+                    sourceId: session.id,
+                    clubId: audit.clubId,
+                    sessionId: session.id,
+                },
+                audit.actorUserId,
+            );
         }
         return;
     }
@@ -36,10 +40,12 @@ export async function recordAuditNotifications(
     if (!event) return;
     const input = { event, sourceId: audit.id, clubId: audit.clubId };
     if (event === 'CLUB_ARCHIVED' || event === 'CLUB_REACTIVATED') {
-        await recordClubNotifications(tx, input);
+        await recordClubNotifications(tx, input, audit.actorUserId);
         return;
     }
-    await recordNotification(tx, { ...input, recipientId: audit.subjectUserId });
+    // Nobody is told about what they just did themselves, such as leaving or joining.
+    if (audit.subjectUserId !== audit.actorUserId)
+        await recordNotification(tx, { ...input, recipientId: audit.subjectUserId });
     if (audit.action === 'ADMIN_TRANSFERRED' && audit.actorUserId !== audit.subjectUserId) {
         await recordNotification(tx, { ...input, recipientId: audit.actorUserId });
     }
@@ -48,9 +54,10 @@ export async function recordAuditNotifications(
 async function recordClubNotifications(
     tx: Prisma.TransactionClient,
     input: { event: TNotificationEvent; sourceId: string; clubId: string; sessionId?: string },
+    actorUserId: string,
 ) {
     const members = await tx.membership.findMany({
-        where: { clubId: input.clubId, status: 'ACTIVE' },
+        where: { clubId: input.clubId, status: 'ACTIVE', userId: { not: actorUserId } },
         select: { userId: true },
     });
     for (const member of members) {

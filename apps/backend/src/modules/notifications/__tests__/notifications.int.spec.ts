@@ -187,7 +187,8 @@ describe('Notifications', () => {
             await api.prisma.notification.count({
                 where: { sourceId: session.id, event: 'SESSION_STARTED' },
             }),
-        ).toBe(2);
+            // The creator is not told about the Session they just created.
+        ).toBe(1);
         await api.prisma.sessionParticipant.create({
             data: { clubId, sessionId: session.id, membershipId: memberId, status: 'ACCEPTED' },
         });
@@ -325,9 +326,10 @@ describe('Notifications', () => {
                 'MEMBERSHIP_ROLE_CHANGED',
             ),
         ).toEqual(members);
+        // The Admin who archived the Club is not notified of it.
         expect(
             await findNotifiedUsers(api.prisma, sourceOf('CLUB_ARCHIVED'), 'CLUB_ARCHIVED'),
-        ).toEqual(members);
+        ).toEqual([users[1]]);
     });
 
     it('should target private awards only to managers and recheck roles, owners and deleted awards', async () => {
