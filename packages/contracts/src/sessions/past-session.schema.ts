@@ -56,6 +56,16 @@ export const createPastSessionSchema = sessionDetailsSchema
                 path: ['nominations'],
                 message: 'Add each nominated Movie once.',
             });
+        // As in a live Session, each participant nominates one Movie.
+        const nominators = input.nominations.flatMap((row) =>
+            row.nominatorMembershipId ? [row.nominatorMembershipId] : [],
+        );
+        if (new Set(nominators).size !== nominators.length)
+            context.addIssue({
+                code: 'custom',
+                path: ['nominations'],
+                message: 'Choose each nominator for one Movie only.',
+            });
         if (
             new Set(input.scoreMatrix.map((row) => row.membershipId)).size !==
             input.scoreMatrix.length

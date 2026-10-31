@@ -98,6 +98,8 @@ export default function PastNominations({
             ],
         });
     }
+    // Each member nominates one Movie, so a chosen nominator leaves the other lists.
+    const takenNominators = new Set(nominations.flatMap((row) => row.nominatorMembershipId ?? []));
     return (
         <fieldset className={styles.evidence} disabled={disabled}>
             <legend>Nomination Details (optional)</legend>
@@ -124,10 +126,16 @@ export default function PastNominations({
                             disabled={disabled}
                             data={[
                                 { value: '', label: 'Unknown' },
-                                ...members.map((member) => ({
-                                    value: member.id,
-                                    label: formatMemberName(member),
-                                })),
+                                ...members
+                                    .filter(
+                                        (member) =>
+                                            member.id === nominatorMembershipId ||
+                                            !takenNominators.has(member.id),
+                                    )
+                                    .map((member) => ({
+                                        value: member.id,
+                                        label: formatMemberName(member),
+                                    })),
                             ]}
                             onChange={(value) => setNominator(id, value ?? '')}
                         />
