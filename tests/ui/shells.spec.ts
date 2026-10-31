@@ -47,6 +47,9 @@ for (const shell of shellRoutes) {
                     animations: 'disabled',
                     caret: 'hide',
                     fullPage: true,
+                    // Signed out, the invite ticket shows its load error and renders unevenly;
+                    // the pending-invite captures cover the ticket itself.
+                    mask: [page.locator('[data-invite-ticket]')],
                     scale: 'css',
                 });
             },

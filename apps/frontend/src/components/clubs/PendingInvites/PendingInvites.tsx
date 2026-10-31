@@ -146,7 +146,7 @@ export default function PendingInvites() {
                             <small className={styles.meta}>Club · Session</small>
                         </span>
                         <span className={styles.stub}>
-                            <strong>{isLoaded ? invitations.length : '—'}</strong>
+                            <strong data-invite-count>{isLoaded ? invitations.length : '—'}</strong>
                             <small>open</small>
                         </span>
                     </button>

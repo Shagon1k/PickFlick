@@ -31,6 +31,8 @@ export default function Popover({
             floatingStrategy="fixed"
             // The invite ticket opens while it may still be sliding in from the screen edge.
             hideDetached={false}
+            // The invite ticket sits at the screen's foot, so its panel always opens above it.
+            middlewares={{ flip: variant !== 'invites', shift: true }}
             width={`min(${POPOVER_WIDTHS[variant]}, calc(100vw - var(--gap-md) * 2))`}
             opened={open}
             onChange={onChange}
