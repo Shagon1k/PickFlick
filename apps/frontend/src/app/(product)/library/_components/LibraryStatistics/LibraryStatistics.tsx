@@ -2,6 +2,7 @@ import type { TLibraryStatistics } from '@pickflick/contracts';
 
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import { formatAverage, formatHours } from '#lib/format';
 
 import styles from './LibraryStatistics.module.scss';
@@ -50,12 +51,14 @@ export default function LibraryStatistics({ statistics }: { statistics: TLibrary
                     ))}
                 </div>
             </div>
-            <p className={styles.explanation}>
-                {statistics.filmsRated === 0 && 'Rate a film to start your personal statistics. '}
-                Each rated film counts once. This year uses the latest rating update in UTC. Watch
-                time estimates one viewing per rated film. Metadata summaries need details for every
-                rated film and may change with catalog updates. An em dash means unavailable.
-            </p>
+            <div className={styles.about}>
+                {statistics.filmsRated === 0 ? <p>Rate a film to start your statistics.</p> : null}
+                <InfoTip label="How these are counted">
+                    Each rated film counts once, and this year counts films you last rated this
+                    year. Watch time assumes one viewing per film. Genre, director and actor need
+                    details for every rated film; a dash means they are not available yet.
+                </InfoTip>
+            </div>
         </section>
     );
 }

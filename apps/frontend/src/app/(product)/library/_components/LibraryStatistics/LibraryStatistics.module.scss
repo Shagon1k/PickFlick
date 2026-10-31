@@ -74,10 +74,17 @@
     }
 }
 
-.explanation {
-    margin: var(--gap-sm) 0 0;
-    font-size: var(--fs-caption);
-    color: var(--muted);
+.about {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: flex-end;
+    min-height: var(--hit);
+    color: var(--fg-secondary);
+}
+
+.about p {
+    margin: 0 auto 0 0;
 }
 
 @media (width < 1024px) {
