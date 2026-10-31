@@ -260,7 +260,14 @@ export default function PastSessionForm({
                     </Button>
                 ) : null}
                 {step < STEPS.length - 1 ? (
-                    <Button disabled={isDisabled} onClick={() => goTo(step + 1)}>
+                    <Button
+                        disabled={isDisabled}
+                        onClick={(event) => {
+                            // The last Next becomes a submit button before this click finishes.
+                            event.preventDefault();
+                            goTo(step + 1);
+                        }}
+                    >
                         Next
                     </Button>
                 ) : (

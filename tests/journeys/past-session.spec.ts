@@ -158,6 +158,8 @@ test('A minimal past Session waits for hydration, retains input after a request 
         await expect(page.getByLabel('Date')).toHaveValue('2020-01-01');
         await next(page);
         await next(page);
+        await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toBeEnabled();
+        expect(await prisma.session.findMany({ where: { clubId } })).toEqual([]);
         await page.route(`**${path}`, (route) => route.abort('failed'), { times: 1 });
         await logSession(page);
         await expect(

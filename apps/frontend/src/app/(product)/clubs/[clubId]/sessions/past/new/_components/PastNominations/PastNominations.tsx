@@ -10,6 +10,7 @@ import { useState } from 'react';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import Select from '#components/ui/Select/Select';
+import { useActionStatus } from '#lib/use-action-status';
 
 import { buildMemberNames, formatMemberName } from '../../past-members';
 import styles from './PastNominations.module.scss';
@@ -39,7 +40,7 @@ export default function PastNominations({
     onChange: (evidence: TEvidence) => void;
 }) {
     const [titles, setTitles] = useState(knownTitles);
-    const [message, setMessage] = useState('');
+    const { message, isSuccess, setMessage, announceSuccess } = useActionStatus();
     const { nominations, scoreMatrix } = evidence;
     const memberNames = buildMemberNames(members);
     const scoreOptions = Array.from(
@@ -60,7 +61,7 @@ export default function PastNominations({
             [movieId]: movie.title ?? movie.originalTitle ?? 'Untitled film',
         }));
         onChange({ nominations: [...nominations, { movieId }], scoreMatrix });
-        setMessage('Nomination added.');
+        announceSuccess('Nomination added.');
     }
     function setNominator(movieId: string, nominatorMembershipId: string) {
         onChange({
@@ -84,7 +85,7 @@ export default function PastNominations({
                 scores: row.scores.filter((cell) => cell.movieId !== movieId),
             })),
         });
-        setMessage('Nomination and its recorded scores removed.');
+        announceSuccess('Nomination and its recorded scores removed.');
         requestAnimationFrame(() => document.getElementById('past-nomination')?.focus());
     }
     function setScore(membershipId: string, movieId: string, value: string) {
@@ -114,7 +115,9 @@ export default function PastNominations({
                 error={error}
                 onChange={handleNominationPick}
             />
-            <p role="status">{message}</p>
+            <p className={isSuccess ? 'visually-hidden' : undefined} role="status">
+                {message}
+            </p>
             <ul className={styles.movies} aria-label="Imported nominations">
                 {nominations.map(({ movieId: id, nominatorMembershipId }) => (
                     <li key={id}>
