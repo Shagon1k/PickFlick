@@ -127,3 +127,17 @@
         padding: var(--gap-lg) var(--gutter);
     }
 }
+
+/* One icon-led fact per line in an invitation preview. */
+.previewMeta {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    align-self: center;
+}
+
+.previewMeta svg {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+}

@@ -23,7 +23,7 @@ test(
         );
         await authenticate(context, 'outsider');
         await page.reload();
-        await expect(page.getByText(/You must already belong to the Club/)).toBeVisible();
+        await expect(page.getByText(/Only members of the Club can join/)).toBeVisible();
         await expect(page.getByText('Private noir night')).toHaveCount(0);
         await expect(page.getByText('Midnight Society')).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Accept invitation' })).toHaveCount(0);
