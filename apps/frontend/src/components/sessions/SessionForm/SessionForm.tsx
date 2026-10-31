@@ -156,7 +156,7 @@ export default function SessionForm({
                     label="Nomination phase ends in"
                     labelHint="optional"
                     maxLength={DURATION_INPUT_LENGTH}
-                    placeholder="hh:mm"
+                    placeholder="hh:mm from now"
                     hint={describeDeadline(session?.deadlineAt, timeZone)}
                 />
             ) : null}
@@ -277,6 +277,6 @@ function SessionResult({ session }: { session: TSession }) {
 }
 
 function describeDeadline(deadlineAt: string | null | undefined, timeZone: string | undefined) {
-    if (!deadlineAt) return 'hh:mm from now. Leave blank for no deadline.';
-    return `Current deadline: ${formatInstant(deadlineAt, 'dateTime', timeZone)}. Leave blank to keep it.`;
+    if (!deadlineAt) return undefined;
+    return `Ends ${formatInstant(deadlineAt, 'dateTime', timeZone)}. Leave blank to keep it.`;
 }
