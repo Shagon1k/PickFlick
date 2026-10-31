@@ -222,7 +222,12 @@ export default function ScaleControl({
                     value={selectedValue ?? ''}
                 />
             ) : null}
-            <output aria-live="polite" className={styles.scale__value} id={feedbackId}>
+            {/* The rail already shows the choice, so only a missing choice is printed. */}
+            <output
+                aria-live="polite"
+                className={isConstraintInvalid ? styles.scale__value : 'visually-hidden'}
+                id={feedbackId}
+            >
                 {scaleStatus}
             </output>
         </fieldset>

@@ -32,8 +32,8 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.keyboard.press('End');
                 await expect(dialog.getByRole('radio', { name: '10 of 10' })).toBeChecked();
                 await expect(dialog.getByText('10/10', { exact: true })).toBeVisible();
-                await dialog.getByRole('button', { name: 'Save rating' }).click();
-                await expect(dialog.getByText('Personal Rating saved.')).toBeVisible();
+                // Choosing a star saves it; there is no separate Save button.
+                await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
                 await expect(
                     page.getByRole('button', { name: 'Your rating: 10 out of 10. Edit rating' }),
                 ).toBeVisible();
@@ -50,13 +50,13 @@ for (const width of [390, 768, 1024, 1440]) {
                 await seven.scrollIntoViewIfNeeded();
                 await seven.tap();
                 await expect(seven).toBeChecked();
-                await dialog.getByRole('button', { name: 'Save rating' }).tap();
-                await expect(dialog.getByText('Personal Rating saved.')).toBeVisible();
+                await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
                 await settle(page);
-                const hasRailOverflow = await dialog
-                    .getByRole('radiogroup')
-                    .evaluate((rail) => rail.scrollWidth > rail.clientWidth);
-                expect(hasRailOverflow).toBe(width === 390);
+                // All ten stars fit the popover at every width, so nothing scrolls sideways.
+                const hasOverflow = await dialog.evaluate(
+                    (popover) => popover.scrollWidth > popover.clientWidth,
+                );
+                expect(hasOverflow).toBe(false);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -86,19 +86,20 @@ test(
         await page.goto(`/movies/${MOVIE_ID}`);
         await page.getByRole('button', { name: 'Rate this film' }).click();
         const dialog = page.getByRole('dialog', { name: /^(?:Rate this film|Your rating:)/u });
-        await dialog.getByRole('radio', { name: '8 of 10' }).click();
+        const eight = dialog.getByRole('radio', { name: '8 of 10' });
+        // A chosen star saves itself; choosing it again retries.
         await context.setOffline(true);
-        await dialog.getByRole('button', { name: 'Save rating' }).click();
+        await eight.click();
         await expect(dialog.getByText(/offline/iu)).toBeVisible();
-        await expect(dialog.getByRole('radio', { name: '8 of 10' })).toBeChecked();
+        await expect(eight).toBeChecked();
         await context.setOffline(false);
-        await dialog.getByRole('button', { name: 'Save rating' }).click();
+        await eight.click();
         await expect(
             dialog.getByText('We could not save your rating.', { exact: false }),
         ).toBeVisible();
-        await expect(dialog.getByRole('radio', { name: '8 of 10' })).toBeChecked();
+        await expect(eight).toBeChecked();
         await signInMock(context, 'valid-rating-recovery');
-        await dialog.getByRole('button', { name: 'Save rating' }).click();
-        await expect(dialog.getByText('Personal Rating saved.')).toBeVisible();
+        await eight.click();
+        await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
     },
 );

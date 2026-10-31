@@ -64,7 +64,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.keyboard.press('Enter');
                 const dialog = page.getByRole('dialog');
                 await dialog.getByRole('radio', { name: '10 of 10', exact: true }).check();
-                await dialog.getByRole('button', { name: 'Save rating', exact: true }).tap();
                 await expect(dialog).toHaveCount(0);
                 await expect(statistics.locator('dd').nth(2)).toHaveText('8.1');
             } finally {

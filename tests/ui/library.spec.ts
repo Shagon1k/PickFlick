@@ -68,7 +68,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 const dialog = page.getByRole('dialog');
                 await expect(dialog).toBeVisible();
                 await dialog.getByRole('radio', { name: '9 of 10', exact: true }).check();
-                await dialog.getByRole('button', { name: 'Save rating', exact: true }).tap();
                 await expect(
                     page.getByText('No films match your search or filters.', { exact: false }),
                 ).toBeVisible();
@@ -163,18 +162,19 @@ test(
         await page.goto('/library?q=Grand');
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
-        await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
+        const nine = dialog.getByRole('radio', { name: '9 of 10', exact: true });
+        // A chosen star saves itself; choosing it again retries.
         await context.setOffline(true);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(dialog.getByText(/offline/iu)).toBeVisible();
         await context.setOffline(false);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(
             dialog.getByText('We could not save your rating.', { exact: false }),
         ).toBeVisible();
-        await expect(dialog.getByRole('radio', { name: '9 of 10', exact: true })).toBeChecked();
+        await expect(nine).toBeChecked();
         await context.addCookies([{ ...cookie, value: 'valid-library-recovered' }]);
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
+        await nine.click();
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'My Ratings', exact: true })).toBeFocused();
         await expect(

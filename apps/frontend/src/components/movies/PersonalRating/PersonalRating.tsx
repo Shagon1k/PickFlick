@@ -1,7 +1,7 @@
 'use client';
 
-import { formatRatingScore, RATING_SCALE, type TPersonalMovieRating } from '@pickflick/contracts';
-import { useId, useRef, useState } from 'react';
+import { RATING_SCALE, type TPersonalMovieRating } from '@pickflick/contracts';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
@@ -12,6 +12,10 @@ import { useActionStatus } from '#lib/use-action-status';
 import { savePersonalRatingAction } from './actions';
 import styles from './PersonalRating.module.scss';
 
+// Arrow keys step through several stars; only the one the viewer settles on is saved.
+const SAVE_DELAY_MS = 400;
+
+/** The prototype's compact rating: a pill in the film ticket and a row of stars that saves itself. */
 export default function PersonalRating({
     movieId,
     rating,
@@ -22,27 +26,32 @@ export default function PersonalRating({
     onSaved?: (message: string) => void;
 }) {
     const id = useId();
-    const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [score, setScore] = useState(rating?.score);
-    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const { message, isSuccess, setMessage, announceSuccess, run } = useActionStatus();
+    useEffect(() => () => clearTimeout(saveTimerRef.current), []);
 
-    function handleSave(event: React.SubmitEvent<HTMLFormElement>) {
-        event.preventDefault();
-        run(() => savePersonalRatingAction(movieId, { score }), {
-            pendingMessage: 'Saving your rating…',
-            unreachableMessage:
-                'We could not reach PickFlick. Your selection is still here; try again.',
+    function save(value: number) {
+        run(() => savePersonalRatingAction(movieId, { score: value }), {
+            pendingMessage: 'Saving…',
+            unreachableMessage: 'We could not reach PickFlick. Choose your rating again to retry.',
             onResult: (result) => {
-                if (result.ok) announceSuccess('Personal Rating saved.');
-                else setMessage(result.message);
-                feedbackRef.current?.focus();
-                if (result.ok && onSaved) {
+                if (!result.ok) return setMessage(result.message);
+                announceSuccess('Personal Rating saved.');
+                if (onSaved) {
                     setIsOpen(false);
                     onSaved('Personal Rating saved.');
                 }
             },
         });
+    }
+
+    function handleChange(value: number) {
+        setScore(value);
+        setMessage('');
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => save(value), SAVE_DELAY_MS);
     }
 
     return (
@@ -63,36 +72,32 @@ export default function PersonalRating({
                     onClick={() => setIsOpen(!isOpen)}
                 >
                     <Icon name="ratings" />
-                    {rating ? formatRatingScore(rating.score) : 'Rate'}
+                    {rating ? (
+                        <span className={styles.pill}>
+                            <strong>{rating.score}</strong>
+                            <small>You</small>
+                        </span>
+                    ) : (
+                        'Rate'
+                    )}
                 </Button>
             }
         >
-            <form className={styles.personalRating} onSubmit={handleSave}>
+            <div className={styles.personalRating}>
+                <p aria-hidden="true" className={styles.label}>
+                    {score === undefined ? 'Rate' : `${score}/${RATING_SCALE.max}`}
+                </p>
                 <RatingControl
+                    isCompact
                     name="personal-rating"
                     label="Your rating"
                     value={score}
-                    onChange={(value) => {
-                        setScore(value);
-                        setMessage('');
-                    }}
-                    disabled={isPending}
-                    required
+                    onChange={handleChange}
                 />
-                <p>{score === undefined ? 'Choose a rating' : formatRatingScore(score)}</p>
-                <p>Your current opinion. Session and Club history stay unchanged.</p>
-                <Button type="submit" loading={isPending}>
-                    Save rating
-                </Button>
-                <p
-                    className={isSuccess ? 'visually-hidden' : undefined}
-                    role="status"
-                    ref={feedbackRef}
-                    tabIndex={-1}
-                >
+                <p className={isSuccess ? 'visually-hidden' : styles.status} role="status">
                     {message}
                 </p>
-            </form>
+            </div>
         </Popover>
     );
 }

@@ -81,7 +81,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
         await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
-        await dialog.getByRole('button', { name: 'Save rating', exact: true }).click();
         await expect(
             page.getByText('No films match your search or filters.', { exact: false }),
         ).toBeVisible();

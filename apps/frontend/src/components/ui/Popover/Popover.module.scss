@@ -17,6 +17,10 @@
     box-shadow: var(--shadow-overlay);
 }
 
+.popover.m-rating {
+    padding: var(--gap-sm);
+}
+
 .popover.m-watchlist {
     padding: var(--gap-xs);
     background: var(--header-glass);

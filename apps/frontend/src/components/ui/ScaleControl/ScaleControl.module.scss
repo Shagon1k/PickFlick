@@ -45,9 +45,15 @@
         border-color var(--motion-local) var(--ease-standard);
 }
 
+.scale__rail[data-presentation='rating'] {
+    overflow-x: visible;
+}
+
 .scale__rail[data-presentation='rating'] .scale__option {
-    flex-basis: var(--hit);
-    min-width: var(--hit);
+    /* Ten stars share the row and shrink on narrow screens instead of scrolling sideways. */
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: var(--hit);
     min-height: var(--hit);
     font-family: var(--font-body);
     font-size: 24px;
@@ -137,7 +143,7 @@
     clip-path: inset(50%);
 }
 
-.scale[data-compact] .scale__option {
+.scale[data-compact] .scale__rail:not([data-presentation='rating']) .scale__option {
     flex: 0 0 var(--hit);
 }
 

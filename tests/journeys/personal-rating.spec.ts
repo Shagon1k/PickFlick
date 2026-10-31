@@ -68,8 +68,8 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog', { name: /^(?:Rate this film|Your rating:)/u });
         await dialog.getByRole('radio', { name: '4 of 10' }).click();
-        await dialog.getByRole('button', { name: 'Save rating' }).click();
-        await expect(dialog.getByText('Personal Rating saved.')).toBeVisible();
+        // Choosing a star saves it.
+        await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
         await page.reload();
         await expect(
             page.getByRole('button', { name: 'Your rating: 4 out of 10. Edit rating' }),

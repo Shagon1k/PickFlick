@@ -22,9 +22,10 @@ for (const viewport of canonicalViewports) {
             await expect(page.getByText(/Rating in progress — 1 of 3/)).toBeVisible();
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const first = page.getByRole('radio', { name: '1 of 10', exact: true });
-            expect(
-                await first.evaluate((element) => element.getBoundingClientRect().width),
-            ).toBeGreaterThanOrEqual(44);
+            // Ten stars share one row, so a star narrows on phones but keeps a 44px height.
+            const box = await first.evaluate((element) => element.getBoundingClientRect());
+            expect(box.width).toBeGreaterThanOrEqual(24);
+            expect(box.height).toBeGreaterThanOrEqual(44);
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(first).toBeFocused();
             await page.keyboard.press('End');
