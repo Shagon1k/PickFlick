@@ -142,45 +142,43 @@ export function buildAccountNavigation(
     ];
 }
 
+const CLUB_SECTIONS: readonly {
+    section: THubSection;
+    path: string;
+    label: string;
+    icon: TIconName;
+}[] = [
+    { section: 'overview', path: '', label: 'Overview', icon: 'overview' },
+    { section: 'sessions', path: 'sessions', label: 'Sessions', icon: 'sessions' },
+    { section: 'ratings', path: 'ratings', label: 'Ratings', icon: 'ratings' },
+    { section: 'members', path: 'members', label: 'Members', icon: 'members' },
+    { section: 'achievements', path: 'achievements', label: 'Achievements', icon: 'achievements' },
+    { section: 'manage', path: 'settings', label: 'Manage Club', icon: 'settings' },
+];
+
+/** Paths `/app?section=` may open in the viewer's last Club. */
+export const CLUB_SECTION_PATHS = CLUB_SECTIONS.map(({ path }) => path);
+
 /** Built Club views. Every member keeps Manage Club for its read-only view and Leave Club. */
 export function buildClubNavigation(
     clubId: string,
     current: THubSection | null,
 ): readonly IShellNavigationItem[] {
-    const hub = `/clubs/${clubId}`;
-    return [
-        { href: hub, label: 'Overview', icon: 'overview', current: current === 'overview' },
-        {
-            href: `${hub}/sessions`,
-            label: 'Sessions',
-            icon: 'sessions',
-            current: current === 'sessions',
-        },
-        {
-            href: `${hub}/ratings`,
-            label: 'Ratings',
-            icon: 'ratings',
-            current: current === 'ratings',
-        },
-        {
-            href: `${hub}/members`,
-            label: 'Members',
-            icon: 'members',
-            current: current === 'members',
-        },
-        {
-            href: `${hub}/achievements`,
-            label: 'Achievements',
-            icon: 'achievements',
-            current: current === 'achievements',
-        },
-        {
-            href: `${hub}/settings`,
-            label: 'Manage Club',
-            icon: 'settings',
-            current: current === 'manage',
-        },
-    ];
+    return CLUB_SECTIONS.map(({ section, path, label, icon }) => ({
+        href: path ? `/clubs/${clubId}/${path}` : `/clubs/${clubId}`,
+        label,
+        icon,
+        current: current === section,
+    }));
+}
+
+/** The same sections outside a Club: `/app` opens them in the last Club the viewer visited. */
+function buildLastClubNavigation(routes: IShellRouteMap): readonly IShellNavigationItem[] {
+    return CLUB_SECTIONS.map(({ path, label, icon }) => ({
+        href: path ? `${routes.product}?section=${path}` : routes.product,
+        label,
+        icon,
+    }));
 }
 
 /** A Club's sections where one is in context; onboarding without a Club; otherwise the Hub itself. */
@@ -197,7 +195,7 @@ function getHubItems(
             { href: routes.createClub, label: 'Create a Club', icon: 'overview' },
             { href: routes.joinClub, label: 'Join a Club', icon: 'user-plus' },
         ];
-    return [{ href: routes.product, label: 'Club Hub' }];
+    return buildLastClubNavigation(routes);
 }
 
 export function buildMobileNavigation({

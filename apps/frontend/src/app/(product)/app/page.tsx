@@ -7,6 +7,7 @@ import { connection } from 'next/server';
 import { buildLoginPath } from '#api/auth-session.server';
 import { listClubs } from '#api/clubs.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import { CLUB_SECTION_PATHS } from '#components/shells/shell-navigation';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
@@ -68,8 +69,13 @@ function ClubsUnavailable() {
     );
 }
 
-export default async function AppPage() {
+export default async function AppPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ section?: string | string[] }>;
+}) {
     await connection();
+    const { section } = await searchParams;
     let clubs: IClubSummary[];
     try {
         clubs = await listClubs();
@@ -84,5 +90,7 @@ export default async function AppPage() {
     if (!club) {
         return <NoClubs />;
     }
-    redirect(`/clubs/${club.id}`);
+    // Navigation outside a Club links its sections here; only known sections are followed.
+    const path = typeof section === 'string' && CLUB_SECTION_PATHS.includes(section) ? section : '';
+    redirect(path ? `/clubs/${club.id}/${path}` : `/clubs/${club.id}`);
 }

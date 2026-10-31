@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { expectMobileAdminEntry, openShell } from './shell-fixtures';
 import { canonicalViewports } from './viewports';
 
@@ -403,3 +404,29 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         await expect(header).not.toHaveAttribute('data-hidden');
     });
 }
+
+test('the mobile Hub menu lists the same Club sections outside a Club', async ({
+    context,
+    page,
+}) => {
+    await signInMock(context, 'valid-library-hub-menu');
+    await page.setViewportSize(canonicalViewports[0]);
+    await page.goto('/library');
+    await page
+        .getByRole('navigation', { name: 'Mobile product navigation' })
+        .getByRole('button', { name: 'Hub' })
+        .click();
+    const sections = page.getByRole('navigation', { name: 'Hub sections' }).getByRole('link');
+    await expect(sections).toHaveText([
+        'Overview',
+        'Sessions',
+        'Ratings',
+        'Members',
+        'Achievements',
+        'Manage Club',
+    ]);
+    await expect(sections.filter({ hasText: 'Sessions' })).toHaveAttribute(
+        'href',
+        '/app?section=sessions',
+    );
+});
