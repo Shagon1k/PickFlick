@@ -13,6 +13,7 @@ import { type ReactNode, useRef } from 'react';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import { submitSelectionAction } from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
@@ -75,10 +76,6 @@ export default function Selection({
             <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
                 Score nominated films
             </h2>
-            <p>
-                Score every nominated film from {data.scaleMin} to {data.scaleMax}. Submit once;
-                your scores cannot be changed.
-            </p>
             {!data.nominations.length ? (
                 <p>No nominations are available for Selection.</p>
             ) : (
@@ -123,16 +120,20 @@ export default function Selection({
                         ))}
                     </ul>
                     <div className={styles.submit}>
-                        {data.submittedAt ? (
-                            <p role="status">Your ballot is saved. Your scores are locked.</p>
-                        ) : null}
+                        {data.submittedAt ? <p role="status">Your ballot is locked.</p> : null}
                         {data.canSubmit && !data.submittedAt ? (
                             <>
-                                <p className={styles.summary} role="status">
-                                    {scoredCount} of {data.nominations.length} films scored ·{' '}
-                                    {scoredCount === data.nominations.length
-                                        ? 'Ready to submit'
-                                        : 'Score every film to submit'}
+                                <p className={styles.summary}>
+                                    <span role="status">
+                                        {scoredCount} of {data.nominations.length} films scored ·{' '}
+                                        {scoredCount === data.nominations.length
+                                            ? 'Ready to submit'
+                                            : 'Score every film to submit'}
+                                    </span>{' '}
+                                    <InfoTip label="About scoring">
+                                        Score every film from {data.scaleMin} to {data.scaleMax}.
+                                        You submit once; scores cannot be changed afterwards.
+                                    </InfoTip>
                                 </p>
                                 <Button type="submit" loading={isPending}>
                                     Submit scores
@@ -140,10 +141,7 @@ export default function Selection({
                             </>
                         ) : null}
                         {!data.canSubmit && !data.submittedAt ? (
-                            <p>
-                                Only accepted participants can submit while Selection is open in an
-                                active Club.
-                            </p>
+                            <p>Join the Session to score films.</p>
                         ) : null}
                         <StatusLine isSuccess={isSuccess} message={message} />
                     </div>

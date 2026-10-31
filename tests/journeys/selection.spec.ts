@@ -88,9 +88,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
             pages[1]!.getByText('0 of 2 participants have submitted.', { exact: false }),
         ).toBeVisible();
         await submitScores(firstPage, session.id, 0);
-        await expect(
-            firstPage.getByText('Your ballot is saved. Your scores are locked.'),
-        ).toBeVisible();
+        await expect(firstPage.getByText('Your ballot is locked.')).toBeVisible();
         await expect(
             pages[1]!.getByText('1 of 2 participants have submitted.', { exact: false }),
         ).toBeVisible({ timeout: 20000 });

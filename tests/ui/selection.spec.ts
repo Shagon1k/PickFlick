@@ -29,14 +29,14 @@ test(
         await expect(groups.nth(1).getByRole('radio', { name: '0 of 3' })).toBeChecked();
         await expect(page.getByText('2 of 2 films scored · Ready to submit')).toBeVisible();
         await page.getByRole('button', { name: 'Submit scores' }).click();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
+        await expect(page.getByText('Your ballot is locked.')).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Score nominated films' })).toBeFocused();
         await expect(page.getByRole('radio')).toHaveCount(0);
         await expect(
             page.getByText('2 of 3 participants have submitted.', { exact: false }),
         ).toBeVisible();
         await page.reload();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
+        await expect(page.getByText('Your ballot is locked.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
     },
 );
@@ -74,7 +74,7 @@ test('legacy scale supports touch and omits zero', async ({ browser }) => {
         for (const group of await page.getByRole('radiogroup').all())
             await group.getByRole('radio', { name: '10 of 10' }).tap();
         await page.getByRole('button', { name: 'Submit scores' }).tap();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
+        await expect(page.getByText('Your ballot is locked.')).toBeVisible();
     } finally {
         await context.close();
     }
