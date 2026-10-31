@@ -135,6 +135,28 @@ batches. Rows below are new or add to an earlier row; spot-checked items are mar
 | 78  | My Library header and filters   | Tagline replaces the owner line; filters need Apply instead of filtering live with a count (adds to #45).                                                                                                                                   | Design         | Minor    | Fixed `bac059a` |
 | 79  | Deadline field                  | A helper sentence instead of the prototype's "from now" suffix.                                                                                                                                                                             | X1             | Cosmetic | Fixed `3c97661` |
 
+## Owner decisions, 2026-10-31
+
+- **Design picks:** 1A (fix the cropped mark), 2A (Recent links redone in round 2), 4B with the
+  reason on the stamp (USED, EXPIRED or REVOKED), 5B, 7A, 18C, 22A (one-line reviews, expansion in
+  round 2), 24A, 71A, 30–32A. #12 gets new icon ideas in round 2. #27 keeps the current Sessions
+  tab and adds Create and Log past Session to it, moved from Manage Club. #68 "+ Invite" opens
+  the 2A dialog.
+- **#47** Accepted participants of a Completed live Session count as attended.
+- **#48** Sessions get an optional screening time.
+- **#49** Automatic advance on "all nominated" needs at least two accepted participants.
+- **#51** Cancel is refused once any Session Rating was received.
+- **#56** In-app notifications for a targeted Session invitation and for removal from a Session.
+- **#60** Members see history and open Rating Sessions, but cannot rate an open Rating Session
+  scheduled before they joined the Club.
+- **#59** The actor is not notified of their own action.
+- **#43** Free Clubs show every Overview statistic; Pro features get a Deferred Project 3 issue.
+- **#26** Restyle Recent Activity after the prototype; the member event feed becomes a subtask of a
+  later phase issue.
+- **#58** Awards stay computed when an achievements view opens.
+- **#62** Menu entries for unbuilt pages come back and lead to 404 until their phase.
+- Unused roster endpoints (A5) go unless a planned phase needs them.
+
 ## Open questions for the owner
 
 - **#43 Free Club statistics.** Free Clubs show only the two counters, by the Roadmap plan table;
