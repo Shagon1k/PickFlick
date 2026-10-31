@@ -23,6 +23,8 @@ export async function advanceNomination(
     await publishProgress(tx, session.id, kind);
 }
 
+const MIN_PARTICIPANTS_TO_ADVANCE = 2;
+
 export async function completeNomination(tx: Prisma.TransactionClient, sessionId: string) {
     const session = await tx.session.findUniqueOrThrow({
         where: { id: sessionId },
@@ -36,7 +38,11 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
         const nominations = participants.flatMap((participant) =>
             participant.nomination ? [participant.nomination] : [],
         );
-        if (nominations.length > 0 && nominations.length === participants.length) {
+        // A lone early joiner does not close Nomination for the members still on their way.
+        const isEveryoneIn =
+            participants.length >= MIN_PARTICIPANTS_TO_ADVANCE &&
+            nominations.length === participants.length;
+        if (isEveryoneIn) {
             await advanceNomination(tx, session, nominations, 'AUTOMATIC');
             return;
         }

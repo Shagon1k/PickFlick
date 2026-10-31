@@ -85,10 +85,16 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await expect(acceptedParticipants(member)).toHaveText('Jordan Member');
     });
 
-    await test.step('the sole participant nomination selects the Movie for Watching', async () => {
+    await test.step('the operator closes a single nomination early, selecting it for Watching', async () => {
         await member.getByRole('combobox', { name: 'Select a Movie' }).fill(query);
         await member.getByRole('option', { name: /The Night of the Hunter/u }).click();
         await member.getByRole('button', { name: 'Nominate This' }).click();
+        // One participant never closes Nomination by themselves; the operator does.
+        await admin.reload();
+        await admin.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await admin.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
+        await admin.getByLabel('Type CLOSE to confirm').fill('CLOSE');
+        await admin.getByRole('button', { name: 'Confirm close' }).click();
         for (const page of [member, admin]) {
             await page.reload();
             await expect(page.getByText('watching', { exact: true })).toBeVisible();
