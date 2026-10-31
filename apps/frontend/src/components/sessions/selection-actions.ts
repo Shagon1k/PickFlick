@@ -44,10 +44,6 @@ export async function submitSelectionAction(
     }
 }
 
-export async function refreshSelectionAction(id: string) {
-    revalidatePath(`/sessions/${id}`);
-}
-
 export async function closeSelectionAction(
     id: string,
     input: unknown,

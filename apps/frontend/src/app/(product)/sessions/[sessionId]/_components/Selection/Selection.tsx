@@ -11,10 +11,7 @@ import Link from 'next/link';
 import { type ReactNode, useRef } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import {
-    refreshSelectionAction,
-    submitSelectionAction,
-} from '#components/sessions/selection-actions';
+import { submitSelectionAction } from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import { useActionStatus } from '#lib/use-action-status';
@@ -66,19 +63,9 @@ export default function Selection({
             },
         )(event);
     }
-    function handleRefresh() {
-        run(() => refreshSelectionAction(sessionId).then(() => ({ ok: true as const })), {
-            unreachableMessage: 'We could not refresh Selection. Try again.',
-            onResult: (result) => setMessage(result.ok ? 'Selection refreshed.' : result.message),
-        });
-    }
     return (
         <section className={styles.selection} aria-labelledby="selection-heading">
-            <PhaseProgress
-                refreshLabel="Refresh Selection"
-                disabled={isPending}
-                onRefresh={handleRefresh}
-            >
+            <PhaseProgress>
                 Selection in progress — {data.submittedCount} of {data.acceptedCount} participants
                 have submitted.
             </PhaseProgress>

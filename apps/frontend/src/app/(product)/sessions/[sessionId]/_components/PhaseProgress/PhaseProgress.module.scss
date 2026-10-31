@@ -1,6 +1,5 @@
-/* The prototype status banner: one centred mono message, with manual refresh kept at the edge. */
+/* The prototype status banner: one centred mono message. */
 .progress {
-    position: relative;
     display: flex;
     gap: 11px;
     align-items: center;
@@ -13,11 +12,6 @@
     letter-spacing: 0.01em;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-}
-
-/* Room for the refresh button, mirrored so the message stays centred. */
-.progress:has(.refresh) {
-    padding-inline: calc(var(--hit) + var(--gap-xs));
 }
 
 .progress > svg {
@@ -33,42 +27,9 @@
     margin: 0;
 }
 
-.refresh {
-    position: absolute;
-    top: 50%;
-    right: 1px;
-    display: grid;
-    place-items: center;
-    width: var(--hit);
-    height: var(--hit);
-    padding: var(--gap-sm);
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius);
-    transform: translateY(-50%);
-}
-
-.refresh:hover {
-    color: var(--fg);
-    background: var(--accent-soft);
-}
-
-.refresh svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 1.6;
-}
-
 @media (width < 576px) {
     .progress {
         align-items: flex-start;
         font-size: var(--fs-micro);
-    }
-
-    .progress:has(.refresh) {
-        padding-left: var(--gap-md);
     }
 }

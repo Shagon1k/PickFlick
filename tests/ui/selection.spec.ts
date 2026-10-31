@@ -85,7 +85,9 @@ for (const scenario of ['readonly', 'empty']) {
         await authenticate(context, scenario);
         await page.goto(PATH);
         await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
-        await expect(page.getByRole('button', { name: 'Refresh Selection' })).toBeVisible();
+        await expect(
+            page.getByRole('status').filter({ hasText: 'Selection in progress' }),
+        ).toBeVisible();
     });
 }
 
@@ -102,10 +104,6 @@ for (const viewport of canonicalViewports) {
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
-        const refreshBounds = await page
-            .getByRole('button', { name: 'Refresh Selection' })
-            .boundingBox();
-        expect(refreshBounds?.width).toBeGreaterThanOrEqual(44);
         const target = page.getByRole('radio', { name: '10 of 10' }).first();
         const bounds = await target.boundingBox();
         expect(bounds?.width).toBeGreaterThanOrEqual(44);

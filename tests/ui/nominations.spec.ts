@@ -29,8 +29,6 @@ test(
         await expect(page.getByRole('button', { name: 'Nominate This' })).toHaveCount(0);
         await expect(page.getByText('2 of 3 participants have nominated.')).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Find & Nominate a Movie' })).toBeFocused();
-        await page.getByRole('button', { name: 'Refresh nominations' }).click();
-        await expect(page.getByText('Nominations refreshed.')).toBeVisible();
         await expect(page.getByText('by Jordan Member')).toHaveCount(0);
     },
 );

@@ -6,7 +6,7 @@ import { type ReactNode, useRef, useState } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
-import { nominateAction, refreshNominationsAction } from '#components/sessions/nomination-actions';
+import { nominateAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { useActionStatus } from '#lib/use-action-status';
@@ -26,30 +26,21 @@ export default function Nomination({
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
     const { message, setMessage, isPending, run } = useActionStatus();
-    function send(action: 'submit' | 'refresh') {
-        run(
-            () =>
-                action === 'submit'
-                    ? nominateAction(sessionId, { movieId: chosen?.id })
-                    : refreshNominationsAction(sessionId),
-            {
-                pendingMessage: action === 'refresh' ? 'Refreshing nominations…' : 'Saving…',
-                onResult: (result) => {
-                    setMessage(result.message);
-                    if (result.ok && action === 'submit') headingRef.current?.focus();
-                },
+    function handleSubmit() {
+        run(() => nominateAction(sessionId, { movieId: chosen?.id }), {
+            pendingMessage: 'Saving…',
+            onResult: (result) => {
+                setMessage(result.message);
+                if (result.ok) headingRef.current?.focus();
             },
-        );
+        });
     }
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
-            <PhaseProgress
-                refreshLabel="Refresh nominations"
-                disabled={isPending}
-                onRefresh={() => send('refresh')}
-            >
-                Nomination in progress — {data.nominatedCount} of {data.acceptedCount} participants
-                have nominated.
+            <PhaseProgress>
+                {data.acceptedCount
+                    ? `Nomination in progress — ${data.nominatedCount} of ${data.acceptedCount} participants have nominated.`
+                    : 'Nomination in progress — no one has joined yet.'}
             </PhaseProgress>
             {header}
             <div className={styles.columns}>
@@ -63,7 +54,7 @@ export default function Nomination({
                             disabled={isPending}
                             suggestions={data.suggestions}
                             onChoose={setChosen}
-                            onSubmit={() => send('submit')}
+                            onSubmit={handleSubmit}
                         />
                     ) : (
                         <SubmissionState movie={data.ownMovie} />

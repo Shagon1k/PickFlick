@@ -23,10 +23,6 @@ const NOMINATION_FAILURE: IFailureCopy = {
     request: 'Nomination request',
 };
 
-export async function refreshNominationsAction(id: string) {
-    revalidatePath(`/sessions/${id}`);
-    return { ok: true as const, message: 'Nominations refreshed.' };
-}
 export async function nominateAction(id: string, input: unknown) {
     const parsed = submitNominationSchema.safeParse(input);
     if (!parsed.success) return { ok: false as const, message: 'Choose a Movie first.' };
