@@ -122,7 +122,7 @@ test('missing media and identifiers omit unavailable links; broken poster become
     // ticket keeps a hidden one.
     const hero = page.locator('section[aria-labelledby="movie-title"]');
     await expect(hero.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
-    await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
+    await expect(page.getByText('Our film sources have no trailer for this film.')).toBeVisible();
     await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
         'href',
         /^https:\/\/www\.youtube\.com\/results\?search_query=/u,

@@ -16,9 +16,7 @@ test(
     async ({ context, page }) => {
         await authenticate(context, 'hidden-anonymous');
         await page.goto(PATH);
-        await expect(
-            page.getByText('Nominations are hidden until you submit your own Movie.'),
-        ).toBeVisible();
+        await expect(page.getByText('Nominations stay hidden until you nominate.')).toBeVisible();
         await expect(page.getByText('Current private film')).toHaveCount(0);
         await page.getByRole('button', { name: 'Past losing nomination (2020)' }).focus();
         await page.keyboard.press('Enter');

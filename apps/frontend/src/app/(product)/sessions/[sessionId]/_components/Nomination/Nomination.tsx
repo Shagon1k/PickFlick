@@ -102,7 +102,7 @@ function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
 }
 
 function NominationList({ data }: { data: TNominations }) {
-    if (data.hidden) return <p>Nominations are hidden until you submit your own Movie.</p>;
+    if (data.hidden) return <p>Nominations stay hidden until you nominate.</p>;
     if (!data.nominations.length) return <p>No nominations yet.</p>;
     return (
         <ul className={styles.movies}>
@@ -214,7 +214,7 @@ function NominationPicker({
                     ))}
                 </ul>
             ) : (
-                <p>No past losing nominations in this Club yet. Search for a Movie above.</p>
+                <p>No earlier nominations yet. Search for a film above.</p>
             )}
         </>
     );
