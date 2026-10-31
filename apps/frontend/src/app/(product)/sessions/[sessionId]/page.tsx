@@ -1,5 +1,5 @@
 import { HTTP_STATUS, isFilmSessionPhase, type TSession } from '@pickflick/contracts';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { buildLoginPath } from '#api/auth-session.server';
@@ -8,6 +8,7 @@ import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import { buildClubNavigation } from '#components/shells/shell-navigation';
+import SystemState from '#components/shells/SystemState/SystemState';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
@@ -27,7 +28,8 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
     } catch (error) {
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             redirect(buildLoginPath(`/sessions/${sessionId}`));
-        if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status)) notFound();
+        if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status))
+            return <SystemState isSignedIn variant="members-only" />;
         return (
             <ProductFrame>
                 <SessionProgress sessionId={sessionId} version={null} />

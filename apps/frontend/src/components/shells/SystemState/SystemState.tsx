@@ -5,7 +5,7 @@ import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 
-type TSystemStateVariant = 'application-error' | 'not-found';
+type TSystemStateVariant = 'application-error' | 'not-found' | 'members-only';
 
 const systemStateContent = {
     'application-error': {
@@ -20,7 +20,23 @@ const systemStateContent = {
         eyebrow: 'Scene missing',
         title: 'Reel Not Found',
     },
+    'members-only': {
+        asset: 'errorRecovery',
+        code: '403',
+        eyebrow: 'Private screening',
+        title: 'Members Only',
+    },
 } as const;
+
+const descriptions: Record<TSystemStateVariant, (homeName: string) => string> = {
+    'application-error': () =>
+        'Something went wrong behind the scenes. Try again, or choose a safe route back to PickFlick.',
+    'not-found': (homeName) =>
+        `This page was cut from the final edit. Head back to the ${homeName} and pick up where you left off.`,
+    // Says nothing about whether the Session exists, only how a Club member gets in.
+    'members-only': () =>
+        'Sessions open only to their Club’s members. Ask a member for a Club invitation, then open this link again.',
+};
 
 interface ISystemStateProps {
     onRetry?: () => void;
@@ -34,10 +50,7 @@ export default function SystemState({ onRetry, isSignedIn, variant }: ISystemSta
         ? { href: '/app', label: 'Back to Hub' }
         : { href: '/', label: 'Back to main' };
     const homeName = isSignedIn ? 'Hub' : 'main page';
-    const description =
-        variant === 'not-found'
-            ? `This page was cut from the final edit. Head back to the ${homeName} and pick up where you left off.`
-            : 'Something went wrong behind the scenes. Try again, or choose a safe route back to PickFlick.';
+    const description = descriptions[variant](homeName);
 
     const scene = (
         <div className={styles.stage} data-system-state={variant}>

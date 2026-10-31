@@ -27,6 +27,11 @@ test(
         await expect(page.getByText('Private noir night')).toHaveCount(0);
         await expect(page.getByText('Midnight Society')).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Accept invitation' })).toHaveCount(0);
+        // The API answers 404 for Sessions outside the viewer's Clubs, as for missing ones.
+        await page.goto('/sessions/30000000-0000-4000-8000-0000000000ff');
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Members Only');
+        await expect(page.getByText(/Ask a member for a Club invitation/u)).toBeVisible();
+        await expect(page.getByText('Private noir night')).toHaveCount(0);
     },
 );
 
