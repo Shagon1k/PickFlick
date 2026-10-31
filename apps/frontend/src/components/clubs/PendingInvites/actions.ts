@@ -6,7 +6,6 @@ import {
     type TPendingInvitation,
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 import {
     listPendingClubInvitations,
@@ -45,7 +44,7 @@ export async function respondPendingInviteAction(
     id: string,
     decision: unknown,
     kind: 'club' | 'session',
-): Promise<{ message: string; resolved: boolean }> {
+): Promise<{ message: string; resolved: boolean; href?: string }> {
     const parsed = invitationDecisionSchema.safeParse({ decision });
     // Server actions are public endpoints: an unknown kind must not fall through to Clubs.
     if (!parsed.success || (kind !== 'club' && kind !== 'session'))
@@ -58,18 +57,23 @@ export async function respondPendingInviteAction(
                 : await respondPendingClubInvitation(id, parsed.data);
     } catch {
         return {
-            message: 'The response could not be confirmed. Retry to check its current state.',
+            message: 'Your response was not confirmed. Try again.',
             resolved: false,
         };
     }
     if (result.state === 'accepted' || result.state === 'already-member') {
         revalidatePath('/app');
         revalidatePath(`/clubs/${result.clubId}`);
+        // The caller navigates: a redirect would reject the awaited action in the browser.
         if ('sessionId' in result && typeof result.sessionId === 'string') {
             revalidatePath(`/sessions/${result.sessionId}`);
-            redirect(`/sessions/${result.sessionId}`);
+            return {
+                message: 'Invitation accepted.',
+                resolved: true,
+                href: `/sessions/${result.sessionId}`,
+            };
         }
-        redirect(`/clubs/${result.clubId}`);
+        return { message: 'Invitation accepted.', resolved: true, href: `/clubs/${result.clubId}` };
     }
     return {
         message:

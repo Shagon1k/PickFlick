@@ -128,7 +128,9 @@ for (const viewport of screenshotViewports) {
         await expect(close).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(dialog).toHaveCount(0);
-        await expect(trigger).toBeFocused();
+        // The emptied ticket slides away, so focus lands on the page instead.
+        await expect(trigger).toBeHidden();
+        await expect(page.locator('main')).toBeFocused();
     });
 }
 

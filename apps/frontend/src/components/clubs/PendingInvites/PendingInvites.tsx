@@ -1,8 +1,10 @@
 'use client';
 
 import type { TPendingInvitation } from '@pickflick/contracts';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useId, useRef, useState, useTransition } from 'react';
 
+import { useNotifications } from '#components/notifications/notifications-context';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Button from '#components/ui/Button/Button';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
@@ -14,40 +16,48 @@ import styles from './PendingInvites.module.scss';
 
 export default function PendingInvites() {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
+    const { data: notifications } = useNotifications();
+    const router = useRouter();
     const isOpen = activeOverlay === 'invites';
     const triggerRef = useRef<HTMLButtonElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
-    const [message, setMessage] = useState('Loading pending invites…');
+    const [loadError, setLoadError] = useState('');
+    const [announcement, setAnnouncement] = useState('');
+    const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
     const [isLoaded, setIsLoaded] = useState(false);
-    // The ticket appears with the first invite and then stays, so focus can return to it after the
-    // last response; a failed load shows it too, so Retry stays reachable.
-    const [isShown, setIsShown] = useState(false);
     const [isPending, startTransition] = useTransition();
     const id = useId();
+    // The ticket stays while its panel is open, so an emptied list can still be read and closed.
+    const isShown = invitations.length > 0 || Boolean(loadError) || isOpen;
     async function load() {
         try {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
-                if (result.invitations.length) setIsShown(true);
                 setIsLoaded(true);
-                setMessage('');
+                setLoadError('');
             } else {
                 setIsLoaded(false);
-                setIsShown(true);
-                setMessage(result.message ?? 'Pending invites are unavailable.');
+                setLoadError(result.message ?? 'Pending invites are unavailable.');
             }
         } catch {
             setIsLoaded(false);
-            setIsShown(true);
-            setMessage('Pending invites could not be loaded. Check your connection and retry.');
+            setLoadError('Pending invites could not be loaded. Check your connection and retry.');
         }
     }
 
+    // Each inbox refresh (a live signal, focus, reconnect or the periodic check) also rechecks
+    // invitations, so a new one slides in without a reload.
     useEffect(() => {
         startTransition(load);
-    }, []);
+    }, [notifications]);
+    useEffect(() => {
+        if (isShown || !widgetContains(triggerRef.current, document.activeElement)) return;
+        const main = document.querySelector('main');
+        main?.setAttribute('tabindex', '-1');
+        main?.focus({ preventScroll: true });
+    }, [isShown]);
     function openInvites() {
         if (triggerRef.current) {
             toggleOverlay('invites', triggerRef.current);
@@ -62,22 +72,38 @@ export default function PendingInvites() {
         headerRef.current
             ?.querySelector<HTMLButtonElement>('button')
             ?.focus({ preventScroll: true });
+        setRowErrors((current) => ({ ...current, [invitationId]: '' }));
         startTransition(async () => {
             try {
                 const result = await respondPendingInviteAction(invitationId, decision, kind);
-                setMessage(result.message);
-                if (result.resolved)
-                    setInvitations((current) =>
-                        current.filter(({ id: inviteId }) => inviteId !== invitationId),
-                    );
+                if (!result.resolved) {
+                    setRowErrors((current) => ({ ...current, [invitationId]: result.message }));
+                    return;
+                }
+                setAnnouncement(result.message);
+                setInvitations((current) =>
+                    current.filter(({ id: inviteId }) => inviteId !== invitationId),
+                );
+                if (result.href) {
+                    closeOverlay();
+                    router.push(result.href);
+                }
             } catch {
-                setMessage('The response could not be confirmed. Check your connection and retry.');
+                setRowErrors((current) => ({
+                    ...current,
+                    [invitationId]: 'Your response was not sent. Check your connection and retry.',
+                }));
             }
         });
     }
     const countLabel = formatCount(invitations.length, 'invitation');
     return (
-        <div className={styles.widget} data-invite-ticket hidden={!isShown}>
+        <div
+            className={styles.widget}
+            data-invite-ticket
+            data-shown={isShown || undefined}
+            inert={!isShown}
+        >
             <Popover
                 id={id}
                 variant="invites"
@@ -135,10 +161,16 @@ export default function PendingInvites() {
                         Close
                     </button>
                 </div>
-                <p className={styles.feedback} aria-live="polite" role="status">
-                    {message ||
-                        (isLoaded && invitations.length === 0 ? 'No pending invitations.' : '')}
+                <p
+                    aria-live="polite"
+                    className={loadError ? styles.feedback : 'visually-hidden'}
+                    role="status"
+                >
+                    {loadError || announcement}
                 </p>
+                {isLoaded && invitations.length === 0 ? (
+                    <p className={styles.feedback}>No pending invitations.</p>
+                ) : null}
                 {!isLoaded ? (
                     <Button
                         disabled={isPending}
@@ -160,6 +192,11 @@ export default function PendingInvites() {
                                     : (invitation.topic ?? 'Untitled Session')}
                             </h3>
                             <p>{describeInvitation(invitation)}</p>
+                            {rowErrors[invitation.id] ? (
+                                <p className={styles.rowError} role="alert">
+                                    {rowErrors[invitation.id]}
+                                </p>
+                            ) : null}
                             <div className={styles.actions}>
                                 <Button
                                     disabled={isPending}
@@ -210,4 +247,8 @@ function describeInvitation(invitation: TPendingInvitation): ReactNode {
             {invitation.clubName} · {day}
         </>
     );
+}
+
+function widgetContains(trigger: HTMLElement | null, element: Element | null): boolean {
+    return Boolean(element && trigger?.closest('[data-invite-ticket]')?.contains(element));
 }
