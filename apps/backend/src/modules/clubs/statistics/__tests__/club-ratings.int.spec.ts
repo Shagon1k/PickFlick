@@ -154,25 +154,20 @@ describe('Club ratings API', () => {
         expect((await read(1)).total).toBe(2);
     });
 
-    it('should keep the ratings leaderboard on Free but only basic statistics', async () => {
+    it('should give Free Clubs the ratings leaderboard and every statistic', async () => {
+        const readStatistics = async (userId: string) =>
+            ((await (await api.request(`/clubs/${clubId}/hub`, { userId })).json()) as IClubHub)
+                .statistics;
+        const viewers = users.slice(0, 3);
+        const pro = await Promise.all(viewers.map(readStatistics));
+        expect(pro[0]!.averageRating).not.toBeNull();
         isPro = false;
-        for (const userId of users.slice(0, 3)) {
+        for (const [index, userId] of viewers.entries()) {
             const result = clubRatingsSchema.parse(
                 await (await api.request(`/clubs/${clubId}/ratings`, { userId })).json(),
             );
             expect(result.total).toBeGreaterThan(0);
-            const hub = (await (
-                await api.request(`/clubs/${clubId}/hub`, { userId })
-            ).json()) as IClubHub;
-            expect(hub.statistics).toEqual({
-                sessionsWatched: 5,
-                sessionsThisYear: new Date().getUTCFullYear() === 2026 ? 5 : 0,
-                averageRating: null,
-                totalWatchHours: null,
-                topGenre: null,
-                topDirector: null,
-                topActor: null,
-            });
+            expect(await readStatistics(userId)).toEqual(pro[index]);
         }
         isPro = true;
         expect(

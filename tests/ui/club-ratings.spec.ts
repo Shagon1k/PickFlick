@@ -118,11 +118,12 @@ test('Club Ratings can retry an API failure and Overview follows the plan', asyn
     await expect(
         page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
     ).toHaveCount(7);
+    // Free Clubs show every statistic too.
     await signInMock(context, 'valid-hub-ratings-free');
     await page.reload();
     await expect(
         page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
-    ).toHaveCount(2);
+    ).toHaveCount(7);
 });
 
 test('Ratings navigation keeps the Hub frame and shows its loading boundary', async ({

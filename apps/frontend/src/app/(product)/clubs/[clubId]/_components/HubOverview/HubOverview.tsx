@@ -34,15 +34,10 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
         { label: 'Top director', value: stats.topDirector, icon: 'director', isSmall: true },
         { label: 'Top actor', value: stats.topActor, icon: 'actor', isSmall: true },
     ];
-    const visibleTiles = hub.club.tier === 'FREE' ? tiles.slice(0, 2) : tiles;
     return (
         <div className={styles.overview}>
-            <section
-                aria-label="Club statistics"
-                className={styles.statistics}
-                data-basic={hub.club.tier === 'FREE' || undefined}
-            >
-                {visibleTiles.map((tile) => (
+            <section aria-label="Club statistics" className={styles.statistics}>
+                {tiles.map((tile) => (
                     <div className={styles.stat} key={tile.label}>
                         <Icon name={tile.icon} />
                         <div>

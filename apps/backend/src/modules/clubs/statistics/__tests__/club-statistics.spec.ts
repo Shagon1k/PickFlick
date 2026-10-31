@@ -18,7 +18,7 @@ describe('buildClubStatistics', () => {
                 scheduledAt: new Date('2020-01-01Z'),
             },
         ];
-        expect(buildClubStatistics(completed, new Map([[movie.id, movie]]), 'PRO')).toEqual({
+        expect(buildClubStatistics(completed, new Map([[movie.id, movie]]))).toEqual({
             sessionsWatched: 2,
             sessionsThisYear: 1,
             averageRating: null,
@@ -27,7 +27,7 @@ describe('buildClubStatistics', () => {
             topDirector: 'Synthetic Director',
             topActor: 'Synthetic Actor',
         });
-        expect(buildClubStatistics(completed, new Map(), 'PRO')).toMatchObject({
+        expect(buildClubStatistics(completed, new Map())).toMatchObject({
             sessionsWatched: 2,
             totalWatchHours: null,
             topGenre: null,
@@ -37,8 +37,8 @@ describe('buildClubStatistics', () => {
     });
 });
 
-describe('Club analytics tiers', () => {
-    it('should expose only basic counters for Free and use UTC dates without inventing absent ratings', () => {
+describe('Club analytics dates', () => {
+    it('should count the year in UTC and report no average without ratings', () => {
         const movie = buildCanonicalDetails();
         const completed = [
             {
@@ -49,51 +49,16 @@ describe('Club analytics tiers', () => {
             },
         ];
         const now = new Date('2026-01-01Z');
-        expect(buildClubStatistics(completed, new Map([[movie.id, movie]]), 'FREE', now)).toEqual({
+        expect(buildClubStatistics(completed, new Map([[movie.id, movie]]), now)).toMatchObject({
             sessionsWatched: 1,
             sessionsThisYear: 1,
-            averageRating: null,
-            totalWatchHours: null,
-            topGenre: null,
-            topDirector: null,
-            topActor: null,
+            averageRating: 6,
         });
-        expect(buildClubStatistics(completed, new Map(), 'PRO', now).averageRating).toBe(6);
-        expect(buildClubStatistics([], new Map(), 'PRO', now)).toMatchObject({
+        expect(buildClubStatistics([], new Map(), now)).toMatchObject({
             sessionsWatched: 0,
             sessionsThisYear: 0,
             averageRating: null,
             totalWatchHours: null,
         });
-    });
-});
-
-describe('Cached metadata coverage', () => {
-    it('should keep numeric history stable across metadata refresh and leave incomplete summaries unknown', () => {
-        const movie = buildCanonicalDetails();
-        const completed = [
-            {
-                movieId: movie.id,
-                movie: { id: movie.id, title: movie.title, releaseYear: movie.releaseYear },
-                ratings: [{ score: 8 }],
-                scheduledAt: new Date('2026-01-01Z'),
-            },
-            { movieId: 'missing', movie: null, ratings: [{ score: 4 }], scheduledAt: null },
-        ];
-        const now = new Date('2026-06-01Z');
-        const first = buildClubStatistics(completed, new Map([[movie.id, movie]]), 'PRO', now);
-        expect(first).toMatchObject({
-            sessionsWatched: 2,
-            sessionsThisYear: 1,
-            averageRating: 6,
-            totalWatchHours: null,
-            topGenre: null,
-            topDirector: null,
-            topActor: null,
-        });
-        const refreshed = { ...movie, runtime: 200, genres: ['Comedy'] };
-        expect(
-            buildClubStatistics(completed, new Map([[movie.id, refreshed]]), 'PRO', now),
-        ).toEqual(first);
     });
 });

@@ -8,7 +8,6 @@ import {
     type IClubSummary,
     type TChangeMemberRoleRequest,
     type TCreateClubRequest,
-    type TMovieDetails,
     type TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
 
@@ -59,10 +58,7 @@ export class ClubsService {
             ...snapshot,
             statistics: buildClubStatistics(
                 completed,
-                snapshot.club.tier === 'PRO'
-                    ? await this.movies.getCachedMetadata(completedIds)
-                    : new Map<string, TMovieDetails>(),
-                snapshot.club.tier,
+                await this.movies.getCachedMetadata(completedIds),
             ),
         };
         const selected = hub.activeSession?.movie;
