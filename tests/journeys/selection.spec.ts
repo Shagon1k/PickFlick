@@ -97,7 +97,7 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         await expect(firstPage.getByText('Submitted: 0 of 10', { exact: true })).toBeVisible();
         await contexts[0]!.setOffline(true);
         await submitScores(pages[1]!, session.id, 1);
-        await expect(pages[1]!.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
+        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
         await contexts[0]!.setOffline(false);
         await firstPage.evaluate(() => window.dispatchEvent(new Event('online')));
         for (const page of pages) {
@@ -108,13 +108,10 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 'href',
                 `/movies/${movies[1]!.id}`,
             );
-            await expect(page.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
         }
-        await expect(firstPage.getByRole('list', { name: 'Selection ranking' })).toBeVisible();
-        await expect(pages[1]!.getByRole('list', { name: 'Selection ranking' })).toHaveCount(0);
-        await expect(
-            pages[1]!.getByText('Vote breakdowns are hidden', { exact: false }),
-        ).toBeVisible();
+        // Operators see the Rivals card; members with hidden votes see none of it.
+        await expect(firstPage.getByRole('region', { name: 'Nomination Rivals' })).toBeVisible();
+        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
         const readOutcome = async () =>
             sessionSchema.parse(
                 await (await contexts[0]!.request.get(`/api/sessions/${session.id}`)).json(),
@@ -133,8 +130,8 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         expect(retry.status()).toBe(201);
         expect(await readOutcome()).toEqual(saved);
         await pages[1]!.reload();
-        await expect(pages[1]!.getByRole('heading', { name: 'Tonight’s pick' })).toBeVisible();
-        await expect(pages[1]!.getByRole('list', { name: 'Selection ranking' })).toHaveCount(0);
+        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
+        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
     } finally {
         for (const context of contexts) await context.close();
         await backend.removeUsers(userIds);

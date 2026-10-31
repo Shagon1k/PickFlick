@@ -1,17 +1,10 @@
-import {
-    getPosterPath,
-    type TImportedSelectionOutcome,
-    type TLiveSelectionOutcome,
-    type TSession,
-} from '@pickflick/contracts';
+import { type TImportedSelectionOutcome, type TSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import LocalTime from '#components/ui/LocalTime/LocalTime';
 import { formatCount } from '#lib/format';
 
+import NominationRivals from '../NominationRivals/NominationRivals';
 import Rating from '../Rating/Rating';
-import SelectionSummary, { HIDDEN_BREAKDOWN_COPY } from '../SelectionOutcome/SelectionSummary';
 import styles from './Completed.module.scss';
 
 export default function Completed({ session }: { session: TSession }) {
@@ -30,17 +23,24 @@ export default function Completed({ session }: { session: TSession }) {
                     <p>No rating record is available for this screening.</p>
                 </section>
             )}
-            <section className={styles.panel} aria-labelledby="rivals-heading">
-                <h2 id="rivals-heading">Nomination Rivals</h2>
-                {session.selectionOutcome?.source === 'IMPORTED' ? (
-                    <ImportedNominations
-                        evidence={session.selectionOutcome}
-                        movieId={session.movieId}
-                    />
-                ) : (
-                    <NominationHistory outcome={session.selectionOutcome} type={session.type} />
-                )}
-            </section>
+            {session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown ? (
+                <NominationRivals
+                    outcome={session.selectionOutcome}
+                    breakdown={session.selectionOutcome.breakdown}
+                />
+            ) : (
+                <section className={styles.panel} aria-labelledby="rivals-heading">
+                    <h2 id="rivals-heading">Nomination Rivals</h2>
+                    {session.selectionOutcome?.source === 'IMPORTED' ? (
+                        <ImportedNominations
+                            evidence={session.selectionOutcome}
+                            movieId={session.movieId}
+                        />
+                    ) : (
+                        <p>{describeMissingRivals(session)}</p>
+                    )}
+                </section>
+            )}
         </div>
     );
 }
@@ -102,76 +102,9 @@ function ImportedNominations({
     );
 }
 
-function NominationHistory({
-    outcome,
-    type,
-}: {
-    outcome: TLiveSelectionOutcome | null;
-    type: TSession['type'];
-}) {
-    if (!outcome)
-        return (
-            <p>
-                {type === 'PRE_SELECTED'
-                    ? 'This Movie was pre-selected. There were no nominations or votes.'
-                    : 'No Selection record is available for this screening.'}
-            </p>
-        );
-    return (
-        <>
-            {outcome.author !== null ? <p>Winner nominated by {outcome.author}</p> : null}
-            <p>
-                Selection closed <LocalTime value={outcome.closedAt} /> ·{' '}
-                {outcome.closure === 'MANUAL' ? 'by a Club operator' : 'automatically'}
-            </p>
-            <HistoricalVotes breakdown={outcome.breakdown} />
-        </>
-    );
-}
-
-function HistoricalVotes({ breakdown }: { breakdown: TLiveSelectionOutcome['breakdown'] }) {
-    if (!breakdown) return <p>{HIDDEN_BREAKDOWN_COPY}</p>;
-    return (
-        <>
-            <SelectionSummary breakdown={breakdown} />
-            <ol className={styles.ranking} aria-label="Historical nominations">
-                {breakdown.ranking.map((row, index) => (
-                    <li key={row.id}>
-                        <div className={styles.nominee}>
-                            <SearchPoster
-                                className={styles.poster}
-                                url={getPosterPath(row.movie.id)}
-                            />
-                            <div>
-                                <Link href={`/movies/${row.movie.id}`}>
-                                    {row.movie.title ?? 'Movie title unavailable'}
-                                </Link>
-                                {index === 0 ? <span className={styles.winner}>Winner</span> : null}
-                                {row.author !== null ? <p>Nominated by {row.author}</p> : null}
-                                <p>
-                                    {[row.movie.year, ...row.movie.genres]
-                                        .filter(Boolean)
-                                        .join(' · ')}
-                                </p>
-                            </div>
-                        </div>
-                        <details>
-                            <summary>{row.total} total · Vote breakdown</summary>
-                            <dl>
-                                <div>
-                                    <dt>Top-score votes</dt>
-                                    <dd>{row.maximumCount}</dd>
-                                </div>
-                                <div>
-                                    <dt>Supporters</dt>
-                                    <dd>{row.supporterCount}</dd>
-                                </div>
-                            </dl>
-                        </details>
-                    </li>
-                ))}
-            </ol>
-            {breakdown.ranking.length === 1 ? <p>No rival nominations.</p> : null}
-        </>
-    );
+function describeMissingRivals(session: TSession): string {
+    if (session.type === 'PRE_SELECTED') return 'This Movie was pre-selected, without nominations.';
+    return session.selectionOutcome
+        ? 'Votes are hidden for this Session.'
+        : 'No votes were recorded.';
 }

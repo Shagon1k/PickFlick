@@ -15,7 +15,7 @@ const STATES = [
         name: 'selection-outcome-visible',
         path: SELECTION_PATH,
         token: 'valid-selection-outcome-visible',
-        ready: 'Tonight’s pick',
+        ready: 'Nomination Rivals',
     },
     {
         name: 'watching-operator',

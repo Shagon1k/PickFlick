@@ -29,10 +29,10 @@ import { formatCount } from '#lib/format';
 import styles from '../../page.module.scss';
 import Completed from '../Completed/Completed';
 import Nomination from '../Nomination/Nomination';
+import NominationRivals from '../NominationRivals/NominationRivals';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import Rating from '../Rating/Rating';
 import Selection from '../Selection/Selection';
-import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
 import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
 
@@ -174,8 +174,12 @@ export default function SessionDetails({
                     <>
                         {renderPhase(participation, onKick)}
                         {session.selectionOutcome?.source === 'LIVE' &&
+                        session.selectionOutcome.breakdown &&
                         session.phase !== 'COMPLETED' ? (
-                            <SelectionOutcome data={session.selectionOutcome} />
+                            <NominationRivals
+                                outcome={session.selectionOutcome}
+                                breakdown={session.selectionOutcome.breakdown}
+                            />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">
                             <SprocketDivider variant="section" />
