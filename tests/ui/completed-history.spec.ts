@@ -75,7 +75,7 @@ for (const viewport of canonicalViewports) {
             ).toContainText('Nomination');
             const ratings = page.getByRole('region', { name: 'Active Ratings' });
             await expect(ratings.getByRole('link')).toHaveCount(2);
-            await expect(ratings.getByText('1 of 2 rated', { exact: true })).toBeVisible();
+            await expect(ratings.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
             const history = page.getByRole('region', { name: 'History', exact: true });
             await expect(history.getByRole('link')).toHaveCount(2);
             await expect(history.getByText('8.0', { exact: true })).toBeVisible();

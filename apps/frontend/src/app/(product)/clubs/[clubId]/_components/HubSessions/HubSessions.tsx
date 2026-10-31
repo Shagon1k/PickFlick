@@ -1,4 +1,4 @@
-import { HUB_HISTORY_LIMIT, type IClubHub, type IClubHubSession } from '@pickflick/contracts';
+import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
@@ -18,7 +18,6 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
                     Log a Past Session
                 </ButtonLink>
             ) : null}
-            <p>One screening at a time. Open Rating Sessions never block the next screening.</p>
             <ActiveSessionCard hub={hub} />
             <section aria-labelledby="active-ratings-heading">
                 <h2 id="active-ratings-heading">Active Ratings</h2>
@@ -26,10 +25,6 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
             </section>
             <section aria-labelledby="session-history-heading">
                 <h2 id="session-history-heading">History</h2>
-                <p>
-                    The latest {HUB_HISTORY_LIMIT} closed Sessions. Open a screening for its
-                    permitted results.
-                </p>
                 <SessionRows sessions={hub.historySessions} empty="No completed Sessions yet." />
             </section>
         </div>
@@ -60,10 +55,6 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
                             </span>
                             {session.phase === 'RATING' ? (
                                 <>
-                                    <span>
-                                        {session.progressCount ?? 0} of {session.acceptedCount}{' '}
-                                        rated
-                                    </span>
                                     <FilmProgress
                                         value={session.progressCount ?? 0}
                                         max={session.acceptedCount}
@@ -83,7 +74,15 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
 }
 
 function SessionScore({ session }: { session: IClubHubSession }) {
-    if (session.phase === 'RATING') return <>Rating</>;
+    if (session.phase === 'RATING')
+        return (
+            <>
+                <span>
+                    {session.progressCount ?? 0}/{session.acceptedCount}
+                </span>
+                <small>rated</small>
+            </>
+        );
     if (session.phase === 'CANCELLED') return <>Cancelled</>;
     return (
         <>

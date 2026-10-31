@@ -7,7 +7,7 @@
 
     position: relative;
     display: grid;
-    grid-template-columns: repeat(15, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--frames, 15), minmax(0, 1fr));
     gap: 4px;
     width: 100%;
     height: 52px;
