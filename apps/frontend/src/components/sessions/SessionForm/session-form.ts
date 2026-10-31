@@ -79,13 +79,21 @@ export function validateSession(values: ISessionValues, session?: TSession) {
               type: 'Choose a Session type.',
           });
     const { scheduledAt, ...fields } = errors;
+    const dateError = scheduledAt ?? getPastDateError(values.date, session);
     return {
         ...fields,
-        ...(scheduledAt ? { date: scheduledAt } : {}),
+        ...(dateError ? { date: dateError } : {}),
         ...(!values.removeDeadline &&
         values.duration &&
         (!/^\d{2}:[0-5]\d$/u.test(values.duration) || values.duration === '00:00')
             ? { duration: 'Use hh:mm, greater than 00:00.' }
             : {}),
     };
+}
+
+/** A new or moved screening day must be today or later in the viewer's own calendar. */
+function getPastDateError(date: string, session?: TSession): string | undefined {
+    if (session?.scheduledAt && toIsoDate(session.scheduledAt) === date) return undefined;
+    const today = new Date().toLocaleDateString('en-CA');
+    return date < today ? 'Choose today or a later date.' : undefined;
 }

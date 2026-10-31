@@ -89,6 +89,7 @@ export class SessionsService {
                 const membership = await findMembership(transaction, userId, clubId);
                 await assertManager(transaction, membership);
                 validateDeadline(input.deadlineAt);
+                validateSchedule(input.scheduledAt, input.deadlineAt);
                 const blocking = await transaction.session.findFirst({
                     where: { clubId, phase: { in: [...BLOCKING_SESSION_PHASES] } },
                     select: { id: true },
@@ -143,6 +144,8 @@ export class SessionsService {
                     throw new ConflictException({ reason: 'DEADLINE_PHASE' });
                 validateDeadline(input.deadlineAt);
             }
+            if (hasDeadlineChanged || !isSameTime(session.scheduledAt, data.scheduledAt))
+                validateSchedule(input.scheduledAt, input.deadlineAt);
             await transaction.session.update({
                 where: { id },
                 data: {
@@ -199,6 +202,21 @@ async function loadWritableSession(
 function validateDeadline(value: string | null) {
     if (value && new Date(value) <= new Date())
         throw new ConflictException({ reason: 'DEADLINE_PAST' });
+}
+
+const DAY_MS = 86_400_000;
+// UTC−12 is the last zone to finish a calendar day.
+const LAST_ZONE_LAG_MS = 12 * 3_600_000;
+
+/**
+ * A Session day is stored at midnight UTC. It is too early once that day has ended in every zone,
+ * and a Nomination deadline may not run past it.
+ */
+function validateSchedule(scheduledAt: string, deadlineAt: string | null) {
+    const dayEnd = new Date(scheduledAt).getTime() + DAY_MS + LAST_ZONE_LAG_MS;
+    if (dayEnd <= Date.now()) throw new ConflictException({ reason: 'SCHEDULED_PAST' });
+    if (deadlineAt && new Date(deadlineAt).getTime() >= dayEnd)
+        throw new ConflictException({ reason: 'DEADLINE_AFTER_SCREENING' });
 }
 
 function toSession(

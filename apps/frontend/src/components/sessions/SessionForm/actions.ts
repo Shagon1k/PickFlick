@@ -20,6 +20,8 @@ const SAVE_FAILURE: IFailureCopy = {
         CLUB_READ_ONLY: 'This Club is read-only. Return to the Club Hub for details.',
         MOVIE_UNAVAILABLE: 'The selected Movie is unavailable. Choose another film.',
         DEADLINE_PAST: 'The nomination deadline has passed. Choose a new deadline.',
+        SCHEDULED_PAST: 'Choose today or a later date.',
+        DEADLINE_AFTER_SCREENING: 'Nomination must end before the screening day is over.',
     },
     statuses: [
         [

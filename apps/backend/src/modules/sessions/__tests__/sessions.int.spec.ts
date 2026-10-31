@@ -13,7 +13,7 @@ import {
 import { removeUsers } from '../../../testing/remove-users.js';
 
 const details = {
-    scheduledAt: '2026-12-01T00:00:00.000Z',
+    scheduledAt: '2090-12-01T00:00:00.000Z',
     location: 'Room A',
     topic: 'Noir night',
     notes: 'Bring snacks.',
@@ -245,6 +245,25 @@ describe('Session workflows', () => {
         ).json()) as TSession;
         expect((await edit(watching, admin, { deadlineAt })).status).toBe(409);
     });
+    it('should refuse a past screening day and a deadline after the screening', async () => {
+        const dayMs = 86_400_000;
+        const today = new Date(Math.floor(Date.now() / dayMs) * dayMs);
+        const twoDaysAgo = new Date(today.getTime() - 2 * dayMs).toISOString();
+        const past = await create(admin, { scheduledAt: twoDaysAgo });
+        expect(past.status).toBe(409);
+        expect(await past.json()).toMatchObject({ error: { reason: 'SCHEDULED_PAST' } });
+        const late = await create(admin, {
+            scheduledAt: today.toISOString(),
+            deadlineAt: new Date(today.getTime() + 3 * dayMs).toISOString(),
+        });
+        expect(await late.json()).toMatchObject({ error: { reason: 'DEADLINE_AFTER_SCREENING' } });
+        const session = (await (
+            await create(admin, { scheduledAt: today.toISOString() })
+        ).json()) as TSession;
+        expect(session.phase).toBe('NOMINATION');
+        expect((await edit(session, admin, { scheduledAt: twoDaysAgo })).status).toBe(409);
+    });
+
     it('should prohibit new Sessions in adminless or over-limit Clubs', async () => {
         await api.prisma.membership.updateMany({
             where: { clubId, userId: admin },

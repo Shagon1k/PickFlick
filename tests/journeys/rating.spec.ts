@@ -171,7 +171,7 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
                 data: {
                     type: 'PRE_SELECTED',
                     movieId: session.movieId,
-                    scheduledAt: '2026-12-02T00:00:00Z',
+                    scheduledAt: '2090-12-02T00:00:00Z',
                     location: 'Second screening room',
                     deadlineAt: null,
                 },

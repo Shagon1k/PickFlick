@@ -26,7 +26,7 @@ test(
         await page.getByRole('link', { name: 'Create Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByLabel('Topic').fill('Noir night');
         await page.getByLabel('Nomination phase ends in').fill('01:30');
@@ -95,7 +95,7 @@ test(
         await page.goto(ROUTE);
         await page.getByRole('radio', { name: 'Pre-selected Movie' }).check();
         await expect(page.getByLabel('Nomination phase ends in')).toHaveCount(0);
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         const search = page.getByRole('combobox', { name: 'Select a Movie' });
         await search.fill('film');
@@ -132,7 +132,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
 }) => {
     await authenticate(context, 'valid-session-workflow-failure');
     await page.goto(ROUTE);
-    await page.getByLabel('Date').fill('2026-12-01');
+    await page.getByLabel('Date').fill('2090-12-01');
     await page.getByLabel('Location').fill('Room A');
     await page.getByLabel('Topic').fill('API failure');
     await page.getByRole('button', { name: 'Create Session', exact: true }).click();
@@ -166,7 +166,7 @@ for (const viewport of canonicalViewports) {
             path: `test-results/session-create-${viewport.name}.png`,
             fullPage: true,
         });
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await page.getByRole('link', { name: 'Open Session' }).click();

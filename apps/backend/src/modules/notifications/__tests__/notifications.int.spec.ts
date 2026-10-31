@@ -175,7 +175,7 @@ describe('Notifications', () => {
             json: {
                 type: 'FULL_CYCLE',
                 movieId: null,
-                scheduledAt: '2026-12-01T19:00:00Z',
+                scheduledAt: '2090-12-01T19:00:00Z',
                 location: 'PRIVATE LOCATION',
                 notes: 'PRIVATE NOTES',
                 deadlineAt: null,

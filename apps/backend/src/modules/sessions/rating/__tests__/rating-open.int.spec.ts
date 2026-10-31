@@ -62,7 +62,7 @@ describe('Watching', () => {
                 type: 'FULL_CYCLE',
                 movieId: null,
                 location: 'Room B',
-                scheduledAt: '2026-12-02T20:00:00Z',
+                scheduledAt: '2090-12-02T20:00:00Z',
                 deadlineAt: null,
             },
         });

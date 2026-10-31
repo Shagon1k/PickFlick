@@ -269,7 +269,7 @@ describe('Selection outcome', () => {
                 '',
                 {
                     version: before.version,
-                    scheduledAt: '2026-12-01T00:00:00Z',
+                    scheduledAt: '2090-12-01T00:00:00Z',
                     location: 'Changed',
                     deadlineAt: null,
                 },

@@ -87,7 +87,7 @@ test('Only Club operators open Rating and both clients see the manual transition
                 type: 'FULL_CYCLE',
                 movieId: null,
                 location: 'Next screening room',
-                scheduledAt: '2026-12-02T20:00:00Z',
+                scheduledAt: '2090-12-02T20:00:00Z',
                 deadlineAt: null,
             },
         });
