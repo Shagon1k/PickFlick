@@ -134,6 +134,7 @@ for (const destination of [
 
             await page.goto(destination);
             await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(destination)}`);
+            await settle(page);
             await page.getByRole('button', { name: 'Continue with Google' }).click();
             await expect
                 .poll(() => requestBody)

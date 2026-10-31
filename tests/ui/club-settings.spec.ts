@@ -243,6 +243,25 @@ test('Member sees read-only controls and can confirm leaving', async ({ context,
 
 for (const viewport of screenshotViewports) {
     test(
+        `Club invitation ticket and Moderators match ${viewport.name}`,
+        { tag: '@visual' },
+        async ({ context, page }) => {
+            await authenticate(context, `valid-settings-admin-dialogs-${viewport.name}`);
+            await open(page, viewport);
+            await page.getByRole('button', { name: 'Invite members' }).click();
+            await expect(
+                page.getByRole('button', { name: 'Copy link', exact: true }),
+            ).toBeEnabled();
+            await settle(page);
+            await expect(page).toHaveScreenshot(`club-invite-ticket-${viewport.name}.png`);
+            await page.keyboard.press('Escape');
+            await page.getByRole('button', { name: 'Manage Moderators' }).click();
+            await settle(page);
+            await expect(page).toHaveScreenshot(`club-moderators-${viewport.name}.png`);
+        },
+    );
+
+    test(
         `Club Admin settings match the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {

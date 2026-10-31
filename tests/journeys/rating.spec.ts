@@ -199,9 +199,11 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
         const blocking = (await blockingResponse.json()) as { id: string };
         expect((await create()).status()).toBe(409);
         await page.goto(`/clubs/${session.clubId}/sessions`);
-        const ratings = page.getByRole('region', { name: 'Active Ratings' });
-        await expect(ratings.getByRole('link')).toHaveCount(2);
-        await expect(ratings.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
+        const active = page.getByRole('region', { name: 'Active Sessions' });
+        await expect(active.getByRole('listitem')).toHaveCount(3);
+        await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toBeVisible();
+        await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
+        await expect(active.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
         await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveAttribute(
             'href',
             `/sessions/${blocking.id}`,
@@ -214,7 +216,9 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
             ).status(),
         ).toBe(201);
         await page.reload();
-        await expect(ratings.getByRole('link')).toHaveCount(1);
+        await expect(active.getByRole('listitem')).toHaveCount(2);
+        await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toHaveCount(0);
+        await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
         const history = page.getByRole('region', { name: 'History', exact: true });
         await expect(history.getByRole('link')).toHaveAttribute('href', `/sessions/${session.id}`);
         await history.getByRole('link').click();

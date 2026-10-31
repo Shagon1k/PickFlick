@@ -7,6 +7,7 @@ import type {
     IManagedInvitation,
     TCreateClubRequest,
     TInvitationPreview,
+    TPastSessionMembers,
     TRespondInvitation,
 } from '@pickflick/contracts';
 
@@ -192,6 +193,16 @@ type TClubRoute = [
 
 /** Routes under one Club, keyed by method and the path after `/clubs/<id>`. */
 const clubRoutes: TClubRoute[] = [
+    [
+        'GET',
+        /^\/sessions\/past\/members$/u,
+        (_request, response, token) => {
+            const members: TPastSessionMembers = settingsProjection(token).members.map(
+                ({ id, displayName }) => ({ id, displayName, status: 'ACTIVE' }),
+            );
+            sendJson(response, 200, members);
+        },
+    ],
     [
         'POST',
         /^\/members\/[^/]+\/remove$/u,

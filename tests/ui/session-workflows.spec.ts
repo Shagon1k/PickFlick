@@ -134,6 +134,7 @@ test('Session save failure keeps entries and offline submit explains recovery', 
 }) => {
     await authenticate(context, 'valid-session-workflow-failure');
     await page.goto(ROUTE);
+    await settle(page);
     await page.getByLabel('Date').fill('2090-12-01');
     await page.getByLabel('Location').fill('Room A');
     await page.getByLabel('Topic').fill('API failure');

@@ -90,8 +90,9 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
         await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
         await expect(
             page
-                .getByRole('region', { name: 'Your rating', exact: true })
-                .getByRole('list')
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .filter({ hasText: 'You' })
                 .getByText('8/10', { exact: true }),
         ).toBeVisible();
     } finally {

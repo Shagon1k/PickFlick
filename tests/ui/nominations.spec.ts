@@ -46,7 +46,7 @@ test('Search selection and failure/offline states retain the selected Movie', as
     await expect(
         page.getByText('We could not save this action. Your selection is still here; try again.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Change film' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove selected Movie' })).toBeVisible();
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Nominate This' }).click();
     await expect(
@@ -64,11 +64,15 @@ test('Operator early close traps and returns focus and requires confirmation', a
     await page.goto(PATH);
     const close = page.getByRole('button', { name: 'Session settings', exact: true });
     await close.click();
+    await settle(page);
     await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
     await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await settle(page);
     await expect(close).toBeFocused();
     await close.click();
+    await settle(page);
     await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
     await page.getByRole('button', { name: 'Confirm close' }).click();
