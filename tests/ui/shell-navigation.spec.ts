@@ -136,16 +136,29 @@ test('Library and Settings menus expose distinct subsection destinations', async
     await mobileNavigation.getByRole('button', { name: 'Settings' }).click();
     const settingsNavigation = page.getByRole('navigation', { name: 'Settings sections' });
     const settingsLinks = settingsNavigation.getByRole('link');
-    // Profile, notification, subscription and privacy pages arrive in Phase 19.
-    await expect(settingsLinks).toHaveText(['Admin Panel', 'Pricing', 'Contact Us']);
+    await expect(settingsLinks).toHaveText([
+        'Admin Panel',
+        'Profile',
+        'Notifications',
+        'Subscription',
+        'Privacy & data',
+    ]);
     expect(
         new Set(
             await settingsLinks.evaluateAll((links) =>
                 links.map((link) => link.getAttribute('href')),
             ),
         ).size,
-    ).toBe(3);
+    ).toBe(5);
     await expect(settingsNavigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await expect(settingsNavigation.getByRole('link', { name: 'Subscription' })).toHaveAttribute(
+        'href',
+        '/shell-preview/settings?tab=subscription',
+    );
+    await expect(settingsNavigation.getByRole('link', { name: 'Privacy & data' })).toHaveAttribute(
+        'href',
+        '/shell-preview/settings?tab=privacy',
+    );
 });
 
 test('Club and Admin section navigation exposes distinct destinations and current state', async ({
