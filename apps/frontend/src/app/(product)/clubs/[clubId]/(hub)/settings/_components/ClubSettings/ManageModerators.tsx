@@ -47,7 +47,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
 
     function renderGroup(title: string, group: IClubMember[]) {
         return (
-            <section aria-label={title}>
+            <div aria-label={title} role="group">
                 <h3 className={styles.kicker}>{title}</h3>
                 {group.length ? (
                     <ul className={styles.memberList}>
@@ -86,7 +86,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                 ) : (
                     <p className={styles.cardLead}>Nobody yet.</p>
                 )}
-            </section>
+            </div>
         );
     }
 

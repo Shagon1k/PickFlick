@@ -75,7 +75,7 @@ for (const viewport of canonicalViewports) {
             // The running Session and both Rating Sessions share one list.
             const active = page.getByRole('region', { name: 'Active Sessions', exact: true });
             await expect(active).toContainText('nomination');
-            await expect(active.getByRole('link')).toHaveCount(3);
+            await expect(active.getByRole('listitem')).toHaveCount(3);
             await expect(active.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
             const history = page.getByRole('region', { name: 'History', exact: true });
             await expect(history.getByRole('link')).toHaveCount(2);
@@ -113,9 +113,14 @@ test('Hub history keeps hidden scores unavailable', async ({ context, page }) =>
     await expect(history.getByText('8.0', { exact: true })).toHaveCount(0);
 });
 
-test('Hub Sessions explains empty Rating and history collections', async ({ context, page }) => {
+test('Hub Sessions lists only the running Session and explains an empty history', async ({
+    context,
+    page,
+}) => {
     await authenticate(context, 'valid-hub-empty');
     await page.goto(HUB_ROUTE);
-    await expect(page.getByText('No Sessions awaiting ratings.')).toBeVisible();
+    await expect(
+        page.getByRole('region', { name: 'Active Sessions', exact: true }).getByRole('listitem'),
+    ).toHaveCount(1);
     await expect(page.getByText('No completed Sessions yet.')).toBeVisible();
 });

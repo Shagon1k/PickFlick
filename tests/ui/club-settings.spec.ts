@@ -97,7 +97,7 @@ test('Admin can submit settings, change a role, and confirm archive', async ({ c
     await moderators.getByRole('button', { name: 'Promote Morgan Member' }).click();
     await expect(
         moderators
-            .getByRole('region', { name: 'Moderators' })
+            .getByRole('group', { name: 'Moderators' })
             .getByRole('button', { name: 'Remove Morgan Member' }),
     ).toBeVisible();
     await save.click();
