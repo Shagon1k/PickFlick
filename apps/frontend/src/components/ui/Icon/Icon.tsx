@@ -29,7 +29,6 @@ export type TIconName =
     | 'catalog'
     | 'chart'
     | 'chat'
-    | 'chevron-right'
     | 'circle'
     | 'clock'
     | 'close'
@@ -55,6 +54,7 @@ export type TIconName =
     | 'sessions'
     | 'settings'
     | 'sign-out'
+    | 'skip-forward'
     | 'user-plus'
     | 'user-x'
     | 'watchlist';

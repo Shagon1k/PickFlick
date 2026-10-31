@@ -154,7 +154,7 @@ function getMenuItems(
         items.push({
             id: 'next-phase',
             label: actions.closePhaseLabel,
-            icon: 'chevron-right',
+            icon: 'skip-forward',
             onSelect: actions.onClosePhase,
         });
     if (session.canManage)

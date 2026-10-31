@@ -17,9 +17,10 @@ export const actionGlyphs = {
             <path d="M8 9h8M8 13h5" />
         </>
     ),
-    'chevron-right': (
+    'skip-forward': (
         <>
-            <path d="m9 18 6-6-6-6" />
+            <path d="M5 5l10 7-10 7z" />
+            <path d="M19 5v14" />
         </>
     ),
     edit: (
