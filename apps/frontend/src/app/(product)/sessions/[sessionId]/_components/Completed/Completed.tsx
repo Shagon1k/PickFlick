@@ -7,7 +7,8 @@ import {
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import { formatCount, formatUtcDateTime } from '#lib/format';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
+import { formatCount } from '#lib/format';
 
 import Rating from '../Rating/Rating';
 import SelectionSummary, { HIDDEN_BREAKDOWN_COPY } from '../SelectionOutcome/SelectionSummary';
@@ -120,7 +121,7 @@ function NominationHistory({
         <>
             {outcome.author !== null ? <p>Winner nominated by {outcome.author}</p> : null}
             <p>
-                Selection closed {formatUtcDateTime(outcome.closedAt)} ·{' '}
+                Selection closed <LocalTime value={outcome.closedAt} /> ·{' '}
                 {outcome.closure === 'MANUAL' ? 'by a Club operator' : 'automatically'}
             </p>
             <HistoricalVotes breakdown={outcome.breakdown} />

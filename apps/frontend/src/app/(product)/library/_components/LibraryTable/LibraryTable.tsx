@@ -7,8 +7,9 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
-import { formatCount, formatUtcDate } from '#lib/format';
+import { formatCount } from '#lib/format';
 
 import { buildLibraryPath } from '../../library-path';
 import LibraryFilters from '../LibraryFilters/LibraryFilters';
@@ -60,7 +61,7 @@ export default function LibraryTable({
             ),
             genres: item.genres.join(', ') || '—',
             year: item.releaseYear ?? '—',
-            date: formatUtcDate(date),
+            date: <LocalTime format="date" value={date} />,
             action,
         },
     });

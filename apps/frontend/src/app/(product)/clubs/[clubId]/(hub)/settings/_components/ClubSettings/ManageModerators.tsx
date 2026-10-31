@@ -6,8 +6,9 @@ import { useActionState, useState } from 'react';
 import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import { changeClubMemberRoleAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Modal from '#components/ui/Modal/Modal';
-import { formatUtcDate, getMonogram } from '#lib/format';
+import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
@@ -85,7 +86,9 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                                 <span aria-hidden="true">{getMonogram(member.displayName)}</span>
                                 <div>
                                     <strong>{member.displayName}</strong>
-                                    <small>Joined {formatUtcDate(member.joinedAt)}</small>
+                                    <small>
+                                        Joined <LocalTime format="date" value={member.joinedAt} />
+                                    </small>
                                 </div>
                             </div>
                             <MemberRoleForm

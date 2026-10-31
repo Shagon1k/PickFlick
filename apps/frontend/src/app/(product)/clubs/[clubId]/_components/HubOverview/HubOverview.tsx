@@ -2,8 +2,9 @@ import type { IClubHub } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatAverage, formatHours, formatUtcDate, getMonogram } from '#lib/format';
+import { formatAverage, formatHours, getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import ActiveRatings from '../ActiveRatings/ActiveRatings';
@@ -94,7 +95,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                                 </Link>{' '}
                                 · {session.phase.toLowerCase()} ·{' '}
                                 <time dateTime={session.updatedAt}>
-                                    {formatUtcDate(session.updatedAt)}
+                                    <LocalTime format="date" value={session.updatedAt} />
                                 </time>
                             </li>
                         ))}

@@ -1,0 +1,4 @@
+/* LocalTime: the server's UTC text holds the space but never shows. */
+.localTime[data-pending] {
+    visibility: hidden;
+}

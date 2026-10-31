@@ -10,9 +10,9 @@ import { getWatchlistItem } from '#api/watchlist.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
-import { formatUtcDate } from '#lib/format';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import MovieLinks from './_components/MovieLinks/MovieLinks';
@@ -54,7 +54,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 {result.state === 'stale' ? (
                     <Alert tone="warning">
                         Showing cached details while the provider is unavailable. Last updated{' '}
-                        {formatUtcDate(result.fetchedAt)}.
+                        <LocalTime format="date" value={result.fetchedAt} />.
                     </Alert>
                 ) : null}
                 {result.state === 'partial' ? (

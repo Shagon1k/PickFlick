@@ -1,7 +1,7 @@
 import type { TLiveSelectionOutcome } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import { formatUtcDateTime } from '#lib/format';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 
 import styles from './SelectionOutcome.module.scss';
 import SelectionSummary, { HIDDEN_BREAKDOWN_COPY } from './SelectionSummary';
@@ -27,7 +27,7 @@ export default function SelectionOutcome({ data }: ISelectionOutcomeProps) {
                     {data.closure === 'MANUAL'
                         ? 'Closed by a Club operator'
                         : 'All accepted participants submitted'}{' '}
-                    · {formatUtcDateTime(data.closedAt)}
+                    · <LocalTime value={data.closedAt} />
                 </p>
             </div>
             {data.breakdown ? (

@@ -18,8 +18,9 @@ import Switch from '#components/ui/Switch/Switch';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '#lib/form-errors';
-import { formatUtcDateTime } from '#lib/format';
+import { formatInstant } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
+import { useViewerTimeZone } from '#lib/use-is-hydrated';
 
 import { saveSessionAction } from './actions';
 import {
@@ -50,6 +51,7 @@ export default function SessionForm({
 }: ISessionFormProps) {
     const router = useRouter();
     const { message, setMessage, isPending, run } = useActionStatus();
+    const timeZone = useViewerTimeZone();
     const [created, setCreated] = useState<TSession | null>(null);
     const form = useForm<ISessionValues>({
         initialValues: getInitialSessionValues(session),
@@ -155,11 +157,7 @@ export default function SessionForm({
                     labelHint="optional"
                     maxLength={DURATION_INPUT_LENGTH}
                     placeholder="hh:mm"
-                    hint={
-                        session?.deadlineAt
-                            ? `Current deadline: ${formatUtcDateTime(session.deadlineAt)}. Leave blank to keep it.`
-                            : 'hh:mm from now. Leave blank for no deadline.'
-                    }
+                    hint={describeDeadline(session?.deadlineAt, timeZone)}
                 />
             ) : null}
             {session?.phase === 'NOMINATION' && session.deadlineAt ? (
@@ -276,4 +274,9 @@ function SessionResult({ session }: { session: TSession }) {
             <ButtonLink href={`/clubs/${session.clubId}`}>Back to Club Hub</ButtonLink>
         </div>
     );
+}
+
+function describeDeadline(deadlineAt: string | null | undefined, timeZone: string | undefined) {
+    if (!deadlineAt) return 'hh:mm from now. Leave blank for no deadline.';
+    return `Current deadline: ${formatInstant(deadlineAt, 'dateTime', timeZone)}. Leave blank to keep it.`;
 }

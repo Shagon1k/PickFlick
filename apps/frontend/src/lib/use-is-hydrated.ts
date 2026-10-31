@@ -15,3 +15,8 @@ export function useIsHydrated(): boolean {
         () => false,
     );
 }
+
+/** The zone to format moments in: UTC while the server's markup hydrates, then the viewer's own. */
+export function useViewerTimeZone(): string | undefined {
+    return useIsHydrated() ? undefined : 'UTC';
+}

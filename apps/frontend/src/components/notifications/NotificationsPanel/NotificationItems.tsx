@@ -6,7 +6,7 @@ import { useNotifications } from '#components/notifications/notifications-contex
 import styles from '#components/shells/product-navigation.module.scss';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
-import { formatUtcShortDateTime } from '#lib/format';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 
 const NOTIFICATION_ICONS: Partial<Record<TNotificationEvent, TIconName>> = {
     SESSION_STARTED: 'clapperboard',
@@ -67,7 +67,7 @@ function NotificationItem({ item, onRead }: { item: TNotificationItem; onRead: (
     const body = (
         <>
             <p>{item.message}</p>
-            <time dateTime={item.createdAt}>{formatUtcShortDateTime(item.createdAt)}</time>
+            <LocalTime format="short" value={item.createdAt} />
         </>
     );
     return (

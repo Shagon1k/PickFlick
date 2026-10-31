@@ -1,12 +1,13 @@
 'use client';
 
 import type { TPendingInvitation } from '@pickflick/contracts';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { useProductOverlay } from '#components/shells/product-overlay';
 import Button from '#components/ui/Button/Button';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
-import { formatCount, formatUtcDate } from '#lib/format';
+import { formatCount } from '#lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';
@@ -188,15 +189,25 @@ export default function PendingInvites() {
     );
 }
 
-function describeInvitation(invitation: TPendingInvitation): string {
+function describeInvitation(invitation: TPendingInvitation): ReactNode {
     if (invitation.kind === 'club')
-        return `Invited by ${invitation.inviterName} · ${formatCount(invitation.memberCount, 'member')} · Expires ${formatUtcDate(invitation.expiresAt)}`;
-    return invitation.scheduledAt
-        ? `${invitation.clubName} · ${new Intl.DateTimeFormat('en', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              timeZone: 'UTC',
-          }).format(new Date(invitation.scheduledAt))}`
-        : invitation.clubName;
+        return (
+            <>
+                Invited by {invitation.inviterName} ·{' '}
+                {formatCount(invitation.memberCount, 'member')} · Expires{' '}
+                <LocalTime format="date" value={invitation.expiresAt} />
+            </>
+        );
+    if (!invitation.scheduledAt) return <>{invitation.clubName}</>;
+    const day = new Intl.DateTimeFormat('en', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(invitation.scheduledAt));
+    return (
+        <>
+            {invitation.clubName} · {day}
+        </>
+    );
 }

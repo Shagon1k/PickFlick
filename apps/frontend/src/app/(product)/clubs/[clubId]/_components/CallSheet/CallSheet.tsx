@@ -67,7 +67,7 @@ export default function CallSheet({
                     {time ? (
                         <div>
                             <dt>Call time</dt>
-                            <dd title="Scheduled time in UTC">{time}</dd>
+                            <dd>{time}</dd>
                         </div>
                     ) : (
                         <div className={styles.location}>

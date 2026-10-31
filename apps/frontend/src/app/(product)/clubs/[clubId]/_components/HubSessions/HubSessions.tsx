@@ -4,7 +4,7 @@ import Link from 'next/link';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { formatAverage, formatCount, formatUtcDate } from '#lib/format';
+import { formatAverage, formatCalendarDate, formatCount } from '#lib/format';
 
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessions.module.scss';
@@ -53,7 +53,7 @@ function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: 
                             </strong>
                             <span>
                                 {session.scheduledAt
-                                    ? formatUtcDate(session.scheduledAt)
+                                    ? formatCalendarDate(session.scheduledAt)
                                     : 'Not scheduled'}
                                 {session.location ? ` · ${session.location}` : ''} ·{' '}
                                 {formatCount(session.acceptedCount, 'attendee')}

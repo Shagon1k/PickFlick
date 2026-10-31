@@ -6,7 +6,8 @@ import { useState, useTransition } from 'react';
 import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { formatUtcDate, formatUtcDateTime } from '#lib/format';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
+import { formatCalendarDate } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
@@ -64,12 +65,14 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                         <p>{view.topic ?? 'Untitled Session'}</p>
                         <p>
                             {view.scheduledAt
-                                ? formatUtcDateTime(view.scheduledAt)
+                                ? formatCalendarDate(view.scheduledAt)
                                 : 'Not scheduled'}
                         </p>
                         <p>{view.location}</p>
                         <p>Invited by {view.inviterName}</p>
-                        <p>Expires {formatUtcDate(view.expiresAt)}</p>
+                        <p>
+                            Expires <LocalTime format="date" value={view.expiresAt} />
+                        </p>
                     </div>
                     <div className={styles.actions}>
                         <Button disabled={!isReady || isPending} onClick={() => respond('accept')}>
