@@ -5,7 +5,8 @@ import { useRef, useState } from 'react';
 
 import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
-import ButtonLink from '#components/ui/Button/ButtonLink';
+import InviteDialog from '#components/clubs/InviteDialog/InviteDialog';
+import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount, getMonogram } from '#lib/format';
@@ -55,9 +56,14 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     Members
                 </h2>
                 {permissions.createInvitations ? (
-                    <ButtonLink href={`/clubs/${club.id}/settings`} size="small">
-                        + Invite
-                    </ButtonLink>
+                    <InviteDialog
+                        projection={projection}
+                        trigger={(onOpen) => (
+                            <Button onClick={onOpen} size="small">
+                                + Invite
+                            </Button>
+                        )}
+                    />
                 ) : null}
             </div>
             <p

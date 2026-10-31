@@ -1,0 +1,177 @@
+.dialog {
+    display: grid;
+    gap: var(--gap-sm);
+}
+
+.note {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+}
+
+/* The link is a ticket: its stub, behind a gold hairline, is the Copy control. */
+.ticket {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    background: linear-gradient(135deg, var(--surface-lit), var(--surface));
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+}
+
+.main {
+    display: grid;
+    gap: var(--gap-xs);
+    min-width: 0;
+    padding: var(--gap-sm) var(--gap-md);
+}
+
+.kicker {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    color: var(--ivory-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+}
+
+.main input {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--hit);
+    padding: 0 var(--gap-sm);
+    text-overflow: ellipsis;
+    font: var(--fs-meta) var(--font-mono);
+    color: var(--fg-secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.stub {
+    display: grid;
+    place-items: center;
+    min-width: 64px;
+    color: var(--gold-light);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-left: 1px solid var(--gold-border);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    transition: background var(--motion-local) ease;
+}
+
+.stub:hover {
+    background: var(--gold-soft);
+}
+
+.stub:focus-visible {
+    outline: 2px solid var(--gold-border);
+    outline-offset: -2px;
+}
+
+.stub:disabled {
+    cursor: progress;
+}
+
+.stub svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Older links fold into one quiet row in the site's card style. */
+.recent {
+    font-size: var(--fs-body-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.recent summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--hit);
+    padding: 0 var(--gap-sm);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    list-style: none;
+}
+
+.recent summary::-webkit-details-marker {
+    display: none;
+}
+
+.recent summary:hover {
+    color: var(--fg);
+}
+
+.recent summary svg {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--motion-local) ease;
+}
+
+.recent[open] summary svg {
+    transform: rotate(180deg);
+}
+
+.recent ul {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+}
+
+.recent li {
+    display: flex;
+    gap: var(--gap-md);
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--hit);
+    padding: 0 var(--gap-sm);
+    color: var(--fg-secondary);
+}
+
+.recent li + li {
+    border-top: 1px solid var(--border);
+}
+
+.recent li:not([data-state='pending']) {
+    opacity: 0.6;
+}
+
+.recent li button {
+    min-height: var(--hit);
+    padding: 0;
+    font: inherit;
+    color: var(--danger-text);
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+.recent li button:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.recent li button:disabled {
+    cursor: progress;
+    opacity: 0.42;
+}
+
+.status {
+    margin: 0;
+    font-size: var(--fs-meta);
+    color: var(--danger-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .recent summary svg,
+    .stub {
+        transition: none;
+    }
+}

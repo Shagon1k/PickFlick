@@ -32,6 +32,12 @@ test(
         await expect(page.getByText('Morgan Member')).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeFocused();
         await expect(page.getByRole('status')).toContainText('Shared history is preserved');
+        // Invite opens the link dialog right here instead of sending the Admin to Manage Club.
+        await page.getByRole('button', { name: '+ Invite' }).click();
+        await expect(
+            page.getByRole('dialog', { name: 'Invite to this Club' }).getByLabel('Invitation link'),
+        ).toHaveValue(/\/invite\/club\//u);
+        await expect(page).toHaveURL(new RegExp(`/clubs/${CLUB_ID}/members$`, 'u'));
     },
 );
 
@@ -46,7 +52,7 @@ test('Member and restricted Club views explain unavailable actions without losin
     await authenticate(context, 'valid-members-adminless');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
-    await expect(page.getByRole('link', { name: '+ Invite' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '+ Invite' })).toHaveCount(0);
     await page.goto(`/clubs/${CLUB_ID}/settings`);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Invite members' }).click();
@@ -54,7 +60,7 @@ test('Member and restricted Club views explain unavailable actions without losin
     await expect(
         invitations.getByText('New invitations are paused.', { exact: false }),
     ).toBeVisible();
-    await expect(invitations.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
+    await expect(invitations.getByRole('button', { name: 'New link' })).toHaveCount(0);
     await authenticate(context, 'valid-members-over-limit');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText(

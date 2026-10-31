@@ -177,8 +177,9 @@ for (const state of ['admin-over-limit', 'adminless']) {
             await open(page, viewport);
             await page.getByRole('button', { name: 'Invite members' }).click();
             const card = page.getByRole('dialog', { name: 'Invite to this Club' });
-            await expect(card.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
-            // Opening the dialog loads the recent invitations.
+            await expect(card.getByRole('button', { name: 'New link' })).toHaveCount(0);
+            // Opening the dialog loads the recent invitations under one folded row.
+            await card.getByText(/^Recent links/u).click();
             await expect(card.getByText('pending · expires 2026-10-10')).toBeVisible();
             // Mantine fades dialogs in; axe would measure contrast through the partial opacity.
             await expect(card).toHaveCSS('opacity', '1');

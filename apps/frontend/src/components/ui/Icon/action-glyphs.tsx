@@ -17,6 +17,17 @@ export const actionGlyphs = {
             <path d="M8 9h8M8 13h5" />
         </>
     ),
+    'chevron-down': (
+        <>
+            <path d="m6 9 6 6 6-6" />
+        </>
+    ),
+    copy: (
+        <>
+            <rect height="12" rx="2" width="12" x="9" y="9" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+        </>
+    ),
     'skip-forward': (
         <>
             <path d="M5 5l10 7-10 7z" />

@@ -236,13 +236,6 @@
     align-items: center;
 }
 
-.explanation {
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    line-height: var(--lh-body);
-    color: var(--fg-secondary);
-}
-
 .formFooter {
     display: flex;
     gap: var(--gap-md);
@@ -525,68 +518,4 @@
     .cardActions button {
         width: 100%;
     }
-}
-
-.invitationLink {
-    display: grid;
-    gap: var(--gap-xs);
-    margin-block: var(--gap-sm) 0;
-}
-
-.invitationLinkRow {
-    display: flex;
-    gap: var(--gap-xs);
-    align-items: center;
-}
-
-.invitationLink p {
-    margin: 0;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-}
-
-.invitationLink input {
-    flex: 1 1 auto;
-    width: 100%;
-    min-width: 0;
-    min-height: var(--hit);
-    padding: var(--gap-sm);
-    color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.invitationList {
-    display: grid;
-    gap: var(--gap-sm);
-    padding: 0;
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    list-style: none;
-}
-
-.invitationList li {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    justify-content: space-between;
-}
-
-.invitationListTitle {
-    margin: var(--gap-md) 0 var(--gap-xs);
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-
-.invitationStatus {
-    margin: var(--gap-sm) 0 0;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-}
-
-.invitationStatus:empty {
-    display: none;
 }

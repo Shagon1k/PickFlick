@@ -238,19 +238,19 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
     const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
-    // Opening the dialog loads the recent invitations once; creation waits for that load.
-    await expect(dialog.getByRole('button', { name: 'Create invitation' })).toBeEnabled();
-    await dialog.getByRole('button', { name: 'Create invitation' }).click();
+    // Opening the dialog loads the recent invitations once, then tears off a fresh link.
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
     await expect(dialog.getByRole('status')).toContainText('Link ready. Share it with one person.');
     await expect(dialog.getByRole('status')).toContainText('could not be refreshed');
+    await dialog.getByText(/^Recent links/u).click();
     await expect(dialog.getByText(/latest link/u)).toBeVisible();
     // Closing and reopening keeps the created link.
     const original = await link.inputValue();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Invite members' }).click();
     await expect(link).toHaveValue(original);
+    await dialog.getByText(/^Recent links/u).click();
     await dialog.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(link).toHaveCount(0);
 });
@@ -262,12 +262,12 @@ test('Club Admin creates, copies, and revokes a link through Manage Club', async
     await signIn(context, 'manager');
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
-    await page.getByRole('button', { name: 'Create invitation' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveValue(
         /\/invite\/club\/[A-Za-z0-9_-]{43}$/,
     );
     await page.getByRole('button', { name: 'Copy link' }).click();
     await expect(page.getByRole('status').last()).toHaveText(/copied|Copy is unavailable/);
+    await page.getByText(/^Recent links/u).click();
     await page.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveCount(0);
     await expect(page.getByRole('status').last()).toHaveText('Invitation revoked.');

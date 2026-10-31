@@ -52,7 +52,8 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
     await test.step('a User joins through a Club invitation link', async () => {
         await admin.goto(`${clubPath}/settings`);
         await admin.getByRole('button', { name: 'Invite members' }).click();
-        await admin.getByRole('button', { name: 'Create invitation' }).click();
+        // Opening the dialog tears off a fresh link.
+        await expect(admin.getByLabel('Invitation link')).toHaveValue(/\/invite\/club\//u);
         const link = await admin.getByLabel('Invitation link').inputValue();
         await member.goto(link);
         await member.getByRole('button', { name: 'Accept Invitation' }).click();
