@@ -49,6 +49,8 @@ for (const viewport of canonicalViewports) {
             await score.press('Enter');
             await expect(page.getByRole('dialog').filter({ hasText: 'Top scores' })).toBeVisible();
             await page.keyboard.press('Escape');
+            // Axe would otherwise measure the popover's fading text.
+            await expect(page.getByRole('dialog')).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
             expect(

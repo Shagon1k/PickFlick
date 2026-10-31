@@ -60,7 +60,7 @@ test('Achievement shelves retain earned history and isolate owners through the r
         const archivist = page.getByRole('article', { name: 'Archivist', exact: true });
         await expect(page.getByRole('article')).toHaveCount(14);
         await expect(archivist.getByText('Unlocked', { exact: true })).toBeVisible();
-        await expect(archivist.getByRole('progressbar')).toHaveAttribute('value', '10');
+        await expect(archivist.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '10');
         const before = await prisma.achievementAward.findFirstOrThrow({
             where: { userId: users[0], key: 'archivist' },
         });
@@ -81,7 +81,7 @@ test('Achievement shelves retain earned history and isolate owners through the r
         await context.addCookies(await backend.cookiesFor(users[1], '127.0.0.1'));
         await page.goto('/library?tab=achievements');
         await expect(archivist.getByText('Not started', { exact: true })).toBeVisible();
-        await expect(archivist.getByRole('progressbar')).toHaveAttribute('value', '0');
+        await expect(archivist.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
         await page.goto(`/clubs/${clubId}/achievements`);
         await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
     } finally {

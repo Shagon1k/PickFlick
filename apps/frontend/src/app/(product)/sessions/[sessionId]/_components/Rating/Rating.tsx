@@ -42,7 +42,7 @@ export default function Rating({
             aria-labelledby="rating-heading"
         >
             <h2 id="rating-heading" ref={headingRef} tabIndex={-1}>
-                Your rating
+                {data.own || data.canSubmit || !isCompleted ? 'Your rating' : 'Ratings'}
             </h2>
             {renderOwnRating()}
             {isImported ? (
