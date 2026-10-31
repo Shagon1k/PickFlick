@@ -1,5 +1,10 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { isOpenSessionPhase, type TClubLifecycle, type TSessionPhase } from '@pickflick/contracts';
+import {
+    isOpenSessionPhase,
+    type TClubLifecycle,
+    type TClubRole,
+    type TSessionPhase,
+} from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import {
@@ -56,6 +61,20 @@ export function getOwnStatus(
         rows.find(({ status }) => status === 'REMOVED') ??
         rows.find(({ status }) => status === 'ACCEPTED');
     return (standing ?? rows.find((row) => row.membershipId === membershipId))?.status;
+}
+
+/** Session removal follows the Club hierarchy: nobody removes the Admin; Moderators remove Members. */
+export function canRemoveParticipant(actorRole: TClubRole, targetRole: TClubRole): boolean {
+    return targetRole !== 'ADMIN' && (actorRole === 'ADMIN' || targetRole === 'MEMBER');
+}
+
+/** An operator removes someone else, within the Club hierarchy; their own exit is Leave. */
+export function assertRemovable(
+    actor: { id: string; role: TClubRole },
+    target: { id: string; role: TClubRole },
+) {
+    if (target.id === actor.id) throw new ConflictException({ reason: 'USE_LEAVE' });
+    if (!canRemoveParticipant(actor.role, target.role)) throw new ForbiddenException();
 }
 
 export function canJoinSession(input: {

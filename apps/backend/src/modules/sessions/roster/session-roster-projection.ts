@@ -4,7 +4,12 @@ import type { Prisma } from '@pickflick/database';
 
 import { getInviteState } from '../../../common/invite-token.js';
 import { findMembership } from '../../clubs/access/club-access.js';
-import { canJoinSession, canManage, getOwnStatus } from '../session-access.js';
+import {
+    canJoinSession,
+    canManage,
+    canRemoveParticipant,
+    getOwnStatus,
+} from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -62,6 +67,7 @@ export async function readRoster(
                 canRemove:
                     isManager &&
                     participant.membershipId !== membership.id &&
+                    canRemoveParticipant(membership.role, participant.membership.role) &&
                     ['INVITED', 'ACCEPTED'].includes(participant.status),
                 invitation:
                     isManager && participant.invitations[0]

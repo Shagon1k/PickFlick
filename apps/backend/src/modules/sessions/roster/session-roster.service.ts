@@ -17,7 +17,7 @@ import {
     type TAuditEvent,
 } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager, assertOpen, getOwnStatus } from '../session-access.js';
+import { assertManager, assertOpen, assertRemovable, getOwnStatus } from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
@@ -176,8 +176,7 @@ export class SessionRosterService {
                 include: { membership: true },
             });
             if (!participant) throw new NotFoundException();
-            if (isRemoving && participant.membershipId === membership.id)
-                throw new ConflictException({ reason: 'USE_LEAVE' });
+            if (isRemoving) assertRemovable(membership, participant.membership);
             const status = isRemoving ? 'REMOVED' : 'LEFT';
             if (participant.status === status) return;
             if (
