@@ -85,7 +85,12 @@ export default function LibraryTable({
                       item,
                       index,
                       item.updatedAt,
-                      <PersonalRating movieId={item.movieId} rating={item} onSaved={handleSaved} />,
+                      <PersonalRating
+                          isInTable
+                          movieId={item.movieId}
+                          rating={item}
+                          onSaved={handleSaved}
+                      />,
                   ),
               );
     return (

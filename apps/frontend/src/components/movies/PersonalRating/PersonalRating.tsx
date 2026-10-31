@@ -20,10 +20,13 @@ export default function PersonalRating({
     movieId,
     rating,
     onSaved,
+    isInTable = false,
 }: {
     movieId: string;
     rating: TPersonalMovieRating | null;
     onSaved?: (message: string) => void;
+    /** A Library table cell shows the plain score, as the prototype's Rating column does. */
+    isInTable?: boolean;
 }) {
     const id = useId();
     const [isOpen, setIsOpen] = useState(false);
@@ -63,7 +66,8 @@ export default function PersonalRating({
             onChange={setIsOpen}
             trigger={
                 <Button
-                    variant="cell"
+                    variant={isInTable ? 'ghost' : 'cell'}
+                    size={isInTable ? 'small' : 'default'}
                     aria-label={
                         rating
                             ? `Your rating: ${rating.score} out of ${RATING_SCALE.max}. Edit rating`
@@ -71,15 +75,17 @@ export default function PersonalRating({
                     }
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    <Icon name="ratings" />
-                    {rating ? (
+                    {isInTable ? null : <Icon name="ratings" />}
+                    {rating && isInTable ? (
+                        <strong className={styles.tableScore}>{rating.score}</strong>
+                    ) : null}
+                    {rating && !isInTable ? (
                         <span className={styles.pill}>
                             <strong>{rating.score}</strong>
                             <small>You</small>
                         </span>
-                    ) : (
-                        'Rate'
-                    )}
+                    ) : null}
+                    {rating ? null : 'Rate'}
                 </Button>
             }
         >
