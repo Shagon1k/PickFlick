@@ -92,12 +92,16 @@ test('Admin can submit settings, change a role, and confirm archive', async ({ c
 
     await page.getByRole('button', { name: 'Manage Moderators' }).click();
     const moderators = page.getByRole('dialog', { name: 'Manage Moderators' });
-    await moderators
-        .getByRole('group', { name: 'Role for Morgan Member' })
-        .getByRole('radio', { name: 'Moderator' })
-        .check();
-    await moderators.getByRole('button', { name: 'Save role' }).click();
-    await expect(moderators.getByText('Member role updated.')).toBeVisible();
+    const save = moderators.getByRole('button', { name: 'Save changes' });
+    await expect(save).toBeDisabled();
+    await moderators.getByRole('button', { name: 'Promote Morgan Member' }).click();
+    await expect(
+        moderators
+            .getByRole('region', { name: 'Moderators' })
+            .getByRole('button', { name: 'Remove Morgan Member' }),
+    ).toBeVisible();
+    await save.click();
+    await expect(moderators.getByRole('status')).toHaveText('Moderators saved.');
     await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: 'Archive Club' }).click();

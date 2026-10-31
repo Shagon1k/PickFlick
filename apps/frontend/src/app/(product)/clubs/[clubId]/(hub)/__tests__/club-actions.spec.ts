@@ -2,7 +2,7 @@ import { ApiError } from '#lib/api.server';
 
 import {
     changeClubLifecycleAction,
-    changeClubMemberRoleAction,
+    changeClubMemberRolesAction,
     removeClubAvatarAction,
     saveClubInfoAction,
     updateClubSettingsAction,
@@ -121,17 +121,24 @@ describe('Club settings actions', () => {
         expect(api.replaceClubAvatar).not.toHaveBeenCalled();
     });
 
-    it('should send the chosen member role', async () => {
-        await changeClubMemberRoleAction(
+    it('should send each changed member role and refuse malformed changes', async () => {
+        const OTHER_ID = '30000000-0000-4000-8000-000000000009';
+        await changeClubMemberRolesAction(
             CLUB_ID,
-            MEMBERSHIP_ID,
             previous,
-            formData({ role: 'MODERATOR' }),
+            formData({ [`role:${MEMBERSHIP_ID}`]: 'MODERATOR', [`role:${OTHER_ID}`]: 'MEMBER' }),
         );
 
-        expect(api.changeMemberRole).toHaveBeenCalledWith(CLUB_ID, MEMBERSHIP_ID, {
+        expect(api.changeMemberRole).toHaveBeenNthCalledWith(1, CLUB_ID, MEMBERSHIP_ID, {
             role: 'MODERATOR',
         });
+        expect(api.changeMemberRole).toHaveBeenNthCalledWith(2, CLUB_ID, OTHER_ID, {
+            role: 'MEMBER',
+        });
+        await expect(
+            changeClubMemberRolesAction(CLUB_ID, previous, formData({ 'role:x': 'ADMIN' })),
+        ).resolves.toMatchObject({ status: 'error' });
+        expect(api.changeMemberRole).toHaveBeenCalledTimes(2);
     });
 
     it('should return recoverable state when the API is unreachable', async () => {
@@ -141,11 +148,10 @@ describe('Club settings actions', () => {
 
         const results = await Promise.all([
             updateClubSettingsAction(CLUB_ID, previous, settingsForm()),
-            changeClubMemberRoleAction(
+            changeClubMemberRolesAction(
                 CLUB_ID,
-                MEMBERSHIP_ID,
                 previous,
-                formData({ role: 'MEMBER' }),
+                formData({ [`role:${MEMBERSHIP_ID}`]: 'MEMBER' }),
             ),
             changeClubLifecycleAction(CLUB_ID, 'reactivate', previous, formData({})),
             saveClubInfoAction(CLUB_ID, previous, avatarForm()),

@@ -423,68 +423,17 @@
     color: var(--fg-secondary);
 }
 
-/* A narrow dialog moves the role controls under the name instead of truncating it. */
-.roleForm {
-    display: flex;
-    flex: 1 0 auto;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
-    align-items: center;
-    justify-content: flex-end;
+.moderatorGroups {
+    display: grid;
+    gap: var(--gap-md);
 }
 
-.roleForm .status {
-    flex-basis: 100%;
-    text-align: right;
+.moderatorGroups .memberList {
+    margin-top: 0;
 }
 
-.roleChoice {
-    display: flex;
-    padding: 2px;
-    margin: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.roleChoice label {
-    position: relative;
-    cursor: pointer;
-}
-
-.roleChoice input {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    cursor: inherit;
-    opacity: 0;
-}
-
-.roleChoice span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 36px;
-    padding: 0 12px;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-    border-radius: calc(var(--radius) - 3px);
-}
-
-.roleChoice input:checked + span {
-    color: var(--bg);
-    background: var(--fg);
-}
-
-.roleChoice input:focus-visible + span {
-    outline: 1px solid var(--focus);
-    outline-offset: 1px;
-}
-
-.roleChoice:disabled {
-    opacity: 0.58;
-}
-
-.roleChoice:disabled label {
-    cursor: not-allowed;
+.moderatorSave {
+    width: 100%;
 }
 
 .lockedRole {

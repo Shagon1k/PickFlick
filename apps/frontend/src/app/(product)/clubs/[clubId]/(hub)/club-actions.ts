@@ -8,6 +8,7 @@ import {
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 
 import {
     changeClubLifecycle,
@@ -79,20 +80,31 @@ export async function updateClubSettingsAction(
     return result;
 }
 
-export async function changeClubMemberRoleAction(
+const ROLE_FIELD = 'role:';
+const roleChangesSchema = z.array(changeMemberRoleSchema.extend({ membershipId: z.uuid() })).min(1);
+
+/** Saves every role the Manage Moderators draft changed, in order, stopping at the first failure. */
+export async function changeClubMemberRolesAction(
     clubId: string,
-    membershipId: string,
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
-    const parsed = changeMemberRoleSchema.safeParse({ role: formData.get('role') });
+    const parsed = roleChangesSchema.safeParse(
+        [...formData.entries()]
+            .filter(([name]) => name.startsWith(ROLE_FIELD))
+            .map(([name, role]) => ({ membershipId: name.slice(ROLE_FIELD.length), role })),
+    );
     if (!parsed.success) {
         return next(previous, 'error', 'Choose Moderator or Member.');
     }
     const result = await run(
         previous,
-        () => changeMemberRole(clubId, membershipId, parsed.data),
-        'Member role updated.',
+        async () => {
+            for (const { membershipId, role } of parsed.data) {
+                await changeMemberRole(clubId, membershipId, { role });
+            }
+        },
+        'Moderators saved.',
     );
     revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
