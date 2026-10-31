@@ -82,6 +82,7 @@ function handleRoster(
         progressVersion: version,
         acceptedCount: hasDeparted ? 2 : 3,
         canJoin: false,
+        isRemoved: false,
         canInvite: false,
         canManage: false,
         canLeave: false,

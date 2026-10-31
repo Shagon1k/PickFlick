@@ -44,6 +44,20 @@ export function canViewSelectionBreakdown(
 }
 
 /** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
+/**
+ * A member's standing in a Session from all their participant rows. Leaving the Club and rejoining
+ * creates a new Membership, but an earlier removal or accepted participation still applies.
+ */
+export function getOwnStatus(
+    rows: readonly { membershipId: string; status: string }[],
+    membershipId: string,
+): string | undefined {
+    const standing =
+        rows.find(({ status }) => status === 'REMOVED') ??
+        rows.find(({ status }) => status === 'ACCEPTED');
+    return (standing ?? rows.find((row) => row.membershipId === membershipId))?.status;
+}
+
 export function canJoinSession(input: {
     phase: TSessionPhase;
     clubLifecycle: TClubLifecycle;

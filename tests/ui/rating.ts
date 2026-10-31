@@ -64,6 +64,7 @@ export function handleRating(
             progressVersion: version,
             acceptedCount: 3,
             canJoin: false,
+            isRemoved: false,
             canLeave: !isCompleted,
             canManage: canManageSession,
             canInvite: canManageSession,

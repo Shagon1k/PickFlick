@@ -35,6 +35,8 @@ export interface ISessionRoster {
     canManage: boolean;
     canLeave: boolean;
     canJoin: boolean;
+    /** The viewer was removed from this Session by an operator. */
+    isRemoved: boolean;
     participants: {
         id: string;
         membershipId: string;

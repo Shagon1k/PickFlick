@@ -4,7 +4,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { getInviteState } from '../../../common/invite-token.js';
 import { findMembership } from '../../clubs/access/club-access.js';
-import { canJoinSession, canManage } from '../session-access.js';
+import { canJoinSession, canManage, getOwnStatus } from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -25,6 +25,10 @@ export async function readRoster(
             invitations: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
     });
+    const ownStatus = getOwnStatus(
+        participants.filter((participant) => participant.membership.userId === userId),
+        membership.id,
+    );
     return {
         progressVersion: session.progressVersion,
         acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
@@ -34,10 +38,9 @@ export async function readRoster(
         canJoin: canJoinSession({
             phase: session.phase,
             clubLifecycle: membership.club.lifecycle,
-            ownStatus: participants.find(
-                (participant) => participant.membershipId === membership.id,
-            )?.status,
+            ownStatus,
         }),
+        isRemoved: ownStatus === 'REMOVED',
         canLeave:
             isOpen &&
             participants.some(

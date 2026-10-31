@@ -66,6 +66,7 @@ export function handleSelection(
             progressVersion: version,
             acceptedCount: 3,
             canJoin: false,
+            isRemoved: false,
             canInvite: false,
             canManage: false,
             canLeave: false,

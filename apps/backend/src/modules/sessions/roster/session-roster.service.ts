@@ -17,7 +17,7 @@ import {
     type TAuditEvent,
 } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager, assertOpen } from '../session-access.js';
+import { assertManager, assertOpen, getOwnStatus } from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
@@ -45,13 +45,16 @@ export class SessionRosterService {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
             assertActive(membership);
-            const existing = await tx.sessionParticipant.findUnique({
-                where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
+            const own = await tx.sessionParticipant.findMany({
+                where: { sessionId, membership: { userId } },
             });
-            if (existing?.status === 'REMOVED')
-                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
+            const existing = own.find((row) => row.membershipId === membership.id);
             if (existing?.status === 'ACCEPTED')
                 return { state: 'accepted', sessionId, clubId: session.clubId };
+            // Removed, or already counted under a Membership from before the member rejoined.
+            const ownStatus = getOwnStatus(own, membership.id);
+            if (ownStatus === 'REMOVED' || ownStatus === 'ACCEPTED')
+                throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             const status = decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
             if (existing?.status !== status) {
                 const participant = await tx.sessionParticipant.upsert({
@@ -98,11 +101,10 @@ export class SessionRosterService {
                 },
             });
             if (!target) throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
-            const existing = await tx.sessionParticipant.findUnique({
-                where: { sessionId_membershipId: { sessionId, membershipId } },
+            const earlier = await tx.sessionParticipant.findFirst({
+                where: { sessionId, status: 'ACCEPTED', membership: { userId: target.userId } },
             });
-            if (existing?.status === 'ACCEPTED')
-                throw new ConflictException({ reason: 'ALREADY_PARTICIPATING' });
+            if (earlier) throw new ConflictException({ reason: 'ALREADY_PARTICIPATING' });
             const participant = await tx.sessionParticipant.upsert({
                 where: { sessionId_membershipId: { sessionId, membershipId } },
                 create: { sessionId, membershipId, clubId: session.clubId },

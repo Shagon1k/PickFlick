@@ -43,6 +43,7 @@ export function handleWatching(
             progressVersion: version,
             acceptedCount: 1,
             canJoin: false,
+            isRemoved: false,
             canLeave: true,
             canManage,
             canInvite: canManage,

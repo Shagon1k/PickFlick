@@ -7,7 +7,7 @@ import {
 } from '@pickflick/contracts';
 import { Prisma } from '@pickflick/database';
 
-import { canJoinSession } from '../sessions/session-access.js';
+import { canJoinSession, getOwnStatus } from '../sessions/session-access.js';
 import { findMembership, loadClubAccess, type TMembership } from './access/club-access.js';
 import { getClubPermissions } from './access/club-permissions.js';
 import { getClubEntitlements } from './access/club-tiers.js';
@@ -114,8 +114,8 @@ async function createHubSessionProjection(
     const [ordinalById, own, averages] = await Promise.all([
         readOrdinals(tx, membership.club.id, ids),
         tx.sessionParticipant.findMany({
-            where: { membershipId: membership.id, sessionId: { in: ids } },
-            select: { sessionId: true, status: true },
+            where: { membership: { userId: membership.userId }, sessionId: { in: ids } },
+            select: { sessionId: true, membershipId: true, status: true },
         }),
         tx.sessionRating.groupBy({
             by: ['sessionId'],
@@ -123,7 +123,6 @@ async function createHubSessionProjection(
             _avg: { score: true },
         }),
     ]);
-    const statusBySession = new Map(own.map((row) => [row.sessionId, row.status]));
     const averageById = new Map(averages.map((row) => [row.sessionId, row._avg.score]));
     return (row: THubSessionRow): IClubHubSession => ({
         id: row.id,
@@ -140,7 +139,10 @@ async function createHubSessionProjection(
         canJoin: canJoinSession({
             phase: row.phase,
             clubLifecycle: membership.club.lifecycle,
-            ownStatus: statusBySession.get(row.id),
+            ownStatus: getOwnStatus(
+                own.filter(({ sessionId }) => sessionId === row.id),
+                membership.id,
+            ),
         }),
         movie: row.movie
             ? {

@@ -283,6 +283,15 @@ function Participation({
                     Join
                 </Button>
             ) : null}
+            {roster.isRemoved ? (
+                <p className={styles.removed}>
+                    <Icon name="user-x" />
+                    Removed
+                    <span className="visually-hidden">
+                        : an operator removed you from this Session.
+                    </span>
+                </p>
+            ) : null}
             {roster.canLeave ? (
                 <Button
                     aria-label="Leave Session"
