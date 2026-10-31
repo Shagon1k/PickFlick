@@ -1,8 +1,13 @@
 .evidence {
     min-width: 0;
     padding: 0;
-    margin: var(--gap-lg) 0;
+    margin: 0 0 var(--gap-md);
     border: 0;
+}
+
+.title {
+    margin-bottom: var(--gap-md);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
 }
 
 .evidence p,

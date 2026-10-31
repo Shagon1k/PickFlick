@@ -46,7 +46,7 @@ test('Search selection and failure/offline states retain the selected Movie', as
     await expect(
         page.getByText('We could not save this action. Your selection is still here; try again.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Remove selected Movie' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Change film' })).toBeVisible();
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Nominate This' }).click();
     await expect(

@@ -142,9 +142,10 @@ export default function MoviePicker({
                         onChange(null);
                         requestAnimationFrame(() => inputRef.current?.focus());
                     }}
-                    variant="ghost"
+                    size="small"
+                    variant="secondary"
                 >
-                    Remove selected Movie
+                    Change film
                 </Button>
             ) : null}
             {result && 'data' in result ? <SearchCredits movies={result.data.movies} /> : null}

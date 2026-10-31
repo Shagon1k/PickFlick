@@ -106,13 +106,31 @@ async function addNomination(page: Page, query: string) {
     await search.fill(query);
     await expect(
         page
-            .getByRole('group', { name: 'Nomination Details (optional)' })
+            .getByRole('group', { name: 'What else was nominated?' })
             .getByRole('listbox', { name: 'Movie results' })
             .getByRole('option'),
     ).toHaveCount(1);
     await search.press('ArrowDown');
     await search.press('Enter');
 }
+
+/** Step one: the screened film, its date and place. */
+async function fillFilm(page: Page, query: string, location = 'Old cinema') {
+    const search = page.getByRole('combobox', { name: 'Select a Movie' });
+    await search.fill(query);
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await search.press('ArrowDown');
+    await search.press('Enter');
+    await page.getByLabel('Date').fill('2020-01-01');
+    await page.getByLabel('Location').fill(location);
+}
+
+const next = (page: Page) => page.getByRole('button', { name: 'Next', exact: true }).click();
+const back = (page: Page) => page.getByRole('button', { name: 'Back', exact: true }).click();
+const logSession = (page: Page) =>
+    page.getByRole('button', { name: 'Log Session', exact: true }).click();
+const ratingFor = (page: Page, name: string) =>
+    page.getByRole('radiogroup', { name: `Rating for ${name}` });
 
 test('A minimal past Session waits for hydration, retains input after a request failure and denies Member creation', async ({
     browser,
@@ -133,28 +151,28 @@ test('A minimal past Session waits for hydration, retains input after a request 
         await page.goto(path, { waitUntil: 'commit' });
         await expect(page.getByLabel('Date')).toBeDisabled();
         await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeDisabled();
-        await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toBeDisabled();
+        await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
         releaseScripts();
         await expect(page.getByLabel('Date')).toBeEnabled();
-        await page.getByLabel('Date').fill('2020-01-01');
-        await page.getByLabel('Location').fill('Old cinema');
-        const search = page.getByRole('combobox', { name: 'Select a Movie' });
-        await search.fill(query);
-        await expect(page.getByRole('option')).toHaveCount(1);
-        await search.press('ArrowDown');
-        await search.press('Enter');
+        await fillFilm(page, query);
         await expect(page.getByLabel('Date')).toHaveValue('2020-01-01');
+        await next(page);
+        await next(page);
         await page.route(`**${path}`, (route) => route.abort('failed'), { times: 1 });
-        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await logSession(page);
         await expect(
             page.getByText('We could not reach PickFlick. Your entries are still here; try again.'),
         ).toBeVisible();
+        await back(page);
+        await back(page);
         await expect(page.getByLabel('Location')).toHaveValue('Old cinema');
-        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
-        await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toBeVisible();
+        await next(page);
+        await next(page);
+        await logSession(page);
+        // Logging opens the new Session itself.
+        await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
         expect(await prisma.sessionParticipant.findMany({ where: { clubId } })).toEqual([]);
         expect(await prisma.sessionRating.findMany({ where: { session: { clubId } } })).toEqual([]);
-        await page.getByRole('link', { name: 'Open Session', exact: true }).click();
         await expect(page.getByText('Not recorded', { exact: true })).toBeVisible();
         await expect(page.getByText('No ratings were received.')).toBeVisible();
         await journey.signInMember();
@@ -162,7 +180,7 @@ test('A minimal past Session waits for hydration, retains input after a request 
         await expect(
             page.getByText('You cannot log a past Session in this Club right now.'),
         ).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
     } finally {
         releaseScripts();
         await journey.cleanup();
@@ -179,19 +197,13 @@ test('Retrying after a lost committed response rejects changed evidence and pres
     try {
         await page.goto(path);
         await settle(page);
-        const search = page.getByRole('combobox', { name: 'Select a Movie' });
-        await search.fill(query);
-        await expect(page.getByRole('option')).toHaveCount(1);
-        await search.press('ArrowDown');
-        await search.press('Enter');
+        await fillFilm(page, query);
+        await next(page);
         await page.getByRole('checkbox', { name: 'Former attendee (former member)' }).check();
         await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
-        await page
-            .getByRole('radiogroup', { name: 'Rating for Former attendee (optional)' })
-            .getByRole('radio', { name: '8 of 10', exact: true })
-            .click();
-        await page.getByLabel('Date').fill('2020-01-01');
-        await page.getByLabel('Location').fill('Old cinema');
+        const ratings = ratingFor(page, 'Former attendee');
+        await ratings.getByRole('radio', { name: '8 of 10', exact: true }).click();
+        await next(page);
         await page.route(
             `**${path}`,
             async (route) => {
@@ -200,40 +212,42 @@ test('Retrying after a lost committed response rejects changed evidence and pres
             },
             { times: 1 },
         );
-        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await logSession(page);
         await expect(
             page.getByText('We could not reach PickFlick. Your entries are still here; try again.'),
         ).toBeVisible();
         const committed = await prisma.session.findFirstOrThrow({ where: { clubId } });
-        await page.getByLabel('Location').fill('Changed cinema');
+        await back(page);
         await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).uncheck();
-        const ratings = page.getByRole('radiogroup', {
-            name: 'Rating for Former attendee (optional)',
-        });
         await ratings.getByRole('radio', { name: '9 of 10', exact: true }).click();
-        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+        await back(page);
+        await page.getByLabel('Location').fill('Changed cinema');
+        await next(page);
+        await next(page);
+        await logSession(page);
         await expect(
             page.getByText(
                 'This Session was already logged with different entries. Your changes were not saved. Open Club history to review it.',
             ),
         ).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toHaveCount(0);
-        await expect(page.getByLabel('Location')).toHaveValue('Changed cinema');
+        await expect(page).toHaveURL(new RegExp(`${path}$`, 'u'));
+        await back(page);
         await expect(
             page.getByRole('checkbox', { name: 'Current attendee', exact: true }),
         ).not.toBeChecked();
         await expect(ratings.getByRole('radio', { name: '9 of 10', exact: true })).toBeChecked();
+        await back(page);
+        await expect(page.getByLabel('Location')).toHaveValue('Changed cinema');
         expect(await prisma.session.findUniqueOrThrow({ where: { id: committed.id } })).toEqual(
             committed,
         );
         await page.getByLabel('Location').fill('Old cinema');
+        await next(page);
         await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
         await ratings.getByRole('radio', { name: '8 of 10', exact: true }).click();
-        await page.getByRole('button', { name: 'Log Session', exact: true }).click();
-        await expect(page.getByRole('link', { name: 'Open Session', exact: true })).toHaveAttribute(
-            'href',
-            `/sessions/${committed.id}`,
-        );
+        await next(page);
+        await logSession(page);
+        await expect(page).toHaveURL(new RegExp(`/sessions/${committed.id}$`, 'u'));
         expect(await prisma.session.findMany({ where: { clubId } })).toHaveLength(1);
         expect(await prisma.sessionParticipant.findMany({ where: { clubId } })).toHaveLength(2);
         expect(await prisma.sessionRating.findMany({ where: { sessionId: committed.id } })).toEqual(
@@ -265,39 +279,38 @@ for (const viewport of canonicalViewports) {
                     page.getByRole('heading', { name: 'Log a Past Session' }),
                 ).toBeVisible();
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.getByRole('button', { name: 'Log Session', exact: true }).click();
-                await expect(page.getByLabel('Date')).toBeFocused();
+                await next(page);
+                await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeFocused();
+                await fillFilm(page, query);
                 await page.getByLabel('Date').fill('2999-01-01');
-                await page.getByLabel('Location').fill('Old cinema');
-                const search = page.getByRole('combobox', { name: 'Select a Movie' });
-                await search.fill(query);
-                await expect(page.getByRole('option')).toHaveCount(1);
-                await search.press('ArrowDown');
-                await search.press('Enter');
-                await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+                await next(page);
                 await expect(
                     page.getByText('Choose a valid date in the past.').last(),
                 ).toBeVisible();
                 await page.getByLabel('Date').fill('2020-01-01');
                 await page.getByLabel('Notes').fill('Only one historical rating is known.');
+                await next(page);
                 await page
                     .getByRole('checkbox', { name: 'Former attendee (former member)' })
                     .check();
                 await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
-                const ratings = page.getByRole('radiogroup', {
-                    name: 'Rating for Former attendee (optional)',
-                });
+                const ratings = ratingFor(page, 'Former attendee');
                 await ratings.getByRole('radio', { name: '1 of 10', exact: true }).focus();
                 await page.keyboard.press('End');
                 await page.keyboard.press('ArrowLeft');
                 await expect(ratings.getByRole('radio', { name: '9 of 10' })).toBeFocused();
-                await page.getByRole('button', { name: 'Clear rating' }).click();
+                // Choosing the same star again clears the rating.
+                await page.keyboard.press('Enter');
                 await expect(ratings.getByRole('radio', { checked: true })).toHaveCount(0);
                 await ratings.getByRole('radio', { name: '9 of 10', exact: true }).tap();
                 await expect(
-                    page.getByText('Rating for Former attendee (optional)', { exact: true }),
+                    ratings.getByRole('radio', { name: '9 of 10', exact: true }),
+                ).toBeChecked();
+                await next(page);
+                // The screened film starts as a nominee.
+                await expect(
+                    page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
                 ).toBeVisible();
-                await addNomination(page, query);
                 await addNomination(page, rivalQuery);
                 await addNomination(page, rivalQuery);
                 await expect(
@@ -327,22 +340,19 @@ for (const viewport of canonicalViewports) {
                 await expect(zero).toHaveValue('');
                 await zero.selectOption('0');
                 const nominator = page.getByRole('combobox', {
-                    name: 'Nominator for A remembered film (optional)',
+                    name: 'Nominator for A remembered film',
                 });
                 await nominator.click();
                 await page
                     .getByRole('option', { name: 'Former attendee (former member)', exact: true })
                     .click();
                 await context.setOffline(true);
-                await page.getByRole('button', { name: 'Log Session', exact: true }).click();
+                await logSession(page);
                 await expect(
                     page.getByRole('status').filter({ hasText: /offline/iu }),
                 ).toBeVisible();
                 await context.setOffline(false);
                 await expect(zero).toHaveValue('0');
-                await expect(page.getByLabel('Notes')).toHaveValue(
-                    'Only one historical rating is known.',
-                );
                 await settle(page);
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -352,13 +362,8 @@ for (const viewport of canonicalViewports) {
                     path: `test-results/past-form-${viewport.name}.png`,
                     fullPage: true,
                 });
-                await page.getByRole('button', { name: 'Log Session', exact: true }).click();
-                await expect(
-                    page.getByText(
-                        'Past Session logged. Only the evidence you supplied was saved.',
-                    ),
-                ).toBeVisible();
-                await page.getByRole('link', { name: 'Open Session', exact: true }).click();
+                await logSession(page);
+                await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
                 // A logged Session carries one LOGGED note instead of per-section caveats.
                 await expect(
                     page.getByRole('button', { name: 'About logged Sessions' }),
@@ -394,9 +399,7 @@ for (const viewport of canonicalViewports) {
                 });
                 await journey.signInMember();
                 await page.reload();
-                await expect(
-                    page.getByText(/Imported nomination and vote evidence is hidden/),
-                ).toBeVisible();
+                await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
                 await expect(page.getByText('A remembered rival', { exact: true })).toHaveCount(0);
             } finally {
                 await journey.cleanup();

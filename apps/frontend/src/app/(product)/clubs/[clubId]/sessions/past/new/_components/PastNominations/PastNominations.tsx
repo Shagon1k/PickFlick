@@ -20,6 +20,7 @@ export default function PastNominations({
     evidence,
     attendees,
     members,
+    knownTitles,
     scaleMin,
     scaleMax,
     disabled,
@@ -29,13 +30,15 @@ export default function PastNominations({
     evidence: TEvidence;
     attendees: TCreatePastSession['attendees'];
     members: TPastSessionMembers;
+    /** Titles already picked earlier in the form, such as the screened film's. */
+    knownTitles: Record<string, string>;
     scaleMin: number;
     scaleMax: number;
     disabled: boolean;
     error?: React.ReactNode;
     onChange: (evidence: TEvidence) => void;
 }) {
-    const [titles, setTitles] = useState<Record<string, string>>({});
+    const [titles, setTitles] = useState(knownTitles);
     const [message, setMessage] = useState('');
     const { nominations, scoreMatrix } = evidence;
     const memberNames = buildMemberNames(members);
@@ -57,9 +60,7 @@ export default function PastNominations({
             [movieId]: movie.title ?? movie.originalTitle ?? 'Untitled film',
         }));
         onChange({ nominations: [...nominations, { movieId }], scoreMatrix });
-        setMessage(
-            'Nomination added. Choose a nominator if known; original submission time is unknown.',
-        );
+        setMessage('Nomination added.');
     }
     function setNominator(movieId: string, nominatorMembershipId: string) {
         onChange({
@@ -102,8 +103,7 @@ export default function PastNominations({
     const takenNominators = new Set(nominations.flatMap((row) => row.nominatorMembershipId ?? []));
     return (
         <fieldset className={styles.evidence} disabled={disabled}>
-            <legend>Nomination Details (optional)</legend>
-            <p>Add only remembered nominations and scores. Blank cells mean unknown, not zero.</p>
+            <legend className={styles.title}>What else was nominated?</legend>
             <MoviePicker
                 id="past-nomination"
                 label="Add nominated Movies"
@@ -121,7 +121,7 @@ export default function PastNominations({
                         <span>{titles[id]}</span>
                         <Select
                             id={`nominator-${id}`}
-                            label={`Nominator for ${titles[id]} (optional)`}
+                            label={`Nominator for ${titles[id]}`}
                             value={nominatorMembershipId ?? ''}
                             disabled={disabled}
                             data={[
@@ -140,11 +140,13 @@ export default function PastNominations({
                             onChange={(value) => setNominator(id, value ?? '')}
                         />
                         <Button
-                            variant="ghost"
+                            aria-label={`Remove ${titles[id]}`}
                             disabled={disabled}
                             onClick={() => removeNomination(id)}
+                            size="small"
+                            variant="secondary"
                         >
-                            Remove {titles[id]}
+                            Remove
                         </Button>
                     </li>
                 ))}
@@ -205,15 +207,7 @@ export default function PastNominations({
                         </tbody>
                     </table>
                 </div>
-            ) : (
-                <p>
-                    Scores are optional. Select known attendees and add nominations to record a
-                    matrix.
-                </p>
-            )}
-            <p>
-                This import does not establish a complete ballot, ranking or Selection closure time.
-            </p>
+            ) : null}
         </fieldset>
     );
 }
