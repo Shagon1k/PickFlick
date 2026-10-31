@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useId, useRef, useState } from 'react';
 
 import { WATCHLIST_PRIORITIES } from '#components/movies/watchlist-priority';
+import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
 import { useActionStatus } from '#lib/use-action-status';
 
@@ -91,32 +92,33 @@ export default function WatchlistBookmark({
                 }
             >
                 <div className={styles.editor}>
-                    <strong>Watchlist priority</strong>
-                    {WATCHLIST_PRIORITIES.map((priority) => (
-                        <button
-                            key={priority.value}
-                            type="button"
-                            aria-pressed={item?.priority === priority.value}
-                            disabled={isPending}
-                            onClick={() => handleSave(priority.value)}
-                        >
-                            {priority.label}
-                            <span aria-hidden="true" />
-                        </button>
-                    ))}
+                    <div className={styles.levels} role="group" aria-label="Watchlist priority">
+                        {WATCHLIST_PRIORITIES.map((priority) => (
+                            <button
+                                key={priority.value}
+                                type="button"
+                                aria-pressed={item?.priority === priority.value}
+                                disabled={isPending}
+                                onClick={() => handleSave(priority.value)}
+                            >
+                                {priority.label}
+                            </button>
+                        ))}
+                    </div>
                     {item ? (
                         <button
                             type="button"
+                            aria-label="Remove from watchlist"
                             className={styles.remove}
                             disabled={isPending}
                             onClick={() => handleSave(null)}
                         >
-                            Remove from watchlist
+                            <Icon name="close" />
                         </button>
                     ) : null}
                     {/* The filled bookmark shows a save, so only progress and failures stay visible. */}
                     <p
-                        className={isSuccess ? 'visually-hidden' : undefined}
+                        className={isSuccess || !message ? 'visually-hidden' : undefined}
                         role="status"
                         ref={feedbackRef}
                         tabIndex={-1}
