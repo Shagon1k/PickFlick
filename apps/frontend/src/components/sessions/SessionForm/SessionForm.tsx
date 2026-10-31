@@ -97,15 +97,25 @@ export default function SessionForm({
         );
     return (
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
-            <TextInput
-                {...form.getInputProps('date')}
-                disabled={isPending}
-                id="session-date"
-                label="Date"
-                labelHint="required"
-                type="date"
-                required
-            />
+            <div className={styles.when}>
+                <TextInput
+                    {...form.getInputProps('date')}
+                    disabled={isPending}
+                    id="session-date"
+                    label="Date"
+                    labelHint="required"
+                    type="date"
+                    required
+                />
+                <TextInput
+                    {...form.getInputProps('time')}
+                    disabled={isPending}
+                    id="session-time"
+                    label="Time"
+                    labelHint="optional"
+                    type="time"
+                />
+            </div>
             <TextInput
                 {...form.getInputProps('location')}
                 disabled={isPending}

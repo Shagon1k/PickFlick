@@ -1,4 +1,7 @@
 const ISO_DATE_LENGTH = 10;
+/** `hh:mm` right after the `T` that ends an ISO date. */
+const ISO_TIME_START = ISO_DATE_LENGTH + 1;
+const ISO_TIME_LENGTH = 5;
 const MINUTES_PER_HOUR = 60;
 const AVERAGE_FORMAT = new Intl.NumberFormat('en', {
     minimumFractionDigits: 1,
@@ -12,11 +15,17 @@ export function toIsoDate(value: string): string {
 }
 
 /**
- * A Session's calendar date. Sessions store the chosen day at midnight UTC, so the day is read in
- * UTC whatever the viewer's zone.
+ * A Session's calendar date. Sessions store the venue's wall-clock day and time as if in UTC, so
+ * they are read in UTC whatever the viewer's zone.
  */
 export function formatCalendarDate(value: string): string {
     return new Date(value).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' });
+}
+
+/** The screening's `hh:mm`, or null for a date-only Session (stored at midnight). */
+export function toScreeningTime(value: string): string | null {
+    const time = value.slice(ISO_TIME_START, ISO_TIME_START + ISO_TIME_LENGTH);
+    return time === '00:00' ? null : time;
 }
 
 export type TInstantFormat = 'date' | 'dateTime' | 'short';

@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
-import { formatAverage } from '#lib/format';
+import { formatAverage, toScreeningTime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -30,9 +30,10 @@ export default function SessionFacts({
                         <dd>
                             {session.scheduledAt
                                 ? new Intl.DateTimeFormat('en', {
-                                      month: 'long',
-                                      day: 'numeric',
-                                      year: 'numeric',
+                                      dateStyle: 'long',
+                                      ...(toScreeningTime(session.scheduledAt)
+                                          ? { timeStyle: 'short' }
+                                          : {}),
                                       timeZone: 'UTC',
                                   }).format(new Date(session.scheduledAt))
                                 : 'Not scheduled'}
