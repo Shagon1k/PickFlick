@@ -205,23 +205,22 @@ here.
 - The Call Sheet opens the current Session from every section, for participants too. Without one it
   keeps the sheet's frame: "No screening scheduled", the projectionist panda in the still and, for
   Admins and Moderators, Schedule a Session. Its number is the Club-local creation order, cancelled Sessions
-  included. Sessions store only a date, so the call-time slot shows the location (two lines at most)
-  until a real time exists, never a fabricated midnight. Topics stop at two lines.
+  included. The call-time slot shows the optional venue time, otherwise the location (two lines
+  at most), never a fabricated midnight. Topics stop at two lines.
 - The Call Sheet still uses cached Movie artwork or an explicit missing-image state, never fixture
   film data. Before a film is selected it shows the choosing panda rather than a nominated poster,
   because nominations stay behind the Club's visibility settings.
-- Overview shows two completed/yearly counters for Free and seven statistics for Pro. Known empty
+- Overview shows all seven statistics on every plan. Known empty
   counts are zero; missing or hidden extended values show `—`. Metadata summaries require complete
   cached coverage and use current cached details. In the Active Session card only its button acts: Open Session for participants, Join me!
-  for an eligible member. Session history is a quiet disclosure row.
-- Ratings shows the Pro Movie leaderboard with rank, Film, Year, Genre and one-decimal Rating.
+  for an eligible member. Session history lives in the Sessions tab.
+- Ratings shows the Movie leaderboard on every plan with rank, Film, Year, Genre and one-decimal Rating.
   Highest rating is the default; Sort films also offers latest permitted rated screening and title.
   Sorting resets pagination; URL state survives reload and sign-in. Pages contain at most 25 films,
   stable Movie ties keep their order, and the shared table scrolls locally on phones. Its scroll
   region is keyboard-focusable and Film links have 44px targets. Loading announces progress;
   offline sorting preserves the current rows with feedback. Invalid filters, unavailable service,
-  denied access and no published ratings have explicit recovery or empty copy. Free explains that
-  extended analytics require Pro. Ratings contain no individual scores or comments and only use
+  denied access and no published ratings have explicit recovery or empty copy. Ratings contain no individual scores or comments and only use
   completed results the current role may view. Exact-SHA hosted preview and owner review remain
   pending for this delivery; local captures do not establish visual acceptance.
 - Manage Club's Active Session gives Admins and Moderators the gear menu's controls: Start next phase
@@ -231,8 +230,8 @@ here.
   remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
   Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
   counts stay in one column whether or not a row has a remove control. Role changes happen in the
-  Manage Moderators dialog, whose role controls wrap under a name rather than truncate it; + Invite
-  opens Manage Club. Dates read as `Oct 21, 2026`.
+  Manage Moderators dialog: Members and Moderators form two lists, with one Save enabled only
+  when roles change. + Invite opens the shared invitation dialog. Dates read as `Oct 21, 2026`.
 - Club Info holds the avatar beside the Club name: clicking it picks an image with a preview, its
   requirements sit in a tip, and Save Changes uploads it with the other fields. Settings lists its
   checkboxes at a fixed spacing with Save Changes at the card's base. A Pro-only setting carries a
@@ -243,10 +242,10 @@ here.
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
   Sessions and invites while roster recovery stays available.
-- Invite members opens the invitation dialog, which loads recent links once. It creates one
-  single-use link with a 12-hour expiry: the link field carries Copy, and Revoke is a quiet link
-  beneath it. Recent links list a short ID, status, expiry and a quiet Revoke, the newest marked;
-  the link survives closing and reopening the dialog.
+- Invite members opens the shared gold ticket dialog and creates a single-use link with a
+  12-hour expiry once per page view. Copy sits on the ticket stub; New link creates another.
+  Recent links fold into an accordion and list short ID, status, expiry and Revoke. The current
+  link survives closing and reopening the dialog; lifetime guidance lives in an info popover.
   A new link stays visible and revocable if the list fails to refresh. Active links are capped at the
   plan's member limit; managers can still inspect and revoke when creation is paused. Members and
   archived Clubs see no invitation controls.
@@ -442,11 +441,12 @@ here.
 #### Rating and completion
 
 - Rating reuses the film header and media, with accepted-participant progress above the header.
-  Its fixed 1–10 star control supports arrows, Home, End, pointer and touch with 44px targets;
-  wide rails scroll locally on phones. The optional labeled comment is limited to 2000 characters.
+  Its fixed 1–10 star control supports arrows, Home, End, pointer and touch; ten stars fit one row
+  on phones with at least 24px width and 44px height. The optional comment is limited to 2000 characters.
 - Submit is final. Pending saves lock the form; validation focuses the rating control, and API or
   offline errors retain the score and comment. Success replaces the form in place with the saved
-  score and comment and focuses its heading. The existing progress poll refreshes other clients.
+  row highlighted inside the ratings list with a Final lock tag. Reviews show one line and open
+  in a popover. The existing progress poll refreshes other clients.
 - Positive N/N completion is automatic. Session Settings offers Close Rating early to authorized
   operators, with received/pending counts and typed `CLOSE`. Cancel or Escape preserves Rating and
   returns focus. Failure preserves the dialog and confirmation; success focuses the Session heading.
@@ -470,25 +470,26 @@ here.
 #### Past Sessions
 
 - Hub → Sessions offers Log a Past Session to operators in writable Clubs, including while a live
-  screening is open. The form reuses the Session setup scene, mascot, fields and Movie picker.
+  screening is open. The form reuses the Session setup scene, mascot, fields and Movie picker in
+  three steps: film/date/place, attendees with ratings, then nominations and recorded scores.
 - Fields and submission stay disabled until their client-side handlers are attached.
-- Date, location and Movie are required. The date must be in the past; live Session date behavior
-  is unchanged. Topic, notes, attendees and each attendee’s 1–10 rating are independent evidence.
+- Date, location and Movie are required. The date may be today or earlier. Topic, notes,
+  attendees and each attendee’s 1–10 rating are independent evidence.
 - Former members are labeled and may be selected. No attendee is selected automatically. Each
   selected attendee has the shared keyboard/touch star control and can clear their optional rating.
-  Long rating rails scroll locally. An empty selection leaves attendance unrecorded.
+  Tapping the selected star again clears it; ten stars fit one row. An empty selection leaves attendance unrecorded.
 - Pending saves lock the form. Validation focuses the first invalid field; offline and request
   failures preserve entries and the submission identifier. An unchanged retry returns the saved
   screening if the original response was lost. Changed entries show an explicit error that they
   were not saved, retain the form values and direct the operator to Club history for the saved
   record. A new form allows an intentional repeat screening.
-  Success replaces the submit area with a Completed Session link and
-  a return to Club history. Loading and denied access have explicit states.
-- Completed identifies imported history and unknown rating submission times. Missing attendance,
+  Success opens the Completed Session directly. Loading and denied access have explicit states.
+- Completed identifies imported history with one LOGGED stamp and an info popover. Missing attendance,
   ratings, nominations and votes remain unknown; existing result visibility still applies.
-- Optional Nomination Details reuse Movie search and allow each nominated Movie once. Selected
+- The screened film starts as a nominee. Optional Nomination Details reuse Movie search and allow each nominated Movie once. Selected
   attendees form the matrix rows; nominations form columns. Each nomination offers an optional
-  nominator selector with Unknown and current/former Club members, independent of attendance.
+  nominator selector with Unknown and current/former Club members, independent of attendance;
+  each member can nominate only one film and leaves the other selectors once chosen.
   Each cell offers Unknown and the inclusive Club Selection scale, including zero where permitted. Clearing a cell restores Unknown. Removing
   an attendee or nomination clears its associated cells. The matrix scrolls locally on phones, with
   labeled controls, table headers, visible focus and 44px targets.
@@ -594,15 +595,15 @@ foundation components; feature-specific wrappers are checked in their built scre
 
 ## 8. Design QA
 
-| Check              | Target                                                                                                           | Evidence                                                                                                                                                                                                                                                                                                                                                    | Status      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Source parity      | Every screen and shared component compared with its source.                                                      | 108 baselines at 390 and 1440, including Selection outcome, Watching, Rating, Completed history, Personal Rating/Watchlist editors, Club Ratings, Library/statistics and Achievements. [Review findings](_docs/ui-quality.md#baseline-review-2026-10-26) record the 13 refreshed and 22 added captures. Owner acceptance of the later screens remains open. | In progress |
-| Responsive         | Continuous widths plus 390, 768, 1024, 1440; orientation where it matters.                                       | Established screens: overflow at 390, 640, 768, 900, 1024, 1200, 1440. Session creation/detail: 390, 768, 1024, 1440.                                                                                                                                                                                                                                       | In progress |
-| Keyboard and focus | Auth, Club creation, Sessions, search, menus, dialogs, rating and score controls, settings, admin confirmations. | Automated for shared and shell controls, Pricing FAQ, Contact and Create Club validation focus, Club switch, member removal, pending invites, Club settings dialogs, Session validation, Movie selection, edit/cancel dialogs, and the unavailable checkout. Remaining feature flows pending.                                                               | In progress |
-| Accessibility      | Structure, names, focus, contrast, live regions, targets, reduced motion.                                        | Axe at 390 and 1440 on every built screen; automated focus, live-region, 44px target, local-scroll, and reduced-motion checks. Manual review pending.                                                                                                                                                                                                       | In progress |
-| Dynamic content    | Empty, loading, error, read-only, offline, long text, large lists, provider failures.                            | Contact covers validation, loading, rate limit, service failure, offline, and preserved input; Hub covers no-Clubs, loading, unauthorized, archived, adminless, and over-limit states; pending invites cover loading, empty, retry, and responses. The broader feature matrix is pending.                                                                   | In progress |
-| Localization       | Longer English, locale-safe formats, no new text in images.                                                      | None yet; reviewed in Phases 22 and 24.                                                                                                                                                                                                                                                                                                                     | Not checked |
-| Browsers and input | The final browser and device matrix with mouse, keyboard, and touch.                                             | Chromium automation only.                                                                                                                                                                                                                                                                                                                                   | In progress |
+| Check              | Target                                                                                                           | Evidence                                                                                                                                                                                                                                                                                      | Status      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Source parity      | Every screen and shared component compared with its source.                                                      | 118 baselines at 390 and 1440, including the three Past Session steps and shared invite/Moderator dialogs. [Phase 18 review](_docs/ui-quality.md#phase-18-baseline-review-2026-11-01) records 62 refreshed and 10 added captures. Exact-head hosted owner acceptance remains open.            | In progress |
+| Responsive         | Continuous widths plus 390, 768, 1024, 1440; orientation where it matters.                                       | Established screens: overflow at 390, 640, 768, 900, 1024, 1200, 1440. Session creation/detail: 390, 768, 1024, 1440.                                                                                                                                                                         | In progress |
+| Keyboard and focus | Auth, Club creation, Sessions, search, menus, dialogs, rating and score controls, settings, admin confirmations. | Automated for shared and shell controls, Pricing FAQ, Contact and Create Club validation focus, Club switch, member removal, pending invites, Club settings dialogs, Session validation, Movie selection, edit/cancel dialogs, and the unavailable checkout. Remaining feature flows pending. | In progress |
+| Accessibility      | Structure, names, focus, contrast, live regions, targets, reduced motion.                                        | Axe at 390 and 1440 on every built screen; automated focus, live-region, 44px target, local-scroll, and reduced-motion checks. Manual review pending.                                                                                                                                         | In progress |
+| Dynamic content    | Empty, loading, error, read-only, offline, long text, large lists, provider failures.                            | Contact covers validation, loading, rate limit, service failure, offline, and preserved input; Hub covers no-Clubs, loading, unauthorized, archived, adminless, and over-limit states; pending invites cover loading, empty, retry, and responses. The broader feature matrix is pending.     | In progress |
+| Localization       | Longer English, locale-safe formats, no new text in images.                                                      | None yet; reviewed in Phases 22 and 24.                                                                                                                                                                                                                                                       | Not checked |
+| Browsers and input | The final browser and device matrix with mouse, keyboard, and touch.                                             | Chromium automation only.                                                                                                                                                                                                                                                                     | In progress |
 
 Phase 17 notification panels have twelve passing browser checks at 390 and 1440px, including axe,
 read actions, local pagination, focus/dismissal, two-tab state, reconnect and failure recovery.

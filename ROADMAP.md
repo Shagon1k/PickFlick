@@ -218,6 +218,9 @@ they do not need a stored personal token. Declining, leaving or removal removes 
 A declined or departed participant may explicitly rejoin; an operator-removed participant cannot
 restore their own participation. Accepted participants leave with typed `LEAVE`; operators remove
 another participant with `REMOVE`.
+Participation follows the User across historical Memberships in the same Club: leaving and
+rejoining cannot create a second ballot or Session Rating. A Rating Session scheduled before the
+current Membership's join date cannot be joined or rated; undated Sessions remain eligible.
 
 Joining remains available in Nomination, Selection, Watching and Rating, while the Club is active.
 Late Selection participants score the already frozen films. Joining later never reopens Nomination,
@@ -245,19 +248,25 @@ and accepted participants under that lock and hold it until the decision commits
 removal updates the participant state before completion is checked. Every transition is idempotent and serialized
 so two clients or a deadline job cannot advance a Session twice.
 
-| Phase      | Trigger                                        | Result                                                                         |
-| ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| Nomination | All `N` nominated, at least two nominations.   | Open Selection and notify participants.                                        |
-| Nomination | All `N` nominated, exactly one nomination.     | Select that film and advance to Watching.                                      |
-| Nomination | Deadline passes with at least two nominations. | Close nominations, open Selection, notify participants.                        |
-| Nomination | Deadline passes with exactly one nomination.   | Select that film and advance to Watching.                                      |
-| Nomination | Deadline passes with no nominations.           | Stay in Nomination and notify the Admin and Moderators; submissions stay open. |
-| Selection  | All `N` submitted ballots.                     | Compute the winner, advance to Watching, notify participants.                  |
-| Rating     | All `N` rated.                                 | Complete the Session and publish the allowed results.                          |
+| Phase      | Trigger                                                | Result                                                                         |
+| ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Nomination | All `N` nominated, `N >= 2`, at least two nominations. | Open Selection and notify participants.                                        |
+| Nomination | All `N` nominated, `N >= 2`, exactly one nomination.   | Select that film and advance to Watching.                                      |
+| Nomination | Deadline passes with at least two nominations.         | Close nominations, open Selection, notify participants.                        |
+| Nomination | Deadline passes with exactly one nomination.           | Select that film and advance to Watching.                                      |
+| Nomination | Deadline passes with no nominations.                   | Stay in Nomination and notify the Admin and Moderators; submissions stay open. |
+| Selection  | All `N` submitted ballots.                             | Compute the winner, advance to Watching, notify participants.                  |
+| Rating     | All `N` rated.                                         | Complete the Session and publish the allowed results.                          |
 
 Otherwise only the Admin or a Moderator advances a phase. Watching always moves to Rating by hand,
 because attendance and the real screening cannot be inferred from page activity. Early closure uses
 the same result rules and cannot advance Nomination with no films.
+Cancellation is refused after any Session Rating has been received, preserving that screening's
+history and analytics.
+
+Screenings accept an optional venue wall-clock time alongside their calendar date. The existing
+UTC date fields carry these components without time-zone conversion, so every member sees the
+same screening time. Midnight remains indistinguishable from a date-only entry.
 
 ### Selection and results
 
@@ -300,9 +309,8 @@ the same result rules and cannot advance Nomination with no films.
 ### Club analytics
 
 Active Club analytics count Completed screenings, including PAST imports and repeat viewings.
-Open and Cancelled Sessions do not contribute. Every plan gets completed and UTC calendar-year
-counts and the Movie leaderboard; Pro adds watch time, metadata summaries and historical rating
-averages.
+Open and Cancelled Sessions do not contribute. Every plan gets all Overview statistics and the
+Movie leaderboard, including watch time, metadata summaries and historical rating averages.
 The existing Club entitlement adapter supplies the plan until billing is implemented.
 
 Rating aggregates use immutable SessionRating rows, never editable Personal Ratings. Each received
@@ -347,12 +355,13 @@ background or source-mutation award delivery is claimed; a transient fact remove
 
 The catalog contains 15 Club and 14 personal criteria from the canonical screens. Card descriptions
 and expandable explanations state the version's precise evidence rule. Completed screenings count
-repeat viewings and PAST imports. Attendance criteria require explicit `attended = true`; accepted
-participation alone proves no attendance. Missing dates, membership windows, scores, ballots or
+repeat viewings and PAST imports. PAST attendance requires explicit `attended = true`; accepted
+participants of Completed live Sessions count as attendees when attendance was not recorded.
+Missing dates, membership windows, scores, ballots or
 metadata cannot prove an award. PAST nominations count only with known authors; partial score
 matrices never establish a submitted live ballot or a Selection winner.
 
-Calendar rules use scheduled UTC dates. Evening means 18:00 onwards on one UTC date; Night Owl
+Calendar rules use the venue date/time components stored in UTC fields. Evening means 18:00 onwards on one date; Night Owl
 requires a time strictly after 23:00. Date-only entries cannot establish an evening or night.
 Full House and Critics Circle reconstruct members at the scheduled date from Membership intervals.
 Runs use scheduled date then Session ID; unknown attendance/averages break the applicable run.
@@ -377,20 +386,20 @@ again, while their other metadata remains usable. Silent Era requires a known re
 
 ### Plans and limits
 
-| Feature                          | Free — Screening Room               | Pro — Director's Cut             |
-| -------------------------------- | ----------------------------------- | -------------------------------- |
-| Price                            | €0                                  | €5 per monthly billing period    |
-| Clubs you administer             | 1                                   | 5                                |
-| Clubs joined as Member/Moderator | Unlimited                           | Unlimited                        |
-| Members per Club                 | 8                                   | 16                               |
-| Blocking Sessions per Club       | 1                                   | 1                                |
-| Open Rating Sessions per Club    | Unlimited                           | Unlimited                        |
-| Session history                  | Unlimited                           | Unlimited                        |
-| Club customization               | Included                            | Included                         |
-| Vote-result visibility           | Always hidden from ordinary members | Admin-configurable               |
-| Inactivity grace                 | 90 days                             | 180 days                         |
-| Club ratings leaderboard         | Included                            | Included                         |
-| Analytics                        | Basic counters                      | Extended deterministic analytics |
+| Feature                          | Free — Screening Room               | Pro — Director's Cut          |
+| -------------------------------- | ----------------------------------- | ----------------------------- |
+| Price                            | €0                                  | €5 per monthly billing period |
+| Clubs you administer             | 1                                   | 5                             |
+| Clubs joined as Member/Moderator | Unlimited                           | Unlimited                     |
+| Members per Club                 | 8                                   | 16                            |
+| Blocking Sessions per Club       | 1                                   | 1                             |
+| Open Rating Sessions per Club    | Unlimited                           | Unlimited                     |
+| Session history                  | Unlimited                           | Unlimited                     |
+| Club customization               | Included                            | Included                      |
+| Vote-result visibility           | Always hidden from ordinary members | Admin-configurable            |
+| Inactivity grace                 | 90 days                             | 180 days                      |
+| Club ratings leaderboard         | Included                            | Included                      |
+| Club analytics                   | All Overview statistics             | All Overview statistics       |
 
 - Paddle anchors billing to the first successful payment, not the calendar month.
 - Cancellation or downgrade takes effect at the end of the paid period.
@@ -1303,7 +1312,7 @@ acknowledgement remain acceptance gates. See the active phase document for verif
 
 **Out of scope:** Web push and Paddle events before Phase 20.
 
-### Phase 18 — Human Verification & Bug Fixing III · Not started
+### Phase 18 — Human Verification & Bug Fixing III · In progress
 
 **Goal:** Stabilize completion, past history, the Library, statistics, achievements, and
 notifications as one retention loop.
@@ -1314,7 +1323,7 @@ notifications as one retention loop.
 
 **Scope:**
 
-- [ ] Create `_docs/phase-18-human-verification-3.md` and a severity-classified register.
+- [x] Create `_docs/phase-18-human-verification-3.md` and a severity-classified register.
 - [ ] Run Watch → Rate → Complete → History → Library → Statistics and Achievements across several
       Clubs and Users.
 - [ ] Verify partial Rating closure, multiple Rating Sessions, past data, repeat viewings,
@@ -1614,26 +1623,30 @@ the MVP
 
 ### Resolved
 
-| Decision                          | Owner         | Resolution                                                                                                                                                                                                                                                                                    | Evidence                                                                                                                  |
-| --------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| UAT and production domains        | Product owner | `https://uat.pick-flick.app` and `https://pick-flick.app`; no other environment aliases.                                                                                                                                                                                                      | Developer decision, 2026-08-24.                                                                                           |
-| Proportional deployment baseline  | Developer     | Dokploy-managed data services and one application Compose resource per environment; source-built UAT traced by full revision. (Redis later removed by ADR-014; digests deferred by ADR-008.)                                                                                                  | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07.                 |
-| Source-built production promotion | Developer     | Promote only current `main` with successful UAT evidence, pinned to an immutable SemVer tag; production disabled by default; digests wait for separate build and deployment hosts.                                                                                                            | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11.    |
-| Contact and sender identity       | Product owner | Publish `hello@pick-flick.app`; send as `PickFlick <notifications@pick-flick.app>` in production and `PickFlick UAT <uat@pick-flick.app>` in UAT. Google Workspace receives mail, Resend sends it, Cloudflare owns DNS, and Alex controls all three.                                          | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-10-28. |
-| Authentication                    | Developer     | Better Auth inside the NestJS API with database sessions; accounts keyed by provider subject; implicit email linking disabled. Next.js presents but never decides authorization. (Explicit linking was later deferred.)                                                                       | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16.                            |
-| Apple Sign In activation          | Product owner | Keep the reviewed Apple implementation disabled everywhere until the owner approves Apple Developer Program membership, real configuration, and sandbox/UAT checks.                                                                                                                           | Issue #27 review, 2026-09-17.                                                                                             |
-| Selection scale start             | Product owner | New Clubs use `0..N` with one slider for N (1–10), matching the Create Club design. A stored `1` start stays valid in the data model, API, and existing Clubs, so nothing migrates; tightening the schema needs a reviewed migration.                                                         | Phase 6, 2026-09-24.                                                                                                      |
-| Product navigation density        | Product owner | The mobile Hub strip lists Club views only (My Library is its own tab). The Settings strip and account menu keep Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. Contact stays in the footer; Manage Club stays visible to every member.             | Phase 6, 2026-09-24.                                                                                                      |
-| Public marketing navigation       | Product owner | Header with How it works, Features, Pricing, and Go to App; no mobile bottom menu. Below 768px only Go to App stays and "Compare plans" reaches Pricing (821px until 2026-09-26, moved to the design-contract breakpoint). Contact, Privacy, and Terms move to a wordmark-and-tagline footer. | Phase 6, 2026-09-24.                                                                                                      |
-| Explicit provider linking         | Developer     | Deferred. Implicit linking stays disabled: a signed-out sign-in whose email matches another User fails safely, and each User keeps one provider identity. Revisit when Users ask to add a provider.                                                                                           | Phase 6, 2026-09-26.                                                                                                      |
-| Apple display name                | Developer     | Apple sends a name only on first consent; without it, the name falls back to the email address.                                                                                                                                                                                               | Phase 6, 2026-09-26.                                                                                                      |
-| Contact delivery                  | Developer     | The API emails each valid Contact message through Resend and answers `503` if delivery fails; the form keeps the text for a retry. Messages are not stored.                                                                                                                                   | Phase 6, 2026-09-26.                                                                                                      |
-| Worker, Redis, and operation IDs  | Developer     | Removed until needed: the worker and Redis return with the first background job (ADR-014); Club commands dropped caller operation IDs because serialized database checks already make the observed races safe.                                                                                | Phase 6, 2026-09-26.                                                                                                      |
-| Code conventions                  | Developer     | Follow TailorTales: `apps/frontend` and `apps/backend`, zod at boundaries (ADR-012), the UI kit on unstyled Mantine inside the frontend (ADR-013), deployment logic in workflow steps, and house style enforced by ESLint.                                                                    | Phase 6, 2026-09-26.                                                                                                      |
-| Club ratings plan                 | Product owner | The Club ratings leaderboard is available on every plan; Pro keeps watch time, metadata summaries and historical rating averages.                                                                                                                                                             | Phase 18 verification #42, 2026-10-31.                                                                                    |
-| Live Session dates                | Product owner | A live Session cannot be scheduled for a day that has ended in every time zone, and its Nomination deadline cannot run past the screening day. Past screenings use Log a Past Session.                                                                                                        | Phase 18 verification #37, 2026-10-31.                                                                                    |
-| Removed Session participants      | Product owner | A participant an operator removed keeps seeing the Session's progress, marked as removed, and cannot rejoin it.                                                                                                                                                                               | Phase 18 verification #38, 2026-10-31.                                                                                    |
-| Nomination suggestions            | Product owner | Reuse the user's own past losing nominations in the current Club as suggestions derived from Nomination history. This replaces the previously planned shared saved-film entity and manual list management.                                                                                    | Owner clarification, 2026-10-12; [#42](https://github.com/Shagon1k/PickFlick/issues/42).                                  |
+| Decision                           | Owner         | Resolution                                                                                                                                                                                                                                                                                    | Evidence                                                                                                                  |
+| ---------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| UAT and production domains         | Product owner | `https://uat.pick-flick.app` and `https://pick-flick.app`; no other environment aliases.                                                                                                                                                                                                      | Developer decision, 2026-08-24.                                                                                           |
+| Proportional deployment baseline   | Developer     | Dokploy-managed data services and one application Compose resource per environment; source-built UAT traced by full revision. (Redis later removed by ADR-014; digests deferred by ADR-008.)                                                                                                  | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07.                 |
+| Source-built production promotion  | Developer     | Promote only current `main` with successful UAT evidence, pinned to an immutable SemVer tag; production disabled by default; digests wait for separate build and deployment hosts.                                                                                                            | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11.    |
+| Contact and sender identity        | Product owner | Publish `hello@pick-flick.app`; send as `PickFlick <notifications@pick-flick.app>` in production and `PickFlick UAT <uat@pick-flick.app>` in UAT. Google Workspace receives mail, Resend sends it, Cloudflare owns DNS, and Alex controls all three.                                          | [ADR-009](_docs/decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders), 2026-10-28. |
+| Authentication                     | Developer     | Better Auth inside the NestJS API with database sessions; accounts keyed by provider subject; implicit email linking disabled. Next.js presents but never decides authorization. (Explicit linking was later deferred.)                                                                       | [ADR-010](_docs/decisions/README.md#adr-010--use-better-auth-at-the-api-boundary), 2026-09-16.                            |
+| Apple Sign In activation           | Product owner | Keep the reviewed Apple implementation disabled everywhere until the owner approves Apple Developer Program membership, real configuration, and sandbox/UAT checks.                                                                                                                           | Issue #27 review, 2026-09-17.                                                                                             |
+| Selection scale start              | Product owner | New Clubs use `0..N` with one slider for N (1–10), matching the Create Club design. A stored `1` start stays valid in the data model, API, and existing Clubs, so nothing migrates; tightening the schema needs a reviewed migration.                                                         | Phase 6, 2026-09-24.                                                                                                      |
+| Product navigation density         | Product owner | The mobile Hub strip lists Club views only (My Library is its own tab). The Settings strip and account menu keep Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. Contact stays in the footer; Manage Club stays visible to every member.             | Phase 6, 2026-09-24.                                                                                                      |
+| Public marketing navigation        | Product owner | Header with How it works, Features, Pricing, and Go to App; no mobile bottom menu. Below 768px only Go to App stays and "Compare plans" reaches Pricing (821px until 2026-09-26, moved to the design-contract breakpoint). Contact, Privacy, and Terms move to a wordmark-and-tagline footer. | Phase 6, 2026-09-24.                                                                                                      |
+| Explicit provider linking          | Developer     | Deferred. Implicit linking stays disabled: a signed-out sign-in whose email matches another User fails safely, and each User keeps one provider identity. Revisit when Users ask to add a provider.                                                                                           | Phase 6, 2026-09-26.                                                                                                      |
+| Apple display name                 | Developer     | Apple sends a name only on first consent; without it, the name falls back to the email address.                                                                                                                                                                                               | Phase 6, 2026-09-26.                                                                                                      |
+| Contact delivery                   | Developer     | The API emails each valid Contact message through Resend and answers `503` if delivery fails; the form keeps the text for a retry. Messages are not stored.                                                                                                                                   | Phase 6, 2026-09-26.                                                                                                      |
+| Worker, Redis, and operation IDs   | Developer     | Removed until needed: the worker and Redis return with the first background job (ADR-014); Club commands dropped caller operation IDs because serialized database checks already make the observed races safe.                                                                                | Phase 6, 2026-09-26.                                                                                                      |
+| Code conventions                   | Developer     | Follow TailorTales: `apps/frontend` and `apps/backend`, zod at boundaries (ADR-012), the UI kit on unstyled Mantine inside the frontend (ADR-013), deployment logic in workflow steps, and house style enforced by ESLint.                                                                    | Phase 6, 2026-09-26.                                                                                                      |
+| Club ratings plan                  | Product owner | The Club ratings leaderboard is available on every plan. The later #43 decision also opens every Overview statistic to Free Clubs.                                                                                                                                                            | Phase 18 verification #42 and #43, 2026-10-31.                                                                            |
+| Live Session dates                 | Product owner | A live Session cannot be scheduled for a day that has ended in every time zone, and its Nomination deadline cannot run past the screening day. Past screenings use Log a Past Session.                                                                                                        | Phase 18 verification #37, 2026-10-31.                                                                                    |
+| Removed Session participants       | Product owner | A participant an operator removed keeps seeing the Session's progress, marked as removed, and cannot rejoin it.                                                                                                                                                                               | Phase 18 verification #38, 2026-10-31.                                                                                    |
+| Nomination suggestions             | Product owner | Reuse the user's own past losing nominations in the current Club as suggestions derived from Nomination history. This replaces the previously planned shared saved-film entity and manual list management.                                                                                    | Owner clarification, 2026-10-12; [#42](https://github.com/Shagon1k/PickFlick/issues/42).                                  |
+| Live attendance and screening time | Product owner | Accepted participants of Completed live Sessions count as attendees. Screening time is optional and shared as venue wall-clock time; 00:00 remains date-only.                                                                                                                                 | Phase 18 verification #47–48, 2026-10-31.                                                                                 |
+| Automatic Nomination closure       | Product owner | Closing because everyone nominated requires at least two accepted participants; deadlines and operator closure keep their existing rules.                                                                                                                                                     | Phase 18 verification #49, 2026-10-31.                                                                                    |
+| Rating history protection          | Product owner | Refuse cancellation after any rating arrives. Members cannot join or rate a Rating Session scheduled before their current Membership began; undated Sessions remain eligible.                                                                                                                 | Phase 18 verification #51 and #60, 2026-10-31.                                                                            |
+| Notification audience and awards   | Product owner | Notify a removed Session participant; omit the actor's own notifications. Achievement awards continue to be evaluated when an achievements view opens.                                                                                                                                        | Phase 18 verification #56, #58–59, 2026-10-31.                                                                            |
 
 ### Achievement criteria clarification
 

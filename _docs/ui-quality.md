@@ -188,3 +188,23 @@ trust fixes it and selects only the expected Library tests.
 Playwright listing confirms 22 visual tests for Library changes, 28 for Session changes and 10 for
 public-page changes, versus 104 for shared changes. The inventory has 53 complete 390/1440 pairs.
 Main, Delivery and the UAT artifact still require verification after merge.
+
+## Phase 18 baseline review, 2026-11-01
+
+The owner's Phase 18 choices refine the canonical screens as recorded in [DESIGN.md](../DESIGN.md)
+and the [verification register](phase-18-human-verification-3.md). The pinned Linux image generated
+62 changed baselines and ten new captures, bringing the inventory to 118 PNGs at 390/1440.
+All 72 changed/new images were inspected for composition and changed regions. Full-size checks
+also covered the new mobile dialogs and wizard, including the nomination rows and score table.
+
+| Area                            | Reviewed result                                                                                                                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared frame and public pages   | The mobile footer fits one row; Hub statistics appear on Free; optional screening time uses its venue value. Existing page content and navigation remain in their established compositions.     |
+| Invitations and Club management | Unavailable invitations carry a reason stamp. New invite-ticket and Moderator-dialog captures cover both widths, including the shared Copy stub, Recent links accordion and single Save action. |
+| Session results and Library     | Historical ratings use the compact list with review previews; Sessions combines running and Rating entries before history; Watchlist priority uses the compact segmented editor.                |
+| Past Session wizard             | Six captures cover film/date/place, selected attendees with ratings, and two nominations with recorded/unknown cells. Ten stars fit one row; the score matrix scrolls inside its own region.    |
+
+The capture update passes 110 visual tests in the pinned image. No pixel tolerance or masking rule
+was changed; existing internal-shell masks remain. A subsequent full run without snapshot updates
+is required before delivery. These checks establish local regression evidence, not exact-head
+hosted owner acceptance or a main/UAT deployment.

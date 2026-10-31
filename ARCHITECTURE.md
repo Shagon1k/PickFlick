@@ -162,22 +162,26 @@ only to authenticated Users. The invitation page and API responses are private a
 Manager lists include the 20 most recent records and every live pending invitation, so older links
 remain reachable for revocation. The creation action preserves its returned token if a subsequent
 list refresh fails; the UI shows the link and a separate refresh warning.
+A consumed Club invitation returns `used` instead of `invalid`; both responses omit Club details.
 
 The reusable Session link is its canonical `/sessions/:sessionId` URL. Any active Club member may
 read it and call `POST /sessions/:sessionId/participation` with `accept` or `decline`; this never creates
 Club Membership. Club → Session locks serialize participation, phase completion and audit writes.
 Repeated acceptance is idempotent; accepted participants use typed Leave instead of Decline, and
 operator-removed participants cannot self-join. The roster projects `canJoin` from the same current
-membership, lifecycle, phase and participant rules. No new token table or migration is required.
+membership, lifecycle, phase and participant rules. Historical Memberships are matched by User
+to prevent a second participation after rejoining. Rating Sessions scheduled before the caller's
+current Membership began reject joining and rating. No new token table or migration is required.
 `GET /session-invitations/pending` derives unanswered invitations from open Club Sessions and uses
 Session IDs for their decisions. These rows have no separate expiry; closed Sessions disappear.
 
 Existing personalized Session invitations use separate digest-only tokens and target a Membership through a
 SessionParticipant. One rule governs every Session roster control (invite, revoke, remove): an
 Admin or Moderator in an active Club that has an Admin and is within its member limit;
-accepted participants can leave open Sessions, including in archived Clubs. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
-response tokens travel only in POST bodies. Existing token responses by invitation ID use the same locked
-eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
+accepted participants can leave open Sessions, including in archived Clubs. Personal invitation
+creation and responses by invitation ID were removed in Phase 18, along with `eligibleMembers`
+and `canInvite`. Existing tokens still support preview, response and revocation; tokens travel
+only in POST bodies. Private, uncached preview/response APIs return a single detail-free `unavailable`
 state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
 and roster changes lock Club → Session before writing. Roster projections use a repeatable-read snapshot. Club departure updates open
 Session participants and revokes their pending links in its membership transaction, preserving
@@ -228,6 +232,12 @@ Memberships, or Clubs (migration 20). Phase decisions lock the Session and count
 participants inside that transaction, keeping the lock through the decision. Workflow writes take the Club lock before the Session lock and before
 participant writes. Club departure updates open participation before checking completion. Nomination and Selection
 automatic transitions reuse the same locked accepted-participant denominator.
+Automatic Nomination closure on full participation additionally requires at least two accepted
+participants. Deadline and manual closure are unchanged. Cancellation checks received Session
+Ratings under the existing locks and refuses to erase a rated screening from history.
+
+Optional screening time shares `scheduledAt` with its calendar date. UTC components represent
+venue wall-clock values, not a time-zone-converted instant; midnight is treated as date-only.
 
 `POST /clubs/:clubId/sessions` validates live modes, date, location, optional topic/notes/deadline,
 and a canonical Movie UUID for pre-selected Sessions. Full-cycle starts in Nomination;
@@ -662,6 +672,8 @@ comment of at most 2000 characters. Current active Club Membership and accepted 
 participation are required; archived Clubs reject submissions. The shared zod contract normalizes
 comment line endings and trims whitespace. Session Ratings have no update or delete API and stay
 separate from editable `PersonalMovieRating` records.
+Rating entries expose `isOwn`, derived on the server, so the caller's final response can share
+the results list without exposing another identity.
 
 Migration 27 adds `SessionRating`, its unique participant/Session key, same-Session foreign key,
 score/comment bounds and an update-rejecting trigger. Inserts lock the Session row and require
@@ -849,7 +861,7 @@ The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership a
 repeatable-read Completed Session projections. A Member's rating query selects only responses from
 Sessions with saved `showRatingResults`; Admins and Moderators may aggregate all Completed results.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
-caching. Every plan gets the ranking rows; the Hub's extended statistics stay Pro. The existing
+caching. Every plan gets the ranking rows and all Overview statistics. The existing
 entitlement adapter supplies the plan; this adds no billing behavior.
 
 The shared pure calculators count completed screenings, group received historical ratings by
@@ -891,6 +903,8 @@ provider/locale's cached metadata. Stored evidence captures measured facts and s
 earning, including each ballot's Session ID and submission time alongside Selection opening times.
 Awarded rows retain the snapshot and award time. Attendance streaks are evaluated within individual
 Membership intervals, matching historical attendees by User. Pending progress recomputes on each read.
+For Completed live Sessions, accepted participation supplies attendance when the stored value is
+null; PAST imports still require recorded attendance. This is derived without a history backfill.
 There is no new worker, event bus, provider request, dependency or environment variable. Read/write
 cost grows with the subject's activity; source writes do not trigger awards. Transient criteria
 removed before a view evaluation are not captured. Results use statement snapshots under the
@@ -911,6 +925,11 @@ content render concurrently, with independent read-failure recovery and a shared
 owner visual acceptance are still pending.
 
 ### Durable notification intent
+
+Phase 18 adds `SESSION_PARTICIPANT_REMOVED` with additive enum and notification-shape migrations.
+It notifies the removed member in the inbox; personal Session invitation creation has been
+removed, so no new targeted-invite producer is added. Producers exclude the actor from their
+own notifications. Achievement awards still originate from view evaluation.
 
 Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt; migration 38
 drops the per-attempt table and the email request hash in favour of the delivery row. Apply it
