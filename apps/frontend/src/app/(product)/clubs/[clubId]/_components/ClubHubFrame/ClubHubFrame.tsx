@@ -12,6 +12,7 @@ import { buildClubNavigation, type THubSection } from '#components/shells/shell-
 import styles from '../../page.module.scss';
 import CallSheet from '../CallSheet/CallSheet';
 import ClubSwitcher from '../ClubSwitcher/ClubSwitcher';
+import HubLiveRefresh from '../HubLiveRefresh/HubLiveRefresh';
 import { HubSnapshotContext } from '../HubPanel/HubPanel';
 
 export default function ClubHubFrame({
@@ -50,6 +51,7 @@ export default function ClubHubFrame({
         <HubSnapshotContext value={publish}>
             <ProductFrame clubItems={navigation}>
                 <main className={styles.hub}>
+                    <HubLiveRefresh />
                     <div className={styles.stage} id="hub-context">
                         <ClubSwitcher
                             clubs={clubs}
