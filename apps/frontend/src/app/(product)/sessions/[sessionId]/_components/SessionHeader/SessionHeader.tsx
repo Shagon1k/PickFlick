@@ -1,4 +1,4 @@
-import type { TMovieDetails, TSession } from '@pickflick/contracts';
+import { isOpenSessionPhase, type TMovieDetails, type TSession } from '@pickflick/contracts';
 import clsx from 'clsx';
 import Link from 'next/link';
 import type { ReactNode, RefObject } from 'react';
@@ -85,7 +85,10 @@ export default function SessionHeader({
             )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
             <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
-                <SessionLink sessionId={session.id} isCell />
+                {/* Joining closes with the Session, so its link is shared only while it is open. */}
+                {isOpenSessionPhase(session.phase) ? (
+                    <SessionLink sessionId={session.id} isCell />
+                ) : null}
                 {items.length ? (
                     <FilmStripMenu
                         triggerLabel="Session settings"
