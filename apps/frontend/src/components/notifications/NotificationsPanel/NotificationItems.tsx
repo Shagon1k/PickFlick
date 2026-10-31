@@ -16,6 +16,7 @@ const NOTIFICATION_ICONS: Partial<Record<TNotificationEvent, TIconName>> = {
     RATING_CLOSED: 'star-circle',
     ACHIEVEMENT_EARNED: 'achievements',
     MEMBERSHIP_JOINED: 'user-plus',
+    SESSION_PARTICIPANT_REMOVED: 'user-x',
     MEMBERSHIP_REMOVED: 'user-x',
     MEMBERSHIP_LEFT: 'user-x',
     BILLING_SERVICE: 'credit-card',

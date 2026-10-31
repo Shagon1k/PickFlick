@@ -15,6 +15,7 @@ import {
     recordAudit,
     type TAuditEvent,
 } from '../../clubs/access/club-access.js';
+import { recordNotification } from '../../notifications/notification-store.js';
 import { Transactions } from '../../notifications/transactions.js';
 import {
     assertManager,
@@ -153,6 +154,15 @@ export class SessionRosterService {
                 sessionId,
                 action: isRemoving ? 'SESSION_PARTICIPANT_REMOVED' : 'SESSION_PARTICIPANT_LEFT',
             });
+            // Club removal also departs Sessions, but that is announced once, as MEMBERSHIP_REMOVED.
+            if (isRemoving)
+                await recordNotification(tx, {
+                    recipientId: participant.membership.userId,
+                    event: 'SESSION_PARTICIPANT_REMOVED',
+                    sourceId: participant.id,
+                    clubId: session.clubId,
+                    sessionId,
+                });
         });
     }
 

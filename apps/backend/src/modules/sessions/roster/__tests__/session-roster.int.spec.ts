@@ -8,6 +8,7 @@ import {
     createSession,
     createSessionInvite,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     startTestApi,
 } from '../../../../testing/integration.js';
@@ -233,6 +234,9 @@ describe('Session roster', () => {
         expect((await remove(participant.id)).status).toBe(204);
         expect((await remove(participant.id)).status).toBe(204);
         expect(await accepted()).toBe(0);
+        expect(
+            await findNotifiedUsers(api.prisma, participant.id, 'SESSION_PARTICIPANT_REMOVED'),
+        ).toEqual([member]);
         expect(await (await respond(replacement.token)).json()).toEqual(unavailable);
         expect(
             await api.prisma.clubAuditEvent.count({
@@ -344,7 +348,12 @@ describe('Session roster', () => {
         expect(response.status).toBe(204);
         expect(await pending()).toEqual([]);
         expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
-        expect((await roster()).participants[0]?.status).toBe('REMOVED');
+        const participant = (await roster()).participants[0]!;
+        expect(participant.status).toBe('REMOVED');
+        // Club removal is announced once, as MEMBERSHIP_REMOVED.
+        expect(
+            await findNotifiedUsers(api.prisma, participant.id, 'SESSION_PARTICIPANT_REMOVED'),
+        ).toEqual([]);
     });
     it('should freeze roster management in restricted Clubs while keeping existing participation', async () => {
         const invitation = await createInvite();

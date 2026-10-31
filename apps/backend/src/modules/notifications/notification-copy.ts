@@ -52,6 +52,13 @@ export const NOTIFICATION_COPY: Record<TNotificationEvent, INotificationCopy> = 
         category: 'Session update',
         action: 'View Session',
     },
+    SESSION_PARTICIPANT_REMOVED: {
+        subject: 'You were removed from a Session',
+        title: 'Your seat was released.',
+        body: 'A Club operator removed you from a Session. You can still follow it in PickFlick.',
+        category: 'Session update',
+        action: 'View Session',
+    },
     NOMINATION_STALLED: {
         subject: 'A Nomination deadline needs attention',
         title: 'The next step needs you.',
