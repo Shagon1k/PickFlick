@@ -72,7 +72,8 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                         ))}
                     </ul>
                 </section>
-                <ActiveSessionCard hub={hub} />
+                {/* With nothing scheduled, the call sheet above already offers Schedule. */}
+                {hub.activeSession ? <ActiveSessionCard hub={hub} /> : null}
             </div>
             {hub.ratingSessions.length ? <ActiveRatings sessions={hub.ratingSessions} /> : null}
             <SprocketDivider variant="section" />

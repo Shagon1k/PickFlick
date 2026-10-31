@@ -18,7 +18,7 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
                     Log a Past Session
                 </ButtonLink>
             ) : null}
-            <ActiveSessionCard hub={hub} />
+            {hub.activeSession ? <ActiveSessionCard hub={hub} /> : null}
             <section aria-labelledby="active-ratings-heading">
                 <h2 id="active-ratings-heading">Active Ratings</h2>
                 <SessionRows sessions={hub.ratingSessions} empty="No Sessions awaiting ratings." />

@@ -23,7 +23,7 @@ test(
                 .getByRole('region', { name: 'Active Session', exact: true })
                 .getByRole('link', { name: 'Open Session', exact: true }),
         ).toHaveCount(0);
-        await page.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await page.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
         await page.getByLabel('Date').fill('2090-12-01');
@@ -33,9 +33,9 @@ test(
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByText('Session created. Nomination is open.')).toBeVisible();
         await page.goBack();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
-            0,
-        );
+        await expect(
+            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
+        ).toHaveCount(0);
         await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
         await page.keyboard.press('Enter');
         await expect(
@@ -82,7 +82,9 @@ test(
         ).toBeVisible();
         await page.getByRole('link', { name: 'Back to Hub' }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
+        await expect(
+            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
+        ).toBeVisible();
     },
 );
 

@@ -61,7 +61,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
 
     await test.step('the member joins the shared Session link, which an outsider cannot use', async () => {
         await admin.goto(clubPath);
-        await admin.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await admin.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
         await admin.getByLabel('Date').fill(upcomingDate());
         await admin.getByLabel('Location').fill('Room A');
         await admin.getByLabel('Topic').fill('Journey night');
