@@ -73,7 +73,7 @@ test(
         await page.getByRole('menuitem', { name: 'Kick', exact: true }).click();
         const kickDialog = page.getByRole('dialog', { name: 'Kick participants' });
         await kickDialog.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
-        await expect(kickDialog.getByText('invited · invitation revoked')).toBeVisible();
+        await expect(kickDialog.getByText('Invited · invite revoked')).toBeVisible();
         await kickDialog.getByRole('button', { name: 'Remove Jordan Member' }).click();
         const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
         await expect(removalDialog.getByLabel('Type REMOVE to confirm')).toBeFocused();

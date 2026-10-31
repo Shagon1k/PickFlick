@@ -11,6 +11,7 @@ import Modal from '#components/ui/Modal/Modal';
 import { getMonogram } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 
+import { describeStatus } from './roster-status';
 import styles from './SessionRoster.module.scss';
 
 /** Join/Leave for the header and, for operators, the gear menu's Kick dialog. */
@@ -88,7 +89,7 @@ export default function SessionRoster({
                 }
             />
             <ConfirmDialog
-                cancelLabel="Keep participation"
+                cancelLabel={copy.cancelLabel}
                 confirmLabel={copy.confirmLabel}
                 inputId="session-roster-confirmation"
                 onClose={() => setDialog(null)}
@@ -137,6 +138,7 @@ function getConfirmationCopy(dialog: TRosterDialog | null) {
             title: 'Remove participant',
             word: 'REMOVE',
             confirmLabel: 'Confirm removal',
+            cancelLabel: 'Cancel',
             body: `Remove ${dialog.name}? This participant will no longer count toward Session progress. Their existing history stays.`,
         };
     }
@@ -144,6 +146,7 @@ function getConfirmationCopy(dialog: TRosterDialog | null) {
         title: 'Leave Session',
         word: 'LEAVE',
         confirmLabel: 'Confirm leaving',
+        cancelLabel: 'Keep participation',
         body: 'End your participation? You will no longer count toward Session progress. Your existing history stays.',
     };
 }
@@ -220,7 +223,7 @@ function KickRow({
     onRevoke: (inviteId: string) => void;
     onRemove: () => void;
 }) {
-    const { displayName, invitation, status } = participant;
+    const { displayName, invitation } = participant;
     return (
         <li className={styles.row}>
             <span aria-hidden="true" className={styles.avatar}>
@@ -228,10 +231,7 @@ function KickRow({
             </span>
             <span className={styles.name}>
                 {displayName}
-                <small>
-                    {status.toLowerCase()}
-                    {status === 'INVITED' && invitation ? ` · invitation ${invitation.state}` : ''}
-                </small>
+                <small>{describeStatus(participant)}</small>
             </span>
             {invitation?.state === 'pending' && canRevoke ? (
                 <Button
