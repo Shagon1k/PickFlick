@@ -9,6 +9,36 @@
     font: 400 var(--fs-app-section)/var(--lh-title) var(--font-display);
 }
 
+.heading {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.heading > span {
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+}
+
+/* One action fills the row; two share it equally. */
+.actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: var(--gap-sm);
+    margin-top: var(--gap-md);
+}
+
+.badge {
+    padding: 2px var(--gap-xs);
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    color: var(--gold-light);
+    text-transform: capitalize;
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-pill);
+}
+
 .sessions p {
     margin-block: var(--gap-sm);
     color: var(--fg-secondary);
@@ -55,7 +85,7 @@
 
 .copy {
     display: grid;
-    gap: var(--gap-sm);
+    gap: var(--gap-xs);
     min-width: 0;
 }
 

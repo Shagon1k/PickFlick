@@ -72,12 +72,11 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(HUB_ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(
-                page.getByRole('region', { name: 'Active Session', exact: true }),
-            ).toContainText('Nomination');
-            const ratings = page.getByRole('region', { name: 'Active Ratings' });
-            await expect(ratings.getByRole('link')).toHaveCount(2);
-            await expect(ratings.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
+            // The running Session and both Rating Sessions share one list.
+            const active = page.getByRole('region', { name: 'Active Sessions', exact: true });
+            await expect(active).toContainText('nomination');
+            await expect(active.getByRole('link')).toHaveCount(3);
+            await expect(active.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
             const history = page.getByRole('region', { name: 'History', exact: true });
             await expect(history.getByRole('link')).toHaveCount(2);
             await expect(history.getByText('8.0', { exact: true })).toBeVisible();

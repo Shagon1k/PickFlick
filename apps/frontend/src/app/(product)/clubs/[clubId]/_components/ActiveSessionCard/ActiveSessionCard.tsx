@@ -1,6 +1,6 @@
 'use client';
 
-import { type IClubHub, type IClubHubSession, isBlockingSessionPhase } from '@pickflick/contracts';
+import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState, useTransition } from 'react';
 
@@ -24,7 +24,6 @@ export default function ActiveSessionCard({
     actions?: ReactNode;
 }) {
     const { activeSession: session, memberCount } = hub;
-    const canCreate = hub.permissions.manageSessions && !isBlockingSessionPhase(session?.phase);
     const [isPending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
     const router = useRouter();
@@ -83,13 +82,6 @@ export default function ActiveSessionCard({
             ) : (
                 <p>No active Session. Your next screening will appear here.</p>
             )}
-            {canCreate ? (
-                <div className={styles.create}>
-                    <ButtonLink href={`/clubs/${hub.club.id}/sessions/new`}>
-                        Create Session
-                    </ButtonLink>
-                </div>
-            ) : null}
         </section>
     );
 }
