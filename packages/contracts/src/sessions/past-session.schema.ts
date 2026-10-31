@@ -3,13 +3,18 @@ import { z } from 'zod';
 import { ratingScoreSchema } from '../common/rating-scale.js';
 import { sessionDetailsSchema } from './session.schema.js';
 
+// UTC+14 is the first zone to start a calendar day, so its "today" may be tomorrow in UTC.
+const FIRST_ZONE_LEAD_MS = 14 * 3_600_000;
+
 export const createPastSessionSchema = sessionDetailsSchema
     .omit({ deadlineAt: true })
     .extend({
         submissionId: z.uuidv4(),
-        scheduledAt: z.iso.datetime().refine((value) => new Date(value).getTime() <= Date.now(), {
-            message: 'Choose a date in the past.',
-        }),
+        scheduledAt: z.iso
+            .datetime()
+            .refine((value) => new Date(value).getTime() <= Date.now() + FIRST_ZONE_LEAD_MS, {
+                message: 'Choose a date in the past.',
+            }),
         movieId: z.uuid(),
         attendees: z.array(
             z.strictObject({

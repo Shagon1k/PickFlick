@@ -76,7 +76,9 @@ export default function PastSessionForm({
         },
         validate: (values) => {
             const parsed = createPastSessionSchema.safeParse(buildInput(values));
-            if (parsed.success) return {};
+            // The schema allows for every zone; the viewer's own calendar decides "in the past".
+            const isFuture = values.date > new Date().toLocaleDateString('en-CA');
+            if (parsed.success) return isFuture ? { date: 'Choose a valid date in the past.' } : {};
             const { scheduledAt, ...errors } = toFieldErrors(parsed.error, {
                 scheduledAt: 'Choose a valid date in the past.',
                 location: 'Use 1–200 characters on one line.',
