@@ -6,6 +6,7 @@ import { buildLoginPath } from '#api/auth-session.server';
 import { getClubHub } from '#api/clubs.server';
 import { getPastSessionMembers } from '#api/sessions.server';
 import BackLink from '#components/navigation/BackLink/BackLink';
+import SystemState from '#components/shells/SystemState/SystemState';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
@@ -28,15 +29,13 @@ export default async function PastSessionPage({ params }: { params: Promise<{ cl
         if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
             redirect(buildLoginPath(`/clubs/${clubId}/sessions/past/new`));
         return (
-            <main className={styles.main}>
-                <section className={styles.card}>
-                    <h1>Past Session unavailable</h1>
-                    <p role="alert">
-                        We could not open this form. Return to your Club and try again.
-                    </p>
-                    <ButtonLink href={`/clubs/${clubId}`}>Back to Club Hub</ButtonLink>
-                </section>
-            </main>
+            <SystemState
+                description="We could not open this form."
+                isSignedIn
+                retryHref={`/clubs/${clubId}/sessions/past/new`}
+                title="Past Session unavailable"
+                variant="application-error"
+            />
         );
     }
     return (

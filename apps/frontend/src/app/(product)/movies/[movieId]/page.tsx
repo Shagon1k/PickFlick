@@ -8,8 +8,8 @@ import { getMovieDetails } from '#api/movies.server';
 import { getPersonalRating } from '#api/personal-rating.server';
 import { getWatchlistItem } from '#api/watchlist.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import SystemState from '#components/shells/SystemState/SystemState';
 import Alert from '#components/ui/Alert/Alert';
-import ButtonLink from '#components/ui/Button/ButtonLink';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
@@ -106,16 +106,13 @@ async function loadDetails(movieId: string) {
 
 function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: string }) {
     return (
-        <ProductFrame>
-            <main className={styles.movieMain}>
-                <h1>Movie Details unavailable</h1>
-                <Alert tone="warning">{getUnavailableMessage(reason)}</Alert>
-                <div className={styles.links}>
-                    <ButtonLink href={`/movies/${movieId}`}>Try again</ButtonLink>
-                    <ButtonLink href="/app">Back to Hub</ButtonLink>
-                </div>
-            </main>
-        </ProductFrame>
+        <SystemState
+            description={getUnavailableMessage(reason)}
+            isSignedIn
+            retryHref={`/movies/${movieId}`}
+            title="Film unavailable"
+            variant="application-error"
+        />
     );
 }
 

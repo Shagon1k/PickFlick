@@ -9,13 +9,11 @@ import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import { buildClubNavigation } from '#components/shells/shell-navigation';
 import SystemState from '#components/shells/SystemState/SystemState';
-import ButtonLink from '#components/ui/Button/ButtonLink';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
 import SessionDetails from './_components/SessionDetails/SessionDetails';
 import SessionProgress from './_components/SessionProgress/SessionProgress';
-import styles from './page.module.scss';
 
 export const metadata = { title: 'Session — PickFlick' };
 export default async function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -31,14 +29,15 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
         if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status))
             return <SystemState isSignedIn variant="members-only" />;
         return (
-            <ProductFrame>
+            <SystemState
+                description="We could not load this Session. It reloads by itself once it can."
+                isSignedIn
+                retryHref={`/sessions/${sessionId}`}
+                title="Session unavailable"
+                variant="application-error"
+            >
                 <SessionProgress sessionId={sessionId} version={null} />
-                <main className={styles.main}>
-                    <h1>Session unavailable</h1>
-                    <p role="alert">We could not load this Session. Try again shortly.</p>
-                    <ButtonLink href="/app">Back to your Clubs</ButtonLink>
-                </main>
-            </ProductFrame>
+            </SystemState>
         );
     }
     const [movie, renderedAt] = await Promise.all([loadFilm(session), getRequestTime()]);
