@@ -1,3 +1,4 @@
+/* The prototype achievement shelf: filter tiles over a ruled grid of badge cards. */
 .achievements {
     min-width: 0;
 
@@ -14,28 +15,40 @@
 
     button,
     .completion {
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: var(--gap-xs);
         align-items: center;
+        justify-content: center;
         min-width: 0;
         min-height: 100px;
-        padding: var(--gap-sm);
+        padding: 24px 20px;
         color: var(--fg);
-        background: var(--surface);
+        background: transparent;
         border: 1px solid var(--border);
         border-radius: var(--radius-lg);
+        transition:
+            opacity var(--motion-local) var(--ease-standard),
+            border-color var(--motion-local) var(--ease-standard),
+            background-color var(--motion-local) var(--ease-standard);
     }
 
     button {
+        font: inherit;
         cursor: pointer;
 
-        &[aria-pressed='true'] {
-            border-color: var(--gold);
+        &:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-lit);
+        }
+
+        &:active {
+            transform: scale(0.98);
         }
 
         &[aria-pressed='false'] {
-            color: var(--fg-secondary);
+            opacity: 0.45;
         }
     }
 
@@ -45,6 +58,39 @@
 
     span {
         font-size: var(--fs-body-sm);
+        color: var(--fg-secondary);
+    }
+}
+
+/* The prototype's tick in the tile corner shows which statuses are listed. */
+.summary .check {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-lit);
+    border-radius: 5px;
+
+    &::after {
+        width: 4px;
+        height: 8px;
+        content: '';
+        border: solid var(--fg);
+        border-width: 0 1.5px 1.5px 0;
+        opacity: 0;
+        transform: translateY(-1px) rotate(45deg);
+    }
+}
+
+.summary button[aria-pressed='true'] .check {
+    border-color: var(--fg-secondary);
+
+    &::after {
+        opacity: 1;
     }
 }
 
@@ -57,78 +103,121 @@
 }
 
 .card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--gap-sm);
+    align-items: center;
     min-width: 0;
-    padding: var(--gap-md) var(--gap-sm);
+    min-height: 230px;
+    padding: 22px 16px;
     text-align: center;
-    overflow-wrap: anywhere;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 
     h3 {
-        margin: 0;
-        font: 600 var(--fs-body) / var(--lh-ui) var(--font-display);
+        width: 100%;
+        margin: 0 0 7px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font: 700 var(--fs-card-title) / var(--lh-title) var(--font-display);
+        white-space: nowrap;
     }
+}
 
-    p {
-        margin: 0;
-        font-size: var(--fs-caption);
-        color: var(--fg-secondary);
-    }
+/* Three reserved lines keep the progress row level across the shelf. */
+.description {
+    display: -webkit-box;
+    min-height: calc(3lh);
+    margin: 0;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    font-size: var(--fs-meta);
+    line-height: var(--lh-body);
+    color: var(--fg-secondary);
+    -webkit-box-orient: vertical;
+}
 
-    details {
-        margin-top: auto;
-        font-size: var(--fs-body-sm);
-    }
-
-    summary {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        cursor: pointer;
-    }
-
-    &[data-status='unlocked'] .icon {
-        color: var(--gold);
-        border-color: var(--gold-border);
-    }
-
-    &[data-status='unlocked'] .status {
-        color: var(--ivory);
-        background: var(--gold-soft);
-    }
-
-    &[data-status='in-progress'] .status {
-        color: var(--gold-light);
-        background: var(--gold-soft);
-    }
+.about {
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 .icon {
     display: grid;
+    flex: 0 0 auto;
     place-items: center;
-    align-self: center;
-    width: 56px;
-    height: 56px;
-    color: var(--fg-secondary);
-    border: 1px solid var(--border-lit);
+    width: 72px;
+    height: 72px;
+    margin-bottom: 16px;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 50%;
 
     svg {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
     }
 }
 
 .status {
-    align-self: center;
-    padding: var(--gap-xs) var(--gap-sm);
-    font-size: var(--fs-caption);
+    display: inline-flex;
+    padding: 5px 10px;
+    margin-bottom: 12px;
+    font-size: var(--fs-micro);
     color: var(--fg-secondary);
+    border: 1px solid var(--border);
     border-radius: var(--radius-pill);
+}
+
+/* Unlocked is the warm, finished state; In progress stays neutral. */
+.card[data-status='unlocked'] {
+    .icon {
+        color: var(--gold);
+        border-color: var(--gold-border);
+    }
+
+    .status {
+        color: var(--gold-light);
+        background: var(--gold-soft);
+        border-color: var(--gold-border);
+    }
+}
+
+.card[data-status='in-progress'] .status {
+    color: var(--fg);
+    background: var(--accent-soft);
+    border-color: var(--border-lit);
+}
+
+.progress {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    width: 100%;
+    margin-top: 12px;
+
+    > span:first-child {
+        font: 700 var(--fs-meta) var(--font-mono);
+    }
+}
+
+.bar {
+    display: block;
+    width: 100%;
+    max-width: 140px;
+    height: 5px;
+    overflow: hidden;
+    background: var(--border);
+    border-radius: var(--radius-pill);
+
+    i {
+        display: block;
+        height: 100%;
+        background: var(--fg);
+        border-radius: var(--radius-pill);
+    }
 }
 
 @media (width < 1400px) {
@@ -140,6 +229,25 @@
 @media (width < 768px) {
     .shelf {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+        min-height: 200px;
+        padding: 18px 12px;
+    }
+
+    .icon {
+        width: 56px;
+        height: 56px;
+
+        svg {
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    .card h3 {
+        font-size: 16px;
     }
 }
 

@@ -24,19 +24,15 @@ for (const width of [390, 768, 1024, 1440]) {
                     await page.goto(path);
                     const shelf = page.getByRole('region', { name: 'Achievements', exact: true });
                     await expect(shelf.getByRole('article')).toHaveCount(6);
-                    await expect(
-                        shelf
-                            .getByRole('article', { name: 'Critics Circle', exact: true })
-                            .getByText('Result-based Club achievements', { exact: false })
-                            .first(),
-                    ).toBeVisible();
                     const masked = shelf.getByRole('article', {
                         name: 'Critics Circle',
                         exact: true,
                     });
-                    await expect(
-                        masked.getByText('Result-based Club achievements', { exact: false }),
-                    ).toHaveCount(1);
+                    // Why a result-based goal shows no progress is in its (i).
+                    await masked.getByRole('button', { name: /is counted$/u }).click();
+                    await expect(masked.getByRole('tooltip')).toContainText(
+                        'Result-based Club achievements',
+                    );
                     await expect(masked.locator('details')).toHaveCount(0);
                     await settle(page);
                     expect(
@@ -52,14 +48,14 @@ for (const width of [390, 768, 1024, 1440]) {
                     await shelf.getByRole('button', { name: '2 In progress', exact: true }).tap();
                     await shelf.getByRole('button', { name: '3 Not started', exact: true }).tap();
                     await expect(
-                        shelf.getByText('No achievements match these filters.', { exact: false }),
+                        shelf.getByText('Select a status above to show its achievements.'),
                     ).toBeVisible();
                     await unlocked.tap();
                     await expect(shelf.getByRole('article')).toHaveCount(1);
-                    await shelf.getByText('How this is calculated · v1').click();
-                    await expect(
-                        shelf.getByText('Earned history is retained.', { exact: false }),
-                    ).toBeVisible();
+                    // How an achievement is counted sits in its (i), without the rule version.
+                    await shelf.getByRole('button', { name: /^How .* is counted$/u }).click();
+                    await expect(shelf.getByRole('tooltip')).toContainText('Unlocked');
+                    await expect(shelf.getByText('v1', { exact: false })).toHaveCount(0);
                     await page.reload();
                     await expect(shelf.getByRole('article')).toHaveCount(6);
                     await page.evaluate(() => window.scrollTo(0, 0));
