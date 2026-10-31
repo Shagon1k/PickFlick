@@ -298,3 +298,10 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         },
     );
 }
+
+test('Delete Club is offered only while the Club has no Sessions', async ({ context, page }) => {
+    await authenticate(context, 'valid-settings-history');
+    await open(page, { width: 1440, height: 900 });
+    await expect(page.getByRole('button', { name: 'Archive Club' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete Club' })).toHaveCount(0);
+});

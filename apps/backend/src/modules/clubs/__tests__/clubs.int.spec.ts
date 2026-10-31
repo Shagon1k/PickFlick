@@ -302,7 +302,15 @@ describe('ClubsController', () => {
             const [second] = (await (
                 await api.request('/clubs', { userId: admin })
             ).json()) as IClubSummary[];
+            const canDelete = async () =>
+                (
+                    (await (
+                        await api.request(`/clubs/${second!.id}/settings`, { userId: admin })
+                    ).json()) as IClubSettings
+                ).canDelete;
+            expect(await canDelete()).toBe(true);
             await createSession(api.prisma, second!.id, { type: 'PAST', phase: 'COMPLETED' });
+            expect(await canDelete()).toBe(false);
 
             const response = await api.request(`/clubs/${second!.id}/delete`, {
                 method: 'POST',

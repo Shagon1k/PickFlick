@@ -58,6 +58,7 @@ export function settingsProjection(
             manageSettings: isActive && isAdmin,
             manageLifecycle: isAdmin,
         },
+        canDelete: isAdmin && !(token?.includes('history') ?? false),
         entitlements: {
             tier: 'FREE',
             adminClubLimit: 1,

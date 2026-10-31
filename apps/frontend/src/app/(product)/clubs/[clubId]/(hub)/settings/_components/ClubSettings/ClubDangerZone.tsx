@@ -80,7 +80,7 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
             action="delete"
             clubId={clubId}
             confirmation={projection.club.name}
-            description="This removes every active Membership and cannot be undone from the Club UI. Clubs with Session history cannot be deleted."
+            description="This removes every active Membership and cannot be undone from the Club UI."
             label="Delete Club"
             title="Delete this Club?"
         />
@@ -117,7 +117,7 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                     ) : (
                         <ReactivateAction clubId={clubId} />
                     )}
-                    {deleteAction}
+                    {projection.canDelete ? deleteAction : null}
                 </div>
             ) : (
                 <div className={styles.cardActions}>

@@ -98,7 +98,10 @@ export class ClubsService {
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const { club, role } = membership;
-                const members = await findActiveMembers(transaction, clubId);
+                const [members, sessionCount] = await Promise.all([
+                    findActiveMembers(transaction, clubId),
+                    transaction.session.count({ where: { clubId } }),
+                ]);
 
                 const access = getClubAccess(
                     club.lifecycle,
@@ -111,6 +114,8 @@ export class ClubsService {
                     currentMembershipId: membership.id,
                     club: toClubSummary(club, role),
                     permissions: getClubPermissions(role, club.lifecycle, access),
+                    // The same rule `delete` enforces: only a Club without Sessions goes.
+                    canDelete: role === 'ADMIN' && sessionCount === 0,
                     entitlements: getClubEntitlements(clubId),
                     visibility: {
                         showNominationAuthors: club.showNominationAuthors,

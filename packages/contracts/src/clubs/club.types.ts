@@ -82,6 +82,8 @@ export interface IClubSettings {
     currentMembershipId: string;
     club: IClubSummary;
     permissions: TClubPermissions;
+    /** An Admin may delete the Club only while it has no Sessions. */
+    canDelete: boolean;
     entitlements: IClubEntitlements;
     visibility: IClubVisibility;
     members: IClubMember[];
