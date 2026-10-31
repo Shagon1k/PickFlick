@@ -232,6 +232,19 @@
     background: var(--accent-soft);
 }
 
+/* The prototype's unread dot, at the row's right edge. */
+.notifItem[data-unread]::after {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    width: 6px;
+    height: 6px;
+    content: '';
+    background: var(--gold);
+    border-radius: 50%;
+    transform: translateY(-50%);
+}
+
 .notifIcon {
     flex: 0 0 20px;
     width: 20px;
@@ -253,8 +266,26 @@
 .notifBody {
     display: block;
     min-height: 44px;
+    padding: 0;
+    font: inherit;
     color: var(--fg);
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+div.notifBody {
+    cursor: default;
+}
+
+/* A link or button stretches over the whole row, icon included. */
+a.notifBody::before,
+button.notifBody::before {
+    position: absolute;
+    inset: 0;
+    content: '';
 }
 
 .notifBody time {
@@ -262,28 +293,6 @@
     margin-top: 5px;
     font-size: var(--fs-micro);
     color: var(--fg-secondary);
-}
-
-.notifRead {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    transform: translateY(-50%);
-}
-
-.notifRead span {
-    width: 6px;
-    height: 6px;
-    background: var(--gold);
-    border-radius: 50%;
 }
 
 .notifStatus,

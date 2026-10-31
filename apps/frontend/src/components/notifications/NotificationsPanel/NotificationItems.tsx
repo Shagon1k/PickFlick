@@ -64,37 +64,39 @@ export default function NotificationItems({ panelRef }: INotificationItemsProps)
 function NotificationItem({ item, onRead }: { item: TNotificationItem; onRead: () => void }) {
     const { closeOverlay } = useProductOverlay();
     const { isSaving } = useNotifications();
+    const isUnread = item.readAt === null;
     const body = (
         <>
             <p>{item.message}</p>
             <LocalTime format="short" value={item.createdAt} />
+            {isUnread ? <span className="visually-hidden">Unread</span> : null}
         </>
     );
+    // The whole row is the action, as in the prototype: opening an update also marks it read.
+    let content = <div className={styles.notifBody}>{body}</div>;
+    if (item.href)
+        content = (
+            <Link
+                className={styles.notifBody}
+                href={item.href}
+                onClick={() => {
+                    if (isUnread) onRead();
+                    closeOverlay({ shouldReturnFocus: false });
+                }}
+            >
+                {body}
+            </Link>
+        );
+    else if (isUnread)
+        content = (
+            <button className={styles.notifBody} disabled={isSaving} onClick={onRead} type="button">
+                {body}
+            </button>
+        );
     return (
-        <li className={styles.notifItem}>
+        <li className={styles.notifItem} data-unread={isUnread || undefined}>
             <Icon className={styles.notifIcon} name={NOTIFICATION_ICONS[item.event] ?? 'bell'} />
-            {item.href ? (
-                <Link
-                    className={styles.notifBody}
-                    href={item.href}
-                    onClick={() => closeOverlay({ shouldReturnFocus: false })}
-                >
-                    {body}
-                </Link>
-            ) : (
-                <div className={styles.notifBody}>{body}</div>
-            )}
-            {item.readAt === null ? (
-                <button
-                    className={styles.notifRead}
-                    disabled={isSaving}
-                    aria-label={`Mark as read: ${item.message}`}
-                    onClick={onRead}
-                    type="button"
-                >
-                    <span />
-                </button>
-            ) : null}
+            {content}
         </li>
     );
 }
