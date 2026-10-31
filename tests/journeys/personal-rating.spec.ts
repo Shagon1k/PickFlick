@@ -87,7 +87,7 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
             await prisma.sessionRating.findUniqueOrThrow({ where: { id: historical.id } }),
         ).toEqual(historical);
         await page.goto(`/sessions/${session.id}`);
-        await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toBeVisible();
+        await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
         await expect(
             page
                 .getByRole('region', { name: 'Your rating', exact: true })

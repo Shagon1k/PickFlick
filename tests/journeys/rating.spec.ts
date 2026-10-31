@@ -72,7 +72,9 @@ test('Three participants submit once and all clients see automatic completion', 
         await memberPage.getByRole('radio', { name: '7 of 10' }).click();
         await memberPage.getByLabel('Comment').fill('Remember this screening.');
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+        ).toBeVisible();
         await expect(pages[0]!.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
             timeout: 20000,
         });
@@ -87,13 +89,15 @@ test('Three participants submit once and all clients see automatic completion', 
         for (const page of pages.slice(0, 2)) {
             await page.getByRole('radio', { name: '9 of 10' }).click();
             await page.getByRole('button', { name: 'Submit Rating' }).click();
-            await expect(page.getByText('Your rating is saved')).toBeVisible();
+            await expect(
+                page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            ).toBeVisible();
         }
         for (const page of pages) {
             await expect(page.getByText('completed', { exact: true })).toBeVisible({
                 timeout: 20000,
             });
-            await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toBeVisible();
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
         }
         await expect(pages[1]!.getByRole('heading', { level: 1 })).toBeFocused();
@@ -104,7 +108,9 @@ test('Three participants submit once and all clients see automatic completion', 
         expect(ratings).toHaveLength(3);
         expect(completions).toHaveLength(1);
         await memberPage.reload();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+        ).toBeVisible();
     } finally {
         await journey.cleanup();
     }
@@ -119,7 +125,9 @@ test('A Moderator completes partial Rating and every client keeps only received 
         const memberPage = pages[2]!;
         await memberPage.getByRole('radio', { name: '6 of 10' }).click();
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+        ).toBeVisible();
         const before = await prisma.sessionRating.findMany({ where: { sessionId: session.id } });
         const operatorPage = pages[1]!;
         await expect(operatorPage.getByText(/Rating in progress — 1 of 3/)).toBeVisible({

@@ -19,7 +19,7 @@ export default function Completed({ session }: { session: TSession }) {
                 />
             ) : (
                 <section className={styles.panel}>
-                    <h2>Individual Ratings</h2>
+                    <h2>Ratings</h2>
                     <p>No rating record is available for this screening.</p>
                 </section>
             )}

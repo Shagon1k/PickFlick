@@ -40,7 +40,9 @@ for (const viewport of canonicalViewports) {
                 fullPage: true,
             });
             await page.getByRole('button', { name: 'Submit Rating' }).click();
-            await expect(page.getByText('Your rating is saved')).toBeVisible();
+            await expect(
+                page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            ).toBeVisible();
             await expect(page.getByText(/Rating in progress — 2 of 3/)).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await page.reload();
@@ -65,7 +67,7 @@ for (const viewport of canonicalViewports) {
             await dialog.getByRole('button', { name: 'Complete Session' }).click();
             await expect(dialog).toHaveCount(0);
             await expect(page.getByText('completed', { exact: true })).toBeVisible();
-            await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toBeVisible();
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
             await expect(page.getByText('A memorable screening.')).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             expect(
@@ -90,7 +92,7 @@ for (const scenario of ['member', 'readonly', 'hidden-completed']) {
             scenario === 'member' ? 1 : 0,
         );
         await expect(page.getByText('A memorable screening.')).toHaveCount(0);
-        await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toHaveCount(0);
+        await expect(page.getByRole('list', { name: 'Session ratings' })).toHaveCount(0);
     });
 }
 
@@ -148,7 +150,9 @@ test('Rating supports touch and reduced motion on a phone', async ({ browser }) 
         await page.goto(ROUTE);
         await page.getByRole('radio', { name: '7 of 10' }).tap();
         await page.getByRole('button', { name: 'Submit Rating' }).tap();
-        await expect(page.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+        ).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
             true,
         );

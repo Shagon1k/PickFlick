@@ -101,6 +101,7 @@ function buildRating(
         {
             id: '60000000-0000-4000-8000-000000000050',
             author: 'Casey',
+            isOwn: false,
             score: 8,
             comment: 'A memorable screening.',
             submittedAt: '2026-12-01T22:00:00.000Z',
@@ -111,6 +112,7 @@ function buildRating(
         entries.push({
             id: '60000000-0000-4000-8000-000000000051',
             author: 'Jordan',
+            isOwn: true,
             ...own,
             comment: own.comment ?? '',
             submittedAt: '2026-12-01T22:01:00.000Z',

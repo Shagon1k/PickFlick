@@ -361,9 +361,7 @@ for (const viewport of canonicalViewports) {
                 await page.getByRole('link', { name: 'Open Session', exact: true }).click();
                 await expect(page.getByText('completed', { exact: true })).toBeVisible();
                 await expect(page.getByText(/This session has ended/)).toBeVisible();
-                await page
-                    .getByRole('heading', { name: 'Individual Ratings' })
-                    .scrollIntoViewIfNeeded();
+                await page.getByRole('list', { name: 'Session ratings' }).scrollIntoViewIfNeeded();
                 await expect(page.getByText('9/10', { exact: true })).toBeVisible();
                 await expect(page.getByText(/Original submission times are unknown/)).toBeVisible();
                 const rivals = page.getByRole('region', { name: 'Nomination Rivals' });

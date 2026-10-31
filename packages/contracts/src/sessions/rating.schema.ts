@@ -31,7 +31,14 @@ export const ratingSchema = z.strictObject({
     results: z
         .strictObject({
             average: z.number().nullable(),
-            entries: z.array(sessionRatingSchema.extend({ id: z.uuid(), author: z.string() })),
+            entries: z.array(
+                sessionRatingSchema.extend({
+                    id: z.uuid(),
+                    author: z.string(),
+                    /** The viewer's own response, which the list highlights at the top. */
+                    isOwn: z.boolean(),
+                }),
+            ),
         })
         .nullable(),
 });

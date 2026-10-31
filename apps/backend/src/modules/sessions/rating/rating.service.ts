@@ -36,6 +36,7 @@ export class RatingService {
                           ...toRating(participant.rating),
                           id: participant.rating.id,
                           author: participant.membership.user.displayName,
+                          isOwn: participant.membershipId === membership.id,
                       },
                   ]
                 : [],

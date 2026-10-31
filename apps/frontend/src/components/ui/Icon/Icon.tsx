@@ -44,6 +44,7 @@ export type TIconName =
     | 'hub'
     | 'import-export'
     | 'library'
+    | 'lock'
     | 'members'
     | 'overview'
     | 'plus'
