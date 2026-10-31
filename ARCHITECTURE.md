@@ -933,11 +933,14 @@ own notifications. Achievement awards still originate from view evaluation.
 
 Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt; migration 38
 drops the per-attempt table and the email request hash in favour of the delivery row. Apply it
-before the updated API and deadline worker. It is additive, with no historical backfill. Source
+before the updated API and deadline worker. Per-attempt history is removed; delivery counters and
+the latest failure remain.
+
 Session transitions, audited Membership/Club changes and new achievement awards record intent in
 their existing transaction. Notification writes failing roll back the source mutation. The
 per-recipient/event/source UUID/occurrence unique index handles concurrent replay; phase/deadline
-versions distinguish repeated Session events. First-write preferences and attempts survive retries.
+versions distinguish repeated Session events. First-write preferences and delivery rows survive
+retries.
 Existing SessionProgressEvent records retain their role (live progress and the Early Bird
 achievement's Selection opening time); they are not a second inbox. Only future writes produce
 Notifications.
@@ -945,8 +948,9 @@ Notifications.
 The authenticated preference GET/PUT API is private/no-store, derives identity from the session,
 and validates strict shared contracts. Optional defaults are in-app on/email off; transactional
 BILLING_SERVICE is mandatory on both channels. The database also rejects disabled mandatory rows.
-Preferences apply prospectively. Each Notification has initial per-channel attempts with a unique
-positive attempt number; email intent remains pending until #62 implements transport.
+Preferences apply prospectively. Eligible email intent has one `NotificationEmailDelivery` row
+per Notification; the Phase 17 email worker claims and retries that row using its saved counter
+and idempotency key.
 
 Only typed references and delivery/read metadata are stored. There is no payload JSON or copied
 entity content. Entity UUIDs intentionally have no foreign keys: deletion retains generic inbox

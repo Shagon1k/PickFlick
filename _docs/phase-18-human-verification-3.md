@@ -205,6 +205,12 @@ cells and assistive-technology-only success announcements.
   and 390/768/1024/1440 widths.
 - Five previously failing UI checks pass in the pinned Linux image after selectors and
   hydration/animation waits match the delivered interface.
+- The full Linux UI run passes 400/402. Its two remaining timing-sensitive checks are repaired:
+  filter taps wait for each pressed-state change, and dialog captures wait for the previous
+  overlay to close and remove pointer hover. All six affected responsive cases then pass three
+  repeats (18/18) without retries. Full CI contract and visual checks gate the final committed head.
+- Baselines: 62 changed and ten new PNGs, all inspected; the two final Moderator updates were
+  inspected again. Pixel tolerance and masking rules are unchanged.
 - `pnpm deploy:check`: local, UAT and production definitions render. No deployment is performed.
 
 The phase remains open for exact-head hosted owner acceptance, live email delivery (#39) and the

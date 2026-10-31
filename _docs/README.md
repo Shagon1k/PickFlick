@@ -65,6 +65,9 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 [Phase 18 — Human Verification & Bug Fixing III](phase-18-human-verification-3.md) holds the
 severity-classified register for #63.
 
+The [historical simplification audit](simplification-audit.md) and its area reports preserve
+observations from before the fixes. Use the Phase 18 register for current verification and disposition.
+
 [Phase 17 — Notifications and preferences](phase-17-notifications.md) is active for durable
 notifications, preferences and safe event mapping under #60, plus the inbox, read state and
 notification refresh UI under #61. Redis now distributes recipient invalidation signals; hosted visual acceptance remains pending.

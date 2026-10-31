@@ -1345,6 +1345,13 @@ notifications as one retention loop.
 
 **Out of scope:** Billing, full privacy and deletion, and App Admin operations.
 
+Local verification on 2026-11-01 passes the static gate (609 unit tests and builds), 320 database
+integration tests, 16 real-API journeys and the final six Past Session checks. The Linux UI run
+passes 400/402; after repairing its two test-timing failures, all six affected responsive cases
+pass three repeats without retries. The [Phase 18 register](_docs/phase-18-human-verification-3.md)
+and [baseline review](_docs/ui-quality.md#phase-18-baseline-review-2026-11-01) record the evidence.
+Full CI and exact-head hosted owner acceptance remain required before this gate closes.
+
 ### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
 
 **Goal:** Users control their profile, portability, privacy rights, and account removal without

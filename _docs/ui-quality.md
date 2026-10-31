@@ -204,7 +204,10 @@ also covered the new mobile dialogs and wizard, including the nomination rows an
 | Session results and Library     | Historical ratings use the compact list with review previews; Sessions combines running and Rating entries before history; Watchlist priority uses the compact segmented editor.                |
 | Past Session wizard             | Six captures cover film/date/place, selected attendees with ratings, and two nominations with recorded/unknown cells. Ten stars fit one row; the score matrix scrolls inside its own region.    |
 
-The capture update passes 110 visual tests in the pinned image. No pixel tolerance or masking rule
-was changed; existing internal-shell masks remain. A subsequent full run without snapshot updates
-is required before delivery. These checks establish local regression evidence, not exact-head
-hosted owner acceptance or a main/UAT deployment.
+The capture update passes 110 visual tests in the pinned image. The subsequent full run passes
+400/402: one filter check needs to wait for each pressed-state change, and a new dialog capture
+includes the previous overlay/hover state. After synchronizing those actions and capturing the
+resting backdrop, all six affected responsive cases pass three repeats (18/18), without retries.
+The two updated Moderator PNGs were inspected again. No pixel tolerance or masking rule changed;
+existing internal-shell masks remain. Full CI contract and visual checks still gate the committed
+head. Local evidence does not establish hosted owner acceptance or a main/UAT deployment.
