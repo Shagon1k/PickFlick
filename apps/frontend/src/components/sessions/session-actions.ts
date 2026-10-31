@@ -17,7 +17,10 @@ export async function cancelSessionAction(id: string, input: unknown) {
         return { ok: true, message: 'Session cancelled.' };
     } catch (error) {
         const message = getFailureMessage(error, {
-            reasons: { SESSION_CHANGED: 'This Session changed. Reload before cancelling.' },
+            reasons: {
+                SESSION_CHANGED: 'This Session changed. Reload before cancelling.',
+                RATINGS_RECEIVED: 'Ratings are already in. Close Rating to finish this Session.',
+            },
             statuses: [
                 [ACCESS_LOST_STATUSES, 'You no longer have permission to cancel this Session.'],
             ],

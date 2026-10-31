@@ -74,7 +74,7 @@ export default function ActiveSessionActions({
                         ) : null
                     }
                 </SessionRoster>
-                {session.canManage ? (
+                {session.canManage && !session.rating?.receivedCount ? (
                     <Button
                         fullWidth
                         onClick={() => setIsCancelOpen(true)}

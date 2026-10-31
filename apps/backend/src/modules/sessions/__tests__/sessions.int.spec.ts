@@ -225,6 +225,22 @@ describe('Session workflows', () => {
         expect((await edit(session)).status).toBe(409);
         expect((await cancel(session)).status).toBe(409);
     });
+    it('should refuse to cancel a Session once a rating is in', async () => {
+        const session = (await (await create()).json()) as TSession;
+        const { id: membershipId } = await api.prisma.membership.findFirstOrThrow({
+            where: { clubId, userId: member },
+        });
+        await api.prisma.session.update({ where: { id: session.id }, data: { phase: 'RATING' } });
+        const participant = await api.prisma.sessionParticipant.create({
+            data: { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' },
+        });
+        await api.prisma.sessionRating.create({
+            data: { sessionId: session.id, participantId: participant.id, score: 6 },
+        });
+        const refused = await cancel(session);
+        expect(refused.status).toBe(409);
+        expect(await refused.json()).toMatchObject({ error: { reason: 'RATINGS_RECEIVED' } });
+    });
     it('should edit nomination deadlines without changing phase or saved mode', async () => {
         const deadlineAt = new Date(Date.now() + 3_600_000).toISOString();
         const session = (await (await create(admin, { deadlineAt })).json()) as TSession;

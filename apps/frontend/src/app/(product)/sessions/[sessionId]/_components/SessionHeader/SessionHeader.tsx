@@ -161,7 +161,8 @@ function getMenuItems(
         items.push({ id: 'edit', label: 'Edit Session', icon: 'edit', onSelect: actions.onEdit });
     if (actions.onKick)
         items.push({ id: 'kick', label: 'Kick', icon: 'user-x', onSelect: actions.onKick });
-    if (session.canManage)
+    // A Session with received ratings is history: it can be closed, not cancelled.
+    if (session.canManage && !session.rating?.receivedCount)
         items.push({
             id: 'cancel',
             label: 'Cancel Session',

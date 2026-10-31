@@ -168,6 +168,9 @@ export class SessionsService {
                 throw new ConflictException({ reason: 'SESSION_CLOSED' });
             if (session.detailsVersion !== input.version)
                 throw new ConflictException({ reason: 'SESSION_CHANGED' });
+            // Received Session Ratings are shared history; Close Rating ends the Session instead.
+            if (await transaction.sessionRating.count({ where: { sessionId: id } }))
+                throw new ConflictException({ reason: 'RATINGS_RECEIVED' });
             await transaction.session.update({
                 where: { id },
                 data: {
