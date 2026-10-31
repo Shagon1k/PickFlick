@@ -9,7 +9,7 @@ import {
     toUtcDayKey,
     toUtcMonthKey,
 } from './rule-helpers.js';
-import type { TAchievementSession } from './rule-sources.js';
+import { hasAttended, type TAchievementSession } from './rule-sources.js';
 
 const EVENING_HOUR = 18;
 const DECADE = 10;
@@ -31,7 +31,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
             date: session.scheduledAt?.toISOString() ?? null,
             members: getMembersAtScreening(session).map((member) => member.id),
             accepted: session.participants
-                .filter((participant) => participant.attended === true)
+                .filter((participant) => hasAttended(session, participant))
                 .map((participant) => participant.membershipId),
             ratings: session.ratings.map((rating) => ({
                 id: rating.id,
@@ -45,7 +45,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
         })),
     };
     const hasFullHouse = completed.some((session) =>
-        everyMemberAtScreening(session, (participant) => participant.attended === true),
+        everyMemberAtScreening(session, (participant) => hasAttended(session, participant)),
     );
     const hasCriticsCircle = completed.some((session) =>
         everyMemberAtScreening(session, (participant) =>

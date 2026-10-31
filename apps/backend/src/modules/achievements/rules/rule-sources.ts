@@ -78,3 +78,11 @@ export async function readAchievementSessions(
 }
 
 export type TAchievementSession = Awaited<ReturnType<typeof readAchievementSessions>>[number];
+
+/** Log a Past Session records attendance; everyone accepted into a live Session attended it. */
+export function hasAttended(
+    session: TAchievementSession,
+    participant: TAchievementSession['participants'][number],
+) {
+    return participant.attended ?? (session.type !== 'PAST' && participant.status === 'ACCEPTED');
+}

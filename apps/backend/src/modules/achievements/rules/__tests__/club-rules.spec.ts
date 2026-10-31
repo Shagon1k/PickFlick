@@ -98,6 +98,22 @@ describe('buildClubAchievements', () => {
         expect(metrics['critics-circle']).toBe(1);
     });
 
+    it('should count accepted participants of a completed live Session as attendees', () => {
+        const participant = {
+            id: 'participant-1',
+            membershipId: 'member-1',
+            status: 'ACCEPTED' as const,
+            attended: null,
+            membership: { userId: 'user-1' },
+        };
+        const live = buildScreening({ type: 'FULL_CYCLE', participants: [participant] });
+        const left = buildScreening({
+            type: 'FULL_CYCLE',
+            participants: [{ ...participant, status: 'LEFT' }],
+        });
+        expect(buildClubAchievements([live]).metrics['full-house']).toBe(1);
+        expect(buildClubAchievements([left]).metrics['full-house']).toBe(0);
+    });
     it('should ignore imported score matrices as Selection outcome evidence', () => {
         expect(
             buildClubAchievements([

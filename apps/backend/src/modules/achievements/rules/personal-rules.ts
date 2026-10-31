@@ -1,7 +1,7 @@
 import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
 import type { TPersonalAchievementKey } from './rule-catalog.js';
 import { getAverage, getLongestRun, getMembersAtScreening, readDetails } from './rule-helpers.js';
-import type { TAchievementSession } from './rule-sources.js';
+import { hasAttended, type TAchievementSession } from './rule-sources.js';
 
 const LONG_REVIEW = 301;
 const NIGHT_HOUR = 23;
@@ -43,7 +43,8 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     const completed = sessions.filter((session) => session.phase === 'COMPLETED');
     const isAttendee = (session: TAchievementSession) =>
         session.participants.some(
-            (participant) => ownParticipants.has(participant.id) && participant.attended === true,
+            (participant) =>
+                ownParticipants.has(participant.id) && hasAttended(session, participant),
         );
     const membershipIds = [
         ...new Set(
