@@ -57,7 +57,8 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
                 await page.goto('/library');
                 await page.getByLabel('Search rated films').fill('Grand');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
+                await expect(page).toHaveURL(/q=Grand/u);
                 await page
                     .getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' })
                     .focus();
@@ -91,7 +92,7 @@ test(
         await expect(page.getByRole('table')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(page.getByLabel('Search rated films')).toHaveValue('Grand');
-        await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
+        await expect(page.getByLabel('Search rated films')).toBeEnabled();
     },
 );
 

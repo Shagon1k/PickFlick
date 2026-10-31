@@ -337,35 +337,32 @@ test('a failed Sign out keeps the session UI and allows a successful retry', asy
 });
 
 test('section mobile menus focus their first item and return focus', async ({ page }) => {
-    await openShell(page, 'settings', canonicalViewports[0]);
-    const sectionTrigger = page.getByRole('button', { name: /Settings sections Profile/ });
+    await openShell(page, 'admin', canonicalViewports[0]);
+    const sectionTrigger = page.getByRole('button', { name: /Admin sections Overview/ });
     await sectionTrigger.click();
     await expect(
-        page
-            .getByRole('navigation', { name: 'Settings sections mobile' })
-            .getByRole('link')
-            .first(),
+        page.getByRole('navigation', { name: 'Admin sections mobile' }).getByRole('link').first(),
     ).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(sectionTrigger).toBeFocused();
 });
 
 test('section menus share the product overlay state', async ({ page }) => {
-    await openShell(page, 'settings', canonicalViewports[0]);
-    const sectionTrigger = page.getByRole('button', { name: /Settings sections Profile/ });
+    await openShell(page, 'admin', canonicalViewports[0]);
+    const sectionTrigger = page.getByRole('button', { name: /Admin sections Overview/ });
     const mobileNavigation = page.getByRole('navigation', { name: 'Mobile product navigation' });
 
     await sectionTrigger.click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toBeVisible();
     await mobileNavigation.getByRole('button', { name: 'Alerts' }).click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toHaveCount(0);
     await expect(page.locator('#shell-notifications-mobile')).toBeVisible();
 
     await sectionTrigger.click();
     await expect(page.locator('#shell-notifications-mobile')).toBeHidden();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toBeVisible();
     await mobileNavigation.getByRole('button', { name: 'My Library' }).click();
-    await expect(page.getByRole('navigation', { name: 'Settings sections mobile' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Admin sections mobile' })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'My Library sections' })).toBeVisible();
 });
 

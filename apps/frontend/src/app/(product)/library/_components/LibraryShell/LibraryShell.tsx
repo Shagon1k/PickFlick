@@ -34,7 +34,6 @@ export default function LibraryShell({
     return (
         <ControlShell
             title="My Library"
-            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
             summary={shouldShowStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}

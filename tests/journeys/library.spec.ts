@@ -72,7 +72,6 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByLabel('Search rated films').fill('Library journey 00');
         await page.getByRole('combobox', { name: 'Rating', exact: true }).click();
         await page.getByRole('option', { name: '8/10', exact: true }).click();
-        await page.getByRole('button', { name: 'Apply', exact: true }).click();
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(statistics.locator('dd').first()).toHaveText('28');
         await expect(page.getByText('Page 1 of 1')).toBeVisible();

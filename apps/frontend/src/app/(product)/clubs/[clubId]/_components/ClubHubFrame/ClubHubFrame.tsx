@@ -1,12 +1,12 @@
 'use client';
 
 import type { IClubHub, IClubSummary } from '@pickflick/contracts';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import SectionTabs from '#components/shells/SectionTabs/SectionTabs';
 import { buildClubNavigation, type THubSection } from '#components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
@@ -75,20 +75,7 @@ export default function ClubHubFrame({
                     {!isCreating ? (
                         <>
                             <ClubStatus access={snapshot.access} />
-                            <nav aria-label="Club sections" className={styles.tabs}>
-                                <div className={styles.tabsInner}>
-                                    {navigation.map((item) => (
-                                        <Link
-                                            aria-current={item.current ? 'page' : undefined}
-                                            href={item.href}
-                                            scroll={false}
-                                            key={item.label}
-                                        >
-                                            {item.label}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </nav>
+                            <SectionTabs items={navigation} label="Club sections" />
                             {children}
                         </>
                     ) : null}

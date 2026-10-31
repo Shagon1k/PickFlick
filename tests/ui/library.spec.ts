@@ -50,7 +50,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     'true',
                 );
                 await page.getByLabel('Search rated films').fill('Grand Budapest');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
                 await expect(page.getByRole('row')).toHaveCount(2);
                 await expect(page.getByText('Page 1 of 1')).toBeVisible();
                 await page.reload();
@@ -59,7 +59,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.getByRole('option', { name: '8/10', exact: true }).click();
                 await page.getByRole('combobox', { name: 'Sort by', exact: true }).click();
                 await page.getByRole('option', { name: 'Film A to Z' }).click();
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
                 const editor = page.getByRole('button', {
                     name: 'Your rating: 8 out of 10. Edit rating',
                 });
@@ -77,7 +76,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.getByRole('link', { name: 'Clear', exact: true }).click();
                 await expect(page.getByRole('row')).toHaveCount(26);
                 await page.getByLabel('Search rated films').fill('missing film');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page.getByLabel('Search rated films').press('Enter');
                 await expect(
                     page.getByText('No films match your search or filters.', { exact: false }),
                 ).toBeVisible();

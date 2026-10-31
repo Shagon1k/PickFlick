@@ -4,7 +4,6 @@ export default function LibraryLoading() {
     return (
         <ControlShell
             title="My Library"
-            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
             items={[
