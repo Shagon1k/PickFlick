@@ -4,7 +4,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager, recordSessionAction } from '../session-access.js';
+import { assertManager, predatesMembership, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
 import { advanceRating, completeRating } from './rating-completion.js';
@@ -52,7 +52,8 @@ export class RatingService {
                 isOpen &&
                 membership.club.lifecycle === 'ACTIVE' &&
                 own?.status === 'ACCEPTED' &&
-                !own.rating,
+                !own.rating &&
+                !predatesMembership(session, membership.joinedAt),
             canClose: isOpen && viewer.canManage,
             own: own?.rating ? toRating(own.rating) : null,
             results: canSeeResults
@@ -97,7 +98,11 @@ export class RatingService {
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { rating: true },
             });
-            if (participant?.status !== 'ACCEPTED') throw new ForbiddenException();
+            if (
+                participant?.status !== 'ACCEPTED' ||
+                predatesMembership(session, membership.joinedAt)
+            )
+                throw new ForbiddenException();
             if (participant.rating) {
                 if (
                     participant.rating.score === input.score &&

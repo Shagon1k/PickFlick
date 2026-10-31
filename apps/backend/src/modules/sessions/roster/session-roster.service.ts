@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-    type ICreatedInvitation,
     type IPendingSessionInvitation,
     type ISessionRoster,
     OPEN_SESSION_PHASES,
@@ -8,7 +7,7 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { createInviteToken, digestInviteToken } from '../../../common/invite-token.js';
+import { digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import {
     assertActive,
@@ -17,7 +16,13 @@ import {
     type TAuditEvent,
 } from '../../clubs/access/club-access.js';
 import { Transactions } from '../../notifications/transactions.js';
-import { assertManager, assertOpen, assertRemovable, getOwnStatus } from '../session-access.js';
+import {
+    assertManager,
+    assertOpen,
+    assertRemovable,
+    getOwnStatus,
+    predatesMembership,
+} from '../session-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
@@ -53,7 +58,11 @@ export class SessionRosterService {
                 return { state: 'accepted', sessionId, clubId: session.clubId };
             // Removed, or already counted under a Membership from before the member rejoined.
             const ownStatus = getOwnStatus(own, membership.id);
-            if (ownStatus === 'REMOVED' || ownStatus === 'ACCEPTED')
+            if (
+                ownStatus === 'REMOVED' ||
+                ownStatus === 'ACCEPTED' ||
+                (decision === 'accept' && predatesMembership(session, membership.joinedAt))
+            )
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             const status = decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
             if (existing?.status !== status) {
@@ -80,56 +89,6 @@ export class SessionRosterService {
             return decision === 'accept'
                 ? { state: 'accepted', sessionId, clubId: session.clubId }
                 : { state: 'declined' };
-        });
-    }
-
-    async create(
-        userId: string,
-        sessionId: string,
-        membershipId: string,
-    ): Promise<ICreatedInvitation> {
-        return this.transactions.write(async (tx) => {
-            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
-            assertOpen(session.phase);
-            await assertManager(tx, membership);
-            const target = await tx.membership.findFirst({
-                where: {
-                    id: membershipId,
-                    clubId: session.clubId,
-                    status: 'ACTIVE',
-                    user: { status: 'ACTIVE' },
-                },
-            });
-            if (!target) throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
-            const earlier = await tx.sessionParticipant.findFirst({
-                where: { sessionId, status: 'ACCEPTED', membership: { userId: target.userId } },
-            });
-            if (earlier) throw new ConflictException({ reason: 'ALREADY_PARTICIPATING' });
-            const participant = await tx.sessionParticipant.upsert({
-                where: { sessionId_membershipId: { sessionId, membershipId } },
-                create: { sessionId, membershipId, clubId: session.clubId },
-                update: { status: 'INVITED' },
-            });
-            await revokePendingInvites(tx, participant.id);
-            const { token, tokenDigest, expiresAt } = createInviteToken();
-            const invitation = await tx.sessionInvite.create({
-                data: {
-                    tokenDigest,
-                    participantId: participant.id,
-                    clubId: session.clubId,
-                    inviterMembershipId: membership.id,
-                    expiresAt,
-                },
-            });
-            await recordRosterChange(tx, {
-                actorUserId: userId,
-                subjectUserId: target.userId,
-                subjectMembershipId: membershipId,
-                clubId: session.clubId,
-                sessionId,
-                action: 'SESSION_INVITE_CREATED',
-            });
-            return { id: invitation.id, token, expiresAt: invitation.expiresAt.toISOString() };
         });
     }
 
@@ -227,27 +186,37 @@ export class SessionRosterService {
                     },
                 },
             },
-            include: { club: true },
+            include: {
+                club: {
+                    include: {
+                        memberships: {
+                            where: { userId, status: 'ACTIVE' },
+                            select: { joinedAt: true },
+                        },
+                    },
+                },
+            },
             orderBy: { createdAt: 'desc' },
         });
-        return sessions.map((session) => ({
-            id: session.id,
-            clubName: session.club.name,
-            topic: session.topic,
-            scheduledAt: session.scheduledAt?.toISOString() ?? null,
-        }));
+        return sessions
+            .filter(
+                (session) => !predatesMembership(session, session.club.memberships[0]!.joinedAt),
+            )
+            .map((session) => ({
+                id: session.id,
+                clubName: session.club.name,
+                topic: session.topic,
+                scheduledAt: session.scheduledAt?.toISOString() ?? null,
+            }));
     }
 
     async respond(
         userId: string,
-        selector: { token: string } | { id: string },
+        token: string,
         decision: 'accept' | 'decline',
     ): Promise<TSessionInvitationPreview> {
         return this.transactions.write(async (tx) => {
-            const where =
-                'token' in selector
-                    ? { tokenDigest: digestInviteToken(selector.token) }
-                    : { id: selector.id };
+            const where = { tokenDigest: digestInviteToken(token) };
             const found = await tx.sessionInvite.findUnique({
                 where,
                 include: { participant: true },

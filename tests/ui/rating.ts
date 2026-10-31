@@ -67,8 +67,6 @@ export function handleRating(
             isRemoved: false,
             canLeave: !isCompleted,
             canManage: canManageSession,
-            canInvite: canManageSession,
-            eligibleMembers: [],
             participants: ['Jordan', 'Casey', 'Morgan'].map((displayName, index) => ({
                 id: `40000000-0000-4000-8000-00000000005${index}`,
                 membershipId: `50000000-0000-4000-8000-00000000005${index}`,

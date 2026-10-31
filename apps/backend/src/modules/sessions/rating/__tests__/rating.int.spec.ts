@@ -122,6 +122,15 @@ describe('Rating', () => {
         ).toBe(0);
     });
 
+    it('should let a participant who joined the Club after the screening read but not rate', async () => {
+        await api.prisma.session.update({
+            where: { id: sessionId },
+            data: { scheduledAt: new Date(Date.now() - 86_400_000) },
+        });
+        expect((await detail(2)).rating).toMatchObject({ canSubmit: false });
+        expect((await submit(2)).status).toBe(403);
+        expect(await received()).toEqual([]);
+    });
     it('should preserve exactly the received ratings under concurrent partial closure', async () => {
         await submit(2, { score: 10, comment: '  Keep this\r\nresponse.  ' });
         const before = await received();

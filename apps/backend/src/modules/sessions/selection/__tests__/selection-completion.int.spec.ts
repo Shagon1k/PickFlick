@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import { sessionSchema } from '@pickflick/contracts';
-import { z } from 'zod';
 
 import {
     addMember,
@@ -290,17 +289,7 @@ describe('Selection completion', () => {
         await submit(users[1]);
         await leave();
         await leave(users[0]);
-        const membership = await api.prisma.membership.findFirstOrThrow({
-            where: { clubId, userId: users[1] },
-        });
-        const invitation = await api.request(`/sessions/${sessionId}/invitations`, {
-            method: 'POST',
-            userId: users[2],
-            json: { membershipId: membership.id },
-        });
-        expect(invitation.status).toBe(201);
-        const { id } = z.object({ id: z.uuid() }).parse(await invitation.json());
-        const response = await api.request(`/session-invitations/${id}/respond`, {
+        const response = await api.request(`/sessions/${sessionId}/participation`, {
             method: 'POST',
             userId: users[1],
             json: { decision: 'accept' },

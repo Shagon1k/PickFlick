@@ -67,11 +67,9 @@ export function handleSelection(
             acceptedCount: 3,
             canJoin: false,
             isRemoved: false,
-            canInvite: false,
             canManage: false,
             canLeave: false,
             participants: [],
-            eligibleMembers: [],
         };
         sendJson(response, 200, roster);
         return true;

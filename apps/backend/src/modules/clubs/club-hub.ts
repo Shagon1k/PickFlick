@@ -136,14 +136,14 @@ async function createHubSessionProjection(
         nominatedCount: row._count.nominations,
         progressCount: getProgressCount(row),
         ratingAverage: averageById.get(row.id) ?? null,
-        canJoin: canJoinSession({
-            phase: row.phase,
-            clubLifecycle: membership.club.lifecycle,
-            ownStatus: getOwnStatus(
+        canJoin: canJoinSession(
+            row,
+            membership,
+            getOwnStatus(
                 own.filter(({ sessionId }) => sessionId === row.id),
                 membership.id,
             ),
-        }),
+        ),
         movie: row.movie
             ? {
                   id: row.movie.id,

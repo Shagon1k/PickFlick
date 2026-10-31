@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-import { z } from 'zod';
-
 import {
     createSession,
     createUser,
@@ -219,22 +217,12 @@ describe('Session progress', () => {
         await leave();
         await leave(users[0]);
         expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
-        const invitation = await api.request(`/sessions/${sessionId}/invitations`, {
-            userId: users[0],
+        const rejoined = await api.request(`/sessions/${sessionId}/participation`, {
+            userId: users[1],
             method: 'POST',
-            json: { membershipId: memberships[1] },
+            json: { decision: 'accept' },
         });
-        const { id } = z.object({ id: z.uuid() }).parse(await invitation.json());
-        expect(invitation.status).toBe(201);
-        expect(
-            (
-                await api.request(`/session-invitations/${id}/respond`, {
-                    userId: users[1],
-                    method: 'POST',
-                    json: { decision: 'accept' },
-                })
-            ).status,
-        ).toBe(200);
+        expect(rejoined.status).toBe(200);
         expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
         expect((await events()).at(-1)).toMatchObject({
             kind: 'PROGRESS',

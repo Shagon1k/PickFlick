@@ -46,8 +46,6 @@ export function handleWatching(
             isRemoved: false,
             canLeave: true,
             canManage,
-            canInvite: canManage,
-            eligibleMembers: [],
             participants: [
                 {
                     id: '40000000-0000-4000-8000-000000000049',

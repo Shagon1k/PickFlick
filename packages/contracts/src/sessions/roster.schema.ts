@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 import type { IPendingClubInvitation } from '../clubs/invitation.schema.js';
 
-export const createSessionInvitationSchema = z.strictObject({ membershipId: z.uuidv4() });
-export type TCreateSessionInvitation = z.infer<typeof createSessionInvitationSchema>;
 export const leaveSessionSchema = z.strictObject({ confirmation: z.literal('LEAVE') });
 export const removeSessionParticipantSchema = z.strictObject({ confirmation: z.literal('REMOVE') });
 
@@ -31,7 +29,6 @@ export interface IPendingSessionInvitation {
 export interface ISessionRoster {
     progressVersion: number;
     acceptedCount: number;
-    canInvite: boolean;
     canManage: boolean;
     canLeave: boolean;
     canJoin: boolean;
@@ -49,7 +46,6 @@ export interface ISessionRoster {
         } | null;
         canRemove: boolean;
     }[];
-    eligibleMembers: { id: string; displayName: string }[];
 }
 
 export type TPendingInvitation =

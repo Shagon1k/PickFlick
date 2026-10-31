@@ -77,16 +77,27 @@ export function assertRemovable(
     if (!canRemoveParticipant(actor.role, target.role)) throw new ForbiddenException();
 }
 
-export function canJoinSession(input: {
-    phase: TSessionPhase;
-    clubLifecycle: TClubLifecycle;
-    ownStatus: string | undefined;
-}) {
+type TDatedSession = { phase: TSessionPhase; scheduledAt: Date | null };
+
+/**
+ * A Rating Session screened before the member joined the Club is history to them: they can read
+ * it, but never join or rate it.
+ */
+export function predatesMembership(session: TDatedSession, joinedAt: Date) {
+    return session.phase === 'RATING' && !!session.scheduledAt && session.scheduledAt < joinedAt;
+}
+
+export function canJoinSession(
+    session: TDatedSession,
+    membership: { joinedAt: Date; club: { lifecycle: TClubLifecycle } },
+    ownStatus: string | undefined,
+) {
     return (
-        isOpenSessionPhase(input.phase) &&
-        input.clubLifecycle === 'ACTIVE' &&
-        input.ownStatus !== 'ACCEPTED' &&
-        input.ownStatus !== 'REMOVED'
+        isOpenSessionPhase(session.phase) &&
+        membership.club.lifecycle === 'ACTIVE' &&
+        !predatesMembership(session, membership.joinedAt) &&
+        ownStatus !== 'ACCEPTED' &&
+        ownStatus !== 'REMOVED'
     );
 }
 

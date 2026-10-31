@@ -38,13 +38,8 @@ export async function readRoster(
         progressVersion: session.progressVersion,
         acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
             .length,
-        canInvite: isManager,
         canManage: isManager,
-        canJoin: canJoinSession({
-            phase: session.phase,
-            clubLifecycle: membership.club.lifecycle,
-            ownStatus,
-        }),
+        canJoin: canJoinSession(session, membership, ownStatus),
         isRemoved: ownStatus === 'REMOVED',
         canLeave:
             isOpen &&
@@ -78,24 +73,5 @@ export async function readRoster(
                           }
                         : null,
             })),
-        eligibleMembers: isManager
-            ? (
-                  await tx.membership.findMany({
-                      where: {
-                          clubId: session.clubId,
-                          status: 'ACTIVE',
-                          user: { status: 'ACTIVE' },
-                          sessionParticipants: {
-                              none: { sessionId, status: 'ACCEPTED' },
-                          },
-                      },
-                      orderBy: { joinedAt: 'asc' },
-                      include: { user: true },
-                  })
-              ).map((membership) => ({
-                  id: membership.id,
-                  displayName: membership.user.displayName,
-              }))
-            : [],
     };
 }

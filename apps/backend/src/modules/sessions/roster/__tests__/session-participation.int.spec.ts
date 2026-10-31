@@ -64,6 +64,25 @@ describe('Session participation', () => {
             await api.request(`/sessions/${sessionId}/roster`, { userId: member })
         ).json()) as ISessionRoster;
 
+    it('should keep a Rating Session screened before the member joined out of reach', async () => {
+        const screenedAt = new Date(Date.now() - 86_400_000);
+        await api.prisma.session.update({
+            where: { id: sessionId },
+            data: { phase: 'RATING', scheduledAt: screenedAt },
+        });
+        expect(await pending()).toEqual([]);
+        expect((await roster()).canJoin).toBe(false);
+        expect((await participate()).status).toBe(409);
+        expect((await participate(member, 'decline')).status).toBe(200);
+        await api.prisma.membership.update({
+            where: { id: membershipId },
+            data: { joinedAt: new Date(screenedAt.getTime() - 1000) },
+        });
+        expect(await pending()).toEqual([]);
+        await api.prisma.sessionParticipant.deleteMany({ where: { sessionId } });
+        expect(await pending()).toEqual([expect.objectContaining({ id: sessionId })]);
+        expect((await participate()).status).toBe(200);
+    });
     it('should offer every member an open Session and join once under concurrent requests', async () => {
         expect(await pending()).toEqual([
             expect.objectContaining({ id: sessionId, scheduledAt: null }),

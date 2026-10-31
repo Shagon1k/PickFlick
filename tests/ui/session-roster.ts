@@ -62,7 +62,6 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
         acceptedCount: state.status === 'ACCEPTED' ? 1 : 0,
         canJoin: state.status === 'INVITED',
         isRemoved: false,
-        canInvite: isManager && token.includes('session-roster'),
         canManage: isManager,
         canLeave: state.status === 'ACCEPTED',
         participants: token.includes('session-roster')
@@ -79,7 +78,6 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
                   },
               ]
             : [],
-        eligibleMembers: isManager ? [{ id: MEMBERSHIP_ID, displayName: 'Jordan Member' }] : [],
     };
 }
 function previewProjection(token: string, state: IRosterState): TSessionInvitationPreview {

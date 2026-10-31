@@ -83,7 +83,6 @@ function handleRoster(
         acceptedCount: hasDeparted ? 2 : 3,
         canJoin: false,
         isRemoved: false,
-        canInvite: false,
         canManage: false,
         canLeave: false,
         participants: (hasDeparted ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
@@ -96,7 +95,6 @@ function handleRoster(
                 invitation: null,
             }),
         ),
-        eligibleMembers: [],
     };
     sendJson(response, 200, roster);
     return true;
