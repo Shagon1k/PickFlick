@@ -162,3 +162,8 @@
         justify-content: center;
     }
 }
+
+/* A star row is centred at every width, as in the prototype's rating panels. */
+.scale[data-compact] .scale__rail[data-presentation='rating'] {
+    justify-content: center;
+}

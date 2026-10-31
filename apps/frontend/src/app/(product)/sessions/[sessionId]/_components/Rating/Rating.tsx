@@ -33,13 +33,7 @@ export default function Rating({
             );
         if (data.canSubmit)
             return <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />;
-        return (
-            <p>
-                {isCompleted
-                    ? 'This Session is complete. No more ratings can be added.'
-                    : 'Join this Session in an active Club to submit a rating.'}
-            </p>
-        );
+        return isCompleted ? null : <p>Join the Session to rate.</p>;
     }
     return (
         <section
@@ -70,13 +64,7 @@ export default function Rating({
                         <p>No ratings were received.</p>
                     )}
                 </div>
-            ) : (
-                <p>
-                    {isCompleted
-                        ? 'Club rating results are hidden by this Session’s visibility setting.'
-                        : 'Club rating results are available after completion, when permitted.'}
-                </p>
-            )}
+            ) : null}
         </section>
     );
 }

@@ -1,15 +1,22 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import { SESSION_RATING_COMMENT_MAX_LENGTH, submitRatingSchema } from '@pickflick/contracts';
+import {
+    RATING_SCALE,
+    SESSION_RATING_COMMENT_MAX_LENGTH,
+    submitRatingSchema,
+} from '@pickflick/contracts';
 
 import { submitRatingAction } from '#components/sessions/rating-actions';
 import Button from '#components/ui/Button/Button';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
 import Textarea from '#components/ui/Textarea/Textarea';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
 import { useActionStatus } from '#lib/use-action-status';
+
+import styles from './Rating.module.scss';
 
 export default function RatingForm({
     sessionId,
@@ -64,9 +71,13 @@ export default function RatingForm({
     return (
         <>
             <form onSubmit={handleSubmit} noValidate>
+                <p aria-hidden="true" className={styles.starLabel}>
+                    {form.values.score ?? '—'}/{RATING_SCALE.max}
+                </p>
                 <RatingControl
+                    isCompact
                     name="session-rating"
-                    label="Rate this screening"
+                    label="Your rating"
                     value={form.values.score}
                     onChange={(score) => {
                         form.setFieldValue('score', score);
@@ -77,17 +88,22 @@ export default function RatingForm({
                 />
                 <Textarea
                     id="session-rating-comment"
+                    isLabelHidden
                     label="Comment"
-                    labelHint="optional"
+                    placeholder="Add a comment — optional"
                     maxLength={SESSION_RATING_COMMENT_MAX_LENGTH}
-                    shouldShowCount
                     disabled={isPending}
                     {...form.getInputProps('comment')}
                 />
-                <p>Submit once. Your Session Rating cannot be changed.</p>
-                <Button type="submit" loading={isPending}>
-                    Submit Rating
-                </Button>
+                <div className={styles.submitRow}>
+                    <Button type="submit" loading={isPending}>
+                        Submit Rating
+                    </Button>
+                    <InfoTip label="About Session Ratings">
+                        You rate once and cannot change it later. Your Personal Rating of the film
+                        stays editable in your Library.
+                    </InfoTip>
+                </div>
             </form>
             <StatusLine isSuccess={isSuccess} message={message} />
         </>

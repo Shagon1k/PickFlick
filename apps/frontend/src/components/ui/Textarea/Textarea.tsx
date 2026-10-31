@@ -26,6 +26,7 @@ export default function Textarea({
     hint,
     label,
     labelHint,
+    isLabelHidden,
     maxLength,
     shouldShowCount = false,
     size = 'default',
@@ -41,6 +42,7 @@ export default function Textarea({
             {...props}
             {...getFieldProps({
                 error,
+                isLabelHidden,
                 label,
                 labelHint,
                 success,

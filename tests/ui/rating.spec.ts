@@ -164,8 +164,5 @@ test('Completed Rating explains an empty result without inventing responses', as
     await authenticate(context, 'empty-completed');
     await page.goto(ROUTE);
     await expect(page.getByText('No ratings were received.')).toBeVisible();
-    await expect(
-        page.getByText('This Session is complete. No more ratings can be added.'),
-    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
 });

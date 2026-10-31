@@ -116,3 +116,21 @@
         gap: var(--gap-xs);
     }
 }
+
+/* The prototype's mono score label over the star row. */
+.starLabel {
+    margin: 0;
+    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
+    text-align: center;
+}
+
+.rating .starLabel {
+    color: var(--ivory-muted);
+}
+
+.submitRow {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    justify-content: center;
+}

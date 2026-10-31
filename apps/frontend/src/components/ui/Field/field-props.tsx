@@ -19,6 +19,7 @@ export function getFieldProps({
     hint,
     label,
     labelHint,
+    isLabelHidden = false,
     success,
     message = <FieldMessage error={error} hint={hint} success={success} />,
 }: Omit<IFieldProps, 'id'> & { message?: ReactNode }) {
@@ -33,7 +34,11 @@ export function getFieldProps({
             </>
         ),
         inputWrapperOrder: SLOT_ORDER,
-        label: <FieldLabel hint={labelHint} label={label} />,
+        label: isLabelHidden ? (
+            <span className="visually-hidden">{label}</span>
+        ) : (
+            <FieldLabel hint={labelHint} label={label} />
+        ),
         unstyled: true,
         withAsterisk: false,
     };
