@@ -49,8 +49,14 @@ corepack enable
 
 `pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline and email workers without ports. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
-the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email dispatch remains disabled locally.
+the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email
+dispatch is disabled locally by default.
 Generate synthetic templates with `pnpm email:preview`; see [Email delivery operations](email-delivery.md).
+
+For an owner-approved real-email test, follow [Verify real email locally](email-delivery.md#verify-real-email-locally).
+The opt-in requires approved recipients and a fresh activation cutoff, prefixes subjects with
+`[LOCAL]`, leaves older notification backlog untouched and skips operator email alerts. Test and
+preview environments still never send. Restore disabled delivery when the local test ends.
 
 After pulling a schema change, run `pnpm install` again; it regenerates the Prisma Client. Then restart
 your editor's ESLint and TypeScript servers. Editors that keep the old client report
@@ -147,8 +153,8 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
   `THETVDB_READ_TOKEN`. TheTVDB expects the bearer token returned as `data.token` by its
   `/v4/login` API; an API key must be exchanged there first, rather than copied into the token field.
 - **Contact succeeds but no email arrives locally.** Local email delivery is disabled by default;
-  the backend logs that delivery was skipped and stores no message body. Verify real delivery only
-  with an explicitly configured live sender and approved recipient.
+  the backend logs that delivery was skipped and stores no message body. Use the
+  [scoped local opt-in](email-delivery.md#verify-real-email-locally) for approved recipient tests.
 - **Seed or reset refuses to run.** Check `APP_ENV` and the database name in `DATABASE_URL`.
 - **`/ui-preview` or `/shell-preview` answers 404.** They are hidden only when
   `APP_ENV=production`.

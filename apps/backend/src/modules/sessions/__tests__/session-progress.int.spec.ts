@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { sessionSchema } from '@pickflick/contracts';
+
 import {
     createSession,
     createUser,
@@ -87,7 +89,13 @@ describe('Session progress', () => {
             method: 'POST',
             json: { confirmation: 'LEAVE' },
         });
+    const excludeUnjoinedMember = () =>
+        api.prisma.membership.update({
+            where: { id: memberships[2] },
+            data: { status: 'LEFT', leftAt: new Date() },
+        });
     it('should serialize concurrent final submissions and publish one automatic decision with repeated Movies', async () => {
+        await excludeUnjoinedMember();
         const results = await Promise.all([submit(), submit(users[1])]);
         expect(results.map((result) => result.status)).toEqual([201, 201]);
         expect(await state()).toMatchObject({
@@ -110,6 +118,46 @@ describe('Session progress', () => {
         expect((await submit()).status).toBe(409);
         expect(await events()).toHaveLength(2);
     });
+    it('should wait for an unjoined Club member and advance only after that member joins and nominates', async () => {
+        await submit();
+        await submit(users[1]);
+        expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
+        const response = await api.request(`/sessions/${sessionId}`, { userId: users[0] });
+        expect(sessionSchema.parse(await response.json()).nominations).toMatchObject({
+            memberCount: 3,
+            acceptedCount: 2,
+            nominatedCount: 2,
+        });
+        await api.expectStatus(200, `/sessions/${sessionId}/participation`, {
+            userId: users[2],
+            method: 'POST',
+            json: { decision: 'accept' },
+        });
+        expect(await state()).toMatchObject({ phase: 'NOMINATION' });
+        await submit(users[2]);
+        expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
+        expect((await events()).filter((event) => event.kind === 'AUTOMATIC')).toHaveLength(1);
+    });
+    it('should reevaluate Nomination when an unjoined member leaves the Club', async () => {
+        await submit();
+        await submit(users[1]);
+        await api.expectStatus(204, `/clubs/${clubId}/leave`, {
+            userId: users[2],
+            method: 'POST',
+            json: { confirmation: 'LEAVE' },
+        });
+        expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
+    });
+    it('should reevaluate Nomination when the Admin removes an unjoined Club member', async () => {
+        await submit();
+        await submit(users[1]);
+        await api.expectStatus(204, `/clubs/${clubId}/members/${memberships[2]}/remove`, {
+            userId: users[0],
+            method: 'POST',
+            json: { confirmation: 'REMOVE' },
+        });
+        expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
+    });
     it('should keep the nomination of a sole participant open until someone else joins', async () => {
         await api.prisma.sessionParticipant.updateMany({
             where: { sessionId, membershipId: memberships[1] },
@@ -121,14 +169,14 @@ describe('Session progress', () => {
             expect.objectContaining({ kind: 'PROGRESS', acceptedCount: 1, nominatedCount: 1 }),
         ]);
     });
-    it('should advance when a non-nominator departs and the rest have nominated', async () => {
+    it('should keep Nomination open when a non-nominator leaves only the Session', async () => {
         await submit();
         await joinThird();
         await submit(users[2]);
         expect((await leave()).status).toBe(204);
-        expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
+        expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
         expect((await events()).at(-1)).toMatchObject({
-            kind: 'AUTOMATIC',
+            kind: 'PROGRESS',
             acceptedCount: 2,
             nominatedCount: 2,
         });
@@ -175,21 +223,28 @@ describe('Session progress', () => {
             userId: users[0],
             method: 'POST',
         });
+        expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
+        await api.expectStatus(200, `/sessions/${sessionId}/participation`, {
+            userId: users[1],
+            method: 'POST',
+            json: { decision: 'accept' },
+        });
+        await submit(users[1]);
         expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
     });
     it('should serialize the final submission against a departure using the committed roster', async () => {
         await submit();
         const [submission, departure] = await Promise.all([submit(users[1]), leave()]);
         expect(departure.status).toBe(204);
-        expect([201, 409]).toContain(submission.status);
+        expect([201, 403]).toContain(submission.status);
         expect(await state()).toMatchObject({
-            phase: submission.status === 201 ? 'SELECTION' : 'WATCHING',
-            phaseVersion: 2,
+            phase: 'NOMINATION',
+            phaseVersion: 1,
         });
-        expect((await events()).filter((event) => event.kind === 'AUTOMATIC')).toHaveLength(1);
+        expect((await events()).filter((event) => event.kind === 'AUTOMATIC')).toHaveLength(0);
         expect((await events()).at(-1)).toMatchObject({ acceptedCount: 1, nominatedCount: 1 });
     });
-    it('should evaluate completion after an operator removes the last non-nominator', async () => {
+    it('should wait for the Club roster after an operator removes a Session participant', async () => {
         await submit();
         await joinThird();
         await submit(users[2]);
@@ -205,9 +260,9 @@ describe('Session progress', () => {
                 })
             ).status,
         ).toBe(204);
-        expect(await state()).toMatchObject({ phase: 'SELECTION', phaseVersion: 2 });
+        expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
         expect((await events()).at(-1)).toMatchObject({
-            kind: 'AUTOMATIC',
+            kind: 'PROGRESS',
             acceptedCount: 2,
             nominatedCount: 2,
         });
@@ -232,6 +287,7 @@ describe('Session progress', () => {
         expect(await api.prisma.nomination.count({ where: { sessionId } })).toBe(1);
     });
     it('should atomically roll back the nomination and transition if the outbox write fails', async () => {
+        await excludeUnjoinedMember();
         await submit();
         // Reserve the next outbox key to force a real PostgreSQL uniqueness failure.
         await api.prisma.sessionProgressEvent.create({

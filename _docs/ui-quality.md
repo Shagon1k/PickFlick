@@ -211,3 +211,19 @@ resting backdrop, all six affected responsive cases pass three repeats (18/18), 
 The two updated Moderator PNGs were inspected again. No pixel tolerance or masking rule changed;
 existing internal-shell masks remain. Full CI contract and visual checks still gate the committed
 head. Local evidence does not establish hosted owner acceptance or a main/UAT deployment.
+
+## Owner alignment review, 2026-11-01
+
+The follow-up to `666ea16` refreshes 49 PNGs and adds two imported Completed captures, bringing
+the inventory to 120. All 51 changed/new images were inspected at the same scale against their
+previous captures and the canonical prototypes, with full-size checks of affected controls. The
+review covers the footer, SVG stars and rating labels, selected-film cards, imported rival cards,
+InfoTip typography, leaderboards and Nomination/Watching counts. The native Date/Time controls
+keep the shared field gap. Recorded owner choices and partial historical evidence remain intact.
+
+The pinned Linux image passes all 112 visual checks during the update and again without updating
+snapshots. Pixel tolerance and masks are unchanged. Eight additional actual production-screen
+before/after pairs use matching synthetic fixtures at 390×844, DPR 2; they accompany the owner
+report. Interaction, keyboard and animation evidence comes from behavior checks, not static PNGs.
+Final contract, static and hosted acceptance evidence belongs to the
+[current register](phase-18-human-verification-3.md#current-alignment-evidence).

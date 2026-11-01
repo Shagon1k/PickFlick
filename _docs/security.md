@@ -110,6 +110,11 @@ IDs or signed notification tags matching a stored recipient-address hash can cha
 Logs redact the signature header and omit provider messages, addresses and email bodies. Email jobs
 persist typed source references and request/address hashes, never rendered content or invitation tokens.
 
+Local live email requires an explicit recipient allowlist and Notification creation cutoff. The
+worker leaves older or out-of-scope deliveries untouched and skips operator alerts; the shared
+Resend adapter also rejects out-of-scope direct sends. Only local may omit the webhook secret,
+and an unconfigured callback endpoint still refuses requests. See [local verification](email-delivery.md#verify-real-email-locally).
+
 ## Abuse limits
 
 `@nestjs/throttler` allows 120 requests a minute per client, 5 Contact messages per 10 minutes, and

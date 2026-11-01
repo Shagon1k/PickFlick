@@ -19,7 +19,8 @@
 }
 
 .clubRatings__sort {
-    max-width: 280px;
+    justify-self: end;
+    width: min(100%, 280px);
 }
 
 .clubRatings__film {
@@ -27,9 +28,16 @@
     align-items: center;
     min-width: 150px;
     min-height: var(--hit);
+    font-weight: 600;
     color: var(--fg);
     overflow-wrap: anywhere;
     text-decoration: none;
+}
+
+@media (width < 576px) {
+    .clubRatings__sort {
+        width: 100%;
+    }
 }
 
 .clubRatings__rating {

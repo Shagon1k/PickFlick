@@ -18,6 +18,10 @@
     border-radius: var(--radius-lg);
 }
 
+.card:only-child {
+    grid-column: 1 / -1;
+}
+
 .card h2 {
     margin: 0 0 var(--gap-sm);
     font-size: 18px;

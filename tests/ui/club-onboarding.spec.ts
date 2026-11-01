@@ -111,7 +111,7 @@ test('a valid Club creation opens the new Free Club with its configured scale', 
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-create-success');
+    await authenticate(context, `valid-create-success-${crypto.randomUUID()}`);
     await open(page, '/clubs/new', canonicalViewports[1]);
 
     await page.getByRole('textbox', { name: 'Club name — required' }).fill('Midnight Society');

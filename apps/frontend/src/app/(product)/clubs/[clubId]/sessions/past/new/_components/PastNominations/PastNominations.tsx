@@ -5,7 +5,6 @@ import type {
     TMovieSearchResults,
     TPastSessionMembers,
 } from '@pickflick/contracts';
-import { useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
@@ -21,7 +20,8 @@ export default function PastNominations({
     evidence,
     attendees,
     members,
-    knownTitles,
+    titles,
+    onTitlesChange,
     scaleMin,
     scaleMax,
     disabled,
@@ -31,15 +31,14 @@ export default function PastNominations({
     evidence: TEvidence;
     attendees: TCreatePastSession['attendees'];
     members: TPastSessionMembers;
-    /** Titles already picked earlier in the form, such as the screened film's. */
-    knownTitles: Record<string, string>;
+    titles: Record<string, string>;
+    onTitlesChange: (titles: Record<string, string>) => void;
     scaleMin: number;
     scaleMax: number;
     disabled: boolean;
     error?: React.ReactNode;
     onChange: (evidence: TEvidence) => void;
 }) {
-    const [titles, setTitles] = useState(knownTitles);
     const { message, isSuccess, setMessage, announceSuccess } = useActionStatus();
     const { nominations, scoreMatrix } = evidence;
     const memberNames = buildMemberNames(members);
@@ -56,10 +55,10 @@ export default function PastNominations({
             setMessage('This Movie is already in the nomination list.');
             return;
         }
-        setTitles((current) => ({
-            ...current,
+        onTitlesChange({
+            ...titles,
             [movieId]: movie.title ?? movie.originalTitle ?? 'Untitled film',
-        }));
+        });
         onChange({ nominations: [...nominations, { movieId }], scoreMatrix });
         announceSuccess('Nomination added.');
     }
@@ -125,6 +124,7 @@ export default function PastNominations({
                         <Select
                             id={`nominator-${id}`}
                             label={`Nominator for ${titles[id]}`}
+                            shouldReserveMessage={false}
                             value={nominatorMembershipId ?? ''}
                             disabled={disabled}
                             data={[

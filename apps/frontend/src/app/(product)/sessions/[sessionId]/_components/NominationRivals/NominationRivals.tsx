@@ -1,20 +1,15 @@
 'use client';
 
-import {
-    getPosterPath,
-    type TLiveSelectionOutcome,
-    type TSelectionReason,
-} from '@pickflick/contracts';
-import Link from 'next/link';
+import { type TLiveSelectionOutcome, type TSelectionReason } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
-import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
 import { formatAverage, formatCount } from '#lib/format';
 
 import styles from './NominationRivals.module.scss';
+import RivalCard from './RivalCard';
 
 type TBreakdown = NonNullable<TLiveSelectionOutcome['breakdown']>;
 type TRival = TBreakdown['ranking'][number];
@@ -56,31 +51,14 @@ export default function NominationRivals({
             </div>
             <ol className={styles.list}>
                 {breakdown.ranking.map((rival, index) => (
-                    <li className={styles.card} key={rival.id}>
-                        <SearchPoster
-                            className={styles.poster}
-                            url={getPosterPath(rival.movie.id)}
-                        />
-                        <div className={styles.info}>
-                            <h4>
-                                <Link href={`/movies/${rival.movie.id}`}>
-                                    {rival.movie.title ?? 'Movie title unavailable'}
-                                </Link>
-                                {index === 0 ? <span className={styles.winner}>Winner</span> : null}
-                            </h4>
-                            {rival.author !== null ? (
-                                <span className={styles.meta}>by {rival.author}</span>
-                            ) : null}
-                            {rival.movie.genres.length ? (
-                                <ul className={styles.genres} aria-label="Genres">
-                                    {rival.movie.genres.map((genre) => (
-                                        <li key={genre}>{genre}</li>
-                                    ))}
-                                </ul>
-                            ) : null}
-                        </div>
+                    <RivalCard
+                        key={rival.id}
+                        movie={rival.movie}
+                        author={rival.author}
+                        badge={index === 0 ? 'Winner' : undefined}
+                    >
                         <RivalScore rival={rival} average={average(rival)} />
-                    </li>
+                    </RivalCard>
                 ))}
             </ol>
         </section>

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
+import { settle } from './settle';
 import { expectMobileAdminEntry, openShell } from './shell-fixtures';
 import { canonicalViewports } from './viewports';
 
@@ -408,11 +409,18 @@ test('the mobile Hub menu lists the same Club sections outside a Club', async ({
 }) => {
     await signInMock(context, 'valid-library-hub-menu');
     await page.setViewportSize(canonicalViewports[0]);
-    await page.goto('/library');
-    await page
+    await page.goto('/library', { waitUntil: 'load' });
+    await settle(page);
+    // The shell is interactive once its layout effect has aligned the server-rendered menus.
+    await expect(page.locator('[data-anchored-menu="hub"]')).toHaveAttribute(
+        'style',
+        /--menu-shift:/u,
+    );
+    const hub = page
         .getByRole('navigation', { name: 'Mobile product navigation' })
-        .getByRole('button', { name: 'Hub' })
-        .click();
+        .getByRole('button', { name: 'Hub' });
+    await hub.click();
+    await expect(hub).toHaveAttribute('aria-expanded', 'true');
     const sections = page.getByRole('navigation', { name: 'Hub sections' }).getByRole('link');
     await expect(sections).toHaveText([
         'Overview',

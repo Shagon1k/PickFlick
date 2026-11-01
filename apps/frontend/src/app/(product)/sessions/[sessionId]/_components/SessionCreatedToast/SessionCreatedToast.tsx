@@ -38,8 +38,13 @@ export default function SessionCreatedToast({ sessionId }: { sessionId: string }
                     ? 'Copy is unavailable. Copy this page’s address instead.'
                     : 'Share this Session with your Club.'}
             </p>
-            <Button onClick={handleCopy} size="small" variant="secondary">
-                {state === 'copied' ? 'Copied!' : 'Copy link'}
+            <Button
+                onClick={handleCopy}
+                size="small"
+                variant="secondary"
+                success={state === 'copied' ? 'Copied' : ''}
+            >
+                Copy link
             </Button>
             <button
                 aria-label="Dismiss"

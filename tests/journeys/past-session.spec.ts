@@ -168,6 +168,9 @@ test('A minimal past Session waits for hydration, retains input after a request 
         await back(page);
         await back(page);
         await expect(page.getByLabel('Location')).toHaveValue('Old cinema');
+        await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+            'A remembered film',
+        );
         await next(page);
         await next(page);
         await logSession(page);
@@ -338,6 +341,19 @@ for (const viewport of canonicalViewports) {
                 await expect(
                     page.getByRole('combobox', { name: 'Add nominated Movies' }),
                 ).toBeFocused();
+                await back(page);
+                await back(page);
+                await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+                    'A remembered film',
+                );
+                await next(page);
+                await next(page);
+                await expect(
+                    page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
+                ).toHaveCount(0);
+                await expect(
+                    page.getByRole('button', { name: 'Remove A remembered rival', exact: true }),
+                ).toBeVisible();
                 await addNomination(page, query);
                 await expect(zero).toHaveValue('');
                 await zero.selectOption('0');
@@ -372,14 +388,17 @@ for (const viewport of canonicalViewports) {
                 ).toBeVisible();
                 await expect(page.getByText(/This session has ended/)).toBeVisible();
                 await page.getByRole('list', { name: 'Session ratings' }).scrollIntoViewIfNeeded();
-                await expect(page.getByText('9/10', { exact: true })).toBeVisible();
+                await expect(
+                    page
+                        .getByRole('list', { name: 'Session ratings' })
+                        .getByText('9', { exact: true }),
+                ).toBeVisible();
                 const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
                 await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('0 total · 1 score', { exact: true })).toBeVisible();
+                await expect(rivals.getByText('0', { exact: true })).toBeVisible();
+                await expect(rivals.getByText('total · 1 score', { exact: true })).toBeVisible();
                 await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
-                await expect(
-                    rivals.getByText('Nominated by Former attendee', { exact: true }),
-                ).toBeVisible();
+                await expect(rivals.getByText('by Former attendee', { exact: true })).toBeVisible();
                 await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
                 expect(
                     await prisma.sessionRating.findMany({ where: { session: { clubId } } }),

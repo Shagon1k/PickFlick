@@ -50,11 +50,11 @@ export class ClubLifecycleService {
             if (membership.role === 'ADMIN') {
                 throw new ConflictException({ reason: 'ADMIN_MUST_TRANSFER' });
             }
-            await departSessions(transaction, membership.id, userId, 'LEFT');
             await transaction.membership.update({
                 where: { id: membership.id },
                 data: { status: 'LEFT', leftAt: new Date() },
             });
+            await departSessions(transaction, { id: membership.id, clubId }, userId, 'LEFT');
             await recordAudit(transaction, {
                 clubId,
                 actorUserId: userId,
@@ -85,11 +85,11 @@ export class ClubLifecycleService {
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             }
             if (target.status !== 'ACTIVE') return;
-            await departSessions(transaction, target.id, userId, 'REMOVED');
             await transaction.membership.update({
                 where: { id: target.id },
                 data: { status: 'REMOVED', leftAt: new Date() },
             });
+            await departSessions(transaction, { id: target.id, clubId }, userId, 'REMOVED');
             await recordAudit(transaction, {
                 clubId,
                 actorUserId: userId,

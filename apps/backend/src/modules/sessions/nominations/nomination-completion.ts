@@ -38,9 +38,13 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
         const nominations = participants.flatMap((participant) =>
             participant.nomination ? [participant.nomination] : [],
         );
-        // A lone early joiner does not close Nomination for the members still on their way.
+        const memberCount = await tx.membership.count({
+            where: { clubId: session.clubId, status: 'ACTIVE' },
+        });
+        // Members who have not joined yet still get their chance before automatic closure.
         const isEveryoneIn =
             participants.length >= MIN_PARTICIPANTS_TO_ADVANCE &&
+            participants.length === memberCount &&
             nominations.length === participants.length;
         if (isEveryoneIn) {
             await advanceNomination(tx, session, nominations, 'AUTOMATIC');

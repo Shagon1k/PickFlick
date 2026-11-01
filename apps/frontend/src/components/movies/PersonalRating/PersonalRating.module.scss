@@ -1,15 +1,8 @@
-/* The prototype's star popover: a mono value label over one row of stars. */
+/* One row of stars; the selected value stays in the control's accessible description. */
 .personalRating {
     display: grid;
     gap: var(--gap-xs);
     min-width: 0;
-}
-
-.label {
-    margin: 0;
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--ivory-muted);
-    text-align: center;
 }
 
 .status {

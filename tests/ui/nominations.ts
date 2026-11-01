@@ -35,16 +35,22 @@ const movie: TNominationMovie = {
     genres: ['Drama', 'Mystery'],
 };
 function stateFor(token: string | undefined): INominationState {
-    const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };
+    const state = states.get(token) ?? {
+        own: token?.includes('waiting-member') ? movie : null,
+        phase: 'NOMINATION',
+        version: 1,
+    };
     states.set(token, state);
     return state;
 }
 function projection(token: string, state: INominationState): TNominations {
     const isHidden = token.includes('hidden') && !state.own;
     return {
-        acceptedCount: state.departed ? 2 : 3,
+        memberCount: 3,
+        acceptedCount: state.departed || /waiting-member|removed|unjoined/u.test(token) ? 2 : 3,
         nominatedCount: state.own ? 2 : 1,
-        canSubmit: !state.own && state.phase === 'NOMINATION' && !token.includes('readonly'),
+        canSubmit:
+            !state.own && state.phase === 'NOMINATION' && !/readonly|removed|unjoined/u.test(token),
         canClose: token.includes('operator') && state.phase === 'NOMINATION',
         hidden: isHidden,
         ownMovie: state.own,
@@ -78,23 +84,25 @@ function handleRoster(
         state.version++;
         state.sendDetail?.();
     }
+    let participantNames = ['Avery', 'Jordan', 'You'];
+    if (/removed|unjoined/u.test(token)) participantNames = ['Avery', 'Jordan'];
+    else if (hasDeparted || token.includes('waiting-member')) participantNames = ['Avery', 'You'];
     const roster: ISessionRoster = {
         progressVersion: version,
-        acceptedCount: hasDeparted ? 2 : 3,
-        canJoin: false,
-        isRemoved: false,
+        memberCount: 3,
+        acceptedCount: participantNames.length,
+        canJoin: token.includes('unjoined'),
+        isRemoved: token.includes('removed'),
         canManage: false,
         canLeave: false,
-        participants: (hasDeparted ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
-            (name, index) => ({
-                id: `30000000-0000-4000-8000-00000000000${index}`,
-                membershipId: `40000000-0000-4000-8000-00000000000${index}`,
-                displayName: name,
-                status: 'ACCEPTED',
-                canRemove: false,
-                invitation: null,
-            }),
-        ),
+        participants: participantNames.map((name, index) => ({
+            id: `30000000-0000-4000-8000-00000000000${index}`,
+            membershipId: `40000000-0000-4000-8000-00000000000${index}`,
+            displayName: name,
+            status: 'ACCEPTED',
+            canRemove: false,
+            invitation: null,
+        })),
     };
     sendJson(response, 200, roster);
     return true;

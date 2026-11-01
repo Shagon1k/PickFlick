@@ -20,9 +20,11 @@ variable, never its value.
 | `STORAGE_BUCKET`                                   | Lowercase S3 bucket name.                                                                                                      | No     |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`         | Application storage credentials.                                                                                               | Yes    |
 | `STORAGE_FORCE_PATH_STYLE`                         | `true` for MinIO, `false` for AWS S3.                                                                                          | No     |
-| `RESEND_DELIVERY_MODE`                             | `disabled` (local/test), `preview` (synthetic preview), `live` (UAT/production).                                               | No     |
+| `RESEND_DELIVERY_MODE`                             | `disabled` (local default/test), `preview` (synthetic UAT preview), `live` (UAT/production or scoped local opt-in).            | No     |
 | `RESEND_API_KEY`                                   | Sending-only key, or `local-disabled` / `preview-disabled`.                                                                    | Yes    |
-| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the API in live mode and by the deploy Compose file, blank in local/test/preview.  | Yes    |
+| `RESEND_WEBHOOK_SECRET`                            | Resend endpoint signing secret; required by the deployed live API and deploy Compose file, optional for local live tests.      | Yes    |
+| `LOCAL_EMAIL_RECIPIENTS`                           | Comma-separated approved test-account addresses; required for local live delivery. Rejected outside `APP_ENV=local`.           | Yes    |
+| `LOCAL_EMAIL_SEND_AFTER`                           | ISO UTC timestamp; local live notification claims require creation at or after this cutoff. Rejected outside local.            | No     |
 | `RESEND_FROM`                                      | Exact sender per environment (see below).                                                                                      | No     |
 | `CONTACT_DELIVERY_TO`                              | Contact and final email-failure alert inbox: `hello@pick-flick.app` in production; approved test inbox in UAT.                 | Yes\*  |
 | `AUTH_BASE_URL`                                    | Canonical public origin; HTTPS in UAT and production.                                                                          | No     |
@@ -57,12 +59,13 @@ secret from the `.p8` key at startup, so an invalid key fails validation.
 
 Fixed by [ADR-009](decisions/README.md#adr-009--use-one-public-contact-and-environment-specific-resend-senders):
 
-| Environment | `RESEND_FROM`                              | Delivery                                              |
-| ----------- | ------------------------------------------ | ----------------------------------------------------- |
-| Local, test | `PickFlick <pickflick@example.invalid>`    | Disabled; messages are logged, never sent             |
-| Preview     | `PickFlick UAT <uat@pick-flick.app>`       | `preview` mode; nothing is sent                       |
-| UAT         | `PickFlick UAT <uat@pick-flick.app>`       | Live, separate UAT key restricted to `pick-flick.app` |
-| Production  | `PickFlick <notifications@pick-flick.app>` | Live, key restricted to `pick-flick.app`              |
+| Environment         | `RESEND_FROM`                              | Delivery                                                                                         |
+| ------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Local default, test | `PickFlick <pickflick@example.invalid>`    | Disabled; delivery skips are logged without message bodies                                       |
+| Local opt-in        | Sender permitted by Resend                 | Live only with approved recipients and notification creation cutoff; subjects prefixed `[LOCAL]` |
+| Preview             | `PickFlick UAT <uat@pick-flick.app>`       | `preview` mode; nothing is sent                                                                  |
+| UAT                 | `PickFlick UAT <uat@pick-flick.app>`       | Live, separate UAT key restricted to `pick-flick.app`                                            |
+| Production          | `PickFlick <notifications@pick-flick.app>` | Live, key restricted to `pick-flick.app`                                                         |
 
 Startup rejects any other sender or mode for UAT and production. Contact messages are sent
 directly with `Reply-To` set to the visitor when they give an address; a delivery failure answers
@@ -80,10 +83,15 @@ Club avatars are private objects under `club-avatars/`: PNG, JPEG, or WebP up to
 checked against the file signature, readable only by active members.
 
 The separate email worker reads only `APP_ENV`, `DATABASE_URL`, `AUTH_BASE_URL`,
-`RESEND_DELIVERY_MODE`, `RESEND_API_KEY`, `RESEND_FROM` and `CONTACT_DELIVERY_TO`. It receives no OAuth,
+`RESEND_DELIVERY_MODE`, `RESEND_API_KEY`, `RESEND_FROM`, `CONTACT_DELIVERY_TO`,
+`LOCAL_EMAIL_RECIPIENTS` and `LOCAL_EMAIL_SEND_AFTER`. It receives no OAuth,
 storage, Redis or webhook signing credentials. The live Compose worker waits for API readiness;
-the API rejects a missing `RESEND_WEBHOOK_SECRET`. Local/test/preview dispatch leaves delivery jobs
-pending. See [Email delivery operations](email-delivery.md) for setup, status counts and alert limits.
+the deployed live API rejects a missing `RESEND_WEBHOOK_SECRET`. Default local, test and preview
+dispatch leaves delivery jobs pending. The owner-approved local live exception requires both
+`LOCAL_EMAIL_*` values and an allowlisted `CONTACT_DELIVERY_TO`; the claim cutoff excludes older
+notification intent and local cycles skip operator alerts. The sender independently rejects
+non-allowlisted recipients. See [Email delivery operations](email-delivery.md#verify-real-email-locally)
+for opt-in, shutdown, status counts and confirmation limits.
 
 ## Health, errors, and logs
 

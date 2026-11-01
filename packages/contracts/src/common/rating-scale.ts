@@ -11,5 +11,5 @@ export const RATING_SCORES = Array.from(
 );
 
 export function formatRatingScore(score: number) {
-    return `${score}/${RATING_SCALE.max}`;
+    return String(score);
 }

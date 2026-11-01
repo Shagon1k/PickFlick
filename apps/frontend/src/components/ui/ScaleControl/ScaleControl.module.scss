@@ -46,7 +46,18 @@
 }
 
 .scale__rail[data-presentation='rating'] {
+    gap: calc(var(--gap-xs) / 2);
     overflow-x: visible;
+}
+
+.scale__rail[data-presentation='rating'] svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+}
+
+.scale__rail[data-presentation='rating'] [data-active] svg {
+    fill: currentColor;
 }
 
 .scale__rail[data-presentation='rating'] .scale__option {
@@ -78,6 +89,12 @@
 .scale__rail[data-presentation='rating'] .scale__option[data-active] {
     color: var(--gold-light);
     background: transparent;
+    border-color: transparent;
+}
+
+.scale__rail[data-presentation='rating'] .scale__option[data-selected] {
+    background: transparent;
+    border-color: transparent;
 }
 
 .scale__option[data-selected] {

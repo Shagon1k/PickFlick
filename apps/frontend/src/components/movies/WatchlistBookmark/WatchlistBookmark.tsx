@@ -116,9 +116,11 @@ export default function WatchlistBookmark({
                             <Icon name="close" />
                         </button>
                     ) : null}
-                    {/* The filled bookmark shows a save, so only progress and failures stay visible. */}
+                    {/* The filled bookmark shows a save; only failures need visible text. */}
                     <p
-                        className={isSuccess || !message ? 'visually-hidden' : undefined}
+                        className={
+                            isPending || isSuccess || !message ? 'visually-hidden' : undefined
+                        }
                         role="status"
                         ref={feedbackRef}
                         tabIndex={-1}

@@ -18,14 +18,43 @@ records the required configuration without authorizing a deployment or provider 
    `email.failed` and `email.suppressed`. Keep open/click tracking disabled; the application adds
    no tracking pixels or rewritten links.
 4. Store that endpoint's signing secret in the backend's `RESEND_WEBHOOK_SECRET`. Do not copy it
-   into chat, logs, a PR or the email worker. The live API refuses to start without it.
+   into chat, logs, a PR or the email worker. The deployed live API refuses to start without it.
 5. Apply migrations through 35 before starting this revision. The new `email-worker` service uses
    the existing worker image with `node dist/email-worker.js`, waits for release and backend
-   readiness, and has no port or Redis connection. Local/test/preview modes never claim jobs.
+   readiness, and has no port or Redis connection. Test/preview modes never claim jobs. Local
+   delivery is disabled unless you configure the scoped opt-in below.
 
 The worker uses a sending-only key and never calls provider management APIs. The API verifies the
 raw webhook body using the installed SDK before parsing supported fields. Receipt IDs prevent
 replay side effects. See [Resend signature verification](https://resend.com/docs/webhooks/verify-webhooks-requests).
+
+## Verify real email locally
+
+Use only test accounts and recipient addresses approved by the owner. Keep the local database,
+storage and `AUTH_BASE_URL`; this flow does not configure UAT or production.
+
+1. In the ignored local environment file, keep `APP_ENV=local`. Set
+   `RESEND_DELIVERY_MODE=live`, a sending-only `RESEND_API_KEY` and a sender permitted by Resend
+   in `RESEND_FROM`.
+2. Set `LOCAL_EMAIL_RECIPIENTS` to the comma-separated approved account email addresses. Set
+   `CONTACT_DELIVERY_TO` to one of those addresses. The shared sender rejects other recipients.
+3. Set `LOCAL_EMAIL_SEND_AFTER` to the activation time in ISO UTC format. You can obtain a fresh
+   value with `date -u +%Y-%m-%dT%H:%M:%SZ`. The worker claims only Notifications created at or
+   after this cutoff for allowlisted accounts; older pending deliveries stay untouched.
+4. Restart the API and email worker, enable email preferences for the intended events, then create
+   fresh test events. Local subjects start with `[LOCAL]`. The local worker skips operator email
+   alerts, including candidates from older deliveries.
+5. Check the recipient inboxes and database delivery statuses separately. `ACCEPTED` establishes
+   provider acceptance. `DELIVERED` still requires a valid signed callback. The local API permits
+   an empty `RESEND_WEBHOOK_SECRET`; without a reachable signed callback endpoint, inbox observation
+   and provider acceptance do not establish webhook verification.
+6. When testing ends, restore `RESEND_DELIVERY_MODE=disabled` and
+   `RESEND_API_KEY=local-disabled`, clear the two `LOCAL_EMAIL_*` values, and restart the processes.
+
+The cutoff governs notification claims; Contact sends directly to the configured allowlisted
+`CONTACT_DELIVERY_TO`. Existing preference, authorization, suppression and retry rules remain in
+force. Do not reset delivery rows or move the cutoff backwards to replay a backlog.
+See the [ADR-020 local amendment](decisions/README.md#adr-020-amendment--scoped-local-live-verification-2026-11-01).
 
 ## Generate template previews
 
@@ -83,6 +112,7 @@ production launch must consume the database/log signals; email alerts depend on 
 
 Final failure, bounce, complaint and provider suppression each make a delivery eligible for one
 best-effort operator alert to `CONTACT_DELIVERY_TO`. The alert contains the notification ID only.
+Scoped local live runs skip these alerts.
 `alertSentAt` records provider acceptance of that alert, not inbox receipt. The worker reserves the
 alert attempt before sending, so a crash at that point or provider failure can lose the email signal;
 its database record remains. Alerts never generate new notification jobs or recursive alerts.
@@ -103,8 +133,9 @@ No automatic manual-resend or suppression-removal path is provided by this issue
 
 ## Remaining live verification for #62
 
-Use only synthetic registered test accounts and the approved inbox `test@pick-flick.app` for actual
-mail. Once the owner has configured and verified the provider, record real sandbox acceptance,
+For UAT, use only synthetic registered test accounts and the approved inbox `test@pick-flick.app`.
+The scoped local opt-in may use the multiple test addresses explicitly approved by the owner.
+Once the owner has configured and verified the provider, record real sandbox acceptance,
 confirmed delivery callbacks, bounce/complaint/suppression behavior and final-failure alert evidence.
 Review HTML and text in representative email clients and inspect the provider/application logs for
 content leaks. Do not mark the issue complete until these checks and exact-head hosted visual

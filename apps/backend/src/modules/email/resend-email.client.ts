@@ -20,9 +20,16 @@ export class ResendEmailClient implements IEmailClient {
     constructor(
         private readonly apiKey: string,
         private readonly from: string,
+        private readonly localRecipients?: string[],
     ) {}
 
     async send(message: IEmailMessage): Promise<string> {
+        if (
+            this.localRecipients &&
+            !this.localRecipients.includes(message.to.trim().toLowerCase())
+        ) {
+            throw new EmailDeliveryError('local_recipient_not_allowed', false);
+        }
         // The SDK send method exposes no AbortSignal; bound the external request at this adapter.
         let response: Response;
         try {
@@ -40,7 +47,7 @@ export class ResendEmailClient implements IEmailClient {
                 body: JSON.stringify({
                     from: this.from,
                     to: message.to,
-                    subject: message.subject,
+                    subject: this.localRecipients ? `[LOCAL] ${message.subject}` : message.subject,
                     text: message.text,
                     html: message.html,
                     reply_to: message.replyTo,

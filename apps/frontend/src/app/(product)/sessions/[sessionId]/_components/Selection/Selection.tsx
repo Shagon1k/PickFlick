@@ -140,9 +140,6 @@ export default function Selection({
                                 </Button>
                             </>
                         ) : null}
-                        {!data.canSubmit && !data.submittedAt ? (
-                            <p>Join the Session to score films.</p>
-                        ) : null}
                         <StatusLine isSuccess={isSuccess} message={message} />
                     </div>
                 </form>

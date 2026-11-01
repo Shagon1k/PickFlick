@@ -21,6 +21,7 @@ describe('EmailWebhook', () => {
         apiKey: 'synthetic-only',
         deliveryEnabled: true,
         alertTo: 'test@pick-flick.app',
+        localDelivery: null,
     };
     const send = vi.fn<(message: IEmailMessage) => Promise<string>>();
     const log = vi.fn();

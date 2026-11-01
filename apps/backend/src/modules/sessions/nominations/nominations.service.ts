@@ -74,6 +74,9 @@ export class NominationsService {
         const summaries = await this.movies.findSummaries(tx, ids);
         const getMovie = (movieId: string) => summaries.get(movieId)!;
         return {
+            memberCount: await tx.membership.count({
+                where: { clubId: session.clubId, status: 'ACTIVE' },
+            }),
             acceptedCount: participants.length,
             nominatedCount: rows.length,
             canSubmit,

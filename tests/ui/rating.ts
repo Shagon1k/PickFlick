@@ -2,6 +2,7 @@ import {
     closeRatingSchema,
     type ISessionRoster,
     submitRatingSchema,
+    type TImportedSelectionOutcome,
     type TLiveSelectionOutcome,
     type TRating,
     type TSession,
@@ -29,7 +30,7 @@ export function handleRating(
     if (!token?.startsWith('valid-rating') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
         return false;
     const isCompleted = closed.has(token) || token.includes('completed');
-    const canManage = !token.includes('member') && !token.includes('readonly');
+    const canManage = !/member|readonly|removed|unjoined|ineligible/u.test(token);
     const canManageSession = canManage && !isCompleted;
     const own = saved.get(token);
     const version = 1 + Number(Boolean(own)) + Number(isCompleted);
@@ -60,14 +61,18 @@ export function handleRating(
         });
     } else if (pathname.endsWith('/progress')) sendJson(response, 200, { version });
     else if (pathname.endsWith('/roster')) {
+        const participantNames = /removed|unjoined|ineligible/u.test(token)
+            ? ['Casey', 'Morgan']
+            : ['Jordan', 'Casey', 'Morgan'];
         const roster: ISessionRoster = {
             progressVersion: version,
-            acceptedCount: 3,
-            canJoin: false,
-            isRemoved: false,
-            canLeave: !isCompleted,
+            memberCount: 4,
+            acceptedCount: participantNames.length,
+            canJoin: !isCompleted && token.includes('unjoined'),
+            isRemoved: token.includes('removed'),
+            canLeave: !isCompleted && !/readonly|removed|unjoined|ineligible/u.test(token),
             canManage: canManageSession,
-            participants: ['Jordan', 'Casey', 'Morgan'].map((displayName, index) => ({
+            participants: participantNames.map((displayName, index) => ({
                 id: `40000000-0000-4000-8000-00000000005${index}`,
                 membershipId: `50000000-0000-4000-8000-00000000005${index}`,
                 displayName,
@@ -118,10 +123,10 @@ function buildRating(
             submittedAt: '2026-12-01T22:01:00.000Z',
         });
     return {
-        acceptedCount: 3,
+        acceptedCount: /removed|unjoined|ineligible/u.test(token) ? 2 : 3,
         submittedCount: entries.length,
         receivedCount: entries.length,
-        canSubmit: !isCompleted && !own && !token.includes('readonly'),
+        canSubmit: !isCompleted && !own && !/readonly|removed|unjoined|ineligible/u.test(token),
         canClose: !isCompleted && canManage,
         own: own
             ? { ...own, comment: own.comment ?? null, submittedAt: '2026-12-01T22:01:00.000Z' }
@@ -139,13 +144,35 @@ function buildRating(
     };
 }
 
-function buildHistoricalSelection(token: string): TLiveSelectionOutcome {
+function buildHistoricalSelection(
+    token: string,
+): TLiveSelectionOutcome | TImportedSelectionOutcome {
     const winner = {
         id: '10000000-0000-4000-8000-000000000037',
         title: 'Selected film',
         year: 2026,
         genres: ['Drama'],
     };
+    if (token.includes('imported')) {
+        return {
+            source: 'IMPORTED',
+            scaleMin: 0,
+            scaleMax: 5,
+            nominations: [
+                { movie: winner, author: 'Jordan', total: 7, scoreCount: 2 },
+                {
+                    movie: {
+                        ...winner,
+                        id: '10000000-0000-4000-8000-000000000038',
+                        title: 'The rival nomination',
+                    },
+                    author: 'Morgan',
+                    total: 8,
+                    scoreCount: 3,
+                },
+            ],
+        };
+    }
     return {
         source: 'LIVE',
         winner,
@@ -194,11 +221,12 @@ function buildRatingSession({
     canManage: boolean;
 }): TSession {
     const rating = buildRating(token, own, isCompleted, canManage);
+    const liveType = token.includes('history') ? 'FULL_CYCLE' : 'PRE_SELECTED';
     return {
         id: SESSION_ID,
         clubId: '10000000-0000-4000-8000-000000000031',
         clubName: 'Midnight Society',
-        type: token.includes('history') ? 'FULL_CYCLE' : 'PRE_SELECTED',
+        type: token.includes('imported') ? 'PAST' : liveType,
         phase: isCompleted ? 'COMPLETED' : 'RATING',
         movieId: '10000000-0000-4000-8000-000000000037',
         scheduledAt: '2026-12-01T20:00:00.000Z',

@@ -119,7 +119,7 @@ function getProgress(session: IClubHubSession, memberCount: number) {
         max,
         label: `${value} of ${max} ${verb}`,
     });
-    if (session.phase === 'NOMINATION') return of(done, session.acceptedCount, 'nominated');
+    if (session.phase === 'NOMINATION') return of(done, memberCount, 'nominated');
     if (session.phase === 'SELECTION') return of(done, session.acceptedCount, 'scored');
     if (session.phase === 'WATCHING') return of(session.acceptedCount, memberCount, 'joined');
     if (session.phase === 'RATING') return of(done, session.acceptedCount, 'rated');

@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
 import styles from './Table.module.scss';
@@ -18,6 +19,7 @@ export interface ITableProps {
     columns: ITableColumn[];
     rows: ITableRow[];
     emptyMessage?: string;
+    variant?: 'default' | 'leaderboard';
 }
 
 /** A semantic table whose dense content scrolls inside its own region, never the page. */
@@ -26,18 +28,24 @@ export default function Table({
     columns,
     emptyMessage = 'No records yet.',
     rows,
+    variant = 'default',
 }: ITableProps) {
     const getCellClass = (column: ITableColumn) =>
         column.isNumeric ? styles.table__numeric : undefined;
     return (
         <div
             aria-label={`${caption} scroll region`}
-            className={styles.table__scroll}
+            className={clsx(
+                styles.table__scroll,
+                variant === 'leaderboard' && styles['m-leaderboard'],
+            )}
             role="region"
             tabIndex={0}
         >
             <table className={styles.table}>
-                <caption>{caption}</caption>
+                <caption className={variant === 'leaderboard' ? 'visually-hidden' : undefined}>
+                    {caption}
+                </caption>
                 <thead>
                     <tr>
                         {columns.map((column) => (

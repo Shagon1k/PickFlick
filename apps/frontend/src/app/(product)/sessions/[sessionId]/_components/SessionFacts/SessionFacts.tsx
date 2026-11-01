@@ -94,7 +94,7 @@ function getCompanion(session: TSession, roster: ISessionRoster): ReactNode {
         return (
             <div className={styles.metric}>
                 <strong>
-                    {submitted}/{roster.acceptedCount}
+                    {submitted}/{session.nominations?.memberCount ?? roster.acceptedCount}
                 </strong>
                 <span>{session.phase === 'NOMINATION' ? 'Nominated' : 'Selected'}</span>
             </div>

@@ -28,10 +28,12 @@ for (const width of [390, 768, 1024, 1440]) {
                 });
                 await expect(dialog).toBeVisible();
                 const first = dialog.getByRole('radio', { name: '1 of 10', exact: true });
+                await expect(dialog.getByRole('radio')).toHaveCount(10);
+                await expect(dialog.getByRole('radio').locator('svg')).toHaveCount(10);
                 await first.focus();
                 await page.keyboard.press('End');
                 await expect(dialog.getByRole('radio', { name: '10 of 10' })).toBeChecked();
-                await expect(dialog.getByText('10/10', { exact: true })).toBeVisible();
+                await expect(dialog.getByText(/^\d+\/10$/u)).toHaveCount(0);
                 // Choosing a star saves it; there is no separate Save button.
                 await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
                 await expect(
@@ -52,6 +54,15 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(seven).toBeChecked();
                 await expect(dialog.getByText('Personal Rating saved.')).toBeAttached();
                 await settle(page);
+                const selectedStyle = await seven.evaluate((element) => {
+                    const style = getComputedStyle(element);
+                    return {
+                        border: style.borderColor,
+                        background: style.backgroundColor,
+                    };
+                });
+                expect(selectedStyle.border).toBe('rgba(0, 0, 0, 0)');
+                expect(selectedStyle.background).toBe('rgba(0, 0, 0, 0)');
                 // All ten stars fit the popover at every width, so nothing scrolls sideways.
                 const hasOverflow = await dialog.evaluate(
                     (popover) => popover.scrollWidth > popover.clientWidth,

@@ -86,8 +86,8 @@ export default function SessionHeader({
                             logged
                             {/* One note carries every caveat a reconstructed record has. */}
                             <InfoTip label="About logged Sessions">
-                                Logged after the screening. It holds what was recorded; anything
-                                left out, and when it was first submitted, is unknown.
+                                Recorded after the screening. Missing details and original
+                                submission times are unknown.
                             </InfoTip>
                         </>
                     ) : (

@@ -33,12 +33,12 @@ export default function SessionLink({ sessionId }: { sessionId: string }) {
     }
     return (
         <div className={styles.cell}>
-            <Button onClick={handleCopy} variant="cell">
+            <Button onClick={handleCopy} variant="cell" success={isCopied ? 'Copied' : ''}>
                 <Icon name="user-plus" />
-                {isCopied ? 'Copied!' : 'Invite'}
+                Invite
             </Button>
             <span className={isCopied ? 'visually-hidden' : styles.feedback} role="status">
-                {message}
+                {isCopied ? '' : message}
             </span>
         </div>
     );

@@ -37,37 +37,19 @@
 }
 
 .infoTip__bubble {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    left: 50%;
-    z-index: 30;
-
-    /* Closed bubbles leave the layout, so a tip near an edge never widens the page. */
-    display: none;
+    position: fixed;
     width: max-content;
     max-width: min(240px, 70vw);
     padding: 8px 10px;
     font: 400 var(--fs-caption)/var(--lh-body) var(--font-body);
     color: var(--fg-secondary);
     text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: normal;
     pointer-events: none;
     background: var(--surface-lit);
     border: 1px solid var(--border-lit);
     border-radius: 8px;
     box-shadow: var(--shadow-popover);
-    transform: translate(calc(-50% + var(--tip-shift, 0px)), 0);
-    transition:
-        opacity var(--motion-local) var(--ease-standard),
-        transform var(--motion-local) var(--ease-standard);
-}
-
-.infoTip__bubble[data-open] {
-    display: block;
-}
-
-@starting-style {
-    .infoTip__bubble[data-open] {
-        opacity: 0;
-        transform: translate(calc(-50% + var(--tip-shift, 0px)), 4px);
-    }
 }

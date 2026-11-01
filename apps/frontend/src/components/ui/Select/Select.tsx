@@ -16,7 +16,9 @@ const DROPDOWN_FADE_MS = 150;
 export interface ISelectProps
     extends
         IFieldProps,
-        TOmitStyling<IMantineSelectProps, keyof IFieldProps | 'description' | 'hiddenInputProps'> {}
+        TOmitStyling<IMantineSelectProps, keyof IFieldProps | 'description' | 'hiddenInputProps'> {
+    shouldReserveMessage?: boolean;
+}
 
 export default function Select({
     disabled,
@@ -28,6 +30,7 @@ export default function Select({
     readOnly,
     required,
     success,
+    shouldReserveMessage,
     value,
     ...props
 }: ISelectProps) {
@@ -45,7 +48,7 @@ export default function Select({
         <MantineSelect
             {...props}
             allowDeselect={false}
-            {...getFieldProps({ error, hint, label, labelHint, success })}
+            {...getFieldProps({ error, hint, label, labelHint, success, shouldReserveMessage })}
             classNames={{
                 ...FIELD_CLASS_NAMES,
                 input: clsx(fieldStyles.control, fieldStyles['m-select']),

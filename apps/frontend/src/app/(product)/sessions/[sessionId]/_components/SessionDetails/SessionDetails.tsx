@@ -121,8 +121,7 @@ export default function SessionDetails({
                     {(onOpen) => (
                         <>
                             <PhaseProgress>
-                                {roster.acceptedCount}{' '}
-                                {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined
+                                {roster.acceptedCount} of {roster.memberCount} members have joined
                                 the screening.
                             </PhaseProgress>
                             {header(participation, onKick, onOpen)}

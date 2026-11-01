@@ -7,6 +7,36 @@ import { canonicalViewports } from './viewports';
 const SESSION_ROUTE = '/sessions/30000000-0000-4000-8000-000000000050';
 const HUB_ROUTE = '/clubs/10000000-0000-4000-8000-000000000031/sessions';
 
+test(
+    'Logged nominations use the shared film cards without inventing a Selection winner',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await authenticate(context, 'valid-rating-history-imported-completed');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(SESSION_ROUTE, { waitUntil: 'load' });
+        const rivals = page.getByRole('region', { name: 'Nomination Rivals', exact: true });
+        await expect(rivals.getByRole('list', { name: 'Logged nominations' })).toBeVisible();
+        await expect(
+            rivals.getByRole('link', { name: 'Selected film', exact: true }),
+        ).toBeVisible();
+        await expect(
+            rivals.getByRole('link', { name: 'The rival nomination', exact: true }),
+        ).toBeVisible();
+        await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
+        await expect(rivals.getByText('Winner', { exact: true })).toHaveCount(0);
+        await expect(rivals.getByRole('button', { name: /Average vote/u })).toHaveCount(0);
+        await expect(rivals.getByText('total · 2 scores', { exact: true })).toBeVisible();
+        await expect(
+            page.getByRole('list', { name: 'Session ratings' }).getByText('8', { exact: true }),
+        ).toBeVisible();
+        await settle(page);
+        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+            true,
+        );
+    },
+);
+
 async function authenticate(context: BrowserContext, value: string) {
     await context.addCookies([
         {
@@ -47,7 +77,9 @@ for (const viewport of canonicalViewports) {
                 .getByRole('button', { name: /^Average vote .* Show votes$/u })
                 .first();
             await score.press('Enter');
-            await expect(page.getByRole('dialog').filter({ hasText: 'Top scores' })).toBeVisible();
+            const votes = page.getByRole('dialog').filter({ hasText: 'Top scores' });
+            await expect(votes).toBeVisible();
+            await expect(votes).toBeFocused();
             await page.keyboard.press('Escape');
             // Axe would otherwise measure the popover's fading text.
             await expect(page.getByRole('dialog')).toHaveCount(0);

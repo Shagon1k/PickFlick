@@ -47,11 +47,15 @@ export default function ClubRatings({
             aria-labelledby="club-ratings-heading"
             aria-busy={isPending}
         >
-            <h2 id="club-ratings-heading">Club Ratings</h2>
+            <h2 id="club-ratings-heading" className="visually-hidden">
+                Club Ratings
+            </h2>
             <div className={styles.clubRatings__sort}>
                 <Select
                     id="club-ratings-sort"
                     label="Sort films"
+                    labelProps={{ className: 'visually-hidden' }}
+                    shouldReserveMessage={false}
                     value={query.sort}
                     disabled={isPending}
                     data={[
@@ -68,6 +72,7 @@ export default function ClubRatings({
                 {message || status}
             </p>
             <Table
+                variant="leaderboard"
                 caption="Club rating leaderboard"
                 columns={[
                     { key: 'rank', header: '#', isNumeric: true },

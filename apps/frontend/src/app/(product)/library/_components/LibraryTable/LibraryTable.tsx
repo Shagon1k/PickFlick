@@ -27,7 +27,7 @@ export default function LibraryTable({
     const shouldFocusHeadingRef = useRef(false);
     useEffect(() => {
         if (!shouldFocusHeadingRef.current) return;
-        headingRef.current?.focus();
+        headingRef.current?.focus({ preventScroll: true });
         shouldFocusHeadingRef.current = false;
     }, [library, message]);
     function handleSaved(message: string) {
@@ -100,10 +100,13 @@ export default function LibraryTable({
             </h2>
             <LibraryFilters key={buildLibraryPath(query)} query={query} />
             <p role="status">
-                {message && `${message} `}
                 {`${formatCount(library.total, 'film')} ${isWatchlist ? 'queued' : 'rated'}`}
             </p>
+            <p className="visually-hidden" role="status">
+                {message}
+            </p>
             <Table
+                variant="leaderboard"
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
                 columns={[
                     { key: 'rank', header: '#', isNumeric: true },

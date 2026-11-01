@@ -23,31 +23,6 @@
     color: var(--fg-secondary);
 }
 
-.ranking {
-    display: grid;
-    gap: var(--gap-md);
-    max-height: 480px;
-    padding-left: var(--gap-md);
-    overflow-y: auto;
-}
-
-.ranking li {
-    padding-block: var(--gap-xs);
-    border-bottom: 1px solid var(--border);
-}
-
-.ranking a {
-    display: inline-block;
-    min-height: var(--hit);
-    padding-block: var(--gap-sm);
-}
-
-.winner {
-    margin-left: var(--gap-xs);
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--gold-light);
-}
-
 @media (width < 1024px) {
     .grid {
         grid-template-columns: minmax(0, 1fr);

@@ -7,6 +7,61 @@ import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/settings`;
+
+test(
+    'Invitation explanations keep sentence case and escape clipped dialog content',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-settings-admin-tip-alignment');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(ROUTE, { waitUntil: 'load' });
+        await settle(page);
+        await page.getByRole('button', { name: 'Invite members' }).click();
+        const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
+        await expect(dialog.getByRole('button', { name: 'Copy link' })).toBeEnabled();
+        await dialog.getByRole('button', { name: 'About single-use links' }).hover();
+        const tip = page.getByRole('tooltip');
+        await expect(tip).toContainText('Each link admits one person');
+        await settle(page);
+        const appearance = await tip.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            let hasClipping = false;
+            for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+                const parentStyle = getComputedStyle(parent);
+                const box = parent.getBoundingClientRect();
+                if (
+                    /(hidden|clip|auto|scroll)/u.test(parentStyle.overflowX) &&
+                    (rect.left < box.left || rect.right > box.right)
+                )
+                    hasClipping = true;
+                if (
+                    /(hidden|clip|auto|scroll)/u.test(parentStyle.overflowY) &&
+                    (rect.top < box.top || rect.bottom > box.bottom)
+                )
+                    hasClipping = true;
+            }
+            return {
+                hasClipping,
+                transform: style.textTransform,
+                spacing: style.letterSpacing,
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+            };
+        });
+        expect(appearance.hasClipping).toBe(false);
+        expect(appearance.transform).toBe('none');
+        expect(appearance.spacing).toBe('normal');
+        expect(appearance.left).toBeGreaterThanOrEqual(0);
+        expect(appearance.right).toBeLessThanOrEqual(390);
+        expect(appearance.top).toBeGreaterThanOrEqual(0);
+        expect(appearance.bottom).toBeLessThanOrEqual(844);
+        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    },
+);
+
 async function authenticate(context: BrowserContext, token: string) {
     await signInMock(context, token);
 }
@@ -81,14 +136,20 @@ test('Admin can submit settings, change a role, and confirm archive', async ({ c
     const name = clubInfo.getByRole('textbox', { name: 'Club name' });
     await name.fill('Midnight Society Updated');
     await clubInfo.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(clubInfo.getByText('Club settings saved.')).toBeVisible();
+    await expect(clubInfo.getByRole('button', { name: 'Save Changes' })).toHaveAttribute(
+        'data-state',
+        'success',
+    );
 
     const visibility = page.getByRole('region', { name: 'Settings', exact: true });
     await visibility
         .getByRole('checkbox', { name: 'Show ratings after the round closes' })
         .uncheck();
     await visibility.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(visibility.getByText('Club settings saved.')).toBeVisible();
+    await expect(visibility.getByRole('button', { name: 'Save Changes' })).toHaveAttribute(
+        'data-state',
+        'success',
+    );
 
     await page.getByRole('button', { name: 'Manage Moderators' }).click();
     const moderators = page.getByRole('dialog', { name: 'Manage Moderators' });
@@ -101,7 +162,7 @@ test('Admin can submit settings, change a role, and confirm archive', async ({ c
             .getByRole('button', { name: 'Remove Morgan Member' }),
     ).toBeVisible();
     await save.click();
-    await expect(moderators.getByRole('status')).toHaveText('Moderators saved.');
+    await expect(save).toHaveAttribute('data-state', 'success');
     await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: 'Archive Club' }).click();
@@ -133,7 +194,11 @@ test('avatar replacements refresh the image and removal keeps the latest status'
             .getByRole('region', { name: 'Club Info' })
             .getByRole('button', { name: 'Save Changes' })
             .click();
-        await expect(page.getByText('Club settings and avatar saved.')).toBeVisible();
+        await expect(
+            page
+                .getByRole('region', { name: 'Club Info' })
+                .getByRole('button', { name: 'Save Changes' }),
+        ).toHaveAttribute('data-state', 'success');
         return avatarResponse;
     };
 
@@ -252,6 +317,7 @@ for (const viewport of screenshotViewports) {
             await expect(
                 page.getByRole('button', { name: 'Copy link', exact: true }),
             ).toBeEnabled();
+            await page.mouse.move(0, 0);
             await settle(page);
             await expect(page).toHaveScreenshot(`club-invite-ticket-${viewport.name}.png`);
             await page.keyboard.press('Escape');

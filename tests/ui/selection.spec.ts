@@ -91,6 +91,34 @@ for (const scenario of ['readonly', 'empty']) {
     });
 }
 
+for (const [scenario, joinCount, removedCount] of [
+    ['readonly', 0, 0],
+    ['removed', 0, 1],
+    ['unjoined', 1, 0],
+] as const) {
+    test(
+        `Selection ${scenario} state shows disabled scores and accurate participation controls`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            await authenticate(context, scenario);
+            await page.goto(PATH);
+            await expect(page.getByRole('list', { name: 'Nominated films' })).toBeVisible();
+            await expect(page.getByRole('radio')).toHaveCount(8);
+            expect(
+                await page
+                    .getByRole('radio')
+                    .evaluateAll((radios) => radios.every((radio) => radio.matches(':disabled'))),
+            ).toBe(true);
+            await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
+            await expect(page.getByText('Join the Session to score films.')).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Join Session', exact: true }),
+            ).toHaveCount(joinCount);
+            await expect(page.getByText('Removed', { exact: false })).toHaveCount(removedCount);
+        },
+    );
+}
+
 for (const viewport of canonicalViewports) {
     test(`Selection maximum scale accessibility and layout at ${viewport.name}`, async ({
         context,

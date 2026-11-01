@@ -41,6 +41,7 @@ export function handleWatching(
     } else if (pathname.endsWith('/roster')) {
         const roster: ISessionRoster = {
             progressVersion: version,
+            memberCount: 3,
             acceptedCount: 1,
             canJoin: false,
             isRemoved: false,

@@ -7,10 +7,6 @@
     color: var(--fg-secondary);
 }
 
-.field {
-    position: relative;
-}
-
 /* The prototype dropdown floats over the card instead of pushing its content down. */
 .results {
     position: absolute;
@@ -103,4 +99,66 @@
 .picker p:empty,
 .results:empty {
     display: none;
+}
+
+.selected {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    padding: var(--gap-sm) 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius);
+}
+
+.selected .info {
+    flex: 1;
+}
+
+.selectedPoster {
+    flex: 0 0 var(--hit);
+    width: var(--hit);
+    height: 62px;
+    border-radius: 4px;
+}
+
+.remove {
+    position: relative;
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    padding: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-pill);
+}
+
+.remove::before {
+    position: absolute;
+    inset: var(--gap-xs);
+    content: '';
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+}
+
+.remove:hover {
+    color: var(--danger-text);
+}
+
+.remove:hover::before {
+    border-color: var(--danger-border);
+}
+
+.remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+.remove:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
 }

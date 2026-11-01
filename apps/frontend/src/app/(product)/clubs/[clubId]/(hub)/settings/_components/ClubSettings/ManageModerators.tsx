@@ -110,6 +110,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                             disabled={!canEdit || !changed.length}
                             fullWidth
                             loading={isPending}
+                            success={state.status === 'success' ? 'Saved' : ''}
                             type="submit"
                         >
                             Save changes
@@ -124,7 +125,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                     {renderGroup('Moderators', team)}
                     {renderGroup('Members', members)}
                 </div>
-                <ActionStatus state={state} />
+                <ActionStatus state={state} shouldAnnounceSuccess={false} />
             </Modal>
         </>
     );

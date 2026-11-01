@@ -6,7 +6,13 @@ import type { ReactNode } from 'react';
 
 import styles from './Popover.module.scss';
 
-const POPOVER_WIDTHS = { default: '380px', invites: '344px', rating: '400px', watchlist: '272px' };
+const POPOVER_WIDTHS = {
+    default: '380px',
+    invites: '344px',
+    rating: '344px',
+    review: '400px',
+    watchlist: '272px',
+};
 
 export default function Popover({
     children,
@@ -23,7 +29,7 @@ export default function Popover({
     onChange: (open: boolean) => void;
     label: string;
     id: string;
-    variant?: 'default' | 'invites' | 'rating' | 'watchlist';
+    variant?: 'default' | 'invites' | 'rating' | 'review' | 'watchlist';
 }) {
     return (
         <MantinePopover

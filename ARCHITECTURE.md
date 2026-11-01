@@ -230,10 +230,10 @@ The existing partial unique index still enforces one Nomination/Selection/Watchi
 Club; Rating is outside it. A trigger keeps participant identity from moving between Sessions,
 Memberships, or Clubs (migration 20). Phase decisions lock the Session and count accepted
 participants inside that transaction, keeping the lock through the decision. Workflow writes take the Club lock before the Session lock and before
-participant writes. Club departure updates open participation before checking completion. Nomination and Selection
-automatic transitions reuse the same locked accepted-participant denominator.
-Automatic Nomination closure on full participation additionally requires at least two accepted
-participants. Deadline and manual closure are unchanged. Cancellation checks received Session
+participant writes. Club departure updates Membership status and open participation before checking
+completion. Automatic Nomination closure requires every active Club member to be an accepted
+participant with a nomination, with at least two accepted participants. Selection uses the accepted
+participant denominator. Deadline and manual closure are unchanged. Cancellation checks received Session
 Ratings under the existing locks and refuses to erase a rated screening from history.
 
 Optional screening time shares `scheduledAt` with its calendar date. UTC components represent
@@ -288,8 +288,11 @@ tags and address hashes correlate early callbacks. Acceptance, confirmed deliver
 and suppression remain distinct. Bounce, complaint and provider suppression block future email to
 the address. One best-effort operator alert uses `CONTACT_DELIVERY_TO`; database/log evidence remains
 when Resend cannot send it. See [ADR-020](_docs/decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
-and [Email delivery operations](_docs/email-delivery.md). Local/test/preview dispatch is disabled;
-live provider and exact-head hosted visual verification remain pending.
+and [Email delivery operations](_docs/email-delivery.md). Local delivery is disabled by default.
+An explicit local live configuration restricts recipients in both claiming and sending, claims only
+Notifications created at or after the configured cutoff, prefixes subjects with `[LOCAL]`, and skips
+operator alerts. It reuses the existing dispatcher without draining older pending rows. Test and
+preview never send. Live provider and exact-head hosted visual verification remain pending.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
@@ -434,12 +437,12 @@ every authentication session.
 
 ## 6. Runtime and delivery
 
-| Environment | Topology                                                                                                                                                                                                                 | Data                           |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
-| Local       | Frontend, backend and deadline worker run natively; PostgreSQL, Redis and MinIO in Docker.                                                                                                                               | Synthetic seed; email disabled |
-| CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs select UI smoke and visual checks by affected area (full selections for shared changes); main/manual run full contract and visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`, Redis) + managed data.                                                                                                                                      | Synthetic; test-inbox email    |
-| Production  | Same shape, pinned to a SemVer tag.                                                                                                                                                                                      | Real users; live providers     |
+| Environment | Topology                                                                                                                                                                                                                 | Data                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| Local       | Frontend, backend, deadline worker and email worker run natively; PostgreSQL, Redis and MinIO in Docker.                                                                                                                 | Synthetic seed; email disabled by default, scoped live opt-in |
+| CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs select UI smoke and visual checks by affected area (full selections for shared changes); main/manual run full contract and visual regression. | Ephemeral services                                            |
+| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`, Redis) + managed data.                                                                                                                                      | Synthetic; test-inbox email                                   |
+| Production  | Same shape, pinned to a SemVer tag.                                                                                                                                                                                      | Real users; live providers                                    |
 
 ```mermaid
 flowchart LR
@@ -565,9 +568,11 @@ Notification delivery and retention policy remain later phases; no dispatcher or
 introduced. Nothing reads these rows yet: the outbox is kept by owner decision (#172) as the source
 for the notification phase, an explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
 
-Submission and roster changes evaluate accepted participants under Club → Session locks. Positive
-N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
-repeated Movies count separately. Session/Club departure and removal update participation first.
+Submission and roster changes evaluate active Club Memberships and accepted participants under
+Club → Session locks. Automatic closure requires all active members to have joined and nominated,
+with at least two accepted participants; repeated Movies count as separate nominations. An unjoined
+active member keeps Nomination open. Club departure updates Membership and participation first,
+then rechecks Nomination even when that member had no participant row.
 Archived Clubs publish progress without advancing; reactivation checks the current roster.
 The shared transition clears the deadline and increments phase/details versions exactly once.
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
@@ -774,7 +779,9 @@ behavior. Active voting still uses `selection`; imported post-screening ratings 
 Zero is a recorded score; an absent score total is null. Totals count only supplied cells and do not
 rank nominations or recalculate the screened Movie. Current plan and snapshotted vote-result visibility
 use the same rules as live post-close breakdowns. Individual matrix cells and Membership IDs remain
-private. Completed labels imported and unknown evidence explicitly.
+private. Completed reuses the live rival-card presentation for permitted imported nominations,
+labels the screened film independently of totals, and shows missing totals as `—` beside the recorded
+score count. One LOGGED info popover explains missing evidence; no winner or ranking is invented.
 
 The PAST Session type records imported provenance. Migration 28 makes SessionRating.submittedAt
 nullable: imported ratings require a Completed PAST Session and a null original submission time;

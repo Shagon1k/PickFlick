@@ -1,7 +1,10 @@
+'use client';
+
 import { Button as MantineButton, type ButtonProps as IMantineButtonProps } from '@mantine/core';
 import clsx from 'clsx';
-import type { ButtonHTMLAttributes, Ref } from 'react';
+import { type ButtonHTMLAttributes, type Ref, useEffect, useState } from 'react';
 
+import Icon from '#components/ui/Icon/Icon';
 import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Button.module.scss';
@@ -24,9 +27,11 @@ export interface IButtonProps
     variant?: TButtonVariant;
     size?: TButtonSize;
     loading?: boolean;
-    /** Announced politely while the action label stays unchanged. */
+    /** Short confirmation shown temporarily in place of the action label and announced. */
     success?: string;
 }
+
+const SUCCESS_DURATION_MS = 1800;
 
 function getButtonState(success?: string, isLoading?: boolean): 'success' | 'loading' | undefined {
     if (success) {
@@ -49,6 +54,23 @@ export default function Button({
     variant = 'primary',
     ...props
 }: IButtonProps) {
+    const [feedback, setFeedback] = useState({
+        success,
+        loading,
+        isVisible: Boolean(success) && !loading,
+    });
+    if (feedback.success !== success || feedback.loading !== loading) {
+        setFeedback({ success, loading, isVisible: Boolean(success) && !loading });
+    }
+    const isSuccessVisible = feedback.isVisible;
+    useEffect(() => {
+        if (!success || loading) return;
+        const timer = setTimeout(
+            () => setFeedback((current) => ({ ...current, isVisible: false })),
+            SUCCESS_DURATION_MS,
+        );
+        return () => clearTimeout(timer);
+    }, [success, loading]);
     return (
         <>
             <MantineButton
@@ -59,7 +81,7 @@ export default function Button({
                     inner: styles.button__inner,
                     label: styles.button__label,
                 }}
-                data-state={getButtonState(success, loading)}
+                data-state={getButtonState(isSuccessVisible ? success : undefined, loading)}
                 disabled={disabled || loading}
                 leftSection={
                     loading ? <span aria-hidden="true" className={styles.spinner} /> : undefined
@@ -67,16 +89,20 @@ export default function Button({
                 type={type}
                 unstyled
             >
-                {children}
+                <span className={styles.button__original}>{children}</span>
+                <span aria-hidden="true" className={styles.button__confirmation}>
+                    <Icon name="check" />
+                    {success}
+                </span>
             </MantineButton>
-            {success ? (
+            {success !== undefined ? (
                 <span
                     aria-atomic="true"
                     aria-live="polite"
                     className="visually-hidden"
                     role="status"
                 >
-                    {success}
+                    {isSuccessVisible ? success : ''}
                 </span>
             ) : null}
         </>

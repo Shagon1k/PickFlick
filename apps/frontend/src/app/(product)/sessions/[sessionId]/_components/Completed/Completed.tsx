@@ -1,8 +1,6 @@
-import { type TImportedSelectionOutcome, type TSession } from '@pickflick/contracts';
-import Link from 'next/link';
+import type { TSession } from '@pickflick/contracts';
 
-import { formatCount } from '#lib/format';
-
+import ImportedNominations from '../NominationRivals/ImportedNominations';
 import NominationRivals from '../NominationRivals/NominationRivals';
 import Rating from '../Rating/Rating';
 import styles from './Completed.module.scss';
@@ -18,57 +16,30 @@ export default function Completed({ session }: { session: TSession }) {
                     <p>No rating record is available for this screening.</p>
                 </section>
             )}
-            {session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown ? (
-                <NominationRivals
-                    outcome={session.selectionOutcome}
-                    breakdown={session.selectionOutcome.breakdown}
-                />
-            ) : (
-                <section className={styles.panel} aria-labelledby="rivals-heading">
-                    <h2 id="rivals-heading">Nomination Rivals</h2>
-                    {session.selectionOutcome?.source === 'IMPORTED' ? (
-                        <ImportedNominations
-                            evidence={session.selectionOutcome}
-                            movieId={session.movieId}
-                        />
-                    ) : (
-                        <p>{describeMissingRivals(session)}</p>
-                    )}
-                </section>
-            )}
+            <SessionRivals session={session} />
         </div>
     );
 }
 
-/** A logged Session shows only what was recorded; the header's LOGGED note covers the rest. */
-function ImportedNominations({
-    evidence,
-    movieId,
-}: {
-    evidence: TImportedSelectionOutcome;
-    movieId: string | null;
-}) {
-    if (evidence.nominations === null) return <p>Votes are hidden for this Session.</p>;
-    if (evidence.nominations.length === 0) return <p>No votes were recorded.</p>;
+function SessionRivals({ session }: { session: TSession }) {
+    if (session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown) {
+        return (
+            <NominationRivals
+                outcome={session.selectionOutcome}
+                breakdown={session.selectionOutcome.breakdown}
+            />
+        );
+    }
+    if (session.selectionOutcome?.source === 'IMPORTED') {
+        return (
+            <ImportedNominations evidence={session.selectionOutcome} movieId={session.movieId} />
+        );
+    }
     return (
-        <ul className={styles.ranking} aria-label="Logged nominations">
-            {evidence.nominations.map((row) => (
-                <li key={row.movie.id}>
-                    <Link href={`/movies/${row.movie.id}`}>
-                        {row.movie.title ?? 'Movie title unavailable'}
-                    </Link>
-                    {row.movie.id === movieId ? (
-                        <span className={styles.winner}>Screened Movie</span>
-                    ) : null}
-                    {row.author === null ? null : <p>Nominated by {row.author}</p>}
-                    {row.total === null ? null : (
-                        <p>
-                            {row.total} total · {formatCount(row.scoreCount, 'score')}
-                        </p>
-                    )}
-                </li>
-            ))}
-        </ul>
+        <section className={styles.panel} aria-labelledby="rivals-heading">
+            <h2 id="rivals-heading">Nomination Rivals</h2>
+            <p>{describeMissingRivals(session)}</p>
+        </section>
     );
 }
 

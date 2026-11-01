@@ -32,7 +32,7 @@ export default function PersonalRating({
     const [isOpen, setIsOpen] = useState(false);
     const [score, setScore] = useState(rating?.score);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const { message, isSuccess, setMessage, announceSuccess, run } = useActionStatus();
+    const { message, isSuccess, isPending, setMessage, announceSuccess, run } = useActionStatus();
     useEffect(() => () => clearTimeout(saveTimerRef.current), []);
 
     function save(value: number) {
@@ -90,9 +90,6 @@ export default function PersonalRating({
             }
         >
             <div className={styles.personalRating}>
-                <p aria-hidden="true" className={styles.label}>
-                    {score === undefined ? 'Rate' : `${score}/${RATING_SCALE.max}`}
-                </p>
                 <RatingControl
                     isCompact
                     name="personal-rating"
@@ -100,7 +97,10 @@ export default function PersonalRating({
                     value={score}
                     onChange={handleChange}
                 />
-                <p className={isSuccess ? 'visually-hidden' : styles.status} role="status">
+                <p
+                    className={isSuccess || isPending ? 'visually-hidden' : styles.status}
+                    role="status"
+                >
                     {message}
                 </p>
             </div>

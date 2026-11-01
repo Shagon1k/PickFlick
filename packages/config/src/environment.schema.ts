@@ -2,7 +2,7 @@ import { createPrivateKey } from 'node:crypto';
 
 import { z } from 'zod';
 
-import { validateEmailEnvironment } from './email-environment.js';
+import { getLocalEmailDelivery, validateEmailEnvironment } from './email-environment.js';
 
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
 
@@ -112,6 +112,8 @@ const rawRuntimeEnvironmentSchema = z.object({
     RESEND_API_KEY: required,
     RESEND_FROM: mailbox,
     RESEND_WEBHOOK_SECRET: z.string().trim().default(''),
+    LOCAL_EMAIL_RECIPIENTS: z.string().trim().default(''),
+    LOCAL_EMAIL_SEND_AFTER: z.string().trim().default(''),
     CONTACT_DELIVERY_TO: email,
     AUTH_BASE_URL: origin,
     AUTH_SECRET: required.min(32, 'must contain at least 32 characters'),
@@ -195,7 +197,11 @@ const RUNTIME_ENVIRONMENT_RULES: {
 export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .superRefine((env, context) => {
         validateEmailEnvironment(env, context);
-        if (env.RESEND_DELIVERY_MODE === 'live' && !env.RESEND_WEBHOOK_SECRET) {
+        if (
+            env.RESEND_DELIVERY_MODE === 'live' &&
+            env.APP_ENV !== 'local' &&
+            !env.RESEND_WEBHOOK_SECRET
+        ) {
             context.addIssue({
                 code: 'custom',
                 path: ['RESEND_WEBHOOK_SECRET'],
@@ -228,6 +234,7 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             webhookSecret: env.RESEND_WEBHOOK_SECRET,
             from: env.RESEND_FROM,
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
+            localDelivery: getLocalEmailDelivery(env),
         },
         contact: { deliveryTo: env.CONTACT_DELIVERY_TO },
         catalog: {
@@ -281,6 +288,8 @@ export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
         RESEND_API_KEY: true,
         RESEND_DELIVERY_MODE: true,
         CONTACT_DELIVERY_TO: true,
+        LOCAL_EMAIL_RECIPIENTS: true,
+        LOCAL_EMAIL_SEND_AFTER: true,
     })
     .superRefine((env, context) => validateEmailEnvironment(env, context))
     .transform((env) => ({
@@ -290,6 +299,7 @@ export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
         apiKey: env.RESEND_API_KEY,
         deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
         alertTo: env.CONTACT_DELIVERY_TO,
+        localDelivery: getLocalEmailDelivery(env),
     }));
 export type TEmailWorkerEnvironment = z.infer<typeof emailWorkerEnvironmentSchema>;
 

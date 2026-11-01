@@ -29,6 +29,7 @@ export interface IPendingSessionInvitation {
 export interface ISessionRoster {
     progressVersion: number;
     acceptedCount: number;
+    memberCount: number;
     canManage: boolean;
     canLeave: boolean;
     canJoin: boolean;

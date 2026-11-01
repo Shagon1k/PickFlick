@@ -12,6 +12,12 @@ const MOVIE_PATH = '/movies/10000000-0000-4000-8000-000000000037';
 
 const STATES = [
     {
+        name: 'completed-imported',
+        path: RATING_PATH,
+        token: 'valid-rating-history-imported-completed',
+        ready: 'Nomination Rivals',
+    },
+    {
         name: 'selection-outcome-visible',
         path: SELECTION_PATH,
         token: 'valid-selection-outcome-visible',

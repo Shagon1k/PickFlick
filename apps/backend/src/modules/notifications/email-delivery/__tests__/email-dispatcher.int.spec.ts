@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import type { TEmailWorkerEnvironment } from '@pickflick/config/environment';
 import { createDatabaseClient, type PrismaClient } from '@pickflick/database';
 
 import {
@@ -17,32 +18,38 @@ import { claimEmail, finishEmail, hashEmailAddress } from '../email-store.js';
 describe('EmailDispatcher', () => {
     let prisma: PrismaClient;
     let userId: string;
+    let secondUserId: string;
+    let unapprovedUserId: string;
     let clubId: string;
     const send = vi.fn<(message: IEmailMessage) => Promise<string>>();
     const log = vi.fn();
-    const environment = {
+    const environment: TEmailWorkerEnvironment = {
         databaseUrl: 'unused',
         baseUrl: 'https://uat.pick-flick.app',
         from: 'PickFlick UAT <uat@pick-flick.app>',
         apiKey: 'synthetic-only',
         deliveryEnabled: true,
         alertTo: 'test@pick-flick.app',
+        localDelivery: null,
     };
-    const buildDispatcher = (isDeliveryEnabled = true) =>
+    const buildDispatcher = (isDeliveryEnabled = true, localDelivery = environment.localDelivery) =>
         new EmailDispatcher(
             prisma,
             { send },
             {
-                environment: { ...environment, deliveryEnabled: isDeliveryEnabled },
+                environment: { ...environment, deliveryEnabled: isDeliveryEnabled, localDelivery },
                 log,
             },
         );
     const getDelivery = (notificationId: string) =>
         prisma.notificationEmailDelivery.findUniqueOrThrow({ where: { notificationId } });
-    const record = async (event: 'CLUB_ARCHIVED' | 'BILLING_SERVICE' = 'CLUB_ARCHIVED') => {
+    const record = async (
+        event: 'CLUB_ARCHIVED' | 'BILLING_SERVICE' = 'CLUB_ARCHIVED',
+        recipientId = userId,
+    ) => {
         return prisma.$transaction((tx) =>
             recordNotification(tx, {
-                recipientId: userId,
+                recipientId,
                 sourceId: randomUUID(),
                 event,
                 clubId: event === 'BILLING_SERVICE' ? undefined : clubId,
@@ -52,12 +59,16 @@ describe('EmailDispatcher', () => {
     beforeAll(async () => {
         prisma = createDatabaseClient(loadIntegrationEnvironment().databaseUrl);
         userId = await createUser(prisma);
+        secondUserId = await createUser(prisma);
+        unapprovedUserId = await createUser(prisma);
         clubId = randomUUID();
         await prisma.club.create({ data: { id: clubId, name: 'PRIVATE CLUB' } });
         await addMember(prisma, clubId, userId, 'ADMIN');
     });
     beforeEach(async () => {
-        await prisma.notification.deleteMany({ where: { recipientId: userId } });
+        await prisma.notification.deleteMany({
+            where: { recipientId: { in: [userId, secondUserId, unapprovedUserId] } },
+        });
         await prisma.notificationEmailSuppression.deleteMany({
             where: { addressHash: hashEmailAddress(`it-${userId}@example.invalid`) },
         });
@@ -74,11 +85,11 @@ describe('EmailDispatcher', () => {
             create: { userId, event: 'CLUB_ARCHIVED', inApp: true, email: true },
             update: { email: true },
         });
-        send.mockReset().mockResolvedValue(randomUUID());
+        send.mockReset().mockImplementation(() => Promise.resolve(randomUUID()));
         log.mockClear();
     });
     afterAll(async () => {
-        await removeUsers(prisma, [userId]);
+        await removeUsers(prisma, [userId, secondUserId, unapprovedUserId]);
         await prisma.$disconnect();
     });
 
@@ -98,6 +109,76 @@ describe('EmailDispatcher', () => {
         });
         expect(JSON.stringify(log.mock.calls)).not.toMatch(/PRIVATE|example.invalid|html|subject/);
     });
+
+    it.each(['PENDING', 'PROCESSING'] as const)(
+        'should leave old and unapproved %s deliveries untouched while sending new local mail to approved users',
+        async (status) => {
+            const sendAfter = new Date(Date.now() - 1000);
+            const old = (await record('BILLING_SERVICE'))!;
+            const unapproved = (await record('BILLING_SERVICE', unapprovedUserId))!;
+            await prisma.notification.update({
+                where: { id: old.id },
+                data: { createdAt: new Date(sendAfter.getTime() - 1) },
+            });
+            await prisma.notificationEmailDelivery.updateMany({
+                where: { notificationId: { in: [old.id, unapproved.id] } },
+                data: {
+                    status,
+                    leaseUntil: new Date(0),
+                    claimToken: randomUUID(),
+                    attemptCount: 1,
+                    firstAttemptAt: sendAfter,
+                },
+            });
+            const oldDelivery = await getDelivery(old.id);
+            const unapprovedDelivery = await getDelivery(unapproved.id);
+            const failure = (await record('BILLING_SERVICE'))!;
+            await prisma.notificationEmailDelivery.update({
+                where: { notificationId: failure.id },
+                data: { status: 'FAILED', reason: 'provider_403' },
+            });
+            const first = (await record('BILLING_SERVICE'))!;
+            const second = (await record('BILLING_SERVICE', secondUserId))!;
+            await prisma.notification.update({
+                where: { id: first.id },
+                data: { createdAt: sendAfter },
+            });
+            await prisma.user.update({
+                where: { id: userId },
+                data: { email: `IT-${userId}@EXAMPLE.INVALID` },
+            });
+            const localDelivery = {
+                recipients: [`it-${userId}@example.invalid`, `it-${secondUserId}@example.invalid`],
+                sendAfter,
+            };
+            const dispatcher = buildDispatcher(true, localDelivery);
+
+            for (let cycle = 0; cycle < 4; cycle++) await dispatcher.runOnce();
+
+            expect(send).toHaveBeenCalledTimes(2);
+            expect(send.mock.calls.map(([message]) => message.to)).toEqual(
+                expect.arrayContaining([
+                    `IT-${userId}@EXAMPLE.INVALID`,
+                    `it-${secondUserId}@example.invalid`,
+                ]),
+            );
+            expect(await getDelivery(first.id)).toMatchObject({
+                status: 'ACCEPTED',
+                attemptCount: 1,
+            });
+            expect(await getDelivery(second.id)).toMatchObject({
+                status: 'ACCEPTED',
+                attemptCount: 1,
+            });
+            expect(await getDelivery(old.id)).toEqual(oldDelivery);
+            expect(await getDelivery(unapproved.id)).toEqual(unapprovedDelivery);
+            expect(await getDelivery(failure.id)).toMatchObject({
+                status: 'FAILED',
+                alertAttemptedAt: null,
+                alertSentAt: null,
+            });
+        },
+    );
 
     it('should retry temporary failure after backoff with exactly the same key and payload after a restart', async () => {
         const notification = (await record())!;

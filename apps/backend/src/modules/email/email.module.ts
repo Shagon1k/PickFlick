@@ -13,7 +13,11 @@ import { ResendEmailClient } from './resend-email.client.js';
             inject: [RUNTIME_ENVIRONMENT],
             useFactory: ({ resend }: TRuntimeEnvironment) =>
                 resend.deliveryEnabled
-                    ? new ResendEmailClient(resend.apiKey, resend.from)
+                    ? new ResendEmailClient(
+                          resend.apiKey,
+                          resend.from,
+                          resend.localDelivery?.recipients,
+                      )
                     : new LoggingEmailClient(),
         },
     ],

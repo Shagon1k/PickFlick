@@ -27,8 +27,10 @@
 .list {
     display: grid;
     gap: var(--gap-sm);
+    max-height: 300px;
     padding: 0;
     margin: 0;
+    overflow-y: auto;
     list-style: none;
 }
 
@@ -97,7 +99,8 @@
     border-radius: var(--radius-pill);
 }
 
-.score {
+.score,
+.recordedScore {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -108,23 +111,28 @@
     padding: 8px 10px;
     font-family: inherit;
     color: inherit;
-    cursor: pointer;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     transition: border-color var(--motion-local) var(--ease-standard);
 }
 
+.score {
+    cursor: pointer;
+}
+
 .score:hover {
     border-color: var(--accent);
 }
 
-.score strong {
+.score strong,
+.recordedScore strong {
     font: 600 28px/1 var(--font-display);
     color: var(--accent);
 }
 
-.score small {
+.score small,
+.recordedScore small {
     font: var(--fs-micro) var(--font-mono);
     color: var(--fg-secondary);
 }
@@ -160,13 +168,15 @@
         flex-wrap: wrap;
     }
 
-    .score {
+    .score,
+    .recordedScore {
         flex-direction: row;
         gap: 8px;
         min-width: 100%;
     }
 
-    .score strong {
+    .score strong,
+    .recordedScore strong {
         font-size: 22px;
     }
 }

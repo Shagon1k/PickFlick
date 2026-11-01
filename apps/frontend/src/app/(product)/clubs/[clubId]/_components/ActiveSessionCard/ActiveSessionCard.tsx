@@ -52,7 +52,11 @@ export default function ActiveSessionCard({
             </p>
             <FilmProgress
                 value={session.progressCount ?? session.acceptedCount}
-                max={session.progressCount === null ? memberCount : session.acceptedCount}
+                max={
+                    session.phase === 'NOMINATION' || session.progressCount === null
+                        ? memberCount
+                        : session.acceptedCount
+                }
                 label={progressText(session, memberCount)}
             />
         </div>
@@ -92,7 +96,7 @@ function formatPhase(value: string) {
 
 function progressText(session: IClubHubSession, memberCount: number) {
     if (session.phase === 'NOMINATION')
-        return `${session.progressCount ?? 0} of ${session.acceptedCount} have nominated`;
+        return `${session.progressCount ?? 0} of ${memberCount} have nominated`;
     if (session.phase === 'SELECTION')
         return `${session.progressCount ?? 0} of ${session.acceptedCount} have submitted`;
     return `${session.acceptedCount} of ${memberCount} Club members have joined`;

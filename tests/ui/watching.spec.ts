@@ -21,6 +21,11 @@ for (const viewport of canonicalViewports) {
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
             await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({
+                    hasText: '1 of 3 members have joined the screening.',
+                }),
+            ).toBeVisible();
             await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
             await expect(page.getByText('Room A', { exact: true })).toBeVisible();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();

@@ -170,6 +170,47 @@
     color: var(--success-text-strong);
     background: var(--success-soft);
     border-color: var(--success-border);
+    opacity: 1;
+}
+
+.button__original {
+    display: inline-flex;
+    flex-direction: inherit;
+    gap: inherit;
+    align-items: inherit;
+    transition:
+        opacity var(--motion-local) var(--ease-standard),
+        transform var(--motion-local) var(--ease-standard);
+}
+
+.button__confirmation {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity var(--motion-local) var(--ease-standard),
+        transform var(--motion-local) var(--ease-standard);
+}
+
+.button__confirmation svg {
+    width: 16px;
+    height: 16px;
+}
+
+.button[data-state='success'] .button__original {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.button[data-state='success'] .button__confirmation {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Icons centre on the button, not on the text baseline. */

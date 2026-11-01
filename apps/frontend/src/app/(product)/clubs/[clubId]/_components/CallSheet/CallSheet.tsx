@@ -39,7 +39,7 @@ export default function CallSheet({
     const title = hasSelectedFilm
         ? (session.movie?.title ?? session.topic ?? 'Film unavailable')
         : (session.topic ?? 'Untitled Session');
-    const fields = getPhaseFields(session, hasSelectedFilm);
+    const fields = getPhaseFields(session, hasSelectedFilm, memberCount);
     return (
         <Link
             className={styles.sheet}
@@ -151,7 +151,7 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
     );
 }
 
-function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
+function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean, memberCount: number) {
     if (hasSelectedFilm)
         return [
             { label: 'Runtime', value: formatRuntime(session.movie?.runtime ?? null) ?? '—' },
@@ -160,7 +160,7 @@ function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
     return [
         {
             label: session.phase === 'SELECTION' ? 'Ballots' : 'Nominated',
-            value: `${session.progressCount ?? 0}/${session.acceptedCount}`,
+            value: `${session.progressCount ?? 0}/${session.phase === 'NOMINATION' ? memberCount : session.acceptedCount}`,
         },
         {
             label: session.phase === 'SELECTION' ? 'Nominations' : 'Participants',

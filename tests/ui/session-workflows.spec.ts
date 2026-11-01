@@ -108,7 +108,10 @@ test(
         await expect(page.getByRole('option')).toHaveCount(2);
         await search.press('ArrowDown');
         await search.press('Enter');
-        await expect(search).toHaveValue('<script>alert(1)</script> & Film');
+        await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+            '<script>alert(1)</script> & Film',
+        );
+        await expect(page.locator('script').filter({ hasText: 'alert(1)' })).toHaveCount(0);
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByText('watching', { exact: true })).toBeVisible();
         await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(

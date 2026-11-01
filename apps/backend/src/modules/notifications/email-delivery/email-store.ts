@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import type { Prisma, PrismaClient } from '@pickflick/database';
+import type { TEmailWorkerEnvironment } from '@pickflick/config/environment';
+import { Prisma, type PrismaClient } from '@pickflick/database';
 
 /** Suppression must match however Resend or our records wrote the address, so both sides hash alike. */
 export function hashEmailAddress(address: string) {
@@ -28,14 +29,28 @@ export function getRetryAt(claim: TEmailClaim, now: Date) {
 }
 
 /** Claims one due delivery; `SKIP LOCKED` lets parallel workers take different rows. */
-export async function claimEmail(prisma: PrismaClient, now: Date): Promise<TEmailClaim | null> {
+export async function claimEmail(
+    prisma: PrismaClient,
+    now: Date,
+    localDelivery: TEmailWorkerEnvironment['localDelivery'] = null,
+): Promise<TEmailClaim | null> {
     const token = randomUUID();
     const leaseUntil = new Date(now.getTime() + LEASE_MS);
+    const localFilter = localDelivery
+        ? Prisma.sql`AND EXISTS (
+            SELECT 1 FROM "Notification" AS notification
+            JOIN "User" AS recipient ON recipient."id" = notification."recipientId"
+            WHERE notification."id" = "NotificationEmailDelivery"."notificationId"
+                AND notification."createdAt" >= ${localDelivery.sendAfter}
+                AND LOWER(recipient."email") IN (${Prisma.join(localDelivery.recipients)})
+        )`
+        : Prisma.empty;
     const [claim] = await prisma.$queryRaw<TEmailClaim[]>`
         WITH due AS (
             SELECT "notificationId" FROM "NotificationEmailDelivery"
-            WHERE ("status" = 'PENDING' AND "nextAttemptAt" <= ${now})
-               OR ("status" = 'PROCESSING' AND "leaseUntil" <= ${now})
+            WHERE (("status" = 'PENDING' AND "nextAttemptAt" <= ${now})
+               OR ("status" = 'PROCESSING' AND "leaseUntil" <= ${now}))
+            ${localFilter}
             ORDER BY "nextAttemptAt", "notificationId"
             FOR UPDATE SKIP LOCKED LIMIT 1
         )

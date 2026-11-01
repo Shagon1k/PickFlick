@@ -302,6 +302,11 @@ describe('Selection ballots', () => {
                     })
                 ).status,
             ).toBe(201);
+        await api.expectStatus(201, `/sessions/${sessionId}/nominations/close`, {
+            method: 'POST',
+            userId: admin,
+            json: { confirmation: 'CLOSE', phaseVersion: 1 },
+        });
         const data = await read();
         expect(data.nominations).toHaveLength(2);
         nominationIds = data.nominations.map((row) => row.id);

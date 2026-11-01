@@ -1616,3 +1616,26 @@ and the worker logs every attempt, so migration 38 drops the unread per-attempt 
 request hash. A retry still reuses the stable idempotency key; when the provider refuses a changed
 payload under it, the delivery fails for operator review as before. Owner approval: Phase 18
 simplification audit, decisions #2 and #3.
+
+### ADR-020 amendment — scoped local live verification (2026-11-01)
+
+- **Status:** Accepted by the owner in the Phase 18 alignment request.
+
+The owner requested real local delivery to multiple approved test accounts. This narrowly
+supersedes the local-delivery prohibition above and in ADR-009; test and preview still never send.
+Local delivery stays disabled by default. To opt in, configure `APP_ENV=local`,
+`RESEND_DELIVERY_MODE=live`, a sending key and sender, comma-separated `LOCAL_EMAIL_RECIPIENTS`,
+and an ISO `LOCAL_EMAIL_SEND_AFTER` activation timestamp. `CONTACT_DELIVERY_TO` must belong to
+that recipient list. Other environments reject these local restriction variables.
+
+The existing worker claims only Notifications created at or after the cutoff for allowlisted
+accounts. The shared sender checks recipients again and prefixes every local subject with
+`[LOCAL]`. Existing pending backlog is left untouched. Local worker cycles skip operator email
+alerts, including old alert candidates; delivery failures remain in the database and structured
+logs. Existing authorization checks, preferences, retries, suppression and idempotency still apply.
+No new dispatcher, database migration, provider-management API or deployment is introduced.
+
+Local startup does not require a webhook signing secret. Provider acceptance therefore remains
+distinct from delivery confirmation; a signed callback is still required for `DELIVERED`.
+This exception authorizes the owner's scoped local test, not UAT/production configuration changes
+or acceptance of the outstanding hosted review and provider checks.

@@ -128,9 +128,31 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     await expect(select).toHaveValue('1 to 5');
     await expect(page.locator('input[type="hidden"][name="score-range"]')).toHaveValue('1-5');
 
-    await expect(page.locator('button[data-state="success"] + [role="status"]')).toHaveText(
-        'Changes saved.',
-    );
+    const confirmation = page.getByRole('button', { name: 'Save example', exact: true });
+    const confirmationStatus = page
+        .locator('form')
+        .filter({ has: confirmation })
+        .getByRole('status');
+    await expect(confirmationStatus).toBeAttached();
+    await expect(confirmationStatus).toBeEmpty();
+    const originalSize = await confirmation.boundingBox();
+    expect(originalSize).not.toBeNull();
+    await confirmation.focus();
+    await page.keyboard.press('Enter');
+    await expect(confirmation).toHaveAttribute('data-state', 'success');
+    await expect(confirmation).toHaveAccessibleName('Save example');
+    await expect(confirmationStatus).toHaveText('Saved');
+    await expect(confirmation.locator('span[aria-hidden="true"]')).toContainText('Saved');
+    await waitForAnimations(confirmation);
+    const confirmedSize = await confirmation.boundingBox();
+    expect(confirmedSize).not.toBeNull();
+    expect(confirmedSize!.width).toBe(originalSize!.width);
+    await expect(confirmation).not.toHaveAttribute('data-state', 'success');
+    await expect(confirmationStatus).toBeEmpty();
+    await confirmation.focus();
+    await page.keyboard.press('Enter');
+    await expect(confirmation).toHaveAttribute('data-state', 'success');
+    await expect(confirmationStatus).toHaveText('Saved');
 
     const submittedScale = page.locator('[data-submitted="true"]');
     await expect(submittedScale).toContainText('Submitted');

@@ -59,6 +59,7 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
     const isManager = !token.includes('member');
     return {
         progressVersion: 1,
+        memberCount: 3,
         acceptedCount: state.status === 'ACCEPTED' ? 1 : 0,
         canJoin: state.status === 'INVITED',
         isRemoved: false,

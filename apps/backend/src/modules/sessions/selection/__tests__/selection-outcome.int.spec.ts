@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { sessionSchema } from '@pickflick/contracts';
+import { type ISessionRoster, sessionSchema } from '@pickflick/contracts';
 
 import {
     addMember,
@@ -236,9 +236,9 @@ describe('Selection outcome', () => {
         await close();
         await complete();
         const before = await read(users[1]);
-        const rosterBefore = await (
+        const rosterBefore = (await (
             await api.request(`/sessions/${sessionId}/roster`, { userId: users[1] })
-        ).json();
+        ).json()) as ISessionRoster;
         await api.prisma.club.update({
             where: { id: clubId },
             data: {
@@ -258,7 +258,7 @@ describe('Selection outcome', () => {
         expect(await read(users[1])).toEqual(before);
         expect(
             await (await api.request(`/sessions/${sessionId}/roster`, { userId: users[1] })).json(),
-        ).toEqual(rosterBefore);
+        ).toEqual({ ...rosterBefore, memberCount: 2 });
         expect(before).toMatchObject({
             phase: 'COMPLETED',
             canManage: false,

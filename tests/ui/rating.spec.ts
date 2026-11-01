@@ -96,6 +96,35 @@ for (const scenario of ['member', 'readonly', 'hidden-completed']) {
     });
 }
 
+for (const [scenario, joinCount, removedCount] of [
+    ['readonly', 0, 0],
+    ['removed', 0, 1],
+    ['unjoined', 1, 0],
+    ['ineligible', 0, 0],
+] as const) {
+    test(
+        `Rating ${scenario} state omits the empty rating panel and keeps participation accurate`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            await authenticate(context, scenario);
+            await page.goto(ROUTE);
+            await expect(page.getByText(/Rating in progress/u)).toBeVisible();
+            await expect(
+                page.getByRole('heading', { name: 'Your rating', exact: true }),
+            ).toHaveCount(0);
+            await expect(page.getByRole('radio')).toHaveCount(0);
+            await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
+            await expect(page.getByText('Join the Session to rate.')).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Join Session', exact: true }),
+            ).toHaveCount(joinCount);
+            await expect(page.getByText('Removed', { exact: false })).toHaveCount(removedCount);
+            await expect(page.getByText('A memorable screening.')).toHaveCount(0);
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toHaveCount(0);
+        },
+    );
+}
+
 test('Rating keeps input and explains save failure and offline recovery', async ({
     context,
     page,

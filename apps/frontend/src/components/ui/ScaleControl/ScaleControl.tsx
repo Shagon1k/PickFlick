@@ -2,6 +2,8 @@
 
 import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
 
+import Icon from '#components/ui/Icon/Icon';
+
 import { createInclusiveScale } from './scale';
 import styles from './ScaleControl.module.scss';
 
@@ -195,11 +197,7 @@ export default function ScaleControl({
                             }
                             type="button"
                         >
-                            {presentation === 'rating' ? (
-                                <span aria-hidden="true">★</span>
-                            ) : (
-                                scaleValue
-                            )}
+                            {presentation === 'rating' ? <Icon name="ratings" /> : scaleValue}
                         </button>
                     );
                 })}
@@ -265,7 +263,7 @@ function SubmittedScale({
                         data-selected={scaleValue === selectedValue || undefined}
                         key={scaleValue}
                     >
-                        {presentation === 'rating' ? '★' : scaleValue}
+                        {presentation === 'rating' ? <Icon name="ratings" /> : scaleValue}
                     </span>
                 ))}
             </div>

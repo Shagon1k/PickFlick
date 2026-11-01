@@ -22,7 +22,6 @@
     gap: var(--gap-md);
     width: 100%;
     max-width: 560px;
-    min-height: 320px;
     margin: var(--gap-md) auto;
     text-align: start;
 }
@@ -151,17 +150,6 @@
     flex: 0 0 auto;
     font: var(--fs-card-title)/var(--lh-ui) var(--font-mono);
     color: var(--gold-light);
-}
-
-/* The prototype's mono score label over the star row. */
-.starLabel {
-    margin: 0;
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    text-align: center;
-}
-
-.rating .starLabel {
-    color: var(--ivory-muted);
 }
 
 .submitRow {

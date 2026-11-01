@@ -2,8 +2,41 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
+import { settle } from './settle';
 import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
+
+test(
+    'An empty invitation ticket leaves no extra gap below the mobile footer',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-settings-admin-compact-footer');
+        for (const width of [390, 768]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings', {
+                waitUntil: 'load',
+            });
+            await settle(page);
+            await expect(page.locator('[data-invite-ticket]')).toBeHidden();
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+            await settle(page);
+            const footer = await page.getByRole('contentinfo').boundingBox();
+            const links = await page
+                .getByRole('navigation', { name: 'Footer navigation' })
+                .boundingBox();
+            const bar = await page
+                .getByRole('navigation', { name: 'Mobile product navigation' })
+                .boundingBox();
+            expect(footer).not.toBeNull();
+            expect(links).not.toBeNull();
+            expect(bar).not.toBeNull();
+            expect(Math.abs(footer!.y + footer!.height - bar!.y)).toBeLessThanOrEqual(1);
+            expect(footer!.y + footer!.height - links!.y - links!.height).toBeLessThanOrEqual(
+                width < 768 ? 24 : 56,
+            );
+        }
+    },
+);
 
 for (const shell of shellRoutes) {
     test(`${shell} shell has no automated accessibility violations`, async ({ page }) => {

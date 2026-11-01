@@ -13,6 +13,7 @@ import Tabs from '#components/ui/Tabs/Tabs';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
+import ButtonFeedbackPreview from './_components/ButtonFeedbackPreview/ButtonFeedbackPreview';
 import PreviewInteractions from './_components/PreviewInteractions/PreviewInteractions';
 import PreviewMenus from './_components/PreviewMenus/PreviewMenus';
 import PreviewSection from './_components/PreviewSection/PreviewSection';
@@ -99,7 +100,7 @@ export default function UiPreviewPage() {
                         <Button loading>Creating</Button>
                     </StateCell>
                     <StateCell label="Success">
-                        <Button success="Changes saved.">Save</Button>
+                        <ButtonFeedbackPreview />
                     </StateCell>
                     <StateCell label="Disabled">
                         <Button disabled>Create</Button>

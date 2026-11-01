@@ -21,15 +21,28 @@ export function getFieldProps({
     labelHint,
     isLabelHidden = false,
     success,
+    dropdown,
+    shouldReserveMessage = true,
     message = <FieldMessage error={error} hint={hint} success={success} />,
-}: Omit<IFieldProps, 'id'> & { message?: ReactNode }) {
+}: Omit<IFieldProps, 'id'> & {
+    message?: ReactNode;
+    dropdown?: ReactNode;
+    shouldReserveMessage?: boolean;
+}) {
     return {
         'data-state': getFieldState(error, success),
-        description: message,
+        description: shouldReserveMessage || error || hint || success ? message : undefined,
         error: Boolean(error),
         inputContainer: (input: ReactNode) => (
             <>
-                {input}
+                {dropdown ? (
+                    <div className={styles['field__control-wrapper']}>
+                        {input}
+                        {dropdown}
+                    </div>
+                ) : (
+                    input
+                )}
                 <FieldAnnouncements error={error} success={success} />
             </>
         ),

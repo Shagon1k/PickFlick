@@ -23,12 +23,13 @@ export default function SaveRow({
                     fullWidth
                     loading={isPending}
                     size="small"
+                    success={state.status === 'success' ? 'Saved' : ''}
                     type="submit"
                 >
                     Save Changes
                 </Button>
             </div>
-            <ActionStatus state={state} />
+            <ActionStatus state={state} shouldAnnounceSuccess={false} />
         </div>
     );
 }

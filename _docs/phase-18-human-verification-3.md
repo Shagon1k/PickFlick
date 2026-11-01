@@ -195,7 +195,123 @@ cells and assistive-technology-only success announcements.
 - **A5.** Personal Session invite creation, respond-by-ID, `eligibleMembers` and `canInvite` are
   gone; existing token links still preview, answer and revoke.
 
-## Final verification, 2026-11-01
+## Owner alignment round, 2026-11-01
+
+The owner reopened the whole prior request after finding visible departures despite the earlier
+green checks. Keep all current alignment work in one commit and provide actual before/after app
+screenshots. Passing tests and updating baselines do not establish parity with the source design.
+Compare each affected surface with its canonical prototype and retain the recorded owner choices.
+Departures need an uncovered case, an important adaptation, or an explicit prior owner decision.
+
+The latest requirements amend the earlier register and X4:
+
+- Remove footer space reserved for a hidden invite ticket; retain clearance while it is visible.
+- Automatic Nomination closure requires every active Club member to have joined and nominated,
+  with at least two accepted participants. Deadline and manual closure keep their existing rules.
+- Reuse temporary animated Saved/Copied feedback inside the existing button, restoring its label
+  without changing geometry. The shared default is 1800ms; existing Session Copy flows retain
+  their 1500ms lifetime. Other success narration remains assistive-only.
+- Keep bookmark hover and opening stable. Watchlist pending and success text stays assistive-only;
+  failures remain visible.
+- Use the compact rating popover and a single star row. Own and historical ratings have no visible
+  N/10 label. Review the complete Session family, including imported rivals, facts and result states.
+- Allow scoped real local Resend verification for the owner's approved test addresses, with an
+  activation cutoff and `[LOCAL]` subjects. Older notification backlog and operator email alerts
+  are excluded. See the [ADR-020 amendment](decisions/README.md#adr-020-amendment--scoped-local-live-verification-2026-11-01).
+
+### Coverage of the original 80 findings
+
+The table maps every original finding to its owning sources and existing assertions. “Assertions”
+means checks present in the current tree, not results from this round. Independent source review
+covered the shared controls and adjacent flows; that independent review did not run browsers,
+tests or delivery. The implementation run subsequently produced the scoped evidence below. Those
+results cover the full current automated UI and visual selections; exact-head hosted owner
+acceptance remains separate.
+
+| Original IDs                                                               | Source scope and canonical authority                                                                                                                                                                             | Existing assertion locations                                                                                                                                                                                | Current evidence                                                                                                                       |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–4, 6–7, 9, 12, 16, 19, 24, 36, 55, 57, 62–63, 76–77                      | LoginActions, navigation/shell/footer, InviteDialog, both invitation pages, PendingInvites, NotificationItems, SessionHeader; `login.html`, `invite.html`, `app.html`, Session family and selected owner options | `tests/ui/shells.spec.ts`, `interaction.spec.ts`, `club-settings.spec.ts`, `session-roster.spec.ts`; invitation and roster backend integration suites                                                       | Source review, scoped UI checks and database suite; full UI contract and visual gates passed                                           |
+| 5, 21, 25–29, 40, 42–43, 50, 58, 65–69, 75                                 | ManageModerators, HubOverview/HubSessions, ActiveSessionCard/ActiveRatings, FilmProgress, ClubRatings, Achievements, HubLiveRefresh; `app.html`, `DESIGN.md`, owner decisions                                    | `tests/ui/club-hub.spec.ts`, `club-settings.spec.ts`, `achievements.spec.ts`, `completed-history.spec.ts`; `tests/journeys/hub-live-refresh.spec.ts`; Club/achievement backend suites                       | Source review; real two-account empty-inbox refresh regression reproduced before/fixed after; full UI contract and visual gates passed |
+| 8, 10–11, 13, 20, 22–23, 37–38, 41, 46–49, 51–54, 56, 59–60, 64, 70–74, 79 | SessionDetails/Header/Facts, Nomination/Selection/Rating/Completed, rivals, roster, SessionForm, server completion/access/deadlines; canonical Session family and business rules                                 | `tests/ui/nominations.spec.ts`, `selection.spec.ts`, `watching.spec.ts`, `rating.spec.ts`, `session-workflows.spec.ts`, `completed-history.spec.ts`; Session progress/roster/rating/deadline backend suites | Source review, database suite and scoped UI checks; full UI contract and visual gates passed                                           |
+| 14–15, 17–18, 45, 78                                                       | PersonalRating, WatchlistBookmark, LibraryStatistics/Filters/Table, ScaleControl/Popover/Table; `movie-details.html`, `library.html`, chosen 18C and star-row override                                           | `tests/ui/library.spec.ts`, `personal-rating.spec.ts`, `watchlist.spec.ts`; corresponding real-API journeys                                                                                                 | Source review, real-API journeys and bookmark geometry check; full UI contract and visual gates passed                                 |
+| 30–35, 44, 61, 80                                                          | PastSessionForm, PastAttendees, PastNominations, MoviePicker and field wrappers; three-step owner choice 30–32A and historical evidence rules                                                                    | `tests/ui/past-session.spec.ts`, `tests/journeys/past-session.spec.ts`; past Session/Selection backend suites                                                                                               | Source review, database suite and real-API journeys including Back/Next title persistence at four widths; visual gate passed           |
+| 39                                                                         | Email configuration, shared Resend sender, dispatcher/claim filter; ADR-020 local amendment and email operations guide                                                                                           | Resend client unit suite; email dispatcher/webhook integration suites                                                                                                                                       | Actual producer→queue→worker: 2/2 provider-delivered; 30 prior rows unchanged; local DB ACCEPTED, signed callbacks unverified          |
+
+The current source changes address the reported imported bulleted list, uppercase/clipped InfoTips,
+disabled selected-film field, duplicate leaderboard caption, rating denominators, footer spacer and
+bookmark movement. The source review also found the Watching banner's missing all-member denominator
+and generic Join instructions for viewers who cannot join; current Session changes address these
+states. Automated checks supplement source review; owner acceptance remains open.
+
+Intentional exceptions remain: the owner's invitation, moderator, watchlist, rating, footer and
+wizard choices; Session actions moved to the Sessions tab; unbuilt menu destinations returning 404;
+view-triggered achievements (#58); Pro discovery deferred in #200; member-event feed deferred in #81.
+These are dispositions, not missing alignment fixes.
+
+### Current alignment evidence
+
+- Final `PICKFLICK_ENV_FILE=.env.example pnpm verify` passed in the isolated native checkout:
+  lint, formatting, knip, type checks, 624 unit tests and builds. The earlier Linux static run
+  also passed. The user’s development build stayed available on port 3000.
+- Database integration passed 325/325 against isolated `pickflick_test`.
+- Real-API journeys passed 17/17. The empty-inbox Hub refresh regression was reproduced before the
+  fix and passed afterward with two accounts. Past Session Back/Next retains the selected title
+  at 390, 768, 1024 and 1440px.
+- The final fresh-mock native UI contract passed 310/310, including keyboard, touch, axe,
+  failure states and all four canonical widths. InfoTip preserves its help-text description and
+  Escape behavior; Date and Time retain the shared field gap.
+- The pinned Linux visual selection passed 112/112 during the update and again without updating
+  snapshots. All 49 changed and two new PNGs were inspected; the inventory is 120. Pixel
+  tolerance and masks are unchanged.
+- Eight actual before/after production-screen pairs were captured at 390×844, DPR 2, using the
+  same synthetic fixtures. Before uses frozen `666ea16`; after uses the current implementation.
+  The owner report includes an interactive comparison and a portable `before-after.html` artifact
+  under the ignored `test-results/alignment-20261101`. Both reviewers inspected all eight pairs;
+  a Date/Time gap concern was corrected and rechecked. Captures alone do not establish interaction
+  behavior or owner acceptance.
+- Real local email traversed the actual Session producer, notification queue and email worker.
+  At 2026-11-01 13:11 UTC, provider GET responses showed `last_event=delivered` for both sends
+  (2/2). The database remains `ACCEPTED` because local signed webhooks were not configured;
+  provider delivery was verified separately. Private `local-email-proof.json` records safe IDs
+  and outcomes without addresses or credentials and is not committed.
+- All 30 pre-existing delivery rows remained byte-for-byte unchanged. The temporary QA Club,
+  synthetic actor and test notices were removed. `SESSION_STARTED` email is enabled for both
+  approved accounts; other preferences are unchanged. Scoped local delivery remains live.
+
+The first hosted PR visual run found one nondeterministic capture: the pointer left by opening
+Invite could hover New link after the modal moved beneath it. All 636 differing pixels were that
+button's hover border; the parallel full hosted visual selection passed. The capture now moves the
+pointer away before settling, as the Moderator capture already does. Baselines, masks and pixel
+tolerance are unchanged. Both dialog widths pass three pinned-Linux repeats (6/6), without retries or baseline updates.
+
+The subsequent hosted smoke/full selections found two additional readiness gaps in tests:
+Date/Time geometry was sampled before the streamed fields became visible, and Hub was clicked
+before the mobile menu's layout effect attached its alignment. Both now wait for those observable
+states before measuring or clicking. The exact gap, dropdown geometry, six navigation labels and
+Sessions destination assertions remain unchanged. Three repeats at both picker widths plus Hub
+navigation pass 9/9 in pinned Linux, without retries.
+
+A real-API journey also opened the Admin menu while the member's nomination response was still
+in flight. Its trace showed transient menu detachment, not clipping or a persistent positioning
+loop. It now waits for the persisted Your pick link, then settles the reloaded Admin page before
+opening settings. Three focused real journeys pass. The unchanged journey also passed locally,
+so a production defect was not established; these changes synchronize tests without changing UI,
+timeouts, click forcing, baselines or comparison tolerances.
+
+The broader local smoke run also exposed a Watchlist test clicking the old Library priority
+button before navigation to Movie completed. It now waits for the Movie URL and scopes the
+bookmark to that Movie's region; unique fixture tokens isolate repeated runs. Priority, removal
+and focus assertions remain intact. A parallel local run also missed Nomination's fixed 5500ms
+fault window against its 5000ms poll; all three repeats with CI's configured single worker pass.
+The fixture timing and the application remain unchanged. The final native smoke selection passes
+113/113 with the configured single worker, including all four Watchlist widths.
+
+Exact-head hosted CI, owner acceptance and deployed-environment verification remain separate gates.
+
+## Baseline verification at `666ea16`, 2026-11-01
+
+The following results predate the reopened alignment round. They describe the baseline revision,
+not the current worktree, its design parity or its live delivery behavior.
 
 - `PICKFLICK_ENV_FILE=.env.example pnpm verify`: lint, knip, formatting, type checks, 609 unit
   tests and production builds pass.
@@ -213,6 +329,7 @@ cells and assistive-technology-only success announcements.
   inspected again. Pixel tolerance and masking rules are unchanged.
 - `pnpm deploy:check`: local, UAT and production definitions render. No deployment is performed.
 
-The phase remains open for exact-head hosted owner acceptance, live email delivery (#39) and the
-two-account Hub refresh observation carried from the earlier review. Accepted design choices and
-local screenshot review do not establish those UAT results. Keep this register until the gate closes.
+At this baseline, live email delivery (#39) and two-account Hub refresh were still outstanding;
+their later local evidence appears above. The phase remains open for exact-head
+hosted owner acceptance. Local observations do not establish UAT results. Keep this register until
+the gate closes.

@@ -6,6 +6,74 @@ import { settle } from './settle';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
 
+test(
+    'Bookmark hover stays still and pending updates do not resize the priority popover',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, `valid-watchlist-stable-layout-${crypto.randomUUID()}`);
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
+        await settle(page);
+        const ribbon = page.getByRole('button', { name: 'Add to watchlist', exact: true });
+        const resting = await ribbon.boundingBox();
+        expect(resting).not.toBeNull();
+        await ribbon.hover();
+        await settle(page);
+        expect(await ribbon.boundingBox()).toEqual(resting);
+        let release = () => {};
+        let hasCaptured = false;
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        await page.route(`**/movies/${MOVIE_ID}`, async (route) => {
+            if (route.request().method() === 'POST') {
+                hasCaptured = true;
+                await held;
+            }
+            await route.continue();
+        });
+        try {
+            await ribbon.click();
+            await expect.poll(() => hasCaptured).toBe(true);
+            await expect(ribbon).toHaveAttribute('aria-busy', 'true');
+            const dialog = page.getByRole('dialog').filter({
+                has: page.getByRole('group', { name: 'Watchlist priority', exact: true }),
+            });
+            await expect(dialog).toBeVisible();
+            await settle(page);
+            const pending = await dialog.boundingBox();
+            expect(pending).not.toBeNull();
+            const progress = dialog.getByRole('status');
+            await expect(progress).toHaveText('Updating your Watchlist…');
+            expect(
+                await progress.evaluate((element) => element.getBoundingClientRect().height),
+            ).toBeLessThanOrEqual(1);
+            release();
+            const savedRibbon = page.getByRole('button', {
+                name: 'Edit watchlist priority',
+                exact: true,
+            });
+            await expect(savedRibbon).not.toHaveAttribute('aria-busy', 'true');
+            await expect(
+                dialog.getByRole('button', { name: 'Medium', exact: true }),
+            ).toHaveAttribute('aria-pressed', 'true');
+            await expect(progress).toHaveText('Watchlist saved.');
+            expect(
+                await progress.evaluate((element) => element.getBoundingClientRect().height),
+            ).toBeLessThanOrEqual(1);
+            await settle(page);
+            const saved = await dialog.boundingBox();
+            expect(saved).not.toBeNull();
+            expect(Math.abs(pending!.height - saved!.height)).toBeLessThanOrEqual(1);
+            await savedRibbon.hover();
+            await settle(page);
+            expect(await savedRibbon.boundingBox()).toEqual(resting);
+        } finally {
+            release();
+        }
+    },
+);
+
 for (const width of [390, 768, 1024, 1440]) {
     test(
         `Watchlist stays consistent across Movie and Library at ${width}`,
@@ -16,7 +84,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await signInMock(context, `valid-watchlist-${width}`);
+                await signInMock(context, `valid-watchlist-${width}-${crypto.randomUUID()}`);
                 const page = await context.newPage();
                 await page.route('**/api/movies/images/**', (route) => route.abort());
                 await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
@@ -81,7 +149,9 @@ for (const width of [390, 768, 1024, 1440]) {
                     fullPage: true,
                 });
                 await row.getByRole('link').click();
+                await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
                 await page
+                    .getByRole('region', { name: '<script>alert(1)</script> & Film', exact: true })
                     .getByRole('button', { name: 'Edit watchlist priority', exact: true })
                     .click();
                 await expect(

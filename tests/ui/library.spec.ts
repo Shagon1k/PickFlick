@@ -19,7 +19,9 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.goto('/library', { waitUntil: 'load' });
                 await expect(page.getByRole('table')).toHaveCount(1);
                 await expect(page.getByRole('row')).toHaveCount(26);
-                await expect(page.getByRole('status')).toContainText('28 films rated');
+                await expect(
+                    page.getByRole('status').filter({ hasText: '28 films rated' }),
+                ).toContainText('28 films rated');
                 await expect(page.locator('a').filter({ hasText: /^Previous$/u })).toHaveAttribute(
                     'aria-disabled',
                     'true',
@@ -56,7 +58,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.reload();
                 await expect(page.getByLabel('Search rated films')).toHaveValue('Grand Budapest');
                 await page.getByRole('combobox', { name: 'Rating', exact: true }).click();
-                await page.getByRole('option', { name: '8/10', exact: true }).click();
+                await page.getByRole('option', { name: '8', exact: true }).click();
                 await page.getByRole('combobox', { name: 'Sort by', exact: true }).click();
                 await page.getByRole('option', { name: 'Film A to Z' }).click();
                 const editor = page.getByRole('button', {

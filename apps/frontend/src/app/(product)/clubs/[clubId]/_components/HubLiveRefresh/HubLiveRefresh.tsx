@@ -11,7 +11,8 @@ import { useNotifications } from '#components/notifications/notifications-contex
  */
 export default function HubLiveRefresh() {
     const router = useRouter();
-    const latestId = useNotifications().data?.items[0]?.id;
+    const data = useNotifications().data;
+    const latestId = data ? (data.items[0]?.id ?? null) : undefined;
     const seenIdRef = useRef(latestId);
     useEffect(() => {
         if (latestId === seenIdRef.current) return;

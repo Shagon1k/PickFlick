@@ -7,6 +7,7 @@ import {
     type IJourneyBackend,
 } from '../../apps/backend/src/testing/journeys.ts';
 import { acceptedParticipants } from '../ui/session-facts';
+import { settle } from '../ui/settle';
 import { openVisitor } from './visitors';
 
 let backend: IJourneyBackend;
@@ -91,8 +92,12 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await member.getByRole('combobox', { name: 'Select a Movie' }).fill(query);
         await member.getByRole('option', { name: /The Night of the Hunter/u }).click();
         await member.getByRole('button', { name: 'Nominate This' }).click();
+        await expect(
+            member.getByRole('link', { name: 'Your pick: The Night of the Hunter (1955)' }),
+        ).toHaveAttribute('href', `/movies/${movie.id}`);
         // One participant never closes Nomination by themselves; the operator does.
         await admin.reload();
+        await settle(admin);
         await admin.getByRole('button', { name: 'Session settings', exact: true }).click();
         await admin.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
         await admin.getByLabel('Type CLOSE to confirm').fill('CLOSE');

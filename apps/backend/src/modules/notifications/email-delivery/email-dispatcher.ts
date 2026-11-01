@@ -43,9 +43,11 @@ export class EmailDispatcher {
 
     async runOnce(now = new Date(), signal?: AbortSignal) {
         if (!this.options.environment.deliveryEnabled || signal?.aborted) return;
-        const claim = await claimEmail(this.prisma, now);
+        const claim = await claimEmail(this.prisma, now, this.options.environment.localDelivery);
         if (claim) await this.deliver(claim, now);
-        if (!signal?.aborted) await sendFailureAlert(this.prisma, this.email, this.options);
+        if (!signal?.aborted && !this.options.environment.localDelivery) {
+            await sendFailureAlert(this.prisma, this.email, this.options);
+        }
     }
 
     private async deliver(claim: TEmailClaim, now: Date) {

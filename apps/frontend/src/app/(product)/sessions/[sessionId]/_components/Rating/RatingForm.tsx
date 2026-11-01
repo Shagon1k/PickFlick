@@ -1,11 +1,7 @@
 'use client';
 
 import { useForm } from '@mantine/form';
-import {
-    RATING_SCALE,
-    SESSION_RATING_COMMENT_MAX_LENGTH,
-    submitRatingSchema,
-} from '@pickflick/contracts';
+import { SESSION_RATING_COMMENT_MAX_LENGTH, submitRatingSchema } from '@pickflick/contracts';
 
 import { submitRatingAction } from '#components/sessions/rating-actions';
 import Button from '#components/ui/Button/Button';
@@ -71,9 +67,6 @@ export default function RatingForm({
     return (
         <>
             <form onSubmit={handleSubmit} noValidate>
-                <p aria-hidden="true" className={styles.starLabel}>
-                    {form.values.score ?? '—'}/{RATING_SCALE.max}
-                </p>
                 <RatingControl
                     isCompact
                     name="session-rating"

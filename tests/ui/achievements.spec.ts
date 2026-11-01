@@ -30,7 +30,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     });
                     // Why a result-based goal shows no progress is in its (i).
                     await masked.getByRole('button', { name: /is counted$/u }).click();
-                    await expect(masked.getByRole('tooltip')).toContainText(
+                    await expect(page.getByRole('tooltip')).toContainText(
                         'Result-based Club achievements',
                     );
                     await expect(masked.locator('details')).toHaveCount(0);
@@ -65,7 +65,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     await expect(shelf.getByRole('article')).toHaveCount(1);
                     // How an achievement is counted sits in its (i), without the rule version.
                     await shelf.getByRole('button', { name: /^How .* is counted$/u }).click();
-                    await expect(shelf.getByRole('tooltip')).toContainText('Unlocked');
+                    await expect(page.getByRole('tooltip')).toContainText('Unlocked');
                     await expect(shelf.getByText('v1', { exact: false })).toHaveCount(0);
                     await page.reload();
                     await expect(shelf.getByRole('article')).toHaveCount(6);

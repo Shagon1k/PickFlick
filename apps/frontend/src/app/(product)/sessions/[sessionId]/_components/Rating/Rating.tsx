@@ -27,6 +27,7 @@ export default function Rating({
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const isRating = !data.own && data.canSubmit;
+    if (!isCompleted && !data.own && !data.canSubmit) return null;
     return (
         <section
             className={styles.rating}
@@ -39,7 +40,6 @@ export default function Rating({
             {isRating ? (
                 <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />
             ) : null}
-            {!data.own && !data.canSubmit && !isCompleted ? <p>Join the Session to rate.</p> : null}
             <RatingList data={data} />
         </section>
     );
@@ -97,7 +97,7 @@ function Review({ author, comment }: { author: string; comment: string }) {
             label={`Review by ${author}`}
             open={isOpen}
             onChange={setIsOpen}
-            variant="rating"
+            variant="review"
             trigger={
                 <button
                     aria-label={`Read the review by ${author}`}

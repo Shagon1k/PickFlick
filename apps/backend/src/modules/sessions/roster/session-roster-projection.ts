@@ -3,13 +3,9 @@ import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { getInviteState } from '../../../common/invite-token.js';
-import { findMembership } from '../../clubs/access/club-access.js';
-import {
-    canJoinSession,
-    canManage,
-    canRemoveParticipant,
-    getOwnStatus,
-} from '../session-access.js';
+import { findMembership, loadClubAccess } from '../../clubs/access/club-access.js';
+import { getClubPermissions } from '../../clubs/access/club-permissions.js';
+import { canJoinSession, canRemoveParticipant, getOwnStatus } from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -20,8 +16,11 @@ export async function readRoster(
     if (!session) throw new NotFoundException();
     const membership = await findMembership(tx, userId, session.clubId);
     const isOpen = isOpenSessionPhase(session.phase);
+    const { access, memberCount } = await loadClubAccess(tx, membership.club);
     // One rule decides every roster control: invite, revoke, and remove.
-    const isManager = isOpen && (await canManage(tx, membership));
+    const isManager =
+        isOpen &&
+        getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },
@@ -36,6 +35,7 @@ export async function readRoster(
     );
     return {
         progressVersion: session.progressVersion,
+        memberCount,
         acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
             .length,
         canManage: isManager,

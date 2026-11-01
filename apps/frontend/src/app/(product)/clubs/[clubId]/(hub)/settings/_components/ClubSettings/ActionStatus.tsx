@@ -5,7 +5,13 @@ import { type IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-
 import styles from '../../page.module.scss';
 
 /** Errors stay on screen; a success is announced but not shown, the change itself is the feedback. */
-export default function ActionStatus({ state }: { state: IClubActionState }) {
+export default function ActionStatus({
+    state,
+    shouldAnnounceSuccess = true,
+}: {
+    state: IClubActionState;
+    shouldAnnounceSuccess?: boolean;
+}) {
     return (
         <p
             aria-atomic="true"
@@ -14,7 +20,7 @@ export default function ActionStatus({ state }: { state: IClubActionState }) {
             data-tone={state.status}
             role="status"
         >
-            {state.message}
+            {state.status === 'success' && !shouldAnnounceSuccess ? '' : state.message}
         </p>
     );
 }

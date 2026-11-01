@@ -63,3 +63,28 @@
         padding-inline: 12px;
     }
 }
+
+.m-leaderboard {
+    border-inline: 0;
+    border-radius: 0;
+}
+
+.m-leaderboard .table {
+    min-width: 640px;
+}
+
+.m-leaderboard .table td {
+    vertical-align: middle;
+}
+
+.m-leaderboard .table th:first-child,
+.m-leaderboard .table td:first-child {
+    width: 40px;
+    font: var(--fs-lead)/var(--lh-body) var(--font-display);
+    color: var(--muted);
+    text-align: left;
+}
+
+.m-leaderboard .table thead th {
+    border-top: 0;
+}

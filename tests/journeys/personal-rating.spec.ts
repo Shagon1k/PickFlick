@@ -93,7 +93,7 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
                 .getByRole('list', { name: 'Session ratings' })
                 .getByRole('listitem')
                 .filter({ hasText: 'You' })
-                .getByText('8/10', { exact: true }),
+                .getByText('8', { exact: true }),
         ).toBeVisible();
     } finally {
         await context.close();

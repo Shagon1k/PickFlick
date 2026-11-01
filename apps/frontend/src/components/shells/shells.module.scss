@@ -347,7 +347,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
-    padding-bottom: 78px;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 .productShell > footer {
@@ -356,7 +356,7 @@
 
 /* Below 1024px the invite ticket floats above the bottom bar; the footer's links end above it. */
 @media (width < 1024px) {
-    .productShell:has([data-invite-ticket]:not([hidden])) .publicFooterInner {
+    .productShell:has([data-invite-ticket][data-shown]) .publicFooterInner {
         padding-bottom: 96px;
     }
 }

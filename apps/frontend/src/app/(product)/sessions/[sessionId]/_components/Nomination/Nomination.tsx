@@ -42,32 +42,34 @@ export default function Nomination({
         <section className={styles.nomination} aria-label="Movie nomination">
             <PhaseProgress>
                 {data.acceptedCount
-                    ? `Nomination in progress — ${data.nominatedCount} of ${data.acceptedCount} participants have nominated.`
+                    ? `Nomination in progress — ${data.nominatedCount} of ${data.memberCount} members have nominated.`
                     : 'Nomination in progress — no one has joined yet.'}
             </PhaseProgress>
             {header}
             <div className={styles.columns}>
-                <section className={styles.card} aria-labelledby="nominate-heading">
-                    <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
-                        Find &amp; Nominate a Movie
-                    </h2>
-                    {data.canSubmit ? (
-                        <NominationPicker
-                            chosen={chosen}
-                            disabled={isPending}
-                            suggestions={data.suggestions}
-                            onChoose={setChosen}
-                            onSubmit={handleSubmit}
+                {data.canSubmit || data.ownMovie ? (
+                    <section className={styles.card} aria-labelledby="nominate-heading">
+                        <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
+                            Find &amp; Nominate a Movie
+                        </h2>
+                        {data.canSubmit ? (
+                            <NominationPicker
+                                chosen={chosen}
+                                disabled={isPending}
+                                suggestions={data.suggestions}
+                                onChoose={setChosen}
+                                onSubmit={handleSubmit}
+                            />
+                        ) : (
+                            <SubmissionState movie={data.ownMovie} />
+                        )}
+                        <StatusLine
+                            className={styles.feedback}
+                            isSuccess={isSuccess}
+                            message={message}
                         />
-                    ) : (
-                        <SubmissionState movie={data.ownMovie} />
-                    )}
-                    <StatusLine
-                        className={styles.feedback}
-                        isSuccess={isSuccess}
-                        message={message}
-                    />
-                </section>
+                    </section>
+                ) : null}
                 <section className={styles.card} aria-labelledby="nominations-heading">
                     <h2 id="nominations-heading">Current Nominations</h2>
                     <NominationList data={data} />
@@ -84,7 +86,7 @@ function formatMovieLabel(movie: TNominationMovie) {
 
 /** After nominating, the prototype's faded "Your pick" card stands in for the search. */
 function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
-    if (!movie) return <p>Join the Session to nominate a film.</p>;
+    if (!movie) return null;
     return (
         <div className={styles.ownPick}>
             <SearchPoster className={styles.poster} url={getPosterPath(movie.id)} />
@@ -102,7 +104,14 @@ function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
 }
 
 function NominationList({ data }: { data: TNominations }) {
-    if (data.hidden) return <p>Nominations stay hidden until you nominate.</p>;
+    if (data.hidden)
+        return (
+            <p>
+                {data.canSubmit
+                    ? 'Nominations stay hidden until you nominate.'
+                    : 'Nominations are hidden.'}
+            </p>
+        );
     if (!data.nominations.length) return <p>No nominations yet.</p>;
     return (
         <ul className={styles.movies}>

@@ -18,7 +18,11 @@ await runPollingWorker({
         logger.info({ event: 'email.delivery', deliveryEnabled: environment.deliveryEnabled });
         const dispatcher = new EmailDispatcher(
             prisma,
-            new ResendEmailClient(environment.apiKey, environment.from),
+            new ResendEmailClient(
+                environment.apiKey,
+                environment.from,
+                environment.localDelivery?.recipients,
+            ),
             {
                 environment,
                 log: (fields) => {

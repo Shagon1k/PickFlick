@@ -116,10 +116,6 @@ export default function PastSessionForm({
                 return;
             }
         }
-        // The screened film is a nominee by default; it can still be removed.
-        const { movieId, nominations } = form.values;
-        if (next === 2 && movieId && !nominations.some((row) => row.movieId === movieId))
-            form.setFieldValue('nominations', [{ movieId }, ...nominations]);
         setMessage('');
         setStep(next);
     }
@@ -169,13 +165,21 @@ export default function PastSessionForm({
                     <h2 className={styles.stepTitle}>Which film, and when?</h2>
                     <MoviePicker
                         value={form.values.movieId || null}
+                        selectedTitle={titles[form.values.movieId]}
                         onChange={(id, movie) => {
                             form.setFieldValue('movieId', id ?? '');
-                            if (id && movie)
+                            if (id && movie) {
                                 setTitles({
                                     ...titles,
                                     [id]: movie.title ?? movie.originalTitle ?? 'Untitled film',
                                 });
+                                // Default once on selection; Back/Next keeps explicit removals.
+                                if (!form.values.nominations.some((row) => row.movieId === id))
+                                    form.setFieldValue('nominations', [
+                                        { movieId: id },
+                                        ...form.values.nominations,
+                                    ]);
+                            }
                         }}
                         disabled={isDisabled}
                         error={form.errors.movieId}
@@ -241,7 +245,8 @@ export default function PastSessionForm({
                     }}
                     attendees={form.values.attendees}
                     members={members}
-                    knownTitles={titles}
+                    titles={titles}
+                    onTitlesChange={setTitles}
                     scaleMin={scaleMin}
                     scaleMax={scaleMax}
                     disabled={isDisabled}

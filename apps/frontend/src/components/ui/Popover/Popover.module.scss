@@ -17,7 +17,8 @@
     box-shadow: var(--shadow-overlay);
 }
 
-.popover.m-rating {
+.popover.m-rating,
+.popover.m-review {
     padding: var(--gap-sm);
 }
 
