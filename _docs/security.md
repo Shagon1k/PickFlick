@@ -91,6 +91,34 @@ A forged request from another site needs the session cookie, and several layers 
   it holds no notification content. Heartbeats never trigger inbox REST refreshes. REST responses are private/no-store; streams also disable transformation and
   proxy buffering. File and entity endpoints independently authorize every follow-up request.
 
+Session history pagination rechecks current Club Membership for every page and rejects foreign
+or nonterminal cursor IDs without revealing their records. Participant avatar reads likewise
+require current Club Membership and an accepted participant matching Club and Session. Only
+same-origin avatar paths reach the browser; the server downloads from exact HTTPS
+`lh3.googleusercontent.com` URLs without credentials, fragments, nondefault ports or redirects.
+A five-second deadline, 512 KiB streaming cap and PNG/JPEG/WebP signatures bound this adapter.
+Club member avatar reads validate both path UUIDs and require the viewer's current Membership plus
+the target's active Membership in the same Club. Foreign/departed targets return 404; the endpoint
+reuses the same downloader and private/no-store response without exposing source URLs.
+The authenticated `/account/avatar` endpoint accepts no identifiers or source URLs and reads only
+the current user's stored image. It reuses the same bounded downloader as participant photos and
+returns private/no-store bytes. No third-party browser image origin is enabled. Unsupported photos fall back to initials; raw
+provider URLs, addresses and image bodies are omitted from logs.
+
+Session Rating result entries expose nullable same-origin photo paths only through the existing
+rating-result visibility policy. Accepted participants with a stored image reuse the protected
+participant-avatar endpoint; other historical entries receive null. The own-rating projection
+includes its actual display name and nullable self-only account-avatar path. These fields do not
+expose source URLs, hidden peer responses or new image permissions.
+
+New Sessions snapshot independent During/After author, named Selection and rating visibility.
+Every role obeys these flags; During score disclosure also requires the viewer's own submitted
+response, and After starts only at Completed. Cancelled Sessions reveal no new-policy peer scores.
+Legacy snapshots keep prior disclosure and never expose historical individual Selection ballots.
+Authorized closed Selection matrices read frozen inputs, while imported missing cells remain
+unknown. Hidden results are excluded from Hub averages, analytics, private derived achievements
+and their notification producers/resolvers, so alternate projections do not bypass the flags.
+
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 
 ## Input and output
@@ -247,6 +275,13 @@ copying; it never persists it in browser storage. Recent-invitation API response
 or digest. Better Auth's short-lived OAuth state retains the allowlisted return path during sign-in;
 provider log messages and error arguments are omitted to keep that path out of logs.
 
+Club form Back links reuse the same canonical internal-path allowlist for their `returnTo` query.
+External or invalid values do not become navigation targets; they retain the existing safe fallback.
+
+Nomination's Watchlist suggestions read only rows for the authenticated viewer's User ID and
+are included only for that viewer's eligible submission flow. Peer nomination/author visibility
+still follows the Session snapshot; suggestions never query another member's private Watchlist.
+
 ## Catalog media and outbound links
 
 The backend downloads displayed posters from the five validated provider hosts into private
@@ -265,6 +300,13 @@ Yandex mirror URLs under `/get-kinopoisk-image/` normalize to the existing canon
 `avatars.mds.yandex.net` host before the full image URL validation. No new host is allowlisted.
 Other unsupported optional PoiskKino image URLs are omitted before caching or image ingestion, so the
 existing placeholder is shown without rejecting the Movie. The media host allowlist is unchanged.
+
+Before playback, trailer previews load through the authenticated same-origin
+`/api/movies/:movieId/trailers/:videoId/thumbnail` endpoint. The backend validates both parameters
+and checks that the ID belongs to the Movie's cached trailers. It constructs one fixed
+`https://i.ytimg.com/vi/<id>/hqdefault.jpg` URL without forwarding browser credentials or headers.
+Downloads reuse the five-second, 5 MiB, no-redirect and raster-signature checks and private image
+storage. The endpoint makes no catalog metadata calls. Browser image CSP remains unchanged.
 
 Trailers play in YouTube's privacy-enhanced player: the page loads
 `https://www.youtube-nocookie.com/embed/<id>` only after the viewer presses Play, from a video ID the

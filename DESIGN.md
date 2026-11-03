@@ -73,6 +73,31 @@ Tokens live in [`tokens.scss`](apps/frontend/src/styles/tokens.scss) and compone
 [`components/ui`](apps/frontend/src/components/ui), both traceable to the
 [design contract](_docs/design/prototypes/DESIGN.md). Never copy partial token sets into features.
 
+Active action feedback uses one 350ms scale pulse, starting on primary pointer-down or the
+control's activation key (Enter/Space as applicable). Hover keeps the existing color, background
+and border transitions without scaling or a wave. Default native controls use a 5% peak,
+shared Buttons/ButtonLinks 8%, Achievements filters 10%, and icon controls, score/star options,
+checkboxes and Switch tracks 12%. Scale is independent of existing translation and rotation.
+Hidden inputs animate their visible mark; trailer Play animates only its ring. No animation runs
+just because a control mounts or starts selected. Disabled, busy, read-only and inert controls
+do not pulse; reduced motion suppresses the effect and stops running pulses. The UI provider
+installs one delegated listener pair, including controls in portals. A manual desktop check confirms
+350ms pulses and return to rest on the Achievements filter and Movie Details rating trigger.
+Computed CSS timing accepts both milliseconds and seconds. Full cross-device/automated verification
+remains deferred until the case-by-case fix round ends.
+
+All adjustable press parameters live in `tokens.scss`: duration, easing, peak offset and the four
+strengths. Components only choose a strength or mark a visible surface; `PressFeedback` owns the
+single keyframe sequence and input handling. Tabs animate their inner label rather than expanding
+the scrollable tab frame. Hub section navigation suppresses vertical overflow while retaining
+horizontal scrolling for genuinely long tab lists.
+
+Temporary Button success feedback keeps the variant's normal palette, including on hover and
+keyboard focus. Only the original label and confirmation crossfade/slide; success does not
+recolor the button. Enabled Settings checkboxes, Switch tracks and Past Session attendee chips
+respond to hover with background/border changes over the shared 150ms local timing, without
+growth or changing checked values. Disabled controls retain their unavailable appearance.
+
 | Area                | Contract                                                                                                                                                                                                                                                                                                                                                                                                  | Source                                                                   | Build   | QA                                     |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------- | -------------------------------------- |
 | Color               | Dark only. The `#0c0c0c` family for structure, neutral text and borders, ivory and gold `#C89B55` for warm emphasis. Pages use a flat `--bg`. The warm spotlight belongs only to the Landing, Pricing, and legal heroes, the Login scene, and the no-Clubs and error stages; form scenes use the neutral `--accent-glow`. Small text on surfaces uses `--fg-secondary`, because `--muted` fails AA there. | [Color tokens](_docs/design/prototypes/DESIGN.md#color-tokens)           | Done    | Screenshots                            |
@@ -100,14 +125,14 @@ The shells live in `apps/frontend/src/components/shells`, one folder per shell o
 product, Session, Settings, Library, and App Admin compositions without feature data; the shells
 default to the product routes and the preview supplies its own route map.
 
-| Context              | Shell                                                                                                                                                                                                                                                                                                                         | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                                          | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks. Contact uses a focused form scene with Back and omits the full marketing header/footer.                                                                                                                                          | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
-| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                                          | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
-| Product              | The brand links to the public home and Hub links to `/app`; the public footer appears on every page. Round 34px search, notifications, and avatar controls with 44px targets; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
-| Session detail       | The product shell, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                                    | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
-| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                                      | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
-| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                                         | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
+| Context              | Shell                                                                                                                                                                                                                                                                                                                                                                    | Responsive behavior                                                                                                                                                                                                                                                                                                                                                                                             | Source                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public               | Brand header with How it works, Features, Pricing, and a small secondary Go to App; a wordmark-and-tagline footer with How it works · Privacy · Terms · Contact; cinematic sections.                                                                                                                                                                                     | No bottom menu. Below 768px the header holds the brand and Go to App (44px); the links join from 768px, and the landing price block offers "Compare plans". The footer stacks. Contact uses a focused form scene with Back and omits the full marketing header/footer.                                                                                                                                          | [Landing](_docs/design/prototypes/landing.html), [Pricing](_docs/design/prototypes/pricing.html)                                                     |
+| Auth and setup       | A focused cinematic scene, minimal escape navigation, one task card.                                                                                                                                                                                                                                                                                                     | Art and form reorder and scale without hiding context.                                                                                                                                                                                                                                                                                                                                                          | [Login](_docs/design/prototypes/login.html), [Invite](_docs/design/prototypes/invite.html), [Create Club](_docs/design/prototypes/create-group.html) |
+| Product              | The brand links to the public home and Hub links to `/app`; the public footer appears on every page. Round 42px search, notifications, and avatar rings with 48px targets; 20px action glyphs and a 40px account avatar; search slides down over the header; notifications open a popover and the avatar a downward film strip; Club switcher, Call Sheet, product tabs. | A fixed four-column bottom bar: Hub (labelled with the current Club view), My Library, Alerts, Settings. Film strips rise above their trigger, stay inside the viewport, and keep the tail on the trigger. The Hub strip lists Club views only; Settings holds Profile, Notifications, Subscription, Privacy, Sign out, and Admin Panel for App Admins. With no Club, Hub offers Create a Club and Join a Club. | [Club Hub](_docs/design/prototypes/app.html)                                                                                                         |
+| Session detail       | The product shell, phase banner, hero metadata and actions, phase content.                                                                                                                                                                                                                                                                                               | The primary phase action and progress stay above secondary detail.                                                                                                                                                                                                                                                                                                                                              | [Session family](_docs/design/prototypes/session-detail-nomination.html)                                                                             |
+| Settings and Library | The product shell with local tabs or sidebar, tables and cards, stable feedback regions.                                                                                                                                                                                                                                                                                 | The sidebar becomes a menu; tables scroll in bounded regions.                                                                                                                                                                                                                                                                                                                                                   | [Library](_docs/design/prototypes/library.html), [Settings](_docs/design/prototypes/settings.html)                                                   |
+| App Admin            | Protected sidebar, overview panels, searchable tables, settings, typed confirmations.                                                                                                                                                                                                                                                                                    | Complete on mobile through the admin menu and bounded tables.                                                                                                                                                                                                                                                                                                                                                   | [Admin Panel](_docs/design/prototypes/admin-panel.html)                                                                                              |
 
 ### Key flows
 
@@ -135,32 +160,32 @@ the [Roadmap](ROADMAP.md#3-business-rules).
 
 All canonical screens are MVP and approved as direction.
 
-| Route / view                        | Purpose                                                                                                                                                                                                                                                                               | Source                                                                                   | Build                                                                                                           | QA                                                                                |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `/`                                 | Explain the ritual and lead visitors to sign up.                                                                                                                                                                                                                                      | [landing.html](_docs/design/prototypes/landing.html)                                     | Done                                                                                                            | Passed locally                                                                    |
-| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Done; checkout disabled until billing                                                                           | Passed locally                                                                    |
-| `/contact`                          | Send a short message with stable validation and success feedback.                                                                                                                                                                                                                     | [contact.html](_docs/design/prototypes/contact.html)                                     | Done                                                                                                            | Passed locally                                                                    |
-| `/legal/privacy`, `/legal/terms`    | Public entries that never present draft policy as approved.                                                                                                                                                                                                                           | Shared public shell                                                                      | Done; final legal copy pending                                                                                  | Passed locally                                                                    |
-| `/login`                            | Sign in with an enabled provider and continue; signed-in Users go to `/app`. Apple is hidden while gated.                                                                                                                                                                             | [login.html](_docs/design/prototypes/login.html)                                         | Done for Google; Apple built but gated                                                                          | Passed locally with Apple off                                                     |
-| `/invite/club/[token]`              | Preview and accept or decline a Club invitation; expiry and sign-in.                                                                                                                                                                                                                  | [invite.html](_docs/design/prototypes/invite.html)                                       | Accepted in Phase 12                                                                                            | Passed locally; owner accepted 2026-10-23                                         |
-| `/invite/session/[token]`           | Accept a member-only Session invite or show privacy-safe denial.                                                                                                                                                                                                                      | [Club Hub invite ticket](_docs/design/prototypes/app.html)                               | Accepted in Phase 12                                                                                            | Passed locally; owner accepted 2026-10-23                                         |
-| `/app` with no Clubs                | Orient a new User and create or join the first Club.                                                                                                                                                                                                                                  | [app-no-clubs.html](_docs/design/prototypes/app-no-clubs.html)                           | Done; invitation links arrive with invitations                                                                  | Passed locally                                                                    |
-| `/clubs/new`                        | Create a Club and choose its Selection scale.                                                                                                                                                                                                                                         | [create-group.html](_docs/design/prototypes/create-group.html)                           | Done: one slider for the `0..N` upper bound, explained by an InfoTip                                            | Passed locally                                                                    |
-| `/clubs/[clubId]`                   | Run and understand one Club across six Hub views.                                                                                                                                                                                                                                     | [app.html](_docs/design/prototypes/app.html)                                             | Active — Overview, Sessions/history, Ratings leaderboard, Members, Achievements and Manage Club                 | Existing views accepted 2026-10-23; Sessions/history exact-SHA review pending     |
-| `/clubs/[clubId]/members`           | Active roster, current role, member removal confirmation, and adminless/read-only notices.                                                                                                                                                                                            | Members view in [app.html](_docs/design/prototypes/app.html)                             | Active                                                                                                          | Phase 12 contract checks; owner accepted 2026-10-23                               |
-| `/clubs/[clubId]/settings`          | Manage Club info, visibility, scale, roles, lifecycle, and destructive actions.                                                                                                                                                                                                       | Manage Club view in [app.html](_docs/design/prototypes/app.html)                         | Done for the Phase 5 foundation; the full Hub arrives in Phase 7                                                | Passed locally (Admin, Member, archived)                                          |
-| `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session and share its member-only join link.                                                                                                                                                                                                      | [create-session.html](_docs/design/prototypes/create-session.html)                       | Accepted in Phase 12                                                                                            | Local QA passed; owner accepted 2026-10-23                                        |
-| `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Active — screening, attendees, imported ratings and partial nomination/score evidence                           | Exact-SHA hosted preview and owner review pending                                 |
-| Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                                   | Responsive and accessibility checks passed; owner accepted 2026-10-23             |
-| Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                                          | Responsive and accessibility checks passed; owner accepted 2026-10-23             |
-| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Active — film, context, joined roster and operator-confirmed Rating opening; owner review pending               | Base accepted 2026-10-23; new action awaits preview review                        |
-| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Active — form, saved response, progress, partial completion and permitted results; owner review pending         | Four widths, axe, keyboard/touch passed; owner review pending                     |
-| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Active — film, screening facts, historical ratings/comments and permitted nomination breakdowns                 | Exact-SHA hosted preview and owner review pending                                 |
-| `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Active — searchable, filterable Ratings/Watchlist tables and shared editors; statistics and achievement shelves | Exact-SHA hosted preview and owner review pending                                 |
-| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player, links, Personal Rating and Watchlist priority editors implemented                      | Details accepted 2026-10-23; editor QA recorded in Phase 15; owner review pending |
-| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                                                     | Not checked                                                                       |
-| `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                                     | Not checked                                                                       |
-| `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                            | Passed locally                                                                    |
+| Route / view                        | Purpose                                                                                                                                                                                                                                                                               | Source                                                                                   | Build                                                                                                                     | QA                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `/`                                 | Explain the ritual and lead visitors to sign up.                                                                                                                                                                                                                                      | [landing.html](_docs/design/prototypes/landing.html)                                     | Done                                                                                                                      | Passed locally                                                                    |
+| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Done; checkout disabled until billing                                                                                     | Passed locally                                                                    |
+| `/contact`                          | Send a short message with stable validation and success feedback.                                                                                                                                                                                                                     | [contact.html](_docs/design/prototypes/contact.html)                                     | Done                                                                                                                      | Passed locally                                                                    |
+| `/legal/privacy`, `/legal/terms`    | Public entries that never present draft policy as approved.                                                                                                                                                                                                                           | Shared public shell                                                                      | Done; final legal copy pending                                                                                            | Passed locally                                                                    |
+| `/login`                            | Sign in with an enabled provider and continue; signed-in Users go to `/app`. Apple is hidden while gated.                                                                                                                                                                             | [login.html](_docs/design/prototypes/login.html)                                         | Done for Google; Apple built but gated                                                                                    | Passed locally with Apple off                                                     |
+| `/invite/club/[token]`              | Preview and accept or decline a Club invitation; expiry and sign-in.                                                                                                                                                                                                                  | [invite.html](_docs/design/prototypes/invite.html)                                       | Accepted in Phase 12                                                                                                      | Passed locally; owner accepted 2026-10-23                                         |
+| `/invite/session/[token]`           | Accept a member-only Session invite or show privacy-safe denial.                                                                                                                                                                                                                      | [Club Hub invite ticket](_docs/design/prototypes/app.html)                               | Accepted in Phase 12                                                                                                      | Passed locally; owner accepted 2026-10-23                                         |
+| `/app` with no Clubs                | Orient a new User and create or join the first Club.                                                                                                                                                                                                                                  | [app-no-clubs.html](_docs/design/prototypes/app-no-clubs.html)                           | Done; invitation links arrive with invitations                                                                            | Passed locally                                                                    |
+| `/clubs/new`                        | Create a Club and choose its Selection scale.                                                                                                                                                                                                                                         | [create-group.html](_docs/design/prototypes/create-group.html)                           | Done: one slider for the `0..N` upper bound, explained by an InfoTip                                                      | Passed locally                                                                    |
+| `/clubs/[clubId]`                   | Run and understand one Club across six Hub views.                                                                                                                                                                                                                                     | [app.html](_docs/design/prototypes/app.html)                                             | Active — Overview, Sessions/history, Ratings leaderboard, Members, Achievements and Manage Club                           | Existing views accepted 2026-10-23; Sessions/history exact-SHA review pending     |
+| `/clubs/[clubId]/members`           | Active roster, current role, member removal confirmation, and adminless/read-only notices.                                                                                                                                                                                            | Members view in [app.html](_docs/design/prototypes/app.html)                             | Active                                                                                                                    | Phase 12 contract checks; owner accepted 2026-10-23                               |
+| `/clubs/[clubId]/settings`          | Manage Club info, visibility, scale, roles, lifecycle, and destructive actions.                                                                                                                                                                                                       | Manage Club view in [app.html](_docs/design/prototypes/app.html)                         | Done for the Phase 5 foundation; the full Hub arrives in Phase 7                                                          | Passed locally (Admin, Member, archived)                                          |
+| `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session and share its member-only join link.                                                                                                                                                                                                      | [create-session.html](_docs/design/prototypes/create-session.html)                       | Accepted in Phase 12                                                                                                      | Local QA passed; owner accepted 2026-10-23                                        |
+| `/clubs/[clubId]/sessions/past/new` | Record a past screening with partial evidence.                                                                                                                                                                                                                                        | [create-past-session.html](_docs/design/prototypes/create-past-session.html)             | Active — screening, attendees, imported ratings and partial nomination/score evidence                                     | Exact-SHA hosted preview and owner review pending                                 |
+| Session — Nomination                | Choose one film, see allowed nominations, follow progress.                                                                                                                                                                                                                            | [session-detail-nomination.html](_docs/design/prototypes/session-detail-nomination.html) | Active for the delivered flow                                                                                             | Responsive and accessibility checks passed; owner accepted 2026-10-23             |
+| Session — Selection                 | Score every nomination, submit once, follow progress.                                                                                                                                                                                                                                 | [session-detail-selection.html](_docs/design/prototypes/session-detail-selection.html)   | Active — ballots, closure and policy-filtered outcomes                                                                    | Responsive and accessibility checks passed; owner accepted 2026-10-23             |
+| Session — Watching                  | Focus on the film; an operator opens Rating.                                                                                                                                                                                                                                          | [session-detail-watching.html](_docs/design/prototypes/session-detail-watching.html)     | Active — film, context, joined roster and operator-confirmed Rating opening; owner review pending                         | Base accepted 2026-10-23; new action awaits preview review                        |
+| Session — Rating                    | Submit 1–10 with an optional comment; see permitted results and rivals.                                                                                                                                                                                                               | [session-detail-rating.html](_docs/design/prototypes/session-detail-rating.html)         | Active — form, saved response, progress, partial completion and permitted results; owner review pending                   | Four widths, axe, keyboard/touch passed; owner review pending                     |
+| Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Active — film, screening facts, historical ratings/comments and permitted nomination breakdowns                           | Exact-SHA hosted preview and owner review pending                                 |
+| `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Active — searchable Ratings/Watchlist tables with sortable headers and shared editors; statistics and achievement shelves | Exact-SHA hosted preview and owner review pending                                 |
+| `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player, links, Personal Rating and Watchlist priority editors implemented                                | Details accepted 2026-10-23; editor QA recorded in Phase 15; owner review pending |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                                                               | Not checked                                                                       |
+| `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                                               | Not checked                                                                       |
+| `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                                      | Passed locally                                                                    |
 
 "Passed locally" means the Playwright suite passes at 390 and 1440 pixels plus overflow checks at
 every breakpoint and gap width.
@@ -178,6 +203,10 @@ here.
   return on any scroll up; they stay near the top, while focus is inside them and while one of
   their menus or panels is open. The phone bottom bar never hides; reduced motion drops the slide.
   Sticky section menus rise with the hidden header instead of leaving its height empty.
+- Below 1024px the product header places its compact panda/wordmark in one row at the left and
+  search/actions at the right. Phone gutters remain 16px; header actions use 48px targets. The desktop
+  header retains its existing layout. All header wordmarks share the home page's 19px display-serif
+  style, including mobile; the product header has no smaller type override.
 - The public footer stays on every product page, phones included, because it carries the legal and
   contact links. It sits at the bottom of short pages, and below 1024px its links end above the
   floating invite ticket while the ticket shows.
@@ -187,11 +216,23 @@ here.
 - Back to Hub and other in-header actions use the shared small button, with its hover and focus.
 - The account film strip lists Settings, Privacy & data, Pricing, Contact Us and Sign out, with Admin
   Panel first for App Admins. Movie Details marks no header destination as current.
+- The header account control uses the stored Google profile photo, grayscale at rest and in color
+  on hover, focus or while its menu is open. Initials remain during loading or after an unavailable
+  photo. The existing 34px circle, 44px target, accessible name and account menu remain unchanged.
 - Search, notifications and film-strip menus move focus inside when they open, also under reduced
   motion, and return it to the trigger when they close.
 
 #### Club Hub
 
+- Club Hub and My Library share one 32px (`--gap-lg`) gap from section navigation to the first
+  panel element. SectionTabs owns this through its panel padding, including loading/error content;
+  Members, Achievements and Manage Club add no separate top offset. Below 768px the top tabs are
+  hidden and the panel retains the same 32px inset after the preceding shared content.
+- Tabs with a single main section do not repeat the selected tab name as a visible heading:
+  Members and Achievements in Club Hub, plus My Ratings, Watchlist and Achievements in My Library.
+  Semantic headings remain visually hidden for accessible section names and existing focus return.
+  Members centers a 200px-wide outlined Invite action below the list on every screen size;
+  viewers without invitation permission get no empty action row.
 - Overview, Sessions, Ratings, Members and Manage Club share one mounted frame with the Club switcher and Call Sheet.
   Each panel rechecks authorization and refreshes the frame's snapshot; its links keep the scroll
   position. Below 768px the section tabs give way to the bottom bar's Hub strip. A section switch
@@ -202,11 +243,17 @@ here.
   were not cancelled, and the founding month and year; description, plan, role and scale stay in
   their own panels. Names wrap by whole words and stop at three lines. Phones show position dots and
   switch Clubs with a clearly sideways swipe over the name as well as the arrows; wider screens hide
-  the dots.
+  the dots. The selected clean-arrow treatment uses full-shaft arrows without circular frames or
+  hover-dependent visibility: 32px icons on desktop, 28px on phones, with 48px hit targets.
+  The Club heading and Create new club share one stable layout slot. Leaving Create for another
+  Club retains that slot until the destination frame is ready, without revealing the previous Club.
 - The Call Sheet opens the current Session from every section, for participants too. Without one it
   keeps the sheet's frame: "No screening scheduled", the projectionist panda in the still and, for
-  Admins and Moderators, Schedule a Session. Its number is the Club-local creation order, cancelled Sessions
-  included. The call-time slot shows the optional venue time, otherwise the location (two lines
+  eligible Admins and Moderators, a compact Schedule New action in its header. The empty-state
+  header hides the redundant Current phase / none metadata on phones, keeping Call sheet and
+  Schedule New on one row. There is no full-width creation button in the main scene.
+  The active Call Sheet is unchanged. Its number is the Club-local creation order, cancelled
+  Sessions included. The call-time slot shows the optional venue time, otherwise the location (two lines
   at most), never a fabricated midnight. Topics stop at two lines.
 - The Call Sheet still uses cached Movie artwork or an explicit missing-image state, never fixture
   film data. Before a film is selected it shows the choosing panda rather than a nominated poster,
@@ -214,12 +261,23 @@ here.
 - Overview shows all seven statistics on every plan. Known empty
   counts are zero; missing or hidden extended values show `—`. Metadata summaries require complete
   cached coverage and use current cached details. In the Active Session card only its button acts: Open Session for participants, Join me!
-  for an eligible member. Session history lives in the Sessions tab.
+  for an eligible member. The card stays beside Members when no active Session exists: eligible
+  Admins and Moderators get icon-labelled Schedule New and Log Past buttons in one row; other members see only
+  "No active Session." Session history lives in the Sessions tab.
+- Overview's Members pills use the shared Avatar with the authorized member avatar URL and initials
+  fallback. Photos stay grayscale, including hover, without ColorReveal; retain the existing 28px
+  avatar frame, member names and admin labels. This differs from the full Members tab's ordinary
+  hover-to-color behavior.
 - Ratings shows the Movie leaderboard on every plan with rank, Film, Year, Genre and one-decimal Rating.
-  Highest rating is the default; Sort films also offers latest permitted rated screening and title.
-  Sorting resets pagination; URL state survives reload and sign-in. Pages contain at most 25 films,
+  Highest rating is the default. A centered title search is capped at 480px and fills the available
+  phone width. Search replaces the dropdown toolbar; the section adds no extra top padding beyond
+  the canonical tab spacing. Film, Year, Genre and Rating headers sort on click: ascending, descending,
+  then the default order. Clicking another header while a sort is active also resets to default.
+  Active direction is visible and exposed through aria-sort; header labels are vertically centered.
+  Sorting and search reset pagination; URL state survives reload and sign-in. Pages contain at most 25 films,
   stable Movie ties keep their order, and the shared table scrolls locally on phones. Its scroll
-  region is keyboard-focusable and Film links have 44px targets. Loading announces progress;
+  region is keyboard-focusable and Film links have 44px targets. Previous/Next use the same clean
+  full-shaft arrows as the Club switcher, with 48px targets and disabled page bounds. Loading announces progress;
   offline sorting preserves the current rows with feedback. Invalid filters, unavailable service,
   denied access and no published ratings have explicit recovery or empty copy. Ratings contain no individual scores or comments and only use
   completed results the current role may view. Exact-SHA hosted preview and owner review remain
@@ -227,19 +285,50 @@ here.
 - Manage Club's Active Session gives Admins and Moderators the gear menu's controls: Start next phase
   (Selection, or Watching for a single nomination or after Selection), Kick participant and Cancel
   Session, with the same typed confirmations. Watching offers Start next phase: Rating through the shared Open Rating dialog.
-- Members shows each role and the accepted participations, excluding cancelled Sessions. Admins
+- Members follows the History list: unframed rows with separators only between entries, a 40px
+  photo/initial avatar beside the name, role below it, then the display-serif Session count and
+  permitted removal action at the right. Names wrap within the remaining phone width; rows retain
+  the existing hover treatment and 44px action targets. Members opts out of the radial reveal: avatar photos
+  regain color through the ordinary 150ms filter transition on row hover/focus.
+  The shared Avatar also supplies the 24px AvatarGroup images and 32px header account image, with
+  the same initials fallback. Other avatar consumers retain the shared reveal. Members shows each role and the accepted
+  participations, excluding cancelled Sessions. Admins
   remove Members or Moderators, Moderators remove Members, and Members leave through Manage Club.
   Removal needs `REMOVE`, keeps shared history and returns focus to the Members heading. Session
   counts stay in one column whether or not a row has a remove control. Role changes happen in the
   Manage Moderators dialog: Members and Moderators form two lists, with one Save enabled only
-  when roles change. + Invite opens the shared invitation dialog. Dates read as `Oct 21, 2026`.
-- Club Info holds the avatar beside the Club name: clicking it picks an image with a preview, its
-  requirements sit in a tip, and Save Changes uploads it with the other fields. Settings lists its
-  checkboxes at a fixed spacing with Save Changes at the card's base. A Pro-only setting carries a
-  Pro marker and its reason in a tip instead of a bare disabled box.
+  when roles change. Invite opens the shared invitation dialog. Dates read as `Oct 21, 2026`.
+- Club Info holds the avatar beside the Club name: clicking it picks an image with a preview,
+  and Save Changes uploads it with the other fields. The heading tooltip contains image formats,
+  size/private-storage requirements and upload instructions; there is no separate Avatar caption.
+  Settings owns the Selection score range below its visibility tabs, before Save Changes. The slider keeps its numeric
+  value and accessible value text without a repeated Members score nominations caption. Both forms
+  submit exactly one saved/edited scale pair and retain the other card's stored fields.
+  Settings uses neutral
+  During Session/After Session tabs with three visibility checkboxes in each. Both panels stay
+  mounted so saving either tab retains all six values. Appearance is not a Club-level control.
+  Settings has an adjacent tooltip saying “These rules apply to everyone.” No explanatory paragraph
+  or applies-to-new-Sessions line is shown. Save Changes remains at the card's base.
+  The shared tab list keeps its active underline inside its bounds and never scrolls vertically.
+  Hub failure actions use a wrapping flex row with the standard gap between Retry and Back.
 - The last row pairs two compact cards of equal height: Members (places in use, Invite members, and
   Manage Moderators for the Admin) and the Danger Zone (one line, then Archive or Reactivate and
   Delete, or Leave).
+- Manage Club's Active Ratings matches the prototype rows: title/date and response count at the
+  left, an outlined Finish Session action at the right, and separators between rows. The action
+  reuses typed CLOSE confirmation and server-projected permission/version data; failed or changed
+  Session reads offer per-row Refresh. Phones stack the action beneath the screening facts.
+  Members puts occupied/available places beside its title instead of repeating a sentence below.
+  Admins always see Delete Club; Session history keeps it disabled, with the reason in the existing
+  action tooltip and no separate explanatory line.
+  The existing no-history deletion rule and typed Club-name confirmation are retained.
+- New Sessions use six controls (Nomination authors, named Selection scores and Session ratings,
+  each During/After Session), available on all plans. During Selection/Rating,
+  other submitted responses appear only after the caller submits their own response. After means
+  Session Completed, and all visibility switches apply to Admins/Moderators as well as Members.
+  Existing Session snapshots keep their prior disclosure boundaries and never acquire newly
+  disclosed individual ballots. Authorized Selection matrices show participant names, film columns
+  and missing imported cells as `—`; author-only nominations remain independent of score visibility.
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
   Sessions and invites while roster recovery stays available.
@@ -261,6 +350,9 @@ here.
 - The ticket appears once an invitation or a loading failure exists, and then stays, so focus can
   return to it after the last answer; with nothing pending it never covers content. On phones it
   floats above the bottom bar.
+- Its fixed clipping box stays inside the viewport even when hidden; only the ticket slides behind
+  that edge. Hidden invitations never add horizontal page scrolling. The shared table similarly
+  contains absolutely positioned accessibility labels inside its own scroll region.
 
 #### Invitation pages
 
@@ -287,12 +379,37 @@ here.
 - Local reference comparison covers 390 and 1440px. An exact-head hosted
   preview and owner visual acknowledgment remain required before #61 is accepted.
 
+#### Interaction continuity
+
+- Small interaction continuity: invitation URL fields select the complete link on focus. Club form
+  entry links carry their originating view as an allowlisted `returnTo`; Back uses that view rather
+  than losing the active Club tab. Direct visits keep the existing safe fallback.
+- Selecting a Nomination film focuses Change; Change restores focus to the search field without
+  submitting. Log Past step changes focus the newly mounted heading/legend, while validation keeps
+  the existing invalid-field path. Review text keeps its layout with a transparent 44px hit area.
+- Editing Session form values clears obsolete submit feedback. Notification retries use the shared
+  Button loading state and retain the label footprint while refresh is pending.
+- Shared `HorizontalScroll` supplies decorative edge fades for application tables and Pricing's
+  comparison table. Each fade appears only when more columns remain in that direction, updates on
+  scroll/resize, does not capture pointers, and keeps the labelled keyboard-focusable scroll region.
+- Page and internal native scrollbars share global thin/neutral styling from the initial stylesheet.
+  Visibility/autohide follows the browser and OS; no scroll listener, timer or hydration attribute
+  controls it. Forced-colors uses system styling. Modern scrollbar-color/width only.
+
 #### Global search and Movie Details
 
 - Header search reuses the product overlay. A 300ms debounce updates a bounded, locally scrolling
   panel with loading, empty, cached, provider failure, rate-limit, unconfigured and expired-session
   feedback; a new query clears obsolete results at once. Arrow keys move through results while focus
   stays in the combobox, Enter opens the canonical Movie route, and Tab and touch work too.
+  Below 1024px its close control replaces Search at the exact same position: both use a 48px
+  target, 42px ring and 20px glyph. The overlay shares the header's content width and phone gutters.
+- Header search and all form pickers share `MovieSearchResults`: a 2px field-to-popup gap,
+  320px panel (clamped on short viewports), 32px count slot aligned right, and 64px result rows.
+  Loading uses five decorative skeleton rows and a count placeholder; results and empty/error
+  states keep the same panel height. Empty copy is centered in the results body. Loading remains
+  announced to assistive technology; reduced motion stops the shimmer. Rows include year and
+  available English genres, retaining attribution and keyboard selection/navigation.
 - Results fall back to an available source title; "Untitled film" means no title at all. Posters load
   lazily through authenticated same-origin URLs, with the neutral PF placeholder when missing.
 - Movie Details shows title, then the Session header's meta line (year, runtime, language name and
@@ -302,10 +419,16 @@ here.
   the poster's top-right corner, poster, directors, writers, up to five actors
   in one row, budget and worldwide revenue in compact US dollars, synopsis and a trailer player.
   Rows without data other than directors and actors are left out. On wide screens the poster and
-  trailer share one height (3 : 8 columns), and the poster behaves as in Sessions. Provider
-  attribution stays with TMDB in search results only; where PoiskKino and TheTVDB are credited for
+  trailer share one height (3 : 8 columns), and the poster behaves as in Sessions.
+  Session information below that row follows the prototype's three-column spans: credits cover
+  the poster plus half the trailer region, and Synopsis occupies the remaining column. Movie
+  Details keeps its separate equal-width information columns. Below 1024px the existing stacked
+  information layout remains unchanged.
+  Provider attribution stays with TMDB in search results only; where PoiskKino and TheTVDB are credited for
   public launch is decided in #89. Movie Details and Sessions share one loading skeleton of this
   layout. On phones the header is the same film ticket as in Sessions, with that rail as its stub.
+  When the rail has no visible content, the header uses a continuous rounded outline and poster
+  corners without stub cutouts or perforation. This follows available actions, not just the phase.
   There is no in-content Back. On phones each credit keeps its label and value on one row.
 - Missing media, absent English synopsis, provider outage, rate limits, unconfigured catalog, partial
   and stale details each have explicit feedback. Related titles load separately: up to six
@@ -314,16 +437,25 @@ here.
   PoiskKino ID is the Kinopoisk film ID; Letterboxd resolves the IMDb, else the TMDB, ID); Wikipedia
   is a title search. They are bordered pills with each source's one-colour mark and an outbound
   arrow, marks only on phones, followed by the dotted sprocket divider. The trailer card shows the
-  film still (or the blurred poster) with a Play button; only pressing it loads YouTube's
-  privacy-enhanced player in place, with up to three trailers to choose from. A Search YouTube
-  caption closes the card on the same line as the poster's Film details caption, because provider
-  trailers can be teasers or missing. One credit region covers the film and its related titles.
+  selected video's cached YouTube thumbnail with a Play button; only pressing it loads YouTube's
+  privacy-enhanced player in place. Up to three distinct video IDs are available through the shared
+  clean arrows and a position counter, replacing the repeated Trailer pills. Switching videos fades
+  in the corresponding thumbnail with the shared local motion timing; an unavailable thumbnail
+  leaves a neutral cover with Play available. The chooser and Search YouTube link sit in the bottom
+  footer. The preview image uses shared ColorReveal with its existing dim exposure; the Play ring
+  and captions stay outside the effect. The controls
+  disappear during playback. Play stays at the exact card centre independently of the
+  footer or trailer name; the name sits at the top. Cached images that finish before hydration are
+  revealed on attachment as well as on load. Provider trailers can be teasers or missing.
+  One credit region covers the film and its related titles.
   Unknown Movies use the not-found page.
 - Personal Rating opens a compact, focus-trapped popover containing one row of ten stars. Hover
   previews stars; arrows/Home/End, pointer and touch work. A settled selection saves automatically
   after 400ms. Own and historical rating displays show the score without a visible N/10 label;
-  accessible names still announce the scale. Stars fit one row on phones. Offline/API errors retain
-  selection and show recovery feedback. Pending and success messages are announced without visible
+  accessible names still announce the scale. Stars fit one row on phones.
+  Keyboard focus uses a centered 28px square around the 24px SVG, independently of the taller
+  hit target. Native button padding is reset and the icon/frame share the same center.
+  Offline/API errors retain selection and show recovery feedback. Pending and success messages are announced without visible
   text. Successful saves update the header and survive reload.
   Escape or outside dismissal returns focus to the trigger. Personal edits preserve Session and
   Club history; a new live Session Rating sets the current opinion, while retries preserve later edits.
@@ -331,6 +463,9 @@ here.
 - Watchlist ribbons stay ivory while unsaved and become filled gold after a successful save.
   Hover and opening the popover keep the ribbon in place.
   Activating an unsaved ribbon saves Medium priority and opens the focus-trapped priority popover.
+  Priority and Personal Rating popovers share a 336px maximum width, opaque surface, border and
+  compact 8px outer padding. Priorities form one unframed row of 44px-high choices, with a warm
+  selected state and a separate 44px removal control. There is no nested rounded group frame.
   Low, Medium and High buttons expose their saved state with `aria-pressed`; choosing a priority
   or Remove from watchlist saves immediately and closes the popover. Escape and outside dismissal
   return focus. Pending controls prevent duplicate submissions; pending and success messages are
@@ -339,10 +474,14 @@ here.
 - `/library` opens My Ratings; `?tab=my-ratings` and `?tab=watchlist` select the two sections in
   the control shell. Tables show rank, Film, cached Genre, Year, Rated on/Added on and the shared
   rating or priority editor. Missing metadata uses `—`; Film links open Movie Details.
-- Search, an exact rating or priority filter, and sort controls filter live and update the result
-  count. Clear resets the current section. The URL preserves controls across reloads; changes start
-  at page one. Sort choices are rating/priority High to Low, Film A to Z, newest Year and most
-  recently rated/added. Each page contains at most 25 films, with Previous/Next bounds and counts.
+- My Ratings and Watchlist reuse the centered 480px title search, sortable headers and arrow
+  pagination from Club Ratings. Filter and sort dropdowns are removed. Film, Genre, Year,
+  Rated on/Added on and Rating/Priority support the same ascending → descending → reset cycle;
+  switching columns resets an active sort. The default stays highest rating or highest priority.
+  Search applies after a typing pause or Enter, updates the count and retains newer input while
+  earlier responses arrive. URL state survives reloads and changes start at page one. Existing
+  exact score/priority query links remain supported with a Clear filters recovery action.
+  Each page contains at most 25 films, with Previous/Next bounds and counts.
 - Tables scroll locally on phones; rating stars fit one row. Successful Library edits return focus to the
   section heading and announce feedback, including when the edit removes a filtered row. Loading,
   empty Library, no matches, invalid filters, unavailable/retry and sign-in recovery are explicit.
@@ -354,8 +493,14 @@ here.
   watch-time estimate. Loading uses the Library boundary; statistics failures show their own retry
   while the table stays usable. Existing editor revalidation updates the totals after saves.
   `?tab=achievements` opens the personal shelf, and the Club Achievements tab opens
-  `/clubs/[clubId]/achievements`. Shared shelves recompose from three columns at L+ to two at M
-  and one below 576px. Summary buttons toggle Unlocked, In progress and Not started independently
+  `/clubs/[clubId]/achievements`. Shared shelves use at most three columns from 768px and two
+  below 768px. The current presentation uses medal groups separated by gaps, each with a thin
+  neutral rounded outline and transparent background: a shaded
+  circular badge with a double rim, status text, a wrapping display-serif title, description and
+  progress below. Earned medals and their progress use gold-light; other states stay neutral.
+  Badge sizes are 80px on wider screens and 64px below 768px. Existing criteria, evidence and
+  private-progress rules are retained. Summary buttons use the shared 350ms press pulse with a 10% peak, with smooth
+  checkbox color/check visibility and 35% opacity when off. They toggle Unlocked, In progress and Not started independently
   with `aria-pressed`; all start selected, and zero matches has explicit feedback. The completion
   tile counts visible-to-caller unlocked versions over all returned versions. Cards show an icon,
   status, description, bounded progress and expandable rule/version explanation. Earned versions
@@ -366,6 +511,15 @@ here.
   World Tour uses recorded production countries; Silent Era uses a release year before 1930.
   Exact-SHA hosted visual review is pending.
   No fixture statistics or film content appear.
+
+#### Personal Appearance — Proposed
+
+Phase 19 personal Settings [#65](https://github.com/Shagon1k/PickFlick/issues/65) covers per-user monochrome media,
+quiet mode (grain/ambient-motion reduction with a tooltip), Comfortable/Compact list spacing and
+one shared optional-column control for applicable tables. These preferences apply across Hub,
+Sessions and My Library without changing another user's view or Club result visibility. Essential
+Film and Rating/Priority controls remain available. Existing Club/Session media values are legacy
+data; this work does not rewrite historical records.
 
 #### Create Session
 
@@ -397,10 +551,39 @@ here.
 
 #### Nomination
 
-- Search opens a dropdown over the card; a chosen film becomes a row with Change and Nominate This.
-  Suggestions are the caller's own past losing nominations in this Club and use the same flow.
+- Search opens a dropdown over the card; selection keeps the same field dimensions and shows only
+  the film title on one line, truncating long titles with an ellipsis. The full title remains
+  available to assistive technology and in a native tooltip. Change and the explicit Nominate
+  arrow sit inside the field, with reserved space before selection. Both use the same 44px subtle
+  icon button, hover treatment and icon-only press feedback; the arrow is disabled until selection.
+  Desktop Find & Nominate and Current Nominations panels share 20px padding and the Open Ratings
+  24px/600 body heading. Find & Nominate sizes to its content with a 280px minimum; the adjacent
+  Current Nominations matches its height and scrolls internally without expanding the row.
+  Below 1024px the main panels stack with natural heights and a bounded nomination list.
+- Inside Find & Nominate, below the picker, Try again and Watchlist are independent horizontal
+  strips with smaller 16px h3 headings and explanatory InfoTips. They sit side by side, stacking
+  below 768px while both remain inside the same Find & Nominate frame.
+  Try again retains the caller's earlier losing nominations in this Club. Watchlist contains only
+  that user's saved films, ordered High → Medium → Low, then saved date and Movie ID. Selecting
+  either kind of suggestion uses the normal selection/Change/explicit submission flow.
 - Current Nominations show posters, titles, cached genres and the nominator when the Club allows it.
+  The whole item links to its Movie. Nomination items and suggestion cards use shared ColorReveal
+  with grayscale at rest; suggestion buttons provide the same whole-card hover/focus feedback.
+  Suggestion strips reserve space around cards for press enlargement and scroll horizontally only.
   Feedback stays inside the nomination card; a successful submission focuses its heading.
+- Current Nominations, Your nomination and live/Logged Rivals reuse the shared
+  `NominationMovieCard`; their lists use `NominationMovieList`. The 48×72px poster centers vertically,
+  while title, 12px author credit and genre chips form one top-aligned block with 4px internal gaps.
+  Rivals add an independent right-hand slot for a plain total or a 52px-minimum avg. button,
+  without changing the text spacing or adding a phone footer. Both numbers use the display font
+  at 24px/400. Native full-card Movie links keep the avg. button separate and do not underline titles.
+  Lists use an unconstrained inner equal-row grid inside a 300px-max scroller: all cards in a list
+  match its tallest card, without fixed heights, clipping or a measurement controller. The 112px
+  minimum and 12px card padding/radius remain. Nomination retains its three-genre limit; Rivals
+  retain all supplied genres and the existing author/count visibility rules. Selection stays separate.
+- After submission, the left panel becomes Your nomination, with a quiet check and
+  Submitted · Waiting for selection status above the film. Omit the redundant by-you credit and
+  the form's minimum height; the right panel remains the shared Current Nominations list.
 - Empty history, hidden nominations, missing metadata, non-participant and read-only access, pending
   saves, failures, offline recovery and locked submission each have explicit copy.
 - Early closure cannot close with no films; one film moves to Watching, several open Selection, and
@@ -412,11 +595,28 @@ here.
 
 #### Selection
 
-- Every eligible nomination gets a score row on the Club's scale (`0..N`, or a legacy `1..N`) with one
-  year · genres · nominator line. Rows stack on phones and wide scales scroll inside the row. Scores
+- Selection shows Your scores with a 24px/600 body heading and a brief instruction; viewers without
+  a ballot or submission permission see Nominated films. Every eligible nomination gets a score row
+  on the Club's scale (`0..N`, or a legacy `1..N`). Poster/title/metadata form one Movie link, separate
+  from the score controls. The native Movie link stretches across the entire card; the separate
+  score buttons sit above it and never navigate. Empty rail space, padding and gaps pass pointer
+  hits through to the Movie link. Card feedback replaces title underlining, with
+  a full-card keyboard focus outline and no row navigation handler or event-propagation workaround.
+  Film text is top-aligned to the poster regardless of missing metadata.
+  Compact layouts right-align the year beside the title; from 1024px it returns below the title.
+  An optional nominator line and restrained genre chips follow. Cards reuse the
+  Nomination border, 12px padding and radius, 48×72px posters and whole-card soft ColorReveal.
+  On phones the poster stays beside the text, with the score rail below. Wide scales scroll locally;
+  safe alignment keeps the first value reachable when centered/end-aligned content overflows. Scores
   keep 44px targets and support arrows, Home, End and touch; a score marks only the chosen option.
+- A compact N/M count sits at the right of the section heading above the cards, with full scored
+  progress/readiness announced to assistive technology. The scoring/finality InfoTip sits beside
+  Your scores. Submit scores sits alone on a centered row below the cards, 250px wide or the
+  available width on narrow screens, without a progress caption.
 - Missing scores focus the first unscored film with live feedback; errors keep the input.
-  Submission is final: a saved ballot shows locked rails with the choices marked. Archived Clubs and
+  Submission is final: a saved ballot keeps the same rows and rails with the choices marked, and
+  shows Submitted · Waiting for other participants below Your scores. Submitted score choices stay
+  fully opaque; other values recede and have no actionable hover. Archived Clubs and
   ineligible participants cannot submit, and the server filters nominator names.
 - After closure a warm winner card links the Movie, names the permitted nominator and records how
   and when Selection closed. When allowed, the ranking shows totals, top-score votes, supporters and
@@ -427,8 +627,13 @@ here.
 #### Watching
 
 - A film header (linked title; year and runtime, then the genres in the display italic after a
-  hairline; a phase stamp whose dot pulses only while Watching) sits above the Movie Details media
-  grid. From 576px the stamp sits left of a compact action rail (icon and label inline); below it
+  hairline) sits above the Movie Details media
+  grid. The capsule is 28px high with 11px body text and centered 14×14px SVG icons from the shared
+  library. Watching uses Play, Rating a star, Completed a check and Logged a clock; Logged keeps
+  its existing InfoTip. SessionStatus overlays the poster's top-right at both desktop and phone
+  sizes; unavailable film metadata retains an inline fallback. The capsule replaces the separate
+  uppercase phase stamp and live dot.
+  From 576px the action rail keeps icons and labels inline; below it
   the header becomes the shared film ticket: the poster carries title, meta, an info mark and the
   stamp, and the rail is its stub, joined by a perforation with outlined notches. The rail shows
   only the viewer's actions: Invite, Settings for Session managers, and Join or Leave. The media
@@ -450,28 +655,115 @@ here.
 - Rating reuses the film header and media, with accepted-participant progress above the header.
   Its fixed 1–10 star control supports arrows, Home, End, pointer and touch; ten stars fit one row
   on phones with at least 24px width and 44px height. The optional comment is limited to 2000 characters.
+- Your rating follows the prototype's transparent outlined card: up to 720px wide, responsive
+  padding and a 72px gold line on its top edge. A small mono heading precedes neutral ivory stars,
+  an 80px-minimum transparent comment field up to 480px wide, and a centered submit control with
+  the existing finality InfoTip. Visible N/10 labels stay omitted. During Rating, the same card
+  shows the saved historical score after submission. Ineligible non-participants do not get a form.
+  Mobile star rails remove horizontal gaps/padding so icons fit the narrower card without page scroll.
 - Submit is final. Pending saves lock the form; validation focuses the rating control, and API or
-  offline errors retain the score and comment. Success replaces the form in place with the saved
-  row highlighted inside the ratings list with a Final lock tag. Reviews show one line and open
-  in a popover. The existing progress poll refreshes other clients.
+  offline errors retain the score and comment. Success shows the saved score in the same personal
+  card and the own row at the top of the results list, labelled You without a Final tag or special card colors.
+  The response stays immutable even though the list omits the lock badge. Reviews show one line and open
+  in a popover; a small chevron indicates this action and rotates while open. Below 576px,
+  Review and Selection-details popovers use the available viewport width with 20px side gaps
+  and an opaque surface, keeping contextual vertical placement with flip/shift. Desktop widths
+  remain compact. The existing progress poll refreshes other clients.
 - Positive N/N completion is automatic. Session Settings offers Close Rating early to authorized
   operators, with received/pending counts and typed `CLOSE`. Cancel or Escape preserves Rating and
   returns focus. Failure preserves the dialog and confirmation; success focuses the Session heading.
-- Other responses and the Club score remain hidden while Rating is open. Completed results show
+- Other responses and the Club score appear only when the server's saved period policy permits
+  them; live disclosure additionally requires the caller's own submitted rating. Completed results show
   individual scores, comments and the average only when the server permits them. Hidden results,
   no received ratings, non-participation and read-only Clubs have explicit text. The caller's own
   response stays visible. Completion removes further submission and management controls.
-- Completed places the film and stable screening facts before two result panels: individual
+- Rating and Completed share SessionResults after the film and stable screening facts: individual
   ratings/comments and historical nominations. The latter identifies the winner and exposes
   permitted aggregate vote totals, top-score votes and supporters through keyboard-operable
   disclosures. Pre-selected screenings explain the absence of nominations and votes. Empty,
   partial and hidden results never invent responses. Catalog titles and account display names
   remain current; saved choices, scores, scale and closure information remain historical.
-- The Hub Sessions section shows the single blocking Session, all unfinished Rating Sessions
-  with accepted-participant progress, and the latest twenty closed Sessions. History uses the
-  server-permitted Session average, or `—` when absent or hidden. Overview and Manage Club also
-  expose all open Ratings; the Call Sheet and Active Session card represent the blocking Session.
-  Without one, an authorized operator can schedule while Ratings remain open.
+- When Rating has no available rows yet, the Ratings panel keeps its position and shows a dash
+  with In progress. Already permitted results and the own response still follow the server's
+  visibility policy. The permitted Selection matrix follows the panels in both phases.
+- Completed replaces the header's standalone phase label with readonly Club, historical Session
+  You and Global rating cells, adapting the shared Movie Details ticket rail. Unavailable/private
+  values are dashes. GlobalMovieRating shares its source priority, count and accessible scale with
+  Movie Details; the Session You cell never edits or reads PersonalMovieRating. Rail icons are 20px;
+  desktop icon/value/label groups center vertically. Numbers are 20px desktop/16px phone, and the
+  phone ticket keeps stacked icons above centered value/label groups. Personal Rating in Movie
+  Details uses the same alignment and numeral sizing while retaining its editor.
+- Completed retains both result panels' neutral outer borders and uses independent rounded row
+  cards inside. Ratings and Nomination Rivals share the Open Ratings heading typography: 600,
+  24px body sans, with a 44px header slot and matching panel padding. Shared tokens set a 112px
+  row minimum and 300px list maximum; the desktop grid stretches the panels to equal outer height
+  without assuming equal counts. Below 1024px the panels stack and use their natural heights.
+  Ratings use the shared 48px Avatar with same-origin photos and initials; Rivals retain actual
+  Movie posters. Images restore color on row hover/focus, and plain scores change from white to
+  gold-light. Gray card backgrounds apply only to actual fine-pointer hover, without lingering
+  after focus returns from a popover; visible keyboard focus remains. Plain rating numbers have
+  an additional 8px right inset. The own row uses the same neutral border/background as its peers;
+  You and first position identify it. Live Selection averages are framed
+  buttons with an avg. label, chevron and distinct hover/focus/open states, opening the existing
+  aggregate details popover. Imported totals stay non-interactive and never imply a full ballot.
+  Recorded total values align right with a compact total caption. Repeated equal score counts
+  are assistive-only; differing counts remain visible because logged evidence can be partial.
+  The Avatar extra-large size applies to Ratings without changing Member/header/group sizes.
+- Sessions shows Open Ratings only when at least one Session remains in Rating, then History.
+  The single blocking Session stays in the Call Sheet instead of being repeated in this list.
+  Open Ratings has no redundant Rating pill. Accepted participants appear as up to five overlapping
+  24px avatars plus `+N` for the remainder; photos are grayscale until hover or keyboard focus,
+  with initials for missing/failed images. Activating the 44px group trigger opens a compact,
+  keyboard-accessible full participant list. The 32px film strip occupies a separate right-hand
+  column, up to 320px wide and vertically centered, from 1024px. Below that it returns to the
+  bottom right beside the avatars and shrinks to fit. Row borders separate adjacent entries only;
+  the final entry has no bottom border before the section separator. This is participation context,
+  not disclosure of individual ratings or submission status. The strip rests in grayscale and
+  restores its existing colors on parent-row hover or focus, using the same transition as the poster.
+- Compact Schedule New and Log Past links use the shared subtle Button variant: primary-color
+  semibold labels, a calendar/clock icon, no resting frame or underline, and a soft neutral
+  background on hover or keyboard focus. They remain navigation links, with visible focus and
+  44px targets. Existing outlined actions in the Overview empty card retain their treatment.
+- Members' Invite uses the shared secondary outlined variant with the existing user-plus icon
+  instead of a text plus prefix; it remains a button opening the invitation dialog.
+- History starts with ten Completed/Cancelled Sessions. Load More appends the next ten from the
+  server, retaining the loaded list on ordinary Hub refreshes and announcing completion without
+  visible success text. The shown count includes both terminal states; restricted or absent
+  averages remain `—`. A role change resets loaded pages to the newly authorized projection.
+  Eligible operators keep a compact Log Past action beside History, even while a blocking Session
+  exists. Manage Club also retains open Ratings; Overview omits the duplicate Active Ratings card.
+  Section headings use the body font;
+  History scores use neutral display-serif numbers without a Club score caption, with canonical
+  row/poster spacing and stationary content on hover. Phone History keeps poster, flexible film
+  text and score/Cancelled in three columns. From 1024px, Open Ratings and History rows have 20px
+  left/right padding; compact layouts retain their existing edge spacing. Phone History keeps
+  the score at the right edge; metadata wraps
+  inside the middle column instead of moving the score below the film. History always places
+  attendee count on its own line below date/location, on both phone and desktop.
+  Sessions posters regain color on row hover
+  or keyboard focus; History and Club Ratings scores rest at `--fg` and turn `--gold-light` in the
+  same states. Club Ratings, My Ratings and Watchlist tables retain their ordinary 150ms row hover,
+  without ColorReveal layers. Session Ratings, Selection scoring cards, Nomination Rivals, Hub Sessions/History, Call Sheet
+  and Related Movie cards use the whole item as one `ColorReveal` surface. History separators stay
+  straight; the row has no corner radius.
+  One mask coordinates the background, frame/rules, images and score accents; body text keeps its
+  contrast. Independent row hover fills are removed, including the average-score button's fast
+  hover fill. Average-score buttons retain a direct 150ms gold border/chevron hover, with matching
+  keyboard-focus/open accents and no background change. Images and score text have assistive-hidden visual copies; live controls are never
+  duplicated. Color diffuses from pointer entry or touch through a broad soft edge over 350ms everywhere,
+  including Movie/Session Details posters, phone tickets and trailer previews. Dismissal fades use
+  the same duration. On exit, color contracts
+  toward the exit point: the farthest pixels lose color first and the nearest last. Interrupted transitions preserve
+  the current mask. Keyboard focus starts at the center; reduced motion changes color without movement.
+  Trailer previews and standalone Movie posters retain the image-level reveal and resting treatment.
+  Members retains its ordinary avatar color transition. There is no light ring or brightness overlay.
+  Duration and feather live in `tokens.scss`; feather is 0.4 of the maximum distance from the origin.
+  `COLOR_REVEAL_CONFIG.enabled` in the shared ColorReveal configuration
+  switches all remaining reveals to ordinary 150ms hover feedback without a radial mask. A persisted
+  personal Appearance switch is Proposed in #65; the current global default is enabled.
+  Related Movie titles/years are centered with 12px side padding and 12px bottom padding below the year.
+  Local DOM checks cover both global switch states, timings, table opt-outs and 390px Related Movie
+  alignment/overflow; broader visual/automated checks remain deferred.
 - Exact-SHA hosted preview review and owner acknowledgment remain required for acceptance.
 
 #### Past Sessions
@@ -491,7 +783,7 @@ here.
   were not saved, retain the form values and direct the operator to Club history for the saved
   record. A new form allows an intentional repeat screening.
   Success opens the Completed Session directly. Loading and denied access have explicit states.
-- Completed identifies imported history with one LOGGED stamp and an info popover. Missing attendance,
+- Completed identifies imported history with one Logged capsule and an info popover. Missing attendance,
   ratings, nominations and votes remain unknown; existing result visibility still applies.
 - Movie selection shows a compact poster/title card with a Change film icon instead of a disabled
   input. Back and Next preserve the selected title and explicit nomination removals.
@@ -502,7 +794,9 @@ here.
   Each cell offers Unknown and the inclusive Club Selection scale, including zero where permitted. Clearing a cell restores Unknown. Removing
   an attendee or nomination clears its associated cells. The matrix scrolls locally on phones, with
   labeled controls, table headers, visible focus and 44px targets.
-- Completed reuses the live Nomination Rivals cards for imported nominations. Recorded totals carry
+- Completed reuses the shared Nomination Movie cards for imported nominations. Recorded totals
+  use the right-hand score slot on desktop and phone. The viewed film is labelled Watched, independent
+  of totals; this never declares it the Selection winner. Recorded totals retain
   their recorded score count; a missing total shows `—`, never zero. The LOGGED info popover explains
   that evidence can be incomplete. Permitted known nominators use current display
   names; absent or hidden authors add no invented attribution. Original submission times and
@@ -519,10 +813,10 @@ here.
 
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Personal suggestions beside Nomination search.                                                                                      | Suggest only the current user's own past nominations in this Club that did not win. Derive them from history; selecting a card uses the normal nomination flow. There is no separate shared saved-film list or manual add/remove UI.                                                                                                                                                                    |
+| Personal suggestions beside Nomination search.                                                                                      | Separate Try again and Watchlist strips use the caller's own losing nominations in this Club and their private saved films, ordered by priority. Selecting a card uses the normal nomination flow. No shared saved-film list or new add/remove controls are introduced here.                                                                                                                            |
 | Nomination, Selection, and Rating rows together under "Active Sessions".                                                            | Examples of row states. A Club has one blocking Session at a time; any number of Rating Sessions.                                                                                                                                                                                                                                                                                                       |
 | Manage Club with one Active Session and several Active Ratings.                                                                     | The real concurrency rule and the preferred composition.                                                                                                                                                                                                                                                                                                                                                |
-| Pricing promising unlimited nomination rounds on Pro.                                                                               | Superseded: both plans have one blocking Session per Club. Pro adds limits, result visibility, grace period, and analytics.                                                                                                                                                                                                                                                                             |
+| Pricing promising unlimited nomination rounds on Pro.                                                                               | Superseded: both plans have one blocking Session per Club. Pro adds limits, grace period, and analytics; Session visibility is configurable on both plans.                                                                                                                                                                                                                                              |
 | Selection copy saying "rank", and "three films" beside five scored rows.                                                            | Users score every nomination on the Club's scale; there is no drag ranking.                                                                                                                                                                                                                                                                                                                             |
 | Score buttons 0–3.                                                                                                                  | Generated from the Club's stored scale: `0..N` for new Clubs, existing `1..N` Clubs keep theirs; N at most 10.                                                                                                                                                                                                                                                                                          |
 | A Session invite beside a Club invite.                                                                                              | Valid only for an existing member; non-members see no details and are told to join the Club.                                                                                                                                                                                                                                                                                                            |

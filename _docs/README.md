@@ -65,26 +65,14 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 [Phase 18 — Human Verification & Bug Fixing III](phase-18-human-verification-3.md) holds the
 severity-classified register for #63.
 
-The [historical simplification audit](simplification-audit.md) and its area reports preserve
-observations from before the fixes. Use the Phase 18 register for current verification and disposition.
+The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,
+decisions and implementation notes from before the fixes. Its raw area reports were removed after
+consolidation. Use the Phase 18 register for current verification and disposition.
 
-[Phase 17 — Notifications and preferences](phase-17-notifications.md) is active for durable
-notifications, preferences and safe event mapping under #60, plus the inbox, read state and
-notification refresh UI under #61. Redis now distributes recipient invalidation signals; hosted visual acceptance remains pending.
+The temporary Phase 6–11 and 13–17 documents were consolidated into the canonical references above
+and removed. [Roadmap phase evidence](../ROADMAP.md#11-progress) and
+[Design QA](../DESIGN.md#8-design-qa) retain the recorded checks and outstanding acceptance gates;
+the Phase 18 register holds current verification. Removing staging notes does not accept a phase.
 
-[Phase 16 — Statistics and achievements](phase-16-statistics-achievements.md) is active for Club
-statistics and the rating leaderboard under #57, personal Library statistics under #58, and
-versioned achievements under #59.
-
-[Phase 15 — Personal Library, Ratings and Watchlist](phase-15-personal-library.md) is active.
-The active deliveries cover editable Personal Ratings, synchronization from live Session Ratings,
-and prioritized Watchlist controls across Movie Details and the Library.
-
-[Phase 14 — Past Sessions](phase-14-past-sessions.md) is active for historical screenings and optional
-nomination/score reconstruction.
-
-Phase 12 closed under [#48](https://github.com/Shagon1k/PickFlick/issues/48).
-[Phase 13 — Watching, Rating and completion](phase-13-watching-rating-completion.md) is active. [Roadmap phase evidence](../ROADMAP.md#11-progress) and
-[Design QA](../DESIGN.md#8-design-qa) hold the recorded checks and carried-forward limits. The temporary Phase 6–11 documents
-were consolidated into the canonical references above and removed. Phase 12 verification used its
-existing branch and issue without a separate findings register.
+Phase 12 closed under [#48](https://github.com/Shagon1k/PickFlick/issues/48). Its verification used
+the existing branch and issue without a separate findings register.

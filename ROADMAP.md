@@ -82,9 +82,10 @@ out when listed under Out.
 - Full-cycle, pre-selected, and past Session modes.
 - Member-only Session invitations and a participant roster.
 - Nomination through the catalog facade, one nomination per participant, and suggestions from the
-  user's own past nominations in the current Club that did not win.
+  user's own past nominations in the current Club that did not win, alongside their personal
+  Watchlist ordered from High to Low priority.
 - Scored Selection on the Club's `0..N` scale (N from 1 to 10; see Selection rules).
-- Deterministic tie-breaking and result visibility set by plan and Club settings.
+- Deterministic tie-breaking and Session result visibility set by Club settings on every plan.
 - Optional nomination deadline and the automatic transitions in section 3.
 - Watching, Rating, Completed, early operator closure, participant removal, cancellation, and
   editing Session details.
@@ -285,21 +286,26 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
   point, numeric IDs compare numerically, text IDs by code point, and missing mappings sort last.
   Repeated Movies remain separate nominations. Closure freezes inputs, ranking and the decisive
   tie-break; later roster or catalog changes cannot recalculate history.
-- Free Clubs hide vote results from ordinary members; Pro Club Admins choose post-close visibility.
-  App Admins get audited operational access only when required.
-- "Show who nominated", pre-submission nomination visibility, post-close vote visibility, and
-  post-close rating visibility are independent Club settings where the plan allows.
-- Post-close Selection projections show the winner to current Club members. Club Admins and
-  Moderators can see aggregate rankings; ordinary members need the current Pro entitlement and
-  the Session's snapshotted vote-result visibility. Free members receive no breakdown even if
-  that snapshot flag is true. Individual ballots and internal winner inputs stay private.
+- New Sessions snapshot six independent visibility settings: nomination authors, named Selection
+  scores and Session ratings, each During/After Session. Every plan can configure them; Admins and
+  Moderators obey the same flags as Members. Pre-submission nomination-list visibility remains
+  a separate stored Club setting. Appearance belongs to personal Settings; existing Club/Session
+  media fields are retained only as legacy data.
+- During Selection/Watching/Rating, other Selection scores require the During flag and the
+  viewer's own submitted ballot; other Session ratings require their own During flag and response.
+  After starts only at Completed and uses the corresponding After flag. Cancelled Sessions do not
+  expose new-policy named scores. A chosen Movie remains visible independently of score disclosure.
+- Authorized named Selection scores use immutable submitted ballots while open and frozen closure
+  inputs afterwards, with current anonymized names. Imported score matrices preserve missing cells
+  as unknown. Internal tie-break/provider inputs never become public.
 - Session Ratings use a fixed 1–10 scale with an optional comment (at most 2000 characters).
   Each participant submits once; identical retries preserve the saved response. Only accepted
   participants count toward positive N/N completion; received responses from departed participants
   remain part of history. Manual completion may keep partial or empty ratings.
-- Other participants' Session Ratings and the Session average appear only after completion.
-  Admins and Moderators can see them; ordinary members require the Session's snapshotted
-  `showRatingResults`. A caller can always read their own response while they remain a Club member.
+- Other participants' Session Ratings and the Session average follow the snapshotted period flag,
+  including for operators. A caller can always read their own response while they remain a Club
+  member. Hidden scores also stay absent from Hub averages, Club analytics and derived private
+  achievement/notification projections.
 - Past Session nomination lists and Selection matrices preserve partial imported evidence. Missing
   cells remain unknown; zero is an explicit score on the saved Club scale. Recorded totals neither
   establish a complete ballot nor determine a winner. Each nomination may identify a current or former
@@ -309,6 +315,12 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
 
 ### Club analytics
 
+**Legacy visibility:** Sessions created before period-specific snapshots retain their existing
+rules. Their individual Selection ballots remain private; legacy aggregate Selection visibility
+keeps its saved flag/role/tier boundary, and legacy completed ratings keep their saved flag/role
+boundary. Club edits never rewrite existing Session snapshots. New-policy behavior is implemented
+under Phase 18; its deferred tests and fixture updates remain required before delivery acceptance.
+
 Active Club analytics count Completed screenings, including PAST imports and repeat viewings.
 Open and Cancelled Sessions do not contribute. Every plan gets all Overview statistics and the
 Movie leaderboard, including watch time, metadata summaries and historical rating averages.
@@ -316,13 +328,14 @@ The existing Club entitlement adapter supplies the plan until billing is impleme
 
 Rating aggregates use immutable SessionRating rows, never editable Personal Ratings. Each received
 response has equal weight, including retained responses after departure. Repeat screenings share a
-canonical Movie ranking. Missing responses remain unknown. Admins and Moderators aggregate every
-Completed Session; Members aggregate only Sessions with saved `showRatingResults`. Filtering happens
+canonical Movie ranking. Missing responses remain unknown. New-snapshot results require saved
+After visibility for all roles; legacy results retain their original role/flag policy. Filtering happens
 before averaging, ranking and latest-screening sorting. Analytics expose no individual responses,
 comments or hidden response counts. Archived Clubs keep read access for current members.
 
-The leaderboard sorts by highest rating, latest permitted rated screening or title, with Movie ID
-breaking ties and unknown titles/dates last. It returns 25 Movies per page. Watch time and each
+The leaderboard supports title search and ascending/descending Film, Year, Genre and Rating header
+sorting, with highest rating as the reset order. The legacy latest-screening query remains supported.
+Movie ID breaks ties and missing values stay last. It returns 25 Movies per page. Watch time and each
 metadata summary remain unavailable when any screening lacks the required metadata. Descriptive
 summaries use the validated catalog cache and may change when it is refreshed; completed counts and
 historical rating aggregates do not. This delivery creates no achievement awards.
@@ -375,7 +388,9 @@ JavaScript characters; no comment text enters achievement evidence.
 
 Club reads require active Membership, including for archived Clubs. Rating/Selection-derived Club
 criteria (Critics Circle, Cult Classic, Perfect Split, Shared Taste) expose progress and earned
-history only to Admins/Moderators, including retired rule versions. Members see current private
+history only to Admins/Moderators, including retired rule versions, and only when new-snapshot
+result visibility permits it. A hidden new result category masks the related private keys across
+that Club, including older earned versions; stored awards are retained. Members see current private
 criteria with a privacy explanation and no award state or time, regardless of earned history;
 retired private award cards are omitted.
 Personal responses contain only the caller's achievement summaries. Evidence snapshots stay internal
@@ -387,20 +402,20 @@ again, while their other metadata remains usable. Silent Era requires a known re
 
 ### Plans and limits
 
-| Feature                          | Free — Screening Room               | Pro — Director's Cut          |
-| -------------------------------- | ----------------------------------- | ----------------------------- |
-| Price                            | €0                                  | €5 per monthly billing period |
-| Clubs you administer             | 1                                   | 5                             |
-| Clubs joined as Member/Moderator | Unlimited                           | Unlimited                     |
-| Members per Club                 | 8                                   | 16                            |
-| Blocking Sessions per Club       | 1                                   | 1                             |
-| Open Rating Sessions per Club    | Unlimited                           | Unlimited                     |
-| Session history                  | Unlimited                           | Unlimited                     |
-| Club customization               | Included                            | Included                      |
-| Vote-result visibility           | Always hidden from ordinary members | Admin-configurable            |
-| Inactivity grace                 | 90 days                             | 180 days                      |
-| Club ratings leaderboard         | Included                            | Included                      |
-| Club analytics                   | All Overview statistics             | All Overview statistics       |
+| Feature                          | Free — Screening Room   | Pro — Director's Cut          |
+| -------------------------------- | ----------------------- | ----------------------------- |
+| Price                            | €0                      | €5 per monthly billing period |
+| Clubs you administer             | 1                       | 5                             |
+| Clubs joined as Member/Moderator | Unlimited               | Unlimited                     |
+| Members per Club                 | 8                       | 16                            |
+| Blocking Sessions per Club       | 1                       | 1                             |
+| Open Rating Sessions per Club    | Unlimited               | Unlimited                     |
+| Session history                  | Unlimited               | Unlimited                     |
+| Club customization               | Included                | Included                      |
+| Session visibility settings      | Included                | Included                      |
+| Inactivity grace                 | 90 days                 | 180 days                      |
+| Club ratings leaderboard         | Included                | Included                      |
+| Club analytics                   | All Overview statistics | All Overview statistics       |
 
 - Paddle anchors billing to the first successful payment, not the calendar month.
 - Cancellation or downgrade takes effect at the end of the paid period.
@@ -517,7 +532,7 @@ hidden from normal history unless product copy exposes it.
 | `/app`                              | Authenticated landing: the last Club Hub or the no-Clubs state.                                                                                                  |
 | `/clubs/new`                        | Create a Club and set its Selection scale.                                                                                                                       |
 | `/clubs/[clubId]`                   | Club Hub: Overview, Sessions, Ratings, Members, Achievements, and Manage Club.                                                                                   |
-| `/clubs/[clubId]/sessions`          | Club Sessions: one blocking screening, all open Ratings, and recent closed history with permitted scores.                                                        |
+| `/clubs/[clubId]/sessions`          | Club Sessions: open Ratings with participants and ten-at-a-time closed history; the blocking screening stays in the shared Call Sheet.                           |
 | `/clubs/[clubId]/sessions/new`      | Create a full-cycle or pre-selected Session.                                                                                                                     |
 | `/clubs/[clubId]/sessions/past/new` | Log a past screening.                                                                                                                                            |
 | `/sessions/[sessionId]`             | Phase-aware Session detail.                                                                                                                                      |
@@ -1297,8 +1312,9 @@ preferences apply to future notifications. Transactional `BILLING_SERVICE` notic
 on both channels; marketing is never included in that exception. Notification content stores typed
 entity references only. Current authorization and saved achievement privacy govern projection;
 deleted or inaccessible entities return generic unavailable copy without a link. Inactivity and
-billing producers arrive in their owning phases. The active [Phase 17 document](_docs/phase-17-notifications.md)
-records the event/audience matrix and verification in progress.
+billing producers arrive in their owning phases. Current event/audience rules live in
+[Architecture](ARCHITECTURE.md#durable-notification-intent); remaining verification is tracked in
+[#63](https://github.com/Shagon1k/PickFlick/issues/63).
 
 The recipient-scoped inbox and read APIs, shared desktop/mobile list and recipient-scoped
 Redis refresh signals are implemented under #61, with post-commit publication and REST recovery
@@ -1309,7 +1325,7 @@ Notification email dispatch, Card templates, bounded provider retries, signed de
 address suppression and best-effort alerts are implemented under #62 and ADR-020. Optional channel
 decisions remain fixed at event creation; provider suppression also blocks mandatory email, while
 the inbox remains available. Live sandbox delivery, exact-head hosted preview and final owner visual
-acknowledgement remain acceptance gates. See the active phase document for verification evidence.
+acknowledgement remain acceptance gates. See the [Phase 18 register](_docs/phase-18-human-verification-3.md) for current verification evidence.
 
 **Out of scope:** Web push and Paddle events before Phase 20.
 
@@ -1346,6 +1362,12 @@ notifications as one retention loop.
 
 **Out of scope:** Billing, full privacy and deletion, and App Admin operations.
 
+Phases 13–17 implementation behavior is recorded in Architecture and Design. Their temporary
+command logs are consolidated into the baseline and current #63 evidence below; removing those
+files does not accept a phase or close its exact-head hosted/owner gates. Phase 17 still needs
+live sandbox delivery/callback/suppression evidence under #62. Phase 16 World Tour country mapping
+has fixture evidence; live TheTVDB production-country response validation remains unevidenced.
+
 Baseline verification at `666ea16` on 2026-11-01 passes the static gate (609 unit tests and builds), 320 database
 integration tests, 16 real-API journeys and the final six Past Session checks. The Linux UI run
 passes 400/402; after repairing its two test-timing failures, all six affected responsive cases
@@ -1367,14 +1389,14 @@ Exact-head hosted CI and owner acceptance remain pending.
 
 ### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
 
-**Goal:** Users control their profile, portability, privacy rights, and account removal without
+**Goal:** Users control their profile, personal appearance, portability, privacy rights, and account removal without
 damaging shared history.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.
 
 **Tickets:** [#64](https://github.com/Shagon1k/PickFlick/issues/64) retention, deletion, export, and
-legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) profile and avatar ·
+legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) personal Settings, profile, avatar and Appearance ·
 [#66](https://github.com/Shagon1k/PickFlick/issues/66) personal ratings CSV ·
 [#67](https://github.com/Shagon1k/PickFlick/issues/67) GDPR archive ·
 [#68](https://github.com/Shagon1k/PickFlick/issues/68) account deletion and anonymization ·
@@ -1384,6 +1406,11 @@ legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) prof
 
 - [ ] Implement display name, avatar upload and removal, email and provider display, and
       locale-ready settings.
+- [ ] Add personal Appearance settings shared across Hub, Sessions and My Library: monochrome
+      media, a color-reveal on/off preference with ordinary hover feedback when off, quiet mode
+      with an explanatory tooltip, Comfortable/Compact list spacing, and a common
+      optional-table-column setup. Preserve essential film/rating controls, keyboard focus, 44px
+      targets and system reduced-motion behavior. Club managers do not configure personal display.
 - [ ] Implement the ratings CSV schema with parser limits, formula-injection handling, a validation
       preview, idempotent import, and export.
 - [ ] Implement the GDPR archive job with a private expiring download, manifest, disclosures, and
@@ -1739,9 +1766,9 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 10 — Nomination & Deadline Automation                  | Done        | Nomination delivery accepted; Session-row deadlines, transitions, outbox intent and version polling are active.    |
 | 11 — Selection & Winner Resolution                     | Done        | Selection delivery accepted; immutable ballots/results, deterministic closure and filtered projections are active. |
 | 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
-| 13 — Watching, Rating & Completion                     | In progress | Manual Watching → Rating delivery is active; Rating submission/completion and phase acceptance remain open.        |
-| 14–17                                                  | In progress | Notification inbox, live refresh and email delivery are built; hosted and sandbox acceptance remain open.          |
-| 18 — Human Verification & Bug Fixing III               | Not started | Gate for Phases 13–17.                                                                                             |
+| 13 — Watching, Rating & Completion                     | In progress | Watching → Rating → Completed is implemented; exact-head hosted/owner phase acceptance remains open.               |
+| 14–17                                                  | In progress | Past imports, Library, analytics/achievements and notifications are built; hosted/sandbox acceptance remains open. |
+| 18 — Human Verification & Bug Fixing III               | In progress | #63: owner-led verification and fixes for Phases 13–17; final checks and acceptance remain open.                   |
 | 19–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
 | 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |

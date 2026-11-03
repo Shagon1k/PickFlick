@@ -62,6 +62,12 @@ After pulling a schema change, run `pnpm install` again; it regenerates the Pris
 your editor's ESLint and TypeScript servers. Editors that keep the old client report
 `@typescript-eslint/no-unsafe-*` errors that `pnpm lint` does not.
 
+The running API imports the database package's built client from `dist`. After applying a schema
+migration, restart `pnpm dev` so its shared-package build updates that runtime client. If dev stays
+running, use `pnpm --filter @pickflick/database build`; the existing watcher restarts the API and
+workers. `prisma generate` alone updates the source client, which can leave readiness healthy while
+real API reads fail with unknown-field errors.
+
 ## Enable the movie catalog
 
 The example environment disables external catalog calls. In the ignored root `.env`, set
@@ -142,6 +148,9 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
 
 ## Common problems
 
+- **A CSS change still looks old after Fast Refresh.** Reload the page fully before checking the
+  result. A long dev session can retain older CSS chunks beside the updated sheet; local browser
+  inspection confirmed that full navigation cleared conflicting old rules.
 - **A port is in use.** Another project probably holds `15432` or `19000`. Stop it, or change
   `POSTGRES_PORT` or `MINIO_API_PORT` together with `DATABASE_URL` or `STORAGE_ENDPOINT` in `.env`.
 - **The backend exits at startup.** The log names every invalid variable; compare `.env` with
