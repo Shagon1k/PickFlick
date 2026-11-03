@@ -1,10 +1,11 @@
 'use client';
 
-import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
+import type { IClubHub } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState, useTransition } from 'react';
 
 import { changeRosterAction } from '#components/sessions/roster-actions';
+import { formatSessionPhase, formatSessionProgress } from '#components/sessions/club-session-text';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
@@ -47,8 +48,8 @@ export default function ActiveSessionCard({
         <div className={styles.details}>
             <p>
                 Current phase:{' '}
-                <strong className={styles.phase}>{formatPhase(session.phase)}</strong> —{' '}
-                {progressText(session, memberCount)}
+                <strong className={styles.phase}>{formatSessionPhase(session.phase)}</strong> —{' '}
+                {formatSessionProgress(session, memberCount)}
             </p>
             <FilmProgress
                 value={session.progressCount ?? session.acceptedCount}
@@ -57,7 +58,7 @@ export default function ActiveSessionCard({
                         ? memberCount
                         : session.acceptedCount
                 }
-                label={progressText(session, memberCount)}
+                label={formatSessionProgress(session, memberCount)}
             />
         </div>
     ) : null;
@@ -91,16 +92,4 @@ export default function ActiveSessionCard({
             )}
         </section>
     );
-}
-
-function formatPhase(value: string) {
-    return value[0] + value.slice(1).toLowerCase();
-}
-
-function progressText(session: IClubHubSession, memberCount: number) {
-    if (session.phase === 'NOMINATION')
-        return `${session.progressCount ?? 0} of ${memberCount} have nominated`;
-    if (session.phase === 'SELECTION')
-        return `${session.progressCount ?? 0} of ${session.acceptedCount} have submitted`;
-    return `${session.acceptedCount} of ${memberCount} Club members have joined`;
 }

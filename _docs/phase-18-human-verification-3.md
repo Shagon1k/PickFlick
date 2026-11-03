@@ -428,6 +428,95 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
   and My Ratings/Watchlist at 390px have document width equal to viewport client width. The table
   still scrolls locally while window scrollX stays zero. Shown/open invitation states and automated
   regression coverage remain for the deferred test round; no screenshots, tests or commit made.
+- Owner checkpoint (2026-11-04): owner requested committing the current skeleton/parity, content
+  loader, notification-header and Edit Session spacing work before continuing. Save the current
+  source and documentation together; the commit hash is recorded in #63. Browser/tests and
+  lint/typecheck/build gates remain deferred. Commit-hook quality automation is skipped under
+  that instruction; the staged secret scan runs separately before the checkpoint commit.
+- Bare content-loader cleanup (2026-11-04): Log a Past Session no longer shows Loading Club
+  history and attendees. Its fallback reuses the actual scene/brand/card/lead, step bars and
+  first-step field/action styles. Shared TextInput/Textarea isLoading modes paint Skeleton over
+  the actual native control through getFieldProps, retaining label/help geometry; the existing
+  Rating form skeleton also uses this path instead of a bespoke textarea overlay.
+  Found and replaced two analogous bare loaders: related Movie cards (actual responsive grid,
+  poster geometry and known result count) and initial notifications (three actual-styled rows).
+  Loading text stays in hidden live statuses. Invitation checking and action-button/live status
+  copy remain purposeful states. Log Session still reads authorized Club data, then current/former
+  members behind manageSessions; Create Club only checks authentication before its local form.
+  No data-fetch order, permission or mutation change. Source review/formatting only; browser/tests
+  and other deferred checks remain pending, no real notifications read or Session writes/commit.
+- Edit Session empty footer spacing (2026-11-04): the shared Modal already supplies its standard
+  32px body-bottom padding. The form's empty live-status paragraph added a 20px minimum plus a
+  paragraph top margin below Cancel/Save. Edit-only :empty styling now removes that height/margin
+  while leaving the node mounted and non-empty feedback unchanged. No shared Modal geometry or
+  save/focus logic changes. Source review/formatting only; browser/automated checks deferred.
+- Notification header compactness (2026-11-04): Mark all as read now uses shared ghost/compact
+  Button (28px visual height, 11px text, extended 44px vertical hit area). Replace the second-line
+  unread summary with a 22px gold-toned badge beside Notifications, visually capped at 99+; keep
+  the full count/caught-up announcement in a hidden live status. Hide the badge at zero. Header
+  padding is 12px vertically/16px horizontally. Removed native-header button/blanket span styling
+  so shared hover/focus/disabled feedback and the status utility keep their own behavior.
+  Read handler, pending disable and focus-before-read are unchanged. Source review/formatting
+  only; no notification read mutation, browser/automated checks or commit during this follow-up.
+- Owner-approved skeleton parity audit fixes (2026-11-04): corrected all ten reported groups.
+  Achievement shelf columns/medal/card/description/progress geometry now follows its live rules;
+  Overview sections, cards and divider use real spacing; both statistic variants stay horizontal
+  on phones with their own glyph/value/label sizing and minimum heights. Members rows use real
+  gaps, count slots and known removal space. Sessions rows use the real poster/inset/metadata
+  geometry, avatar groups and compact progress; authorized snapshot text reserves actual wrapping.
+  Tables now render through Table itself (5 Club / 6 Library columns, no posters, local scrolling,
+  count line and arrow/page/arrow pagination). Manage Club has its session summaries and distinct
+  Info, checkbox/range, Members and Danger structures with the proper grid breakpoints.
+  Added a read-only Hub loading context from the existing frame snapshot; no new request/cache.
+  MovieMedia/MoviePoster/TicketPoster now accept explicit loading views using the same layout;
+  movie/session headers reuse the live host/ticket classes. Removed the separate legacy film
+  skeleton. Nomination, Selection, rating forms/results, rivals and facts have optional loading
+  modes which preserve their normal markup/CSS and already-authorized conditional states.
+  Shared Skeleton paint uses a Mantine Box span and optionally measures supplied text invisibly;
+  known titles, author/genre strings and saved values retain actual line wrapping. Loading content
+  is inert. Scale and avatar loading preserve the real target/frame dimensions. Session fallback
+  now receives the full authorized Session, uses its true scale/submission/visibility state,
+  retains the actual reel break/heading/facts layout and a single Cancelled facts card.
+  Source comparison and formatting only; frontend HTTP 200 / backend ready. No browser, tests,
+  lint/typecheck/build suites, fixture/baseline edits, data writes or new commits. All new skeleton
+  work remains after pushed checkpoint 0ed6489c. Visual/runtime parity still needs the deferred pass.
+- Achievement-filter skeleton sizing (2026-11-03): replace generic 100px cards with the live
+  summary's column layout, 24px vertical/20px horizontal padding and 8px inner gap. Reserve the
+  responsive display-counter line via --fs-app-title × --lh-title and the 14px label's line box.
+  Match the four-to-two-column breakpoint at 576px (previous skeleton switched at 768px).
+  Follow-up: use 32px --gap-lg between filters and shelf instead of the generic 20px stack gap.
+  Source review/formatting only; browser/automated checks remain deferred.
+- Phase-aware Session skeletons / Members correction (2026-11-03): removed the Members top-action
+  placeholder and unused toolbar CSS. Added route-local SessionLoading compositions from shared
+  Skeleton primitives for Nomination, Selection, Watching, Rating, Completed/Logged and Cancelled.
+  Unknown phase uses a neutral heading instead of a film layout. SessionPage first reads the
+  authorized Session, then a nested Suspense fallback receives its real phase/Club while roster,
+  film and request time load in parallel. Auth/denial/recovery rendering is shared between both
+  fetch stages; missing-film recovery and progress-version handling remain existing. No client
+  phase cache, fixture data or extra API endpoint. Initial roster fetch now starts after Session
+  resolves so phase is available to the nested boundary.
+  Source/phase coverage reviewed and targeted formatting applied; frontend HTTP 200 / API ready.
+  Browser/tests/lint/typecheck/build suites remain deferred. These skeleton changes are still
+  working-tree changes after checkpoint 0ed6489c; no commit or data write in this follow-up.
+- Owner checkpoint saved/pushed (2026-11-03): split the existing work into 2b1a9981 (backend,
+  contracts and database), 99273ee7 (frontend) and 0ed6489c (documentation/consolidation), pushed
+  through head 0ed6489ccbe4e72f003ea046b2254b134b68483e to PF-18-1_verify / PR #199. Each staged
+  group passed redacted gitleaks scanning. Owner explicitly deferred tests/quality checks; Husky's
+  lint/format automation was skipped for these checkpoint commits to preserve the current source.
+  SSH authentication failed, but the existing gh HTTPS credentials had push permission and the
+  HTTPS push succeeded. No merge or production action was requested or performed.
+- Profiled skeletons (2026-11-03): added shared Mantine-backed Skeleton primitives for text,
+  title, avatar, poster, control and block; shimmer/tone/reduced-motion behavior lives in its CSS.
+  LoadingState composes them into Overview/statistics, Sessions/history, Ratings/Watchlist tables,
+  Members, Achievements and Settings profiles. Six Hub loading boundaries now target their actual
+  sections. Library initial loading reads the target query tab; keyed panel Suspense and separate
+  statistics Suspense provide the corresponding profile during query-tab content streaming.
+  Existing film/line and search skeletons now use the same primitive while retaining their source
+  dimensions, counts, radii and original default/search shimmer. Removed the unused generic card
+  fallback and duplicate paint/keyframes. No dependency, data or permission changes.
+  Source/route coverage reviewed and targeted formatting applied; frontend HTTP 200 and API ready.
+  Browser/automated checks, screenshot baselines and test edits remain deferred. These new skeleton
+  changes are after the checkpoint above and remain in the working tree.
 - Sessions desktop row insets (2026-11-03): shared HubSessions row adds 20px horizontal padding
   from 1024px, covering Open Ratings and History. Compact/mobile edge spacing stays unchanged.
   Source review/formatting only; browser/automated checks remain deferred.

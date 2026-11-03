@@ -3,6 +3,11 @@
     overflow-wrap: anywhere;
 }
 
+.loadingPicker {
+    height: calc(var(--fs-body) * var(--lh-ui) + 24px);
+    border-radius: var(--radius);
+}
+
 .columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

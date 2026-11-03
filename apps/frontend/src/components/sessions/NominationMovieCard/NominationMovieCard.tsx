@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './NominationMovieCard.module.scss';
 
@@ -13,12 +14,14 @@ export default function NominationMovieCard({
     badge,
     score,
     maxGenres,
+    isLoading = false,
 }: {
     movie: TNominationMovie;
     author: string | null;
     badge?: string;
     score?: ReactNode;
     maxGenres?: number;
+    isLoading?: boolean;
 }) {
     return (
         <div
@@ -38,17 +41,32 @@ export default function NominationMovieCard({
                     className={styles.poster}
                     url={getPosterPath(movie.id)}
                     withColorReveal
+                    isLoading={isLoading}
                 />
                 <div className={styles.info}>
                     <h3>
-                        <span>{movie.title ?? 'Movie title unavailable'}</span>
-                        {badge ? <span className={styles.badge}>{badge}</span> : null}
+                        <span>
+                            {isLoading ? (
+                                <Skeleton text={movie.title ?? 'Movie title unavailable'} />
+                            ) : (
+                                (movie.title ?? 'Movie title unavailable')
+                            )}
+                        </span>
+                        {badge ? (
+                            <span className={styles.badge}>
+                                {isLoading ? <Skeleton text={badge} /> : badge}
+                            </span>
+                        ) : null}
                     </h3>
-                    {author !== null ? <p className={styles.author}>by {author}</p> : null}
+                    {author !== null ? (
+                        <p className={styles.author}>
+                            {isLoading ? <Skeleton text={'by ' + author} /> : <>by {author}</>}
+                        </p>
+                    ) : null}
                     {movie.genres.length ? (
                         <ul className={styles.genres} aria-label="Genres">
                             {movie.genres.slice(0, maxGenres).map((genre) => (
-                                <li key={genre}>{genre}</li>
+                                <li key={genre}>{isLoading ? <Skeleton text={genre} /> : genre}</li>
                             ))}
                         </ul>
                     ) : null}

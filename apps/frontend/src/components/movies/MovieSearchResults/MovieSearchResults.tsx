@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getSearchMessage, type TMovieSearchResponse } from '#components/movies/movie-search';
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatCount } from '#lib/format';
 
 import styles from './MovieSearchResults.module.scss';
@@ -38,7 +39,11 @@ export default function MovieSearchResults({
         <div className={styles.results}>
             <div className={styles.header}>
                 {result?.state === 'stale' ? <span>Cached</span> : null}
-                {isLoading ? <span aria-hidden="true" className={styles.countSkeleton} /> : null}
+                {isLoading ? (
+                    <div className={styles.countSkeleton}>
+                        <Skeleton tone="search" shouldFill />
+                    </div>
+                ) : null}
                 {result && 'data' in result ? (
                     <span className={styles.count}>{formatCount(movies.length, 'film')} found</span>
                 ) : null}
@@ -132,11 +137,17 @@ function SearchState({
             <div aria-hidden="true" className={styles.loading}>
                 {Array.from({ length: SKELETON_ROWS }, (_, index) => (
                     <div className={styles.skeletonRow} key={index}>
-                        <span className={styles.posterSkeleton} />
-                        <span className={styles.skeletonText}>
-                            <i />
-                            <i />
-                        </span>
+                        <div className={styles.posterSkeleton}>
+                            <Skeleton tone="search" shouldFill />
+                        </div>
+                        <div className={styles.skeletonText}>
+                            <div>
+                                <Skeleton tone="search" shouldFill />
+                            </div>
+                            <div>
+                                <Skeleton tone="search" shouldFill />
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>

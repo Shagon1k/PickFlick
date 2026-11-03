@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './SearchPoster.module.scss';
 
@@ -14,10 +15,12 @@ export default function SearchPoster({
     url,
     className,
     withColorReveal = false,
+    isLoading = false,
 }: {
     url: string | null;
     className?: string;
     withColorReveal?: boolean;
+    isLoading?: boolean;
 }) {
     const [failedUrl, setFailedUrl] = useState<string | null>(null);
     const image =
@@ -35,7 +38,17 @@ export default function SearchPoster({
         ) : null;
     return (
         <span aria-hidden="true" className={className}>
-            {image ? withColorReveal ? <ColorReveal shouldFill>{image}</ColorReveal> : image : 'PF'}
+            {isLoading ? (
+                <Skeleton shouldFill />
+            ) : image ? (
+                withColorReveal ? (
+                    <ColorReveal shouldFill>{image}</ColorReveal>
+                ) : (
+                    image
+                )
+            ) : (
+                'PF'
+            )}
         </span>
     );
 }

@@ -11,6 +11,7 @@ import { nominateAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -23,10 +24,12 @@ export default function Nomination({
     sessionId,
     data,
     header,
+    isLoading = false,
 }: {
     sessionId: string;
     data: TNominations;
     header: ReactNode;
+    isLoading?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [chosen, setChosen] = useState<TNominationMovie | null>(null);
@@ -60,14 +63,20 @@ export default function Nomination({
                             {data.canSubmit ? 'Find & Nominate a Movie' : 'Your nomination'}
                         </h2>
                         {data.canSubmit ? (
-                            <NominationPicker
-                                chosen={chosen}
-                                disabled={isPending}
-                                onChoose={setChosen}
-                                onSubmit={handleSubmit}
-                            />
+                            isLoading ? (
+                                <div className={styles.loadingPicker}>
+                                    <Skeleton variant="control" shouldFill />
+                                </div>
+                            ) : (
+                                <NominationPicker
+                                    chosen={chosen}
+                                    disabled={isPending}
+                                    onChoose={setChosen}
+                                    onSubmit={handleSubmit}
+                                />
+                            )
                         ) : (
-                            <SubmissionState movie={data.ownMovie} />
+                            <SubmissionState movie={data.ownMovie} isLoading={isLoading} />
                         )}
                         <StatusLine
                             className={styles.feedback}
@@ -78,7 +87,8 @@ export default function Nomination({
                             <NominationSuggestions
                                 past={data.suggestions}
                                 watchlist={data.watchlist}
-                                disabled={isPending}
+                                disabled={isPending || isLoading}
+                                isLoading={isLoading}
                                 onChoose={setChosen}
                             />
                         ) : null}
@@ -89,26 +99,37 @@ export default function Nomination({
                     aria-labelledby="nominations-heading"
                 >
                     <h2 id="nominations-heading">Current Nominations</h2>
-                    <NominationList data={data} />
+                    <NominationList data={data} isLoading={isLoading} />
                 </section>
             </div>
         </section>
     );
 }
 
-function SubmissionState({ movie }: { movie: TNominationMovie | null }) {
+function SubmissionState({
+    movie,
+    isLoading,
+}: {
+    movie: TNominationMovie | null;
+    isLoading: boolean;
+}) {
     return movie ? (
         <>
             <p className={styles.submissionStatus}>
                 <Icon name="check" />
                 <span>Submitted · Waiting for selection</span>
             </p>
-            <NominationMovieCard movie={movie} author={null} maxGenres={MAX_GENRES} />
+            <NominationMovieCard
+                movie={movie}
+                author={null}
+                maxGenres={MAX_GENRES}
+                isLoading={isLoading}
+            />
         </>
     ) : null;
 }
 
-function NominationList({ data }: { data: TNominations }) {
+function NominationList({ data, isLoading }: { data: TNominations; isLoading: boolean }) {
     if (data.hidden)
         return (
             <p>
@@ -127,6 +148,7 @@ function NominationList({ data }: { data: TNominations }) {
                         movie={row.movie}
                         author={row.author}
                         maxGenres={MAX_GENRES}
+                        isLoading={isLoading}
                     />
                 </li>
             ))}

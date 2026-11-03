@@ -40,6 +40,13 @@
     color: var(--fg);
 }
 
+.savedValue {
+    display: block;
+    width: 2ch;
+    height: 1lh;
+    border-radius: var(--radius);
+}
+
 .saved span {
     font: 600 var(--fs-caption)/var(--lh-body) var(--font-mono);
     color: var(--fg-secondary);

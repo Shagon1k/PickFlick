@@ -7,42 +7,58 @@ import Rating from '../Rating/Rating';
 import SelectionScores from '../SelectionScores/SelectionScores';
 import styles from './SessionResults.module.scss';
 
-export default function SessionResults({ session }: { session: TSession }) {
+export default function SessionResults({
+    session,
+    isLoading = false,
+}: {
+    session: TSession;
+    isLoading?: boolean;
+}) {
     return (
         <>
             <div className={styles.grid}>
                 {session.rating ? (
-                    <Rating data={session.rating} isInProgress={session.phase === 'RATING'} />
+                    <Rating
+                        data={session.rating}
+                        isInProgress={session.phase === 'RATING'}
+                        isLoading={isLoading}
+                    />
                 ) : (
                     <section className={styles.panel}>
                         <h2>Ratings</h2>
                         <p>No rating record is available for this screening.</p>
                     </section>
                 )}
-                <SessionRivals session={session} />
+                <SessionRivals session={session} isLoading={isLoading} />
             </div>
             {session.selectionScores ? <SelectionScores data={session.selectionScores} /> : null}
         </>
     );
 }
 
-function SessionRivals({ session }: { session: TSession }) {
+function SessionRivals({ session, isLoading }: { session: TSession; isLoading: boolean }) {
     if (session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown) {
         return (
             <NominationRivals
                 outcome={session.selectionOutcome}
                 breakdown={session.selectionOutcome.breakdown}
+                isLoading={isLoading}
             />
         );
     }
     if (session.selectionOutcome?.source === 'IMPORTED') {
         if (session.selectionOutcome.nominations === null && session.nominationAuthors)
-            return <NominationAuthors authors={session.nominationAuthors} />;
+            return <NominationAuthors authors={session.nominationAuthors} isLoading={isLoading} />;
         return (
-            <ImportedNominations evidence={session.selectionOutcome} movieId={session.movieId} />
+            <ImportedNominations
+                evidence={session.selectionOutcome}
+                movieId={session.movieId}
+                isLoading={isLoading}
+            />
         );
     }
-    if (session.nominationAuthors) return <NominationAuthors authors={session.nominationAuthors} />;
+    if (session.nominationAuthors)
+        return <NominationAuthors authors={session.nominationAuthors} isLoading={isLoading} />;
     return (
         <section className={styles.panel} aria-labelledby="rivals-heading">
             <h2 id="rivals-heading">Nomination Rivals</h2>

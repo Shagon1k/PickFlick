@@ -98,6 +98,44 @@ recolor the button. Enabled Settings checkboxes, Switch tracks and Past Session 
 respond to hover with background/border changes over the shared 150ms local timing, without
 growth or changing checked values. Disabled controls retain their unavailable appearance.
 
+Loading visuals compose the shared UI `Skeleton` primitives: text, title, avatar, poster, control
+and block. The primitive owns the shimmer, tones and reduced-motion behavior. It
+can measure already-authorized text in an invisible inline box, preserving its font, wrapping
+and height while painting the shared skeleton over it. Decorative loading content is inert.
+The primitive uses a Mantine Box span so it also fits inside headings and inline labels.
+`LoadingState` owns the accessible loading status and content-shaped compositions. Hub has separate Overview,
+Sessions, Ratings, Members, Achievements and Manage Club fallbacks. Members shows only list rows,
+without a placeholder for an absent top action. My Library uses table layouts
+for My Ratings/Watchlist, the achievement shelf for Achievements and eight statistic placeholders.
+Achievement filter placeholders reserve the actual counter line height from `--fs-app-title` and
+`--lh-title`, the label line and 24px vertical padding; their four-column grid becomes two below
+576px, matching the live summary rather than using generic 100px card geometry. The gap from
+filters to the achievement shelf is 32px (`--gap-lg`), matching the live summary's bottom spacing.
+The shelf retains three columns from 768px and two below, 80/64px medals, the actual description
+slot and 5px progress track. Overview, statistics and Members mirror their real padding, type
+slots and horizontal phone composition. Hub loading reads the frame's existing authorized snapshot
+for conditional actions and rows. Club Ratings/My Ratings/Watchlist use the real Table with five/six
+columns and native local scrolling, no posters, and the real pagination geometry. Manage Club
+reserves its session cards and distinct Info, Visibility/range, Members and Danger sections.
+Library query-tab content has a keyed Suspense boundary and statistics stream independently.
+Movie Details and Session loading share the live MovieMedia layout and TicketPoster geometry,
+including the phone ticket, tablet credits beside the poster, trailer after synopsis on compact
+screens and Session's wider desktop credits. Search retains its count slot, five rows and shimmer.
+Session loading reuses the real Nomination, Selection, Your rating, Facts and Results components
+in inert loading modes; saved/read-only states, absent sections, author privacy and scale bounds
+come from the authorized Session response. Headers share the real host/ticket classes, and the
+reel break, Session Details heading, facts rows and results header slots retain their live spacing.
+Until the authorized Session response supplies the phase, the route shows a
+neutral heading skeleton. A nested Suspense boundary then shows that phase while roster and film
+load in parallel. Existing sign-in, denial, unavailable-film and recovery behavior is retained.
+These changes are source-reviewed only; visual and automated verification remain pending.
+Content-loading fallbacks for Log a Past Session, related films and the initial notification list
+also use shared skeleton paint. The past-session fallback preserves the real scene/card, step bars
+and first-step fields, using TextInput/Textarea loading modes that overlay the native control box
+while retaining labels/help slots. Related cards reuse their real grid and poster aspect ratio;
+notification placeholders reuse the actual row/icon/message/time spacing. Loading announcements
+remain visually hidden. Invitation checking and explicit action-progress states retain their copy.
+
 | Area                | Contract                                                                                                                                                                                                                                                                                                                                                                                                  | Source                                                                   | Build   | QA                                     |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------- | -------------------------------------- |
 | Color               | Dark only. The `#0c0c0c` family for structure, neutral text and borders, ivory and gold `#C89B55` for warm emphasis. Pages use a flat `--bg`. The warm spotlight belongs only to the Landing, Pricing, and legal heroes, the Login scene, and the no-Clubs and error stages; form scenes use the neutral `--accent-glow`. Small text on surfaces uses `--fg-secondary`, because `--muted` fails AA there. | [Color tokens](_docs/design/prototypes/DESIGN.md#color-tokens)           | Done    | Screenshots                            |
@@ -367,11 +405,15 @@ here.
 #### Notification inbox
 
 - The shared desktop bell and mobile Alerts trigger open the same recent inbox. Reuse `app.html`'s
-  344px panel, elevated neutral surface, heading/unread summary, bounded scrolling list, event icons
+  344px panel, elevated neutral surface, heading with an inline unread-count badge, bounded scrolling list, event icons
   and small gold unread dots. Mobile centers the panel above the bottom bar. The existing overlay
   handles focus, Escape, outside dismissal and return to the trigger; another overlay closes it.
   Following a notification link closes the panel within the persistent Club frame. Reverse Tab
   from the panel after a read action wraps to its last enabled control.
+- Notifications keeps unread count in a 22px round badge beside the title (99+ visually, full
+  count in the live status); zero hides the badge and announces the caught-up state. Mark all as
+  read uses the shared ghost/compact Button: 28px visual height, 11px label and an extended 44px
+  hit area. The header uses 12px vertical padding and does not add a second count line.
 - Linked rows and explicit unread-dot buttons have 44px targets. Marking one or all read updates
   the shared count; pagination stays inside the panel. Loading, empty, load/save failure, retry,
   offline, ended-session and paused-live-update feedback are explicit. UTC metadata accompanies
@@ -542,6 +584,8 @@ data; this work does not rewrite historical records.
 - Dialogs have no close icon: Escape, the overlay and their own Cancel or Close dismiss them. Edit is
   a focus-trapped form; Cancel, Kick and early closure keep typed `CANCEL`, `REMOVE` and `CLOSE`.
   Terminal Sessions have no edit or cancel controls. A phase change focuses the Session heading.
+  Edit Session keeps the shared Modal padding; its mounted live-feedback paragraph reserves no
+  height/margin while empty, so no invisible status row adds space below Cancel/Save.
 - Participants appear only in the facts. Any current member may join from Nomination through Rating;
   a declined or departed participant can rejoin, but operator removal blocks self-join. Late
   Selection participants score the frozen films. Kick lists removable participants and can still

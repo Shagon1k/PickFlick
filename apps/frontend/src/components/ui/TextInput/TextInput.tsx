@@ -18,6 +18,7 @@ export interface ITextInputProps
     dropdown?: ReactNode;
     shouldReserveMessage?: boolean;
     variant?: 'default' | 'selected';
+    isLoading?: boolean;
 }
 
 export default function TextInput({
@@ -31,11 +32,13 @@ export default function TextInput({
     shouldReserveMessage,
     rightSection,
     variant = 'default',
+    isLoading = false,
     ...props
 }: ITextInputProps) {
     return (
         <MantineTextInput
             {...props}
+            disabled={props.disabled || isLoading}
             rightSection={rightSection}
             {...getFieldProps({
                 error,
@@ -46,6 +49,7 @@ export default function TextInput({
                 success,
                 dropdown,
                 shouldReserveMessage,
+                isLoading,
             })}
             classNames={{
                 ...FIELD_CLASS_NAMES,

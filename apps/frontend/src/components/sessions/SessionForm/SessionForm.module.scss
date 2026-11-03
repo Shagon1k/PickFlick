@@ -75,6 +75,11 @@
     color: var(--fg-secondary);
 }
 
+.edit p:empty {
+    min-height: 0;
+    margin: 0;
+}
+
 .editActions {
     display: flex;
     flex-wrap: wrap;

@@ -3,6 +3,7 @@
 import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import { createInclusiveScale } from './scale';
 import styles from './ScaleControl.module.scss';
@@ -20,6 +21,7 @@ export interface IScaleControlProps {
     readOnly?: boolean;
     required?: boolean;
     isSubmitted?: boolean;
+    isLoading?: boolean;
     presentation?: 'score' | 'rating';
     tone?: 'accent' | 'neutral';
 }
@@ -72,6 +74,7 @@ export default function ScaleControl({
     readOnly = false,
     required = false,
     isSubmitted = false,
+    isLoading = false,
     value,
     tone = 'accent',
 }: IScaleControlProps) {
@@ -82,7 +85,7 @@ export default function ScaleControl({
     const [previewValue, setPreviewValue] = useState<number | undefined>();
     const selectedValue = findScaleValue(values, value ?? internalValue);
     const activeValue = findScaleValue(values, previewValue) ?? selectedValue;
-    const isLocked = disabled || readOnly || isSubmitted;
+    const isLocked = disabled || readOnly || isSubmitted || isLoading;
     const isConstraintRequired = required && !isLocked;
     const [isConstraintInvalid, setIsConstraintInvalid] = useState(false);
     const controlsRef = useRef(new Map<number, HTMLButtonElement>());
@@ -113,6 +116,7 @@ export default function ScaleControl({
                 compact={isCompact}
                 selectionLabel={selectionLabel}
                 tone={tone}
+                isLoading={isLoading}
             />
         );
 
@@ -141,7 +145,8 @@ export default function ScaleControl({
             className={styles.scale}
             data-compact={isCompact || undefined}
             data-tone={tone}
-            disabled={disabled}
+            disabled={disabled || isLoading}
+            data-loading={isLoading || undefined}
         >
             <legend>{label}</legend>
             {/* eslint-disable-next-line jsx-a11y-x/interactive-supports-focus -- a radiogroup moves focus between its radios (roving tabindex); the group itself takes none. */}
@@ -201,7 +206,15 @@ export default function ScaleControl({
                             }
                             type="button"
                         >
-                            {presentation === 'rating' ? <Icon name="ratings" /> : scaleValue}
+                            {isLoading ? (
+                                <span className={styles.scale__placeholder}>
+                                    <Skeleton shouldFill />
+                                </span>
+                            ) : presentation === 'rating' ? (
+                                <Icon name="ratings" />
+                            ) : (
+                                scaleValue
+                            )}
                         </button>
                     );
                 })}
@@ -245,6 +258,7 @@ function SubmittedScale({
     compact,
     selectionLabel,
     tone,
+    isLoading,
 }: {
     label: string;
     values: readonly number[];
@@ -253,6 +267,7 @@ function SubmittedScale({
     compact: boolean;
     selectionLabel: string;
     tone: 'accent' | 'neutral';
+    isLoading: boolean;
 }) {
     return (
         <fieldset
@@ -270,7 +285,15 @@ function SubmittedScale({
                         data-selected={scaleValue === selectedValue || undefined}
                         key={scaleValue}
                     >
-                        {presentation === 'rating' ? <Icon name="ratings" /> : scaleValue}
+                        {isLoading ? (
+                            <span className={styles.scale__placeholder}>
+                                <Skeleton shouldFill />
+                            </span>
+                        ) : presentation === 'rating' ? (
+                            <Icon name="ratings" />
+                        ) : (
+                            scaleValue
+                        )}
                     </span>
                 ))}
             </div>

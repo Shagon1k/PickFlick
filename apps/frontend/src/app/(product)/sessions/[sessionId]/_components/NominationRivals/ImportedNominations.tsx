@@ -3,6 +3,7 @@ import type { TImportedSelectionOutcome } from '@pickflick/contracts';
 import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatCount } from '#lib/format';
 
 import styles from './NominationRivals.module.scss';
@@ -11,9 +12,11 @@ import styles from './NominationRivals.module.scss';
 export default function ImportedNominations({
     evidence,
     movieId,
+    isLoading = false,
 }: {
     evidence: TImportedSelectionOutcome;
     movieId: string | null;
+    isLoading?: boolean;
 }) {
     const hasDifferentScoreCounts =
         new Set(evidence.nominations?.map((row) => row.scoreCount)).size > 1;
@@ -32,12 +35,17 @@ export default function ImportedNominations({
                                 movie={row.movie}
                                 author={row.author}
                                 badge={row.movie.id === movieId ? 'Watched' : undefined}
+                                isLoading={isLoading}
                                 score={
                                     <div className={styles.recordedScore}>
                                         <strong>
-                                            <ColorReveal variant="accent">
-                                                {row.total ?? '—'}
-                                            </ColorReveal>
+                                            {isLoading ? (
+                                                <Skeleton text={row.total ?? '—'} />
+                                            ) : (
+                                                <ColorReveal variant="accent">
+                                                    {row.total ?? '—'}
+                                                </ColorReveal>
+                                            )}
                                         </strong>
                                         <small>
                                             total

@@ -10,9 +10,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-import nominationPanda from '#brand/panda-collection.webp';
-import watchingPanda from '#brand/panda-rating.webp';
-import selectionPanda from '#brand/panda-rating-2.webp';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
 import NominationClose from '#components/sessions/NominationClose/NominationClose';
@@ -37,6 +34,7 @@ import SelectionScores from '../SelectionScores/SelectionScores';
 import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
 import SessionResults from '../SessionResults/SessionResults';
+import { getPhaseMascot } from './phase-mascot';
 
 export default function SessionDetails({
     session,
@@ -248,12 +246,6 @@ function ScreeningFilm({ movie, session }: { movie: TMovieDetails | null; sessio
             {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
         </Alert>
     );
-}
-
-function getPhaseMascot(phase: TSession['phase']) {
-    if (phase === 'NOMINATION') return nominationPanda;
-    if (phase === 'SELECTION') return selectionPanda;
-    return watchingPanda;
 }
 
 function getClosePhaseLabel(phase: TSession['phase']) {

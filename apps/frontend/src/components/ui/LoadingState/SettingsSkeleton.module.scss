@@ -1,0 +1,214 @@
+.layout {
+    display: grid;
+    gap: var(--gap-lg);
+    padding-bottom: 110px;
+}
+.grid,
+.sessionCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-lg);
+    align-items: stretch;
+}
+.card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+.title {
+    height: 18px;
+    margin-bottom: 12px;
+}
+.sessionCards .title {
+    height: calc(15px * var(--lh-title));
+    margin-bottom: 16px;
+}
+.notice {
+    padding: var(--gap-sm) var(--gap-md);
+    margin: 0;
+    font: var(--fs-body-sm)/var(--lh-body) var(--font-body);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.copy {
+    display: grid;
+    gap: var(--gap-lg);
+}
+.progress {
+    height: 52px;
+    border-radius: 4px;
+}
+.form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--gap-sm);
+}
+.identity {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: var(--gap-md);
+    align-items: start;
+}
+.avatar {
+    height: 70px;
+    border-radius: var(--radius-lg);
+}
+.field {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+.label {
+    height: calc(var(--fs-body-sm) * var(--lh-ui));
+}
+.input {
+    height: calc(var(--fs-body) * var(--lh-ui) + 24px);
+    border-radius: var(--radius);
+}
+.input[data-textarea] {
+    height: 112px;
+}
+.message {
+    height: calc(var(--fs-meta) * var(--lh-body));
+}
+.tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+}
+.checks {
+    display: grid;
+    gap: var(--gap-xs);
+    padding-block: var(--gap-md);
+}
+.summaryLine {
+    margin: 0;
+    font: var(--fs-body-sm)/var(--lh-body) var(--font-body);
+}
+.summaryStack {
+    display: grid;
+    gap: 24px;
+}
+.activeActions {
+    display: grid;
+    gap: var(--gap-sm);
+}
+.dangerActions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--gap-sm);
+}
+.ratingSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-sm);
+    padding-block: var(--gap-sm);
+}
+.ratingSummary + .ratingSummary {
+    border-top: 1px solid var(--border);
+}
+.ratingCopy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: var(--hit);
+}
+.ratingCopy strong {
+    font-size: var(--fs-body-sm);
+    font-weight: 700;
+}
+.ratingCopy > span {
+    font: var(--fs-meta)/var(--lh-body) var(--font-body);
+}
+.ratingAction {
+    width: 120px;
+}
+.check {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    min-height: var(--hit);
+    padding-block: 6px;
+    font-size: var(--fs-body-sm);
+}
+.checkLabel {
+    flex: 1;
+    min-width: 0;
+}
+.check > div {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+}
+.scale {
+    display: grid;
+    gap: 6px;
+}
+.rangeLabel {
+    min-height: 18px;
+    font-size: var(--fs-body-sm);
+}
+.rangeRow {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    min-height: var(--hit);
+}
+.range {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+}
+.rangeValue {
+    flex: 0 0 var(--hit);
+    width: var(--hit);
+}
+.save {
+    width: min(100%, 250px);
+    padding-top: var(--gap-xs);
+    margin: auto auto 0;
+}
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gap-sm);
+    margin-top: auto;
+}
+@media (width < 1024px) {
+    .grid,
+    .sessionCards {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .grid {
+        gap: var(--gap-md);
+    }
+}
+@media (width < 576px) {
+    .ratingSummary {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--gap-md);
+    }
+    .ratingAction {
+        width: 100%;
+    }
+    .layout {
+        gap: var(--gap-md);
+    }
+    .card {
+        padding: var(--gap-md);
+    }
+    .actions > * {
+        flex: 1 1 100%;
+    }
+}

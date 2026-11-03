@@ -5,6 +5,7 @@ import { getFieldState, type IFieldProps } from '#components/ui/Field/field.type
 import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
 import FieldLabel from '#components/ui/Field/FieldLabel';
 import FieldMessage from '#components/ui/Field/FieldMessage';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 type TFieldSlot = 'label' | 'input' | 'description';
 const SLOT_ORDER: TFieldSlot[] = ['label', 'input', 'description'];
@@ -23,11 +24,13 @@ export function getFieldProps({
     success,
     dropdown,
     shouldReserveMessage = true,
+    isLoading = false,
     message = <FieldMessage error={error} hint={hint} success={success} />,
 }: Omit<IFieldProps, 'id'> & {
     message?: ReactNode;
     dropdown?: ReactNode;
     shouldReserveMessage?: boolean;
+    isLoading?: boolean;
 }) {
     return {
         'data-state': getFieldState(error, success),
@@ -35,7 +38,14 @@ export function getFieldProps({
         error: Boolean(error),
         inputContainer: (input: ReactNode) => (
             <>
-                {dropdown ? (
+                {isLoading ? (
+                    <span className={styles.field__skeleton}>
+                        {input}
+                        <span className={styles['field__skeleton-paint']}>
+                            <Skeleton shouldFill />
+                        </span>
+                    </span>
+                ) : dropdown ? (
                     <div className={styles['field__control-wrapper']}>
                         {input}
                         {dropdown}

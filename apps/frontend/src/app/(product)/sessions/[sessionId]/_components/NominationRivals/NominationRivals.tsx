@@ -10,6 +10,7 @@ import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatAverage, formatCount } from '#lib/format';
 
 import styles from './NominationRivals.module.scss';
@@ -31,9 +32,11 @@ const SELECTION_REASONS: Record<TSelectionReason, string> = {
 export default function NominationRivals({
     outcome,
     breakdown,
+    isLoading = false,
 }: {
     outcome: TLiveSelectionOutcome;
     breakdown: TBreakdown;
+    isLoading?: boolean;
 }) {
     const average = (rival: TRival) =>
         breakdown.ballotCount ? rival.total / breakdown.ballotCount : 0;
@@ -59,7 +62,14 @@ export default function NominationRivals({
                             movie={rival.movie}
                             author={rival.author}
                             badge={index === 0 ? 'Winner' : undefined}
-                            score={<RivalScore rival={rival} average={average(rival)} />}
+                            isLoading={isLoading}
+                            score={
+                                <RivalScore
+                                    rival={rival}
+                                    average={average(rival)}
+                                    isLoading={isLoading}
+                                />
+                            }
                         />
                     </li>
                 ))}
@@ -68,7 +78,15 @@ export default function NominationRivals({
     );
 }
 
-function RivalScore({ rival, average }: { rival: TRival; average: number }) {
+function RivalScore({
+    rival,
+    average,
+    isLoading,
+}: {
+    rival: TRival;
+    average: number;
+    isLoading: boolean;
+}) {
     const id = useId();
     const [isOpen, setIsOpen] = useState(false);
     const title = rival.movie.title ?? 'this Movie';
@@ -83,12 +101,17 @@ function RivalScore({ rival, average }: { rival: TRival; average: number }) {
                 <button
                     aria-label={`Average Selection score ${formatAverage(average)} for ${title}. Show details`}
                     className={styles.score}
+                    disabled={isLoading}
                     data-open={isOpen || undefined}
                     onClick={() => setIsOpen(!isOpen)}
                     type="button"
                 >
                     <strong>
-                        <ColorReveal variant="accent">{formatAverage(average)}</ColorReveal>
+                        {isLoading ? (
+                            <Skeleton text={formatAverage(average)} />
+                        ) : (
+                            <ColorReveal variant="accent">{formatAverage(average)}</ColorReveal>
+                        )}
                     </strong>
                     <span className={styles.scoreHint}>
                         <small>avg.</small>

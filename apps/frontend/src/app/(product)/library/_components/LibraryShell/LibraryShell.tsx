@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 import { getLibraryStatistics } from '#api/library.server';
 import ControlShell from '#components/shells/ControlShell/ControlShell';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LoadingState from '#components/ui/LoadingState/LoadingState';
 
 import { loadLibraryRead } from '../../load-library-read';
 import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
@@ -36,7 +37,20 @@ export default function LibraryShell({
             title="My Library"
             currentArea="library"
             clubItems={[]}
-            summary={shouldShowStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}
+            summary={
+                shouldShowStatistics && (
+                    <Suspense
+                        fallback={
+                            <LoadingState
+                                label="Loading personal statistics…"
+                                variant="statistics"
+                            />
+                        }
+                    >
+                        <LibraryStatisticsSummary returnPath={returnPath} />
+                    </Suspense>
+                )
+            }
             items={[
                 {
                     label: 'My Ratings',

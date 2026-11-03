@@ -1,6 +1,7 @@
 import { libraryQuerySchema, type TLibraryQuery } from '@pickflick/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { getPersonalAchievements } from '#api/achievements.server';
 import { buildLoginPath, getSessionState } from '#api/auth-session.server';
@@ -9,6 +10,7 @@ import Achievements from '#components/achievements/Achievements/Achievements';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LoadingState from '#components/ui/LoadingState/LoadingState';
 
 import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
@@ -93,15 +95,31 @@ export default async function LibraryPage({
             returnPath={returnPath}
             shouldShowStatistics={isAchievements || (parsed.success && session === 'authenticated')}
         >
-            {isAchievements ? (
-                <AchievementContent />
-            ) : (
-                <LibraryContent
-                    query={query}
-                    isValid={parsed.success}
-                    isAuthenticated={session === 'authenticated'}
-                />
-            )}
+            <Suspense
+                key={current}
+                fallback={
+                    <LoadingState
+                        label="Loading your Library…"
+                        variant={
+                            isAchievements
+                                ? 'achievements'
+                                : query.tab === 'watchlist'
+                                  ? 'watchlist'
+                                  : 'ratings'
+                        }
+                    />
+                }
+            >
+                {isAchievements ? (
+                    <AchievementContent />
+                ) : (
+                    <LibraryContent
+                        query={query}
+                        isValid={parsed.success}
+                        isAuthenticated={session === 'authenticated'}
+                    />
+                )}
+            </Suspense>
         </LibraryShell>
     );
 }

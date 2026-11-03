@@ -3,8 +3,12 @@ import { type RefObject, useState } from 'react';
 import { useNotifications } from '#components/notifications/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
 import Button from '#components/ui/Button/Button';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import NotificationItems from './NotificationItems';
+
+const MAX_BADGE_COUNT = 99;
+const LOADING_ROW_COUNT = 3;
 
 interface INotificationsPanelProps {
     id: string;
@@ -46,22 +50,28 @@ export default function NotificationsPanel({
             tabIndex={-1}
         >
             <div className={styles.notifHeader}>
-                <div>
+                <div className={styles.notifTitle}>
                     <h2>Notifications</h2>
-                    <span aria-live="polite">
-                        {unreadCount ? `${unreadCount} unread` : 'You’re all caught up'}
-                    </span>
+                    {unreadCount ? (
+                        <span className={styles.notifUnreadCount} aria-hidden="true">
+                            {unreadCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : unreadCount}
+                        </span>
+                    ) : null}
                 </div>
-                <button
+                <Button
+                    size="compact"
+                    variant="ghost"
                     disabled={!unreadCount || isSaving}
                     onClick={() => {
                         panelRef.current?.focus({ preventScroll: true });
                         void markRead();
                     }}
-                    type="button"
                 >
                     Mark all as read
-                </button>
+                </Button>
+                <span className="visually-hidden" aria-live="polite">
+                    {unreadCount ? `${unreadCount} unread` : 'You’re all caught up'}
+                </span>
             </div>
             {error ? (
                 <div className={styles.notifFeedback} role="alert">
@@ -81,15 +91,38 @@ export default function NotificationsPanel({
                     Live updates paused. Checking for updates automatically.
                 </p>
             ) : null}
-            {isLoading && !data ? (
-                <p className={styles.overlayEmpty} role="status">
-                    Loading notifications…
-                </p>
-            ) : null}
+            {isLoading && !data ? <NotificationsLoading /> : null}
             {data?.items.length === 0 ? (
                 <p className={styles.overlayEmpty}>No notifications yet.</p>
             ) : null}
             <NotificationItems panelRef={panelRef} />
+        </div>
+    );
+}
+
+function NotificationsLoading() {
+    return (
+        <div role="status" aria-busy="true">
+            <span className="visually-hidden">Loading notifications…</span>
+            <div className={styles.notifList} aria-hidden="true" inert>
+                <ul>
+                    {Array.from({ length: LOADING_ROW_COUNT }, (_, index) => (
+                        <li className={styles.notifItem} key={index}>
+                            <span className={styles.notifIcon}>
+                                <Skeleton shouldFill />
+                            </span>
+                            <div className={styles.notifBody}>
+                                <p>
+                                    <Skeleton text="Notification" />
+                                </p>
+                                <span className={styles.notifLoadingTime}>
+                                    <Skeleton text="Time" />
+                                </span>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
     );
 }

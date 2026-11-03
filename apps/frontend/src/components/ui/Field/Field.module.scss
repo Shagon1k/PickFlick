@@ -11,6 +11,18 @@
     position: relative;
 }
 
+.field__skeleton {
+    position: relative;
+    display: block;
+    border-radius: var(--radius);
+}
+.field__skeleton-paint {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
 .field__section[data-position='right'] {
     position: absolute;
     inset: 0 0 0 auto;

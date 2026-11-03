@@ -1,0 +1,28 @@
+.cell {
+    min-width: 0;
+    margin: 0;
+}
+.icon {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-pill);
+}
+.values {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.value {
+    width: 32px;
+    height: var(--film-rail-score-size);
+    border-radius: var(--radius);
+}
+.label {
+    width: 32px;
+    height: var(--fs-micro);
+}
+.actionLabel {
+    width: 64px;
+    height: calc(var(--fs-meta) * var(--lh-ui));
+}

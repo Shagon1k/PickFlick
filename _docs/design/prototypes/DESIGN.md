@@ -379,6 +379,9 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - `.sprocket` — larger version for Session Details
 
 ### Modals
+
+- Edit Session uses the shared Modal frame. Its live-status paragraph stays mounted for announcements
+  but has zero height/margin when empty; the form must not add a blank footer under Cancel/Save.
 - Full-screen dark overlay
 - Centered card with title, content, action buttons
 - Gear popover → Next Phase / Change details / Kick / Cancel session
@@ -416,6 +419,49 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - 20-film database, real-time results
 
 ---
+
+### Loading skeletons
+
+- Build all skeleton paint from the shared UI `Skeleton`: text/title, avatar, poster, control and
+  block variants, with shared shimmer and reduced-motion handling. Content compositions own only
+  layout. Keep one accessible loading status; decorative blocks are hidden from assistive technology.
+  Already-authorized text may be measured invisibly to preserve its exact wrapping and font metrics;
+  the shared paint covers that box. Loading compositions are inert, including reused UI controls.
+- Hub's six tabs use content-shaped fallbacks: seven-stat Overview with member pills/cards,
+  Session/History rows, Ratings table, Members list, achievement filters/shelf and Settings forms.
+  Members omits a top-action placeholder because that action is absent from the real layout.
+  Achievement filter placeholders match the live counter/label line heights, 24px vertical padding,
+  8px inner gap and four-to-two-column transition below 576px; 100px is a minimum, not their height.
+  Leave 32px (`--gap-lg`) between the filters and achievement shelf, matching the live layout.
+  The shelf itself keeps three columns from 768px and two below, 80/64px medals, real card padding,
+  a three-line description slot and 5px progress. Overview/Members/statistic placeholders retain
+  actual gaps and padding; statistic cards remain horizontal on phones, with Library's 104px minimum.
+  The mounted Club switcher and Call Sheet remain above the tab boundary.
+- My Library uses Ratings/Watchlist tables or the achievement shelf according to the target query
+  tab. Its tab-keyed content boundary and independent statistics boundary show the appropriate
+  fallback while server content streams; initial loading includes the eight-stat summary.
+  Tables reuse Table's actual five/six-column leaderboard layout and local scrolling; no poster column
+  is invented. Pagination keeps the two arrow targets and centered page label. Hub fallbacks use
+  the frame's existing authorized snapshot for known conditional rows and actions. Manage Club has
+  its two session summaries and distinct Info, Visibility/range, Members and Danger card structures.
+- Movie/Session loading reuses MovieMedia and TicketPoster: preserve the phone ticket and compact
+  credits/synopsis/trailer order, tablet poster/credits pairing and Session's desktop credit proportion.
+  Search result dimensions, count slot, five rows and original shimmer remain unchanged.
+- Session Details uses phase-shaped compositions of the same primitive: Nomination search/cards,
+  Selection scoring rows, Watching media, Rating media plus form/results, Completed/Logged summary
+  and results, and Cancelled facts. Before the authorized Session response arrives, use only a
+  neutral heading placeholder. Once the phase is known, a nested server Suspense boundary displays
+  its composition while participants and film details load; do not infer phase from client storage.
+  Reuse the real Nomination, Selection, Your rating, Facts and Results markup in loading modes.
+  Respect submitted/eligible/hidden states already present in Session data, actual scale bounds,
+  48px result avatars, header slots and the reel/Session Details spacing. Visual/automated parity
+  remains pending during the owner fix round.
+- Replace bare content-loading paragraphs in Log a Past Session, related films and initial
+  notifications with content-shaped skeletons. The past-session loader uses the actual scene,
+  step/field/action geometry; field loading overlays the native input/textarea without copying
+  its dimensions. Related and notification placeholders reuse the real card/row classes. Keep
+  loading announcements assistive-readable and decorative controls inert. Purposeful invitation
+  checking and action-progress messages remain separate states.
 
 ## Page-Specific Rules
 
@@ -602,7 +648,7 @@ This section defines intended production behavior. The HTML prototypes are visua
 | Tabs | Activate the selected label, move the thin active line, and fade the corresponding panel over `0.25s` | `Tab` reaches the tablist; arrow keys move between tabs; `Enter` / `Space` activates; focus remains on the selected tab | One panel is active at a time; selection must be exposed through `aria-selected` |
 | Film-strip menu | Click/tap opens a directional `clip-path` + slight translate reveal over `0.34s`; icons and labels never scale or distort | Trigger uses `aria-expanded`; opening focuses the first actionable row; closing returns focus to the trigger | Close on outside click, `Escape`, route selection, or opening a mutually exclusive popover |
 | Header search | Search control replaces/overlays the header search area and focuses the input; results update while typing | `Escape` closes; arrow keys move through results; `Enter` opens the active result; closing returns focus to the search trigger | Clear transient query/result state when the panel fully closes unless the user navigated to a result |
-| Notification popover | Bell toggles the shared notification list without moving surrounding chrome | Use the same popover focus/dismissal contract as film-strip menus | Only one header popover may be open at a time |
+| Notification popover | Bell toggles the shared notification list without moving surrounding chrome; inline 22px unread badge beside the title, compact Mark all as read action | Keep the film-strip focus/dismissal contract and full count/caught-up live status; compact action has a 28px visual height and 44px effective target | Only one header popover may be open; badge hides at zero and caps visually at 99+; preserve read/save/focus behavior |
 | Modal / confirmation | Overlay fades in; the modal stays stationary and becomes the sole interaction context | Move focus to the title or first control; trap focus; `Escape` closes non-blocking dialogs; closing returns focus to the opener | Destructive actions require a separate final `.btn-danger`; Admin suspend/delete/transfer requires exact-name confirmation |
 | Accordion | Header toggles the adjacent answer/body without introducing a nested card or decorative glow | Header is a real button; `Enter` / `Space` toggles; focus remains on the header | Preserve each item’s `aria-expanded`; Privacy may keep multiple items open unless the flow explicitly requires one-at-a-time behavior |
 | Rating control | Pointer hover previews values without scaling; pointer-down starts a 12% pulse, and click locks the value | Arrow keys adjust the value; `Home` / `End` jump to limits; Enter/Space activation pulses; the current value is announced | Submitted state replaces the form in place and must not create a new heavy card or layout jump |

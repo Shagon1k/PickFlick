@@ -18,6 +18,7 @@ import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -27,10 +28,12 @@ export default function Selection({
     sessionId,
     data,
     header,
+    isLoading = false,
 }: {
     sessionId: string;
     data: TSelection;
     header: ReactNode;
+    isLoading?: boolean;
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
@@ -120,10 +123,15 @@ export default function Selection({
                                 data-color-reveal-surface
                             >
                                 <ColorReveal variant="surface" />
-                                <SelectionMovie movie={row.movie} author={row.author} />
+                                <SelectionMovie
+                                    movie={row.movie}
+                                    author={row.author}
+                                    isLoading={isLoading}
+                                />
                                 <div className={styles.control}>
                                     <ScoreControl
                                         isCompact
+                                        isLoading={isLoading}
                                         label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
                                         name={`score-${row.id}`}
                                         min={data.scaleMin}
@@ -147,8 +155,8 @@ export default function Selection({
                     </ul>
                     {data.canSubmit && !data.submittedAt ? (
                         <div className={styles.submit}>
-                            <Button type="submit" loading={isPending}>
-                                Submit scores
+                            <Button type="submit" loading={isPending} disabled={isLoading}>
+                                {isLoading ? <Skeleton text="Submit scores" /> : 'Submit scores'}
                             </Button>
                         </div>
                     ) : null}
@@ -163,20 +171,45 @@ export default function Selection({
     );
 }
 
-function SelectionMovie({ movie, author }: { movie: TNominationMovie; author: string | null }) {
+function SelectionMovie({
+    movie,
+    author,
+    isLoading,
+}: {
+    movie: TNominationMovie;
+    author: string | null;
+    isLoading: boolean;
+}) {
     return (
         <Link className={styles.film} href={`/movies/${movie.id}`} prefetch={false}>
-            <SearchPoster className={styles.poster} url={getPosterPath(movie.id)} withColorReveal />
+            <SearchPoster
+                className={styles.poster}
+                url={getPosterPath(movie.id)}
+                withColorReveal
+                isLoading={isLoading}
+            />
             <div className={styles.info}>
                 <div className={styles.filmHeading}>
-                    <h3>{movie.title ?? 'Movie title unavailable'}</h3>
-                    {movie.year !== null ? <span className={styles.year}>{movie.year}</span> : null}
+                    <h3>
+                        {isLoading ? (
+                            <Skeleton text={movie.title ?? 'Movie title unavailable'} />
+                        ) : (
+                            (movie.title ?? 'Movie title unavailable')
+                        )}
+                    </h3>
+                    {movie.year !== null ? (
+                        <span className={styles.year}>
+                            {isLoading ? <Skeleton text={movie.year} /> : movie.year}
+                        </span>
+                    ) : null}
                 </div>
-                {author !== null ? <p>by {author}</p> : null}
+                {author !== null ? (
+                    <p>{isLoading ? <Skeleton text={'by ' + author} /> : <>by {author}</>}</p>
+                ) : null}
                 {movie.genres.length ? (
                     <ul className={styles.genres} aria-label="Genres">
                         {movie.genres.slice(0, MAX_GENRES).map((genre) => (
-                            <li key={genre}>{genre}</li>
+                            <li key={genre}>{isLoading ? <Skeleton text={genre} /> : genre}</li>
                         ))}
                     </ul>
                 ) : null}

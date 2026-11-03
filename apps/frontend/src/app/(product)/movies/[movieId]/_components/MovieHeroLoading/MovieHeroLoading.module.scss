@@ -1,0 +1,19 @@
+.content {
+    display: grid;
+    gap: var(--gap-lg);
+}
+.copy {
+    flex: 1;
+    width: 100%;
+}
+.title {
+    width: min(100%, 480px);
+    height: 1lh;
+    border-radius: var(--radius);
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    min-height: calc(var(--fs-body) * var(--lh-ui));
+}

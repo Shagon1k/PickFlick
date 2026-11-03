@@ -333,6 +333,13 @@
     letter-spacing: var(--tracking-tight);
 }
 
+.metric strong[data-loading] {
+    display: block;
+    width: 3ch;
+    height: 1lh;
+    border-radius: var(--radius);
+}
+
 .metric span {
     font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
     color: var(--ivory-muted);

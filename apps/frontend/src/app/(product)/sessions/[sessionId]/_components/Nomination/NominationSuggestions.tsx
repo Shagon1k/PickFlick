@@ -6,6 +6,7 @@ import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './Nomination.module.scss';
 
@@ -14,11 +15,13 @@ export default function NominationSuggestions({
     watchlist,
     disabled,
     onChoose,
+    isLoading = false,
 }: {
     past: TNominationMovie[];
     watchlist: TNominationMovie[];
     disabled: boolean;
     onChoose: (movie: TNominationMovie) => void;
+    isLoading?: boolean;
 }) {
     return (
         <div className={styles.suggestionColumns}>
@@ -29,6 +32,7 @@ export default function NominationSuggestions({
                 movies={past}
                 disabled={disabled}
                 onChoose={onChoose}
+                isLoading={isLoading}
             />
             <SuggestionList
                 title="Watchlist"
@@ -37,6 +41,7 @@ export default function NominationSuggestions({
                 movies={watchlist}
                 disabled={disabled}
                 onChoose={onChoose}
+                isLoading={isLoading}
             />
         </div>
     );
@@ -49,6 +54,7 @@ function SuggestionList({
     movies,
     disabled,
     onChoose,
+    isLoading,
 }: {
     title: string;
     explanation: string;
@@ -56,6 +62,7 @@ function SuggestionList({
     movies: TNominationMovie[];
     disabled: boolean;
     onChoose: (movie: TNominationMovie) => void;
+    isLoading: boolean;
 }) {
     return (
         <section className={styles.suggestionSection} aria-label={`${title} suggestions`}>
@@ -82,10 +89,25 @@ function SuggestionList({
                                         className={styles.suggestionPoster}
                                         url={getPosterPath(movie.id)}
                                         withColorReveal
+                                        isLoading={isLoading}
                                     />
-                                    <strong>{movie.title ?? 'Movie title unavailable'}</strong>
+                                    <strong>
+                                        {isLoading ? (
+                                            <Skeleton
+                                                text={movie.title ?? 'Movie title unavailable'}
+                                            />
+                                        ) : (
+                                            (movie.title ?? 'Movie title unavailable')
+                                        )}
+                                    </strong>
                                     {movie.year ? (
-                                        <span className={styles.suggestionYear}>{movie.year}</span>
+                                        <span className={styles.suggestionYear}>
+                                            {isLoading ? (
+                                                <Skeleton text={movie.year} />
+                                            ) : (
+                                                movie.year
+                                            )}
+                                        </span>
                                     ) : null}
                                 </button>
                             </li>

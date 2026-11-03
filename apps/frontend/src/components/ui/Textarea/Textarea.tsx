@@ -23,6 +23,7 @@ export interface ITextareaProps
     shouldShowCount?: boolean;
     size?: 'compact' | 'default' | 'large';
     variant?: 'default' | 'transparent';
+    isLoading?: boolean;
 }
 
 export default function Textarea({
@@ -36,6 +37,7 @@ export default function Textarea({
     size = 'default',
     success,
     variant = 'default',
+    isLoading = false,
     ...props
 }: ITextareaProps) {
     const count =
@@ -45,12 +47,14 @@ export default function Textarea({
     return (
         <MantineTextarea
             {...props}
+            disabled={props.disabled || isLoading}
             {...getFieldProps({
                 error,
                 isLabelHidden,
                 label,
                 labelHint,
                 success,
+                isLoading,
                 message: (
                     <FieldMessage
                         shouldAlignEnd={shouldShowCount}

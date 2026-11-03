@@ -143,10 +143,10 @@
 
 .notifHeader {
     display: flex;
-    gap: 16px;
+    gap: var(--gap-xs);
     align-items: center;
     justify-content: space-between;
-    padding: 18px 18px 15px;
+    padding: var(--gap-sm) 16px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -157,38 +157,31 @@
     letter-spacing: 0;
 }
 
-.notifHeader span {
-    display: block;
-    margin-top: 4px;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
+.notifTitle {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-width: 0;
 }
 
-.notifHeader button {
+.notifTitle h2 {
+    white-space: nowrap;
+}
+
+.notifUnreadCount {
+    display: inline-flex;
     flex: 0 0 auto;
-    min-height: 44px;
-    padding: 0 9px;
-    font: var(--fs-micro) var(--font-body);
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-radius: 8px;
-}
-
-.notifHeader button:hover,
-.notifHeader button:focus-visible {
-    color: var(--fg);
-    outline: 1px solid var(--focus);
-    background: var(--accent-soft);
-}
-
-.notifHeader button:disabled {
-    color: var(--muted);
-    cursor: default;
-    outline: none;
-    background: transparent;
-    opacity: 0.48;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 4px;
+    font: 600 var(--fs-micro)/1 var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--gold-light);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-pill);
 }
 
 .overlayEmpty {
@@ -298,7 +291,8 @@ button.notifBody::before {
     content: '';
 }
 
-.notifBody time {
+.notifBody time,
+.notifLoadingTime {
     display: block;
     margin-top: 5px;
     font-size: var(--fs-micro);

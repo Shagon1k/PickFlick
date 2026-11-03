@@ -16,7 +16,7 @@ import { ApiError } from '#lib/api.server';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import MovieLinks from './_components/MovieLinks/MovieLinks';
-import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
+import RelatedMovies, { RelatedMoviesLoading } from './_components/RelatedMovies/RelatedMovies';
 import styles from './page.module.scss';
 
 const MAX_RELATED_MOVIES = 6;
@@ -78,7 +78,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 <section className={styles.related} aria-labelledby="related-title">
                     <h2 id="related-title">You may also like</h2>
                     {relatedIds.length ? (
-                        <Suspense fallback={<p role="status">Loading related titles…</p>}>
+                        <Suspense fallback={<RelatedMoviesLoading count={relatedIds.length} />}>
                             <RelatedMovies ids={relatedIds} />
                         </Suspense>
                     ) : (

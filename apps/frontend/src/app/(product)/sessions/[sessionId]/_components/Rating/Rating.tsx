@@ -7,6 +7,7 @@ import Avatar from '#components/ui/Avatar/Avatar';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './Rating.module.scss';
 
@@ -18,22 +19,32 @@ type TEntry = Pick<
 export default function Rating({
     data,
     isInProgress = false,
+    isLoading = false,
 }: {
     data: TRating;
     isInProgress?: boolean;
+    isLoading?: boolean;
 }) {
     return (
         <section className={styles.rating} aria-labelledby="rating-heading">
             <h2 id="rating-heading" tabIndex={-1}>
                 Ratings
             </h2>
-            <RatingList data={data} isInProgress={isInProgress} />
+            <RatingList data={data} isInProgress={isInProgress} isLoading={isLoading} />
         </section>
     );
 }
 
 /** Your response appears first, without duplicating it among everyone else's. */
-function RatingList({ data, isInProgress }: { data: TRating; isInProgress: boolean }) {
+function RatingList({
+    data,
+    isInProgress,
+    isLoading,
+}: {
+    data: TRating;
+    isInProgress: boolean;
+    isLoading: boolean;
+}) {
     const entries: TEntry[] = data.results
         ? data.results.entries.toSorted((a, b) => Number(b.isOwn) - Number(a.isOwn))
         : [];
@@ -51,31 +62,50 @@ function RatingList({ data, isInProgress }: { data: TRating; isInProgress: boole
     return (
         <ul className={styles.list} aria-label="Session ratings">
             {entries.map((entry) => (
-                <RatingEntry key={entry.id} entry={entry} />
+                <RatingEntry key={entry.id} entry={entry} isLoading={isLoading} />
             ))}
         </ul>
     );
 }
 
-function RatingEntry({ entry }: { entry: TEntry }) {
+function RatingEntry({ entry, isLoading }: { entry: TEntry; isLoading: boolean }) {
     const name = entry.isOwn ? 'You' : entry.author;
     return (
         <li data-own={entry.isOwn || undefined} data-color-reveal-trigger data-color-reveal-surface>
             <ColorReveal variant="surface" />
-            <Avatar name={entry.author} src={entry.avatarUrl} size="extra-large" />
+            <Avatar
+                name={entry.author}
+                src={entry.avatarUrl}
+                size="extra-large"
+                isLoading={isLoading}
+            />
             <div className={styles.who}>
-                <strong>{name}</strong>
-                {entry.comment ? <Review author={name} comment={entry.comment} /> : null}
+                <strong>{isLoading ? <Skeleton text={name} /> : name}</strong>
+                {entry.comment ? (
+                    <Review author={name} comment={entry.comment} isLoading={isLoading} />
+                ) : null}
             </div>
             <span className={styles.score}>
-                <ColorReveal variant="accent">{formatRatingScore(entry.score)}</ColorReveal>
+                {isLoading ? (
+                    <Skeleton text={formatRatingScore(entry.score)} />
+                ) : (
+                    <ColorReveal variant="accent">{formatRatingScore(entry.score)}</ColorReveal>
+                )}
             </span>
         </li>
     );
 }
 
 /** One line in the list; the whole review opens in a popover next to it. */
-function Review({ author, comment }: { author: string; comment: string }) {
+function Review({
+    author,
+    comment,
+    isLoading,
+}: {
+    author: string;
+    comment: string;
+    isLoading: boolean;
+}) {
     const id = useId();
     const [isOpen, setIsOpen] = useState(false);
     return (
@@ -89,11 +119,14 @@ function Review({ author, comment }: { author: string; comment: string }) {
                 <button
                     aria-label={`Read the review by ${author}`}
                     className={styles.review}
+                    disabled={isLoading}
                     data-open={isOpen || undefined}
                     onClick={() => setIsOpen(!isOpen)}
                     type="button"
                 >
-                    <span className={styles.reviewText}>{comment}</span>
+                    <span className={styles.reviewText}>
+                        {isLoading ? <Skeleton text={comment} /> : comment}
+                    </span>
                     <Icon name="chevron-down" />
                 </button>
             }

@@ -13,7 +13,7 @@ import styles from '../../page.module.scss';
 import CallSheet from '../CallSheet/CallSheet';
 import ClubSwitcher from '../ClubSwitcher/ClubSwitcher';
 import HubLiveRefresh from '../HubLiveRefresh/HubLiveRefresh';
-import { HubSnapshotContext } from '../HubPanel/HubPanel';
+import { HubLoadingContext, HubSnapshotContext } from '../HubPanel/HubPanel';
 
 export default function ClubHubFrame({
     clubs,
@@ -76,7 +76,7 @@ export default function ClubHubFrame({
                         <>
                             <ClubStatus access={snapshot.access} />
                             <SectionTabs items={navigation} label="Club sections">
-                                {children}
+                                <HubLoadingContext value={snapshot}>{children}</HubLoadingContext>
                             </SectionTabs>
                         </>
                     ) : null}

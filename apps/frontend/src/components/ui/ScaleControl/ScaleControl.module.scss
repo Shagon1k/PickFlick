@@ -145,6 +145,20 @@
     color: var(--ivory-muted);
 }
 
+.scale__placeholder {
+    display: block;
+    width: 20px;
+    height: 16px;
+    border-radius: var(--radius);
+}
+.scale__rail[data-presentation='rating'] .scale__placeholder {
+    width: 24px;
+    height: 24px;
+}
+.scale[data-loading] .scale__option {
+    opacity: 1;
+}
+
 .scale[data-submitted] .scale__option {
     cursor: default;
     opacity: 0.5;

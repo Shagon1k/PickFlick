@@ -19,7 +19,7 @@ export type TButtonVariant =
     | 'danger'
     | 'cell'
     | 'cell-danger';
-export type TButtonSize = 'default' | 'small' | 'large' | 'icon';
+export type TButtonSize = 'default' | 'small' | 'compact' | 'large' | 'icon';
 
 export interface IButtonProps
     extends

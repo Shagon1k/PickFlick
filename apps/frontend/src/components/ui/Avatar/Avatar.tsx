@@ -4,6 +4,7 @@ import { Avatar as MantineAvatar } from '@mantine/core';
 import clsx from 'clsx';
 
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './Avatar.module.scss';
 
@@ -12,11 +13,13 @@ export default function Avatar({
     src,
     size = 'medium',
     withColorReveal = true,
+    isLoading = false,
 }: {
     name: string;
     src: string | null;
     size?: 'small' | 'medium' | 'large' | 'extra-large';
     withColorReveal?: boolean;
+    isLoading?: boolean;
 }) {
     const avatar = (
         <MantineAvatar
@@ -25,7 +28,7 @@ export default function Avatar({
             component="span"
             data-hover-color={!withColorReveal || undefined}
             name={name}
-            src={src}
+            src={isLoading ? null : src}
             imageProps={{ loading: 'lazy', decoding: 'async' }}
             classNames={{
                 root: clsx(styles.avatar, styles[`m-${size}`]),
@@ -33,7 +36,9 @@ export default function Avatar({
                 placeholder: styles.avatar__placeholder,
             }}
             unstyled
-        />
+        >
+            {isLoading ? <Skeleton shouldFill /> : null}
+        </MantineAvatar>
     );
-    return src && withColorReveal ? <ColorReveal>{avatar}</ColorReveal> : avatar;
+    return src && withColorReveal && !isLoading ? <ColorReveal>{avatar}</ColorReveal> : avatar;
 }

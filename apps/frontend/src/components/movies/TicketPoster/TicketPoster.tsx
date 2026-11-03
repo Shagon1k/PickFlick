@@ -13,14 +13,16 @@ export default function TicketPoster({
     title,
     href,
     corner,
+    isLoading = false,
 }: {
     url: string | null;
     title: string;
     href?: string;
     /** A control over the poster's top-right corner, such as the Watchlist ribbon. */
     corner?: ReactNode;
+    isLoading?: boolean;
 }) {
-    const poster = <MoviePoster url={url} title={title} />;
+    const poster = <MoviePoster url={url} title={title} isLoading={isLoading} />;
     if (!href)
         return (
             <div className={ticket.poster}>

@@ -172,6 +172,20 @@
     font-size: var(--fs-meta);
 }
 
+.button.m-compact {
+    min-height: 28px;
+    padding: 4px var(--gap-xs);
+    font-size: var(--fs-micro);
+}
+
+/* Compact chrome actions keep a 44px hit area around their smaller visual surface. */
+.button.m-compact::before {
+    position: absolute;
+    inset-block: calc((28px - var(--hit)) / 2);
+    inset-inline: 0;
+    content: '';
+}
+
 .button.m-subtle.m-small {
     min-height: var(--hit);
 }
