@@ -38,11 +38,13 @@ export const createClubSchema = z
 export const updateClubSettingsSchema = z
     .strictObject({
         ...clubDetailsShape,
-        showNominationAuthors: z.boolean(),
+        showNominationAuthorsDuring: z.boolean(),
+        showNominationAuthorsAfter: z.boolean(),
+        showSelectionScoresDuring: z.boolean(),
+        showSelectionScoresAfter: z.boolean(),
+        showRatingsDuring: z.boolean(),
+        showRatingsAfter: z.boolean(),
         showNominationsBeforeSubmit: z.boolean(),
-        showVoteResults: z.boolean(),
-        showRatingResults: z.boolean(),
-        useMonochromeMedia: z.boolean(),
     })
     .refine(scaleIsIncreasing.check, scaleIsIncreasing.issue);
 

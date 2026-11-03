@@ -12,23 +12,9 @@ import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { readCachedDetails } from '../movies/cached-details.js';
 import { buildConfiguredDetailsKey } from '../movies/catalog-cache-key.js';
+import { orderGenrePage, readGenrePage } from './library-genre-order.js';
+import { getRatingsOrder, getWatchlistOrder } from './library-order.js';
 import { buildLibraryStatistics } from './library-statistics.js';
-
-type TSort = TLibraryQuery['sort'];
-
-const WATCHLIST_ORDER: Record<TSort, Prisma.WatchlistItemOrderByWithRelationInput[]> = {
-    title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
-    year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
-    recent: [{ addedAt: 'desc' }],
-    default: [{ priority: 'desc' }, { addedAt: 'asc' }],
-};
-
-const RATINGS_ORDER: Record<TSort, Prisma.PersonalMovieRatingOrderByWithRelationInput[]> = {
-    title: [{ movie: { title: { sort: 'asc', nulls: 'last' } } }],
-    year: [{ movie: { releaseYear: { sort: 'desc', nulls: 'last' } } }],
-    recent: [{ updatedAt: 'desc' }],
-    default: [{ score: 'desc' }, { updatedAt: 'desc' }],
-};
 
 /** Clamps the requested page into range, so a list that shrank still answers its last page. */
 function paginate(
@@ -98,12 +84,15 @@ export class LibraryService {
             await tx.watchlistItem.count({ where }),
             query.page,
         );
-        const items = await tx.watchlistItem.findMany({
-            where,
-            orderBy: [...WATCHLIST_ORDER[query.sort], { movieId: 'asc' }],
-            include: { movie: this.selectMovie() },
-            ...window,
-        });
+        const items =
+            query.sort === 'genre'
+                ? await this.listWatchlistByGenre(tx, { userId, query, where, ...window })
+                : await tx.watchlistItem.findMany({
+                      where,
+                      orderBy: getWatchlistOrder({ ...query, sort: query.sort }),
+                      include: { movie: this.selectMovie() },
+                      ...window,
+                  });
         return {
             tab: 'watchlist',
             ...pagination,
@@ -129,12 +118,15 @@ export class LibraryService {
             await tx.personalMovieRating.count({ where }),
             query.page,
         );
-        const items = await tx.personalMovieRating.findMany({
-            where,
-            orderBy: [...RATINGS_ORDER[query.sort], { movieId: 'asc' }],
-            include: { movie: this.selectMovie() },
-            ...window,
-        });
+        const items =
+            query.sort === 'genre'
+                ? await this.listRatingsByGenre(tx, { userId, query, where, ...window })
+                : await tx.personalMovieRating.findMany({
+                      where,
+                      orderBy: getRatingsOrder({ ...query, sort: query.sort }),
+                      include: { movie: this.selectMovie() },
+                      ...window,
+                  });
         return {
             tab: 'my-ratings',
             ...pagination,
@@ -145,6 +137,48 @@ export class LibraryService {
                 updatedAt: item.updatedAt.toISOString(),
             })),
         };
+    }
+
+    private async listWatchlistByGenre(
+        tx: Prisma.TransactionClient,
+        input: {
+            userId: string;
+            query: TLibraryQuery;
+            where: Prisma.WatchlistItemWhereInput;
+            skip: number;
+            take: number;
+        },
+    ) {
+        const ids = await readGenrePage(tx, {
+            ...input,
+            detailsKey: buildConfiguredDetailsKey(this.environment.catalog),
+        });
+        const items = await tx.watchlistItem.findMany({
+            where: { ...input.where, movieId: { in: ids } },
+            include: { movie: this.selectMovie() },
+        });
+        return orderGenrePage(items, ids);
+    }
+
+    private async listRatingsByGenre(
+        tx: Prisma.TransactionClient,
+        input: {
+            userId: string;
+            query: TLibraryQuery;
+            where: Prisma.PersonalMovieRatingWhereInput;
+            skip: number;
+            take: number;
+        },
+    ) {
+        const ids = await readGenrePage(tx, {
+            ...input,
+            detailsKey: buildConfiguredDetailsKey(this.environment.catalog),
+        });
+        const items = await tx.personalMovieRating.findMany({
+            where: { ...input.where, movieId: { in: ids } },
+            include: { movie: this.selectMovie() },
+        });
+        return orderGenrePage(items, ids);
     }
 
     /** Case-insensitive title search; `%`, `_` and `\` in the query match literally. */

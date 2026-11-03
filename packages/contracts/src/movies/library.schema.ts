@@ -15,7 +15,8 @@ export const libraryQuerySchema = z.strictObject({
     // Query values stay strings; '' means every score.
     score: z.enum(['', ...RATING_SCORES.map(String)]).default(''),
     priority: z.union([z.literal(''), watchlistPrioritySchema]).default(''),
-    sort: z.enum(['default', 'title', 'year', 'recent']).default('default'),
+    sort: z.enum(['default', 'title', 'year', 'recent', 'genre', 'value']).default('default'),
+    direction: z.enum(['asc', 'desc']).optional(),
     page: z.coerce.number().int().min(1).max(100_000).default(1),
 });
 export type TLibraryQuery = z.infer<typeof libraryQuerySchema>;

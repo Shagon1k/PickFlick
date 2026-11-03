@@ -4,6 +4,7 @@ import type { Prisma } from '@pickflick/database';
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewSelectionBreakdown } from '../session-access.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
 
 export async function loadPastSelection(
     tx: Prisma.TransactionClient,
@@ -34,7 +35,7 @@ export async function loadPastSelection(
         nominations: canSeeBreakdown
             ? visible.map((row) => ({
                   movie: movies.get(row.movieId)!,
-                  author: session.showNominationAuthors
+                  author: canViewNominationAuthors(session)
                       ? (row.nominator?.user.displayName ?? null)
                       : null,
                   scoreCount: row.scores.length,

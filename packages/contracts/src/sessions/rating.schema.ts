@@ -27,7 +27,12 @@ export const ratingSchema = z.strictObject({
     receivedCount: z.int().nonnegative(),
     canSubmit: z.boolean(),
     canClose: z.boolean(),
-    own: sessionRatingSchema.nullable(),
+    own: sessionRatingSchema
+        .extend({
+            author: z.string(),
+            avatarUrl: z.string().nullable(),
+        })
+        .nullable(),
     results: z
         .strictObject({
             average: z.number().nullable(),
@@ -35,7 +40,8 @@ export const ratingSchema = z.strictObject({
                 sessionRatingSchema.extend({
                     id: z.uuid(),
                     author: z.string(),
-                    /** The viewer's own response, which the list highlights at the top. */
+                    avatarUrl: z.string().nullable(),
+                    /** The viewer's response, labelled You and shown first in the list. */
                     isOwn: z.boolean(),
                 }),
             ),

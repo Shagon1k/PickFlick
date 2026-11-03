@@ -27,6 +27,13 @@ export class MovieImagesService {
         return image;
     }
 
+    async storeTrailerThumbnail(videoId: string): Promise<string | null> {
+        return this.store(
+            `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`,
+            'trailer',
+        );
+    }
+
     async storeMedia<
         TMovie extends Pick<TMovieMetadata, 'posterUrl' | 'backdropUrl'> &
             Partial<Pick<TMovieMetadata, 'cast'>>,
@@ -39,7 +46,10 @@ export class MovieImagesService {
         };
     }
 
-    private async store(url: string | null): Promise<string | null> {
+    private async store(
+        url: string | null,
+        source: 'catalog' | 'trailer' = 'catalog',
+    ): Promise<string | null> {
         if (!url) return null;
         const key = createHash('sha256').update(url).digest('hex');
         const objectKey = `movie-images/${key}`;
@@ -47,7 +57,8 @@ export class MovieImagesService {
         let body: Buffer;
         let contentType: string;
         try {
-            movieImageUrlSchema.parse(url);
+            // Trailer URLs are constructed above from a validated ID on one fixed host/path.
+            if (source === 'catalog') movieImageUrlSchema.parse(url);
             // Never follow a provider redirect to an unvalidated host or private network.
             const response = await fetch(url, {
                 redirect: 'error',
@@ -57,7 +68,7 @@ export class MovieImagesService {
             body = await readBoundedBody(response, MAX_BYTES);
             contentType = requireImageType(body);
         } catch {
-            this.logger.warn({ event: 'movies.image.unavailable', key });
+            this.logger.warn({ event: 'movies.image.unavailable', key, source });
             return null;
         }
         await this.storage.put(objectKey, body, contentType);

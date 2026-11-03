@@ -4,6 +4,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import {
     getPosterPath,
     type IClubHub,
+    type IClubSessionHistoryPage,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
@@ -29,6 +30,7 @@ import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 import { readClubHub } from './club-hub.js';
 import { findActiveMembers, toClubMember } from './club-members.js';
+import { readClubSessionHistory } from './club-session-history.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
 @Injectable()
@@ -74,6 +76,16 @@ export class ClubsService {
         return hub;
     }
 
+    async getSessionHistory(
+        userId: string,
+        clubId: string,
+        cursor?: string,
+    ): Promise<IClubSessionHistoryPage> {
+        return this.transactions.read((tx) => readClubSessionHistory(tx, userId, clubId, cursor), {
+            isolationLevel: 'RepeatableRead',
+        });
+    }
+
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
         return this.transactions.write(async (transaction) => {
             await lockKey(transaction, `club-admin:${userId}`);
@@ -114,11 +126,13 @@ export class ClubsService {
                     canDelete: role === 'ADMIN' && sessionCount === 0,
                     entitlements: getClubEntitlements(clubId),
                     visibility: {
-                        showNominationAuthors: club.showNominationAuthors,
+                        showNominationAuthorsDuring: club.showNominationAuthorsDuring,
+                        showNominationAuthorsAfter: club.showNominationAuthorsAfter,
+                        showSelectionScoresDuring: club.showSelectionScoresDuring,
+                        showSelectionScoresAfter: club.showSelectionScoresAfter,
+                        showRatingsDuring: club.showRatingsDuring,
+                        showRatingsAfter: club.showRatingsAfter,
                         showNominationsBeforeSubmit: club.showNominationsBeforeSubmit,
-                        showVoteResults: club.showVoteResults,
-                        showRatingResults: club.showRatingResults,
-                        useMonochromeMedia: club.useMonochromeMedia,
                     },
                     members: members.map((member) => toClubMember(membership, member)),
                 };
@@ -137,15 +151,15 @@ export class ClubsService {
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);
-            if (
-                input.showVoteResults &&
-                getClubEntitlements(clubId).voteResultVisibility !== 'ADMIN_CONFIGURABLE'
-            ) {
-                throw new ConflictException({ reason: 'TIER_SETTING_UNAVAILABLE' });
-            }
             await transaction.club.update({
                 where: { id: clubId },
-                data: { ...input, description: input.description ?? null },
+                data: {
+                    ...input,
+                    description: input.description ?? null,
+                    showNominationAuthors: input.showNominationAuthorsDuring,
+                    showVoteResults: input.showSelectionScoresAfter,
+                    showRatingResults: input.showRatingsAfter,
+                },
             });
             await recordAudit(transaction, {
                 clubId,

@@ -11,17 +11,21 @@ import {
     Patch,
     Post,
     Put,
+    Query,
     Res,
     StreamableFile,
 } from '@nestjs/common';
 import {
     changeMemberRoleSchema,
+    clubSessionsHistoryQuerySchema,
     confirmClubActionSchema,
     createClubSchema,
     type IClubHub,
+    type IClubSessionHistoryPage,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
+    type TClubSessionsHistoryQuery,
     type TConfirmClubActionRequest,
     type TCreateClubRequest,
     type TUpdateClubSettingsRequest,
@@ -59,6 +63,17 @@ export class ClubsController {
         @Param('clubId', UUID_PARAM) clubId: string,
     ): Promise<IClubHub> {
         return this.clubsService.getHub(user.id, clubId);
+    }
+
+    @Get(':clubId/sessions/history')
+    @Header(...PRIVATE)
+    getSessionHistory(
+        @CurrentUser() user: IAuthUser,
+        @Param('clubId', UUID_PARAM) clubId: string,
+        @Query(new ZodValidationPipe(clubSessionsHistoryQuerySchema))
+        query: TClubSessionsHistoryQuery,
+    ): Promise<IClubSessionHistoryPage> {
+        return this.clubsService.getSessionHistory(user.id, clubId, query.cursor);
     }
 
     @Post()

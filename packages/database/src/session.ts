@@ -12,6 +12,12 @@ export async function snapshotSessionSettings(database: Prisma.TransactionClient
             showNominationsBeforeSubmit: true,
             showVoteResults: true,
             showRatingResults: true,
+            showNominationAuthorsDuring: true,
+            showNominationAuthorsAfter: true,
+            showSelectionScoresDuring: true,
+            showSelectionScoresAfter: true,
+            showRatingsDuring: true,
+            showRatingsAfter: true,
             useMonochromeMedia: true,
         },
     });

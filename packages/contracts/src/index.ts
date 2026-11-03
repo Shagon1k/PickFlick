@@ -4,6 +4,7 @@ export * from './clubs/club.schema.js';
 export * from './clubs/club.types.js';
 export * from './clubs/invitation.schema.js';
 export * from './clubs/ratings.schema.js';
+export * from './clubs/sessions-history.schema.js';
 export * from './common/errors.js';
 export * from './common/health.js';
 export * from './common/http-status.js';

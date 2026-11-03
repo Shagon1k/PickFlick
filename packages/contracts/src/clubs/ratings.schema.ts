@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { createPaginationSchema } from '../common/pagination.js';
 
 export const CLUB_RATINGS_PAGE_SIZE = 25;
+export const CLUB_RATINGS_SEARCH_MAX_LENGTH = 200;
 
 export const clubRatingsQuerySchema = z.strictObject({
-    sort: z.enum(['rating', 'time', 'title']).default('rating'),
+    q: z.string().trim().max(CLUB_RATINGS_SEARCH_MAX_LENGTH).optional(),
+    sort: z.enum(['rating', 'time', 'title', 'year', 'genre']).default('rating'),
+    direction: z.enum(['asc', 'desc']).optional(),
     page: z.coerce.number().int().min(1).max(100_000).default(1),
 });
 export type TClubRatingsQuery = z.infer<typeof clubRatingsQuerySchema>;

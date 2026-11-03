@@ -1,4 +1,5 @@
 import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
+import { canViewCompletedRatings } from '../../sessions/session-visibility.js';
 import type { TPersonalAchievementKey } from './rule-catalog.js';
 import { getAverage, getLongestRun, getMembersAtScreening, readDetails } from './rule-helpers.js';
 import { hasAttended, type TAchievementSession } from './rule-sources.js';
@@ -176,7 +177,7 @@ function canReadAverage(session: TAchievementSession, userId: string) {
     const member = session.club.memberships.find(
         (membership) => membership.userId === userId && membership.status === 'ACTIVE',
     );
-    return member && (member.role !== 'MEMBER' || session.showRatingResults);
+    return member && canViewCompletedRatings(session, member.role);
 }
 
 /** Night Owl: strictly after 23:00 on its UTC date, so 23:00 exactly does not count. */

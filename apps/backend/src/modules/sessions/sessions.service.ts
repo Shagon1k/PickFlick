@@ -37,6 +37,16 @@ export class SessionsService {
                 if (!session) throw new NotFoundException();
                 const membership = await findMembership(transaction, userId, session.clubId);
                 const canManageSession = await canManage(transaction, membership);
+                const selectionOutcome = await this.selection.loadOutcome(
+                    transaction,
+                    session,
+                    membership,
+                );
+                const hasBreakdown =
+                    selectionOutcome?.source === 'LIVE'
+                        ? selectionOutcome.breakdown !== null
+                        : selectionOutcome?.source === 'IMPORTED' &&
+                          selectionOutcome.nominations !== null;
                 return {
                     ...toSession(session, membership.club.name, canManageSession),
                     rating:
@@ -46,7 +56,11 @@ export class SessionsService {
                                   canManage: canManageSession,
                               })
                             : null,
-                    selectionOutcome: await this.selection.loadOutcome(
+                    selectionOutcome,
+                    nominationAuthors: hasBreakdown
+                        ? null
+                        : await this.selection.loadAuthors(transaction, session),
+                    selectionScores: await this.selection.loadScores(
                         transaction,
                         session,
                         membership,
@@ -226,7 +240,15 @@ function toSession(
     session: Prisma.SessionGetPayload<object>,
     clubName: string,
     canManageSession: boolean,
-): Omit<TSession, 'nominations' | 'selection' | 'selectionOutcome' | 'rating'> {
+): Omit<
+    TSession,
+    | 'nominations'
+    | 'selection'
+    | 'selectionOutcome'
+    | 'selectionScores'
+    | 'nominationAuthors'
+    | 'rating'
+> {
     const isOpen = isOpenSessionPhase(session.phase);
     return {
         id: session.id,

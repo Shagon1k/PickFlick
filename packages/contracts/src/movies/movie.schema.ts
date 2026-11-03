@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const movieIdSchema = z.uuid();
+export const youtubeVideoIdSchema = z.string().regex(/^[a-zA-Z0-9_-]{6,64}$/u);
 export const tmdbIdSchema = z.number().int().positive().max(2_147_483_647);
 export const movieSourceSchema = z.enum(['tmdb', 'poiskkino', 'thetvdb']);
 export type TMovieSource = z.infer<typeof movieSourceSchema>;
@@ -177,6 +178,7 @@ export const movieSummarySchema = movieMetadataSchema
     .extend({
         id: movieIdSchema,
         provenance: z.array(movieProvenanceSchema).max(3),
+        genres: movieMetadataSchema.shape.genres.optional(),
     });
 export type TMovieSummary = z.infer<typeof movieSummarySchema>;
 export const movieDetailsSchema = movieMetadataSchema.extend({
@@ -260,4 +262,14 @@ export type TMovieDetailsResponse = z.infer<typeof movieDetailsResponseSchema>;
 /** The same-origin route that serves a Movie's stored poster. */
 export function getPosterPath(movieId: string) {
     return `/api/movies/${movieId}/poster`;
+}
+
+/** Trailer URLs have already passed movieTrailerUrlSchema at the provider boundary. */
+export function getYouTubeVideoId(url: string) {
+    const parsed = new URL(url);
+    return parsed.searchParams.get('v') ?? parsed.pathname.split('/').at(-1) ?? '';
+}
+
+export function getTrailerThumbnailPath(movieId: string, videoId: string) {
+    return `/api/movies/${encodeURIComponent(movieId)}/trailers/${encodeURIComponent(videoId)}/thumbnail`;
 }

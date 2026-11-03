@@ -22,17 +22,15 @@ export interface IClubEntitlements {
     tier: TClubTier;
     adminClubLimit: number;
     memberLimit: number;
-    voteResultVisibility: 'ADMIN_HIDDEN' | 'ADMIN_CONFIGURABLE';
 }
 
 /** Plan limits the API enforces and the public pricing pages describe. */
 export const CLUB_TIER_ENTITLEMENTS: Record<TClubTier, IClubEntitlements> = {
-    FREE: { tier: 'FREE', adminClubLimit: 1, memberLimit: 8, voteResultVisibility: 'ADMIN_HIDDEN' },
+    FREE: { tier: 'FREE', adminClubLimit: 1, memberLimit: 8 },
     PRO: {
         tier: 'PRO',
         adminClubLimit: 5,
         memberLimit: 16,
-        voteResultVisibility: 'ADMIN_CONFIGURABLE',
     },
 };
 
@@ -51,16 +49,19 @@ export interface IClubSummary {
 }
 
 export interface IClubVisibility {
-    showNominationAuthors: boolean;
+    showNominationAuthorsDuring: boolean;
+    showNominationAuthorsAfter: boolean;
+    showSelectionScoresDuring: boolean;
+    showSelectionScoresAfter: boolean;
+    showRatingsDuring: boolean;
+    showRatingsAfter: boolean;
     showNominationsBeforeSubmit: boolean;
-    showVoteResults: boolean;
-    showRatingResults: boolean;
-    useMonochromeMedia: boolean;
 }
 
 export interface IClubMember {
     id: string;
     displayName: string;
+    avatarUrl: string | null;
     role: TClubRole;
     joinedAt: string;
     sessionCount: number;
@@ -98,6 +99,12 @@ export interface IClubHubMovie {
     posterUrl: string | null;
 }
 
+export interface IClubHubParticipant {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+}
+
 export interface IClubHubSession {
     id: string;
     ordinal: number;
@@ -112,6 +119,13 @@ export interface IClubHubSession {
     scheduledAt?: string;
     location?: string;
     updatedAt: string;
+    /** Accepted participants, present only while Rating is open. */
+    participants?: IClubHubParticipant[];
+}
+
+export interface IClubSessionHistoryPage {
+    sessions: IClubHubSession[];
+    nextCursor: string | null;
 }
 
 /** One authorized snapshot for every contextual section of the Club Hub. */
@@ -137,6 +151,7 @@ export interface IClubHub {
     recentSessions: IClubHubSession[];
     ratingSessions: IClubHubSession[];
     historySessions: IClubHubSession[];
+    historyNextCursor: string | null;
 }
 
 /** Why a Club request conflicted with current state; the web maps each to recovery copy. */
@@ -146,11 +161,10 @@ export const CLUB_CONFLICT_REASONS = [
     'ADMIN_MUST_TRANSFER',
     'SESSION_HISTORY',
     'CLUB_ARCHIVED',
-    'TIER_SETTING_UNAVAILABLE',
     'MEMBERSHIP_INELIGIBLE',
 ] as const;
 
 export type TClubConflictReason = (typeof CLUB_CONFLICT_REASONS)[number];
 
-/** The Club Hub lists this many most recent closed Sessions as history. */
-export const HUB_HISTORY_LIMIT = 20;
+/** The Club Hub and each history page list this many closed Sessions. */
+export const HUB_HISTORY_LIMIT = 10;

@@ -8,6 +8,7 @@ import {
 } from '@pickflick/contracts';
 import { z } from 'zod';
 
+import { getPoiskkinoGenres } from './genre-names.js';
 import { MovieHttp } from './movie-http.js';
 import {
     createEmptyMetadata,
@@ -55,6 +56,11 @@ const wire = z.object({
     year: releaseYear,
     ageRating: number,
     movieLength: minutes,
+    genres: z
+        .array(z.object({ name: text }))
+        .max(100)
+        .nullish()
+        .catch(null),
     poster: image,
     backdrop: image,
     rating: z.object({ kp: number, imdb: number, tmdb: number }).nullish(),
@@ -241,6 +247,7 @@ export class PoiskkinoClient {
                 posterUrl: movie.poster?.url ?? null,
                 backdropUrl: movie.backdrop?.url ?? null,
                 ratings,
+                genres: movie.genres ? getPoiskkinoGenres(movie.genres) : null,
                 // Trailer labels have no guaranteed English locale.
                 trailers:
                     withDetails && movie.videos?.trailers

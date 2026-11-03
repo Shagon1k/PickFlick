@@ -14,7 +14,17 @@ export function readCompletedScreenings(
             scheduledAt: true,
             movie: { select: { id: true, title: true, releaseYear: true } },
             ratings: {
-                where: role === 'MEMBER' ? { session: { showRatingResults: true } } : {},
+                where: {
+                    session: {
+                        OR: [
+                            { showRatingsAfter: true },
+                            {
+                                showRatingsAfter: null,
+                                ...(role === 'MEMBER' ? { showRatingResults: true } : {}),
+                            },
+                        ],
+                    },
+                },
                 select: { score: true },
             },
         },

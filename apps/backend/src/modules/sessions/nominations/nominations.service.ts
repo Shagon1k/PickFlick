@@ -11,6 +11,7 @@ import { MoviesService } from '../../movies/movies.service.js';
 import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
 const MAX_SUGGESTIONS = 12;
@@ -63,11 +64,19 @@ export class NominationsService {
         const suggestionIds = canSubmit
             ? await findPastLosingNominations(tx, viewer.userId, session)
             : [];
+        const watchlist = canSubmit
+            ? await tx.watchlistItem.findMany({
+                  where: { userId: viewer.userId },
+                  select: { movieId: true },
+                  orderBy: [{ priority: 'desc' }, { addedAt: 'asc' }, { movieId: 'asc' }],
+              })
+            : [];
         const visible = isHidden ? [] : rows;
         const ids = [
             ...new Set([
                 ...visible.map((row) => row.movieId),
                 ...suggestionIds,
+                ...watchlist.map((item) => item.movieId),
                 ...(own?.nomination ? [own.nomination.movieId] : []),
             ]),
         ];
@@ -85,9 +94,10 @@ export class NominationsService {
             ownMovie: own?.nomination ? getMovie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
                 movie: getMovie(row.movieId),
-                author: session.showNominationAuthors ? row.author : null,
+                author: canViewNominationAuthors(session) ? row.author : null,
             })),
             suggestions: suggestionIds.map(getMovie),
+            watchlist: watchlist.map((item) => getMovie(item.movieId)),
         };
     }
 

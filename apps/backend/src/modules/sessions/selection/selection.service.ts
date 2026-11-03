@@ -13,8 +13,11 @@ import { Transactions } from '../../notifications/transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
 import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
+import { loadNominationAuthors } from './nomination-authors.js';
 import { advanceSelection, completeSelection } from './selection-completion.js';
 import { loadSelectionOutcome } from './selection-outcome.js';
+import { loadSelectionScores } from './selection-scores.js';
 
 @Injectable()
 export class SelectionService {
@@ -22,6 +25,18 @@ export class SelectionService {
         private readonly transactions: Transactions,
         private readonly movies: MoviesService,
     ) {}
+
+    loadScores(
+        tx: Prisma.TransactionClient,
+        session: Prisma.SessionGetPayload<object>,
+        membership: TMembership,
+    ) {
+        return loadSelectionScores(tx, session, membership, this.movies);
+    }
+
+    loadAuthors(tx: Prisma.TransactionClient, session: Prisma.SessionGetPayload<object>) {
+        return loadNominationAuthors(tx, session, this.movies);
+    }
 
     async loadOutcome(
         tx: Prisma.TransactionClient,
@@ -74,7 +89,7 @@ export class SelectionService {
             nominations: nominations.map((row) => ({
                 id: row.id,
                 movie: movies.get(row.movieId)!,
-                author: session.showNominationAuthors
+                author: canViewNominationAuthors(session)
                     ? row.participant.membership.user.displayName
                     : null,
                 ownScore:

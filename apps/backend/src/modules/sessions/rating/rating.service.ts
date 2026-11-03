@@ -7,6 +7,7 @@ import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, predatesMembership, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
 import { publishProgress } from '../session-progress.js';
+import { canViewRatingResults } from '../session-visibility.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
@@ -23,7 +24,7 @@ export class RatingService {
             where: { sessionId: session.id },
             include: {
                 rating: true,
-                membership: { select: { user: { select: { displayName: true } } } },
+                membership: { select: { user: { select: { displayName: true, image: true } } } },
             },
             orderBy: { id: 'asc' },
         });
@@ -36,15 +37,17 @@ export class RatingService {
                           ...toRating(participant.rating),
                           id: participant.rating.id,
                           author: participant.membership.user.displayName,
+                          avatarUrl:
+                              participant.membership.user.image && participant.status === 'ACCEPTED'
+                                  ? `/api/clubs/${session.clubId}/sessions/${session.id}/participants/${participant.id}/avatar`
+                                  : null,
                           isOwn: participant.membershipId === membership.id,
                       },
                   ]
                 : [],
         );
         const isOpen = session.phase === 'RATING';
-        const canSeeResults =
-            session.phase === 'COMPLETED' &&
-            (membership.role !== 'MEMBER' || session.showRatingResults);
+        const canSeeResults = canViewRatingResults(session, membership.role, Boolean(own?.rating));
         return {
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.rating).length,
@@ -56,7 +59,13 @@ export class RatingService {
                 !own.rating &&
                 !predatesMembership(session, membership.joinedAt),
             canClose: isOpen && viewer.canManage,
-            own: own?.rating ? toRating(own.rating) : null,
+            own: own?.rating
+                ? {
+                      ...toRating(own.rating),
+                      author: own.membership.user.displayName,
+                      avatarUrl: own.membership.user.image ? '/api/account/avatar' : null,
+                  }
+                : null,
             results: canSeeResults
                 ? {
                       average: received.length

@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { multilineText, optionalText, singleLineText } from '../common/text.js';
 import { nominationsSchema } from './nomination.schema.js';
 import { ratingSchema } from './rating.schema.js';
-import { selectionOutcomeSchema, selectionSchema } from './selection.schema.js';
+import {
+    selectionOutcomeSchema,
+    selectionSchema,
+    selectionScoresSchema,
+    sessionNominationAuthorsSchema,
+} from './selection.schema.js';
 
 export const SESSION_PHASES = [
     'NOMINATION',
@@ -99,6 +104,8 @@ export const sessionSchema = z.strictObject({
     progressVersion: z.number().int().positive(),
     nominations: nominationsSchema.nullable(),
     selection: selectionSchema.nullable(),
+    selectionScores: selectionScoresSchema.nullable(),
+    nominationAuthors: sessionNominationAuthorsSchema.nullable(),
     rating: ratingSchema.nullable(),
     selectionOutcome: selectionOutcomeSchema.nullable(),
     /** The viewer may edit, advance and cancel this open Session. */

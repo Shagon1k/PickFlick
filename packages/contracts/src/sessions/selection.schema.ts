@@ -83,3 +83,26 @@ export const selectionSchema = z.strictObject({
     ),
 });
 export type TSelection = z.infer<typeof selectionSchema>;
+
+export const selectionScoresSchema = z.strictObject({
+    scaleMin: selectionScaleMinSchema,
+    scaleMax: selectionScaleMaxSchema,
+    films: z.array(z.strictObject({ nominationId: z.uuid(), movie: nominationMovieSchema })),
+    ballots: z.array(
+        z.strictObject({
+            participantId: z.uuid(),
+            author: z.string(),
+            scores: z.array(selectionScoreSchema),
+        }),
+    ),
+});
+export type TSelectionScores = z.infer<typeof selectionScoresSchema>;
+
+export const sessionNominationAuthorsSchema = z.array(
+    z.strictObject({
+        nominationId: z.uuid(),
+        movie: nominationMovieSchema,
+        author: z.string().nullable(),
+    }),
+);
+export type TSessionNominationAuthors = z.infer<typeof sessionNominationAuthorsSchema>;

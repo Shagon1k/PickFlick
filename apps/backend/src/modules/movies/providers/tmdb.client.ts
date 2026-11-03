@@ -10,6 +10,7 @@ import {
 } from '@pickflick/contracts';
 import type { z } from 'zod';
 
+import { getTmdbGenres } from './genre-names.js';
 import { MovieHttp } from './movie-http.js';
 import {
     createEmptyMetadata,
@@ -36,6 +37,7 @@ function toSummary(movie: TTmdbMovie) {
         originalLanguage: movie.original_language || null,
         posterUrl: toImageUrl(movie.poster_path),
         backdropUrl: toImageUrl(movie.backdrop_path),
+        genres: getTmdbGenres(movie.genre_ids),
         ratings:
             movie.vote_count > 0
                 ? [

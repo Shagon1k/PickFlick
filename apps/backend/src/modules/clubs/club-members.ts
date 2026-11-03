@@ -13,7 +13,7 @@ export function findActiveMembers(tx: Prisma.TransactionClient, clubId: string) 
             id: true,
             role: true,
             joinedAt: true,
-            user: { select: { displayName: true } },
+            user: { select: { displayName: true, image: true } },
             _count: {
                 select: {
                     sessionParticipants: {
@@ -33,6 +33,9 @@ export function toClubMember(
     return {
         id: member.id,
         displayName: member.user.displayName,
+        avatarUrl: member.user.image
+            ? `/api/clubs/${viewer.club.id}/members/${member.id}/avatar`
+            : null,
         role: member.role,
         joinedAt: member.joinedAt.toISOString(),
         sessionCount: member._count.sessionParticipants,

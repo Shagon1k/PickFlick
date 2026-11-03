@@ -16,6 +16,8 @@ export async function readAchievementSessions(
             scheduledAt: true,
             selectionResult: true,
             showRatingResults: true,
+            showRatingsAfter: true,
+            showSelectionScoresAfter: true,
             club: {
                 select: {
                     memberships: {

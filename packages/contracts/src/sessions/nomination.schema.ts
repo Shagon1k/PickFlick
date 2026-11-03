@@ -29,5 +29,6 @@ export const nominationsSchema = z.strictObject({
         }),
     ),
     suggestions: z.array(nominationMovieSchema),
+    watchlist: z.array(nominationMovieSchema),
 });
 export type TNominations = z.infer<typeof nominationsSchema>;

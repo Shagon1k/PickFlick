@@ -1,5 +1,7 @@
 import type { Prisma } from '@pickflick/database';
 
+import { readHiddenResultAchievementKeys } from '../achievements/rules/result-visibility.js';
+
 import { getInboxMessage, UNAVAILABLE_COPY } from './notification-copy.js';
 import { isMembershipEndedEvent } from './notification-policy.js';
 
@@ -74,5 +76,11 @@ async function resolveAwardTarget(
     if (!award || award.clubId !== notification.clubId) return null;
     if (award.userId !== null && award.userId !== notification.recipientId) return null;
     if (award.clubId && award.private && role !== 'ADMIN' && role !== 'MODERATOR') return null;
+    if (
+        award.clubId &&
+        award.private &&
+        (await readHiddenResultAchievementKeys(tx, award.clubId)).some((key) => key === award.key)
+    )
+        return null;
     return award.clubId ? `/clubs/${award.clubId}/achievements` : '/library?tab=achievements';
 }

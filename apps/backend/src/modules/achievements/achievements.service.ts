@@ -10,6 +10,7 @@ import { recordAchievementNotifications } from '../notifications/notification-pr
 import { Transactions } from '../notifications/transactions.js';
 import { buildClubAchievements } from './rules/club-rules.js';
 import { buildPersonalAchievements } from './rules/personal-rules.js';
+import { hiddenResultAchievementKeys } from './rules/result-visibility.js';
 import { ACHIEVEMENT_DEFINITIONS, type IAchievementDefinition } from './rules/rule-catalog.js';
 import { readAchievementSessions } from './rules/rule-sources.js';
 
@@ -23,14 +24,14 @@ export class AchievementsService {
     async listClub(userId: string, clubId: string): Promise<TAchievements> {
         return this.transactions.write(async (tx) => {
             const member = await findMembership(tx, userId, clubId);
-            const facts = buildClubAchievements(
-                await readAchievementSessions(tx, [clubId], this.getCacheKey()),
-            );
+            const sessions = await readAchievementSessions(tx, [clubId], this.getCacheKey());
+            const facts = buildClubAchievements(sessions);
             return {
                 items: await this.recompute(tx, {
                     scope: 'CLUB',
                     subjectId: clubId,
                     hidePrivate: member.role === 'MEMBER',
+                    hiddenPrivateKeys: hiddenResultAchievementKeys(sessions),
                     ...facts,
                 }),
             };
@@ -115,13 +116,17 @@ export class AchievementsService {
                 })),
             skipDuplicates: true,
         });
-        await recordAchievementNotifications(tx, created);
+        await recordAchievementNotifications(
+            tx,
+            created.filter((award) => !input.hiddenPrivateKeys?.includes(award.key)),
+        );
     }
 }
 
 interface IRecomputeInput {
     scope: IAchievementDefinition['scope'];
     hidePrivate?: boolean;
+    hiddenPrivateKeys?: string[];
     subjectId: string;
     metrics: Record<string, number>;
     evidence: Prisma.InputJsonObject;
@@ -134,13 +139,22 @@ function getProgress(input: IRecomputeInput, definition: IAchievementDefinition)
 const PRIVATE_EXPLANATION =
     'Result-based Club achievements are visible to Admins and Moderators only. Their progress and award history are private.';
 
+const HIDDEN_RESULTS_EXPLANATION =
+    'This achievement depends on Session results hidden by the Club’s visibility settings. Its progress and award history are private.';
+
+function isHidden(input: IRecomputeInput, award: { key: string; private?: boolean }) {
+    return Boolean(
+        award.private && (input.hidePrivate || input.hiddenPrivateKeys?.includes(award.key)),
+    );
+}
+
 /** Earned cards keep their snapshot; current definitions add pending or private placeholders. */
 function toAchievementCards(
     definitions: IAchievementDefinition[],
     earned: Prisma.AchievementAwardGetPayload<object>[],
     input: IRecomputeInput,
 ): TAchievement[] {
-    const visibleAwards = earned.filter((award) => !input.hidePrivate || !award.private);
+    const visibleAwards = earned.filter((award) => !isHidden(input, award));
     const cards: TAchievement[] = visibleAwards.map((award) => ({
         key: award.key,
         version: award.version,
@@ -154,13 +168,15 @@ function toAchievementCards(
     }));
     for (const definition of definitions) {
         const { key, version, title, description, target } = definition;
-        if (input.hidePrivate && definition.private) {
+        if (isHidden(input, definition)) {
             cards.push({
                 ...{ key, version, title, description, target },
                 progress: null,
                 status: 'not-started',
                 awardedAt: null,
-                explanation: PRIVATE_EXPLANATION,
+                explanation: input.hiddenPrivateKeys?.includes(key)
+                    ? HIDDEN_RESULTS_EXPLANATION
+                    : PRIVATE_EXPLANATION,
             });
             continue;
         }

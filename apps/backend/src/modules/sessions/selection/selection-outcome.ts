@@ -4,6 +4,7 @@ import type { Prisma } from '@pickflick/database';
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewSelectionBreakdown } from '../session-access.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
 import { selectionResultSchema } from './selection-result.js';
 
 export async function loadSelectionOutcome(
@@ -14,7 +15,11 @@ export async function loadSelectionOutcome(
 ): Promise<TLiveSelectionOutcome | null> {
     if (session.selectionResult === null) return null;
     const saved = selectionResultSchema.parse(session.selectionResult);
-    const canSeeBreakdown = canViewSelectionBreakdown(session, membership);
+    const ownBallot = await tx.selectionBallot.findFirst({
+        where: { sessionId: session.id, participant: { membershipId: membership.id } },
+        select: { id: true },
+    });
+    const canSeeBreakdown = canViewSelectionBreakdown(session, membership, Boolean(ownBallot));
     const visible = canSeeBreakdown
         ? saved.ranking
         : saved.ranking.filter((row) => row.id === saved.winnerNominationId);
@@ -22,7 +27,7 @@ export async function loadSelectionOutcome(
         tx,
         visible.map((row) => row.movieId),
     );
-    const nominations = session.showNominationAuthors
+    const nominations = canViewNominationAuthors(session)
         ? await tx.nomination.findMany({
               where: { sessionId: session.id, id: { in: visible.map((row) => row.id) } },
               select: {
