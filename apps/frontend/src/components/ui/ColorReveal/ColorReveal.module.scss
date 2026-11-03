@@ -1,0 +1,74 @@
+.reveal {
+    position: relative;
+    display: inline-grid;
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    vertical-align: middle;
+    border-radius: inherit;
+    isolation: isolate;
+}
+
+.reveal[data-fill] {
+    display: grid;
+    width: 100%;
+    height: 100%;
+}
+
+.reveal__base {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    filter: var(--color-reveal-filter, grayscale(1));
+}
+
+.reveal__color {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.reveal__color {
+    place-items: center;
+    filter: var(--color-reveal-color-filter, none);
+}
+
+.reveal.m-accent .reveal__base {
+    filter: none;
+}
+
+.reveal.m-accent .reveal__color {
+    color: var(--gold-light);
+    filter: none;
+}
+
+.reveal.m-surface,
+.reveal.m-outline {
+    display: contents;
+    border: inherit;
+}
+
+.reveal.m-surface .reveal__color,
+.reveal.m-outline .reveal__color {
+    inset: calc(-1 * var(--color-reveal-border-width, 0px));
+    z-index: -1;
+    background: var(--color-reveal-background, var(--accent-soft));
+    border: var(--color-reveal-border-width, 0px) solid
+        var(--color-reveal-border, var(--border-lit));
+    border-radius: inherit;
+    filter: none;
+}
+
+.reveal.m-outline .reveal__color {
+    inset: -1px;
+    background: transparent;
+    border: inherit;
+    border-color: var(--color-reveal-border, var(--border-lit));
+}

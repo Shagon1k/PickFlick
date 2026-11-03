@@ -13,6 +13,8 @@ import { type ReactNode, useRef } from 'react';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import { submitSelectionAction } from '#components/sessions/selection-actions';
 import Button from '#components/ui/Button/Button';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
@@ -73,28 +75,52 @@ export default function Selection({
                 have submitted.
             </PhaseProgress>
             {header}
-            <h2 className="visually-hidden" id="selection-heading" ref={headingRef} tabIndex={-1}>
-                Score nominated films
-            </h2>
+            <div className={styles.intro}>
+                <div className={styles.headingRow}>
+                    <div className={styles.headingGroup}>
+                        <h2 id="selection-heading" ref={headingRef} tabIndex={-1}>
+                            {data.canSubmit || data.submittedAt ? 'Your scores' : 'Nominated films'}
+                        </h2>
+                        <InfoTip label="About scoring">
+                            Score every film from {data.scaleMin} to {data.scaleMax}. You submit
+                            once; scores cannot be changed afterwards.
+                        </InfoTip>
+                    </div>
+                    {data.canSubmit && !data.submittedAt && data.nominations.length ? (
+                        <p className={styles.progress} role="status" aria-atomic="true">
+                            <span aria-hidden="true">
+                                {scoredCount}/{data.nominations.length}
+                            </span>
+                            <span className="visually-hidden">
+                                {scoredCount} of {data.nominations.length} films scored.
+                                {scoredCount === data.nominations.length ? ' Ready to submit.' : ''}
+                            </span>
+                        </p>
+                    ) : null}
+                </div>
+                {data.submittedAt ? (
+                    <p className={styles.confirmation} role="status">
+                        <Icon name="check" />
+                        <span>Submitted · Waiting for other participants</span>
+                    </p>
+                ) : data.canSubmit ? (
+                    <p>Score every film to help choose what we watch.</p>
+                ) : null}
+            </div>
             {!data.nominations.length ? (
                 <p>No nominations are available for Selection.</p>
             ) : (
                 <form onSubmit={handleSubmit} noValidate>
                     <ul className={styles.movies} aria-label="Nominated films">
                         {data.nominations.map((row, index) => (
-                            <li key={row.id} className={styles.movie}>
-                                <SearchPoster
-                                    className={styles.poster}
-                                    url={getPosterPath(row.movie.id)}
-                                />
-                                <div className={styles.info}>
-                                    <h3>
-                                        <Link href={`/movies/${row.movie.id}`}>
-                                            {row.movie.title ?? 'Movie title unavailable'}
-                                        </Link>
-                                    </h3>
-                                    <p>{describeNomination(row.movie, row.author)}</p>
-                                </div>
+                            <li
+                                key={row.id}
+                                className={styles.movie}
+                                data-color-reveal-trigger
+                                data-color-reveal-surface
+                            >
+                                <ColorReveal variant="surface" />
+                                <SelectionMovie movie={row.movie} author={row.author} />
                                 <div className={styles.control}>
                                     <ScoreControl
                                         isCompact
@@ -119,43 +145,44 @@ export default function Selection({
                             </li>
                         ))}
                     </ul>
-                    <div className={styles.submit}>
-                        {data.submittedAt ? <p role="status">Your ballot is locked.</p> : null}
-                        {data.canSubmit && !data.submittedAt ? (
-                            <>
-                                <p className={styles.summary}>
-                                    <span role="status">
-                                        {scoredCount} of {data.nominations.length} films scored ·{' '}
-                                        {scoredCount === data.nominations.length
-                                            ? 'Ready to submit'
-                                            : 'Score every film to submit'}
-                                    </span>{' '}
-                                    <InfoTip label="About scoring">
-                                        Score every film from {data.scaleMin} to {data.scaleMax}.
-                                        You submit once; scores cannot be changed afterwards.
-                                    </InfoTip>
-                                </p>
-                                <Button type="submit" loading={isPending}>
-                                    Submit scores
-                                </Button>
-                            </>
-                        ) : null}
-                        <StatusLine isSuccess={isSuccess} message={message} />
-                    </div>
+                    {data.canSubmit && !data.submittedAt ? (
+                        <div className={styles.submit}>
+                            <Button type="submit" loading={isPending}>
+                                Submit scores
+                            </Button>
+                        </div>
+                    ) : null}
+                    <StatusLine
+                        className={styles.feedback}
+                        isSuccess={isSuccess}
+                        message={message}
+                    />
                 </form>
             )}
         </section>
     );
 }
 
-function describeNomination(movie: TNominationMovie, author: string | null) {
-    return [
-        movie.year,
-        movie.genres.slice(0, MAX_GENRES).join(', '),
-        author === null ? null : `nominated by ${author}`,
-    ]
-        .filter(Boolean)
-        .join(' · ');
+function SelectionMovie({ movie, author }: { movie: TNominationMovie; author: string | null }) {
+    return (
+        <Link className={styles.film} href={`/movies/${movie.id}`} prefetch={false}>
+            <SearchPoster className={styles.poster} url={getPosterPath(movie.id)} withColorReveal />
+            <div className={styles.info}>
+                <div className={styles.filmHeading}>
+                    <h3>{movie.title ?? 'Movie title unavailable'}</h3>
+                    {movie.year !== null ? <span className={styles.year}>{movie.year}</span> : null}
+                </div>
+                {author !== null ? <p>by {author}</p> : null}
+                {movie.genres.length ? (
+                    <ul className={styles.genres} aria-label="Genres">
+                        {movie.genres.slice(0, MAX_GENRES).map((genre) => (
+                            <li key={genre}>{genre}</li>
+                        ))}
+                    </ul>
+                ) : null}
+            </div>
+        </Link>
+    );
 }
 
 const MAX_GENRES = 2;

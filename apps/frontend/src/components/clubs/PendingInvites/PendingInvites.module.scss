@@ -7,21 +7,20 @@
     width: calc(184px + 18px);
     padding-right: 18px;
     overflow: clip;
-    transition:
-        right var(--motion-menu) var(--ease-menu),
-        visibility 0s;
+    transition: visibility 0s;
 }
 
 /*
- * Without invitations the ticket slides past the screen edge, and back in when one arrives. It
- * moves by `right`: a transform would trap the fixed-position popover inside the sliding widget.
+ * Keep the fixed clip inside the viewport; moving it off-screen widens the document even hidden.
+ * Only its ticket moves. The popover is portaled outside this clip and keeps viewport positioning.
  */
 .widget:not([data-shown]) {
-    right: calc(-184px - 18px);
     visibility: hidden;
-    transition:
-        right var(--motion-menu) var(--ease-menu),
-        visibility 0s linear var(--motion-menu);
+    transition: visibility 0s linear var(--motion-menu);
+}
+
+.widget:not([data-shown]) .ticket {
+    transform: translateX(calc(184px + 18px));
 }
 
 .ticket {

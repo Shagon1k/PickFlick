@@ -18,20 +18,23 @@ export default function MovieMedia({
     filmHref,
     shouldHidePhonePoster = false,
     posterCorner,
+    variant = 'movie',
 }: {
     movie: TMovieDetails;
     title: string;
     filmHref?: string;
     /** The film ticket already shows the poster on phones. */
     shouldHidePhonePoster?: boolean;
-    /** A control over the poster's top-right corner, such as the Watchlist ribbon. */
+    /** A poster overlay such as the Watchlist ribbon or Session status. */
     posterCorner?: ReactNode;
+    variant?: 'movie' | 'session';
 }) {
     const poster = <MoviePoster url={movie.posterUrl} title={title} />;
     return (
-        <div className={styles.heroGrid}>
+        <div className={styles.heroGrid} data-variant={variant}>
             <div
                 className={styles.posterRegion}
+                data-color-reveal-trigger
                 data-phone-hidden={shouldHidePhonePoster || undefined}
             >
                 {filmHref ? (
@@ -57,8 +60,8 @@ export default function MovieMedia({
             </section>
             <div className={styles.trailer}>
                 <TrailerPlayer
-                    backdropUrl={movie.backdropUrl}
-                    posterUrl={movie.posterUrl}
+                    key={movie.id}
+                    movieId={movie.id}
                     searchUrl={buildTrailerSearch(title, movie.releaseYear)}
                     title={title}
                     trailers={movie.trailers ?? []}

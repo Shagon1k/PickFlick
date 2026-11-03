@@ -20,15 +20,16 @@
 .pill {
     display: inline-flex;
     gap: 6px;
-    align-items: baseline;
+    align-items: center;
 }
 
 .pill strong {
-    font: 700 var(--fs-body)/1 var(--font-mono);
+    font: 600 var(--film-rail-score-size)/1 var(--font-mono);
 }
 
 .pill small {
     font-size: var(--fs-caption);
+    line-height: 1;
     color: var(--ivory-muted);
 }
 

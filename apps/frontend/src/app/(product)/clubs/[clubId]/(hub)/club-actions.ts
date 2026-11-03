@@ -61,11 +61,13 @@ export async function updateClubSettingsAction(
         ...values,
         selectionScaleMin: Number(values.selectionScaleMin),
         selectionScaleMax: Number(values.selectionScaleMax),
-        showNominationAuthors: isChecked(formData, 'showNominationAuthors'),
+        showNominationAuthorsDuring: isChecked(formData, 'showNominationAuthorsDuring'),
+        showNominationAuthorsAfter: isChecked(formData, 'showNominationAuthorsAfter'),
+        showSelectionScoresDuring: isChecked(formData, 'showSelectionScoresDuring'),
+        showSelectionScoresAfter: isChecked(formData, 'showSelectionScoresAfter'),
+        showRatingsDuring: isChecked(formData, 'showRatingsDuring'),
+        showRatingsAfter: isChecked(formData, 'showRatingsAfter'),
         showNominationsBeforeSubmit: isChecked(formData, 'showNominationsBeforeSubmit'),
-        showVoteResults: isChecked(formData, 'showVoteResults'),
-        showRatingResults: isChecked(formData, 'showRatingResults'),
-        useMonochromeMedia: isChecked(formData, 'useMonochromeMedia'),
     });
     if (!parsed.success) {
         return next(previous, 'error', 'Review the Club name, description, and Selection scale.');

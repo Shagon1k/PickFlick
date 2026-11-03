@@ -1,13 +1,14 @@
 import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
+import Avatar from '#components/ui/Avatar/Avatar';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatAverage, formatHours, getMonogram } from '#lib/format';
+import { formatAverage, formatHours } from '#lib/format';
 
 import styles from '../../page.module.scss';
-import ActiveRatings from '../ActiveRatings/ActiveRatings';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 
 export default function HubOverview({ hub }: { hub: IClubHub }) {
@@ -60,17 +61,45 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <ul className={styles.memberPills}>
                         {hub.members.map((member) => (
                             <li key={member.id} data-admin={member.role === 'ADMIN' || undefined}>
-                                <span aria-hidden="true">{getMonogram(member.displayName)}</span>
+                                <span className={styles.memberAvatar}>
+                                    <Avatar
+                                        name={member.displayName}
+                                        src={member.avatarUrl}
+                                        size="small"
+                                        withColorReveal={false}
+                                    />
+                                </span>
                                 {member.displayName}
                                 {member.role === 'ADMIN' ? ' (admin)' : ''}
                             </li>
                         ))}
                     </ul>
                 </section>
-                {/* With nothing scheduled, the call sheet above already offers Schedule. */}
-                {hub.activeSession ? <ActiveSessionCard hub={hub} /> : null}
+                <ActiveSessionCard
+                    hub={hub}
+                    actions={
+                        !hub.activeSession && hub.permissions.manageSessions ? (
+                            <div className={styles.emptySessionActions}>
+                                <ButtonLink
+                                    fullWidth
+                                    href={`/clubs/${hub.club.id}/sessions/new?returnTo=${encodeURIComponent(`/clubs/${hub.club.id}`)}`}
+                                    variant="primary"
+                                >
+                                    <Icon name="calendar" />
+                                    <span>Schedule New</span>
+                                </ButtonLink>
+                                <ButtonLink
+                                    fullWidth
+                                    href={`/clubs/${hub.club.id}/sessions/past/new?returnTo=${encodeURIComponent(`/clubs/${hub.club.id}`)}`}
+                                >
+                                    <Icon name="clock" />
+                                    <span>Log Past</span>
+                                </ButtonLink>
+                            </div>
+                        ) : undefined
+                    }
+                />
             </div>
-            {hub.ratingSessions.length ? <ActiveRatings sessions={hub.ratingSessions} /> : null}
             <SprocketDivider variant="section" />
             <section className={styles.card}>
                 <h2>Recent Activity</h2>

@@ -6,6 +6,8 @@ import choosingPanda from '#brand/panda-choosing.webp';
 import projectionistPanda from '#brand/panda-projectionist.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Icon from '#components/ui/Icon/Icon';
 import { formatCount, formatRuntime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
@@ -43,11 +45,15 @@ export default function CallSheet({
     return (
         <Link
             className={styles.sheet}
+            data-color-reveal-trigger
+            data-color-reveal-surface
             href={`/sessions/${session.id}`}
             prefetch={false}
             aria-label={`Open Session: ${title}`}
         >
+            <ColorReveal variant="surface" />
             <header className={styles.head}>
+                <ColorReveal variant="outline" />
                 <span>Call sheet {String(session.ordinal).padStart(CALL_SHEET_DIGITS, '0')}</span>
                 <div className={styles.headMeta}>
                     <span className={styles.unit}>{unit} unit</span>
@@ -61,42 +67,54 @@ export default function CallSheet({
             <div className={styles.layout}>
                 <dl className={styles.fields}>
                     <div className={styles.picture}>
+                        <ColorReveal variant="outline" />
                         <dt>{hasSelectedFilm ? 'Picture' : 'Session'}</dt>
                         <dd>{title}</dd>
                     </div>
                     {time ? (
                         <div>
+                            <ColorReveal variant="outline" />
                             <dt>Call time</dt>
                             <dd>{time}</dd>
                         </div>
                     ) : (
                         <div className={styles.location}>
+                            <ColorReveal variant="outline" />
                             <dt>Location</dt>
                             <dd title={session.location ?? undefined}>{session.location ?? '—'}</dd>
                         </div>
                     )}
                     <div>
+                        <ColorReveal variant="outline" />
                         <dt>Date</dt>
                         <dd>{date}</dd>
                     </div>
                     {fields.map((field) => (
                         <div key={field.label}>
+                            <ColorReveal variant="outline" />
                             <dt>{field.label}</dt>
                             <dd>{field.value}</dd>
                         </div>
                     ))}
                 </dl>
                 <figure className={styles.still}>
+                    <ColorReveal variant="outline" />
                     <div className={styles.frameMeta}>
                         <span>{hasSelectedFilm ? 'Selected film' : 'Film selection'}</span>
                         <span>{formatCount(session.nominatedCount, 'nomination')}</span>
                     </div>
                     {session.movie ? (
-                        <SearchPoster className={styles.image} url={session.movie.posterUrl} />
+                        <SearchPoster
+                            className={styles.image}
+                            url={session.movie.posterUrl}
+                            withColorReveal
+                        />
                     ) : (
                         // The picture is still being chosen; nominations stay behind Club visibility rules.
                         <span className={styles.image} aria-hidden="true">
-                            <Image className={styles.mascot} src={choosingPanda} alt="" />
+                            <ColorReveal shouldFill>
+                                <Image className={styles.mascot} src={choosingPanda} alt="" />
+                            </ColorReveal>
                         </span>
                     )}
                     <figcaption className={styles.frameMeta}>
@@ -112,8 +130,16 @@ export default function CallSheet({
 /** The same sheet waits for the next screening instead of collapsing into a note. */
 function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
     return (
-        <section className={styles.sheet} aria-label="Screening Call Sheet" data-empty>
+        <section
+            className={styles.sheet}
+            aria-label="Screening Call Sheet"
+            data-empty
+            data-color-reveal-trigger
+            data-color-reveal-surface
+        >
+            <ColorReveal variant="surface" />
             <header className={styles.head}>
+                <ColorReveal variant="outline" />
                 <span>Call sheet —</span>
                 <div className={styles.headMeta}>
                     <span className={styles.phase}>
@@ -122,24 +148,30 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
                         <b>none</b>
                     </span>
                 </div>
+                {scheduleHref ? (
+                    <div className={styles.scheduleAction}>
+                        <ButtonLink href={scheduleHref} size="small" variant="subtle">
+                            <Icon name="calendar" />
+                            Schedule New
+                        </ButtonLink>
+                    </div>
+                ) : null}
             </header>
             <div className={styles.layout}>
                 <div className={styles.waiting}>
                     <p className={styles.waitingKicker}>Next screening</p>
                     <h2>No screening scheduled</h2>
-                    {scheduleHref ? (
-                        <ButtonLink fullWidth href={scheduleHref} variant="primary">
-                            Schedule a Session
-                        </ButtonLink>
-                    ) : null}
                 </div>
                 <figure className={styles.still} aria-hidden="true">
+                    <ColorReveal variant="outline" />
                     <div className={styles.frameMeta}>
                         <span>Projector</span>
                         <span>Standing by</span>
                     </div>
                     <span className={styles.image}>
-                        <Image className={styles.mascot} src={projectionistPanda} alt="" />
+                        <ColorReveal shouldFill>
+                            <Image className={styles.mascot} src={projectionistPanda} alt="" />
+                        </ColorReveal>
                     </span>
                     <figcaption className={styles.frameMeta}>
                         <span>Reel 00</span>

@@ -2,6 +2,8 @@
 
 * {
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg-secondary) transparent;
 }
 
 html {
@@ -14,6 +16,13 @@ body {
     font-family: var(--font-body);
     color: var(--fg);
     background: var(--bg);
+}
+
+@media (forced-colors: active) {
+    * {
+        scrollbar-width: auto;
+        scrollbar-color: auto;
+    }
 }
 
 /* Projector Noir film grain: a fixed 2.5% texture over every screen that never takes input. */

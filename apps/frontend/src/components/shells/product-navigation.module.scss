@@ -31,14 +31,15 @@
     display: none;
 }
 
-/* 44px targets that draw the design's 34px circle. */
+/* Shared Search/Close and account-control geometry. */
 .roundButton,
-.avatarButton {
+.avatarButton,
+.searchClose {
     position: relative;
     display: grid;
     place-items: center;
-    width: var(--hit);
-    height: var(--hit);
+    width: var(--header-action-size);
+    height: var(--header-action-size);
     padding: 0;
     color: var(--fg-secondary);
     cursor: pointer;
@@ -48,9 +49,10 @@
 }
 
 .roundButton::before,
-.avatarButton::before {
+.avatarButton::before,
+.searchClose::before {
     position: absolute;
-    inset: 5px;
+    inset: calc((var(--header-action-size) - var(--header-action-ring-size)) / 2);
     z-index: -1;
     content: '';
     border: 1px solid var(--border-lit);
@@ -61,6 +63,8 @@
 .roundButton,
 .avatarButton,
 .searchClose {
+    --action-scale: var(--action-scale-small);
+
     isolation: isolate;
 }
 
@@ -70,7 +74,9 @@
 .roundButton[aria-expanded='true'],
 .avatarButton:hover,
 .avatarButton:focus-visible,
-.avatarButton[aria-expanded='true'] {
+.avatarButton[aria-expanded='true'],
+.searchClose:hover,
+.searchClose:focus-visible {
     color: var(--ivory);
 }
 
@@ -79,7 +85,9 @@
 .roundButton[aria-expanded='true']::before,
 .avatarButton:hover::before,
 .avatarButton:focus-visible::before,
-.avatarButton[aria-expanded='true']::before {
+.avatarButton[aria-expanded='true']::before,
+.searchClose:hover::before,
+.searchClose:focus-visible::before {
     border-color: var(--gold-border);
 }
 
@@ -92,15 +100,17 @@
     background: var(--surface);
 }
 
-.searchClose::before {
+.avatarImage {
     position: absolute;
-    inset: -2px;
-    content: '';
+    inset: 0;
+    width: var(--header-avatar-size);
+    height: var(--header-avatar-size);
+    margin: auto;
 }
 
 .roundIcon {
-    width: 18px;
-    height: 18px;
+    width: var(--header-action-icon-size);
+    height: var(--header-action-icon-size);
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
@@ -364,10 +374,15 @@ button.notifBody::before {
     margin: 0 auto;
 }
 
-.globalSearchInner .globalSearchInput {
+.globalSearchField {
+    position: relative;
     flex: 0 1 480px;
     width: 100%;
     min-width: 0;
+}
+
+.globalSearchInner .globalSearchInput {
+    width: 100%;
     min-height: var(--hit);
     padding: 10px 16px;
     font: var(--fs-body) / var(--lh-ui) var(--font-body);
@@ -393,41 +408,7 @@ button.notifBody::before {
 }
 
 .searchClose {
-    position: relative;
-    display: grid;
     flex-shrink: 0;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: var(--surface);
-    border: 1px solid var(--border-lit);
-    border-radius: 50%;
-}
-
-.searchClose:hover {
-    color: var(--ivory);
-    border-color: var(--gold-border);
-}
-
-.searchResults {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    z-index: 1;
-    width: min(100%, 532px);
-    max-height: min(400px, calc(100dvh - 160px));
-    overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-overlay);
-    transform: translateX(-50%);
-}
-
-.searchResults:empty {
-    display: none;
 }
 
 .filmStrip {
@@ -470,7 +451,6 @@ button.notifBody::before {
     max-height: calc(100dvh - 140px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: none;
 }
 
 .filmFrame {
@@ -836,66 +816,20 @@ button.notifBody::before {
     .headerActions {
         position: static;
     }
-}
 
-.searchResult {
-    display: flex;
-    gap: var(--gap-sm);
-    align-items: center;
-    min-height: var(--hit);
-    padding: var(--gap-sm) var(--gap-md);
-    color: var(--fg);
-    text-decoration: none;
-
-    & + & {
-        border-top: 1px solid var(--border);
+    .globalSearch {
+        padding-inline: 0;
     }
 
-    &:hover,
-    &[aria-selected='true'] {
-        background: var(--accent-soft);
+    .globalSearchInner {
+        justify-content: space-between;
+        width: var(--product-header-width);
+        max-width: none;
     }
-}
 
-.searchPoster {
-    display: grid;
-    flex-shrink: 0;
-    place-items: center;
-    width: 36px;
-    height: 54px;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-    background: var(--surface-lit);
-    border-radius: var(--radius);
-}
-
-.searchInfo {
-    min-width: 0;
-}
-
-.searchTitle {
-    display: block;
-    font-size: var(--fs-body-sm);
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
-.searchMeta {
-    display: block;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-}
-
-.searchResults .overlayEmpty {
-    color: var(--fg-secondary);
-}
-
-/* With results the count is a slim caption, so the films start at once. */
-.searchResults .overlayEmpty[data-count] {
-    padding: var(--gap-xs) 16px;
-    font-size: var(--fs-caption);
-    text-align: left;
-    border-bottom: 1px solid var(--border);
+    .globalSearchField {
+        flex: 1;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

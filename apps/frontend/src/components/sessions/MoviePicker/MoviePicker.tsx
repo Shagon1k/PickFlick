@@ -1,20 +1,15 @@
 'use client';
 
-import {
-    getPosterPath,
-    MOVIE_QUERY_MAX_LENGTH,
-    type TMovieSearchResults,
-} from '@pickflick/contracts';
-import { useRef, useState } from 'react';
+import { MOVIE_QUERY_MAX_LENGTH, type TMovieSearchResults } from '@pickflick/contracts';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
 import {
     getNextOptionIndex,
-    getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
 } from '#components/movies/movie-search';
-import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
-import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import MovieSearchResults from '#components/movies/MovieSearchResults/MovieSearchResults';
+import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import TextInput from '#components/ui/TextInput/TextInput';
 
@@ -34,6 +29,8 @@ interface IMoviePickerProps {
     placeholder: string;
     /** The Nomination card names the task in its heading, so the field label is for assistive tech. */
     isLabelHidden?: boolean;
+    shouldReserveMessage?: boolean;
+    endAction?: ReactNode;
 }
 export default function MoviePicker({
     id = 'session-movie',
@@ -46,12 +43,22 @@ export default function MoviePicker({
     disabled,
     placeholder,
     isLabelHidden = false,
+    shouldReserveMessage = true,
+    endAction,
 }: IMoviePickerProps) {
     const [query, setQuery] = useState('');
     const [selectedMovie, setSelectedMovie] = useState<TSearchMovie | null>(null);
     const [index, setIndex] = useState(-1);
     const inputRef = useRef<HTMLInputElement>(null);
     const removeRef = useRef<HTMLButtonElement>(null);
+    const focusStateRef = useRef({ value, selectedMovie });
+    useLayoutEffect(() => {
+        const previous = focusStateRef.current;
+        if (previous.value === value && previous.selectedMovie === selectedMovie) return;
+        focusStateRef.current = { value, selectedMovie };
+        const control = value ? removeRef.current : inputRef.current;
+        control?.focus();
+    }, [value, selectedMovie]);
     const term = query.trim();
     const result = useMovieSearch(term, !value);
     const movies = result && 'data' in result ? result.data.movies : [];
@@ -61,10 +68,6 @@ export default function MoviePicker({
         onChange(movie.id, movie);
         setQuery('');
         setIndex(-1);
-        requestAnimationFrame(() => {
-            const control = removeRef.current ?? inputRef.current;
-            control?.focus();
-        });
     }
     function handleKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
         if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && movies.length) {
@@ -83,33 +86,54 @@ export default function MoviePicker({
             setIndex(-1);
         }
     }
+    const rightSection =
+        value || endAction ? (
+            <span className={styles.actions}>
+                <span className={styles.change} data-hidden={!value || undefined}>
+                    <Button
+                        aria-label="Change film"
+                        title="Change film"
+                        ref={removeRef}
+                        disabled={disabled || !value}
+                        size="icon"
+                        variant="subtle"
+                        onClick={() => {
+                            onChange(null);
+                            setSelectedMovie(null);
+                        }}
+                    >
+                        <span className={styles.actionIcon} data-press-surface>
+                            <Icon name="close" />
+                        </span>
+                    </Button>
+                </span>
+                {endAction}
+            </span>
+        ) : undefined;
+    const actionWidth = endAction ? 'calc(var(--hit) * 2)' : undefined;
     if (value) {
+        const selected = selectedMovie?.id === value ? selectedMovie : null;
+        const title =
+            selected?.title ?? selected?.originalTitle ?? selectedTitle ?? 'Untitled film';
         return (
-            <div className={styles.selected} role="group" aria-label="Selected film">
-                <SearchPoster className={styles.selectedPoster} url={getPosterPath(value)} />
-                <div className={styles.info}>
-                    <strong>
-                        {selectedMovie?.title ??
-                            selectedMovie?.originalTitle ??
-                            selectedTitle ??
-                            'Untitled film'}
-                    </strong>
-                    {selectedMovie?.releaseYear ? <span>{selectedMovie.releaseYear}</span> : null}
-                </div>
-                <button
-                    className={styles.remove}
-                    aria-label="Change film"
-                    ref={removeRef}
+            <div className={styles.picker}>
+                <TextInput
+                    ref={inputRef}
+                    id={id}
+                    label={label}
+                    labelHint={required ? 'required' : 'optional'}
+                    labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
+                    value={title}
+                    title={title}
+                    readOnly
                     disabled={disabled}
-                    onClick={() => {
-                        onChange(null);
-                        setSelectedMovie(null);
-                        requestAnimationFrame(() => inputRef.current?.focus());
-                    }}
-                    type="button"
-                >
-                    <Icon name="close" />
-                </button>
+                    error={error}
+                    shouldReserveMessage={shouldReserveMessage}
+                    variant="selected"
+                    rightSectionPointerEvents="auto"
+                    rightSectionWidth={actionWidth}
+                    rightSection={rightSection}
+                />
             </div>
         );
     }
@@ -119,7 +143,7 @@ export default function MoviePicker({
                 ref={inputRef}
                 aria-activedescendant={movies[index] ? `${id}-${index}` : undefined}
                 aria-controls={`${id}-results`}
-                aria-expanded={movies.length > 0}
+                aria-expanded={Boolean(term)}
                 aria-autocomplete="list"
                 role="combobox"
                 disabled={disabled}
@@ -130,6 +154,10 @@ export default function MoviePicker({
                 labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
                 placeholder={placeholder}
                 required={required}
+                shouldReserveMessage={shouldReserveMessage}
+                rightSectionPointerEvents="auto"
+                rightSectionWidth={actionWidth}
+                rightSection={rightSection}
                 value={query}
                 maxLength={MOVIE_QUERY_MAX_LENGTH}
                 onChange={(event) => {
@@ -138,44 +166,16 @@ export default function MoviePicker({
                 }}
                 onKeyDown={handleKeyboard}
                 dropdown={
-                    <>
-                        <div
-                            aria-label="Movie results"
-                            id={`${id}-results`}
-                            role="listbox"
-                            className={styles.results}
-                        >
-                            {movies.map((movie, position) => (
-                                <button
-                                    aria-selected={position === index}
-                                    disabled={disabled}
-                                    id={`${id}-${position}`}
-                                    key={movie.id}
-                                    onClick={() => select(movie)}
-                                    role="option"
-                                    tabIndex={-1}
-                                    type="button"
-                                >
-                                    <SearchPoster className={styles.poster} url={movie.posterUrl} />
-                                    <span className={styles.info}>
-                                        <strong>
-                                            {movie.title ?? movie.originalTitle ?? 'Untitled film'}
-                                        </strong>
-                                        <span>{movie.releaseYear ?? 'Year unavailable'}</span>
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                        <p
-                            className={movies.length ? 'visually-hidden' : styles.searchStatus}
-                            role="status"
-                        >
-                            {getSearchMessage(term, result)}
-                        </p>
-                    </>
+                    <MovieSearchResults
+                        idPrefix={id}
+                        term={term}
+                        result={result}
+                        activeIndex={index}
+                        disabled={disabled}
+                        onSelect={select}
+                    />
                 }
             />
-            {result && 'data' in result ? <SearchCredits movies={result.data.movies} /> : null}
         </div>
     );
 }

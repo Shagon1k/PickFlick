@@ -2,6 +2,7 @@ import PublicShell from '#components/shells/PublicShell/PublicShell';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
 import { createPublicMetadata } from '#lib/public-metadata';
 
 import PlanHandoff from '../_components/PlanHandoff/PlanHandoff';
@@ -128,12 +129,7 @@ export default function PricingPage() {
                             Full breakdown
                         </p>
                         <h2 id="comparison-title">Everything side by side</h2>
-                        <div
-                            aria-label="Plan comparison scroll region"
-                            className={styles.tableScroll}
-                            role="region"
-                            tabIndex={0}
-                        >
+                        <HorizontalScroll label="Plan comparison" variant="ruled">
                             <table className={styles.comparisonTable}>
                                 <caption>PickFlick Free and Pro plan comparison</caption>
                                 <thead>
@@ -153,7 +149,7 @@ export default function PricingPage() {
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
+                        </HorizontalScroll>
                     </div>
                 </section>
 

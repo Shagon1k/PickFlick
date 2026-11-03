@@ -1,4 +1,4 @@
-/* The prototype achievement shelf: filter tiles over a ruled grid of badge cards. */
+/* Shared by the Club and personal shelves. */
 .achievements {
     min-width: 0;
 
@@ -11,7 +11,7 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gap-sm);
-    margin-block: var(--gap-lg);
+    margin-block: 0 var(--gap-lg);
 
     button,
     .completion {
@@ -35,6 +35,8 @@
     }
 
     button {
+        --action-scale: var(--action-scale-toggle);
+
         font: inherit;
         cursor: pointer;
 
@@ -43,12 +45,8 @@
             border-color: var(--border-lit);
         }
 
-        &:active {
-            transform: scale(0.98);
-        }
-
         &[aria-pressed='false'] {
-            opacity: 0.45;
+            opacity: 0.35;
         }
     }
 
@@ -71,22 +69,28 @@
     place-items: center;
     width: 17px;
     height: 17px;
+    color: var(--fg-secondary);
     background: var(--surface);
     border: 1.5px solid var(--border-lit);
     border-radius: 5px;
+    transition:
+        border-color var(--motion-local) var(--ease-standard),
+        color var(--motion-local) var(--ease-standard);
 
     &::after {
         width: 4px;
         height: 8px;
         content: '';
-        border: solid var(--fg);
+        border: solid currentColor;
         border-width: 0 1.5px 1.5px 0;
         opacity: 0;
         transform: translateY(-1px) rotate(45deg);
+        transition: opacity var(--motion-local) var(--ease-standard);
     }
 }
 
 .summary button[aria-pressed='true'] .check {
+    color: var(--fg);
     border-color: var(--fg-secondary);
 
     &::after {
@@ -94,12 +98,15 @@
     }
 }
 
+.summary button:is(:hover, :focus-visible) .check {
+    border-color: var(--fg-secondary);
+}
+
 .shelf {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap-md);
     margin-block: var(--gap-md);
-    border-top: 1px solid var(--border);
-    border-left: 1px solid var(--border);
 }
 
 .card {
@@ -108,19 +115,17 @@
     flex-direction: column;
     align-items: center;
     min-width: 0;
-    min-height: 230px;
+    min-height: 300px;
     padding: 22px 16px;
     text-align: center;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-lg);
 
     h3 {
         width: 100%;
         margin: 0 0 7px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font: 700 var(--fs-card-title) / var(--lh-title) var(--font-display);
-        white-space: nowrap;
+        font: 400 var(--fs-card-title) / var(--lh-title) var(--font-display);
+        overflow-wrap: anywhere;
     }
 }
 
@@ -147,48 +152,47 @@
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 72px;
-    height: 72px;
-    margin-bottom: 16px;
+    width: 80px;
+    height: 80px;
+    margin: calc(var(--gap-sm) / 2) 0 calc(var(--gap-sm) * 2);
     color: var(--muted);
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: radial-gradient(circle at 35% 25%, var(--surface-lit), var(--surface) 72%);
+    border: 1px solid var(--border-lit);
     border-radius: 50%;
+    box-shadow:
+        0 0 0 5px var(--bg),
+        0 0 0 6px var(--medal-ring, var(--border)),
+        inset 0 0 0 5px var(--bg);
 
     svg {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
     }
 }
 
 .status {
     display: inline-flex;
-    padding: 5px 10px;
     margin-bottom: 12px;
     font-size: var(--fs-micro);
     color: var(--fg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
 }
 
 /* Unlocked is the warm, finished state; In progress stays neutral. */
 .card[data-status='unlocked'] {
     .icon {
-        color: var(--gold);
-        border-color: var(--gold-border);
+        --medal-ring: var(--gold-border);
+
+        color: var(--gold-light);
+        border-color: var(--gold-light);
     }
 
     .status {
         color: var(--gold-light);
-        background: var(--gold-soft);
-        border-color: var(--gold-border);
     }
 }
 
 .card[data-status='in-progress'] .status {
     color: var(--fg);
-    background: var(--accent-soft);
-    border-color: var(--border-lit);
 }
 
 .progress {
@@ -196,7 +200,9 @@
     gap: 8px;
     justify-items: center;
     width: 100%;
-    margin-top: 12px;
+    max-width: 160px;
+    padding-top: var(--gap-sm);
+    margin-top: auto;
 
     > span:first-child {
         font: 700 var(--fs-meta) var(--font-mono);
@@ -206,7 +212,6 @@
 .bar {
     display: block;
     width: 100%;
-    max-width: 140px;
     height: 5px;
     overflow: hidden;
     background: var(--border);
@@ -220,25 +225,24 @@
     }
 }
 
-@media (width < 1400px) {
-    .shelf {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+.card[data-status='unlocked'] .bar i {
+    background: var(--gold-light);
 }
 
 @media (width < 768px) {
     .shelf {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--gap-sm);
     }
 
     .card {
-        min-height: 200px;
+        min-height: 280px;
         padding: 18px 12px;
     }
 
     .icon {
-        width: 56px;
-        height: 56px;
+        width: 64px;
+        height: 64px;
 
         svg {
             width: 24px;
@@ -247,7 +251,7 @@
     }
 
     .card h3 {
-        font-size: 16px;
+        font-size: var(--fs-lead);
     }
 }
 

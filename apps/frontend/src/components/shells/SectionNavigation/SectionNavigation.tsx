@@ -37,6 +37,7 @@ export default function SectionNavigation({ items, label }: ISectionNavigationPr
                     {items.map((item) => (
                         <Link
                             aria-current={item.current ? 'page' : undefined}
+                            data-press-feedback
                             href={item.href}
                             key={item.label}
                         >

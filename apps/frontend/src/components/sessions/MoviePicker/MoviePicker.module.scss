@@ -7,158 +7,16 @@
     color: var(--fg-secondary);
 }
 
-/* The prototype dropdown floats over the card instead of pushing its content down. */
-.results {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
-    left: 0;
-    z-index: 20;
-    max-height: 280px;
-    overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-popover);
-}
-
-.searchStatus {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
-    left: 0;
-    z-index: 20;
-    padding: var(--gap-sm) 14px;
-    margin: 0;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-popover);
-}
-
-.searchStatus:empty {
-    display: none;
-}
-
-.results button {
+.actions {
     display: flex;
-    gap: var(--gap-sm);
     align-items: center;
-    width: 100%;
-    min-height: var(--hit);
-    padding: var(--gap-sm) 14px;
-    color: var(--fg);
-    text-align: left;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    transition: background-color var(--motion-local) var(--ease-standard);
 }
 
-.results button + button {
-    border-top: 1px solid var(--border);
-}
-
-.results button:hover,
-.results button[aria-selected='true'] {
-    background: var(--accent-soft);
-}
-
-.poster {
-    display: grid;
-    flex: 0 0 36px;
-    place-items: center;
-    width: 36px;
-    height: 54px;
-    overflow: hidden;
-    font-size: var(--fs-micro);
-    color: var(--fg-secondary);
-    background: var(--surface-lit);
-    border-radius: 4px;
-}
-
-.info {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-}
-
-.info strong {
-    font-size: var(--fs-body-sm);
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
-.info span {
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-}
-
-.picker p:empty,
-.results:empty {
-    display: none;
-}
-
-.selected {
+.change,
+.actionIcon {
     display: flex;
-    gap: var(--gap-sm);
-    align-items: center;
-    padding: var(--gap-sm) 14px;
-    background: var(--accent-soft);
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius);
 }
 
-.selected .info {
-    flex: 1;
-}
-
-.selectedPoster {
-    flex: 0 0 var(--hit);
-    width: var(--hit);
-    height: 62px;
-    border-radius: 4px;
-}
-
-.remove {
-    position: relative;
-    display: grid;
-    flex: 0 0 var(--hit);
-    place-items: center;
-    width: var(--hit);
-    height: var(--hit);
-    padding: 0;
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-pill);
-}
-
-.remove::before {
-    position: absolute;
-    inset: var(--gap-xs);
-    content: '';
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-}
-
-.remove:hover {
-    color: var(--danger-text);
-}
-
-.remove:hover::before {
-    border-color: var(--danger-border);
-}
-
-.remove svg {
-    width: 16px;
-    height: 16px;
-}
-
-.remove:disabled {
-    cursor: not-allowed;
-    opacity: 0.42;
+.change[data-hidden] {
+    visibility: hidden;
 }

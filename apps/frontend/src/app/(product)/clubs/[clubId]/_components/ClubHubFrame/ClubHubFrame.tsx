@@ -66,7 +66,7 @@ export default function ClubHubFrame({
                                 memberCount={snapshot.memberCount}
                                 scheduleHref={
                                     snapshot.permissions.manageSessions
-                                        ? `/clubs/${snapshot.club.id}/sessions/new`
+                                        ? `/clubs/${snapshot.club.id}/sessions/new?returnTo=${encodeURIComponent(pathname)}`
                                         : undefined
                                 }
                             />
@@ -75,8 +75,9 @@ export default function ClubHubFrame({
                     {!isCreating ? (
                         <>
                             <ClubStatus access={snapshot.access} />
-                            <SectionTabs items={navigation} label="Club sections" />
-                            {children}
+                            <SectionTabs items={navigation} label="Club sections">
+                                {children}
+                            </SectionTabs>
                         </>
                     ) : null}
                 </main>

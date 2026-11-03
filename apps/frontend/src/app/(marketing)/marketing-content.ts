@@ -78,7 +78,7 @@ export const freePlanFeatures: readonly IPlanFeature[] = [
     { label: 'Unlimited Session history' },
     { label: 'Club customization' },
     { label: 'Basic counters and the Club ratings leaderboard' },
-    { label: 'Vote results hidden from ordinary members', tone: 'limited' },
+    { label: 'Configurable Session visibility' },
     { label: '90-day inactivity grace', tone: 'limited' },
 ];
 
@@ -89,7 +89,7 @@ export const proPlanFeatures: readonly IPlanFeature[] = [
     { label: 'Unlimited open Rating Sessions' },
     { label: 'Unlimited Session history' },
     { label: 'Club customization' },
-    { label: 'Admin-configurable vote results', tone: 'upgrade' },
+    { label: 'Configurable Session visibility' },
     { label: '180-day inactivity grace', tone: 'upgrade' },
     { label: 'Extended deterministic analytics' },
 ];
@@ -110,7 +110,7 @@ export const comparisonRows = [
     { feature: 'Open Rating Sessions per Club', free: 'Unlimited', pro: 'Unlimited' },
     { feature: 'Session history', free: 'Unlimited', pro: 'Unlimited' },
     { feature: 'Club customization', free: 'Included', pro: 'Included' },
-    { feature: 'Vote-result visibility', free: 'Always hidden', pro: 'Admin-configurable' },
+    { feature: 'Session visibility settings', free: 'Included', pro: 'Included' },
     { feature: 'Inactivity grace', free: '90 days', pro: '180 days' },
     { feature: 'Club ratings leaderboard', free: 'Included', pro: 'Included' },
     { feature: 'Analytics', free: 'Basic counters', pro: 'Extended deterministic' },
@@ -132,7 +132,7 @@ export const pricingFaqs = [
     },
     {
         question: 'Do my Club members need Pro too?',
-        answer: "No. Members join for free. The Club Admin's plan determines that Club's member limit, inactivity grace period, and vote-result visibility.",
+        answer: "No. Members join for free. The Club Admin's plan determines that Club's member limit and inactivity grace period. Session visibility settings are available on both plans.",
     },
     {
         question: 'What is the inactivity grace period?',

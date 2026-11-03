@@ -94,7 +94,7 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                 <h2 id="club-danger-title">Danger Zone</h2>
                 <InfoTip label="About these actions">
                     {isAdmin
-                        ? 'Admins cannot leave their own Club. Delete it while it is empty, or ask the App Admin to transfer it.'
+                        ? 'Admins cannot leave their own Club. Clubs without Session history can be deleted; otherwise, archive the Club or ask the App Admin to transfer it.'
                         : 'Leaving ends your Membership immediately. Shared Club history remains for its members.'}
                 </InfoTip>
             </div>
@@ -112,7 +112,13 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                     ) : (
                         <ReactivateAction clubId={clubId} />
                     )}
-                    {projection.canDelete ? deleteAction : null}
+                    {projection.canDelete ? (
+                        deleteAction
+                    ) : (
+                        <Button disabled size="small" variant="secondary-danger">
+                            Delete Club
+                        </Button>
+                    )}
                 </div>
             ) : (
                 <div className={styles.cardActions}>

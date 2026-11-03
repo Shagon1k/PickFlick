@@ -1,102 +1,31 @@
 /* The prototype's Nomination Rivals card: one film card per nominee and an average-vote button. */
 .rivals {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: var(--gap-md);
-    padding: var(--gap-lg);
+    min-width: 0;
+    padding: var(--gap-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
 
 .header {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--gap-sm);
-    align-items: baseline;
+    align-items: center;
+    min-height: var(--hit);
 }
 
-.header h3 {
+.header h2 {
     margin: 0 auto 0 0;
-    font: 600 var(--fs-card-title)/var(--lh-title) var(--font-display);
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
 }
 
 .note {
     font: var(--fs-caption) var(--font-mono);
     color: var(--fg-secondary);
     white-space: nowrap;
-}
-
-.list {
-    display: grid;
-    gap: var(--gap-sm);
-    max-height: 300px;
-    padding: 0;
-    margin: 0;
-    overflow-y: auto;
-    list-style: none;
-}
-
-.card {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-
-.poster {
-    flex-shrink: 0;
-    width: 64px;
-    height: 96px;
-    border-radius: 6px;
-}
-
-.info {
-    flex: 1;
-    min-width: 0;
-}
-
-.info h4 {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px var(--gap-xs);
-    align-items: baseline;
-    margin: 0 0 4px;
-    font-size: var(--fs-body);
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
-.info h4 a {
-    color: var(--fg);
-    text-decoration: none;
-}
-
-.winner {
-    font: 600 var(--fs-micro) var(--font-mono);
-    color: var(--gold-light);
-}
-
-.meta {
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-}
-
-.genres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 0;
-    margin: 6px 0 0;
-    list-style: none;
-}
-
-.genres li {
-    padding: 2px 8px;
-    font-size: var(--fs-micro);
-    color: var(--fg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
 }
 
 .score,
@@ -106,35 +35,84 @@
     gap: 2px;
     align-items: center;
     justify-content: center;
-    min-width: 68px;
-    min-height: var(--hit);
-    padding: 8px 10px;
+    padding: 0;
     font-family: inherit;
     color: inherit;
+}
+
+.score {
+    --action-scale: var(--action-scale-small);
+
+    min-width: 52px;
+    min-height: 52px;
+    padding: calc(var(--gap-xs) / 2);
+    cursor: pointer;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-lit);
     border-radius: var(--radius);
     transition: border-color var(--motion-local) var(--ease-standard);
 }
 
-.score {
-    cursor: pointer;
+.recordedScore {
+    align-items: flex-end;
+    min-width: 0;
+    text-align: right;
+    background: transparent;
+    border: 0;
 }
 
-.score:hover {
-    border-color: var(--accent);
+.score:is(:focus-visible, [data-open]) {
+    border-color: var(--gold);
+}
+
+.score:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
 }
 
 .score strong,
 .recordedScore strong {
-    font: 600 28px/1 var(--font-display);
-    color: var(--accent);
+    font: 400 var(--fs-app-section)/1 var(--font-display);
+    color: var(--fg);
 }
 
 .score small,
 .recordedScore small {
     font: var(--fs-micro) var(--font-mono);
     color: var(--fg-secondary);
+}
+
+.scoreHint {
+    display: inline-flex;
+    gap: calc(var(--gap-xs) / 2);
+    align-items: center;
+}
+
+.scoreHint svg {
+    width: 12px;
+    height: 12px;
+    color: var(--fg-secondary);
+    transition:
+        color var(--motion-local) var(--ease-standard),
+        transform var(--motion-local) var(--ease-standard);
+}
+
+.score:is(:focus-visible, [data-open]) .scoreHint svg {
+    color: var(--gold-light);
+}
+
+.score[data-open] .scoreHint svg {
+    transform: rotate(180deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .score:hover {
+        border-color: var(--gold);
+    }
+
+    .score:hover .scoreHint svg {
+        color: var(--gold-light);
+    }
 }
 
 .votes {
@@ -161,22 +139,4 @@
 .votes dd {
     margin: 0;
     font: 600 var(--fs-meta) var(--font-mono);
-}
-
-@media (width < 576px) {
-    .card {
-        flex-wrap: wrap;
-    }
-
-    .score,
-    .recordedScore {
-        flex-direction: row;
-        gap: 8px;
-        min-width: 100%;
-    }
-
-    .score strong,
-    .recordedScore strong {
-        font-size: 22px;
-    }
 }

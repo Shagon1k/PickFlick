@@ -2,7 +2,7 @@
 
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
@@ -27,6 +27,7 @@ export default function ClubSwitcher({
     sessionCount: number;
     onCreateChange: (isCreating: boolean) => void;
 }) {
+    const pathname = usePathname();
     const [isCreating, setIsCreating] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -34,11 +35,14 @@ export default function ClubSwitcher({
     const currentIndex = choices.findIndex(({ id }) => id === current.id);
     const index = isCreating ? choices.length : currentIndex;
     function select(nextIndex: number) {
-        const isCreate = nextIndex === choices.length;
-        setIsCreating(isCreate);
-        onCreateChange(isCreate);
         const club = choices[nextIndex];
-        if (!club || club.id === current.id) return;
+        if (!club || club.id === current.id) {
+            const isCreate = !club;
+            setIsCreating(isCreate);
+            onCreateChange(isCreate);
+            return;
+        }
+        // Keep the create slot until navigation mounts the selected Club's frame.
         const form = new FormData();
         form.set('clubId', club.id);
         // A redirect from the action would scroll to the new Hub segment; the switcher stays put.
@@ -81,11 +85,7 @@ export default function ClubSwitcher({
                     onClick={handlePrevious}
                     type="button"
                 >
-                    <span>
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </span>
+                    <Icon name="arrow-left" />
                 </button>
                 <div
                     className={styles.stage}
@@ -97,39 +97,38 @@ export default function ClubSwitcher({
                             : null;
                     }}
                 >
-                    {isCreating ? (
-                        <Link className={styles.create} href="/clubs/new">
-                            <span className={styles.createCircle} aria-hidden="true">
-                                <Icon name="plus" />
-                            </span>
-                            <h1>Create new club</h1>
-                        </Link>
-                    ) : (
-                        <div className={styles.heading}>
-                            <h1 id="hub-title">{current.name}</h1>
-                            <p>
-                                {formatCount(memberCount, 'member')} <span>·</span>{' '}
-                                {formatCount(sessionCount, 'session')} <span>·</span> Est.{' '}
-                                {established}
-                            </p>
-                        </div>
-                    )}
+                    <Link
+                        className={styles.create}
+                        href={`/clubs/new?returnTo=${encodeURIComponent(pathname)}`}
+                        aria-hidden={!isCreating}
+                        inert={!isCreating || isPending}
+                        prefetch={isCreating ? undefined : false}
+                    >
+                        <span className={styles.createCircle} aria-hidden="true">
+                            <Icon name="plus" />
+                        </span>
+                        <h1>Create new club</h1>
+                    </Link>
+                    <div className={styles.heading} aria-hidden={isCreating}>
+                        <h1 id="hub-title">{current.name}</h1>
+                        <p>
+                            {formatCount(memberCount, 'member')} <span>·</span>{' '}
+                            {formatCount(sessionCount, 'session')} <span>·</span> Est. {established}
+                        </p>
+                    </div>
                 </div>
                 <button
                     className={styles.arrow}
                     aria-label="Next Club"
+                    data-direction="next"
                     disabled={isPending}
                     onClick={handleNext}
                     type="button"
                 >
-                    <span>
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                            <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                    </span>
+                    <Icon name="arrow-left" />
                 </button>
             </div>
-            {/* A position indicator only: the 44px arrows switch Clubs, as in the prototype. */}
+            {/* Position only: the arrows and swipe switch Clubs. */}
             <div className={styles.dots} aria-hidden="true">
                 {[...choices.map((club) => club.id), 'create'].map((key, i) => (
                     <span

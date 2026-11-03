@@ -1,5 +1,10 @@
+'use client';
+
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
+
+import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
+import Icon from '#components/ui/Icon/Icon';
 
 import styles from './Table.module.scss';
 
@@ -7,6 +12,9 @@ export interface ITableColumn {
     key: string;
     header: ReactNode;
     isNumeric?: boolean;
+    sortDirection?: 'asc' | 'desc';
+    onSort?: () => void;
+    isSortDisabled?: boolean;
 }
 
 export interface ITableRow {
@@ -32,25 +40,54 @@ export default function Table({
 }: ITableProps) {
     const getCellClass = (column: ITableColumn) =>
         column.isNumeric ? styles.table__numeric : undefined;
+    const hasExplicitSort = columns.some((column) => column.sortDirection);
     return (
-        <div
-            aria-label={`${caption} scroll region`}
-            className={clsx(
-                styles.table__scroll,
-                variant === 'leaderboard' && styles['m-leaderboard'],
-            )}
-            role="region"
-            tabIndex={0}
-        >
-            <table className={styles.table}>
+        <HorizontalScroll label={caption} variant={variant}>
+            <table
+                className={clsx(styles.table, variant === 'leaderboard' && styles['m-leaderboard'])}
+            >
                 <caption className={variant === 'leaderboard' ? 'visually-hidden' : undefined}>
                     {caption}
                 </caption>
                 <thead>
                     <tr>
                         {columns.map((column) => (
-                            <th className={getCellClass(column)} key={column.key} scope="col">
-                                {column.header}
+                            <th
+                                aria-sort={
+                                    column.sortDirection === 'asc'
+                                        ? 'ascending'
+                                        : column.sortDirection === 'desc'
+                                          ? 'descending'
+                                          : undefined
+                                }
+                                className={clsx(
+                                    getCellClass(column),
+                                    column.onSort && styles.table__sortable,
+                                )}
+                                key={column.key}
+                                scope="col"
+                            >
+                                {column.onSort ? (
+                                    <button
+                                        className={styles.table__sort}
+                                        data-direction={column.sortDirection}
+                                        disabled={column.isSortDisabled}
+                                        onClick={column.onSort}
+                                        type="button"
+                                    >
+                                        {column.header}
+                                        <Icon name="chevron-down" />
+                                        <span className="visually-hidden">
+                                            {column.sortDirection === 'asc'
+                                                ? ': sort descending'
+                                                : hasExplicitSort
+                                                  ? ': reset sorting'
+                                                  : ': sort ascending'}
+                                        </span>
+                                    </button>
+                                ) : (
+                                    column.header
+                                )}
                             </th>
                         ))}
                     </tr>
@@ -75,6 +112,6 @@ export default function Table({
                     )}
                 </tbody>
             </table>
-        </div>
+        </HorizontalScroll>
     );
 }

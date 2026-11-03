@@ -6,6 +6,8 @@
 }
 
 .infoTip__trigger {
+    --action-scale: var(--action-scale-small);
+
     position: relative;
     display: inline-grid;
     place-items: center;

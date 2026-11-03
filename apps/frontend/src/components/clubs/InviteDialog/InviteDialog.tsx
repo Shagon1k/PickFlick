@@ -174,7 +174,12 @@ export default function InviteDialog({
                                 <label className="visually-hidden" htmlFor="invitation-link">
                                     Invitation link
                                 </label>
-                                <input id="invitation-link" readOnly value={link} />
+                                <input
+                                    id="invitation-link"
+                                    readOnly
+                                    value={link}
+                                    onFocus={(event) => event.currentTarget.select()}
+                                />
                             </div>
                             <button
                                 aria-label="Copy link"

@@ -15,10 +15,14 @@ import type { TOmitStyling } from '#components/ui/types';
 export interface ITextareaProps
     extends
         IFieldProps,
-        TOmitStyling<IMantineTextareaProps, keyof IFieldProps | 'description' | 'size'> {
+        TOmitStyling<
+            IMantineTextareaProps,
+            keyof IFieldProps | 'description' | 'size' | 'variant'
+        > {
     /** Shows "length/maxLength" in the message line while there is no error or success. */
     shouldShowCount?: boolean;
     size?: 'compact' | 'default' | 'large';
+    variant?: 'default' | 'transparent';
 }
 
 export default function Textarea({
@@ -31,6 +35,7 @@ export default function Textarea({
     shouldShowCount = false,
     size = 'default',
     success,
+    variant = 'default',
     ...props
 }: ITextareaProps) {
     const count =
@@ -61,6 +66,7 @@ export default function Textarea({
                     styles.control,
                     styles['m-textarea'],
                     size !== 'default' && styles[`m-${size}`],
+                    variant === 'transparent' && styles['m-transparent'],
                 ),
             }}
             maxLength={maxLength}

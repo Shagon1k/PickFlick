@@ -1,16 +1,3 @@
-.table__scroll:focus-visible {
-    outline: 1px solid var(--focus);
-    outline-offset: 3px;
-    box-shadow: var(--focus-ring);
-}
-
-.table__scroll {
-    max-width: 100%;
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
 .table {
     width: 100%;
     min-width: 560px;
@@ -35,13 +22,67 @@
 }
 
 .table th {
+    vertical-align: middle;
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);
 }
 
-.table tbody tr:hover {
+.table th.table__sortable {
+    padding-block: 0;
+}
+
+.table__sort {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-height: var(--hit);
+    padding: 0;
+    font: inherit;
+    color: var(--fg-secondary);
+    text-align: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+.table__sort:hover,
+.table__sort:focus-visible,
+.table__sort[data-direction] {
+    color: var(--fg);
+}
+
+.table__sort:disabled {
+    cursor: progress;
+}
+
+.table__sort svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+}
+
+.table__sort[data-direction] svg,
+.table__sort:hover svg,
+.table__sort:focus-visible svg {
+    opacity: 1;
+}
+
+.table__sort[data-direction='asc'] svg {
+    transform: rotate(180deg);
+}
+
+.table tbody tr {
+    transition:
+        color var(--motion-local) var(--ease-standard),
+        background-color var(--motion-local) var(--ease-standard);
+}
+
+.table tbody tr:is(:hover, :focus-within) {
     color: var(--fg);
     background: var(--accent-soft);
 }
@@ -64,27 +105,22 @@
     }
 }
 
-.m-leaderboard {
-    border-inline: 0;
-    border-radius: 0;
-}
-
-.m-leaderboard .table {
+.table.m-leaderboard {
     min-width: 640px;
 }
 
-.m-leaderboard .table td {
+.table.m-leaderboard td {
     vertical-align: middle;
 }
 
-.m-leaderboard .table th:first-child,
-.m-leaderboard .table td:first-child {
+.table.m-leaderboard th:first-child,
+.table.m-leaderboard td:first-child {
     width: 40px;
     font: var(--fs-lead)/var(--lh-body) var(--font-display);
     color: var(--muted);
     text-align: left;
 }
 
-.m-leaderboard .table thead th {
+.table.m-leaderboard thead th {
     border-top: 0;
 }

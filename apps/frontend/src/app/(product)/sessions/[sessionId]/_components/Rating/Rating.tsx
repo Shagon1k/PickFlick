@@ -1,57 +1,51 @@
 'use client';
 
 import { formatRatingScore, type TRating } from '@pickflick/contracts';
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 
+import Avatar from '#components/ui/Avatar/Avatar';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
-import { getMonogram } from '#lib/format';
 
 import styles from './Rating.module.scss';
-import RatingForm from './RatingForm';
 
-type TEntry = Pick<NonNullable<TRating['results']>['entries'][number], 'score' | 'comment'> & {
-    id: string;
-    author: string;
-    isOwn: boolean;
-};
+type TEntry = Pick<
+    NonNullable<TRating['results']>['entries'][number],
+    'id' | 'score' | 'comment' | 'author' | 'avatarUrl' | 'isOwn'
+>;
 
 export default function Rating({
-    sessionId,
     data,
-    isCompleted,
+    isInProgress = false,
 }: {
-    sessionId: string;
     data: TRating;
-    isCompleted: boolean;
+    isInProgress?: boolean;
 }) {
-    const headingRef = useRef<HTMLHeadingElement>(null);
-    const isRating = !data.own && data.canSubmit;
-    if (!isCompleted && !data.own && !data.canSubmit) return null;
     return (
-        <section
-            className={styles.rating}
-            data-completed={isCompleted || undefined}
-            aria-labelledby="rating-heading"
-        >
-            <h2 id="rating-heading" ref={headingRef} tabIndex={-1}>
-                {isRating || (!data.own && !isCompleted) ? 'Your rating' : 'Ratings'}
+        <section className={styles.rating} aria-labelledby="rating-heading">
+            <h2 id="rating-heading" tabIndex={-1}>
+                Ratings
             </h2>
-            {isRating ? (
-                <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />
-            ) : null}
-            <RatingList data={data} />
+            <RatingList data={data} isInProgress={isInProgress} />
         </section>
     );
 }
 
-/** Your response sits highlighted at the top of everyone else's, so nothing is shown twice. */
-function RatingList({ data }: { data: TRating }) {
+/** Your response appears first, without duplicating it among everyone else's. */
+function RatingList({ data, isInProgress }: { data: TRating; isInProgress: boolean }) {
     const entries: TEntry[] = data.results
         ? data.results.entries.toSorted((a, b) => Number(b.isOwn) - Number(a.isOwn))
         : [];
     if (data.own && !entries.some((entry) => entry.isOwn))
-        entries.unshift({ id: 'own', author: 'You', isOwn: true, ...data.own });
+        entries.unshift({ id: 'own', isOwn: true, ...data.own });
+    if (!entries.length && isInProgress)
+        return (
+            <div className={styles.inProgress}>
+                <span aria-hidden="true">—</span>
+                <p>In progress</p>
+            </div>
+        );
     if (!entries.length)
         return data.results ? <p className={styles.empty}>No ratings were received.</p> : null;
     return (
@@ -66,23 +60,16 @@ function RatingList({ data }: { data: TRating }) {
 function RatingEntry({ entry }: { entry: TEntry }) {
     const name = entry.isOwn ? 'You' : entry.author;
     return (
-        <li data-own={entry.isOwn || undefined}>
-            <span className={styles.avatar} aria-hidden="true">
-                {getMonogram(entry.author)}
-            </span>
+        <li data-own={entry.isOwn || undefined} data-color-reveal-trigger data-color-reveal-surface>
+            <ColorReveal variant="surface" />
+            <Avatar name={entry.author} src={entry.avatarUrl} size="extra-large" />
             <div className={styles.who}>
-                <strong>
-                    {name}
-                    {entry.isOwn ? (
-                        <span className={styles.lock}>
-                            <Icon name="lock" />
-                            Final
-                        </span>
-                    ) : null}
-                </strong>
+                <strong>{name}</strong>
                 {entry.comment ? <Review author={name} comment={entry.comment} /> : null}
             </div>
-            <span className={styles.score}>{formatRatingScore(entry.score)}</span>
+            <span className={styles.score}>
+                <ColorReveal variant="accent">{formatRatingScore(entry.score)}</ColorReveal>
+            </span>
         </li>
     );
 }
@@ -102,10 +89,12 @@ function Review({ author, comment }: { author: string; comment: string }) {
                 <button
                     aria-label={`Read the review by ${author}`}
                     className={styles.review}
+                    data-open={isOpen || undefined}
                     onClick={() => setIsOpen(!isOpen)}
                     type="button"
                 >
-                    {comment}
+                    <span className={styles.reviewText}>{comment}</span>
+                    <Icon name="chevron-down" />
                 </button>
             }
         >

@@ -21,6 +21,7 @@ export interface IScaleControlProps {
     required?: boolean;
     isSubmitted?: boolean;
     presentation?: 'score' | 'rating';
+    tone?: 'accent' | 'neutral';
 }
 
 /** The candidate when it belongs to the scale; anything outside it counts as no selection. */
@@ -72,6 +73,7 @@ export default function ScaleControl({
     required = false,
     isSubmitted = false,
     value,
+    tone = 'accent',
 }: IScaleControlProps) {
     const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
     const firstValue = values[0] ?? min;
@@ -110,6 +112,7 @@ export default function ScaleControl({
                 presentation={presentation}
                 compact={isCompact}
                 selectionLabel={selectionLabel}
+                tone={tone}
             />
         );
 
@@ -137,6 +140,7 @@ export default function ScaleControl({
         <fieldset
             className={styles.scale}
             data-compact={isCompact || undefined}
+            data-tone={tone}
             disabled={disabled}
         >
             <legend>{label}</legend>
@@ -240,6 +244,7 @@ function SubmittedScale({
     presentation,
     compact,
     selectionLabel,
+    tone,
 }: {
     label: string;
     values: readonly number[];
@@ -247,12 +252,14 @@ function SubmittedScale({
     presentation: IScaleControlProps['presentation'];
     compact: boolean;
     selectionLabel: string;
+    tone: 'accent' | 'neutral';
 }) {
     return (
         <fieldset
             className={styles.scale}
             data-compact={compact || undefined}
             data-submitted="true"
+            data-tone={tone}
         >
             <legend>{label}</legend>
             <div aria-hidden="true" className={styles.scale__rail} data-presentation={presentation}>

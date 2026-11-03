@@ -62,6 +62,9 @@
     cursor: pointer;
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
 .members input {
@@ -76,12 +79,24 @@
     border-color: var(--gold-border);
 }
 
+.members label:hover:has(input:not(:disabled)) {
+    background: var(--surface-lit);
+    border-color: var(--fg-secondary);
+}
+
+.members label:hover:has(input:checked:not(:disabled)) {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+}
+
 .members label:has(input:focus-visible) {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
 }
 
 .monogram {
+    --action-scale: var(--action-scale-small);
+
     display: grid;
     flex: 0 0 32px;
     place-items: center;

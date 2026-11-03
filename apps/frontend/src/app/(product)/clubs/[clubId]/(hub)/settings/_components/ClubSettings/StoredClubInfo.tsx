@@ -11,16 +11,6 @@ export default function StoredClubInfo({ projection }: { projection: IClubSettin
         <>
             <input name="name" type="hidden" value={projection.club.name} />
             <input name="description" type="hidden" value={projection.club.description ?? ''} />
-            <input
-                name="selectionScaleMin"
-                type="hidden"
-                value={projection.club.selectionScaleMin}
-            />
-            <input
-                name="selectionScaleMax"
-                type="hidden"
-                value={projection.club.selectionScaleMax}
-            />
         </>
     );
 }

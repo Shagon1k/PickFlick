@@ -37,6 +37,7 @@ export default function ButtonLink({
                 label: styles.button__label,
             }}
             component="a"
+            data-press-feedback
             href={disabled ? undefined : href}
             onClick={disabled ? (event) => event.preventDefault() : onClick}
             tabIndex={disabled ? -1 : tabIndex}

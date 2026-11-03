@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+
 import styles from './MoviePoster.module.scss';
 
 const POSTER_WIDTH = 300;
@@ -20,14 +22,16 @@ export default function MoviePoster({ url, title, className }: IMoviePosterProps
     return (
         <div className={clsx(styles.poster, className)}>
             {url && url !== failedUrl ? (
-                <Image
-                    src={url}
-                    alt={`${title} poster`}
-                    width={POSTER_WIDTH}
-                    height={POSTER_HEIGHT}
-                    unoptimized
-                    onError={() => setFailedUrl(url)}
-                />
+                <ColorReveal shouldFill>
+                    <Image
+                        src={url}
+                        alt={`${title} poster`}
+                        width={POSTER_WIDTH}
+                        height={POSTER_HEIGHT}
+                        unoptimized
+                        onError={() => setFailedUrl(url)}
+                    />
+                </ColorReveal>
             ) : (
                 <span>Poster unavailable</span>
             )}

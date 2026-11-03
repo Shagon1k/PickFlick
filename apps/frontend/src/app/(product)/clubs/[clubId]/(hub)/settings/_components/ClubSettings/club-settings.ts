@@ -1,21 +1,26 @@
-import { type IClubSettings } from '@pickflick/contracts';
+import type { IClubSettings, IClubVisibility } from '@pickflick/contracts';
 
-export type TVisibilityName =
-    | 'showNominationAuthors'
-    | 'showNominationsBeforeSubmit'
-    | 'showVoteResults'
-    | 'showRatingResults'
-    | 'useMonochromeMedia';
+export const visibilityOptions: {
+    label: string;
+    during: keyof IClubVisibility;
+    after: keyof IClubVisibility;
+}[] = [
+    {
+        label: 'Show who nominated each film',
+        during: 'showNominationAuthorsDuring',
+        after: 'showNominationAuthorsAfter',
+    },
+    {
+        label: 'Show each member’s Selection scores',
+        during: 'showSelectionScoresDuring',
+        after: 'showSelectionScoresAfter',
+    },
+    { label: 'Show Session ratings', during: 'showRatingsDuring', after: 'showRatingsAfter' },
+];
 
-export const visibilityOptions: ReadonlyArray<{
-    readonly name: TVisibilityName;
-    readonly label: string;
-}> = [
-    { name: 'showNominationAuthors', label: 'Show who nominated each film' },
-    { name: 'showNominationsBeforeSubmit', label: 'Show nominations before I submit' },
-    { name: 'showVoteResults', label: 'Show Selection results after the round closes' },
-    { name: 'showRatingResults', label: 'Show ratings after the round closes' },
-    { name: 'useMonochromeMedia', label: 'Use black & white posters and trailers' },
+export const visibilityNames: (keyof IClubVisibility)[] = [
+    ...visibilityOptions.flatMap(({ during, after }) => [during, after]),
+    'showNominationsBeforeSubmit',
 ];
 
 export function isWritable(projection: IClubSettings): boolean {

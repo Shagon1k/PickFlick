@@ -3,6 +3,7 @@ import '@mantine/core/styles.layer.css';
 import { mantineHtmlProps, MantineProvider } from '@mantine/core';
 import type { ReactNode } from 'react';
 
+import PressFeedback from '#components/ui/PressFeedback/PressFeedback';
 import { theme } from '#theme/mantine';
 
 // Projector Noir is dark only, so the scheme is forced before hydration.
@@ -17,6 +18,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
             withGlobalClasses={false}
             withStaticClasses={false}
         >
+            <PressFeedback />
             {children}
         </MantineProvider>
     );

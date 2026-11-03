@@ -1,7 +1,8 @@
-import type { RefObject } from 'react';
+import { type RefObject, useState } from 'react';
 
 import { useNotifications } from '#components/notifications/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
+import Button from '#components/ui/Button/Button';
 
 import NotificationItems from './NotificationItems';
 
@@ -19,7 +20,16 @@ export default function NotificationsPanel({
     panelRef,
 }: INotificationsPanelProps) {
     const { data, error, isLoading, isSaving, isLive, refresh, markRead } = useNotifications();
+    const [isRetrying, setIsRetrying] = useState(false);
     const unreadCount = data?.unreadCount ?? 0;
+    async function handleRetry() {
+        setIsRetrying(true);
+        try {
+            await refresh();
+        } finally {
+            setIsRetrying(false);
+        }
+    }
     return (
         <div
             aria-label="Notifications"
@@ -56,14 +66,14 @@ export default function NotificationsPanel({
             {error ? (
                 <div className={styles.notifFeedback} role="alert">
                     <p>{error}</p>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            void refresh();
-                        }}
+                    <Button
+                        loading={isRetrying}
+                        size="small"
+                        variant="subtle"
+                        onClick={() => void handleRetry()}
                     >
                         Try again
-                    </button>
+                    </Button>
                 </div>
             ) : null}
             {!isLive && data ? (

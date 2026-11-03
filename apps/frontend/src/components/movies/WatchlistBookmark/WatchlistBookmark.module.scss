@@ -1,5 +1,7 @@
 /* A tall ribbon over the poster corner, filled only after a successful save. */
 .bookmark {
+    --action-scale: var(--action-scale-small);
+
     position: absolute;
     top: 10px;
     right: 10px;
@@ -65,35 +67,54 @@
     font-size: var(--fs-body-sm);
 }
 
-/* The words stay visible as one segmented control, like the Session type choice. */
+/* One unframed row of choices sits directly on the same surface as the rating picker. */
 .levels {
     display: flex;
-    padding: 3px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
+    flex: 1;
+    gap: calc(var(--gap-xs) / 2);
+    min-width: 0;
+    padding: calc(var(--gap-xs) / 2);
 }
 
 .levels button {
-    min-width: 56px;
+    flex: 1;
+    min-width: var(--hit);
     min-height: var(--hit);
-    padding: var(--gap-xs) var(--gap-sm);
+    padding: var(--gap-xs) calc(var(--gap-xs) / 2);
+    font: inherit;
     color: var(--fg-secondary);
     cursor: pointer;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
+    transition:
+        color var(--motion-local) var(--ease-standard),
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
-.levels button:hover {
+.levels button:hover:not(:disabled, [aria-pressed='true']) {
     color: var(--fg);
+    background: var(--accent-soft);
+    border-color: var(--border-lit);
 }
 
 .levels button[aria-pressed='true'] {
     font-weight: 500;
-    color: var(--fg);
-    background: var(--surface);
-    border-color: var(--border-lit);
+    color: var(--gold-light);
+    background: var(--gold-soft);
+    border-color: var(--gold-border);
+}
+
+.levels button[aria-pressed='true']:hover:not(:disabled) {
+    border-color: var(--gold);
+}
+
+.levels button:focus-visible,
+.remove:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+    box-shadow: none;
 }
 
 .levels button:disabled,
@@ -108,7 +129,10 @@
 }
 
 .remove {
+    --action-scale: var(--action-scale-small);
+
     display: grid;
+    flex: 0 0 var(--hit);
     place-items: center;
     width: var(--hit);
     height: var(--hit);
@@ -116,11 +140,15 @@
     cursor: pointer;
     background: transparent;
     border: 1px solid var(--danger-border);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
-.remove:hover {
+.remove:hover:not(:disabled) {
     background: var(--danger-soft);
+    border-color: var(--danger);
 }
 
 .remove svg {

@@ -1,5 +1,6 @@
 /** Glyphs for menu and dialog actions. */
 export const actionGlyphs = {
+    play: <path d="m5 3 16 9-16 9z" />,
     cancel: (
         <>
             <circle cx="12" cy="12" r="10" />

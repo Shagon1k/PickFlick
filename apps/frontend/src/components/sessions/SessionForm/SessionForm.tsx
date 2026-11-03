@@ -53,6 +53,7 @@ export default function SessionForm({
     const form = useForm<ISessionValues>({
         initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
+        onValuesChange: () => setMessage(''),
     });
     function save(values: ISessionValues, element?: HTMLFormElement) {
         const input = buildSessionInput(values, getNextDeadline(values, session), session);

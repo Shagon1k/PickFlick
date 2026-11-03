@@ -3,13 +3,16 @@
 import { type TLiveSelectionOutcome, type TSelectionReason } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
+import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
+import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
 import { formatAverage, formatCount } from '#lib/format';
 
 import styles from './NominationRivals.module.scss';
-import RivalCard from './RivalCard';
 
 type TBreakdown = NonNullable<TLiveSelectionOutcome['breakdown']>;
 type TRival = TBreakdown['ranking'][number];
@@ -38,7 +41,7 @@ export default function NominationRivals({
     return (
         <section aria-labelledby="rivals-heading" className={styles.rivals}>
             <div className={styles.header}>
-                <h3 id="rivals-heading">Nomination Rivals</h3>
+                <h2 id="rivals-heading">Nomination Rivals</h2>
                 {winner ? (
                     <span className={styles.note}>winner: {formatAverage(average(winner))}</span>
                 ) : null}
@@ -49,18 +52,18 @@ export default function NominationRivals({
                     {breakdown.scaleMax} scale. {SELECTION_REASONS[breakdown.reason]}.
                 </InfoTip>
             </div>
-            <ol className={styles.list}>
+            <NominationMovieList label="Selection ranking" ordered>
                 {breakdown.ranking.map((rival, index) => (
-                    <RivalCard
-                        key={rival.id}
-                        movie={rival.movie}
-                        author={rival.author}
-                        badge={index === 0 ? 'Winner' : undefined}
-                    >
-                        <RivalScore rival={rival} average={average(rival)} />
-                    </RivalCard>
+                    <li key={rival.id}>
+                        <NominationMovieCard
+                            movie={rival.movie}
+                            author={rival.author}
+                            badge={index === 0 ? 'Winner' : undefined}
+                            score={<RivalScore rival={rival} average={average(rival)} />}
+                        />
+                    </li>
                 ))}
-            </ol>
+            </NominationMovieList>
         </section>
     );
 }
@@ -72,19 +75,25 @@ function RivalScore({ rival, average }: { rival: TRival; average: number }) {
     return (
         <Popover
             id={id}
-            label={`Votes for ${title}`}
+            label={`Selection details for ${title}`}
             open={isOpen}
             onChange={setIsOpen}
-            variant="watchlist"
+            variant="selection"
             trigger={
                 <button
-                    aria-label={`Average vote ${formatAverage(average)} for ${title}. Show votes`}
+                    aria-label={`Average Selection score ${formatAverage(average)} for ${title}. Show details`}
                     className={styles.score}
+                    data-open={isOpen || undefined}
                     onClick={() => setIsOpen(!isOpen)}
                     type="button"
                 >
-                    <strong>{formatAverage(average)}</strong>
-                    <small>avg. vote</small>
+                    <strong>
+                        <ColorReveal variant="accent">{formatAverage(average)}</ColorReveal>
+                    </strong>
+                    <span className={styles.scoreHint}>
+                        <small>avg.</small>
+                        <Icon name="chevron-down" />
+                    </span>
                 </button>
             }
         >

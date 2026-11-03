@@ -6,6 +6,11 @@ import type { ReactNode } from 'react';
 import PhaseTransitionDialog from '#components/sessions/PhaseTransitionDialog/PhaseTransitionDialog';
 import { closeRatingAction } from '#components/sessions/rating-actions';
 
+export type TRatingCloseData = Pick<
+    TRating,
+    'canClose' | 'receivedCount' | 'acceptedCount' | 'submittedCount'
+>;
+
 export default function RatingClose({
     sessionId,
     phaseVersion,
@@ -14,7 +19,7 @@ export default function RatingClose({
 }: {
     sessionId: string;
     phaseVersion: number;
-    data: TRating;
+    data: TRatingCloseData;
     children: (onClose?: () => void) => ReactNode;
 }) {
     return (

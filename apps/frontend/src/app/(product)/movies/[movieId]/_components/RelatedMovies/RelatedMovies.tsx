@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { getMovieDetails } from '#api/movies.server';
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 
 import styles from '../../page.module.scss';
 
@@ -21,10 +22,13 @@ export default async function RelatedMovies({ ids }: { ids: string[] }) {
                 return (
                     <Link
                         className={styles.relatedCard}
+                        data-color-reveal-trigger
+                        data-color-reveal-surface
                         href={`/movies/${id}`}
                         key={id}
                         prefetch={false}
                     >
+                        <ColorReveal variant="surface" />
                         <MoviePoster
                             className={styles.relatedPoster}
                             url={result.state === 'unavailable' ? null : result.data.posterUrl}

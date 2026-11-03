@@ -23,6 +23,7 @@ function FilmMenuItem({ item }: { item: TShellMenuItem }) {
         <Link
             aria-current={item.current ? 'page' : undefined}
             className={styles.filmFrame}
+            data-press-feedback
             href={item.href}
             onClick={() => closeOverlay()}
         >

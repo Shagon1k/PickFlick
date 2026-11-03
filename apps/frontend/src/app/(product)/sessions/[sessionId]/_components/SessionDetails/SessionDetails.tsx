@@ -21,19 +21,22 @@ import RatingClose from '#components/sessions/RatingClose/RatingClose';
 import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
+import SessionStatus from '#components/sessions/SessionStatus/SessionStatus';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
 import styles from '../../page.module.scss';
-import Completed from '../Completed/Completed';
 import Nomination from '../Nomination/Nomination';
+import NominationAuthors from '../NominationRivals/NominationAuthors';
 import NominationRivals from '../NominationRivals/NominationRivals';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
-import Rating from '../Rating/Rating';
+import YourRating from '../Rating/YourRating';
 import Selection from '../Selection/Selection';
+import SelectionScores from '../SelectionScores/SelectionScores';
 import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
+import SessionResults from '../SessionResults/SessionResults';
 
 export default function SessionDetails({
     session,
@@ -53,6 +56,7 @@ export default function SessionDetails({
         phaseRef.current = session.phase;
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
+    const isResultsPhase = session.phase === 'RATING' || session.phase === 'COMPLETED';
     const header = (participation: ReactNode, onKick?: () => void, onClosePhase?: () => void) => (
         <SessionHeader
             session={session}
@@ -76,7 +80,7 @@ export default function SessionDetails({
                         <a href="#rating-heading">below</a>.
                     </PhaseProgress>
                     {header(participation)}
-                    <ScreeningFilm movie={movie} movieId={session.movieId} />
+                    <ScreeningFilm movie={movie} session={session} />
                 </>
             );
         const rating = session.rating;
@@ -95,18 +99,13 @@ export default function SessionDetails({
                                 {rating.canSubmit ? (
                                     <>
                                         {' '}
-                                        Please <a href="#rating-heading">rate</a>.
+                                        Please <a href="#your-rating-heading">rate</a>.
                                     </>
                                 ) : null}
                             </PhaseProgress>
                             {header(participation, onKick, onClose)}
-                            <ScreeningFilm movie={movie} movieId={session.movieId} />
-                            <Rating
-                                key={session.phase}
-                                sessionId={session.id}
-                                data={rating}
-                                isCompleted={false}
-                            />
+                            <ScreeningFilm movie={movie} session={session} />
+                            <YourRating key={session.id} sessionId={session.id} data={rating} />
                         </>
                     )}
                 </RatingClose>
@@ -125,7 +124,7 @@ export default function SessionDetails({
                                 the screening.
                             </PhaseProgress>
                             {header(participation, onKick, onOpen)}
-                            <ScreeningFilm movie={movie} movieId={session.movieId} />
+                            <ScreeningFilm movie={movie} session={session} />
                         </>
                     )}
                 </OpenRating>
@@ -176,11 +175,22 @@ export default function SessionDetails({
                         {renderPhase(participation, onKick)}
                         {session.selectionOutcome?.source === 'LIVE' &&
                         session.selectionOutcome.breakdown &&
-                        session.phase !== 'COMPLETED' ? (
+                        !isResultsPhase ? (
                             <NominationRivals
                                 outcome={session.selectionOutcome}
                                 breakdown={session.selectionOutcome.breakdown}
                             />
+                        ) : null}
+                        {!isResultsPhase &&
+                        session.nominationAuthors &&
+                        !(
+                            session.selectionOutcome?.source === 'LIVE' &&
+                            session.selectionOutcome.breakdown
+                        ) ? (
+                            <NominationAuthors authors={session.nominationAuthors} />
+                        ) : null}
+                        {!isResultsPhase && session.selectionScores ? (
+                            <SelectionScores data={session.selectionScores} />
                         ) : null}
                         <div className={styles.reelBreak} aria-hidden="true">
                             <SprocketDivider variant="section" />
@@ -188,7 +198,7 @@ export default function SessionDetails({
                         </div>
                         <h2 className={styles.detailsTitle}>Session Details</h2>
                         <SessionFacts session={session} roster={roster} />
-                        {session.phase === 'COMPLETED' ? <Completed session={session} /> : null}
+                        {isResultsPhase ? <SessionResults session={session} /> : null}
                     </>
                 )}
             </SessionRoster>
@@ -211,20 +221,23 @@ export default function SessionDetails({
     );
 }
 
-function ScreeningFilm({
-    movie,
-    movieId,
-}: {
-    movie: TMovieDetails | null;
-    movieId: string | null;
-}) {
+function ScreeningFilm({ movie, session }: { movie: TMovieDetails | null; session: TSession }) {
+    const movieId = session.movieId;
     if (movie)
         return (
             <div className={styles.film}>
                 <MovieMedia
+                    variant="session"
                     filmHref={movieId ? `/movies/${movieId}` : undefined}
                     shouldHidePhonePoster
                     movie={movie}
+                    posterCorner={
+                        <SessionStatus
+                            phase={session.phase}
+                            isLogged={session.type === 'PAST'}
+                            placement="poster"
+                        />
+                    }
                     title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
                 />
             </div>

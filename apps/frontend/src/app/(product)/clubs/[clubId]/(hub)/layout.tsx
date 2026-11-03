@@ -21,7 +21,7 @@ export default async function HubLayout({
         // The requested panel owns sign-in, denial and service-failure recovery.
     }
     return (
-        <ClubHubFrame hub={hub} clubs={clubs}>
+        <ClubHubFrame key={clubId} hub={hub} clubs={clubs}>
             {children}
         </ClubHubFrame>
     );

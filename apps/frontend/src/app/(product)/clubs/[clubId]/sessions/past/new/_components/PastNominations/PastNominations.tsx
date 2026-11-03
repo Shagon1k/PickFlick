@@ -103,7 +103,9 @@ export default function PastNominations({
     const takenNominators = new Set(nominations.flatMap((row) => row.nominatorMembershipId ?? []));
     return (
         <fieldset className={styles.evidence} disabled={disabled}>
-            <legend className={styles.title}>What else was nominated?</legend>
+            <legend className={styles.title} data-step-heading tabIndex={-1}>
+                What else was nominated?
+            </legend>
             <MoviePicker
                 id="past-nomination"
                 label="Add nominated Movies"

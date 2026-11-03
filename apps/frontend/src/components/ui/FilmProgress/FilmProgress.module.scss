@@ -95,3 +95,25 @@
         transform: translateX(120%);
     }
 }
+
+.film[data-compact] {
+    gap: 3px;
+    height: 32px;
+    padding: 8px 4px;
+    border-color: var(--border-lit);
+}
+
+.film[data-compact]::before,
+.film[data-compact]::after {
+    right: 4px;
+    left: 4px;
+    height: 4px;
+}
+
+.film[data-compact]::before {
+    top: 2px;
+}
+
+.film[data-compact]::after {
+    bottom: 2px;
+}

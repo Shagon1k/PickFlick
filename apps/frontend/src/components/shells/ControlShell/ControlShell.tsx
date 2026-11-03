@@ -48,8 +48,9 @@ export default function ControlShell({
                     {summary && <div className={styles.controlSummary}>{summary}</div>}
                 </header>
                 {summary ? <SprocketDivider variant="section" /> : null}
-                <SectionTabs items={items} label={title} />
-                <div className={styles.controlContent}>{children}</div>
+                <SectionTabs items={items} label={title}>
+                    {children}
+                </SectionTabs>
             </main>
         </ProductChrome>
     );

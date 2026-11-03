@@ -20,7 +20,7 @@ export default function ActiveSessionCard({
 }: {
     hub: IClubHub;
     isCompact?: boolean;
-    /** Operator controls that replace the open or join button in Manage Club. */
+    /** Contextual controls for an active Session or the empty Overview card. */
     actions?: ReactNode;
 }) {
     const { activeSession: session, memberCount } = hub;
@@ -84,7 +84,10 @@ export default function ActiveSessionCard({
                     <p role="status">{message}</p>
                 </div>
             ) : (
-                <p>No active Session. Your next screening will appear here.</p>
+                <div className={styles.stack}>
+                    <p>No active Session.</p>
+                    {actions}
+                </div>
             )}
         </section>
     );

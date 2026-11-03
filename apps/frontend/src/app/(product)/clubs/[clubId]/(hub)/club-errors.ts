@@ -11,7 +11,6 @@ const CONFLICT_MESSAGES: Record<TClubConflictReason, string> = {
         'A Club Admin must transfer administration or delete the Club before leaving.',
     SESSION_HISTORY: 'Clubs with Session history can be archived, but not deleted.',
     CLUB_ARCHIVED: 'This Club is archived. Reactivate it before making changes.',
-    TIER_SETTING_UNAVAILABLE: 'Showing Selection results is a Pro Club setting.',
     MEMBERSHIP_INELIGIBLE:
         "That member's role can no longer be changed. Reload to see the current roster.",
 };

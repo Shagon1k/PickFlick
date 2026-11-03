@@ -2,6 +2,7 @@ import 'server-only';
 
 import type {
     IClubHub,
+    IClubSessionHistoryPage,
     IClubSettings,
     IClubSummary,
     TChangeMemberRoleRequest,
@@ -21,11 +22,20 @@ export const getClubHub = cache(
         requestApi(apiPath`/clubs/${clubId}/hub`, {}, incomingHeaders),
 );
 
+export const getClubSessionHistory = (
+    clubId: string,
+    cursor: string,
+): Promise<IClubSessionHistoryPage> => {
+    const path = apiPath`/clubs/${clubId}/sessions/history`;
+    return requestApi(`${path}?${new URLSearchParams({ cursor })}`);
+};
+
 export const getClubRatings = (clubId: string, query: TClubRatingsQuery): Promise<TClubRatings> => {
     const path = apiPath`/clubs/${clubId}/ratings`;
-    return requestApi(
-        `${path}?${new URLSearchParams({ sort: query.sort, page: String(query.page) })}`,
-    );
+    const search = new URLSearchParams({ sort: query.sort, page: String(query.page) });
+    if (query.q) search.set('q', query.q);
+    if (query.direction) search.set('direction', query.direction);
+    return requestApi(`${path}?${search}`);
 };
 
 export const createClub = (input: TCreateClubRequest): Promise<IClubSummary> =>

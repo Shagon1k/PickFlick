@@ -13,6 +13,8 @@ export type TButtonVariant =
     | 'primary'
     | 'secondary'
     | 'ghost'
+    | 'subtle'
+    | 'navigation'
     | 'secondary-danger'
     | 'danger'
     | 'cell'

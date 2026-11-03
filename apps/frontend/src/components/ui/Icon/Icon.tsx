@@ -9,6 +9,7 @@ export type TIconName =
     | 'document'
     | 'calendar'
     | 'pin'
+    | 'play'
     | 'info'
     | 'film-reel'
     | 'clapperboard'

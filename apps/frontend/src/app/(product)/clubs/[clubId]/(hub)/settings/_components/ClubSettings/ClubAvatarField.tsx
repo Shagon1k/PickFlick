@@ -4,7 +4,6 @@ import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contract
 import { type ReactNode, useEffect, useState } from 'react';
 
 import type { IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
-import InfoTip from '#components/ui/InfoTip/InfoTip';
 import { getMonogram } from '#lib/format';
 
 import styles from '../../page.module.scss';
@@ -63,29 +62,24 @@ export default function ClubAvatarField({
                 {tile}
                 <div className={styles.identityField}>{children}</div>
             </div>
-            <div className={styles.avatarMeta}>
-                <span className={styles.avatarTitle}>
-                    Avatar
-                    <InfoTip label="About the Club avatar">
-                        PNG, JPEG or WebP up to 512 KiB, stored privately. Click the image to choose
-                        one; Save Changes uploads it.
-                    </InfoTip>
-                </span>
-                {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
-                {permissions.manageSettings && club.hasAvatar && !preview ? (
-                    <button
-                        aria-label="Remove avatar"
-                        className={styles.textButton}
-                        disabled={disabled}
-                        formAction={removeAction}
-                        formNoValidate
-                        type="submit"
-                    >
-                        Remove
-                    </button>
-                ) : null}
-                <ActionStatus state={removeState} />
-            </div>
+            {preview || (permissions.manageSettings && club.hasAvatar) ? (
+                <div className={styles.avatarMeta}>
+                    {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
+                    {permissions.manageSettings && club.hasAvatar && !preview ? (
+                        <button
+                            aria-label="Remove avatar"
+                            className={styles.textButton}
+                            disabled={disabled}
+                            formAction={removeAction}
+                            formNoValidate
+                            type="submit"
+                        >
+                            Remove
+                        </button>
+                    ) : null}
+                </div>
+            ) : null}
+            <ActionStatus state={removeState} />
         </>
     );
 }

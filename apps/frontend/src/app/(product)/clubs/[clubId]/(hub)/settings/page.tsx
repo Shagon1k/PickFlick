@@ -6,6 +6,7 @@ import { getClubHub, getClubSettings } from '#api/clubs.server';
 import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 
+import type { TRatingCloseControl } from '../../_components/ActiveRatings/ActiveRatings.types';
 import HubLoadFailure from '../../_components/HubLoadFailure/HubLoadFailure';
 import HubPanel from '../../_components/HubPanel/HubPanel';
 import ClubSettings from './_components/ClubSettings/ClubSettings';
@@ -35,14 +36,46 @@ export default async function ClubSettingsPage({
             />
         );
     }
+    const [activeSession, ratingControls] = await Promise.all([
+        loadActiveSession(hub),
+        loadRatingControls(hub),
+    ]);
     return (
         <HubPanel hub={hub}>
             <ClubSettings
                 projection={settings}
                 hub={hub}
-                activeSession={await loadActiveSession(hub)}
+                activeSession={activeSession}
+                ratingControls={ratingControls}
             />
         </HubPanel>
+    );
+}
+
+async function loadRatingControls(hub: IClubHub): Promise<TRatingCloseControl[]> {
+    if (!hub.permissions.manageSessions) return [];
+    return Promise.all(
+        hub.ratingSessions.map(async ({ id }): Promise<TRatingCloseControl> => {
+            try {
+                const session = await getSession(id);
+                if (session.phase === 'RATING' && session.rating) {
+                    return {
+                        sessionId: id,
+                        status: 'ready',
+                        phaseVersion: session.phaseVersion,
+                        rating: {
+                            canClose: session.rating.canClose,
+                            receivedCount: session.rating.receivedCount,
+                            acceptedCount: session.rating.acceptedCount,
+                            submittedCount: session.rating.submittedCount,
+                        },
+                    };
+                }
+            } catch (error) {
+                console.error('Manage Club Rating controls unavailable.', { sessionId: id, error });
+            }
+            return { sessionId: id, status: 'unavailable' };
+        }),
     );
 }
 

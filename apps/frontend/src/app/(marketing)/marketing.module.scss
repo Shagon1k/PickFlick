@@ -555,13 +555,6 @@
     text-align: center;
 }
 
-.tableScroll {
-    width: 100%;
-    overflow-x: auto;
-    border-block: 1px solid var(--border);
-    -webkit-overflow-scrolling: touch;
-}
-
 .comparisonTable {
     width: 100%;
     min-width: 650px;

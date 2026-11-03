@@ -28,7 +28,9 @@ export default function PastAttendees({
     const names = buildMemberNames(members);
     return (
         <fieldset className={styles.attendees} disabled={disabled}>
-            <legend className={styles.stepTitle}>Who came?</legend>
+            <legend className={styles.stepTitle} data-step-heading tabIndex={-1}>
+                Who came?
+            </legend>
             <div className={styles.members}>
                 {members.map((member) => {
                     const isAttending = attendees.some((row) => row.membershipId === member.id);
@@ -41,7 +43,7 @@ export default function PastAttendees({
                                     onToggle(member.id, event.currentTarget.checked)
                                 }
                             />
-                            <span className={styles.monogram} aria-hidden="true">
+                            <span className={styles.monogram} aria-hidden="true" data-press-surface>
                                 {isAttending ? (
                                     <Icon name="check" />
                                 ) : (

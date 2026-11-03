@@ -363,6 +363,14 @@
 
 .productHeader .headerInner {
     grid-template-columns: auto 1fr auto;
+    width: var(--product-header-width);
+}
+
+.productHeader {
+    --product-header-width: min(
+        calc(var(--container) - 2 * var(--gutter)),
+        calc(100% - 2 * var(--gutter))
+    );
 }
 
 .productHeaderControls {
@@ -535,6 +543,10 @@
 }
 
 @media (width < 576px) {
+    .productHeader {
+        --product-header-width: calc(100% - 32px);
+    }
+
     .headerInner,
     .publicFooterInner,
     .productMain,
@@ -549,15 +561,6 @@
 
     .publicHeader .brand {
         justify-self: start;
-    }
-
-    .productHeader .headerInner {
-        grid-template-columns: var(--hit) minmax(0, 1fr) var(--hit);
-    }
-
-    .productHeader .brand {
-        grid-column: 2;
-        justify-self: center;
     }
 
     .publicHeader .brand img,
@@ -603,16 +606,15 @@
 
     .productHeader .headerInner {
         display: flex;
-        justify-content: center;
-        min-height: 60px;
+        justify-content: space-between;
+        min-height: 62px;
         padding-block: 4px;
     }
 
     .productHeader .brand {
-        flex-direction: column;
-        font-size: var(--fs-body);
-        line-height: 14px;
-        text-align: center;
+        flex-direction: row;
+        line-height: 1;
+        text-align: left;
     }
 
     .productHeader .brand img {
@@ -621,8 +623,7 @@
     }
 
     .productHeader .productHeaderControls {
-        position: absolute;
-        right: 0;
+        flex-shrink: 0;
     }
 
     .sessionHeaderBack {

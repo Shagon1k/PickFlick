@@ -1,14 +1,8 @@
 .rating {
-    max-width: 100%;
-    margin: var(--gap-xl) auto;
-    text-align: center;
-}
-
-.rating h2 {
-    font: var(--fs-app-section)/var(--lh-title) var(--font-display);
-}
-
-.rating[data-completed] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+    min-width: 0;
     width: 100%;
     padding: var(--gap-md);
     margin: 0;
@@ -17,13 +11,12 @@
     border-radius: var(--radius-lg);
 }
 
-.rating form {
-    display: grid;
-    gap: var(--gap-md);
-    width: 100%;
-    max-width: 560px;
-    margin: var(--gap-md) auto;
-    text-align: start;
+.rating h2 {
+    display: flex;
+    align-items: center;
+    min-height: var(--hit);
+    margin: 0;
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
 }
 
 .rating p {
@@ -31,59 +24,57 @@
 }
 
 .empty {
-    max-width: 560px;
-    margin-inline: auto;
+    margin: 0;
+}
+
+.inProgress {
+    display: grid;
+    flex: 1;
+    gap: var(--gap-xs);
+    align-content: center;
+    justify-items: center;
+    min-height: var(--session-result-row-min);
+    color: var(--fg-secondary);
+}
+
+.inProgress > span {
+    font: 400 var(--fs-app-title)/1 var(--font-display);
+}
+
+.inProgress p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
 }
 
 .list {
-    display: grid;
-    max-width: 560px;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    min-height: 0;
+    max-height: var(--session-result-list-max);
     padding: 0;
-    margin: var(--gap-md) auto 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     text-align: start;
     list-style: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.rating[data-completed] .list,
-.rating[data-completed] .empty {
-    max-width: none;
-    margin-inline: 0;
 }
 
 .list li {
+    --color-reveal-border-width: 1px;
+
+    position: relative;
     display: flex;
+    flex: 0 0 auto;
     gap: var(--gap-sm);
     align-items: center;
     min-width: 0;
+    min-height: var(--session-result-row-min);
     padding: var(--gap-sm);
-}
-
-.list li + li {
-    border-top: 1px solid var(--border);
-}
-
-.list li[data-own] {
-    outline: 1px solid var(--gold-border);
-    outline-offset: -1px;
-    background: var(--gold-soft);
-}
-
-.list li:first-child {
-    border-radius: var(--radius) var(--radius) 0 0;
-}
-
-.avatar {
-    display: grid;
-    flex: 0 0 32px;
-    place-items: center;
-    height: 32px;
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--ivory);
-    background: var(--accent-soft);
     border: 1px solid var(--border);
-    border-radius: 50%;
+    border-radius: var(--radius);
+    isolation: isolate;
 }
 
 .who {
@@ -93,37 +84,18 @@
 }
 
 .who strong {
-    display: flex;
-    gap: var(--gap-xs);
-    align-items: center;
     font-weight: 600;
-}
-
-/* "Final" is a small lock tag beside your name instead of a sentence. */
-.lock {
-    display: inline-flex;
-    gap: 3px;
-    align-items: center;
-    padding: 1px 7px;
-    font: 600 var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    color: var(--gold-light);
-    text-transform: uppercase;
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius-pill);
-}
-
-.lock svg {
-    width: 11px;
-    height: 11px;
 }
 
 /* The review reads as one line; the whole text opens in a popover. */
 .review {
+    position: relative;
+    display: inline-flex;
+    gap: calc(var(--gap-xs) / 2);
+    align-items: center;
     min-width: 0;
     min-height: 24px;
     padding: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
     font: inherit;
     font-size: var(--fs-meta);
     color: var(--fg-secondary);
@@ -132,6 +104,31 @@
     cursor: pointer;
     background: none;
     border: 0;
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+.reviewText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Keep the text in place while the transparent hit area reaches the shared touch target. */
+.review::before {
+    position: absolute;
+    inset: calc((var(--hit) - 24px) / -2) 0;
+    content: '';
+}
+
+.review svg {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    transition: transform var(--motion-local) var(--ease-standard);
+}
+
+.review[data-open] svg {
+    transform: rotate(180deg);
 }
 
 .review:hover {
@@ -148,13 +145,7 @@
 
 .score {
     flex: 0 0 auto;
-    font: var(--fs-card-title)/var(--lh-ui) var(--font-mono);
-    color: var(--gold-light);
-}
-
-.submitRow {
-    display: flex;
-    gap: var(--gap-sm);
-    align-items: center;
-    justify-content: center;
+    padding-right: var(--gap-xs);
+    font: 400 var(--fs-app-section)/1 var(--font-display);
+    color: var(--fg);
 }

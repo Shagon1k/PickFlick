@@ -1,0 +1,16 @@
+.scores {
+    min-width: 0;
+    margin-block: var(--gap-lg);
+}
+
+.scores th,
+.scores td {
+    min-width: 100px;
+    max-width: 220px;
+}
+
+.scores th:first-child,
+.scores td:first-child {
+    min-width: 160px;
+    color: var(--fg);
+}

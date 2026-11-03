@@ -12,18 +12,9 @@ import {
     useProductOverlay,
 } from '#components/shells/product-overlay';
 import type { TShellMenuItem } from '#components/shells/shell-navigation';
+import Avatar from '#components/ui/Avatar/Avatar';
 import Icon from '#components/ui/Icon/Icon';
 import { authClient } from '#lib/auth-client';
-
-/** Up to two initials from the viewer's display name; empty when no usable name exists. */
-function getInitials(name: string | null | undefined): string {
-    const words = (name ?? '').trim().split(/\s+/u).filter(Boolean);
-    const initials =
-        words.length > 1
-            ? `${words[0]?.[0] ?? ''}${words.at(-1)?.[0] ?? ''}`
-            : (words[0] ?? '').slice(0, 2);
-    return initials.toUpperCase();
-}
 
 interface IProductHeaderActionsProps {
     accountItems: readonly TShellMenuItem[];
@@ -37,7 +28,6 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const isAccountMenuOpen = activeOverlay === 'account';
     const isNotificationsPanelOpen = activeOverlay === 'notifications';
     const { data: session } = authClient.useSession();
-    const initials = getInitials(session?.user.name);
     const { data: notifications } = useNotifications();
 
     useOverlayDismissal({
@@ -107,11 +97,23 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                     aria-expanded={isAccountMenuOpen}
                     aria-label="Account menu"
                     className={styles.avatarButton}
+                    data-color-reveal-trigger
                     data-product-overlay-control
                     onClick={(event) => toggleOverlay('account', event.currentTarget)}
                     type="button"
                 >
-                    {initials || <Icon className={styles.roundIcon} name="profile" />}
+                    {session?.user.name ? (
+                        <span className={styles.avatarImage}>
+                            <Avatar
+                                key={session.user.id}
+                                name={session.user.name}
+                                src={session.user.image ? '/api/account/avatar' : null}
+                                size="large"
+                            />
+                        </span>
+                    ) : (
+                        <Icon className={styles.roundIcon} name="profile" />
+                    )}
                 </button>
                 <div
                     className={styles.accountPopover}

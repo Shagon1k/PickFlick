@@ -1,0 +1,52 @@
+.card {
+    position: relative;
+    width: min(720px, 100%);
+    padding: var(--session-rating-form-padding);
+    margin: var(--gap-lg) auto 0;
+    text-align: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.card::before {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 72px;
+    height: 2px;
+    content: '';
+    background: var(--gold);
+    translate: -50% 0;
+}
+
+.card h2 {
+    margin: 0 0 var(--gap-sm);
+    font: 600 var(--fs-caption)/var(--lh-ui) var(--font-mono);
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.saved {
+    display: grid;
+    gap: var(--gap-xs);
+    justify-items: center;
+    padding-block: var(--gap-md);
+}
+
+.saved strong {
+    font: 600 clamp(48px, 7vw, 72px)/1 var(--font-display);
+    color: var(--fg);
+}
+
+.saved span {
+    font: 600 var(--fs-caption)/var(--lh-body) var(--font-mono);
+    color: var(--fg-secondary);
+}
+
+@media (width < 576px) {
+    .card {
+        padding-inline: calc(var(--gap-xs) * 2);
+    }
+}

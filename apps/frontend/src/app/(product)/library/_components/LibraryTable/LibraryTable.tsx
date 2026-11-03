@@ -1,18 +1,22 @@
 'use client';
 
-import type { TLibrary, TLibraryQuery } from '@pickflick/contracts';
+import { LIBRARY_SEARCH_MAX_LENGTH, type TLibrary, type TLibraryQuery } from '@pickflick/contracts';
 import Link from 'next/link';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import Icon from '#components/ui/Icon/Icon';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
+import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatCount } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
+import { getNextTableSort } from '#lib/table-sort';
 
 import { buildLibraryPath } from '../../library-path';
-import LibraryFilters from '../LibraryFilters/LibraryFilters';
 import styles from './LibraryTable.module.scss';
 
 export default function LibraryTable({
@@ -22,6 +26,9 @@ export default function LibraryTable({
     library: TLibrary;
     query: TLibraryQuery;
 }) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [navigationMessage, setNavigationMessage] = useState('');
     const headingRef = useRef<HTMLHeadingElement>(null);
     const [message, setMessage] = useState('');
     const shouldFocusHeadingRef = useRef(false);
@@ -33,6 +40,33 @@ export default function LibraryTable({
     function handleSaved(message: string) {
         shouldFocusHeadingRef.current = true;
         setMessage(message);
+    }
+    function navigate(next: TLibraryQuery, shouldReplace = false) {
+        const offline = getOfflineMessage();
+        if (offline) {
+            setNavigationMessage(offline);
+            return;
+        }
+        setNavigationMessage('');
+        startTransition(() => {
+            const path = buildLibraryPath(next);
+            if (shouldReplace) router.replace(path, { scroll: false });
+            else router.push(path, { scroll: false });
+        });
+    }
+    function sortable(sort: TLibraryQuery['sort']) {
+        return {
+            sortDirection: query.sort === sort ? query.direction : undefined,
+            isSortDisabled: isPending,
+            onSort: () =>
+                navigate({
+                    ...query,
+                    sort: 'default',
+                    direction: undefined,
+                    ...getNextTableSort(query, sort),
+                    page: 1,
+                }),
+        };
     }
     const isWatchlist = library.tab === 'watchlist';
     const title = isWatchlist ? 'Watchlist' : 'My Ratings';
@@ -94,46 +128,78 @@ export default function LibraryTable({
                   ),
               );
     return (
-        <section aria-labelledby="library-heading" className={styles.libraryTable}>
-            <h2 id="library-heading" ref={headingRef} tabIndex={-1}>
+        <section
+            aria-labelledby="library-heading"
+            className={styles.libraryTable}
+            aria-busy={isPending}
+        >
+            <h2 className="visually-hidden" id="library-heading" ref={headingRef} tabIndex={-1}>
                 {title}
             </h2>
-            <LibraryFilters key={buildLibraryPath(query)} query={query} />
+            <TableSearch
+                value={query.q}
+                label={isWatchlist ? 'Search watchlist…' : 'Search rated films…'}
+                maxLength={LIBRARY_SEARCH_MAX_LENGTH}
+                onSearch={(q) => {
+                    if (q.trim() !== query.q) navigate({ ...query, q, page: 1 }, true);
+                }}
+            />
+            {query.score || query.priority ? (
+                <ButtonLink href={`/library?tab=${query.tab}`} variant="subtle">
+                    Clear filters
+                </ButtonLink>
+            ) : null}
             <p role="status">
                 {`${formatCount(library.total, 'film')} ${isWatchlist ? 'queued' : 'rated'}`}
             </p>
             <p className="visually-hidden" role="status">
-                {message}
+                {isPending ? 'Loading films…' : message}
             </p>
+            {navigationMessage ? <p role="status">{navigationMessage}</p> : null}
             <Table
                 variant="leaderboard"
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
                 columns={[
                     { key: 'rank', header: '#', isNumeric: true },
-                    { key: 'film', header: 'Film' },
-                    { key: 'genres', header: 'Genre' },
-                    { key: 'year', header: 'Year' },
-                    { key: 'date', header: isWatchlist ? 'Added on' : 'Rated on' },
-                    { key: 'action', header: isWatchlist ? 'Priority' : 'Rating' },
+                    { key: 'film', header: 'Film', ...sortable('title') },
+                    { key: 'genres', header: 'Genre', ...sortable('genre') },
+                    { key: 'year', header: 'Year', ...sortable('year') },
+                    {
+                        key: 'date',
+                        header: isWatchlist ? 'Added on' : 'Rated on',
+                        ...sortable('recent'),
+                    },
+                    {
+                        key: 'action',
+                        header: isWatchlist ? 'Priority' : 'Rating',
+                        ...sortable('value'),
+                    },
                 ]}
                 rows={rows}
                 emptyMessage={emptyMessage}
             />
             <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
                 <ButtonLink
+                    aria-label="Previous page"
+                    variant="navigation"
+                    size="icon"
                     href={buildLibraryPath(query, library.page - 1)}
-                    disabled={library.page === 1}
+                    disabled={isPending || library.page === 1}
                 >
-                    Previous
+                    <Icon name="arrow-left" />
                 </ButtonLink>
                 <span>
                     Page {library.page} of {library.pages}
                 </span>
                 <ButtonLink
+                    aria-label="Next page"
+                    variant="navigation"
+                    size="icon"
+                    data-direction="next"
                     href={buildLibraryPath(query, library.page + 1)}
-                    disabled={library.page === library.pages}
+                    disabled={isPending || library.page === library.pages}
                 >
-                    Next
+                    <Icon name="arrow-left" />
                 </ButtonLink>
             </nav>
         </section>

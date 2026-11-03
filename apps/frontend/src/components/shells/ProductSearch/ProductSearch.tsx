@@ -1,18 +1,15 @@
 'use client';
 
 import { MOVIE_QUERY_MAX_LENGTH } from '@pickflick/contracts';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import {
     getNextOptionIndex,
-    getSearchMessage,
     useActiveOptionVisible,
     useMovieSearch,
 } from '#components/movies/movie-search';
-import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
-import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import MovieSearchResults from '#components/movies/MovieSearchResults/MovieSearchResults';
 import styles from '#components/shells/product-navigation.module.scss';
 import { useOverlayDismissal, useProductOverlay } from '#components/shells/product-overlay';
 import Icon from '#components/ui/Icon/Icon';
@@ -58,8 +55,6 @@ export default function ProductSearch() {
         }
     }
 
-    const message = getSearchMessage(term, result);
-
     return (
         <div
             aria-label="Film search"
@@ -74,28 +69,37 @@ export default function ProductSearch() {
                 <label className="visually-hidden" htmlFor="shell-search-input">
                     Search films
                 </label>
-                <input
-                    aria-activedescendant={
-                        activeIndex >= 0 ? `movie-search-${activeIndex}` : undefined
-                    }
-                    aria-autocomplete="list"
-                    aria-controls="movie-search-results"
-                    aria-expanded={movies.length > 0}
-                    autoComplete="off"
-                    className={styles.globalSearchInput}
-                    id="shell-search-input"
-                    maxLength={MOVIE_QUERY_MAX_LENGTH}
-                    onChange={(event) => {
-                        setQuery(event.target.value);
-                        setActiveIndex(-1);
-                    }}
-                    onKeyDown={handleKeyboard}
-                    placeholder="Search films…"
-                    ref={inputRef}
-                    role="combobox"
-                    type="search"
-                    value={query}
-                />
+                <div className={styles.globalSearchField}>
+                    <input
+                        aria-activedescendant={
+                            activeIndex >= 0 ? `movie-search-${activeIndex}` : undefined
+                        }
+                        aria-autocomplete="list"
+                        aria-controls="movie-search-results"
+                        aria-expanded={Boolean(term)}
+                        autoComplete="off"
+                        className={styles.globalSearchInput}
+                        id="shell-search-input"
+                        maxLength={MOVIE_QUERY_MAX_LENGTH}
+                        onChange={(event) => {
+                            setQuery(event.target.value);
+                            setActiveIndex(-1);
+                        }}
+                        onKeyDown={handleKeyboard}
+                        placeholder="Search films…"
+                        ref={inputRef}
+                        role="combobox"
+                        type="search"
+                        value={query}
+                    />
+                    <MovieSearchResults
+                        idPrefix="movie-search"
+                        term={term}
+                        result={result}
+                        activeIndex={activeIndex}
+                        onNavigate={() => closeOverlay({ shouldReturnFocus: false })}
+                    />
+                </div>
                 <button
                     aria-label="Close search"
                     className={styles.searchClose}
@@ -104,49 +108,6 @@ export default function ProductSearch() {
                 >
                     <Icon className={styles.roundIcon} name="close" />
                 </button>
-                <div className={styles.searchResults} hidden={!term}>
-                    <p
-                        className={styles.overlayEmpty}
-                        data-count={movies.length > 0 || undefined}
-                        role="status"
-                    >
-                        {message}
-                        {result?.state === 'signed-out' ? (
-                            <>
-                                {' '}
-                                <Link href="/login">Sign in</Link>
-                            </>
-                        ) : null}
-                    </p>
-                    <div aria-label="Film results" id="movie-search-results" role="listbox">
-                        {movies.map((movie, index) => (
-                            <Link
-                                aria-selected={activeIndex === index}
-                                className={styles.searchResult}
-                                href={`/movies/${movie.id}`}
-                                id={`movie-search-${index}`}
-                                key={movie.id}
-                                onClick={() => closeOverlay({ shouldReturnFocus: false })}
-                                prefetch={false}
-                                role="option"
-                            >
-                                <SearchPoster
-                                    url={movie.posterUrl}
-                                    className={styles.searchPoster}
-                                />
-                                <span className={styles.searchInfo}>
-                                    <span className={styles.searchTitle}>
-                                        {movie.title ?? movie.originalTitle ?? 'Untitled film'}
-                                    </span>
-                                    <span className={styles.searchMeta}>
-                                        {movie.releaseYear ?? 'Year unavailable'}
-                                    </span>
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                    {movies.length ? <SearchCredits movies={movies} /> : null}
-                </div>
             </div>
         </div>
     );

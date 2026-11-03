@@ -1,5 +1,12 @@
 .libraryTable {
+    display: grid;
+    gap: var(--gap-md);
     min-width: 0;
+}
+
+.libraryTable p {
+    margin: 0;
+    color: var(--fg-secondary);
 }
 
 .libraryTable a {
@@ -15,7 +22,6 @@
     gap: var(--gap-sm);
     align-items: center;
     justify-content: space-between;
-    margin-top: var(--gap-md);
     font-size: var(--fs-body-sm);
 }
 

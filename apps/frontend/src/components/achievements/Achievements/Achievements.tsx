@@ -30,7 +30,9 @@ export default function Achievements({ items }: TAchievements) {
     }
     return (
         <section className={styles.achievements} aria-labelledby="achievements-title">
-            <h2 id="achievements-title">Achievements</h2>
+            <h2 className="visually-hidden" id="achievements-title">
+                Achievements
+            </h2>
             <div className={styles.summary} role="group" aria-label="Achievement filters">
                 {STATUSES.map(({ status, label }) => (
                     <button

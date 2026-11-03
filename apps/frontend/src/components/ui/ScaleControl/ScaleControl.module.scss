@@ -23,15 +23,17 @@
     max-width: 100%;
     padding: 4px;
     overflow-x: auto;
-    scrollbar-width: thin;
 }
 
 .scale__option {
+    --action-scale: var(--action-scale-small);
+
     display: grid;
     flex: 1 0 var(--hit);
     place-items: center;
     min-width: var(--hit);
     min-height: var(--hit);
+    padding: 0;
     font: 600 var(--fs-body)/1 var(--font-mono);
     color: var(--fg-secondary);
     cursor: pointer;
@@ -39,7 +41,6 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     transition:
-        transform var(--motion-emphasis) var(--ease-standard),
         color var(--motion-local) var(--ease-standard),
         background-color var(--motion-local) var(--ease-standard),
         border-color var(--motion-local) var(--ease-standard);
@@ -51,9 +52,13 @@
 }
 
 .scale__rail[data-presentation='rating'] svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 24px;
     height: 24px;
     fill: none;
+    translate: -50% -50%;
 }
 
 .scale__rail[data-presentation='rating'] [data-active] svg {
@@ -62,6 +67,7 @@
 
 .scale__rail[data-presentation='rating'] .scale__option {
     /* Ten stars share the row and shrink on narrow screens instead of scrolling sideways. */
+    position: relative;
     flex: 1 1 0;
     min-width: 0;
     max-width: var(--hit);
@@ -73,14 +79,33 @@
     border-color: transparent;
 }
 
-.scale__rail[data-presentation='score'] .scale__option:hover {
+.scale__rail[data-presentation='rating'] .scale__option:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+/* The focus frame follows the icon, not the tall, narrow touch target. */
+.scale__rail[data-presentation='rating'] .scale__option:focus-visible::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    content: '';
+    border: 2px solid var(--gold);
+    border-radius: inherit;
+    translate: -50% -50%;
+}
+
+.scale__rail[data-presentation='score'] button.scale__option:enabled:hover {
     color: var(--fg);
     border-color: var(--accent-dim);
 }
 
 .scale__option[data-active],
 .scale__option[data-selected],
-.scale__rail[data-presentation='score'] .scale__option[data-selected]:hover {
+.scale__rail[data-presentation='score'] button.scale__option[data-selected]:enabled:hover {
     color: var(--ivory);
     background: var(--gold-soft);
     border-color: var(--gold-border);
@@ -97,8 +122,8 @@
     border-color: transparent;
 }
 
-.scale__option[data-selected] {
-    animation: pip-pop var(--motion-emphasis) var(--ease-standard);
+.scale[data-tone='neutral'] .scale__rail[data-presentation='rating'] .scale__option[data-active] {
+    color: var(--fg);
 }
 
 .scale__option:disabled,
@@ -127,21 +152,10 @@
 
 .scale[data-submitted] .scale__option[data-selected] {
     opacity: 0.8;
-    animation: none;
 }
 
-@keyframes pip-pop {
-    0% {
-        transform: scale(0.85);
-    }
-
-    60% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+.scale[data-submitted] .scale__rail[data-presentation='score'] .scale__option[data-selected] {
+    opacity: 1;
 }
 
 .scale[data-compact] {
@@ -165,7 +179,7 @@
 }
 
 .scale[data-compact] .scale__rail {
-    justify-content: flex-end;
+    justify-content: safe flex-end;
 }
 
 @media (width < 1024px) {
@@ -176,11 +190,19 @@
 
 @media (width < 768px) {
     .scale[data-compact] .scale__rail {
-        justify-content: center;
+        justify-content: safe center;
     }
 }
 
 /* A star row is centred at every width, as in the prototype's rating panels. */
 .scale[data-compact] .scale__rail[data-presentation='rating'] {
     justify-content: center;
+}
+
+@media (width < 576px) {
+    /* Keep ten 24px targets inside a narrow form without squeezing the star icons. */
+    .scale__rail[data-presentation='rating'] {
+        gap: 0;
+        padding-inline: 0;
+    }
 }

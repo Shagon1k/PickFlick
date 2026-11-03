@@ -7,6 +7,7 @@ import {
     type TSession,
 } from '@pickflick/contracts';
 
+import type { TRatingCloseControl } from '#app/(product)/clubs/[clubId]/_components/ActiveRatings/ActiveRatings.types';
 import ActiveSessionActions from '#app/(product)/clubs/[clubId]/_components/ActiveSessionActions/ActiveSessionActions';
 import HubSessionCards from '#app/(product)/clubs/[clubId]/_components/HubSessionCards/HubSessionCards';
 
@@ -20,10 +21,12 @@ export default function ClubSettings({
     projection,
     hub,
     activeSession,
+    ratingControls,
 }: {
     projection: IClubSettings;
     hub: IClubHub;
     activeSession: { session: TSession; roster: ISessionRoster } | null;
+    ratingControls: TRatingCloseControl[];
 }) {
     const role = projection.club.membershipRole;
     return (
@@ -36,6 +39,7 @@ export default function ClubSettings({
 
             <HubSessionCards
                 hub={hub}
+                ratingControls={ratingControls}
                 actions={activeSession ? <ActiveSessionActions {...activeSession} /> : undefined}
             />
             <div className={styles.grid}>

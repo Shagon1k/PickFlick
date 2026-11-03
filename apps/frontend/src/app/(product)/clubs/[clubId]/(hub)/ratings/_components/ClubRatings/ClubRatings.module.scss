@@ -2,7 +2,6 @@
     display: grid;
     gap: var(--gap-md);
     min-width: 0;
-    padding-top: var(--gap-md);
 
     h2,
     p {
@@ -18,11 +17,6 @@
     }
 }
 
-.clubRatings__sort {
-    justify-self: end;
-    width: min(100%, 280px);
-}
-
 .clubRatings__film {
     display: inline-flex;
     align-items: center;
@@ -34,14 +28,13 @@
     text-decoration: none;
 }
 
-@media (width < 576px) {
-    .clubRatings__sort {
-        width: 100%;
-    }
-}
-
 .clubRatings__rating {
     font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+    color: var(--fg);
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+.clubRatings tbody tr:is(:hover, :focus-within) .clubRatings__rating {
     color: var(--gold-light);
 }
 

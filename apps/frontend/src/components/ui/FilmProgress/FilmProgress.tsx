@@ -15,25 +15,28 @@ export default function FilmProgress({
     value,
     max,
     label,
+    compact = false,
 }: {
     value: number;
     max: number;
     label: string;
+    compact?: boolean;
 }) {
-    const filmRef = useRef<HTMLDivElement>(null);
+    const filmRef = useRef<HTMLSpanElement>(null);
     const [frameCount, setFrameCount] = useState(DEFAULT_FRAMES);
     useEffect(() => {
         const film = filmRef.current;
         if (!film) return;
+        const frameWidth = compact ? (FRAME_WIDTH_PX * 2) / 3 : FRAME_WIDTH_PX;
         const observer = new ResizeObserver(([entry]) => {
             if (entry)
                 setFrameCount(
-                    Math.max(MIN_FRAMES, Math.round(entry.contentRect.width / FRAME_WIDTH_PX)),
+                    Math.max(MIN_FRAMES, Math.round(entry.contentRect.width / frameWidth)),
                 );
         });
         observer.observe(film);
         return () => observer.disconnect();
-    }, []);
+    }, [compact]);
     const percentage = Math.min(
         FULL_PROGRESS,
         Math.max(0, (value / Math.max(1, max)) * FULL_PROGRESS),
@@ -41,8 +44,9 @@ export default function FilmProgress({
     const filled = Math.round((percentage / FULL_PROGRESS) * frameCount);
     const isRunning = percentage > 0 && percentage < FULL_PROGRESS;
     return (
-        <div
+        <span
             className={styles.film}
+            data-compact={compact || undefined}
             ref={filmRef}
             role="progressbar"
             aria-label={label}
@@ -59,6 +63,6 @@ export default function FilmProgress({
                     data-current={(isRunning && index === filled - 1) || undefined}
                 />
             ))}
-        </div>
+        </span>
     );
 }

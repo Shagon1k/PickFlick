@@ -7,11 +7,12 @@ import ticket from '#components/movies/film-ticket.module.scss';
 import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import SessionLink from '#components/sessions/SessionLink/SessionLink';
+import SessionRatingSummary from '#components/sessions/SessionRatingSummary/SessionRatingSummary';
+import SessionStatus from '#components/sessions/SessionStatus/SessionStatus';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
 import Icon from '#components/ui/Icon/Icon';
-import InfoTip from '#components/ui/InfoTip/InfoTip';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
@@ -53,62 +54,70 @@ export default function SessionHeader({
         <header
             className={clsx(styles.header, ticket.ticket)}
             data-film={filmHref ? true : undefined}
+            data-completed={session.phase === 'COMPLETED' || undefined}
         >
             {filmHref ? (
                 <TicketPoster href={filmHref} title={title} url={movie?.posterUrl ?? null} />
             ) : null}
             <div className={clsx(styles.headingCopy, ticket.copy)}>
-                <h1 ref={headingRef} tabIndex={-1}>
-                    {filmHref ? (
-                        <Link className={styles.filmLink} href={filmHref}>
-                            {title}
-                        </Link>
-                    ) : (
-                        getHeading(session)
+                <div className={styles.headingLine}>
+                    <h1 ref={headingRef} tabIndex={-1}>
+                        {filmHref ? (
+                            <Link className={styles.filmLink} href={filmHref}>
+                                {title}
+                            </Link>
+                        ) : (
+                            getHeading(session)
+                        )}
+                    </h1>
+                    {isDecisionPhase ? null : (
+                        <span className={clsx(styles.phaseStamp, ticket.corner)}>
+                            <SessionStatus
+                                phase={session.phase}
+                                isLogged={session.type === 'PAST'}
+                            />
+                        </span>
                     )}
-                </h1>
-                <p className="visually-hidden">
-                    Session · {SESSION_TYPES[session.type]} · {session.phase.toLowerCase()}
-                </p>
-                {movie && !isDecisionPhase ? (
-                    <FilmMeta className={styles.filmMeta} movie={movie} />
-                ) : null}
-                <SessionLines session={session} hasMovie={movie !== null} renderedAt={renderedAt} />
+                </div>
+                <div className={styles.headingMeta}>
+                    <p className="visually-hidden">
+                        Session · {SESSION_TYPES[session.type]} · {session.phase.toLowerCase()}
+                    </p>
+                    {movie && !isDecisionPhase ? (
+                        <FilmMeta className={styles.filmMeta} movie={movie} />
+                    ) : null}
+                    <SessionLines
+                        session={session}
+                        hasMovie={movie !== null}
+                        renderedAt={renderedAt}
+                    />
+                </div>
             </div>
-            {/* The phase stamp stays when film details are unavailable. */}
-            {isDecisionPhase ? null : (
-                <span
-                    className={clsx(styles.phaseStamp, ticket.corner)}
-                    data-live={session.phase === 'WATCHING' || undefined}
-                >
-                    {session.type === 'PAST' ? (
-                        <>
-                            logged
-                            {/* One note carries every caveat a reconstructed record has. */}
-                            <InfoTip label="About logged Sessions">
-                                Recorded after the screening. Missing details and original
-                                submission times are unknown.
-                            </InfoTip>
-                        </>
-                    ) : (
-                        session.phase.toLowerCase()
-                    )}
-                </span>
-            )}
             {/* Cells appear only for actions this viewer has, so members see two and managers three. */}
             <div className={clsx(styles.actionRail, ticket.rail, ticket.stub)}>
-                {/* Joining closes with the Session, so its link is shared only while it is open. */}
-                {isOpenSessionPhase(session.phase) ? <SessionLink sessionId={session.id} /> : null}
-                {items.length ? (
-                    <FilmStripMenu
-                        triggerLabel="Session settings"
-                        triggerIcon="settings"
-                        triggerText="Settings"
-                        menuLabel="Session actions"
-                        items={items}
+                {session.phase === 'COMPLETED' ? (
+                    <SessionRatingSummary
+                        rating={session.rating}
+                        movieRatings={movie?.ratings ?? []}
                     />
-                ) : null}
-                <div className={ticket.railCell}>{participation}</div>
+                ) : (
+                    <>
+                        {/* Joining closes with the Session, so its link is shared only while it is open. */}
+                        {isOpenSessionPhase(session.phase) ? (
+                            <SessionLink sessionId={session.id} />
+                        ) : null}
+                        {items.length ? (
+                            <FilmStripMenu
+                                triggerLabel="Session settings"
+                                triggerIcon="settings"
+                                triggerText="Settings"
+                                menuLabel="Session actions"
+                                items={items}
+                            />
+                        ) : null}
+                        <div className={ticket.railCell}>{participation}</div>
+                    </>
+                )}
             </div>
         </header>
     );

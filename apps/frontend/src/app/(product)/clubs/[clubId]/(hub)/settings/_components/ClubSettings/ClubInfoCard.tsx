@@ -13,7 +13,7 @@ import {
     removeClubAvatarAction,
     saveClubInfoAction,
 } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
-import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
@@ -33,9 +33,25 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
     const canEdit = isWritable(projection);
     return (
         <section aria-labelledby="club-info-title" className={styles.card}>
-            <h2 id="club-info-title">Club Info</h2>
+            <div className={styles.cardTitle}>
+                <h2 id="club-info-title">Club Info</h2>
+                <InfoTip label="About Club Info">
+                    Club images accept PNG, JPEG or WebP up to 512 KiB and are stored privately.
+                    Admins can click the image and use Save Changes to upload a replacement.
+                </InfoTip>
+            </div>
             <form action={formAction} className={styles.cardForm}>
                 <StoredVisibility projection={projection} />
+                <input
+                    type="hidden"
+                    name="selectionScaleMin"
+                    value={projection.club.selectionScaleMin}
+                />
+                <input
+                    type="hidden"
+                    name="selectionScaleMax"
+                    value={projection.club.selectionScaleMax}
+                />
                 <ClubAvatarField
                     // A saved or removed avatar clears the local preview.
                     key={`${saveState.revision}-${removeState.revision}`}
@@ -63,12 +79,6 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     maxLength={CLUB_DESCRIPTION_MAX_LENGTH}
                     name="description"
                     rows={DESCRIPTION_ROWS}
-                />
-                <SelectionScaleField
-                    defaultMax={projection.club.selectionScaleMax}
-                    disabled={!canEdit}
-                    idPrefix="selection-scale"
-                    min={projection.club.selectionScaleMin}
                 />
                 {projection.permissions.manageSettings ? (
                     <SaveRow disabled={!canEdit} isPending={isSaving} state={saveState} />

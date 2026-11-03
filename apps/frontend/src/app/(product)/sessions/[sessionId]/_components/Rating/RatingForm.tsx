@@ -12,7 +12,7 @@ import Textarea from '#components/ui/Textarea/Textarea';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
 import { useActionStatus } from '#lib/use-action-status';
 
-import styles from './Rating.module.scss';
+import styles from './RatingForm.module.scss';
 
 export default function RatingForm({
     sessionId,
@@ -66,11 +66,12 @@ export default function RatingForm({
     }
     return (
         <>
-            <form onSubmit={handleSubmit} noValidate>
+            <form className={styles.form} onSubmit={handleSubmit} noValidate>
                 <RatingControl
                     isCompact
                     name="session-rating"
                     label="Your rating"
+                    tone="neutral"
                     value={form.values.score}
                     onChange={(score) => {
                         form.setFieldValue('score', score);
@@ -83,22 +84,26 @@ export default function RatingForm({
                     id="session-rating-comment"
                     isLabelHidden
                     label="Comment"
+                    size="compact"
+                    variant="transparent"
                     placeholder="Add a comment — optional"
                     maxLength={SESSION_RATING_COMMENT_MAX_LENGTH}
                     disabled={isPending}
                     {...form.getInputProps('comment')}
                 />
                 <div className={styles.submitRow}>
-                    <Button type="submit" loading={isPending}>
-                        Submit Rating
-                    </Button>
+                    <div className={styles.submitButton}>
+                        <Button type="submit" size="large" fullWidth loading={isPending}>
+                            Submit Rating
+                        </Button>
+                    </div>
                     <InfoTip label="About Session Ratings">
                         You rate once and cannot change it later. Your Personal Rating of the film
                         stays editable in your Library.
                     </InfoTip>
                 </div>
             </form>
-            <StatusLine isSuccess={isSuccess} message={message} />
+            <StatusLine className={styles.status} isSuccess={isSuccess} message={message} />
         </>
     );
 }

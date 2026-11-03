@@ -10,7 +10,7 @@ import {
     type TPastSessionMembers,
 } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
@@ -60,6 +60,12 @@ export default function PastSessionForm({
     const [step, setStep] = useState(0);
     const [titles, setTitles] = useState<Record<string, string>>({});
     const formRef = useRef<HTMLFormElement>(null);
+    const shouldFocusStepRef = useRef(false);
+    useLayoutEffect(() => {
+        if (!shouldFocusStepRef.current) return;
+        formRef.current?.querySelector<HTMLElement>('[data-step-heading]')?.focus();
+        shouldFocusStepRef.current = false;
+    }, [step]);
     const submissionIdRef = useRef<string | null>(null);
     function buildInput({ date, time, ...values }: IPastSessionValues) {
         submissionIdRef.current ??= crypto.randomUUID();
@@ -117,6 +123,7 @@ export default function PastSessionForm({
             }
         }
         setMessage('');
+        shouldFocusStepRef.current = true;
         setStep(next);
     }
     function save(values: IPastSessionValues) {
@@ -162,7 +169,9 @@ export default function PastSessionForm({
             </ol>
             {step === 0 ? (
                 <div className={styles.step}>
-                    <h2 className={styles.stepTitle}>Which film, and when?</h2>
+                    <h2 className={styles.stepTitle} data-step-heading tabIndex={-1}>
+                        Which film, and when?
+                    </h2>
                     <MoviePicker
                         value={form.values.movieId || null}
                         selectedTitle={titles[form.values.movieId]}

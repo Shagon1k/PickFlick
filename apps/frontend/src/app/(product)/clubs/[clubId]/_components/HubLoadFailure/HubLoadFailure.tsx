@@ -36,10 +36,12 @@ export default function HubLoadFailure({ error, title, returnPath }: IHubLoadFai
                         ? 'This Club requires an active Membership. No Club details were disclosed.'
                         : 'Nothing was changed. Try again in a moment or return to your Clubs.'}
                 </p>
-                {isAccessLost ? null : <RetryButton />}
-                <ButtonLink href="/app" variant="primary">
-                    Back to your Clubs
-                </ButtonLink>
+                <div className={styles.failureActions}>
+                    {isAccessLost ? null : <RetryButton />}
+                    <ButtonLink href="/app" variant="primary">
+                        Back to your Clubs
+                    </ButtonLink>
+                </div>
             </section>
         </div>
     );

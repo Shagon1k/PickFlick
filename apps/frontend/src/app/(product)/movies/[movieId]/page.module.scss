@@ -51,28 +51,6 @@
     color: var(--fg-secondary);
 }
 
-/* The rating cell of the header rail: the score in the mono face, its vote count beside it. */
-.rating {
-    margin: 0;
-}
-
-.rating strong {
-    font: 600 var(--fs-body)/1 var(--font-mono);
-    color: var(--fg);
-}
-
-@media (width >= 576px) {
-    .rating strong {
-        font-size: var(--fs-card-title);
-    }
-}
-
-.rating small {
-    margin-left: 4px;
-    font-size: var(--fs-micro);
-    color: var(--fg-secondary);
-}
-
 .related {
     display: grid;
     gap: var(--gap-md);
@@ -90,36 +68,36 @@
 }
 
 .relatedCard {
+    --color-reveal-background: var(--accent-glow);
+
+    position: relative;
     display: grid;
     gap: var(--gap-xs);
     align-content: start;
     min-width: 0;
     color: var(--fg);
+    text-align: center;
     text-decoration: none;
+    border-radius: var(--radius);
+    isolation: isolate;
 }
 
 .relatedCard strong {
+    padding-inline: var(--gap-sm);
     font-size: var(--fs-body-sm);
     font-weight: 500;
 }
 
-.relatedCard > span {
+.relatedCard > span:last-child {
+    padding: 0 var(--gap-sm) var(--gap-sm);
     font-size: var(--fs-meta);
     color: var(--fg-secondary);
 }
 
 .relatedPoster {
+    --poster-rest-filter: grayscale(1) contrast(1.05);
+
     font-size: var(--fs-caption);
-}
-
-/* Related stills rest in black and white and regain colour on hover or focus, as in the prototype. */
-.relatedCard .relatedPoster img {
-    filter: grayscale(1) contrast(1.05);
-}
-
-.relatedCard:hover .relatedPoster img,
-.relatedCard:focus-visible .relatedPoster img {
-    filter: none;
 }
 
 @media (width < 1024px) {

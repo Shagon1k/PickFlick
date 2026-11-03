@@ -35,7 +35,7 @@ export default async function ClubRatingsPage({
             <HubLoadFailure
                 error={error}
                 title="Club Ratings are temporarily unavailable"
-                returnPath={`/clubs/${clubId}/ratings?${new URLSearchParams({ sort: query.sort, page: String(query.page) })}`}
+                returnPath={`/clubs/${clubId}/ratings?${new URLSearchParams({ sort: query.sort, page: String(query.page), ...(query.q ? { q: query.q } : {}), ...(query.direction ? { direction: query.direction } : {}) })}`}
             />
         );
     }

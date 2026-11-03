@@ -15,6 +15,10 @@ export default function Switch(props: ISwitchProps) {
             {...props}
             // Mantine wraps label and description in one <label>; name the switch by its label only.
             aria-label={props.label}
+            attributes={{
+                ...props.attributes,
+                track: { ...props.attributes?.track, 'data-press-surface': true },
+            }}
             classNames={{
                 body: styles.switch,
                 labelWrapper: styles.switch__copy,

@@ -6,10 +6,11 @@ import { useRef, useState } from 'react';
 import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import { removeClubMemberAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import InviteDialog from '#components/clubs/InviteDialog/InviteDialog';
+import Avatar from '#components/ui/Avatar/Avatar';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import Icon from '#components/ui/Icon/Icon';
-import { formatCount, getMonogram } from '#lib/format';
+import { formatCount } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -50,22 +51,10 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
         }
     }
     return (
-        <section className={styles.layout} aria-label="Club members">
-            <div className={styles.sectionHeading}>
-                <h2 ref={headingRef} tabIndex={-1}>
-                    Members
-                </h2>
-                {permissions.createInvitations ? (
-                    <InviteDialog
-                        projection={projection}
-                        trigger={(onOpen) => (
-                            <Button onClick={onOpen} size="small">
-                                + Invite
-                            </Button>
-                        )}
-                    />
-                ) : null}
-            </div>
+        <section aria-label="Club members">
+            <h2 className="visually-hidden" ref={headingRef} tabIndex={-1}>
+                Members
+            </h2>
             <p
                 className={isSuccess ? 'visually-hidden' : styles.feedback}
                 aria-live="polite"
@@ -77,10 +66,13 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                 {members.map((member) => (
                     <li className={styles.member} key={member.id}>
                         <div className={styles.identity}>
-                            <span aria-hidden="true" className={styles.monogram}>
-                                {getMonogram(member.displayName)}
-                            </span>
-                            <div>
+                            <Avatar
+                                name={member.displayName}
+                                src={member.avatarUrl}
+                                size="large"
+                                withColorReveal={false}
+                            />
+                            <div className={styles.identityCopy}>
                                 <strong>
                                     {member.displayName}
                                     {member.id === currentMembershipId ? ' (you)' : ''}
@@ -89,8 +81,12 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                             </div>
                         </div>
                         <div className={styles.memberActions}>
-                            <span className={styles.sessionCount}>
-                                {formatCount(member.sessionCount, 'session')}
+                            <span
+                                className={styles.sessionCount}
+                                aria-label={formatCount(member.sessionCount, 'session')}
+                            >
+                                <strong>{member.sessionCount}</strong>
+                                <small>{member.sessionCount === 1 ? 'session' : 'sessions'}</small>
                             </span>
                             {member.canRemove ? (
                                 <button
@@ -112,6 +108,19 @@ export default function ClubMembers({ projection }: { projection: IClubSettings 
                     </li>
                 ))}
             </ul>
+            {permissions.createInvitations ? (
+                <div className={styles.inviteAction}>
+                    <InviteDialog
+                        projection={projection}
+                        trigger={(onOpen) => (
+                            <Button fullWidth onClick={onOpen} variant="secondary">
+                                <Icon name="user-plus" />
+                                Invite
+                            </Button>
+                        )}
+                    />
+                </div>
+            ) : null}
             <ConfirmDialog
                 confirmLabel="Confirm removal"
                 inputId="remove-confirmation"

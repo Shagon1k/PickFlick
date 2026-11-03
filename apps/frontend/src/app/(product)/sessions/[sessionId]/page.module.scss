@@ -5,15 +5,15 @@
     overflow-wrap: anywhere;
 }
 
-/* One grid serves both layouts: title, stamp and rail in a row from 576px, a poster ticket below. */
+/* Completed uses the Movie Details score rail; phase capsules live on the film poster. */
 .header {
     position: relative;
 
     /* Its own stacking layer keeps the gear menu above the phase content below. */
     z-index: 2;
     display: grid;
-    grid-template-areas: 'copy stamp rail';
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'copy rail';
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--gap-sm) var(--gap-lg);
     align-items: end;
     padding-block: 18px 28px;
@@ -44,6 +44,65 @@
     grid-area: copy;
     gap: 10px;
     min-width: 0;
+}
+
+.headingLine {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+}
+
+.headingMeta {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+@media (width >= 768px) {
+    .header:has(.phaseStamp) {
+        grid-template-areas:
+            'heading heading'
+            'copy rail';
+    }
+
+    .header:has(.phaseStamp) .headingCopy {
+        display: contents;
+    }
+
+    .header:has(.phaseStamp) .headingLine {
+        grid-area: heading;
+        flex-wrap: nowrap;
+    }
+
+    .header:has(.phaseStamp) .headingLine h1 {
+        min-width: 0;
+    }
+
+    .header:has(.phaseStamp) .phaseStamp {
+        margin-left: auto;
+    }
+
+    .header:has(.phaseStamp) .headingMeta {
+        grid-area: copy;
+    }
+
+    .header:has(.phaseStamp) .actionRail {
+        align-self: center;
+        justify-self: end;
+    }
+
+    .header[data-completed] {
+        grid-template-areas:
+            'heading rail'
+            'copy copy';
+    }
+}
+
+@media (width >= 576px) {
+    .header[data-film] .phaseStamp {
+        display: none;
+    }
 }
 
 .header h1 {
@@ -90,42 +149,8 @@
 
 .phaseStamp {
     display: inline-flex;
-    grid-area: stamp;
-    gap: var(--gap-xs);
     align-items: center;
-
-    /* As tall as the rail (a 44px cell and its border), so the stamp sits on its centre line. */
-    min-height: calc(var(--hit) + 2px);
-    font: 600 var(--fs-caption)/1 var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-
-/* Watching is the scene's one ambient loop: a live dot beside the phase. */
-.phaseStamp[data-live]::after {
-    width: 9px;
-    height: 9px;
-    content: '';
-    background: var(--gold);
-    border-radius: 50%;
-
-    /* Capitals sit above the line box's centre; the dot follows them, not the box. */
-    transform: translateY(-1px);
-    animation: live-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes live-pulse {
-    50% {
-        opacity: 0.35;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .phaseStamp[data-live]::after {
-        opacity: 0.82;
-        animation: none;
-    }
+    pointer-events: auto;
 }
 
 .actionRail {
@@ -325,15 +350,19 @@
 @media (width < 768px) {
     .header {
         grid-template-areas:
-            'copy copy'
-            'stamp rail';
-        grid-template-columns: auto auto;
+            'copy'
+            'rail';
+        grid-template-columns: minmax(0, 1fr);
         justify-content: center;
         text-align: center;
     }
 
     .headingCopy {
         justify-items: center;
+    }
+
+    .headingLine {
+        justify-content: center;
     }
 
     .headingCopy .filmMeta {
@@ -384,13 +413,8 @@
     .header:not([data-film]) {
         grid-template-areas:
             'copy'
-            'stamp'
             'rail';
         grid-template-columns: minmax(0, 1fr);
         justify-content: stretch;
-    }
-
-    .phaseStamp {
-        justify-self: center;
     }
 }

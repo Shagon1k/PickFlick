@@ -11,6 +11,26 @@
     position: relative;
 }
 
+.field__section[data-position='right'] {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: var(--input-right-section-width, var(--hit));
+    pointer-events: var(--input-right-section-pointer-events, none);
+}
+
+.control.m-end-action {
+    padding-right: calc(var(--input-right-section-width, var(--hit)) + var(--gap-sm));
+}
+
+.control.m-selected:read-only {
+    overflow: hidden;
+    color: var(--fg);
+    text-overflow: ellipsis;
+    background: var(--bg);
+}
+
 /* Labels sit a step below the value they describe. */
 .field__label {
     font-size: var(--fs-body-sm);
@@ -61,7 +81,7 @@
     opacity: 0.58;
 }
 
-.control:read-only:not(.m-select) {
+.control:read-only:not(.m-select, .m-selected) {
     color: var(--fg-secondary);
     background: transparent;
 }
@@ -87,6 +107,10 @@
     &.m-large {
         min-height: 120px;
     }
+}
+
+.control.m-transparent {
+    background: transparent;
 }
 
 .control.m-select {

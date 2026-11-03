@@ -93,10 +93,24 @@
     --gap-2xl: 96px;
     --container: 1120px;
     --gutter: 24px;
+    --header-action-size: 48px;
+    --header-action-ring-size: 42px;
+    --header-action-icon-size: 20px;
+    --header-avatar-size: 40px;
     --radius: 12px;
     --radius-lg: 18px;
     --radius-pill: 999px;
     --hit: 44px;
+    --film-rail-icon-size: 20px;
+    --film-rail-score-size: var(--fs-body);
+    --session-result-row-min: 112px;
+    --movie-search-gap: 2px;
+    --movie-search-panel-height: 320px;
+    --movie-search-count-height: 32px;
+    --movie-search-row-height: 64px;
+    --nomination-panel-min-height: 280px;
+    --session-result-list-max: 300px;
+    --session-rating-form-padding: clamp(var(--gutter), 4vw, 42px);
 
     /* Border, elevation, imagery, and motion */
     --shadow-overlay: 0 18px 48px rgb(0 0 0 / 42%);
@@ -121,11 +135,20 @@
         transparent 72%
     );
     --motion-press: 50ms;
+    --motion-action: 350ms;
+    --motion-color-reveal: 350ms;
+    --color-reveal-feather: 0.4;
+    --action-peak-offset: 0.35;
+    --action-scale: 1.05;
+    --action-scale-button: 1.08;
+    --action-scale-toggle: 1.1;
+    --action-scale-small: 1.12;
     --motion-local: 150ms;
     --motion-panel: 250ms;
     --motion-emphasis: 300ms;
     --motion-menu: 340ms;
     --motion-editorial: 600ms;
     --ease-standard: ease;
+    --ease-action: cubic-bezier(0.22, 0.8, 0.3, 1);
     --ease-menu: cubic-bezier(0.22, 0.8, 0.3, 1);
 }

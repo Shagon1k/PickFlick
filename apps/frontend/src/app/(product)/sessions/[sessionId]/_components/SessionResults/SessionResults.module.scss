@@ -1,12 +1,16 @@
+/* Rating and Completed keep the same result-panel geometry. */
 .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--gap-md);
-    align-items: start;
+    align-items: stretch;
     margin-block: var(--gap-lg);
 }
 
 .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
     min-width: 0;
     padding: var(--gap-md);
     border: 1px solid var(--border);
@@ -14,8 +18,11 @@
 }
 
 .panel h2 {
-    margin-top: 0;
-    font: 400 var(--fs-app-section)/var(--lh-title) var(--font-display);
+    display: flex;
+    align-items: center;
+    min-height: var(--hit);
+    margin: 0;
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
 }
 
 .panel p,
