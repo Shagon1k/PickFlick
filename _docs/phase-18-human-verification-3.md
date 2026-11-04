@@ -5,6 +5,46 @@ under [#63](https://github.com/Shagon1k/PickFlick/issues/63) on branch `PF-18-1_
 reports findings from local multi-user testing in batches. Nothing is fixed until the owner says
 to start.
 
+## Verification resumed — 2026-11-04
+
+The owner ended the temporary test deferral and requested clean CI for PR #199. Local verification
+is complete; exact-head hosted CI remains pending. Keep #63 In progress while owner verification
+continues. Passing automated checks does not establish hosted owner acceptance or authorize merging.
+
+Initial diagnostics found 79 lint errors, a History failure-union type error, stale UI DTOs, an
+unused export and seven unit failures. The History type error also blocked the previous CI's
+production builds, integration runtime and UI startup. Fixtures and assertions now follow current
+Club privacy, always-visible Club averages, attendee-based historical nomination limits and the
+accepted controls, layouts and loading states.
+
+Final local evidence:
+
+- `pnpm verify` passes the high/critical dependency audit, ESLint/Stylelint, knip, formatting, types,
+  648 unit tests and production workspace builds. The audit reports two low and six moderate
+  advisories, below the existing blocking threshold; no dependency or threshold changed.
+- Database/API integration: 329/329 across 36 files in the disposable test database.
+- Full native UI contract: 315/315 without retries or flaky results. Real-API journeys: 17/17.
+- Pinned Linux visual comparison: 112/112 without updates. All 77 refreshed before/after pairs were
+  inspected; inventory remains 120 PNGs. Existing shell masks and zero-pixel tolerance are unchanged.
+- Hub section skeletons: 10/10 repeated checks at 390/1440 without retries. The test now distinguishes
+  Next.js's route-tree prefetch from the request containing the loading boundary.
+- Deployment definitions, built deadline/email worker recovery and built-runtime E2E smoke pass.
+
+New browser checks cover held table navigation, preserved input/scroll, matrix sorting with zero,
+missing values, ties, reset and word wrapping, and sign-in before hydration. The Login regression
+fails before the fix because its button is enabled before its handler exists; the fix reuses the
+existing hydration hook. Accessibility fixes restore valid Call Sheet definition-list markup and
+the role of disabled ButtonLink controls. The real-API Selection journey independently checks
+visible authors, private scores for both roles and the frozen result after an idempotent retry.
+
+Integration uses a separate disposable Compose project and a positively identified pickflick_test
+DB with synthetic credentials and email disabled. Visual checks use CI's digest-pinned Linux
+Playwright image with Node 24.15.0 / pnpm 11.25.0; behavior checks also use native Chromium. The app's
+dev process is restored after the builds that share .next. Verification never migrated, seeded or
+reset the user's development database. No test/coverage gate, retry policy, accessibility rule or
+screenshot tolerance was weakened.
+Detailed hosted evidence belongs in #63 and PR #199 after the final push.
+
 ## Severity
 
 - **Blocker**: a core flow cannot finish, or data, security or privacy is at risk.

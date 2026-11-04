@@ -227,3 +227,23 @@ before/after pairs use matching synthetic fixtures at 390×844, DPR 2; they acco
 report. Interaction, keyboard and animation evidence comes from behavior checks, not static PNGs.
 Final contract, static and hosted acceptance evidence belongs to the
 [current register](phase-18-human-verification-3.md#current-alignment-evidence).
+
+## Phase 18 verification follow-up, 2026-11-04
+
+The owner ended the temporary test deferral after the UI and visibility follow-ups. The refreshed
+set contains 77 existing PNGs; the inventory remains 120. All 77 before/after pairs were inspected
+against the accepted choices in [DESIGN.md](../DESIGN.md) and the Phase 18 register. Full-size checks
+also covered the mobile Selection controls, historical nomination rows and score matrix,
+notification header, rating picker and priority editor.
+
+The changes cover the left-aligned mobile brand and larger header controls, current Club
+visibility, always-visible Club averages, compact shared result rows, Selection layout, the
+historical Session wizard, short suggestion subsections, table typography/sorting and compact
+notification feedback. Library captures now wait for a film row rather than the removed visible
+film-count caption. Existing shell masks and the zero-pixel comparison threshold are unchanged.
+
+Behavior checks include table transitions with held navigation responses, matrix sorting with
+zero/missing/tied scores and a sign-in click held until hydration. The Login regression test fails
+on the preceding implementation because the button is enabled before its handler exists; the
+fix reuses the existing hydration hook. Final gate results belong to the
+[verification register](phase-18-human-verification-3.md#verification-resumed--2026-11-04).

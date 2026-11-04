@@ -1393,6 +1393,15 @@ records scope and limits. The final native static rerun passes; UI contract pass
 pinned-Linux visual comparison passes 112/112 after all 51 changed/new PNGs were reviewed.
 Exact-head hosted CI and owner acceptance remain pending.
 
+The owner resumed automated verification on 2026-11-04 after the later UI/visibility changes.
+The local rerun passes `pnpm verify` (648 unit tests and production builds), 329 database/API
+checks, 315 UI contract checks, 17 real-API journeys and 112 pinned-Linux visual comparisons.
+All 77 refreshed existing PNGs were reviewed; no screenshot tolerance or quality gate changed.
+Worker recovery, built-runtime smoke and deployment-definition checks also pass. The
+[verification follow-up](_docs/phase-18-human-verification-3.md#verification-resumed--2026-11-04)
+records the fixes, isolated test environment and limits. Exact-head hosted CI and owner acceptance
+still gate Phase 18 completion.
+
 ### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
 
 **Goal:** Users control their profile, personal appearance, portability, privacy rights, and account removal without

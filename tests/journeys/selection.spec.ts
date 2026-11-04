@@ -42,6 +42,8 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 name: 'Selection Journey',
                 selectionScaleMin: 0,
                 selectionScaleMax: 10,
+                showSelectionScoresDuring: false,
+                showNominationAuthorsDuring: true,
             },
         });
         await prisma.membership.create({
@@ -126,9 +128,17 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 `/movies/${movies[1]!.id}`,
             );
         }
-        // Current Club privacy applies to the operator and member alike.
-        await expect(firstPage.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
-        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
+        // Scores stay private for both roles; nomination authors have their own setting.
+        for (const page of pages) {
+            const rivals = page.getByRole('region', { name: 'Nomination Rivals', exact: true });
+            await expect(rivals.getByRole('listitem')).toHaveCount(2);
+            await expect(rivals.getByText('by Selection Admin', { exact: true })).toBeVisible();
+            await expect(rivals.getByText('by Selection Member', { exact: true })).toBeVisible();
+            await expect(
+                rivals.getByRole('button', { name: /^Average Selection score/u }),
+            ).toHaveCount(0);
+            await expect(page.getByRole('table', { name: /^Selection scores/u })).toHaveCount(0);
+        }
         const readOutcome = async () =>
             sessionSchema.parse(
                 await (await contexts[0]!.request.get(`/api/sessions/${session.id}`)).json(),
@@ -156,7 +166,9 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         await expect(
             pages[1]!.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
         ).toBeVisible();
-        await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
+        await expect(
+            pages[1]!.getByRole('region', { name: 'Nomination Rivals' }).getByRole('listitem'),
+        ).toHaveCount(2);
     } finally {
         for (const context of contexts) await context.close();
         await backend.removeUsers(userIds);

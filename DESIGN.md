@@ -904,7 +904,8 @@ data; this work does not rewrite historical records.
 
 #### Public, Login and Contact
 
-- Login shows the enabled identity providers only; dormant Apple sign-in stays hidden.
+- Login shows the enabled identity providers only; dormant Apple sign-in stays hidden. Provider
+  buttons remain disabled until React attaches their handlers, so an early sign-in tap is not lost.
 - Contact uses the focused task scene with Back and requires JavaScript through `@mantine/form`;
   revisit no-JavaScript submission only if it becomes a requirement.
 
