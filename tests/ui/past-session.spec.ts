@@ -14,8 +14,10 @@ for (const viewport of screenshotViewports) {
             await signInMock(context, `valid-settings-admin-picker-${viewport.name}`);
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
-            const date = page.getByLabel('Date', { exact: true });
-            const time = page.getByLabel('Time', { exact: false });
+            const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
+            const date = form.getByLabel('Date', { exact: true });
+            const time = form.getByLabel('Time', { exact: false });
+            await expect(date).toBeEnabled();
             await expect(date).toBeVisible();
             await expect(time).toBeVisible();
             await settle(page);

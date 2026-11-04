@@ -306,9 +306,11 @@ test(
         await authenticate(context, 'split-roster');
         await page.goto(PATH);
         await expect(
-            page.getByText('Nomination in progress — 1 of 3 members have nominated.', {
-                exact: true,
-            }),
+            page
+                .getByRole('main')
+                .getByText('Nomination in progress — 1 of 3 members have nominated.', {
+                    exact: true,
+                }),
         ).toBeVisible();
         await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);
     },

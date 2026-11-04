@@ -60,6 +60,16 @@ checks pass in the pinned Linux image, and both affected visual checks pass five
 one worker (10/10, no retries). Existing PNGs and the zero-pixel threshold are unchanged. Hosted
 verification of the follow-up remains required.
 
+### Hosted smoke locator follow-up
+
+The `ba42260d` smoke log also exposed strict-locator collisions with Next.js's hidden streamed
+markup: the Nomination progress appeared twice, and Log a Past Session had both its inert loading
+Date field and its real Date field. The checks now scope progress to the accessible main region
+and Date/Time to the named form region, waiting for the real Date field to become enabled before
+measuring or entering data. All assertions, timeouts and retry policy remain unchanged. The three
+affected cases pass five repeats each in the pinned Linux image with one worker (15/15, no retries).
+The failed Delivery gate reported only `UI_RESULT=failure`; its other five inputs were successful.
+
 ## Severity
 
 - **Blocker**: a core flow cannot finish, or data, security or privacy is at risk.
