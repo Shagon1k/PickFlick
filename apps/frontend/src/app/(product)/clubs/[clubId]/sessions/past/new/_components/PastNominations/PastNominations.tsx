@@ -8,6 +8,7 @@ import type {
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
+import Icon from '#components/ui/Icon/Icon';
 import Select from '#components/ui/Select/Select';
 import { useActionStatus } from '#lib/use-action-status';
 
@@ -41,6 +42,8 @@ export default function PastNominations({
 }) {
     const { message, isSuccess, setMessage, announceSuccess } = useActionStatus();
     const { nominations, scoreMatrix } = evidence;
+    const isNominationLimitReached = nominations.length >= attendees.length;
+    const hasTooManyNominations = nominations.length > attendees.length;
     const memberNames = buildMemberNames(members);
     const scoreOptions = Array.from(
         { length: scaleMax - scaleMin + 1 },
@@ -51,6 +54,10 @@ export default function PastNominations({
         movie?: TMovieSearchResults['movies'][number],
     ) {
         if (!movieId || !movie) return;
+        if (isNominationLimitReached) {
+            setMessage('Select more attendees in "Who came?" to add another nomination.');
+            return;
+        }
         if (nominations.some((row) => row.movieId === movieId)) {
             setMessage('This Movie is already in the nomination list.');
             return;
@@ -85,7 +92,12 @@ export default function PastNominations({
             })),
         });
         announceSuccess('Nomination and its recorded scores removed.');
-        requestAnimationFrame(() => document.getElementById('past-nomination')?.focus());
+        requestAnimationFrame(() => {
+            const picker = document.getElementById('past-nomination');
+            if (picker?.matches(':disabled'))
+                document.querySelector<HTMLElement>('[data-step-heading]')?.focus();
+            else picker?.focus();
+        });
     }
     function setScore(membershipId: string, movieId: string, value: string) {
         const scores = scoreMatrix.find((row) => row.membershipId === membershipId)?.scores ?? [];
@@ -108,12 +120,23 @@ export default function PastNominations({
             </legend>
             <MoviePicker
                 id="past-nomination"
-                label="Add nominated Movies"
+                label={`Nominated films · ${nominations.length}/${attendees.length}`}
                 required={false}
-                placeholder="Add a nominated Movie…"
+                shouldReserveMessage={false}
+                placeholder={
+                    attendees.length === 0
+                        ? 'Choose attendees first'
+                        : isNominationLimitReached
+                          ? 'All nomination slots filled'
+                          : 'Add a nominated Movie…'
+                }
                 value={null}
-                disabled={disabled}
-                error={error}
+                disabled={disabled || isNominationLimitReached}
+                error={
+                    hasTooManyNominations
+                        ? 'Remove extra nominations or select more attendees in "Who came?".'
+                        : error
+                }
                 onChange={handleNominationPick}
             />
             <p className={isSuccess ? 'visually-hidden' : undefined} role="status">
@@ -125,12 +148,13 @@ export default function PastNominations({
                         <span>{titles[id]}</span>
                         <Select
                             id={`nominator-${id}`}
-                            label={`Nominator for ${titles[id]}`}
+                            label={`Nominated by · ${titles[id]}`}
+                            isLabelHidden
                             shouldReserveMessage={false}
                             value={nominatorMembershipId ?? ''}
                             disabled={disabled}
                             data={[
-                                { value: '', label: 'Unknown' },
+                                { value: '', label: '—' },
                                 ...members
                                     .filter(
                                         (member) =>
@@ -146,12 +170,13 @@ export default function PastNominations({
                         />
                         <Button
                             aria-label={`Remove ${titles[id]}`}
+                            title={`Remove ${titles[id]}`}
                             disabled={disabled}
                             onClick={() => removeNomination(id)}
-                            size="small"
-                            variant="secondary"
+                            size="icon"
+                            variant="subtle"
                         >
-                            Remove
+                            <Icon name="close" />
                         </Button>
                     </li>
                 ))}
@@ -185,25 +210,31 @@ export default function PastNominations({
                                         <th scope="row">{name}</th>
                                         {nominations.map(({ movieId }) => (
                                             <td key={movieId}>
-                                                <select
-                                                    aria-label={`Selection score for ${name}: ${titles[movieId]}`}
-                                                    disabled={disabled}
-                                                    value={getScore(attendee.membershipId, movieId)}
-                                                    onChange={(event) =>
-                                                        setScore(
+                                                <span className={styles.score}>
+                                                    <select
+                                                        aria-label={`Selection score for ${name}: ${titles[movieId]}`}
+                                                        disabled={disabled}
+                                                        value={getScore(
                                                             attendee.membershipId,
                                                             movieId,
-                                                            event.currentTarget.value,
-                                                        )
-                                                    }
-                                                >
-                                                    <option value="">Unknown</option>
-                                                    {scoreOptions.map((score) => (
-                                                        <option key={score} value={score}>
-                                                            {score}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                        )}
+                                                        onChange={(event) =>
+                                                            setScore(
+                                                                attendee.membershipId,
+                                                                movieId,
+                                                                event.currentTarget.value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <option value="">—</option>
+                                                        {scoreOptions.map((score) => (
+                                                            <option key={score} value={score}>
+                                                                {score}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <Icon name="chevron-down" />
+                                                </span>
                                             </td>
                                         ))}
                                     </tr>

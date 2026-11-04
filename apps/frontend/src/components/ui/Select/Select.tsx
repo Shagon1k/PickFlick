@@ -24,6 +24,7 @@ export default function Select({
     disabled,
     error,
     hint,
+    isLabelHidden,
     label,
     labelHint,
     onChange,
@@ -49,6 +50,7 @@ export default function Select({
             {...props}
             allowDeselect={false}
             {...getFieldProps({ error, hint, label, labelHint, success, shouldReserveMessage })}
+            labelProps={isLabelHidden ? { className: 'visually-hidden' } : props.labelProps}
             classNames={{
                 ...FIELD_CLASS_NAMES,
                 input: clsx(fieldStyles.control, fieldStyles['m-select']),

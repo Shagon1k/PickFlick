@@ -827,7 +827,10 @@ ballots, Selection result snapshot or phase times are generated.
 Optional `nominations` contain objects with a unique canonical `movieId` and optional
 `nominatorMembershipId`. Authors may be current or former Club members, including non-attendees;
 missing authors remain unknown. Foreign-Club Memberships reject the entire import.
-`scoreMatrix` contains selected attendee Membership IDs with sparse Movie/score cells. A nomination list needs no attendees or scores. A matrix
+The shared creation schema caps nominations at the selected attendee count, including the screened
+Movie if nominated. No selected attendees permits no recorded nominations; existing imports are
+not rewritten. Nominations need no scores.
+`scoreMatrix` contains selected attendee Membership IDs with sparse Movie/score cells. A matrix
 may omit rows and cells; empty rows carry no score evidence. Duplicate rows/Movies, unselected attendees,
 unknown Movies, malformed cells and scores outside the Club scale snapshot reject the entire import.
 An unchanged replay uses the saved evidence even if the Club scale has since changed.

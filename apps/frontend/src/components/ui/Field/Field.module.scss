@@ -126,7 +126,7 @@
 }
 
 .control.m-select {
-    padding-right: 44px;
+    padding-right: calc(var(--hit) + var(--gap-xs));
     appearance: none;
 }
 

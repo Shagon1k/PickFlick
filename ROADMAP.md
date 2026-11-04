@@ -308,7 +308,9 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
   achievement/notification projections.
 - Past Session nomination lists and Selection matrices preserve partial imported evidence. Missing
   cells remain unknown; zero is an explicit score on the saved Club scale. Recorded totals neither
-  establish a complete ballot nor determine a winner. Each nomination may identify a current or former
+  establish a complete ballot nor determine a winner. New imports allow at most as many nominations
+  as selected attendees, including the screened Movie if nominated; no selected attendees means no
+  recorded nominations. Each nomination may identify a current or former
   Club Membership, including a non-attendee; omitted authors remain unknown. Author visibility and
   current anonymized names apply. Original phase and submission times remain unknown. Existing
   post-close result visibility applies to imported breakdowns.

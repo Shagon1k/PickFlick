@@ -544,6 +544,22 @@ Buttons are a shared component. Every standalone page copies this exact class co
   Card gray backgrounds respond only to mouse hover, not retained focus after dismissal.
 - The separator before Session Details uses one restrained monochrome reel-break composition. Phase mascots may differ, but share the same optical area, mask, and placement.
 
+### Past Session wizard
+
+- Unrecorded nominators and historical Selection scores display `—`; an explicit zero remains
+  a separate score. The dash clears the corresponding optional value.
+- Cap nominations at the selected Who came? attendee count, including the screened film if
+  nominated. Show N/M in the picker label and disable additions at the limit. Zero attendees
+  permits no nominations. Preserve entries if attendance shrinks; show an error and reject saving
+  until extra nominations are removed or more attendees are selected. Logging only the screened
+  Movie without attendees or nominations remains allowed.
+- Nomination rows show the film title once above an author selector and a 44px remove icon.
+  Keep the author label for assistive technology; omit the repeated visible Nominator for title.
+  Shared Select arrows sit inside the field; matrix score selects use the shared chevron with
+  a consistent inner gutter rather than the browser arrow at the border.
+- The live-status paragraph below Back/Next and Log Session stays mounted but has zero height
+  and margin when empty. Keep the scene card's normal padding without a blank feedback footer.
+
 ### Movie Details
 - Poster + trailer + credits + synopsis
 - Your Rating (stars, popover) + Global rating + Watchlist. Unsaved bookmark uses a subtle smoky-ivory fill and neutral outline; gold is reserved for the saved state

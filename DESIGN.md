@@ -812,6 +812,9 @@ data; this work does not rewrite historical records.
 
 #### Past Sessions
 
+- The wizard's live status stays mounted but reserves no height or margin while empty, including
+  in its loading view. Back/Next and Log Session retain only the scene card's normal bottom padding.
+
 - Hub → Sessions offers Log a Past Session to operators in writable Clubs, including while a live
   screening is open. The form reuses the Session setup scene, mascot, fields and Movie picker in
   three steps: film/date/place, attendees with ratings, then nominations and recorded scores.
@@ -833,9 +836,17 @@ data; this work does not rewrite historical records.
   input. Back and Next preserve the selected title and explicit nomination removals.
 - The screened film starts as a nominee when selected. Optional Nomination Details reuse Movie search and allow each nominated Movie once. Selected
   attendees form the matrix rows; nominations form columns. Each nomination offers an optional
-  nominator selector with Unknown and current/former Club members, independent of attendance;
+  nominator selector with `—` for an unrecorded author and current/former Club members, independent of attendance;
   each member can nominate only one film and leaves the other selectors once chosen.
-  Each cell offers Unknown and the inclusive Club Selection scale, including zero where permitted. Clearing a cell restores Unknown. Removing
+  Nomination count is capped at the selected Who came? attendees, including the screened film.
+  Show N/M in the picker label and disable additions at the limit; zero attendees permits no
+  nominations. Reducing attendance preserves entered nominations and scores, shows an over-limit
+  error and blocks saving until the operator removes extra films or selects more attendees.
+  The screened Movie may still be logged without attendees or nomination evidence.
+  Each row shows its film title once, followed by the author selector and a 44px remove icon.
+  The author label remains available to assistive technology. Shared Select arrows are inset from
+  the right edge; native matrix selects use the shared chevron with an explicit inset.
+  Each cell offers `—` for an unrecorded score and the inclusive Club Selection scale, including zero where permitted. Clearing a cell restores `—`. Removing
   an attendee or nomination clears its associated cells. The matrix scrolls locally on phones, with
   labeled controls, table headers, visible focus and 44px targets.
 - Completed reuses the shared Nomination Movie cards for imported nominations. Recorded totals

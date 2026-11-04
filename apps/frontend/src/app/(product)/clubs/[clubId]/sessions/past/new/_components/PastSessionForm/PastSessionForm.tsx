@@ -98,6 +98,8 @@ export default function PastSessionForm({
                 topic: 'Use up to 200 characters on one line.',
                 notes: 'Use up to 2000 characters.',
                 movieId: 'Select a Movie.',
+                nominations:
+                    'Use at most one nomination per selected attendee, with each film and nominator chosen once.',
             });
             return { ...errors, date: scheduledAt };
         },

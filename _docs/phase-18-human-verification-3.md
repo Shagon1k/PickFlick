@@ -428,6 +428,35 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
   and My Ratings/Watchlist at 390px have document width equal to viewport client width. The table
   still scrolls locally while window scrollX stays zero. Shown/open invitation states and automated
   regression coverage remain for the deferred test round; no screenshots, tests or commit made.
+- Past Session empty-value copy (2026-11-04): replaced Unknown with `—` in nominator choices
+  and native Selection-score cells. Both keep their empty-string value and existing clearing
+  behavior; explicit zero is unchanged. Updated design references. Source review/formatting only;
+  browser/tests remain deferred. No data writes or commit; #63 In progress.
+- Past Session nomination limit (2026-11-04): owner selected the Who came? attendee count as
+  the bound. The shared creation schema enforces it for client, server action and API, including
+  the screened Movie if nominated. Picker shows N/M, blocks additions at the limit and guards
+  already-open search selections. Zero attendees permits no nominations; the screened Movie
+  can still be logged without nomination evidence. Reducing attendance preserves nominations
+  and their remaining scores, but over-limit evidence shows corrective feedback and cannot save.
+  Wired nomination schema errors into form field errors (previously omitted from the mapping),
+  reusing the form's existing error clearing on evidence edits. Removal focuses the heading when search remains
+  disabled. No author-pool change: known authors can still be current/former non-attendees.
+  Source review and formatting only; browser/tests and quality suites remain owner-deferred.
+  Deferred coverage: zero/exact/over limit, reducing attendees, initial screened-film nomination,
+  direct API rejection, no-attendee fixture expectations and unchanged valid imports/replays.
+  ROADMAP, Architecture and design references updated. No data writes or commit; #63 In progress.
+- Past Session nomination compactness (2026-11-04): removed the repeated visible Nominator for
+  film label and replaced the text Remove button with a shared subtle 44px close icon beside the
+  author selector. Select now honors its existing hidden-label prop without reserving a label row.
+  Shared Select arrows move inward; native matrix selects reuse the common chevron with an inner
+  gutter. The nomination picker omits an empty feedback reserve. Source review/formatting only;
+  browser/tests remain deferred. Nomination count bound was clarified and implemented in the
+  follow-up above; nomination authors may still be non-attendees. No data writes or commit.
+- Past Session wizard empty footer (2026-11-04): empty live-status paragraph below Back/Next
+  reserved 20px plus a 12px top margin. Scoped :empty styling now removes both while leaving the
+  node mounted and non-empty feedback intact. Applies to all three steps and the first-step
+  skeleton through their shared stylesheet. Scene padding and navigation/save behavior stay as
+  before. Source review/formatting only; browser/tests remain deferred, no data writes or commit.
 - Owner checkpoint (2026-11-04): owner requested committing the current skeleton/parity, content
   loader, notification-header and Edit Session spacing work before continuing. Save the current
   source and documentation together; the commit hash is recorded in #63. Browser/tests and

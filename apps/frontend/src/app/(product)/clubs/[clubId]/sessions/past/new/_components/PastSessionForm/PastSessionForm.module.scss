@@ -153,6 +153,11 @@
     overflow-wrap: anywhere;
 }
 
+.status:empty {
+    min-height: 0;
+    margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .steps li {
         transition: none;

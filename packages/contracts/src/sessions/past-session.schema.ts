@@ -50,6 +50,12 @@ export const createPastSessionSchema = sessionDetailsSchema
         },
     )
     .superRefine((input, context) => {
+        if (input.nominations.length > input.attendees.length)
+            context.addIssue({
+                code: 'custom',
+                path: ['nominations'],
+                message: 'Keep at most one nomination per selected attendee.',
+            });
         if (new Set(input.nominations.map((row) => row.movieId)).size !== input.nominations.length)
             context.addIssue({
                 code: 'custom',
