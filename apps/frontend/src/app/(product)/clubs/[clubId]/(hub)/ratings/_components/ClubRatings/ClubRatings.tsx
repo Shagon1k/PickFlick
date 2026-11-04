@@ -76,8 +76,9 @@ export default function ClubRatings({
                 value={query.q ?? ''}
                 label="Search rated films…"
                 maxLength={CLUB_RATINGS_SEARCH_MAX_LENGTH}
-                onSearch={(q) => {
-                    if (q.trim() !== (query.q ?? '')) navigate({ ...query, q, page: 1 }, true);
+                onSearch={(search) => {
+                    if (search.trim() !== (query.q ?? ''))
+                        navigate({ ...query, q: search, page: 1 }, true);
                 }}
             />
             <p className={message ? undefined : 'visually-hidden'} role="status">

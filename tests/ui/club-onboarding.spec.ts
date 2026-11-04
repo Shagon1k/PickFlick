@@ -120,7 +120,7 @@ test('a valid Club creation opens the new Free Club with its configured scale', 
     const scaleEnd = page.getByRole('slider', { name: 'Selection score range' });
     await expect(scaleEnd).toHaveAttribute('min', '1');
     await scaleEnd.fill('7');
-    await expect(page.getByText('Members score nominations 0–7')).toBeVisible();
+    await expect(scaleEnd).toHaveAttribute('aria-valuetext', 'Scores run 0 to 7');
     const scaleHelp = page.getByRole('button', { name: 'About the Selection score range' });
     await scaleHelp.focus();
     await expect(page.getByRole('tooltip')).toBeVisible();

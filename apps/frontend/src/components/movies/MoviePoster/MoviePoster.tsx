@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import Image from 'next/image';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
@@ -26,24 +26,20 @@ export default function MoviePoster({
     isLoading = false,
 }: IMoviePosterProps) {
     const [failedUrl, setFailedUrl] = useState<string | null>(null);
-    return (
-        <div className={clsx(styles.poster, className)}>
-            {isLoading ? (
-                <Skeleton shouldFill />
-            ) : url && url !== failedUrl ? (
-                <ColorReveal shouldFill>
-                    <Image
-                        src={url}
-                        alt={`${title} poster`}
-                        width={POSTER_WIDTH}
-                        height={POSTER_HEIGHT}
-                        unoptimized
-                        onError={() => setFailedUrl(url)}
-                    />
-                </ColorReveal>
-            ) : (
-                <span>Poster unavailable</span>
-            )}
-        </div>
-    );
+    let content: ReactNode = <span>Poster unavailable</span>;
+    if (isLoading) content = <Skeleton shouldFill />;
+    else if (url && url !== failedUrl)
+        content = (
+            <ColorReveal shouldFill>
+                <Image
+                    src={url}
+                    alt={`${title} poster`}
+                    width={POSTER_WIDTH}
+                    height={POSTER_HEIGHT}
+                    unoptimized
+                    onError={() => setFailedUrl(url)}
+                />
+            </ColorReveal>
+        );
+    return <div className={clsx(styles.poster, className)}>{content}</div>;
 }

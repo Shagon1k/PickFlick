@@ -5,6 +5,7 @@ import { detectImageType } from './image-type.js';
 const AVATAR_HOST = 'lh3.googleusercontent.com';
 const MAX_AVATAR_BYTES = 512 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 5000;
+const MISSING_AVATAR_STATUSES: number[] = [HttpStatus.NOT_FOUND, HttpStatus.GONE];
 const logger = new Logger('GoogleAvatar');
 
 function parseAvatarUrl(source: string | null): URL {
@@ -35,7 +36,7 @@ export async function downloadGoogleAvatar(source: string | null) {
     const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
     try {
         const response = await fetch(url, { redirect: 'error', signal: controller.signal });
-        if (response.status === HttpStatus.NOT_FOUND || response.status === HttpStatus.GONE) {
+        if (MISSING_AVATAR_STATUSES.includes(response.status)) {
             throw new NotFoundException();
         }
         if (!response.ok) unavailable('upstream_response');

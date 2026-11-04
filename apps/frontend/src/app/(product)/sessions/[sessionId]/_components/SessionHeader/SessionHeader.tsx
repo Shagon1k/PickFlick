@@ -62,13 +62,7 @@ export default function SessionHeader({
             <div className={clsx(styles.headingCopy, ticket.copy)}>
                 <div className={styles.headingLine}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                        {filmHref ? (
-                            <Link className={styles.filmLink} href={filmHref}>
-                                {title}
-                            </Link>
-                        ) : (
-                            getHeading(session)
-                        )}
+                        {getHeading(session, filmHref, title)}
                     </h1>
                     {isDecisionPhase ? null : (
                         <span className={clsx(styles.phaseStamp, ticket.corner)}>
@@ -191,10 +185,16 @@ function getMenuItems(
     return items;
 }
 
-function getHeading(session: TSession) {
-    if (session.phase === 'NOMINATION') return 'Movie Nomination';
-    if (session.phase === 'SELECTION') return 'Movie Selection';
-    return session.topic ?? 'Untitled Session';
+function getHeading(session: TSession, filmHref: string | null, title: string) {
+    if (filmHref)
+        return (
+            <Link className={styles.filmLink} href={filmHref}>
+                {title}
+            </Link>
+        );
+    if (session.phase === 'NOMINATION') return <>Movie Nomination</>;
+    if (session.phase === 'SELECTION') return <>Movie Selection</>;
+    return <>{session.topic ?? 'Untitled Session'}</>;
 }
 
 const SESSION_TYPES = {

@@ -17,8 +17,8 @@ import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
-import StatusLine from '#components/ui/StatusLine/StatusLine';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -90,25 +90,13 @@ export default function Selection({
                         </InfoTip>
                     </div>
                     {data.canSubmit && !data.submittedAt && data.nominations.length ? (
-                        <p className={styles.progress} role="status" aria-atomic="true">
-                            <span aria-hidden="true">
-                                {scoredCount}/{data.nominations.length}
-                            </span>
-                            <span className="visually-hidden">
-                                {scoredCount} of {data.nominations.length} films scored.
-                                {scoredCount === data.nominations.length ? ' Ready to submit.' : ''}
-                            </span>
-                        </p>
+                        <ScoredProgress scoredCount={scoredCount} total={data.nominations.length} />
                     ) : null}
                 </div>
-                {data.submittedAt ? (
-                    <p className={styles.confirmation} role="status">
-                        <Icon name="check" />
-                        <span>Submitted · Waiting for other participants</span>
-                    </p>
-                ) : data.canSubmit ? (
-                    <p>Score every film to help choose what we watch.</p>
-                ) : null}
+                <SubmissionStatus
+                    submitted={Boolean(data.submittedAt)}
+                    canSubmit={data.canSubmit}
+                />
             </div>
             {!data.nominations.length ? (
                 <p>No nominations are available for Selection.</p>
@@ -204,7 +192,7 @@ function SelectionMovie({
                     ) : null}
                 </div>
                 {author !== null ? (
-                    <p>{isLoading ? <Skeleton text={'by ' + author} /> : <>by {author}</>}</p>
+                    <p>{isLoading ? <Skeleton text={`by ${author}`} /> : <>by {author}</>}</p>
                 ) : null}
                 {movie.genres.length ? (
                     <ul className={styles.genres} aria-label="Genres">
@@ -219,3 +207,29 @@ function SelectionMovie({
 }
 
 const MAX_GENRES = 2;
+
+function ScoredProgress({ scoredCount, total }: { scoredCount: number; total: number }) {
+    return (
+        <p className={styles.progress} role="status" aria-atomic="true">
+            <span aria-hidden="true">
+                {scoredCount}/{total}
+            </span>
+            <span className="visually-hidden">
+                {scoredCount} of {total} films scored.
+                {scoredCount === total ? ' Ready to submit.' : ''}
+            </span>
+        </p>
+    );
+}
+
+function SubmissionStatus({ submitted, canSubmit }: { submitted: boolean; canSubmit: boolean }) {
+    if (submitted)
+        return (
+            <p className={styles.confirmation} role="status">
+                <Icon name="check" />
+                <span>Submitted · Waiting for other participants</span>
+            </p>
+        );
+    if (canSubmit) return <p>Score every film to help choose what we watch.</p>;
+    return null;
+}

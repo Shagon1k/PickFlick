@@ -56,8 +56,12 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.reload();
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
                 await page.goto('/library');
-                await page.getByLabel('Search rated films').fill('Grand');
-                await page.getByLabel('Search rated films').press('Enter');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .fill('Grand');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .press('Enter');
                 await expect(page).toHaveURL(/q=Grand/u);
                 await page
                     .getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' })
@@ -85,14 +89,15 @@ test(
         ).toBeVisible();
         await expect(
             page.getByRole('link', { name: 'Retry statistics', exact: true }),
-        ).toHaveAttribute(
-            'href',
-            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
-        );
+        ).toHaveAttribute('href', '/library?tab=my-ratings&sort=default&page=1&q=Grand&score=8');
         await expect(page.getByRole('table')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(2);
-        await expect(page.getByLabel('Search rated films')).toHaveValue('Grand');
-        await expect(page.getByLabel('Search rated films')).toBeEnabled();
+        await expect(
+            page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+        ).toHaveValue('Grand');
+        await expect(
+            page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+        ).toBeEnabled();
     },
 );
 
@@ -143,7 +148,7 @@ test(
         await expect(page.getByRole('region', { name: 'My Ratings unavailable' })).toBeVisible();
         await expect(page.getByRole('link', { name: 'Try again', exact: true })).toHaveAttribute(
             'href',
-            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
+            '/library?tab=my-ratings&sort=default&page=1&q=Grand&score=8',
         );
     },
 );

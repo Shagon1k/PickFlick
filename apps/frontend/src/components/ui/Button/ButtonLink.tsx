@@ -33,6 +33,7 @@ export default function ButtonLink({
         <MantineButton
             {...props}
             aria-disabled={disabled || undefined}
+            role={disabled ? 'link' : props.role}
             classNames={{
                 root: getButtonClassName(variant, size),
                 inner: styles.button__inner,

@@ -77,7 +77,13 @@ function SuggestionList({
                             <li key={movie.id}>
                                 <button
                                     className={styles.suggestion}
-                                    aria-label={`Select ${movie.title ?? 'Movie title unavailable'}${movie.year ? ` (${movie.year})` : ''}`}
+                                    aria-label={[
+                                        'Select',
+                                        movie.title ?? 'Movie title unavailable',
+                                        movie.year ? `(${movie.year})` : '',
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' ')}
                                     data-color-reveal-trigger
                                     data-color-reveal-surface
                                     disabled={disabled}

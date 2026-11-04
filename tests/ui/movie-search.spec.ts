@@ -77,19 +77,45 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await trigger.click();
     const input = page.getByRole('combobox', { name: 'Search films' });
     await input.fill('empty');
-    await expect(page.getByText('No films found. Try another title.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('listbox', { name: 'Film results' })
+            .locator('..')
+            .getByText('No films found. Try another title.'),
+    ).toBeVisible();
     await input.fill('outage');
     await expect(
-        page.getByText('The film provider is temporarily unavailable. Try again.'),
+        page
+            .getByRole('listbox', { name: 'Film results', exact: true })
+            .locator('..')
+            .getByText('The film provider is temporarily unavailable. Try again.'),
     ).toBeVisible();
     await input.fill('limited');
-    await expect(page.getByText('Film search is busy. Please try again shortly.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('listbox', { name: 'Film results', exact: true })
+            .locator('..')
+            .getByText('Film search is busy. Please try again shortly.'),
+    ).toBeVisible();
     await input.fill('disabled');
-    await expect(page.getByText('Film search is not configured yet.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('listbox', { name: 'Film results', exact: true })
+            .locator('..')
+            .getByText('Film search is not configured yet.'),
+    ).toBeVisible();
     await input.fill('stale');
     await expect(
-        page.getByText('Showing cached results while the provider is unavailable.'),
+        page
+            .getByRole('listbox', { name: 'Film results', exact: true })
+            .locator('../..')
+            .getByText('Cached', { exact: true }),
     ).toBeVisible();
+    await expect(
+        page
+            .getByRole('status')
+            .filter({ hasText: 'Showing cached results while the provider is unavailable.' }),
+    ).toHaveText('Showing cached results while the provider is unavailable.');
     await expect(page.getByRole('option')).toHaveCount(2);
     const slowRequest = page.waitForRequest(
         (request) => request.method() === 'POST' && (request.postData()?.includes('slow') ?? false),
@@ -98,7 +124,12 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await slowRequest;
     await input.fill('empty');
     await expect(page.getByRole('option')).toHaveCount(0);
-    await expect(page.getByText('No films found. Try another title.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('listbox', { name: 'Film results' })
+            .locator('..')
+            .getByText('No films found. Try another title.'),
+    ).toBeVisible();
     await expect(page.getByText('Old film')).toHaveCount(0);
     await page.getByRole('heading', { level: 1 }).click();
     await expect(input).toBeHidden();

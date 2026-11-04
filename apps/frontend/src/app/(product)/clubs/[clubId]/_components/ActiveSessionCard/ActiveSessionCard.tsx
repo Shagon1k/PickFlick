@@ -4,8 +4,8 @@ import type { IClubHub } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState, useTransition } from 'react';
 
-import { changeRosterAction } from '#components/sessions/roster-actions';
 import { formatSessionPhase, formatSessionProgress } from '#components/sessions/club-session-text';
+import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';

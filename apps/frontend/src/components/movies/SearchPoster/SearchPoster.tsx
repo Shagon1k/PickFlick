@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
@@ -36,19 +36,12 @@ export default function SearchPoster({
                 onError={() => setFailedUrl(url)}
             />
         ) : null;
+    let content: ReactNode = 'PF';
+    if (image) content = withColorReveal ? <ColorReveal shouldFill>{image}</ColorReveal> : image;
+    if (isLoading) content = <Skeleton shouldFill />;
     return (
         <span aria-hidden="true" className={className}>
-            {isLoading ? (
-                <Skeleton shouldFill />
-            ) : image ? (
-                withColorReveal ? (
-                    <ColorReveal shouldFill>{image}</ColorReveal>
-                ) : (
-                    image
-                )
-            ) : (
-                'PF'
-            )}
+            {content}
         </span>
     );
 }

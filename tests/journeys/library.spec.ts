@@ -66,17 +66,24 @@ test('Library filters, pages and Movie mutations persist through the real API', 
             '—',
             '—',
         ]);
-        await page.getByRole('link', { name: 'Next', exact: true }).click();
+        await page.getByRole('link', { name: 'Next page', exact: true }).click();
         await expect(page.getByText('Page 2 of 2')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(4);
-        await page.getByLabel('Search rated films').fill('Library journey 00');
-        await page.getByRole('combobox', { name: 'Rating', exact: true }).click();
-        await page.getByRole('option', { name: '8', exact: true }).click();
+        await page
+            .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+            .fill('Library journey 00');
+        await page
+            .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+            .press('Enter');
+        await expect(page).toHaveURL(/q=Library\+journey\+00/u);
+        await page.goto('/library?q=Library+journey+00&score=8');
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(statistics.locator('dd').first()).toHaveText('28');
         await expect(page.getByText('Page 1 of 1')).toBeVisible();
         await page.reload();
-        await expect(page.getByLabel('Search rated films')).toHaveValue('Library journey 00');
+        await expect(
+            page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+        ).toHaveValue('Library journey 00');
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
         await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
@@ -96,9 +103,9 @@ test('Library filters, pages and Movie mutations persist through the real API', 
             page.getByText('No films match your search or filters.', { exact: false }),
         ).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Watchlist', exact: true })).toBeFocused();
-        await page.getByRole('link', { name: 'Clear', exact: true }).click();
+        await page.getByRole('link', { name: 'Clear filters', exact: true }).click();
         await expect(page.getByRole('row')).toHaveCount(26);
-        await page.getByRole('link', { name: 'Next', exact: true }).click();
+        await page.getByRole('link', { name: 'Next page', exact: true }).click();
         const row = page
             .getByRole('row')
             .filter({ has: page.getByRole('link', { name: 'Library journey 00', exact: true }) });

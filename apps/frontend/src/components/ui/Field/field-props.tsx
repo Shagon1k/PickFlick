@@ -36,26 +36,31 @@ export function getFieldProps({
         'data-state': getFieldState(error, success),
         description: shouldReserveMessage || error || hint || success ? message : undefined,
         error: Boolean(error),
-        inputContainer: (input: ReactNode) => (
-            <>
-                {isLoading ? (
+        inputContainer: (input: ReactNode) => {
+            let control = input;
+            if (isLoading)
+                control = (
                     <span className={styles.field__skeleton}>
                         {input}
                         <span className={styles['field__skeleton-paint']}>
                             <Skeleton shouldFill />
                         </span>
                     </span>
-                ) : dropdown ? (
+                );
+            else if (dropdown)
+                control = (
                     <div className={styles['field__control-wrapper']}>
                         {input}
                         {dropdown}
                     </div>
-                ) : (
-                    input
-                )}
-                <FieldAnnouncements error={error} success={success} />
-            </>
-        ),
+                );
+            return (
+                <>
+                    {control}
+                    <FieldAnnouncements error={error} success={success} />
+                </>
+            );
+        },
         inputWrapperOrder: SLOT_ORDER,
         label: isLabelHidden ? (
             <span className="visually-hidden">{label}</span>

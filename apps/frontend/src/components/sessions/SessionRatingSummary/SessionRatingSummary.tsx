@@ -39,17 +39,13 @@ function ScoreCell({
     icon: TIconName;
     value: number | null;
 }) {
+    let score = '—';
+    if (value !== null) score = label === 'You' ? formatRatingScore(value) : formatAverage(value);
     return (
         <p className={clsx(ticket.railItem, styles.cell)}>
             <Icon name={icon} />
             <span className={styles.cell__value}>
-                <strong aria-hidden={value === null || undefined}>
-                    {value === null
-                        ? '—'
-                        : label === 'You'
-                          ? formatRatingScore(value)
-                          : formatAverage(value)}
-                </strong>
+                <strong aria-hidden={value === null || undefined}>{score}</strong>
                 <span className="visually-hidden">
                     {value === null ? 'Not available ' : ` out of ${RATING_SCALE.max} `}
                 </span>

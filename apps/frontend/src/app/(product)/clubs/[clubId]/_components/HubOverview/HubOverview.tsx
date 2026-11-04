@@ -13,6 +13,8 @@ import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 
 export default function HubOverview({ hub }: { hub: IClubHub }) {
     const stats = hub.statistics;
+    const clubPath = `/clubs/${hub.club.id}`;
+    const returnTo = encodeURIComponent(clubPath);
     const tiles: {
         label: string;
         value: string | number | null;
@@ -82,7 +84,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                             <div className={styles.emptySessionActions}>
                                 <ButtonLink
                                     fullWidth
-                                    href={`/clubs/${hub.club.id}/sessions/new?returnTo=${encodeURIComponent(`/clubs/${hub.club.id}`)}`}
+                                    href={`${clubPath}/sessions/new?returnTo=${returnTo}`}
                                     variant="primary"
                                 >
                                     <Icon name="calendar" />
@@ -90,7 +92,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                                 </ButtonLink>
                                 <ButtonLink
                                     fullWidth
-                                    href={`/clubs/${hub.club.id}/sessions/past/new?returnTo=${encodeURIComponent(`/clubs/${hub.club.id}`)}`}
+                                    href={`${clubPath}/sessions/past/new?returnTo=${returnTo}`}
                                 >
                                     <Icon name="clock" />
                                     <span>Log Past</span>

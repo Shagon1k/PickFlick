@@ -206,15 +206,11 @@ export default function ScaleControl({
                             }
                             type="button"
                         >
-                            {isLoading ? (
-                                <span className={styles.scale__placeholder}>
-                                    <Skeleton shouldFill />
-                                </span>
-                            ) : presentation === 'rating' ? (
-                                <Icon name="ratings" />
-                            ) : (
-                                scaleValue
-                            )}
+                            <ScaleValue
+                                isLoading={isLoading}
+                                presentation={presentation}
+                                value={scaleValue}
+                            />
                         </button>
                     );
                 })}
@@ -285,19 +281,33 @@ function SubmittedScale({
                         data-selected={scaleValue === selectedValue || undefined}
                         key={scaleValue}
                     >
-                        {isLoading ? (
-                            <span className={styles.scale__placeholder}>
-                                <Skeleton shouldFill />
-                            </span>
-                        ) : presentation === 'rating' ? (
-                            <Icon name="ratings" />
-                        ) : (
-                            scaleValue
-                        )}
+                        <ScaleValue
+                            isLoading={isLoading}
+                            presentation={presentation}
+                            value={scaleValue}
+                        />
                     </span>
                 ))}
             </div>
             <p className="visually-hidden">Submitted: {selectionLabel}</p>
         </fieldset>
     );
+}
+
+function ScaleValue({
+    isLoading,
+    presentation,
+    value,
+}: {
+    isLoading: boolean;
+    presentation: IScaleControlProps['presentation'];
+    value: number;
+}) {
+    if (isLoading)
+        return (
+            <span className={styles.scale__placeholder}>
+                <Skeleton shouldFill />
+            </span>
+        );
+    return presentation === 'rating' ? <Icon name="ratings" /> : <>{value}</>;
 }

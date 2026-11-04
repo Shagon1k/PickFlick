@@ -85,10 +85,10 @@
     font: inherit;
     font-size: var(--fs-meta);
     color: var(--fg);
+    appearance: none;
     background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius);
-    appearance: none;
 }
 
 .score {

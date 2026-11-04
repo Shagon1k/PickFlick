@@ -14,37 +14,6 @@ import { useActionStatus } from '#lib/use-action-status';
 
 import styles from './RatingForm.module.scss';
 
-export function RatingFormSkeleton() {
-    return (
-        <div className={styles.form}>
-            <RatingControl
-                isCompact
-                isLoading
-                name="loading-session-rating"
-                label="Your rating"
-                tone="neutral"
-            />
-            <Textarea
-                isLoading
-                disabled
-                id="loading-session-comment"
-                isLabelHidden
-                label="Comment"
-                size="compact"
-                variant="transparent"
-            />
-            <div className={styles.submitRow}>
-                <div className={styles.submitButton}>
-                    <Button fullWidth disabled size="large">
-                        Submit Rating
-                    </Button>
-                </div>
-                <InfoTip label="About Session Ratings">You rate once.</InfoTip>
-            </div>
-        </div>
-    );
-}
-
 export default function RatingForm({
     sessionId,
     onSaved,

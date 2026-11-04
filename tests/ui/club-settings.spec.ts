@@ -142,8 +142,9 @@ test('Admin can submit settings, change a role, and confirm archive', async ({ c
     );
 
     const visibility = page.getByRole('region', { name: 'Settings', exact: true });
+    await visibility.getByRole('tab', { name: 'After Session', exact: true }).click();
     await visibility
-        .getByRole('checkbox', { name: 'Show ratings after the round closes' })
+        .getByRole('checkbox', { name: 'Show individual ratings', exact: true })
         .uncheck();
     await visibility.getByRole('button', { name: 'Save Changes' }).click();
     await expect(visibility.getByRole('button', { name: 'Save Changes' })).toHaveAttribute(
@@ -396,5 +397,5 @@ test('Delete Club is offered only while the Club has no Sessions', async ({ cont
     await authenticate(context, 'valid-settings-history');
     await open(page, { width: 1440, height: 900 });
     await expect(page.getByRole('button', { name: 'Archive Club' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Delete Club' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Delete Club' })).toBeDisabled();
 });

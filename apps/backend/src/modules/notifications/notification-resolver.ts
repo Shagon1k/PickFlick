@@ -1,7 +1,6 @@
 import type { Prisma } from '@pickflick/database';
 
 import { readHiddenResultAchievementKeys } from '../achievements/rules/result-visibility.js';
-
 import { getInboxMessage, UNAVAILABLE_COPY } from './notification-copy.js';
 import { isMembershipEndedEvent } from './notification-policy.js';
 

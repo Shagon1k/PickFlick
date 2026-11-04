@@ -20,9 +20,9 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(page.getByRole('table')).toHaveCount(1);
                 await expect(page.getByRole('row')).toHaveCount(26);
                 await expect(
-                    page.getByRole('status').filter({ hasText: '28 films rated' }),
-                ).toContainText('28 films rated');
-                await expect(page.locator('a').filter({ hasText: /^Previous$/u })).toHaveAttribute(
+                    page.getByRole('status').filter({ hasText: '28 rated films' }),
+                ).toContainText('28 rated films');
+                await expect(page.getByLabel('Previous page', { exact: true })).toHaveAttribute(
                     'aria-disabled',
                     'true',
                 );
@@ -44,23 +44,34 @@ for (const width of [390, 768, 1024, 1440]) {
                     path: `test-results/library-ratings-${width}.png`,
                     fullPage: true,
                 });
-                await page.getByRole('link', { name: 'Next', exact: true }).tap();
+                await page.getByRole('link', { name: 'Next page', exact: true }).tap();
                 await expect(page).toHaveURL(/page=2/u);
                 await expect(page.getByRole('row')).toHaveCount(4);
-                await expect(page.locator('a').filter({ hasText: /^Next$/u })).toHaveAttribute(
+                await expect(page.getByLabel('Next page', { exact: true })).toHaveAttribute(
                     'aria-disabled',
                     'true',
                 );
-                await page.getByLabel('Search rated films').fill('Grand Budapest');
-                await page.getByLabel('Search rated films').press('Enter');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .fill('Grand Budapest');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .press('Enter');
                 await expect(page.getByRole('row')).toHaveCount(2);
                 await expect(page.getByText('Page 1 of 1')).toBeVisible();
                 await page.reload();
-                await expect(page.getByLabel('Search rated films')).toHaveValue('Grand Budapest');
-                await page.getByRole('combobox', { name: 'Rating', exact: true }).click();
-                await page.getByRole('option', { name: '8', exact: true }).click();
-                await page.getByRole('combobox', { name: 'Sort by', exact: true }).click();
-                await page.getByRole('option', { name: 'Film A to Z' }).click();
+                await expect(
+                    page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+                ).toHaveValue('Grand Budapest');
+                await page.goto('/library?tab=my-ratings&q=Grand+Budapest&score=8');
+                await page
+                    .getByRole('columnheader', { name: /^Film/u })
+                    .getByRole('button')
+                    .click();
+                await expect(page.getByRole('columnheader', { name: /^Film/u })).toHaveAttribute(
+                    'aria-sort',
+                    'ascending',
+                );
                 const editor = page.getByRole('button', {
                     name: 'Your rating: 8 out of 10. Edit rating',
                 });
@@ -75,10 +86,14 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(
                     page.getByRole('heading', { name: 'My Ratings', exact: true }),
                 ).toBeFocused();
-                await page.getByRole('link', { name: 'Clear', exact: true }).click();
+                await page.getByRole('link', { name: 'Clear filters', exact: true }).click();
                 await expect(page.getByRole('row')).toHaveCount(26);
-                await page.getByLabel('Search rated films').fill('missing film');
-                await page.getByLabel('Search rated films').press('Enter');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .fill('missing film');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .press('Enter');
                 await expect(
                     page.getByText('No films match your search or filters.', { exact: false }),
                 ).toBeVisible();
@@ -111,18 +126,25 @@ test(
         await context.clearCookies();
         await page.goto('/library?q=retained');
         await expect(page).toHaveURL(
-            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&q=retained&score=&priority=&sort=default&page=1')}`,
+            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&sort=default&page=1&q=retained')}`,
         );
         await page.goto('/library?page=-1');
         await expect(page).toHaveURL(
-            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&q=&score=&priority=&sort=default&page=1')}`,
+            `/login?returnTo=${encodeURIComponent('/library?tab=my-ratings&sort=default&page=1')}`,
         );
     },
 );
 
-for (const destination of [
-    '/library?tab=my-ratings&q=Alien&score=8&priority=&sort=recent&page=2',
-    '/library?tab=watchlist&q=Alien+%26+Aliens&score=&priority=HIGH&sort=title&page=2',
+for (const { destination, expected } of [
+    {
+        destination: '/library?tab=my-ratings&q=Alien&score=8&priority=&sort=recent&page=2',
+        expected: '/library?tab=my-ratings&sort=recent&page=2&q=Alien&score=8',
+    },
+    {
+        destination:
+            '/library?tab=watchlist&q=Alien+%26+Aliens&score=&priority=HIGH&sort=title&page=2',
+        expected: '/library?tab=watchlist&sort=title&page=2&q=Alien+%26+Aliens&priority=HIGH',
+    },
 ]) {
     test(
         `Library sign-in preserves and recovers ${destination}`,
@@ -135,21 +157,21 @@ for (const destination of [
             });
 
             await page.goto(destination);
-            await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(destination)}`);
+            await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(expected)}`);
             await settle(page);
             await page.getByRole('button', { name: 'Continue with Google' }).click();
             await expect
                 .poll(() => requestBody)
                 .toMatchObject({
                     provider: 'google',
-                    callbackURL: destination,
+                    callbackURL: expected,
                 });
 
             await signInMock(context, 'valid-library-sign-in');
             await page.reload();
-            await expect(page).toHaveURL(destination);
+            await expect(page).toHaveURL(expected);
             await expect(
-                page.getByRole('searchbox', { name: /^Search (rated films|watchlist)$/u }),
+                page.getByRole('searchbox', { name: /^Search (rated films|watchlist)…?$/u }),
             ).toHaveValue(new URLSearchParams(destination.split('?')[1]).get('q')!);
         },
     );
@@ -182,5 +204,84 @@ test(
         await expect(
             page.getByRole('button', { name: 'Your rating: 9 out of 10. Edit rating' }),
         ).toBeVisible();
+    },
+);
+
+test(
+    'Library search shows inert skeleton rows without losing input or local scroll',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-library-pending-search');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto('/library', { waitUntil: 'load' });
+        await settle(page);
+        const table = page.getByRole('table');
+        const search = page.getByRole('searchbox', { name: /Search rated films/u });
+        const region = page.getByRole('region', { name: 'Rated films scroll region' });
+        await region.evaluate((element) => {
+            element.scrollLeft = element.scrollWidth;
+        });
+        const scrollLeft = await region.evaluate((element) => element.scrollLeft);
+        let release = () => {};
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        await page.route(/\/library\?.*q=Grand/u, async (route) => {
+            await held;
+            await route.continue();
+        });
+        try {
+            await search.fill('Grand');
+            await search.press('Enter');
+            await expect(table).toHaveAttribute('aria-busy', 'true');
+            await expect(table.locator('tbody')).toHaveAttribute('inert', '');
+            await expect(table.locator('tbody')).toHaveAttribute('aria-hidden', 'true');
+            await expect(search).toBeFocused();
+            expect(await region.evaluate((element) => element.scrollLeft)).toBe(scrollLeft);
+            release();
+            await expect(table).not.toHaveAttribute('aria-busy', 'true');
+            await expect(
+                table.getByRole('link', { name: 'The Grand Budapest Hotel', exact: true }),
+            ).toBeVisible();
+            await expect(search).toHaveValue('Grand');
+            await expect(search).toBeFocused();
+            expect(await region.evaluate((element) => element.scrollLeft)).toBe(scrollLeft);
+        } finally {
+            release();
+        }
+    },
+);
+
+test(
+    'Library pagination starts a table transition while keeping navigation links',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-library-pending-page');
+        await page.goto('/library');
+        await expect(page.getByRole('row')).toHaveCount(26);
+        let release = () => {};
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        await page.route(/\/library\?.*page=2/u, async (route) => {
+            await held;
+            await route.continue();
+        });
+        try {
+            await page.getByRole('link', { name: 'Next page', exact: true }).click();
+            const table = page.getByRole('table');
+            await expect(table).toHaveAttribute('aria-busy', 'true');
+            await expect(table.locator('tbody tr')).toHaveCount(25);
+            await expect(page.getByLabel('Next page', { exact: true })).toHaveAttribute(
+                'aria-disabled',
+                'true',
+            );
+            release();
+            await expect(page).toHaveURL(/page=2/u);
+            await expect(table).not.toHaveAttribute('aria-busy', 'true');
+            await expect(table.getByRole('row')).toHaveCount(4);
+        } finally {
+            release();
+        }
     },
 );

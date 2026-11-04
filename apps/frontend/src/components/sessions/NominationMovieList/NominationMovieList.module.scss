@@ -2,8 +2,7 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: var(--session-result-list-max);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
 }
 
 /* Keep the intrinsic grid outside the scroll-height constraint so rows match the tallest card. */

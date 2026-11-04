@@ -3,12 +3,14 @@
     display: grid;
     gap: var(--gap-sm);
 }
+
 .line {
     display: block;
     width: 100%;
     height: var(--hit);
     border-radius: var(--radius);
 }
+
 .lines > :nth-child(2) {
     width: 72%;
 }

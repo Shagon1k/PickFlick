@@ -18,7 +18,7 @@ export function canViewSelectionScores(
     return isDuring && club.showSelectionScoresDuring && hasSubmitted;
 }
 
-export function canViewCompletedRatings(club: Pick<IClubVisibility, 'showRatingsAfter'>) {
+function canViewCompletedRatings(club: Pick<IClubVisibility, 'showRatingsAfter'>) {
     return club.showRatingsAfter;
 }
 

@@ -43,7 +43,7 @@
     list-style: none;
 }
 
-.list > li + li {
+.list > div + div {
     border-top: 1px solid var(--border);
 }
 

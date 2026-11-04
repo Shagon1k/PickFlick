@@ -62,8 +62,8 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
     });
 
     await test.step('the member joins the shared Session link, which an outsider cannot use', async () => {
-        await admin.goto(clubPath);
-        await admin.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
+        await admin.goto(`${clubPath}/sessions`);
+        await admin.getByRole('link', { name: 'Schedule New', exact: true }).click();
         await admin.getByLabel('Date').fill(upcomingDate());
         await admin.getByLabel('Location').fill('Room A');
         await admin.getByLabel('Topic').fill('Journey night');
@@ -91,9 +91,11 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
     await test.step('the operator closes a single nomination early, selecting it for Watching', async () => {
         await member.getByRole('combobox', { name: 'Select a Movie' }).fill(query);
         await member.getByRole('option', { name: /The Night of the Hunter/u }).click();
-        await member.getByRole('button', { name: 'Nominate This' }).click();
+        await member.getByRole('button', { name: 'Nominate selected film' }).click();
         await expect(
-            member.getByRole('link', { name: 'Your pick: The Night of the Hunter (1955)' }),
+            member
+                .getByRole('region', { name: 'Your nomination', exact: true })
+                .getByRole('link', { name: 'The Night of the Hunter (1955)', exact: true }),
         ).toHaveAttribute('href', `/movies/${movie.id}`);
         // One participant never closes Nomination by themselves; the operator does.
         await admin.reload();
@@ -104,7 +106,9 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await admin.getByRole('button', { name: 'Confirm close' }).click();
         for (const page of [member, admin]) {
             await page.reload();
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
             await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
                 'href',
                 `/movies/${movie.id}`,

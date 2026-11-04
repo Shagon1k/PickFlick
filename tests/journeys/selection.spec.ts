@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { sessionSchema } from '@pickflick/contracts';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+import { selectionResultSchema } from '../../apps/backend/src/modules/sessions/selection/selection-result.ts';
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { openVisitor } from './visitors';
@@ -85,23 +86,39 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         const firstPage = pages[0]!;
         await pages[1]!.goto(`/sessions/${session.id}`);
         await expect(
-            pages[1]!.getByText('0 of 2 participants have submitted.', { exact: false }),
+            pages[1]!
+                .getByText('Selection in progress — 0 of 2 participants have submitted.', {
+                    exact: true,
+                })
+                .filter({ visible: true }),
         ).toBeVisible();
         await submitScores(firstPage, session.id, 0);
-        await expect(firstPage.getByText('Your ballot is locked.')).toBeVisible();
         await expect(
-            pages[1]!.getByText('1 of 2 participants have submitted.', { exact: false }),
+            firstPage.getByText('Submitted · Waiting for other participants', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            pages[1]!
+                .getByText('Selection in progress — 1 of 2 participants have submitted.', {
+                    exact: true,
+                })
+                .filter({ visible: true }),
         ).toBeVisible({ timeout: 20000 });
         await firstPage.reload();
         await expect(firstPage.getByRole('radio')).toHaveCount(0);
-        await expect(firstPage.getByText('Submitted: 0 of 10', { exact: true })).toBeVisible();
+        await expect(
+            firstPage.getByRole('group', { name: 'Score for Journey Movie One', exact: true }),
+        ).toContainText('Submitted: 0 of 10');
         await contexts[0]!.setOffline(true);
         await submitScores(pages[1]!, session.id, 1);
-        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            pages[1]!.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         await contexts[0]!.setOffline(false);
         await firstPage.evaluate(() => window.dispatchEvent(new Event('online')));
         for (const page of pages) {
-            await expect(page.getByText('watching', { exact: true })).toBeVisible({
+            await expect(
+                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
                 timeout: 20000,
             });
             await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
@@ -109,18 +126,23 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 `/movies/${movies[1]!.id}`,
             );
         }
-        // Operators see the Rivals card; members with hidden votes see none of it.
-        await expect(firstPage.getByRole('region', { name: 'Nomination Rivals' })).toBeVisible();
+        // Current Club privacy applies to the operator and member alike.
+        await expect(firstPage.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
         await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
         const readOutcome = async () =>
             sessionSchema.parse(
                 await (await contexts[0]!.request.get(`/api/sessions/${session.id}`)).json(),
             ).selectionOutcome;
         const saved = await readOutcome();
-        expect(saved?.source === 'LIVE' ? saved.breakdown : null).toMatchObject({
-            ballotCount: 2,
-            reason: 'TOTAL',
-        });
+        expect(saved).toMatchObject({ source: 'LIVE', breakdown: null });
+        const readSnapshot = async () =>
+            selectionResultSchema.parse(
+                (await prisma.session.findUniqueOrThrow({ where: { id: session.id } }))
+                    .selectionResult,
+            );
+        const snapshot = await readSnapshot();
+        expect(snapshot).toMatchObject({ reason: 'TOTAL', movieId: movies[1]!.id });
+        expect(snapshot.inputs.ballots).toHaveLength(2);
         const retry = await contexts[0]!.request.post(
             `/api/sessions/${session.id}/selection/close`,
             {
@@ -129,8 +151,11 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         );
         expect(retry.status()).toBe(201);
         expect(await readOutcome()).toEqual(saved);
+        expect(await readSnapshot()).toEqual(snapshot);
         await pages[1]!.reload();
-        await expect(pages[1]!.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            pages[1]!.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         await expect(pages[1]!.getByRole('region', { name: 'Nomination Rivals' })).toHaveCount(0);
     } finally {
         for (const context of contexts) await context.close();

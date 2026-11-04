@@ -119,6 +119,8 @@ export function handleSelection(
         nominations: null,
         selection: isClosed ? null : buildSelection(token, ballot),
         selectionOutcome: isClosed ? buildOutcome(token) : null,
+        selectionScores: null,
+        nominationAuthors: null,
         rating: null,
         canManage: token.includes('operator'),
     };

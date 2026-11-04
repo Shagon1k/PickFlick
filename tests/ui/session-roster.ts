@@ -45,6 +45,8 @@ const session: Omit<TSession, 'canManage'> = {
     nominations: null,
     selection: null,
     selectionOutcome: null,
+    selectionScores: null,
+    nominationAuthors: null,
     rating: null,
 };
 function stateFor(token: string): IRosterState {

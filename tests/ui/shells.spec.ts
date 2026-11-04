@@ -106,7 +106,7 @@ test('header overlays are mutually exclusive and return focus', async ({ context
     await page.keyboard.press('Tab');
     await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
     await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
-    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found.');
+    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found');
     await expect(searchOverlay.getByRole('option')).toHaveCount(2);
     await page.getByRole('button', { name: 'Close search' }).click();
     await expect(searchTrigger).toBeFocused();

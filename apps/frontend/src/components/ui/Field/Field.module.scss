@@ -16,6 +16,7 @@
     display: block;
     border-radius: var(--radius);
 }
+
 .field__skeleton-paint {
     position: absolute;
     inset: 0;
@@ -38,8 +39,8 @@
 
 .control.m-selected:read-only {
     overflow: hidden;
-    color: var(--fg);
     text-overflow: ellipsis;
+    color: var(--fg);
     background: var(--bg);
 }
 

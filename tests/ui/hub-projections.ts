@@ -28,6 +28,7 @@ export function buildHubProjection(
             recentSessions: [],
             ratingSessions: [],
             historySessions: [],
+            historyNextCursor: null,
         };
     }
     if (token?.includes('ratings-pro')) club = { ...club, tier: 'PRO' };
@@ -74,6 +75,7 @@ export function buildHubProjection(
         recentSessions: [session],
         ratingSessions: buildRatingSessions(session, token),
         historySessions: buildHistorySessions(session, token),
+        historyNextCursor: null,
     };
 }
 
@@ -135,7 +137,7 @@ function buildHistorySessions(
             id: '30000000-0000-4000-8000-000000000050',
             phase: 'COMPLETED',
             topic: 'A completed screening',
-            ratingAverage: token.includes('hidden') ? null : 8,
+            ratingAverage: 8,
         },
         {
             ...session,

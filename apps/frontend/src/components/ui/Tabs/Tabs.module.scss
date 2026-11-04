@@ -1,8 +1,7 @@
 .tabs__list {
     display: flex;
     gap: 4px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     border-bottom: 1px solid var(--border);
 }
 

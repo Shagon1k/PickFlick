@@ -1,14 +1,9 @@
 import { hiddenResultAchievementKeys } from '../result-visibility.js';
 
 describe('hiddenResultAchievementKeys', () => {
-    it('should hide stored result-derived awards according to current Club settings', () => {
+    it('should gate Selection-derived awards without hiding rating-aggregate awards', () => {
         const club = { showRatingsAfter: false, showSelectionScoresAfter: false };
-        expect(hiddenResultAchievementKeys(club)).toEqual([
-            'critics-circle',
-            'cult-classic',
-            'shared-taste',
-            'perfect-split',
-        ]);
+        expect(hiddenResultAchievementKeys(club)).toEqual(['perfect-split']);
         club.showRatingsAfter = true;
         expect(hiddenResultAchievementKeys(club)).toEqual(['perfect-split']);
         club.showSelectionScoresAfter = true;

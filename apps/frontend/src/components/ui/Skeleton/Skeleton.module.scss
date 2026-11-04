@@ -21,9 +21,11 @@
     vertical-align: top;
     border-radius: var(--radius);
 }
+
 .measured__content {
     visibility: hidden;
 }
+
 .measured__paint {
     position: absolute;
     inset: 0;
@@ -33,15 +35,19 @@
 .m-title {
     height: 24px;
 }
+
 .m-control {
     height: var(--hit);
 }
+
 .m-block {
     height: 120px;
 }
+
 .m-half {
     width: 60%;
 }
+
 .m-short {
     width: 35%;
 }
@@ -81,6 +87,7 @@
     from {
         background-position: 200% 0;
     }
+
     to {
         background-position: -200% 0;
     }

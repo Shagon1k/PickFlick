@@ -52,7 +52,7 @@ export default function MovieSearchResults({
                 {message}
             </p>
             <div className={styles.body}>
-                <ul
+                <div
                     aria-label="Film results"
                     aria-busy={isLoading}
                     className={styles.list}
@@ -84,7 +84,7 @@ export default function MovieSearchResults({
                             </>
                         );
                         return (
-                            <li key={movie.id} role="presentation">
+                            <div key={movie.id} role="presentation">
                                 {onSelect ? (
                                     <button
                                         {...attributes}
@@ -106,10 +106,10 @@ export default function MovieSearchResults({
                                         {content}
                                     </Link>
                                 )}
-                            </li>
+                            </div>
                         );
                     })}
-                </ul>
+                </div>
                 {!movies.length ? (
                     <SearchState
                         isLoading={isLoading}

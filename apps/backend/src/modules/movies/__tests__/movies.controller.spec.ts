@@ -19,6 +19,7 @@ describe('MoviesController', () => {
     const storeMedia = vi.fn<MovieImagesService['storeMedia']>();
     const search = vi.fn<MoviesService['search']>();
     const getCachedPoster = vi.fn<MoviesService['getCachedPoster']>();
+    const getCachedMetadata = vi.fn<MoviesService['getCachedMetadata']>();
 
     beforeAll(async () => {
         const module = await Test.createTestingModule({
@@ -28,7 +29,7 @@ describe('MoviesController', () => {
                 { provide: MovieImagesService, useValue: { get: getImage, storeMedia } },
                 {
                     provide: MoviesService,
-                    useValue: { search, getDetailsResponse, getCachedPoster },
+                    useValue: { search, getDetailsResponse, getCachedPoster, getCachedMetadata },
                 },
                 {
                     provide: AuthService,
@@ -56,6 +57,7 @@ describe('MoviesController', () => {
         storeMedia.mockReset();
         getDetailsResponse.mockReset();
         getCachedPoster.mockReset();
+        getCachedMetadata.mockReset().mockResolvedValue(new Map());
     });
     afterAll(() => app.close());
 
@@ -186,6 +188,24 @@ describe('MoviesController', () => {
             posterUrl: 'https://image.tmdb.org/t/p/original/poster.jpg',
             backdropUrl: null,
         });
+    });
+
+    it('should enrich missing search genres from cached metadata without ingesting images', async () => {
+        const data = buildCanonicalDetails();
+        search.mockResolvedValue({
+            state: 'fresh',
+            data: { movies: [{ ...data, genres: [] }], page: 1, totalPages: 1, totalResults: 1 },
+            fetchedAt: '2026-10-10T12:00:00.000Z',
+        });
+        getCachedMetadata.mockResolvedValue(new Map([[data.id, { ...data, genres: ['Drama'] }]]));
+        const response = await request({ query: 'Film' });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            data: { movies: [{ id: data.id, genres: ['Drama'] }] },
+        });
+        expect(getCachedMetadata).toHaveBeenCalledWith([data.id]);
+        expect(getDetailsResponse).not.toHaveBeenCalled();
+        expect(storeMedia).not.toHaveBeenCalled();
     });
 
     it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {

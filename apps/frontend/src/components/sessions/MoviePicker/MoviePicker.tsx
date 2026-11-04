@@ -1,7 +1,7 @@
 'use client';
 
 import { MOVIE_QUERY_MAX_LENGTH, type TMovieSearchResults } from '@pickflick/contracts';
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, type Ref, useLayoutEffect, useRef, useState } from 'react';
 
 import {
     getNextOptionIndex,
@@ -63,7 +63,7 @@ export default function MoviePicker({
     const result = useMovieSearch(term, !value);
     const movies = result && 'data' in result ? result.data.movies : [];
     useActiveOptionVisible(id, index);
-    function select(movie: TSearchMovie) {
+    function handleSelect(movie: TSearchMovie) {
         setSelectedMovie(movie);
         onChange(movie.id, movie);
         setQuery('');
@@ -77,7 +77,7 @@ export default function MoviePicker({
         if (event.key === 'Enter') {
             event.preventDefault();
             const movie = movies[index];
-            if (movie) select(movie);
+            if (movie) handleSelect(movie);
         }
         if (event.key === 'Escape') {
             event.preventDefault();
@@ -88,28 +88,19 @@ export default function MoviePicker({
     }
     const rightSection =
         value || endAction ? (
-            <span className={styles.actions}>
-                <span className={styles.change} data-hidden={!value || undefined}>
-                    <Button
-                        aria-label="Change film"
-                        title="Change film"
-                        ref={removeRef}
-                        disabled={disabled || !value}
-                        size="icon"
-                        variant="subtle"
-                        onClick={() => {
-                            onChange(null);
-                            setSelectedMovie(null);
-                        }}
-                    >
-                        <span className={styles.actionIcon} data-press-surface>
-                            <Icon name="close" />
-                        </span>
-                    </Button>
-                </span>
-                {endAction}
-            </span>
+            <PickerActions
+                hasValue={Boolean(value)}
+                endAction={endAction}
+                disabled={disabled}
+                removeRef={removeRef}
+                onRemove={() => {
+                    onChange(null);
+                    setSelectedMovie(null);
+                }}
+            />
         ) : undefined;
+    const labelProps = isLabelHidden ? { className: 'visually-hidden' } : undefined;
+    const labelHint = required ? 'required' : 'optional';
     const actionWidth = endAction ? 'calc(var(--hit) * 2)' : undefined;
     if (value) {
         const selected = selectedMovie?.id === value ? selectedMovie : null;
@@ -121,8 +112,8 @@ export default function MoviePicker({
                     ref={inputRef}
                     id={id}
                     label={label}
-                    labelHint={required ? 'required' : 'optional'}
-                    labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
+                    labelHint={labelHint}
+                    labelProps={labelProps}
                     value={title}
                     title={title}
                     readOnly
@@ -150,8 +141,8 @@ export default function MoviePicker({
                 error={error}
                 id={id}
                 label={label}
-                labelHint={required ? 'required' : 'optional'}
-                labelProps={isLabelHidden ? { className: 'visually-hidden' } : undefined}
+                labelHint={labelHint}
+                labelProps={labelProps}
                 placeholder={placeholder}
                 required={required}
                 shouldReserveMessage={shouldReserveMessage}
@@ -172,10 +163,45 @@ export default function MoviePicker({
                         result={result}
                         activeIndex={index}
                         disabled={disabled}
-                        onSelect={select}
+                        onSelect={handleSelect}
                     />
                 }
             />
         </div>
+    );
+}
+
+function PickerActions({
+    hasValue,
+    endAction,
+    disabled,
+    removeRef,
+    onRemove,
+}: {
+    hasValue: boolean;
+    endAction?: ReactNode;
+    disabled: boolean;
+    removeRef: Ref<HTMLButtonElement>;
+    onRemove: () => void;
+}) {
+    return (
+        <span className={styles.actions}>
+            <span className={styles.change} data-hidden={!hasValue || undefined}>
+                <Button
+                    aria-label="Change film"
+                    title="Change film"
+                    ref={removeRef}
+                    disabled={disabled || !hasValue}
+                    size="icon"
+                    variant="subtle"
+                    onClick={onRemove}
+                >
+                    <span className={styles.actionIcon} data-press-surface>
+                        <Icon name="close" />
+                    </span>
+                </Button>
+            </span>
+            {endAction}
+        </span>
     );
 }

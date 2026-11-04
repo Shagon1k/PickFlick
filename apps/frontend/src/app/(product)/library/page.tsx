@@ -84,6 +84,7 @@ export default async function LibraryPage({
 }) {
     const parameters = await searchParams;
     const isAchievements = parameters.tab === 'achievements';
+    const tableVariant = parameters.tab === 'watchlist' ? 'watchlist' : 'ratings';
     const parsed = libraryQuerySchema.safeParse(parameters);
     const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
     const current = isAchievements ? 'achievements' : query.tab;
@@ -101,13 +102,7 @@ export default async function LibraryPage({
                 fallback={
                     <LoadingState
                         label="Loading your Library…"
-                        variant={
-                            isAchievements
-                                ? 'achievements'
-                                : query.tab === 'watchlist'
-                                  ? 'watchlist'
-                                  : 'ratings'
-                        }
+                        variant={isAchievements ? 'achievements' : tableVariant}
                     />
                 }
             >

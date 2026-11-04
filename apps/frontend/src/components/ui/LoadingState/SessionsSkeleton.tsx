@@ -68,99 +68,88 @@ function Rows({
     if (!count) return <Skeleton width="half" />;
     return (
         <div>
-            {Array.from({ length: count }, (_, index) => {
-                const session = sessions?.[index];
-                const meta = session
-                    ? [
-                          session.scheduledAt
-                              ? formatCalendarDate(session.scheduledAt)
-                              : 'Not scheduled',
-                          session.location,
-                          ...(isRating
-                              ? [
-                                    session.acceptedCount
-                                        ? `${session.progressCount ?? 0} of ${session.acceptedCount} rated`
-                                        : 'No current participants',
-                                ]
-                              : []),
-                      ]
-                          .filter(Boolean)
-                          .join(' · ')
-                    : null;
-                return (
-                    <div className={styles.row} data-rating={isRating || undefined} key={index}>
-                        <div className={styles.poster}>
-                            <Skeleton variant="poster" shouldFill />
-                        </div>
-                        <div className={styles.copy} data-known={Boolean(session) || undefined}>
-                            <div className={styles.name}>
-                                {session ? (
-                                    <Skeleton
-                                        text={
-                                            session.movie?.title ??
-                                            session.topic ??
-                                            'Untitled Session'
-                                        }
-                                    />
-                                ) : (
-                                    <Skeleton shouldFill />
-                                )}
-                            </div>
-                            <div className={styles.meta}>
-                                {meta ? <Skeleton text={meta} /> : <Skeleton />}
-                            </div>
-                            {!isRating ? (
-                                <div className={styles.meta}>
-                                    {session ? (
-                                        <Skeleton
-                                            text={formatCount(session.acceptedCount, 'attendee')}
-                                        />
-                                    ) : (
-                                        <Skeleton width="half" />
-                                    )}
-                                </div>
-                            ) : null}
-                        </div>
-                        {isRating ? (
-                            <>
-                                <div className={styles.participants}>
-                                    {Array.from({ length: AVATAR_COUNT }, (_, avatar) => (
-                                        <div key={avatar}>
-                                            <Skeleton variant="avatar" shouldFill />
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className={styles.progress}>
-                                    <div>
-                                        <Skeleton shouldFill />
-                                    </div>
-                                </div>
-                            </>
-                        ) : session?.phase === 'CANCELLED' ? (
-                            <div className={styles.closedStatus}>
-                                <Skeleton text="Cancelled" />
-                            </div>
+            {Array.from({ length: count }, (_, index) => (
+                <SessionRow key={index} session={sessions?.[index]} isRating={isRating} />
+            ))}
+        </div>
+    );
+}
+
+function getMeta(session: IClubHubSession | undefined, isRating: boolean) {
+    if (!session) return null;
+    const fields = [
+        session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled',
+        session.location,
+    ];
+    if (isRating)
+        fields.push(
+            session.acceptedCount
+                ? `${session.progressCount ?? 0} of ${session.acceptedCount} rated`
+                : 'No current participants',
+        );
+    return fields.filter(Boolean).join(' · ');
+}
+function SessionRow({ session, isRating }: { session?: IClubHubSession; isRating: boolean }) {
+    const meta = getMeta(session, isRating);
+    return (
+        <div className={styles.row} data-rating={isRating || undefined}>
+            <div className={styles.poster}>
+                <Skeleton variant="poster" shouldFill />
+            </div>
+            <div className={styles.copy} data-known={Boolean(session) || undefined}>
+                <div className={styles.name}>
+                    {session ? (
+                        <Skeleton
+                            text={session.movie?.title ?? session.topic ?? 'Untitled Session'}
+                        />
+                    ) : (
+                        <Skeleton shouldFill />
+                    )}
+                </div>
+                <div className={styles.meta}>{meta ? <Skeleton text={meta} /> : <Skeleton />}</div>
+                {!isRating ? (
+                    <div className={styles.meta}>
+                        {session ? (
+                            <Skeleton text={formatCount(session.acceptedCount, 'attendee')} />
                         ) : (
-                            <div
-                                className={styles.score}
-                                data-known={Boolean(session) || undefined}
-                            >
-                                {session ? (
-                                    <Skeleton
-                                        text={
-                                            session.ratingAverage === null
-                                                ? '—'
-                                                : formatAverage(session.ratingAverage)
-                                        }
-                                    />
-                                ) : (
-                                    <Skeleton variant="title" shouldFill />
-                                )}
-                            </div>
+                            <Skeleton width="half" />
                         )}
                     </div>
-                );
-            })}
+                ) : null}
+            </div>
+            <RowResult session={session} isRating={isRating} />
+        </div>
+    );
+}
+function RowResult({ session, isRating }: { session?: IClubHubSession; isRating: boolean }) {
+    if (isRating)
+        return (
+            <>
+                <div className={styles.participants}>
+                    {Array.from({ length: AVATAR_COUNT }, (_, avatar) => (
+                        <div key={avatar}>
+                            <Skeleton variant="avatar" shouldFill />
+                        </div>
+                    ))}
+                </div>
+                <div className={styles.progress}>
+                    <div>
+                        <Skeleton shouldFill />
+                    </div>
+                </div>
+            </>
+        );
+    if (session?.phase === 'CANCELLED')
+        return (
+            <div className={styles.closedStatus}>
+                <Skeleton text="Cancelled" />
+            </div>
+        );
+    const average =
+        session && session.ratingAverage !== null ? formatAverage(session.ratingAverage) : '—';
+    return (
+        <div className={styles.score} data-known={Boolean(session) || undefined}>
+            {session ? <Skeleton text={average} /> : <Skeleton variant="title" shouldFill />}
         </div>
     );
 }

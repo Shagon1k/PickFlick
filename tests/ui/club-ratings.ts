@@ -35,18 +35,20 @@ export function handleClubRatings(
     const query = clubRatingsQuerySchema.parse(
         Object.fromEntries(new URL(request.url!, 'http://127.0.0.1').searchParams),
     );
-    const isPro = token.includes('ratings-pro');
-    const items: TClubRatings['items'] =
-        isPro && !token.includes('empty')
-            ? Array.from({ length: 28 }, (_, index) => ({
-                  movieId: `10000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`,
-                  title: `Synthetic film ${String(28 - index).padStart(2, '0')}`,
-                  year: 2026,
-                  genres: ['Drama'],
-                  averageRating: 10 - index / 10,
-              }))
-            : [];
-    if (query.sort === 'title') items.sort((a, b) => a.title!.localeCompare(b.title!));
+    const items: TClubRatings['items'] = !token.includes('empty')
+        ? Array.from({ length: 28 }, (_, index) => ({
+              movieId: `10000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`,
+              title: `Synthetic film ${String(28 - index).padStart(2, '0')}`,
+              year: 2026,
+              genres: ['Drama'],
+              averageRating: 10 - index / 10,
+          }))
+        : [];
+    if (query.sort === 'title')
+        items.sort((a, b) => {
+            const compared = a.title!.localeCompare(b.title!);
+            return query.direction === 'desc' ? -compared : compared;
+        });
     if (query.sort === 'time') items.reverse();
     const pages = Math.max(1, Math.ceil(items.length / CLUB_RATINGS_PAGE_SIZE));
     const page = Math.min(query.page, pages);

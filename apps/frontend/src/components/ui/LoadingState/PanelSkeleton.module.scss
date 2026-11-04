@@ -3,27 +3,33 @@
     gap: var(--gap-lg);
     min-width: 0;
 }
+
 .cards {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--gap-lg);
 }
+
 .card {
     min-width: 0;
     padding: 24px;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
+
 .cardHeading {
     margin-bottom: 16px;
 }
+
 .cardHeading > span {
     height: calc(var(--fs-app-section) * var(--lh-title));
 }
+
 .active {
     display: grid;
     gap: 24px;
 }
+
 .activeLine {
     margin: 0;
     font: var(--fs-body-sm)/var(--lh-body) var(--font-body);
@@ -33,21 +39,25 @@
     height: calc(var(--fs-body) * var(--lh-ui) + 24px);
     border-radius: var(--radius);
 }
+
 .emptyActions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--gap-sm);
 }
+
 .progress {
     height: 52px;
     margin-top: var(--gap-xs);
     border-radius: 4px;
 }
+
 .pills {
     display: flex;
     flex-wrap: wrap;
     gap: var(--gap-sm);
 }
+
 .pill {
     display: grid;
     grid-template-columns: 28px 80px;
@@ -57,21 +67,26 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
 }
+
 .pillAvatar {
     height: 28px;
     border-radius: var(--radius-pill);
 }
+
 .activity > div {
     padding: 10px 0;
 }
+
 .activity > div + div {
     border-top: 1px solid var(--border);
 }
+
 .statistics {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gap-sm);
 }
+
 .stat {
     display: grid;
     grid-template-columns: 58px minmax(0, 1fr);
@@ -84,17 +99,20 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
+
 .statIcon {
     width: 58px;
     height: 58px;
     border-radius: var(--radius-pill);
 }
+
 .statCopy {
     display: flex;
     flex-direction: column;
     align-items: center;
     min-width: 0;
 }
+
 .statValue {
     display: grid;
     align-items: center;
@@ -102,30 +120,37 @@
     height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
     border-radius: var(--radius);
 }
+
 .statValue[data-text] {
     width: 100%;
     height: calc(clamp(20px, 10cqi, 42px) * var(--lh-tight));
 }
+
 .statLabel {
     width: 100%;
     height: 1lh;
-    font-size: var(--fs-meta);
     margin-top: var(--gap-xs);
+    font-size: var(--fs-meta);
 }
+
 .libraryStats {
     margin-bottom: var(--gap-lg);
 }
+
 .statistics[data-overview] {
     grid-template-columns: repeat(12, minmax(0, 1fr));
 }
+
 .statistics[data-overview] .stat {
     grid-column: span 3;
     gap: 0;
     padding: 20px 24px;
 }
+
 .statistics[data-overview] .stat:nth-child(n + 5) {
     grid-column: span 4;
 }
+
 .statistics[data-overview] .statValue[data-text] {
     height: calc(clamp(20px, 2.5vw, 28px) * var(--lh-tight));
 }
@@ -133,6 +158,7 @@
 .statistics[data-overview] .statLabel {
     font: var(--fs-meta)/var(--lh-ui) var(--font-body);
 }
+
 .member {
     display: flex;
     gap: var(--gap-md);
@@ -141,9 +167,11 @@
     min-height: 88px;
     padding-block: 16px;
 }
+
 .member + .member {
     border-top: 1px solid var(--border);
 }
+
 .identity {
     display: flex;
     flex: 1;
@@ -151,49 +179,59 @@
     align-items: center;
     min-width: 0;
 }
+
 .identityCopy {
     flex: 1;
     min-width: 0;
 }
+
 .memberName {
     width: 60%;
     height: 1lh;
     font-size: var(--fs-body);
 }
+
 .memberRole {
     width: 35%;
     height: 1lh;
     margin-top: 3px;
     font: var(--fs-meta)/var(--lh-body) var(--font-mono);
 }
+
 .memberActions {
     display: flex;
     flex-shrink: 0;
-    align-items: center;
     gap: var(--gap-md);
+    align-items: center;
 }
+
 .sessionCount {
     display: grid;
     gap: 3px;
     width: 48px;
 }
+
 .sessionCount > div {
     height: calc(24px * var(--lh-ui));
     border-radius: var(--radius);
 }
+
 .remove {
     width: var(--hit);
 }
+
 .achievementLayout {
     display: grid;
     gap: var(--gap-lg);
     min-width: 0;
 }
+
 .filters {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gap-sm);
 }
+
 .filter {
     display: flex;
     flex-direction: column;
@@ -206,6 +244,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
 }
+
 .filterValue {
     display: grid;
     align-items: center;
@@ -213,6 +252,7 @@
     height: calc(var(--fs-app-title) * var(--lh-title));
     border-radius: var(--radius);
 }
+
 .filterLabel {
     display: grid;
     align-items: center;
@@ -220,12 +260,14 @@
     height: 1lh;
     font-size: var(--fs-body-sm);
 }
+
 .shelf {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--gap-md);
     margin-bottom: var(--gap-md);
 }
+
 .achievement {
     display: flex;
     flex-direction: column;
@@ -236,6 +278,7 @@
     border: 1px solid var(--border-lit);
     border-radius: var(--radius-lg);
 }
+
 .badge {
     flex: 0 0 auto;
     width: 80px;
@@ -243,6 +286,7 @@
     margin: 6px 0 24px;
     border-radius: var(--radius-pill);
 }
+
 .achievementStatus {
     width: 70px;
     height: 1lh;
@@ -250,6 +294,7 @@
     font-size: var(--fs-micro);
     border-radius: var(--radius);
 }
+
 .achievementTitle {
     display: grid;
     align-items: center;
@@ -258,6 +303,7 @@
     margin-bottom: 7px;
     border-radius: var(--radius);
 }
+
 .description {
     display: grid;
     grid-template-rows: repeat(3, 1fr);
@@ -267,6 +313,7 @@
     min-height: 3lh;
     font: var(--fs-meta)/var(--lh-body) var(--font-body);
 }
+
 .achievementProgress {
     display: grid;
     gap: 8px;
@@ -276,104 +323,130 @@
     padding-top: var(--gap-sm);
     margin-top: auto;
 }
+
 .achievementProgress > div:first-child {
     width: 60%;
     height: 1lh;
     font: 700 var(--fs-meta)/normal var(--font-mono);
 }
+
 .bar {
     width: 100%;
     height: 5px;
     border-radius: var(--radius-pill);
 }
+
 @media (width < 1024px) {
     .cards {
         grid-template-columns: minmax(0, 1fr);
     }
+
     .statistics,
     .statistics[data-overview] {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
     .statistics[data-overview] .stat,
     .statistics[data-overview] .stat:nth-child(n + 5) {
         grid-column: auto;
     }
+
     .statistics[data-overview] .stat:nth-child(5) {
         grid-column: 1/-1;
     }
 }
+
 @media (width < 768px) {
     .statistics[data-overview] .stat {
         grid-template-columns: 42px minmax(0, 1fr);
         gap: var(--gap-sm);
         padding: 20px 14px;
     }
+
     .statistics[data-overview] .statIcon {
         width: 42px;
         height: 42px;
     }
+
     .shelf {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--gap-sm);
     }
+
     .achievement {
         min-height: 280px;
         padding: 18px 12px;
     }
+
     .badge {
         width: 64px;
         height: 64px;
     }
+
     .achievementTitle {
         height: calc(var(--fs-lead) * var(--lh-title));
     }
 }
+
 @media (width < 576px) {
     .filters {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
     .statistics {
         gap: var(--gap-xs);
     }
+
     .stat {
         grid-template-columns: 40px minmax(0, 1fr);
         gap: var(--gap-xs);
         min-height: 104px;
         padding: var(--gap-sm) var(--gap-xs);
     }
+
     .statIcon {
         width: 40px;
         height: 40px;
     }
+
     .statValue {
         height: calc(30px * var(--lh-tight));
     }
+
     .statLabel {
         font-size: var(--fs-caption);
     }
+
     .statistics[data-overview] {
         gap: var(--gap-sm);
     }
+
     .statistics[data-overview] .stat {
         min-height: 124px;
     }
+
     .statistics[data-overview] .statValue {
         height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
     }
+
     .statistics[data-overview] .statValue[data-text] {
         height: calc(clamp(20px, 2.5vw, 28px) * var(--lh-tight));
     }
+
     .statistics[data-overview] .stat:nth-child(n + 5) {
         grid-column: 1/-1;
     }
+
     .member,
     .identity,
     .memberActions {
         gap: var(--gap-xs);
     }
+
     .memberName {
         font-size: var(--fs-body-sm);
     }
+
     .sessionCount > div {
         height: calc(22px * var(--lh-ui));
     }

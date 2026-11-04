@@ -51,19 +51,16 @@ export default function AvatarGroup({ items, label }: IAvatarGroupProps) {
                 </button>
             }
         >
-            <ul
-                aria-label={label}
-                className={styles.avatarGroup__list}
-                tabIndex={0}
-                data-color-reveal-trigger
-            >
-                {items.map((item) => (
-                    <li className={styles.avatarGroup__member} key={item.id}>
-                        <Avatar name={item.displayName} src={item.avatarUrl} size="small" />
-                        <span className={styles.avatarGroup__name}>{item.displayName}</span>
-                    </li>
-                ))}
-            </ul>
+            <div aria-label={label} role="region" tabIndex={0} data-color-reveal-trigger>
+                <ul className={styles.avatarGroup__list}>
+                    {items.map((item) => (
+                        <li className={styles.avatarGroup__member} key={item.id}>
+                            <Avatar name={item.displayName} src={item.avatarUrl} size="small" />
+                            <span className={styles.avatarGroup__name}>{item.displayName}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </Popover>
     );
 }

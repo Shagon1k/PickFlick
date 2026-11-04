@@ -98,6 +98,9 @@ export default function PendingInvites() {
         });
     }
     const countLabel = formatCount(invitations.length, 'invitation');
+    let loadLabel = 'Checking invitations…';
+    if (isLoaded) loadLabel = countLabel;
+    else if (loadError && !isPending) loadLabel = 'Temporarily unavailable';
     return (
         <div
             className={styles.widget}
@@ -156,13 +159,7 @@ export default function PendingInvites() {
                 <div className={styles.header} ref={headerRef}>
                     <div>
                         <h2>Pending invites</h2>
-                        <span>
-                            {isLoaded
-                                ? countLabel
-                                : loadError && !isPending
-                                  ? 'Temporarily unavailable'
-                                  : 'Checking invitations…'}
-                        </span>
+                        <span>{loadLabel}</span>
                     </div>
                     <button type="button" className={styles.close} onClick={() => closeOverlay()}>
                         Close

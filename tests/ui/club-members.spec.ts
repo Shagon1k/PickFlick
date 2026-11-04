@@ -33,7 +33,7 @@ test(
         await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeFocused();
         await expect(page.getByRole('status')).toContainText('Shared history is preserved');
         // Invite opens the link dialog right here instead of sending the Admin to Manage Club.
-        await page.getByRole('button', { name: '+ Invite' }).click();
+        await page.getByRole('button', { name: 'Invite', exact: true }).click();
         await expect(
             page.getByRole('dialog', { name: 'Invite to this Club' }).getByLabel('Invitation link'),
         ).toHaveValue(/\/invite\/club\//u);
@@ -52,10 +52,10 @@ test('Member and restricted Club views explain unavailable actions without losin
     await authenticate(context, 'valid-members-adminless');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
-    await expect(page.getByRole('button', { name: '+ Invite' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Invite', exact: true })).toHaveCount(0);
     await page.goto(`/clubs/${CLUB_ID}/settings`);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Invite members' }).click();
+    await page.getByRole('button', { name: 'Invite members', exact: true }).click();
     const invitations = page.getByRole('dialog', { name: 'Invite to this Club' });
     await expect(
         invitations.getByText('New invitations are paused.', { exact: false }),
@@ -192,7 +192,9 @@ test('pending invitations show recoverable loading failures and an explicit empt
     await page.goto('/app');
     await page.getByRole('button', { name: 'Open pending invites' }).click();
     const dialog = page.getByRole('dialog', { name: 'Pending invites' });
-    await expect(dialog.getByRole('status')).toContainText('could not be loaded');
+    await expect(
+        dialog.getByRole('status').filter({ hasText: 'could not be loaded' }),
+    ).toContainText('could not be loaded');
     await expect(dialog.getByRole('button', { name: 'Retry invites' })).toBeVisible();
     await authenticate(context, 'valid-empty-invites');
     await page.goto('/app');

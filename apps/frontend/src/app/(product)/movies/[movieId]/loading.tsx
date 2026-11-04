@@ -1,7 +1,6 @@
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 
 import MovieHeroLoading from './_components/MovieHeroLoading/MovieHeroLoading';
-
 import styles from './page.module.scss';
 
 export default function Loading() {

@@ -31,6 +31,18 @@ export interface ITableProps {
     isLoading?: boolean;
 }
 
+function getAriaSort(direction?: 'asc' | 'desc') {
+    if (direction === 'asc') return 'ascending';
+    if (direction === 'desc') return 'descending';
+    return undefined;
+}
+
+function getSortLabel(direction: 'asc' | 'desc' | undefined, hasExplicitSort: boolean) {
+    if (direction === 'asc') return ': sort descending';
+    if (hasExplicitSort) return ': reset sorting';
+    return ': sort ascending';
+}
+
 /** A semantic table whose dense content scrolls inside its own region, never the page. */
 export default function Table({
     caption,
@@ -59,13 +71,7 @@ export default function Table({
                     <tr>
                         {columns.map((column) => (
                             <th
-                                aria-sort={
-                                    column.sortDirection === 'asc'
-                                        ? 'ascending'
-                                        : column.sortDirection === 'desc'
-                                          ? 'descending'
-                                          : undefined
-                                }
+                                aria-sort={getAriaSort(column.sortDirection)}
                                 className={clsx(
                                     getCellClass(column),
                                     column.onSort && styles.table__sortable,
@@ -84,11 +90,7 @@ export default function Table({
                                         {column.header}
                                         <Icon name="chevron-down" />
                                         <span className="visually-hidden">
-                                            {column.sortDirection === 'asc'
-                                                ? ': sort descending'
-                                                : hasExplicitSort
-                                                  ? ': reset sorting'
-                                                  : ': sort ascending'}
+                                            {getSortLabel(column.sortDirection, hasExplicitSort)}
                                         </span>
                                     </button>
                                 ) : (

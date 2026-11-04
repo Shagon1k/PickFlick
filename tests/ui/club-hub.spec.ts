@@ -192,9 +192,12 @@ for (const { viewport, open, current } of sectionSwitches) {
             Object.keys(headers).some((name) => name.includes('prefetch'));
         const prefetched = page.waitForResponse(
             (response) =>
-                response.url().includes(members) && isPrefetch(response.request().headers()),
+                response.url().includes(members) &&
+                isPrefetch(response.request().headers()) &&
+                !response.request().headers()['next-router-segment-prefetch'],
         );
         await page.goto(`/clubs/${FIRST_CLUB_ID}`);
+        // The route-tree prefetch arrives before the request containing the loading boundary.
         await prefetched;
         // Hold only the navigation; the prefetched loading boundary must render without it.
         let release = () => {};
@@ -205,14 +208,16 @@ for (const { viewport, open, current } of sectionSwitches) {
             if (!isPrefetch(route.request().headers())) await held;
             await route.continue();
         });
-        await open(page);
-
-        const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club section' });
-        await expect(skeleton).toBeVisible();
-        await expect(page.locator('[data-anchored-menu=hub]')).toBeHidden();
-        await current(page);
-        await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
-        release();
+        const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club members' });
+        try {
+            await open(page);
+            await expect(skeleton).toBeVisible();
+            await expect(page.locator('[data-anchored-menu=hub]')).toBeHidden();
+            await current(page);
+            await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
+        } finally {
+            release();
+        }
         await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
         await expect(skeleton).toHaveCount(0);
     });
@@ -273,8 +278,11 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
         await next.tap();
         await expect(page).toHaveURL(new RegExp(`/clubs/${SECOND_CLUB_ID}$`, 'u'));
         await page
-            .getByRole('heading', { name: 'Active Ratings' })
-            .locator('..')
+            .getByRole('navigation', { name: 'Club sections' })
+            .getByRole('link', { name: 'Sessions', exact: true })
+            .tap();
+        await page
+            .getByRole('region', { name: 'Open Ratings', exact: true })
             .getByRole('link', { name: 'Second Club private screening', exact: true })
             .tap();
         await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000032$/u);
@@ -293,9 +301,10 @@ test('Club carousel ends with creation and shows only the prototype caption', as
     await expect(page.getByRole('link', { name: 'Create a Club', exact: true })).toHaveCount(0);
     await expect(page.getByText('Noir, classics, and arguments.')).toHaveCount(0);
     await page.getByRole('button', { name: 'Previous Club' }).click();
+    const returnTo = encodeURIComponent(`/clubs/${FIRST_CLUB_ID}`);
     await expect(page.getByRole('link', { name: 'Create new club' })).toHaveAttribute(
         'href',
-        '/clubs/new',
+        `/clubs/new?returnTo=${returnTo}`,
     );
     await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(0);
     await page.getByRole('button', { name: 'Next Club' }).click();

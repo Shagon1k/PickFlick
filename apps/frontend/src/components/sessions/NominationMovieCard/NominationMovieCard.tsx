@@ -23,6 +23,8 @@ export default function NominationMovieCard({
     maxGenres?: number;
     isLoading?: boolean;
 }) {
+    const title = movie.title ?? 'Movie title unavailable';
+    const filmLabel = movie.year ? `${title} (${movie.year})` : title;
     return (
         <div
             className={styles.card}
@@ -32,7 +34,7 @@ export default function NominationMovieCard({
         >
             <ColorReveal variant="surface" />
             <Link
-                aria-label={`${movie.title ?? 'Movie title unavailable'}${movie.year ? ` (${movie.year})` : ''}`}
+                aria-label={filmLabel}
                 className={styles.film}
                 href={`/movies/${movie.id}`}
                 prefetch={false}
@@ -60,14 +62,18 @@ export default function NominationMovieCard({
                     </h3>
                     {author !== null ? (
                         <p className={styles.author}>
-                            {isLoading ? <Skeleton text={'by ' + author} /> : <>by {author}</>}
+                            {isLoading ? <Skeleton text={`by ${author}`} /> : <>by {author}</>}
                         </p>
                     ) : null}
                     {movie.genres.length ? (
                         <ul className={styles.genres} aria-label="Genres">
-                            {movie.genres.slice(0, maxGenres).map((genre) => (
-                                <li key={genre}>{isLoading ? <Skeleton text={genre} /> : genre}</li>
-                            ))}
+                            {movie.genres
+                                .slice(0, maxGenres ?? movie.genres.length)
+                                .map((genre) => (
+                                    <li key={genre}>
+                                        {isLoading ? <Skeleton text={genre} /> : genre}
+                                    </li>
+                                ))}
                         </ul>
                     ) : null}
                 </div>

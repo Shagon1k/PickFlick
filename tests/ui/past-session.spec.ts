@@ -30,21 +30,21 @@ for (const viewport of screenshotViewports) {
             expect(dateBounds!.x + dateBounds!.width).toBeLessThanOrEqual(timeBounds!.x);
             const film = page.getByRole('combobox', { name: 'Select a Movie' });
             await film.fill('remembered');
-            const results = page.getByRole('listbox', { name: 'Movie results' });
+            const results = page.getByRole('listbox', { name: 'Film results' });
             await expect(results).toBeVisible();
             await settle(page);
             const control = await film.boundingBox();
-            const dropdown = await results.boundingBox();
+            const dropdown = await results.locator('..').locator('..').boundingBox();
             expect(control).not.toBeNull();
             expect(dropdown).not.toBeNull();
             expect(Math.abs(dropdown!.x - control!.x)).toBeLessThanOrEqual(1);
             expect(Math.abs(dropdown!.width - control!.width)).toBeLessThanOrEqual(1);
             expect(dropdown!.y - control!.y - control!.height).toBeGreaterThanOrEqual(0);
-            expect(dropdown!.y - control!.y - control!.height).toBeLessThanOrEqual(8);
+            expect(dropdown!.y - control!.y - control!.height).toBeCloseTo(2);
             await page.getByRole('option', { name: /A remembered film/u }).click();
-            const selected = page.getByRole('group', { name: 'Selected film' });
-            await expect(selected).toContainText('A remembered film');
-            const change = selected.getByRole('button', { name: 'Change film' });
+            const selected = page.getByRole('textbox', { name: 'Select a Movie' });
+            await expect(selected).toHaveValue('A remembered film');
+            const change = page.getByRole('button', { name: 'Change film' });
             await expect(change).toBeFocused();
             await change.click();
             await expect(selected).toHaveCount(0);
@@ -84,7 +84,7 @@ for (const viewport of screenshotViewports) {
             });
 
             await page.getByRole('button', { name: 'Next', exact: true }).click();
-            await page.getByRole('combobox', { name: 'Add nominated Movies' }).fill('remembered');
+            await page.getByRole('combobox', { name: /^Nominated films/u }).fill('remembered');
             await page.getByRole('option', { name: /A remembered rival/u }).click();
             await page
                 .getByRole('combobox', {

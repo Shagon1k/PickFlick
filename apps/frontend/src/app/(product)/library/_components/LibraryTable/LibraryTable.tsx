@@ -14,8 +14,8 @@ import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
-import LocalTime from '#components/ui/LocalTime/LocalTime';
 import { buildTableSkeletonRows } from '#components/ui/LoadingState/TableSkeleton';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatCount } from '#lib/format';
@@ -76,13 +76,11 @@ export default function LibraryTable({
     }
     const isWatchlist = library.tab === 'watchlist';
     const title = isWatchlist ? 'Watchlist' : 'My Ratings';
-    const hasFilters = Boolean(query.q || (isWatchlist ? query.priority : query.score));
-    const emptyLibraryMessage = isWatchlist
-        ? 'Your Watchlist is empty. Save a film from Movie Details to see it here.'
-        : 'No rated films yet. Rate a film from Movie Details to see it here.';
-    const emptyMessage = hasFilters
-        ? 'No films match your search or filters. Clear them to see all your films.'
-        : emptyLibraryMessage;
+    const valueFilter = isWatchlist ? query.priority : query.score;
+    const hasFilters = Boolean(query.q || valueFilter);
+    const emptyMessage = getEmptyMessage(isWatchlist, hasFilters);
+    const skeletonVariant = isWatchlist ? 'watchlist' : 'ratings';
+    const countLabel = formatCount(library.total, isWatchlist ? 'queued film' : 'rated film');
     const toRow = (
         item: TLibrary['items'][number],
         index: number,
@@ -146,8 +144,8 @@ export default function LibraryTable({
                 value={query.q}
                 label={isWatchlist ? 'Search watchlist…' : 'Search rated films…'}
                 maxLength={LIBRARY_SEARCH_MAX_LENGTH}
-                onSearch={(q) => {
-                    if (q.trim() !== query.q) navigate({ ...query, q, page: 1 }, true);
+                onSearch={(search) => {
+                    if (search.trim() !== query.q) navigate({ ...query, q: search, page: 1 }, true);
                 }}
             />
             {query.score || query.priority ? (
@@ -163,12 +161,11 @@ export default function LibraryTable({
                 </ButtonLink>
             ) : null}
             <p className="visually-hidden" role="status">
-                {isPending
-                    ? 'Loading films…'
-                    : message ||
-                      formatCount(library.total, isWatchlist ? 'queued film' : 'rated film')}
+                {isPending ? 'Loading films…' : message || countLabel}
             </p>
-            {navigationMessage ? <p role="status">{navigationMessage}</p> : null}
+            <p hidden={!navigationMessage} role="status">
+                {navigationMessage}
+            </p>
             <Table
                 variant="leaderboard"
                 isLoading={isPending}
@@ -190,14 +187,7 @@ export default function LibraryTable({
                         ...sortable('value'),
                     },
                 ]}
-                rows={
-                    isPending
-                        ? buildTableSkeletonRows(
-                              isWatchlist ? 'watchlist' : 'ratings',
-                              rows.length || 1,
-                          )
-                        : rows
-                }
+                rows={isPending ? buildTableSkeletonRows(skeletonVariant, rows.length || 1) : rows}
                 emptyMessage={emptyMessage}
             />
             <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
@@ -234,4 +224,12 @@ export default function LibraryTable({
             </nav>
         </section>
     );
+}
+
+function getEmptyMessage(isWatchlist: boolean, hasFilters: boolean) {
+    if (hasFilters)
+        return 'No films match your search or filters. Clear them to see all your films.';
+    if (isWatchlist)
+        return 'Your Watchlist is empty. Save a film from Movie Details to see it here.';
+    return 'No rated films yet. Rate a film from Movie Details to see it here.';
 }

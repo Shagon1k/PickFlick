@@ -79,8 +79,8 @@
     }
 
     .header:has(.phaseStamp) .headingLine {
-        grid-area: heading;
         flex-wrap: nowrap;
+        grid-area: heading;
     }
 
     .header:has(.phaseStamp) .headingLine h1 {
@@ -96,8 +96,7 @@
     }
 
     .header:has(.phaseStamp) .actionRail {
-        align-self: center;
-        justify-self: end;
+        place-self: center end;
     }
 
     .header[data-completed] {

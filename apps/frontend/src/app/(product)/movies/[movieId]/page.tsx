@@ -16,7 +16,8 @@ import { ApiError } from '#lib/api.server';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import MovieLinks from './_components/MovieLinks/MovieLinks';
-import RelatedMovies, { RelatedMoviesLoading } from './_components/RelatedMovies/RelatedMovies';
+import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
+import RelatedMoviesLoading from './_components/RelatedMovies/RelatedMoviesLoading';
 import styles from './page.module.scss';
 
 const MAX_RELATED_MOVIES = 6;

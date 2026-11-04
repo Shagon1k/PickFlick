@@ -29,9 +29,10 @@ for (const width of [390, 768, 1024, 1440]) {
                 '<script>alert(1)</script> & Film',
             );
             // One rating: IMDb wins over Kinopoisk and TMDB, rounded to one decimal.
-            await expect(page.getByTitle('IMDb rating')).toHaveText(
-                'IMDb rating7.6 out of 10 431K ratings',
-            );
+            const externalRating = page.getByTitle('IMDb rating');
+            await expect(externalRating.locator('strong')).toHaveText('7.6');
+            await expect(externalRating).toContainText('out of 10');
+            await expect(externalRating.getByText('431K ratings', { exact: true })).toBeVisible();
             await expect(page.getByText('7.519')).toHaveCount(0);
             await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
             // Personal Ratings and Watchlist use the shared editors.

@@ -121,17 +121,12 @@ function getCompanion(
             </div>
         );
     const average = session.rating?.results?.average ?? null;
+    const averageLabel = average === null ? '—' : formatAverage(average);
     if (session.phase === 'RATING' || session.phase === 'COMPLETED')
         return (
             <div className={styles.metric}>
                 <strong data-loading={isLoading || undefined}>
-                    {isLoading ? (
-                        <Skeleton shouldFill />
-                    ) : average === null ? (
-                        '—'
-                    ) : (
-                        formatAverage(average)
-                    )}
+                    {isLoading ? <Skeleton shouldFill /> : averageLabel}
                 </strong>
                 <span>Club score</span>
             </div>

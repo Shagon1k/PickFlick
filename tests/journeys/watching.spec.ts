@@ -42,7 +42,9 @@ test('Only Club operators open Rating and both clients see the manual transition
         const memberPage = await contexts[2]!.newPage();
         for (const page of [adminPage, operatorPage, memberPage]) {
             await page.goto(`/sessions/${session.id}`);
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
             await page.getByRole('button', { name: 'Join Session', exact: true }).click();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         }
@@ -72,7 +74,11 @@ test('Only Club operators open Rating and both clients see the manual transition
         await dialog.getByRole('button', { name: 'Open Rating', exact: true }).click();
         await expect(dialog).toHaveCount(0);
         for (const page of [adminPage, operatorPage, memberPage]) {
-            await expect(page.getByText('rating', { exact: true })).toBeVisible({ timeout: 20000 });
+            await expect(
+                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
+                timeout: 20000,
+            });
         }
         const retry = await contexts[0]!.request.post(`/api/sessions/${session.id}/rating/open`, {
             data: { confirmation: 'OPEN', phaseVersion: 1 },

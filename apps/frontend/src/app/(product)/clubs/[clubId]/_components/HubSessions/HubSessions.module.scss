@@ -11,10 +11,10 @@
 
 .heading {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--gap-sm);
     align-items: baseline;
     justify-content: space-between;
-    flex-wrap: wrap;
     margin-bottom: var(--gap-md);
 }
 
@@ -174,8 +174,8 @@
 .ratingProgress {
     grid-area: progress;
     align-self: end;
-    min-width: 0;
     width: 100%;
+    min-width: 0;
     max-width: 240px;
     padding-bottom: calc(var(--gap-xs) / 2);
     margin-left: auto;

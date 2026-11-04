@@ -9,8 +9,7 @@
 .horizontalScroll__content {
     position: relative;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     border-radius: inherit;
     -webkit-overflow-scrolling: touch;
 }

@@ -67,33 +67,43 @@ export default function CallSheet({
             <div className={styles.layout}>
                 <dl className={styles.fields}>
                     <div className={styles.picture}>
-                        <ColorReveal variant="outline" />
                         <dt>{hasSelectedFilm ? 'Picture' : 'Session'}</dt>
                         <dd>{title}</dd>
+                        <dd className={styles.fieldOutline} aria-hidden="true">
+                            <ColorReveal variant="outline" />
+                        </dd>
                     </div>
                     {time ? (
                         <div>
-                            <ColorReveal variant="outline" />
                             <dt>Call time</dt>
                             <dd>{time}</dd>
+                            <dd className={styles.fieldOutline} aria-hidden="true">
+                                <ColorReveal variant="outline" />
+                            </dd>
                         </div>
                     ) : (
                         <div className={styles.location}>
-                            <ColorReveal variant="outline" />
                             <dt>Location</dt>
                             <dd title={session.location ?? undefined}>{session.location ?? '—'}</dd>
+                            <dd className={styles.fieldOutline} aria-hidden="true">
+                                <ColorReveal variant="outline" />
+                            </dd>
                         </div>
                     )}
                     <div>
-                        <ColorReveal variant="outline" />
                         <dt>Date</dt>
                         <dd>{date}</dd>
+                        <dd className={styles.fieldOutline} aria-hidden="true">
+                            <ColorReveal variant="outline" />
+                        </dd>
                     </div>
                     {fields.map((field) => (
                         <div key={field.label}>
-                            <ColorReveal variant="outline" />
                             <dt>{field.label}</dt>
                             <dd>{field.value}</dd>
+                            <dd className={styles.fieldOutline} aria-hidden="true">
+                                <ColorReveal variant="outline" />
+                            </dd>
                         </div>
                     ))}
                 </dl>

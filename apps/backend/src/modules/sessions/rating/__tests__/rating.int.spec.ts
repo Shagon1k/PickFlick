@@ -93,7 +93,7 @@ describe('Rating', () => {
             submittedCount: 1,
             receivedCount: 1,
             canSubmit: false,
-            results: null,
+            results: { average: 8, entries: null },
             own: { score: 8 },
         });
         const final = await Promise.all([submit(1), submit(2), submit(2)]);
@@ -228,16 +228,16 @@ describe('Rating', () => {
         });
         await submit();
         await submit(2, { score: 3, comment: 'Private response' });
-        expect((await detail()).rating?.results).toBeNull();
+        expect((await detail()).rating?.results).toEqual({ average: 5.5, entries: null });
         expect((await detail(1)).rating?.own).toBeNull();
         await close();
         for (const index of [2, 3]) {
             const session = await detail(index);
-            expect(session.rating?.results).toBeNull();
+            expect(session.rating?.results).toEqual({ average: 5.5, entries: null });
             expect(JSON.stringify(session)).not.toContain('A fine screening.');
         }
         expect((await detail(2)).rating?.own?.comment).toBe('Private response');
-        expect((await detail()).rating?.results).toBeNull();
+        expect((await detail()).rating?.results).toEqual({ average: 5.5, entries: null });
         await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         expect((await detail()).rating?.results?.entries).toHaveLength(2);
         expect((await detail(1)).rating?.results?.average).toBe(5.5);

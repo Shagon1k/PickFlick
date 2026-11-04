@@ -5,7 +5,8 @@ import { useRef } from 'react';
 
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 
-import RatingForm, { RatingFormSkeleton } from './RatingForm';
+import RatingForm from './RatingForm';
+import RatingFormSkeleton from './RatingFormSkeleton';
 import styles from './YourRating.module.scss';
 
 /** The prototype's personal submission card stays in place throughout the Rating phase. */
@@ -20,6 +21,11 @@ export default function YourRating({
 }) {
     const headingRef = useRef<HTMLHeadingElement>(null);
     if (!data.own && !data.canSubmit) return null;
+    const form = isLoading ? (
+        <RatingFormSkeleton />
+    ) : (
+        <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />
+    );
     return (
         <section className={styles.card} aria-labelledby="your-rating-heading">
             <h2 id="your-rating-heading" ref={headingRef} tabIndex={-1}>
@@ -32,10 +38,8 @@ export default function YourRating({
                     </strong>
                     <span>Saved</span>
                 </div>
-            ) : isLoading ? (
-                <RatingFormSkeleton />
             ) : (
-                <RatingForm sessionId={sessionId} onSaved={() => headingRef.current?.focus()} />
+                form
             )}
         </section>
     );

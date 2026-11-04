@@ -3,45 +3,54 @@
     gap: var(--gap-md);
     min-width: 0;
 }
+
 .search {
     width: min(100%, 480px);
     height: calc(var(--fs-body) * var(--lh-ui) + 24px);
     margin-inline: auto;
     border-radius: var(--radius);
 }
+
 .cell {
     display: flex;
     align-items: center;
-    min-height: var(--hit);
     min-width: 36px;
+    min-height: var(--hit);
 }
+
 .cell[data-film] {
     min-width: 150px;
     max-width: 28ch;
 }
+
 .cell[data-numeric] {
     justify-content: flex-end;
 }
+
 .control {
     flex-shrink: 0;
     width: var(--hit);
     height: var(--hit);
     border-radius: var(--radius);
 }
+
 .control[data-priority] {
     width: var(--watchlist-priority-control-width);
 }
+
 .pagination {
     display: flex;
+    gap: var(--gap-sm);
     align-items: center;
     justify-content: space-between;
-    gap: var(--gap-sm);
 }
+
 .arrow {
     width: 48px;
     height: 48px;
     border-radius: var(--radius);
 }
+
 .page {
     width: 90px;
 }

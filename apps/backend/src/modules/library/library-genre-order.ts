@@ -16,17 +16,13 @@ export async function readGenrePage(
     const table =
         query.tab === 'watchlist' ? Prisma.sql`"WatchlistItem"` : Prisma.sql`"PersonalMovieRating"`;
     const direction = query.direction === 'desc' ? Prisma.sql`DESC` : Prisma.sql`ASC`;
-    const title = query.q
-        ? Prisma.sql`AND movie.title ILIKE ${`%${query.q.replaceAll(/[\\%_]/gu, '\\$&')}%`}`
-        : Prisma.empty;
-    const filter =
-        query.tab === 'watchlist'
-            ? query.priority
-                ? Prisma.sql`AND entry.priority = ${query.priority}::"WatchlistPriority"`
-                : Prisma.empty
-            : query.score
-              ? Prisma.sql`AND entry.score = ${Number(query.score)}`
-              : Prisma.empty;
+    const searchPattern = `%${query.q.replaceAll(/[\\%_]/gu, '\\$&')}%`;
+    const title = query.q ? Prisma.sql`AND movie.title ILIKE ${searchPattern}` : Prisma.empty;
+    let filter = Prisma.empty;
+    if (query.tab === 'watchlist' && query.priority)
+        filter = Prisma.sql`AND entry.priority = ${query.priority}::"WatchlistPriority"`;
+    else if (query.tab === 'my-ratings' && query.score)
+        filter = Prisma.sql`AND entry.score = ${Number(query.score)}`;
     const rows = await tx.$queryRaw<{ movieId: string }[]>`
         SELECT entry."movieId"
         FROM ${table} entry

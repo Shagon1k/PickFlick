@@ -44,6 +44,9 @@ export default function PastNominations({
     const { nominations, scoreMatrix } = evidence;
     const isNominationLimitReached = nominations.length >= attendees.length;
     const hasTooManyNominations = nominations.length > attendees.length;
+    let placeholder = 'Add a nominated Movie…';
+    if (isNominationLimitReached) placeholder = 'All nomination slots filled';
+    if (attendees.length === 0) placeholder = 'Choose attendees first';
     const memberNames = buildMemberNames(members);
     const scoreOptions = Array.from(
         { length: scaleMax - scaleMin + 1 },
@@ -123,13 +126,7 @@ export default function PastNominations({
                 label={`Nominated films · ${nominations.length}/${attendees.length}`}
                 required={false}
                 shouldReserveMessage={false}
-                placeholder={
-                    attendees.length === 0
-                        ? 'Choose attendees first'
-                        : isNominationLimitReached
-                          ? 'All nomination slots filled'
-                          : 'Add a nominated Movie…'
-                }
+                placeholder={placeholder}
                 value={null}
                 disabled={disabled || isNominationLimitReached}
                 error={

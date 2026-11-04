@@ -20,7 +20,9 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
             await expect(
                 page.getByRole('status').filter({
                     hasText: '1 of 3 members have joined the screening.',
@@ -55,7 +57,9 @@ for (const viewport of canonicalViewports) {
             await page.keyboard.press('Escape');
             await expect(dialog).toHaveCount(0);
             await expect(settings).toBeFocused();
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
             await settings.click();
             await expect(page.getByRole('menuitem', { name: 'Open Rating' })).toBeFocused();
             await settle(page);
@@ -63,10 +67,14 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type OPEN to confirm').fill('OPEN');
             await dialog.getByLabel('Type OPEN to confirm').press('Enter');
             await expect(dialog).toHaveCount(0);
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             await page.reload();
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
         },
     );
 }
@@ -78,11 +86,15 @@ for (const scenario of ['member', 'readonly']) {
     }) => {
         await authenticate(context, scenario);
         await page.goto(ROUTE);
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         await page.reload();
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
     });
 }
 

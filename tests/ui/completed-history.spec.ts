@@ -17,18 +17,23 @@ test(
         const rivals = page.getByRole('region', { name: 'Nomination Rivals', exact: true });
         await expect(rivals.getByRole('list', { name: 'Logged nominations' })).toBeVisible();
         await expect(
-            rivals.getByRole('link', { name: 'Selected film', exact: true }),
+            rivals.getByRole('link', { name: 'Selected film (2026)', exact: true }),
         ).toBeVisible();
         await expect(
-            rivals.getByRole('link', { name: 'The rival nomination', exact: true }),
+            rivals.getByRole('link', { name: 'The rival nomination (2026)', exact: true }),
         ).toBeVisible();
-        await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
+        await expect(rivals.getByText('Watched', { exact: true })).toBeVisible();
         await expect(rivals.getByText('Winner', { exact: true })).toHaveCount(0);
-        await expect(rivals.getByRole('button', { name: /Average vote/u })).toHaveCount(0);
+        await expect(rivals.getByRole('button', { name: /Average Selection score/u })).toHaveCount(
+            0,
+        );
         await expect(rivals.getByText('total · 2 scores', { exact: true })).toBeVisible();
         await expect(
-            page.getByRole('list', { name: 'Session ratings' }).getByText('8', { exact: true }),
-        ).toBeVisible();
+            page
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .filter({ hasText: 'Casey' }),
+        ).toContainText('8.0');
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -74,7 +79,7 @@ for (const viewport of canonicalViewports) {
             const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
             await expect(rivals.getByText('The rival nomination')).toBeVisible();
             const score = rivals
-                .getByRole('button', { name: /^Average vote .* Show votes$/u })
+                .getByRole('button', { name: /^Average Selection score .* Show details$/u })
                 .first();
             await score.press('Enter');
             const votes = page.getByRole('dialog').filter({ hasText: 'Top scores' });
@@ -104,15 +109,22 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(HUB_ROUTE, { waitUntil: 'load' });
             await settle(page);
-            // The running Session and both Rating Sessions share one list.
-            const active = page.getByRole('region', { name: 'Active Sessions', exact: true });
-            await expect(active).toContainText('nomination');
-            await expect(active.getByRole('listitem')).toHaveCount(3);
+            // The blocking Session stays in the Call Sheet; only non-blocking Ratings use this list.
+            await expect(page.getByRole('link', { name: /^Open Session:/u }).first()).toBeVisible();
+            const active = page.getByRole('region', { name: 'Open Ratings', exact: true });
+            await expect(active.getByRole('listitem')).toHaveCount(2);
             await expect(active.getByRole('progressbar', { name: '1 of 2 rated' })).toBeVisible();
+            await expect(page.getByRole('link', { name: /^Open Session:/u }).first()).toContainText(
+                'nomination',
+            );
             const history = page.getByRole('region', { name: 'History', exact: true });
-            await expect(history.getByRole('link')).toHaveCount(2);
-            await expect(history.getByText('8.0', { exact: true })).toBeVisible();
-            await expect(history.getByText('—', { exact: true })).toBeVisible();
+            await expect(history.getByRole('listitem').getByRole('link')).toHaveCount(2);
+            await expect(
+                history.getByRole('listitem').filter({ hasText: 'A completed screening' }),
+            ).toContainText('8.0');
+            await expect(
+                history.getByRole('listitem').filter({ hasText: 'An empty screening' }),
+            ).toContainText('—');
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
@@ -137,12 +149,19 @@ test('Completed hidden results disclose no other comments, nominees or vote tota
     await expect(page.getByText(/Winner nominated by/)).toHaveCount(0);
 });
 
-test('Hub history keeps hidden scores unavailable', async ({ context, page }) => {
+test('Hub history retains Club averages when individual scores are hidden', async ({
+    context,
+    page,
+}) => {
     await authenticate(context, 'valid-hub-history-hidden');
     await page.goto(HUB_ROUTE);
     const history = page.getByRole('region', { name: 'History', exact: true });
-    await expect(history.getByText('—', { exact: true })).toHaveCount(2);
-    await expect(history.getByText('8.0', { exact: true })).toHaveCount(0);
+    await expect(
+        history.getByRole('listitem').filter({ hasText: 'An empty screening' }),
+    ).toContainText('—');
+    await expect(
+        history.getByRole('listitem').filter({ hasText: 'A completed screening' }),
+    ).toContainText('8.0');
 });
 
 test('Hub Sessions lists only the running Session and explains an empty history', async ({
@@ -151,8 +170,7 @@ test('Hub Sessions lists only the running Session and explains an empty history'
 }) => {
     await authenticate(context, 'valid-hub-empty');
     await page.goto(HUB_ROUTE);
-    await expect(
-        page.getByRole('region', { name: 'Active Sessions', exact: true }).getByRole('listitem'),
-    ).toHaveCount(1);
-    await expect(page.getByText('No completed Sessions yet.')).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(1);
+    await expect(page.getByRole('region', { name: 'Open Ratings', exact: true })).toHaveCount(0);
+    await expect(page.getByText('No Session history yet.')).toBeVisible();
 });

@@ -57,7 +57,7 @@ const STATES = [
         name: 'library-ratings',
         path: '/library',
         token: 'valid-library-visual',
-        ready: '28 films rated',
+        ready: 'The Grand Budapest Hotel',
     },
     {
         name: 'achievements-library',

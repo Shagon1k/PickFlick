@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
-import FilmRailSkeleton from '#components/movies/FilmRailSkeleton/FilmRailSkeleton';
 import ticket from '#components/movies/film-ticket.module.scss';
+import FilmRailSkeleton from '#components/movies/FilmRailSkeleton/FilmRailSkeleton';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
 import Skeleton from '#components/ui/Skeleton/Skeleton';

@@ -172,3 +172,36 @@ test('Login preserves a supported invitation and never reflects raw provider err
         provider: 'google',
     });
 });
+
+test(
+    'Login waits for hydration before accepting a sign-in click',
+    { tag: '@smoke' },
+    async ({ page }) => {
+        let releaseScripts!: () => void;
+        const scriptsReady = new Promise<void>((resolve) => {
+            releaseScripts = resolve;
+        });
+        let requestBody: Record<string, unknown> | undefined;
+        await page.route('**/_next/static/chunks/*.js', async (route) => {
+            await scriptsReady;
+            await route.continue();
+        });
+        await page.route('**/api/auth/sign-in/social', async (route) => {
+            requestBody = route.request().postDataJSON() as Record<string, unknown>;
+            await route.fulfill({ json: { redirect: false } });
+        });
+        try {
+            await page.goto('/login?returnTo=%2Flibrary', { waitUntil: 'commit' });
+            const google = page.getByRole('button', { name: 'Continue with Google', exact: true });
+            await expect(google).toBeDisabled();
+            releaseScripts();
+            await expect(google).toBeEnabled();
+            await google.click();
+            await expect
+                .poll(() => requestBody)
+                .toMatchObject({ provider: 'google', callbackURL: '/library' });
+        } finally {
+            releaseScripts();
+        }
+    },
+);

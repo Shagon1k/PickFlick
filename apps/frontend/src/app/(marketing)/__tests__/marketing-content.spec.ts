@@ -18,13 +18,19 @@ describe('public plan contract', () => {
             pro: 'Unlimited',
         });
         expect(freePlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
+        expect(freePlanFeatures.map(({ label }) => label)).toContain(
+            'Configurable Session visibility',
+        );
+        expect(proPlanFeatures.map(({ label }) => label)).toContain(
+            'Configurable Session visibility',
+        );
         expect(proPlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
     });
 
     it('should mark Free restrictions as limits rather than included features', () => {
         expect(
             freePlanFeatures.filter(({ tone }) => tone === 'limited').map(({ label }) => label),
-        ).toEqual(['Vote results hidden from ordinary members', '90-day inactivity grace']);
+        ).toEqual(['90-day inactivity grace']);
     });
 
     it('should publish only the monthly Pro offer', () => {

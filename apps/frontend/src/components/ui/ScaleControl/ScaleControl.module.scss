@@ -151,10 +151,12 @@
     height: 16px;
     border-radius: var(--radius);
 }
+
 .scale__rail[data-presentation='rating'] .scale__placeholder {
     width: 24px;
     height: 24px;
 }
+
 .scale[data-loading] .scale__option {
     opacity: 1;
 }

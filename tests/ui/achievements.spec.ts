@@ -87,14 +87,16 @@ test(
     'Achievement views recover from read failures and handle empty and denied states',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await signInMock(context, 'valid-achievements-transient');
+        await signInMock(context, `valid-achievements-transient-${crypto.randomUUID()}`);
         await page.goto('/library?tab=achievements');
         await expect(page.getByRole('region', { name: 'Achievements unavailable' })).toBeVisible();
         await page.getByRole('button', { name: 'Try again', exact: true }).click();
         await expect(page.getByRole('article')).toHaveCount(6);
         await signInMock(context, 'valid-achievements-empty');
         await page.goto('/library?tab=achievements');
-        await expect(page.getByRole('status')).toHaveText('0 of 0 achievements shown');
+        await expect(
+            page.getByRole('status').filter({ hasText: '0 of 0 achievements shown' }),
+        ).toHaveText('0 of 0 achievements shown');
         await expect(page.getByText('0%', { exact: true })).toBeVisible();
         await signInMock(context, 'valid-hub-achievements-denied');
         await page.goto(`/clubs/${CLUB_ID}/achievements`);

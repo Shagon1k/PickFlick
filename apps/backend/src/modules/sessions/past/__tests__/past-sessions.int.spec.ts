@@ -23,7 +23,14 @@ describe('Past Sessions', () => {
     beforeEach(async () => {
         users = await Promise.all(Array.from({ length: 5 }, () => createUser(api.prisma)));
         clubId = randomUUID();
-        await api.prisma.club.create({ data: { id: clubId, name: 'Historical Club' } });
+        await api.prisma.club.create({
+            data: {
+                id: clubId,
+                name: 'Historical Club',
+                showSelectionScoresAfter: true,
+                showRatingsAfter: true,
+            },
+        });
         movieId = (await api.prisma.movie.create({ data: { title: 'Repeat screening' } })).id;
         memberships = [];
         for (const [index, role] of (['ADMIN', 'MODERATOR', 'MEMBER', 'MEMBER'] as const).entries())
@@ -360,16 +367,17 @@ describe('Past Sessions', () => {
         });
         expect((await create({}, users[1])).status).toBe(409);
     });
-    it('should retain saved visibility and attendee attribution when Club settings and accounts change', async () => {
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: false } });
+    it('should apply current visibility and retain attendee attribution when accounts change', async () => {
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: false } });
         const session = await read(
             await create({ attendees: [{ membershipId: memberships[2], score: 6 }] }),
         );
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         const hidden = sessionSchema.parse(
             await (await api.request(`/sessions/${session.id}`, { userId: users[3] })).json(),
         );
-        expect(hidden.rating?.results).toBeNull();
+        expect(hidden.rating?.results?.average).toBe(6);
+        expect(hidden.rating?.results?.entries).toHaveLength(1);
         await api.prisma.user.update({
             where: { id: users[2] },
             data: { displayName: 'Deleted user', status: 'ANONYMIZED' },

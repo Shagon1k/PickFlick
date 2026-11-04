@@ -15,7 +15,7 @@ export default function FilmRailSkeleton({
     return (
         <>
             {Array.from({ length: scores }, (_, index) => (
-                <div className={clsx(ticket.railItem, styles.cell)} key={'score-' + index}>
+                <div className={clsx(ticket.railItem, styles.cell)} key={`score-${index}`}>
                     <div className={styles.icon}>
                         <Skeleton variant="avatar" shouldFill />
                     </div>
@@ -30,7 +30,7 @@ export default function FilmRailSkeleton({
                 </div>
             ))}
             {Array.from({ length: actions }, (_, index) => (
-                <div className={ticket.railItem} key={'action-' + index}>
+                <div className={ticket.railItem} key={`action-${index}`}>
                     <div className={styles.icon}>
                         <Skeleton variant="avatar" shouldFill />
                     </div>

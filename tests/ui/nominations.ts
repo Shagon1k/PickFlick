@@ -21,7 +21,6 @@ interface INominationState {
     phase: TSession['phase'];
     version: number;
     departed?: boolean;
-    sendDetail?: () => void;
     recoverAt?: number;
     failedPath?: string;
 }
@@ -66,6 +65,7 @@ function projection(token: string, state: INominationState): TNominations {
                       : []),
               ],
         suggestions: state.own || token.includes('empty') ? [] : [movie],
+        watchlist: [],
     };
 }
 function handleRoster(
@@ -76,14 +76,13 @@ function handleRoster(
 ): boolean {
     if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/roster`)
         return false;
-    const version = state.version;
-    const hasDeparted = state.departed;
-    // Commit a departure after the roster snapshot, before the detail response.
-    if (token.includes('split-roster') && !hasDeparted) {
+    // The initial detail read has completed; the roster sees the later departure.
+    if (token.includes('split-roster') && !state.departed) {
         state.departed = true;
         state.version++;
-        state.sendDetail?.();
     }
+    const version = state.version;
+    const hasDeparted = state.departed;
     let participantNames = ['Avery', 'Jordan', 'You'];
     if (/removed|unjoined/u.test(token)) participantNames = ['Avery', 'Jordan'];
     else if (hasDeparted || token.includes('waiting-member')) participantNames = ['Avery', 'You'];
@@ -150,14 +149,14 @@ export function handleNominations(
                 nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
                 selection: null,
                 selectionOutcome: null,
+                selectionScores: null,
+                nominationAuthors: null,
                 rating: null,
                 canManage: token.includes('operator'),
             };
             sendJson(response, 200, detail);
         };
-        // Ensure the roster's departure commits between these two read snapshots.
-        if (token.includes('split-roster') && !state.departed) state.sendDetail = sendDetail;
-        else sendDetail();
+        sendDetail();
     } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
     else
         readJson<Partial<TCloseNomination & TSubmitNomination>>(request, (input) => {

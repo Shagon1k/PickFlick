@@ -22,8 +22,8 @@
 }
 
 .table th {
-    vertical-align: middle;
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
+    vertical-align: middle;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);

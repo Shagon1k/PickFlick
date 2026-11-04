@@ -31,6 +31,8 @@ describe('Past Selection evidence', () => {
                 selectionScaleMin: 0,
                 selectionScaleMax: 5,
                 showVoteResults: true,
+                showSelectionScoresAfter: true,
+                showNominationAuthorsAfter: true,
             },
         });
         memberships = [];
@@ -121,10 +123,10 @@ describe('Past Selection evidence', () => {
         expect(await api.prisma.nomination.count({ where: { sessionId: session.id } })).toBe(0);
         expect(await api.prisma.sessionRating.count({ where: { sessionId: session.id } })).toBe(0);
     });
-    it('should accept a nomination list independently of attendance, ratings or the screened Movie', async () => {
+    it('should accept rival nominations without ratings or scores when attendees are selected', async () => {
         const input = {
             ...buildInput(),
-            attendees: [],
+            attendees: [{ membershipId: memberships[0]! }],
             nominations: [{ movieId: movieIds[1] }],
             scoreMatrix: [],
         };
@@ -140,8 +142,19 @@ describe('Past Selection evidence', () => {
         ]);
         expect(
             await api.prisma.sessionParticipant.count({ where: { sessionId: session.id } }),
-        ).toBe(0);
+        ).toBe(1);
     });
+    it('should reject nominations above selected attendance without partial records', async () => {
+        for (const count of [0, 1, 2]) {
+            const input = buildInput();
+            input.attendees = input.attendees.slice(0, count);
+            input.scoreMatrix = [];
+            expect((await create(input)).status).toBe(400);
+        }
+        expect(await api.prisma.session.count({ where: { clubId } })).toBe(0);
+        expect(await api.prisma.clubAuditEvent.count({ where: { clubId } })).toBe(0);
+    });
+
     it('should reject out-of-snapshot scores, unknown Movies and malformed matrices without partial writes', async () => {
         for (const selectionScaleMin of [0, 1]) {
             await api.prisma.club.update({ where: { id: clubId }, data: { selectionScaleMin } });
@@ -184,6 +197,7 @@ describe('Past Selection evidence', () => {
                 await create({
                     ...buildInput(),
                     attendees: [{ membershipId: foreignMembership }],
+                    nominations: [{ movieId: movieIds[0] }],
                     scoreMatrix: [
                         {
                             membershipId: foreignMembership,
@@ -257,10 +271,12 @@ describe('Past Selection evidence', () => {
             ]),
         );
     });
-    it('should apply current plan and saved visibility before projecting imported evidence', async () => {
+    it('should apply current Club visibility to every plan and role for imported evidence', async () => {
         const input = buildInput();
         expect((await create(input)).status).toBe(201);
-        expect((await get(input.submissionId, users[1])).selectionOutcome?.nominations).toBeNull();
+        expect(
+            (await get(input.submissionId, users[1])).selectionOutcome?.nominations,
+        ).toHaveLength(3);
         vi.spyOn(tiers, 'getClubEntitlements').mockReturnValue(tiers.getTierEntitlements('PRO'));
         expect(
             (await get(input.submissionId, users[1])).selectionOutcome?.nominations,
@@ -268,11 +284,14 @@ describe('Past Selection evidence', () => {
         expect(
             (await get(input.submissionId, users[2])).selectionOutcome?.nominations,
         ).toHaveLength(3);
-        await api.prisma.session.update({
-            where: { id: input.submissionId },
-            data: { showVoteResults: false },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showSelectionScoresAfter: false },
         });
-        expect((await get(input.submissionId, users[1])).selectionOutcome?.nominations).toBeNull();
+        for (const userId of users)
+            expect(
+                (await get(input.submissionId, userId)).selectionOutcome?.nominations,
+            ).toBeNull();
     });
     it('should retain known current and former non-attendee authors, unknown authors and anonymization visibility', async () => {
         await api.prisma.membership.update({
@@ -280,7 +299,14 @@ describe('Past Selection evidence', () => {
             data: { status: 'LEFT', leftAt: new Date() },
         });
         const input = buildInput();
-        input.attendees = [];
+        const extraUsers = await Promise.all([createUser(api.prisma), createUser(api.prisma)]);
+        users.push(...extraUsers);
+        const extraMemberships = await Promise.all(
+            extraUsers.map((userId) => addMember(api.prisma, clubId, userId, 'MEMBER')),
+        );
+        input.attendees = [memberships[2]!, ...extraMemberships].map((membershipId) => ({
+            membershipId,
+        }));
         input.scoreMatrix = [];
         input.nominations = movieIds.map((movieId, index) => ({
             movieId,
@@ -305,7 +331,7 @@ describe('Past Selection evidence', () => {
         );
         expect(
             await api.prisma.sessionParticipant.count({ where: { sessionId: input.submissionId } }),
-        ).toBe(0);
+        ).toBe(3);
         await api.prisma.user.update({
             where: { id: users[1] },
             data: { status: 'ANONYMIZED', displayName: 'Deleted user' },
@@ -318,9 +344,9 @@ describe('Past Selection evidence', () => {
                 }),
             ]),
         );
-        await api.prisma.session.update({
-            where: { id: input.submissionId },
-            data: { showNominationAuthors: false },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsAfter: false },
         });
         const hidden = (await get(input.submissionId)).selectionOutcome;
         expect(hidden.nominations?.every((row) => row.author === null)).toBe(true);
@@ -357,7 +383,11 @@ describe('Past Selection evidence', () => {
             data: { id: randomUUID(), name: 'Other Club' },
         });
         const foreignMembership = await addMember(api.prisma, foreignClub.id, users[0]!, 'ADMIN');
-        const input = { ...buildInput(), attendees: [], scoreMatrix: [] };
+        const input = {
+            ...buildInput(),
+            attendees: [{ membershipId: memberships[0]! }],
+            scoreMatrix: [],
+        };
         const response = await create({
             ...input,
             nominations: [{ movieId: movieIds[0], nominatorMembershipId: foreignMembership }],

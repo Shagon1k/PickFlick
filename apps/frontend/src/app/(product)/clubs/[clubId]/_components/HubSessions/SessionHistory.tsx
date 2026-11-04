@@ -49,7 +49,8 @@ export default function SessionHistory({
             cursor: history.hasLoadedMore ? history.cursor : nextCursor,
         });
     }
-    function loadMore() {
+    const returnTo = encodeURIComponent(`/clubs/${clubId}/sessions`);
+    function handleLoadMore() {
         if (!history.cursor || isPending) return;
         const cursor = history.cursor;
         run(() => loadSessionHistoryAction(clubId, cursor), {
@@ -57,7 +58,7 @@ export default function SessionHistory({
             onResult: (result) => {
                 if (!result.ok) {
                     setMessage(result.message);
-                    if (result.denied) {
+                    if ('denied' in result && result.denied) {
                         setHistory((current) => ({
                             ...current,
                             sessions: [],
@@ -98,7 +99,7 @@ export default function SessionHistory({
                     <span>{history.sessions.length} shown</span>
                     {canLogPast ? (
                         <ButtonLink
-                            href={`/clubs/${clubId}/sessions/past/new?returnTo=${encodeURIComponent(`/clubs/${clubId}/sessions`)}`}
+                            href={`/clubs/${clubId}/sessions/past/new?returnTo=${returnTo}`}
                             size="small"
                             variant="subtle"
                         >
@@ -164,7 +165,7 @@ export default function SessionHistory({
             )}
             {history.cursor ? (
                 <div className={styles.loadMore}>
-                    <Button loading={isPending} variant="secondary" onClick={loadMore}>
+                    <Button loading={isPending} variant="secondary" onClick={handleLoadMore}>
                         Load More
                     </Button>
                 </div>

@@ -41,12 +41,18 @@ for (const viewport of canonicalViewports) {
             });
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(
-                page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+                page
+                    .getByRole('list', { name: 'Session ratings' })
+                    .getByRole('listitem')
+                    .first()
+                    .getByText('You', { exact: true }),
             ).toBeVisible();
             await expect(page.getByText(/Rating in progress — 2 of 3/)).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await page.reload();
-            await expect(page.getByText('A lasting impression.', { exact: true })).toBeVisible();
+            await expect(
+                page.getByRole('button', { name: 'Read the review by You', exact: true }),
+            ).toContainText('A lasting impression.');
             await expect(page.getByText('A memorable screening.')).toHaveCount(0);
             const settings = page.getByRole('button', { name: 'Session settings' });
             await settings.focus();
@@ -66,8 +72,12 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type CLOSE to confirm').fill('CLOSE');
             await dialog.getByRole('button', { name: 'Complete Session' }).click();
             await expect(dialog).toHaveCount(0);
-            await expect(page.getByText('completed', { exact: true })).toBeVisible();
-            await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
+            await expect(
+                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toContainText(
+                'A lasting impression.',
+            );
             await expect(page.getByText('A memorable screening.')).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             expect(
@@ -180,7 +190,11 @@ test('Rating supports touch and reduced motion on a phone', async ({ browser }) 
         await page.getByRole('radio', { name: '7 of 10' }).tap();
         await page.getByRole('button', { name: 'Submit Rating' }).tap();
         await expect(
-            page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            page
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
         ).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
             true,

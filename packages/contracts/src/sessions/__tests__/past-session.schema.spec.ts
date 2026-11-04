@@ -26,14 +26,29 @@ describe('createPastSessionSchema', () => {
         ];
         const input = {
             ...minimal,
-            attendees: [{ membershipId }],
+            attendees: [{ membershipId }, { membershipId: randomUUID() }],
             nominations,
             scoreMatrix: [
                 { membershipId, scores: [{ movieId: nominations[0]!.movieId, score: 0 }] },
             ],
         };
         expect(createPastSessionSchema.parse(input)).toEqual(input);
-        expect(createPastSessionSchema.safeParse({ ...minimal, nominations }).success).toBe(true);
+        expect(createPastSessionSchema.safeParse({ ...input, scoreMatrix: [] }).success).toBe(true);
+    });
+    it('should cap nominations at the selected attendee count including the screened Movie', () => {
+        const input = {
+            ...minimal,
+            attendees: [{ membershipId: randomUUID() }],
+            nominations: [{ movieId: minimal.movieId }],
+        };
+        expect(createPastSessionSchema.safeParse(input).success).toBe(true);
+        expect(createPastSessionSchema.safeParse({ ...input, attendees: [] }).success).toBe(false);
+        expect(
+            createPastSessionSchema.safeParse({
+                ...input,
+                nominations: [...input.nominations, { movieId: randomUUID() }],
+            }).success,
+        ).toBe(false);
     });
     it('should reject duplicate Movies, malformed rows, foreign cells and fabricated provenance', () => {
         const membershipId = randomUUID();

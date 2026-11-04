@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import { startSocialSignIn, type TIdentityProvider } from '#lib/auth-client';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import styles from '../../page.module.scss';
 
@@ -14,6 +15,7 @@ interface ILoginActionsProps {
 }
 
 export default function LoginActions({ isAppleSignInEnabled, returnTo }: ILoginActionsProps) {
+    const isReady = useIsHydrated();
     const [pendingProvider, setPendingProvider] = useState<TIdentityProvider>();
     const [error, setError] = useState('');
 
@@ -43,7 +45,7 @@ export default function LoginActions({ isAppleSignInEnabled, returnTo }: ILoginA
                 <Button
                     fullWidth
                     size="large"
-                    disabled={pendingProvider === 'apple'}
+                    disabled={!isReady || pendingProvider === 'apple'}
                     loading={pendingProvider === 'google'}
                     onClick={() => signIn('google')}
                     variant="secondary"
@@ -57,7 +59,7 @@ export default function LoginActions({ isAppleSignInEnabled, returnTo }: ILoginA
                     <Button
                         fullWidth
                         size="large"
-                        disabled={pendingProvider === 'google'}
+                        disabled={!isReady || pendingProvider === 'google'}
                         loading={pendingProvider === 'apple'}
                         onClick={() => signIn('apple')}
                         variant="secondary"

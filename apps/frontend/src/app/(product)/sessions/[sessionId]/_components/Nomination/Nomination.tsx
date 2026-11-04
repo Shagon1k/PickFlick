@@ -5,13 +5,13 @@ import clsx from 'clsx';
 import { type ReactNode, useRef, useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
+import { nominateAction } from '#components/sessions/nomination-actions';
 import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
-import { nominateAction } from '#components/sessions/nomination-actions';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
-import StatusLine from '#components/ui/StatusLine/StatusLine';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -45,6 +45,18 @@ export default function Nomination({
             },
         });
     }
+    const picker = isLoading ? (
+        <div className={styles.loadingPicker}>
+            <Skeleton variant="control" shouldFill />
+        </div>
+    ) : (
+        <NominationPicker
+            chosen={chosen}
+            disabled={isPending}
+            onChoose={setChosen}
+            onSubmit={handleSubmit}
+        />
+    );
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
             <PhaseProgress>
@@ -63,18 +75,7 @@ export default function Nomination({
                             {data.canSubmit ? 'Find & Nominate a Movie' : 'Your nomination'}
                         </h2>
                         {data.canSubmit ? (
-                            isLoading ? (
-                                <div className={styles.loadingPicker}>
-                                    <Skeleton variant="control" shouldFill />
-                                </div>
-                            ) : (
-                                <NominationPicker
-                                    chosen={chosen}
-                                    disabled={isPending}
-                                    onChoose={setChosen}
-                                    onSubmit={handleSubmit}
-                                />
-                            )
+                            picker
                         ) : (
                             <SubmissionState movie={data.ownMovie} isLoading={isLoading} />
                         )}

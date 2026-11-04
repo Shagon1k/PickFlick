@@ -22,14 +22,11 @@ import SessionHeaderSkeleton from './SessionHeaderSkeleton';
 import styles from './SessionLoading.module.scss';
 
 export default function SessionLoading({ session }: { session?: TSession }) {
-    const phase = session?.phase;
-    const header = <SessionHeaderSkeleton session={session} />;
-    const isResults = phase === 'RATING' || phase === 'COMPLETED';
     return (
         <ProductFrame
             currentArea="session"
             clubItems={session ? buildClubNavigation(session.clubId, null) : []}
-            sessionBackHref={session ? '/clubs/' + session.clubId : undefined}
+            sessionBackHref={session ? `/clubs/${session.clubId}` : undefined}
         >
             <main className={page.main} aria-busy="true">
                 <h1 className="visually-hidden">Session</h1>
@@ -37,94 +34,93 @@ export default function SessionLoading({ session }: { session?: TSession }) {
                     <span className="visually-hidden">Loading Session and participation…</span>
                 </div>
                 <div aria-hidden="true" inert>
-                    {session?.nominations ? (
-                        <Nomination
-                            sessionId={session.id}
-                            data={session.nominations}
-                            header={header}
-                            isLoading
-                        />
-                    ) : session?.selection ? (
-                        <Selection
-                            sessionId={session.id}
-                            data={session.selection}
-                            header={header}
-                            isLoading
-                        />
-                    ) : (
-                        <>
-                            {session && phase !== 'CANCELLED' ? (
-                                <PhaseProgress>
-                                    <Skeleton text={progressText(session)} />
-                                </PhaseProgress>
-                            ) : null}
-                            {header}
-                            {session?.movieId && isFilmSessionPhase(session.phase) ? (
-                                <div className={page.film}>
-                                    <MovieMedia
-                                        title=""
-                                        variant="session"
-                                        isLoading
-                                        shouldHidePhonePoster
-                                    />
-                                </div>
-                            ) : null}
-                            {phase === 'RATING' && session?.rating ? (
-                                <YourRating
-                                    sessionId={session.id}
-                                    data={session.rating}
-                                    isLoading
-                                />
-                            ) : null}
-                        </>
-                    )}
-                    {session ? (
-                        <>
-                            {!isResults &&
-                            session.selectionOutcome?.source === 'LIVE' &&
-                            session.selectionOutcome.breakdown ? (
-                                <NominationRivals
-                                    outcome={session.selectionOutcome}
-                                    breakdown={session.selectionOutcome.breakdown}
-                                    isLoading
-                                />
-                            ) : !isResults && session.nominationAuthors ? (
-                                <NominationAuthors authors={session.nominationAuthors} isLoading />
-                            ) : null}
-                            {!isResults && session.selectionScores ? (
-                                <SelectionScores data={session.selectionScores} />
-                            ) : null}
-                            <div className={page.reelBreak}>
-                                <SprocketDivider variant="section" />
-                                <Image src={getPhaseMascot(session.phase)} alt="" />
-                            </div>
-                            <h2 className={page.detailsTitle}>Session Details</h2>
-                            <SessionFacts session={session} isLoading />
-                            {isResults ? <SessionResults session={session} isLoading /> : null}
-                        </>
-                    ) : (
-                        <div className={styles.neutral}>
-                            <Skeleton width="half" />
-                            <Skeleton width="short" />
-                        </div>
-                    )}
+                    <PhaseContent session={session} />
+                    <DetailsContent session={session} />
                 </div>
             </main>
         </ProductFrame>
     );
 }
 
+function PhaseContent({ session }: { session?: TSession }) {
+    const header = <SessionHeaderSkeleton session={session} />;
+    if (session?.nominations)
+        return (
+            <Nomination
+                sessionId={session.id}
+                data={session.nominations}
+                header={header}
+                isLoading
+            />
+        );
+    if (session?.selection)
+        return (
+            <Selection sessionId={session.id} data={session.selection} header={header} isLoading />
+        );
+    return (
+        <>
+            {session && session.phase !== 'CANCELLED' ? (
+                <PhaseProgress>
+                    <Skeleton text={progressText(session)} />
+                </PhaseProgress>
+            ) : null}
+            {header}
+            {session?.movieId && isFilmSessionPhase(session.phase) ? (
+                <div className={page.film}>
+                    <MovieMedia title="" variant="session" isLoading shouldHidePhonePoster />
+                </div>
+            ) : null}
+            {session?.phase === 'RATING' && session.rating ? (
+                <YourRating sessionId={session.id} data={session.rating} isLoading />
+            ) : null}
+        </>
+    );
+}
+function DetailsContent({ session }: { session?: TSession }) {
+    if (!session)
+        return (
+            <div className={styles.neutral}>
+                <Skeleton width="half" />
+                <Skeleton width="short" />
+            </div>
+        );
+    const isResults = session.phase === 'RATING' || session.phase === 'COMPLETED';
+    return (
+        <>
+            {!isResults ? <RivalsContent session={session} /> : null}
+            {!isResults && session.selectionScores ? (
+                <SelectionScores data={session.selectionScores} />
+            ) : null}
+            <div className={page.reelBreak}>
+                <SprocketDivider variant="section" />
+                <Image src={getPhaseMascot(session.phase)} alt="" />
+            </div>
+            <h2 className={page.detailsTitle}>Session Details</h2>
+            <SessionFacts session={session} isLoading />
+            {isResults ? <SessionResults session={session} isLoading /> : null}
+        </>
+    );
+}
+function RivalsContent({ session }: { session: TSession }) {
+    if (session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown)
+        return (
+            <NominationRivals
+                outcome={session.selectionOutcome}
+                breakdown={session.selectionOutcome.breakdown}
+                isLoading
+            />
+        );
+    if (session.nominationAuthors)
+        return <NominationAuthors authors={session.nominationAuthors} isLoading />;
+    return null;
+}
+
 function progressText(session: TSession) {
     if (session.phase === 'COMPLETED')
         return 'This session has ended. The results are available below.';
     if (session.rating)
-        return (
-            'Rating in progress — ' +
-            session.rating.submittedCount +
-            ' of ' +
-            session.rating.acceptedCount +
-            ' members have rated.' +
-            (session.rating.canSubmit ? ' Please rate.' : '')
-        );
+        return `Rating in progress — ${session.rating.submittedCount} of ${
+            session.rating.acceptedCount
+        } members have rated.${session.rating.canSubmit ? ' Please rate.' : ''}`;
     return 'Members have joined the screening.';
 }

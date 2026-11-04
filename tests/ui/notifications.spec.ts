@@ -104,12 +104,16 @@ test('notifications reconcile authoritative state after an offline stream gap', 
     await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
     await context.setOffline(true);
     await panel.getByRole('button', { name: 'Mark all as read' }).click();
-    await expect(panel.getByRole('alert')).toContainText('You appear to be offline.');
+    await expect(
+        panel.getByRole('status').filter({ hasText: 'You appear to be offline.' }),
+    ).toContainText('You appear to be offline.');
     const response = await context.request.post('/api/notifications/read', { data: {} });
     expect(response.status()).toBe(204);
     await context.setOffline(false);
     await expect(panel.getByText('You’re all caught up')).toBeVisible();
-    await expect(panel.getByRole('alert')).toHaveCount(0);
+    await expect(
+        panel.getByRole('status').filter({ hasText: 'You appear to be offline.' }),
+    ).toHaveCount(0);
 });
 
 test('notifications show an empty inbox without enabling a read action', async ({ page }) => {
@@ -122,7 +126,9 @@ test('notifications discard a cached inbox when the session ends', async ({ page
     const { panel } = await openNotifications(page, 'valid-notifications-expired-session');
     await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
     await panel.getByRole('button', { name: 'Mark all as read' }).click();
-    await expect(panel.getByRole('alert')).toContainText('Your session has ended. Sign in again.');
+    await expect(
+        panel.getByRole('status').filter({ hasText: 'Your session has ended. Sign in again.' }),
+    ).toContainText('Your session has ended. Sign in again.');
     await expect(panel.getByRole('listitem')).toHaveCount(0);
     await expect(panel.getByRole('link')).toHaveCount(0);
 });
@@ -132,7 +138,9 @@ test('notifications recover when the browser loses an action request', async ({ 
     await expect(panel.getByText('3 unread', { exact: true })).toBeVisible();
     await page.route('**/app', (route) => route.abort());
     await panel.getByRole('button', { name: 'Mark all as read' }).click();
-    await expect(panel.getByRole('alert')).toContainText('Read state could not be saved.');
+    await expect(
+        panel.getByRole('status').filter({ hasText: 'Read state could not be saved.' }),
+    ).toContainText('Read state could not be saved.');
     await expect(panel.getByRole('button', { name: 'Mark all as read' })).toBeEnabled();
     await page.unroute('**/app');
     await panel.getByRole('button', { name: 'Mark all as read' }).click();
@@ -144,12 +152,16 @@ test('notifications show loading, load failures, retries and save failures', asy
     await expect(loading.getByText('Loading notifications…')).toBeVisible();
     await expect(loading.getByText('3 unread', { exact: true })).toBeVisible();
     const { panel: error } = await openNotifications(page, 'valid-notifications-load-error');
-    await expect(error.getByRole('alert')).toContainText('Notifications could not be loaded.');
+    await expect(
+        error.getByRole('status').filter({ hasText: 'Notifications could not be loaded.' }),
+    ).toContainText('Notifications could not be loaded.');
     await error.getByRole('button', { name: 'Try again' }).click();
     await expect(error.getByText('3 unread', { exact: true })).toBeVisible();
     const { panel: save } = await openNotifications(page, 'valid-notifications-save-error');
     await save.getByRole('button', { name: 'Mark all as read' }).click();
-    await expect(save.getByRole('alert')).toContainText('Read state could not be saved.');
+    await expect(
+        save.getByRole('status').filter({ hasText: 'Read state could not be saved.' }),
+    ).toContainText('Read state could not be saved.');
     await expect(save.getByText('3 unread', { exact: true })).toBeVisible();
 });
 

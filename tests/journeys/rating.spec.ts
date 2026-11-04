@@ -52,7 +52,9 @@ async function createRatingJourney(browser: Browser) {
         const pages = await Promise.all(contexts.map((context) => context.newPage()));
         for (const page of pages) {
             await page.goto(`/sessions/${session.id}`);
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expect(
+                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible();
         }
         return { session, prisma, contexts, pages, cleanup };
     } catch (error) {
@@ -73,7 +75,11 @@ test('Three participants submit once and all clients see automatic completion', 
         await memberPage.getByLabel('Comment').fill('Remember this screening.');
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
         await expect(
-            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
         ).toBeVisible();
         await expect(pages[0]!.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
             timeout: 20000,
@@ -90,11 +96,17 @@ test('Three participants submit once and all clients see automatic completion', 
             await page.getByRole('radio', { name: '9 of 10' }).click();
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(
-                page.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+                page
+                    .getByRole('list', { name: 'Session ratings' })
+                    .getByRole('listitem')
+                    .first()
+                    .getByText('You', { exact: true }),
             ).toBeVisible();
         }
         for (const page of pages) {
-            await expect(page.getByText('completed', { exact: true })).toBeVisible({
+            await expect(
+                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
                 timeout: 20000,
             });
             await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
@@ -109,7 +121,11 @@ test('Three participants submit once and all clients see automatic completion', 
         expect(completions).toHaveLength(1);
         await memberPage.reload();
         await expect(
-            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
         ).toBeVisible();
     } finally {
         await journey.cleanup();
@@ -126,7 +142,11 @@ test('A Moderator completes partial Rating and every client keeps only received 
         await memberPage.getByRole('radio', { name: '6 of 10' }).click();
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
         await expect(
-            memberPage.getByRole('list', { name: 'Session ratings' }).getByText('Final'),
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
         ).toBeVisible();
         const before = await prisma.sessionRating.findMany({ where: { sessionId: session.id } });
         const operatorPage = pages[1]!;
@@ -143,7 +163,9 @@ test('A Moderator completes partial Rating and every client keeps only received 
         await dialog.getByRole('button', { name: 'Complete Session' }).click();
         await expect(dialog).toHaveCount(0);
         for (const page of pages)
-            await expect(page.getByText('completed', { exact: true })).toBeVisible({
+            await expect(
+                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
                 timeout: 20000,
             });
         const retry = await contexts[0]!.request.post(`/api/sessions/${session.id}/rating/close`, {
@@ -199,8 +221,8 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
         const blocking = (await blockingResponse.json()) as { id: string };
         expect((await create()).status()).toBe(409);
         await page.goto(`/clubs/${session.clubId}/sessions`);
-        const active = page.getByRole('region', { name: 'Active Sessions' });
-        await expect(active.getByRole('listitem')).toHaveCount(3);
+        const active = page.getByRole('region', { name: 'Open Ratings', exact: true });
+        await expect(active.getByRole('listitem')).toHaveCount(2);
         await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toBeVisible();
         await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
         await expect(active.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
@@ -216,13 +238,16 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
             ).status(),
         ).toBe(201);
         await page.reload();
-        await expect(active.getByRole('listitem')).toHaveCount(2);
+        await expect(active.getByRole('listitem')).toHaveCount(1);
         await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toHaveCount(0);
         await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
         const history = page.getByRole('region', { name: 'History', exact: true });
-        await expect(history.getByRole('link')).toHaveAttribute('href', `/sessions/${session.id}`);
-        await history.getByRole('link').click();
-        await expect(page.getByText('completed', { exact: true })).toBeVisible();
+        const historySession = history.locator(`a[href="/sessions/${session.id}"]`);
+        await expect(historySession).toBeVisible();
+        await historySession.click();
+        await expect(
+            page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         await expect(page.getByText('No ratings were received.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
     } finally {

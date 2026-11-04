@@ -23,7 +23,10 @@ test(
                 .getByRole('region', { name: 'Active Session', exact: true })
                 .getByRole('link', { name: 'Open Session', exact: true }),
         ).toHaveCount(0);
-        await page.getByRole('link', { name: 'Schedule a Session', exact: true }).click();
+        await page
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Schedule New', exact: true })
+            .click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
         await page.getByLabel('Date').fill('2090-12-01');
@@ -38,9 +41,7 @@ test(
         await share.getByRole('button', { name: 'Dismiss' }).click();
         await expect(share).toHaveCount(0);
         await page.goto(`/clubs/${CLUB_ID}`);
-        await expect(
-            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
-        ).toHaveCount(0);
+        await expect(page.getByRole('link', { name: 'Schedule New', exact: true })).toHaveCount(0);
         await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
         await page.keyboard.press('Enter');
         await expect(
@@ -88,7 +89,9 @@ test(
         await page.getByRole('link', { name: 'Back to Hub' }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
         await expect(
-            page.getByRole('link', { name: 'Schedule a Session', exact: true }),
+            page
+                .getByRole('region', { name: 'Active Session', exact: true })
+                .getByRole('link', { name: 'Schedule New', exact: true }),
         ).toBeVisible();
     },
 );
@@ -108,12 +111,14 @@ test(
         await expect(page.getByRole('option')).toHaveCount(2);
         await search.press('ArrowDown');
         await search.press('Enter');
-        await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+        await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
             '<script>alert(1)</script> & Film',
         );
         await expect(page.locator('script').filter({ hasText: 'alert(1)' })).toHaveCount(0);
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
@@ -127,7 +132,9 @@ test(
         ).toContainText('Watching');
         await activeSession.focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
     },
 );
 

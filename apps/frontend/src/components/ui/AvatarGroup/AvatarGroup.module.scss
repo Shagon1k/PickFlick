@@ -32,8 +32,8 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    min-width: calc(var(--gap-sm) * 2);
     width: auto;
+    min-width: calc(var(--gap-sm) * 2);
     height: calc(var(--gap-sm) * 2);
     padding-inline: calc(var(--gap-xs) / 2);
     overflow: hidden;

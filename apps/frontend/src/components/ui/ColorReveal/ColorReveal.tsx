@@ -3,8 +3,8 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useRef } from 'react';
 
-import styles from './ColorReveal.module.scss';
 import { COLOR_REVEAL_CONFIG } from './color-reveal.config';
+import styles from './ColorReveal.module.scss';
 
 const MILLISECONDS_PER_SECOND = 1000;
 const TOUCH_HOLD_MS = 1800;
@@ -117,18 +117,12 @@ export default function ColorReveal({
                 const progress = 1 - (1 - time) ** 2;
                 const coverage = isRevealing ? progress : 1 - progress;
                 const edge = coverage * (radius + feather * 2) - feather;
+                const settledMask = isRevealing ? FULL_MASK : EMPTY_MASK;
+                const operation = isRevealing ? 'add' : 'intersect';
                 for (const { layer, previous, left, top } of layers) {
                     const front = `radial-gradient(circle at ${originX - left}px ${originY - top}px, black ${Math.max(0, edge - feather)}px, transparent ${Math.max(MASK_START_PX, edge + feather)}px)`;
-                    const mask =
-                        time < 1
-                            ? `${front}, ${previous.mask}`
-                            : isRevealing
-                              ? FULL_MASK
-                              : EMPTY_MASK;
-                    const composite =
-                        time < 1
-                            ? `${isRevealing ? 'add' : 'intersect'}, ${previous.composite}`
-                            : 'add';
+                    const mask = time < 1 ? `${front}, ${previous.mask}` : settledMask;
+                    const composite = time < 1 ? `${operation}, ${previous.composite}` : 'add';
                     masks.set(layer, { mask, composite });
                     layer.style.maskImage = mask;
                     layer.style.maskComposite = composite;

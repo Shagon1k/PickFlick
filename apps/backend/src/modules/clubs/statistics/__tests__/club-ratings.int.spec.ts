@@ -127,7 +127,7 @@ describe('Club ratings API', () => {
         });
     });
 
-    it('should filter all historical ratings using the current Club policy for every role', async () => {
+    it('should preserve Club aggregates when individual ratings are hidden for every role', async () => {
         const read = async (index: number) =>
             clubRatingsSchema.parse(
                 await (
@@ -136,20 +136,24 @@ describe('Club ratings API', () => {
                     })
                 ).json(),
             );
-        for (const index of [0, 1, 2]) expect((await read(index)).total).toBe(3);
+        const baseline = await read(0);
+        expect(baseline.total).toBe(3);
+        const baselineHub = (await (
+            await api.request(`/clubs/${clubId}/hub`, { userId: users[0]! })
+        ).json()) as IClubHub;
         await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: false } });
         for (const index of [0, 1, 2]) {
-            expect((await read(index)).items).toEqual([]);
+            expect((await read(index)).items).toEqual(baseline.items);
             const hub = (await (
                 await api.request(`/clubs/${clubId}/hub`, { userId: users[index]! })
             ).json()) as IClubHub;
-            expect(hub.statistics.averageRating).toBeNull();
+            expect(hub.statistics.averageRating).toBe(baselineHub.statistics.averageRating);
         }
         await api.prisma.membership.update({
             where: { id: memberships[1] },
             data: { role: 'MEMBER' },
         });
-        expect((await read(1)).total).toBe(0);
+        expect((await read(1)).items).toEqual(baseline.items);
         await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         for (const index of [0, 1, 2]) expect((await read(index)).total).toBe(3);
     });

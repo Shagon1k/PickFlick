@@ -2,8 +2,8 @@
 
 * {
     box-sizing: border-box;
-    scrollbar-width: thin;
     scrollbar-color: var(--fg-secondary) transparent;
+    scrollbar-width: thin;
 }
 
 html {
@@ -20,8 +20,8 @@ body {
 
 @media (forced-colors: active) {
     * {
-        scrollbar-width: auto;
         scrollbar-color: auto;
+        scrollbar-width: auto;
     }
 }
 

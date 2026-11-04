@@ -81,10 +81,10 @@ export class MoviesController {
         @Res() response: Response,
     ): Promise<void> {
         const movies = await this.movies.getCachedMetadata([movieId]);
-        const knownTrailer = movies
+        const hasKnownTrailer = movies
             .get(movieId)
             ?.trailers?.some((trailer) => getYouTubeVideoId(trailer.url) === videoId);
-        if (!knownTrailer) throw new NotFoundException();
+        if (!hasKnownTrailer) throw new NotFoundException();
         const thumbnail = await this.images.storeTrailerThumbnail(videoId);
         if (!thumbnail) throw new NotFoundException();
         response.set('Cache-Control', 'private, max-age=86400');

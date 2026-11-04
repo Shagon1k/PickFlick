@@ -135,7 +135,7 @@ describe('Live Club visibility', () => {
         for (const sessionId of sessionIds) {
             for (const index of [0, 1, 2]) {
                 const session = await detail(sessionId, index);
-                expect(session.rating?.results).toBeNull();
+                expect(session.rating?.results).toEqual({ average: 8, entries: null });
                 expect(session.rating?.own?.score).toBe(index + 7);
                 expect(session.selectionScores).toBeNull();
                 expect(session.nominationAuthors).toBeNull();
@@ -143,7 +143,9 @@ describe('Live Club visibility', () => {
                 const response = await api.expectStatus(200, `/clubs/${clubId}/ratings`, {
                     userId: users[index]!,
                 });
-                expect(clubRatingsSchema.parse(await response.json()).items).toEqual([]);
+                expect(clubRatingsSchema.parse(await response.json()).items).toEqual(
+                    expect.arrayContaining([expect.objectContaining({ averageRating: 8 })]),
+                );
             }
         }
         const after = await api.prisma.session.findMany({ where: { clubId } });
@@ -173,7 +175,10 @@ describe('Live Club visibility', () => {
         settings.showRatingsAfter = false;
         settings.showSelectionScoresAfter = false;
         await saveSettings();
-        expect((await detail(sessionIds[0]!, 0)).rating?.results).toBeNull();
+        expect((await detail(sessionIds[0]!, 0)).rating?.results).toEqual({
+            average: 8,
+            entries: null,
+        });
         expect((await detail(sessionIds[1]!, 2)).selectionScores).toBeNull();
         expect(
             await api.prisma.sessionRating.count({ where: { sessionId: { in: sessionIds } } }),
@@ -200,11 +205,11 @@ describe('Live Club visibility', () => {
         settings.showRatingsDuring = true;
         await saveSettings();
         expect((await detail(sessionId, 0)).rating?.results?.entries).toHaveLength(2);
-        expect((await detail(sessionId, 2)).rating?.results).toBeNull();
+        expect((await detail(sessionId, 2)).rating?.results).toEqual({ average: 8, entries: null });
         settings.showRatingsDuring = false;
         settings.showRatingsAfter = true;
         await saveSettings();
-        expect((await detail(sessionId, 0)).rating?.results).toBeNull();
+        expect((await detail(sessionId, 0)).rating?.results).toEqual({ average: 8, entries: null });
         await api.prisma.session.update({ where: { id: sessionId }, data: { phase: 'COMPLETED' } });
         expect((await detail(sessionId, 2)).rating?.results?.entries).toHaveLength(2);
     });
@@ -218,6 +223,9 @@ describe('Live Club visibility', () => {
                 json: { ...settings, showRatingsAfter: true },
             });
         }
-        expect((await detail(sessionIds[0]!, 2)).rating?.results).toBeNull();
+        expect((await detail(sessionIds[0]!, 2)).rating?.results).toEqual({
+            average: 8,
+            entries: null,
+        });
     });
 });

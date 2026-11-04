@@ -22,7 +22,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.goto(PATH, { waitUntil: 'load' });
                 await expect(page.getByRole('row')).toHaveCount(26);
                 await expect(
-                    page.getByRole('button', { name: 'Previous', exact: true }),
+                    page.getByRole('button', { name: 'Previous page', exact: true }),
                 ).toBeDisabled();
                 await expect(page.getByRole('row').nth(1)).toContainText('Synthetic film 28');
                 const region = page.getByRole('region', {
@@ -45,30 +45,33 @@ for (const width of [390, 768, 1024, 1440]) {
                     path: `test-results/club-ratings-${width}.png`,
                     fullPage: true,
                 });
-                await page.getByRole('button', { name: 'Next', exact: true }).tap();
+                await page.getByRole('button', { name: 'Next page', exact: true }).tap();
                 await expect(page).toHaveURL(/page=2/u);
                 await expect(page.getByRole('row')).toHaveCount(4);
-                await page.getByRole('combobox', { name: 'Sort films' }).focus();
-                await page.keyboard.press('ArrowDown');
-                await page.getByRole('option', { name: 'Film title', exact: true }).tap();
+                await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();
                 await expect(page).toHaveURL(/sort=title&page=1/u);
                 await expect(page.getByRole('row').nth(1)).toContainText('Synthetic film 01');
                 await page.reload();
-                await expect(page.getByRole('combobox', { name: 'Sort films' })).toHaveValue(
-                    'Film title',
+                await expect(page.getByRole('columnheader', { name: /^Film/u })).toHaveAttribute(
+                    'aria-sort',
+                    'ascending',
                 );
                 await context.setOffline(true);
-                await page.getByRole('combobox', { name: 'Sort films' }).tap();
-                await page.getByRole('option', { name: 'Latest screening', exact: true }).tap();
-                await expect(page.getByRole('status')).toContainText('offline');
+                await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();
+                await expect(
+                    page.getByRole('status').filter({ hasText: /offline/iu }),
+                ).toContainText('offline');
                 await context.setOffline(false);
-                await page.getByRole('combobox', { name: 'Sort films' }).tap();
-                await page.getByRole('option', { name: 'Latest screening', exact: true }).tap();
-                await expect(page).toHaveURL(/sort=time/u);
-                await expect(page.getByRole('combobox', { name: 'Sort films' })).toHaveValue(
-                    'Latest screening',
+                await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();
+                await expect(page).toHaveURL(/sort=title.*direction=desc/u);
+                await expect(page.getByRole('row').nth(1)).toContainText('Synthetic film 28');
+                await expect(page.getByRole('columnheader', { name: /^Film/u })).toHaveAttribute(
+                    'aria-sort',
+                    'descending',
                 );
-                await expect(page.getByRole('combobox', { name: 'Sort films' })).toBeEnabled();
+                await expect(
+                    page.getByRole('columnheader', { name: /^Film/u }).getByRole('button'),
+                ).toBeEnabled();
             } finally {
                 await context.close();
             }
@@ -150,7 +153,7 @@ test('Ratings navigation keeps the Hub frame and shows its loading boundary', as
         .getByRole('navigation', { name: 'Club sections' })
         .getByRole('link', { name: 'Ratings', exact: true })
         .click();
-    const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club section' });
+    const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club ratings' });
     await expect(skeleton).toBeVisible();
     await expect(page.getByText('Call sheet 001', { exact: true })).toBeVisible();
     release();

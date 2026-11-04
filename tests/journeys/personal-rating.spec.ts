@@ -60,7 +60,9 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
         await page.goto(`/sessions/${session.id}`);
         await page.getByRole('radio', { name: '8 of 10' }).click();
         await page.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(page.getByText('completed', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+        ).toBeVisible();
         const historical = await prisma.sessionRating.findFirstOrThrow({
             where: { sessionId: session.id },
         });
@@ -93,7 +95,8 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
                 .getByRole('list', { name: 'Session ratings' })
                 .getByRole('listitem')
                 .filter({ hasText: 'You' })
-                .getByText('8', { exact: true }),
+                .getByText('8.0', { exact: true })
+                .first(),
         ).toBeVisible();
     } finally {
         await context.close();

@@ -5,6 +5,7 @@ import {
     type TImportedSelectionOutcome,
     type TLiveSelectionOutcome,
     type TRating,
+    type TSelectionScores,
     type TSession,
     type TSubmitRating,
 } from '@pickflick/contracts';
@@ -106,6 +107,7 @@ function buildRating(
         {
             id: '60000000-0000-4000-8000-000000000050',
             author: 'Casey',
+            avatarUrl: null,
             isOwn: false,
             score: 8,
             comment: 'A memorable screening.',
@@ -117,6 +119,7 @@ function buildRating(
         entries.push({
             id: '60000000-0000-4000-8000-000000000051',
             author: 'Jordan',
+            avatarUrl: null,
             isOwn: true,
             ...own,
             comment: own.comment ?? '',
@@ -129,18 +132,24 @@ function buildRating(
         canSubmit: !isCompleted && !own && !/readonly|removed|unjoined|ineligible/u.test(token),
         canClose: !isCompleted && canManage,
         own: own
-            ? { ...own, comment: own.comment ?? null, submittedAt: '2026-12-01T22:01:00.000Z' }
+            ? {
+                  ...own,
+                  author: 'Jordan',
+                  avatarUrl: null,
+                  comment: own.comment ?? null,
+                  submittedAt: '2026-12-01T22:01:00.000Z',
+              }
             : null,
-        results:
-            isCompleted && !token.includes('hidden')
-                ? {
-                      average: entries.length
-                          ? entries.reduce((total, entry) => total + entry.score, 0) /
-                            entries.length
-                          : null,
-                      entries,
-                  }
+        results: {
+            average: entries.length
+                ? entries.reduce((total, entry) => total + entry.score, 0) / entries.length
                 : null,
+            entries:
+                !token.includes('hidden') &&
+                (isCompleted || (token.includes('during-visible') && Boolean(own)))
+                    ? entries
+                    : null,
+        },
     };
 }
 
@@ -159,7 +168,12 @@ function buildHistoricalSelection(
             scaleMin: 0,
             scaleMax: 5,
             nominations: [
-                { movie: winner, author: 'Jordan', total: 7, scoreCount: 2 },
+                {
+                    movie: winner,
+                    author: 'Jordan',
+                    total: 7,
+                    scoreCount: token.includes('matrix') ? 3 : 2,
+                },
                 {
                     movie: {
                         ...winner,
@@ -167,8 +181,8 @@ function buildHistoricalSelection(
                         title: 'The rival nomination',
                     },
                     author: 'Morgan',
-                    total: 8,
-                    scoreCount: 3,
+                    total: token.includes('matrix') ? 0 : 8,
+                    scoreCount: token.includes('matrix') ? 2 : 3,
                 },
             ],
         };
@@ -241,6 +255,57 @@ function buildRatingSession({
         nominations: null,
         selection: null,
         selectionOutcome: token.includes('history') ? buildHistoricalSelection(token) : null,
+        selectionScores: token.includes('matrix') ? buildHistoricalMatrix() : null,
+        nominationAuthors: null,
         rating,
+    };
+}
+
+function buildHistoricalMatrix(): TSelectionScores {
+    const selected = '60000000-0000-4000-8000-000000000061';
+    const rival = '60000000-0000-4000-8000-000000000062';
+    const movie = {
+        id: '10000000-0000-4000-8000-000000000037',
+        title: 'Selected film',
+        year: 2026,
+        genres: ['Drama'],
+    };
+    return {
+        scaleMin: 0,
+        scaleMax: 5,
+        films: [
+            { nominationId: selected, movie },
+            {
+                nominationId: rival,
+                movie: {
+                    ...movie,
+                    id: '10000000-0000-4000-8000-000000000038',
+                    title: 'The rival nomination',
+                },
+            },
+        ],
+        ballots: [
+            {
+                participantId: '20000000-0000-4000-8000-000000000050',
+                author: 'Jordan',
+                scores: [
+                    { nominationId: selected, score: 3 },
+                    { nominationId: rival, score: 0 },
+                ],
+            },
+            {
+                participantId: '20000000-0000-4000-8000-000000000051',
+                author: 'Casey',
+                scores: [{ nominationId: selected, score: 4 }],
+            },
+            {
+                participantId: '20000000-0000-4000-8000-000000000052',
+                author: 'Morgan',
+                scores: [
+                    { nominationId: selected, score: 0 },
+                    { nominationId: rival, score: 0 },
+                ],
+            },
+        ],
     };
 }

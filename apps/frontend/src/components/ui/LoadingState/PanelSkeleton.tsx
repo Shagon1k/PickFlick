@@ -23,6 +23,8 @@ const ROW_COUNT = 4;
 const ACHIEVEMENT_COUNT = 3;
 const CLUB_STAT_COUNT = 7;
 const PERSONAL_STAT_COUNT = 8;
+const CLUB_SMALL_STAT_COUNT = 2;
+const PERSONAL_SMALL_STAT_COUNT = 3;
 
 export default function PanelSkeleton({
     variant,
@@ -86,7 +88,8 @@ export default function PanelSkeleton({
                             <div className={styles.activeAction}>
                                 <Skeleton shouldFill />
                             </div>
-                        ) : hub?.permissions.manageSessions ? (
+                        ) : null}
+                        {!hub?.activeSession && hub?.permissions.manageSessions ? (
                             <div className={styles.emptyActions}>
                                 <div className={styles.activeAction}>
                                     <Skeleton shouldFill />
@@ -122,7 +125,10 @@ function Statistics({ isOverview = false }: { isOverview?: boolean }) {
         <div className={styles.statistics} data-overview={isOverview || undefined}>
             {Array.from({ length: count }, (_, index) => {
                 const isText =
-                    index >= (isOverview ? CLUB_STAT_COUNT - 2 : PERSONAL_STAT_COUNT - 3);
+                    index >=
+                    (isOverview
+                        ? CLUB_STAT_COUNT - CLUB_SMALL_STAT_COUNT
+                        : PERSONAL_STAT_COUNT - PERSONAL_SMALL_STAT_COUNT);
                 return (
                     <div className={styles.stat} key={index}>
                         <div className={styles.statIcon}>

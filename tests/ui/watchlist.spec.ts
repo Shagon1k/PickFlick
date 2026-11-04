@@ -163,7 +163,9 @@ for (const width of [390, 768, 1024, 1440]) {
                 ).toHaveAttribute('aria-pressed', 'false');
                 await page.goto('/library?tab=watchlist');
                 await expect(
-                    page.getByText('Your Watchlist is empty.', { exact: false }),
+                    page
+                        .getByRole('table', { name: 'Films to watch', exact: true })
+                        .getByText('Your Watchlist is empty.', { exact: false }),
                 ).toBeVisible();
             } finally {
                 await context.close();
@@ -200,7 +202,11 @@ test(
         await page.goto('/library?tab=watchlist');
         await page.getByRole('button', { name: 'Edit watchlist priority' }).click();
         await dialog.getByRole('button', { name: 'Remove from watchlist' }).click();
-        await expect(page.getByText('Your Watchlist is empty.', { exact: false })).toBeVisible();
+        await expect(
+            page
+                .getByRole('table', { name: 'Films to watch', exact: true })
+                .getByText('Your Watchlist is empty.', { exact: false }),
+        ).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Watchlist', exact: true })).toBeFocused();
     },
 );

@@ -66,14 +66,14 @@ describe('buildPersonalAchievements', () => {
         expect(buildPersonalAchievements(facts)).toEqual({ metrics, evidence });
     });
 
-    it('should deny hidden averages and ignore another user and unproven timestamps', () => {
+    it('should use Club averages despite hidden entries and ignore unrelated or unproven evidence', () => {
         const facts = buildFacts();
         facts.sessions[0]!.club.memberships[0]!.role = 'MEMBER';
         facts.sessions[0]!.club.showRatingsAfter = false;
         facts.sessions[0]!.progressEvents = [];
         facts.sessions[0]!.scheduledAt = new Date('2026-10-01');
         const { metrics } = buildPersonalAchievements(facts);
-        expect(metrics['hot-take']).toBe(0);
+        expect(metrics['hot-take']).toBe(1);
         expect(metrics['early-bird']).toBe(0);
         expect(metrics['night-owl']).toBe(0);
         const { metrics: other } = buildPersonalAchievements({
@@ -87,6 +87,15 @@ describe('buildPersonalAchievements', () => {
         expect(other['taste-maker']).toBe(0);
         expect(other['critic']).toBe(0);
     });
+
+    it.each(['LEFT', 'REMOVED'] as const)(
+        'should not derive Hot Take from a Club after its Membership becomes %s',
+        (status) => {
+            const facts = buildFacts();
+            facts.sessions[0]!.club.memberships[0]!.status = status;
+            expect(buildPersonalAchievements(facts).metrics['hot-take']).toBe(0);
+        },
+    );
 
     it('should break attendance streaks on unknown attendance and avoid imported wins', () => {
         const facts = buildFacts();

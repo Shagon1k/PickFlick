@@ -26,6 +26,9 @@ async function createPastJourney(browser: Browser) {
             name: 'Historical screening club',
             selectionScaleMin: 0,
             selectionScaleMax: 5,
+            showSelectionScoresAfter: true,
+            showNominationAuthorsAfter: true,
+            showRatingsAfter: true,
         },
     });
     for (const [index, userId] of users.entries())
@@ -102,12 +105,12 @@ async function createPastJourney(browser: Browser) {
 }
 
 async function addNomination(page: Page, query: string) {
-    const search = page.getByRole('combobox', { name: 'Add nominated Movies' });
+    const search = page.getByRole('combobox', { name: /^Nominated films/u });
     await search.fill(query);
     await expect(
         page
             .getByRole('group', { name: 'What else was nominated?' })
-            .getByRole('listbox', { name: 'Movie results' })
+            .getByRole('listbox', { name: 'Film results' })
             .getByRole('option'),
     ).toHaveCount(1);
     await search.press('ArrowDown');
@@ -149,15 +152,19 @@ test('A minimal past Session waits for hydration, retains input after a request 
     });
     try {
         await page.goto(path, { waitUntil: 'commit' });
-        await expect(page.getByLabel('Date')).toBeDisabled();
-        await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeDisabled();
-        await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+        await expect(page.locator('#past-date')).toBeDisabled();
+        await expect(
+            page
+                .locator('form:has(#past-date)')
+                .getByRole('button', { name: 'Next', exact: true, includeHidden: true }),
+        ).toBeDisabled();
         releaseScripts();
         await expect(page.getByLabel('Date')).toBeEnabled();
         await fillFilm(page, query);
         await expect(page.getByLabel('Date')).toHaveValue('2020-01-01');
         await next(page);
         await next(page);
+        await page.getByRole('button', { name: 'Remove A remembered film', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Log Session', exact: true })).toBeEnabled();
         expect(await prisma.session.findMany({ where: { clubId } })).toEqual([]);
         await page.route(`**${path}`, (route) => route.abort('failed'), { times: 1 });
@@ -168,7 +175,7 @@ test('A minimal past Session waits for hydration, retains input after a request 
         await back(page);
         await back(page);
         await expect(page.getByLabel('Location')).toHaveValue('Old cinema');
-        await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+        await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
             'A remembered film',
         );
         await next(page);
@@ -278,7 +285,7 @@ for (const viewport of canonicalViewports) {
             await page.emulateMedia({ reducedMotion: 'reduce' });
             try {
                 await page.goto(`/clubs/${clubId}/sessions`);
-                await page.getByRole('link', { name: 'Log a Past Session' }).click();
+                await page.getByRole('link', { name: 'Log Past', exact: true }).click();
                 await settle(page);
                 await expect(
                     page.getByRole('heading', { name: 'Log a Past Session' }),
@@ -317,10 +324,9 @@ for (const viewport of canonicalViewports) {
                     page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
                 ).toBeVisible();
                 await addNomination(page, rivalQuery);
-                await addNomination(page, rivalQuery);
                 await expect(
-                    page.getByText('This Movie is already in the nomination list.'),
-                ).toBeVisible();
+                    page.getByRole('combobox', { name: /^Nominated films · 2\/2/u }),
+                ).toBeDisabled();
                 const zero = page.getByRole('combobox', {
                     name: 'Selection score for Former attendee: A remembered film',
                     exact: true,
@@ -339,11 +345,11 @@ for (const viewport of canonicalViewports) {
                     .getByRole('button', { name: 'Remove A remembered film', exact: true })
                     .click();
                 await expect(
-                    page.getByRole('combobox', { name: 'Add nominated Movies' }),
+                    page.getByRole('combobox', { name: /^Nominated films/u }),
                 ).toBeFocused();
                 await back(page);
                 await back(page);
-                await expect(page.getByRole('group', { name: 'Selected film' })).toContainText(
+                await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
                     'A remembered film',
                 );
                 await next(page);
@@ -358,7 +364,7 @@ for (const viewport of canonicalViewports) {
                 await expect(zero).toHaveValue('');
                 await zero.selectOption('0');
                 const nominator = page.getByRole('combobox', {
-                    name: 'Nominator for A remembered film',
+                    name: 'Nominated by · A remembered film',
                 });
                 await nominator.click();
                 await page
@@ -391,13 +397,14 @@ for (const viewport of canonicalViewports) {
                 await expect(
                     page
                         .getByRole('list', { name: 'Session ratings' })
-                        .getByText('9', { exact: true }),
+                        .getByText('9.0', { exact: true })
+                        .first(),
                 ).toBeVisible();
                 const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
                 await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('0', { exact: true })).toBeVisible();
+                await expect(rivals.getByText('0', { exact: true }).first()).toBeVisible();
                 await expect(rivals.getByText('total · 1 score', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('Screened Movie', { exact: true })).toBeVisible();
+                await expect(rivals.getByText('Watched', { exact: true })).toBeVisible();
                 await expect(rivals.getByText('by Former attendee', { exact: true })).toBeVisible();
                 await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
                 expect(
@@ -420,6 +427,22 @@ for (const viewport of canonicalViewports) {
                 });
                 await journey.signInMember();
                 await page.reload();
+                await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
+                await prisma.club.update({
+                    where: { id: clubId },
+                    data: {
+                        showSelectionScoresAfter: false,
+                        showNominationAuthorsAfter: false,
+                        showRatingsAfter: false,
+                    },
+                });
+                await page.reload();
+                await expect(
+                    page
+                        .getByRole('region', { name: 'Session details', exact: true })
+                        .getByText('9.0', { exact: true })
+                        .first(),
+                ).toBeVisible();
                 await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
                 await expect(page.getByText('A remembered rival', { exact: true })).toHaveCount(0);
             } finally {
