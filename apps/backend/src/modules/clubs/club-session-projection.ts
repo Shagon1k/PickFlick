@@ -6,7 +6,6 @@ import {
 import { Prisma } from '@pickflick/database';
 
 import { canJoinSession, getOwnStatus } from '../sessions/session-access.js';
-import { canViewCompletedRatings } from '../sessions/session-visibility.js';
 import type { TMembership } from './access/club-access.js';
 
 export const sessionInclude = {
@@ -32,9 +31,7 @@ export async function createHubSessionProjection(
     rows: THubSessionRow[],
 ) {
     const ids = [...new Set(rows.map(({ id }) => id))];
-    const visibleRatingIds = rows
-        .filter((row) => row.phase === 'COMPLETED' && canViewCompletedRatings(membership.club))
-        .map((row) => row.id);
+    const completedIds = rows.filter((row) => row.phase === 'COMPLETED').map((row) => row.id);
     const ratingIds = rows.filter((row) => row.phase === 'RATING').map((row) => row.id);
     const [ordinalById, own, averages, participants] = await Promise.all([
         readOrdinals(tx, membership.club.id, ids),
@@ -44,7 +41,7 @@ export async function createHubSessionProjection(
         }),
         tx.sessionRating.groupBy({
             by: ['sessionId'],
-            where: { sessionId: { in: visibleRatingIds } },
+            where: { sessionId: { in: completedIds } },
             _avg: { score: true },
         }),
         tx.sessionParticipant.findMany({

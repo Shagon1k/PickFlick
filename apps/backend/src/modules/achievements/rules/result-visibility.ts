@@ -3,16 +3,11 @@ import type { Prisma } from '@pickflick/database';
 
 import type { TClubAchievementKey } from './rule-catalog.js';
 
-/** Result-derived awards follow the Club's current disclosure rules, including stored awards. */
+/** Named Selection results remain private even though Club rating averages are visible. */
 export function hiddenResultAchievementKeys(
-    club: Pick<IClubVisibility, 'showRatingsAfter' | 'showSelectionScoresAfter'>,
+    club: Pick<IClubVisibility, 'showSelectionScoresAfter'>,
 ): TClubAchievementKey[] {
-    return [
-        ...(!club.showRatingsAfter
-            ? (['critics-circle', 'cult-classic', 'shared-taste'] as const)
-            : []),
-        ...(!club.showSelectionScoresAfter ? (['perfect-split'] as const) : []),
-    ];
+    return club.showSelectionScoresAfter ? [] : ['perfect-split'];
 }
 
 export async function readHiddenResultAchievementKeys(
@@ -22,7 +17,7 @@ export async function readHiddenResultAchievementKeys(
     return hiddenResultAchievementKeys(
         await tx.club.findUniqueOrThrow({
             where: { id: clubId },
-            select: { showRatingsAfter: true, showSelectionScoresAfter: true },
+            select: { showSelectionScoresAfter: true },
         }),
     );
 }

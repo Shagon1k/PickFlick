@@ -9,11 +9,6 @@ export function readCompletedScreenings(tx: Prisma.TransactionClient, clubId: st
             scheduledAt: true,
             movie: { select: { id: true, title: true, releaseYear: true } },
             ratings: {
-                where: {
-                    session: {
-                        club: { showRatingsAfter: true },
-                    },
-                },
                 select: { score: true },
             },
         },

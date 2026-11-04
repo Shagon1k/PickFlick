@@ -431,7 +431,7 @@ every authentication session.
   participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
   within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
   Club's Session count excludes cancelled Sessions.
-  Completed-screening statistics use validated cached Movie metadata and policy-filtered historical
+  Completed-screening statistics use validated cached Movie metadata and aggregate historical
   Session Ratings. Free projects basic counts; Pro adds the extended summaries described below. Active selected-Movie enrichment runs after the snapshot transaction
   and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
   Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
@@ -737,11 +737,12 @@ publishes the existing progress event. Manual closure also writes `SESSION_RATIN
 same transaction. Any event or audit failure rolls back completion and its submission.
 
 Session detail includes `rating` in Rating and Completed: accepted/submitted/received counts,
-permissions, the caller's own immutable response and a policy-filtered results object. Other
-responses and the average follow the current Club During/After policy for all roles. During requires the
-viewer's own submitted rating; After begins only at Completed. Legacy Sessions use the same global
-policy. Hidden results
-are `null`, including their average and comments. Current Club Membership remains required for
+permissions, the caller's own immutable response and a results object. `results.average` includes
+all received responses and remains available to current Club members regardless of individual-rating
+visibility or their own submission; it is `null` only when there are no received scores.
+`results.entries` follows the current Club During/After policy for all roles and is `null` when
+hidden. During entries require the viewer's own submitted rating; After begins only at Completed.
+Legacy Sessions use the same global policy. Current Club Membership remains required for
 every read. The existing version poll refreshes other clients; no new transport, dependency,
 notification delivery, runtime variable or deployment topology is introduced.
 
@@ -757,9 +758,9 @@ aggregate, author-only and named-score projections under current Club visibility
 `GET /clubs/:clubId/hub` projects `activeSession` only from Nomination, Selection or Watching.
 Every open Rating Session remains in `ratingSessions`, regardless of the recent-activity limit.
 Rating `progressCount` counts received responses from accepted participants. History rows expose
-`ratingAverage` only for Completed Sessions permitted by the current Club After policy,
-including legacy Sessions and all roles. The average includes every received historical response,
-including departed participants. Empty, hidden and open results return `null`; comments and
+`ratingAverage` for every Completed Session, including legacy and imported Sessions, independently
+of the individual-rating visibility flags. The average includes every received historical response,
+including departed participants. Empty and open results return `null`; comments and
 individual scores are never added to Hub responses.
 
 `/clubs/[clubId]/sessions` reuses the persistent Hub frame and authorization/error boundaries.
@@ -768,7 +769,7 @@ is already available in the Call Sheet. Hub responses include `historyNextCursor
 `GET /clubs/:clubId/sessions/history?cursor=:id` returns the next ten rows with one-row lookahead,
 ordered by `(updatedAt DESC, id DESC)`. Every request rechecks current Club Membership and scopes
 its optional UUID cursor to a closed Session in that Club. Both readers reuse the same ordinal,
-Movie and permitted-average projection. The client deduplicates appended rows and retains older
+Movie and Club-average projection. The client deduplicates appended rows and retains older
 pages across ordinary refreshes; changing the Club role remounts the history collection so older
 privileged projections do not remain visible.
 
@@ -953,8 +954,8 @@ adds no dependency, environment variable, worker or deployment change.
 ### Club analytics and rating rankings
 
 The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership authorization and
-repeatable-read Completed Session projections. Rating queries select responses only when the
-current Club has `showRatingsAfter`, including for Admins/Moderators and legacy Sessions.
+repeatable-read Completed Session projections. Aggregate rating queries include all received
+responses regardless of individual-rating visibility, including legacy and imported Sessions.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
 caching. Every plan gets the ranking rows and all Overview statistics. The existing
 entitlement adapter supplies the plan; this adds no billing behavior.
@@ -1010,10 +1011,10 @@ existing default transaction isolation; the next read incorporates concurrent so
 Result-derived Club award state is restricted to Admins/Moderators to avoid leaking historical
 hidden results after visibility changes. Saved privacy classification also protects retired versions.
 Members receive only current private definition cards with masked state, independent of earned rows;
-retired private award rows are omitted. Current Club After flags restrict operators too: a hidden
-result category hides the corresponding private achievement keys across the Club, including older
-earned versions. Award records remain stored. Notification
-production and resolution recheck the same keys, avoiding a hidden-award existence leak.
+retired private award rows are omitted. Hidden Selection results mask Perfect Split for operators
+too, including older earned versions. Individual-rating flags do not mask average/count-derived
+criteria: Club averages and received counts remain available. Award records remain stored.
+Notification production and resolution recheck the same Selection keys.
 Personal Hot Take evaluates only currently accessible
 Completed results. World Tour uses the configured catalog's cached production countries. TheTVDB's
 client maps production-country records from its existing extended request into uppercase codes for

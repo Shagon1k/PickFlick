@@ -9,7 +9,7 @@ import styles from './SettingsSkeleton.module.scss';
 const CHECK_LABELS = [
     'Show who nominated each film',
     'Show each member’s Selection scores',
-    'Show Session ratings',
+    'Show individual ratings',
 ];
 const SESSION_KINDS = ['active', 'ratings'] as const;
 

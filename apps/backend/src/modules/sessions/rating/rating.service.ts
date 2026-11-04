@@ -47,7 +47,7 @@ export class RatingService {
                 : [],
         );
         const isOpen = session.phase === 'RATING';
-        const canSeeResults = canViewRatingResults(session, membership.club, Boolean(own?.rating));
+        const canSeeEntries = canViewRatingResults(session, membership.club, Boolean(own?.rating));
         return {
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.rating).length,
@@ -66,15 +66,12 @@ export class RatingService {
                       avatarUrl: own.membership.user.image ? '/api/account/avatar' : null,
                   }
                 : null,
-            results: canSeeResults
-                ? {
-                      average: received.length
-                          ? received.reduce((total, rating) => total + rating.score, 0) /
-                            received.length
-                          : null,
-                      entries: received,
-                  }
-                : null,
+            results: {
+                average: received.length
+                    ? received.reduce((total, rating) => total + rating.score, 0) / received.length
+                    : null,
+                entries: canSeeEntries ? received : null,
+            },
         };
     }
 

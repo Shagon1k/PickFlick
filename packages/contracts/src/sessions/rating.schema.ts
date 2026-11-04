@@ -36,15 +36,18 @@ export const ratingSchema = z.strictObject({
     results: z
         .strictObject({
             average: z.number().nullable(),
-            entries: z.array(
-                sessionRatingSchema.extend({
-                    id: z.uuid(),
-                    author: z.string(),
-                    avatarUrl: z.string().nullable(),
-                    /** The viewer's response, labelled You and shown first in the list. */
-                    isOwn: z.boolean(),
-                }),
-            ),
+            /** Individual responses can be hidden while the Club average remains available. */
+            entries: z
+                .array(
+                    sessionRatingSchema.extend({
+                        id: z.uuid(),
+                        author: z.string(),
+                        avatarUrl: z.string().nullable(),
+                        /** The viewer's response, labelled You and shown first in the list. */
+                        isOwn: z.boolean(),
+                    }),
+                )
+                .nullable(),
         })
         .nullable(),
 });

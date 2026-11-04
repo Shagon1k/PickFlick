@@ -15,7 +15,7 @@ export const visibilityOptions: {
         during: 'showSelectionScoresDuring',
         after: 'showSelectionScoresAfter',
     },
-    { label: 'Show Session ratings', during: 'showRatingsDuring', after: 'showRatingsAfter' },
+    { label: 'Show individual ratings', during: 'showRatingsDuring', after: 'showRatingsAfter' },
 ];
 
 export const visibilityNames: (keyof IClubVisibility)[] = [

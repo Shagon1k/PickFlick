@@ -111,13 +111,16 @@ participant-avatar endpoint; other historical entries receive null. The own-rati
 includes its actual display name and nullable self-only account-avatar path. These fields do not
 expose source URLs, hidden peer responses or new image permissions.
 
-New Sessions snapshot independent During/After author, named Selection and rating visibility.
-Every role obeys these flags; During score disclosure also requires the viewer's own submitted
-response, and After starts only at Completed. Cancelled Sessions reveal no new-policy peer scores.
-Legacy snapshots keep prior disclosure and never expose historical individual Selection ballots.
+Current Club During/After flags govern author, named Selection and individual-rating visibility
+for all existing/new Sessions and every role. During individual score disclosure also requires
+the viewer's own submitted response, and After starts only at Completed. Cancelled Sessions reveal
+no new-policy peer scores. Retained Session visibility snapshots do not override current settings.
 Authorized closed Selection matrices read frozen inputs, while imported missing cells remain
-unknown. Hidden results are excluded from Hub averages, analytics, private derived achievements
-and their notification producers/resolvers, so alternate projections do not bypass the flags.
+unknown. Club rating averages and received counts remain available to authorized Club members
+independently of individual-rating flags or their own submission. Session `results.entries` is
+null when peer responses are hidden; their scores, comments, identities and photo paths are omitted.
+Hub/analytics and average-derived awards may use aggregate scores. Hidden named Selection results
+still mask dependent private achievements and their notification producers/resolvers.
 
 See [Authentication and sessions](authentication.md#authorizing-a-request) for the flow.
 

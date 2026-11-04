@@ -1,6 +1,6 @@
 'use client';
 
-import { formatRatingScore, type TRating } from '@pickflick/contracts';
+import { RATING_SCALE, type TRating } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
 import Avatar from '#components/ui/Avatar/Avatar';
@@ -12,7 +12,7 @@ import Skeleton from '#components/ui/Skeleton/Skeleton';
 import styles from './Rating.module.scss';
 
 type TEntry = Pick<
-    NonNullable<TRating['results']>['entries'][number],
+    NonNullable<NonNullable<TRating['results']>['entries']>[number],
     'id' | 'score' | 'comment' | 'author' | 'avatarUrl' | 'isOwn'
 >;
 
@@ -45,9 +45,8 @@ function RatingList({
     isInProgress: boolean;
     isLoading: boolean;
 }) {
-    const entries: TEntry[] = data.results
-        ? data.results.entries.toSorted((a, b) => Number(b.isOwn) - Number(a.isOwn))
-        : [];
+    const entries: TEntry[] =
+        data.results?.entries?.toSorted((a, b) => Number(b.isOwn) - Number(a.isOwn)) ?? [];
     if (data.own && !entries.some((entry) => entry.isOwn))
         entries.unshift({ id: 'own', isOwn: true, ...data.own });
     if (!entries.length && isInProgress)
@@ -58,7 +57,9 @@ function RatingList({
             </div>
         );
     if (!entries.length)
-        return data.results ? <p className={styles.empty}>No ratings were received.</p> : null;
+        return data.results?.entries ? (
+            <p className={styles.empty}>No ratings were received.</p>
+        ) : null;
     return (
         <ul className={styles.list} aria-label="Session ratings">
             {entries.map((entry) => (
@@ -70,6 +71,8 @@ function RatingList({
 
 function RatingEntry({ entry, isLoading }: { entry: TEntry; isLoading: boolean }) {
     const name = entry.isOwn ? 'You' : entry.author;
+    const formattedScore =
+        entry.score === RATING_SCALE.max ? String(entry.score) : entry.score.toFixed(1);
     return (
         <li data-own={entry.isOwn || undefined} data-color-reveal-trigger data-color-reveal-surface>
             <ColorReveal variant="surface" />
@@ -87,9 +90,9 @@ function RatingEntry({ entry, isLoading }: { entry: TEntry; isLoading: boolean }
             </div>
             <span className={styles.score}>
                 {isLoading ? (
-                    <Skeleton text={formatRatingScore(entry.score)} />
+                    <Skeleton text={formattedScore} />
                 ) : (
-                    <ColorReveal variant="accent">{formatRatingScore(entry.score)}</ColorReveal>
+                    <ColorReveal variant="accent">{formattedScore}</ColorReveal>
                 )}
             </span>
         </li>

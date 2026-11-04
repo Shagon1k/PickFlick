@@ -24,7 +24,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                 <h2 id="club-visibility-title">Settings</h2>
                 <InfoTip label="About visibility settings">
                     Saved rules apply to everyone and to all existing and future Sessions in this
-                    Club.
+                    Club. Club rating averages stay visible.
                 </InfoTip>
             </div>
             <form action={formAction} className={styles.cardForm}>

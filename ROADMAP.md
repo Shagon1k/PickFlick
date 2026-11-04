@@ -302,10 +302,12 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
   Each participant submits once; identical retries preserve the saved response. Only accepted
   participants count toward positive N/N completion; received responses from departed participants
   remain part of history. Manual completion may keep partial or empty ratings.
-- Other participants' Session Ratings and the Session average follow the current Club period flag,
+- Other participants' individual Session Ratings and comments follow the current Club period flag,
   including for operators. A caller can always read their own response while they remain a Club
-  member. Hidden scores also stay absent from Hub averages, Club analytics and derived private
-  achievement/notification projections.
+  member. Club averages remain visible independently of these flags and of the caller's submission,
+  including in Session detail, Hub history/activity, Club statistics and the ratings leaderboard.
+  No received ratings means no average. Aggregate-derived achievements may use these averages;
+  named peer responses and comments remain excluded from unauthorized projections.
 - Past Session nomination lists and Selection matrices preserve partial imported evidence. Missing
   cells remain unknown; zero is an explicit score on the saved Club scale. Recorded totals neither
   establish a complete ballot nor determine a winner. New imports allow at most as many nominations
@@ -333,10 +335,9 @@ The existing Club entitlement adapter supplies the plan until billing is impleme
 
 Rating aggregates use immutable SessionRating rows, never editable Personal Ratings. Each received
 response has equal weight, including retained responses after departure. Repeat screenings share a
-canonical Movie ranking. Missing responses remain unknown. All results require the current Club's
-After visibility for every role, including legacy Sessions. Filtering happens
-before averaging, ranking and latest-screening sorting. Analytics expose no individual responses,
-comments or hidden response counts. Archived Clubs keep read access for current members.
+canonical Movie ranking. Missing responses remain unknown. Aggregates remain available to current
+Club members regardless of individual-rating visibility, including legacy Sessions. Analytics
+expose no individual responses or comments. Archived Clubs keep read access for current members.
 
 The leaderboard supports title search and ascending/descending Film, Year, Genre and Rating header
 sorting, with highest rating as the reset order. The legacy latest-screening query remains supported.
@@ -393,8 +394,8 @@ JavaScript characters; no comment text enters achievement evidence.
 
 Club reads require active Membership, including for archived Clubs. Rating/Selection-derived Club
 criteria (Critics Circle, Cult Classic, Perfect Split, Shared Taste) expose progress and earned
-history only to Admins/Moderators, including retired rule versions, and only when new-snapshot
-result visibility permits it. A hidden new result category masks the related private keys across
+history only to Admins/Moderators, including retired rule versions. Individual-rating visibility
+does not hide average/count-derived criteria. Hidden Selection results mask Perfect Split across
 that Club, including older earned versions; stored awards are retained. Members see current private
 criteria with a privacy explanation and no award state or time, regardless of earned history;
 retired private award cards are omitted.
