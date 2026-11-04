@@ -27,7 +27,7 @@ export async function loadSelectionOutcome(
         tx,
         visible.map((row) => row.movieId),
     );
-    const nominations = canViewNominationAuthors(session)
+    const nominations = canViewNominationAuthors(session, membership.club)
         ? await tx.nomination.findMany({
               where: { sessionId: session.id, id: { in: visible.map((row) => row.id) } },
               select: {

@@ -15,11 +15,10 @@ export async function readAchievementSessions(
             phase: true,
             scheduledAt: true,
             selectionResult: true,
-            showRatingResults: true,
-            showRatingsAfter: true,
-            showSelectionScoresAfter: true,
             club: {
                 select: {
+                    showRatingsAfter: true,
+                    showSelectionScoresAfter: true,
                     memberships: {
                         select: {
                             id: true,

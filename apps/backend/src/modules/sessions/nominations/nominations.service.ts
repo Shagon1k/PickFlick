@@ -94,7 +94,7 @@ export class NominationsService {
             ownMovie: own?.nomination ? getMovie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
                 movie: getMovie(row.movieId),
-                author: canViewNominationAuthors(session) ? row.author : null,
+                author: canViewNominationAuthors(session, membership.club) ? row.author : null,
             })),
             suggestions: suggestionIds.map(getMovie),
             watchlist: watchlist.map((item) => getMovie(item.movieId)),

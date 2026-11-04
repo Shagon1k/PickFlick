@@ -127,7 +127,7 @@ describe('Club ratings API', () => {
         });
     });
 
-    it('should filter hidden results before averages and ordering, and recheck role and saved settings', async () => {
+    it('should filter all historical ratings using the current Club policy for every role', async () => {
         const read = async (index: number) =>
             clubRatingsSchema.parse(
                 await (
@@ -136,22 +136,22 @@ describe('Club ratings API', () => {
                     })
                 ).json(),
             );
-        expect((await read(1)).total).toBe(3);
-        expect((await read(2)).items.map(({ title }) => title)).toEqual([
-            'Highest film',
-            'Repeated film',
-        ]);
-        const hub = (await (
-            await api.request(`/clubs/${clubId}/hub`, { userId: users[2]! })
-        ).json()) as IClubHub;
-        expect(hub.statistics.averageRating).toBe(7.5);
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
-        expect((await read(2)).total).toBe(2);
+        for (const index of [0, 1, 2]) expect((await read(index)).total).toBe(3);
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: false } });
+        for (const index of [0, 1, 2]) {
+            expect((await read(index)).items).toEqual([]);
+            const hub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: users[index]! })
+            ).json()) as IClubHub;
+            expect(hub.statistics.averageRating).toBeNull();
+        }
         await api.prisma.membership.update({
             where: { id: memberships[1] },
             data: { role: 'MEMBER' },
         });
-        expect((await read(1)).total).toBe(2);
+        expect((await read(1)).total).toBe(0);
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
+        for (const index of [0, 1, 2]) expect((await read(index)).total).toBe(3);
     });
 
     it('should give Free Clubs the ratings leaderboard and every statistic', async () => {

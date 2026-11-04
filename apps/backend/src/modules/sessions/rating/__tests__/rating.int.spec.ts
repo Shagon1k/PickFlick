@@ -221,23 +221,24 @@ describe('Rating', () => {
         expect((await detail()).rating?.results?.entries).toHaveLength(3);
     });
 
-    it('should hide other responses until completion and enforce snapshotted post-close visibility', async () => {
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showRatingResults: false },
+    it('should hide peer responses for all roles until the current Club policy permits disclosure', async () => {
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showRatingsAfter: false },
         });
         await submit();
         await submit(2, { score: 3, comment: 'Private response' });
         expect((await detail()).rating?.results).toBeNull();
         expect((await detail(1)).rating?.own).toBeNull();
         await close();
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
         for (const index of [2, 3]) {
             const session = await detail(index);
             expect(session.rating?.results).toBeNull();
             expect(JSON.stringify(session)).not.toContain('A fine screening.');
         }
         expect((await detail(2)).rating?.own?.comment).toBe('Private response');
+        expect((await detail()).rating?.results).toBeNull();
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         expect((await detail()).rating?.results?.entries).toHaveLength(2);
         expect((await detail(1)).rating?.results?.average).toBe(5.5);
     });

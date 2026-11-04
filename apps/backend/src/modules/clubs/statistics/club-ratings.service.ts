@@ -17,8 +17,8 @@ export class ClubRatingsService {
     async list(userId: string, clubId: string, query: TClubRatingsQuery): Promise<TClubRatings> {
         const snapshot = await this.prisma.$transaction(
             async (tx) => {
-                const membership = await findMembership(tx, userId, clubId);
-                return readCompletedScreenings(tx, clubId, membership.role);
+                await findMembership(tx, userId, clubId);
+                return readCompletedScreenings(tx, clubId);
             },
             { isolationLevel: 'RepeatableRead' },
         );

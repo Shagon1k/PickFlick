@@ -33,6 +33,15 @@ import { findActiveMembers, toClubMember } from './club-members.js';
 import { readClubSessionHistory } from './club-session-history.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
+const VISIBILITY_FIELDS = [
+    'showNominationAuthorsDuring',
+    'showNominationAuthorsAfter',
+    'showSelectionScoresDuring',
+    'showSelectionScoresAfter',
+    'showRatingsDuring',
+    'showRatingsAfter',
+] as const;
+
 @Injectable()
 export class ClubsService {
     constructor(
@@ -161,6 +170,13 @@ export class ClubsService {
                     showRatingResults: input.showRatingsAfter,
                 },
             });
+            if (VISIBILITY_FIELDS.some((field) => input[field] !== membership.club[field])) {
+                // Refresh open Session pages without changing history order or emitting phase events.
+                await transaction.$executeRaw`
+                    UPDATE "Session" SET "progressVersion" = "progressVersion" + 1
+                    WHERE "clubId" = ${clubId}::uuid
+                `;
+            }
             await recordAudit(transaction, {
                 clubId,
                 actorUserId: userId,

@@ -59,7 +59,7 @@ export class SessionsService {
                     selectionOutcome,
                     nominationAuthors: hasBreakdown
                         ? null
-                        : await this.selection.loadAuthors(transaction, session),
+                        : await this.selection.loadAuthors(transaction, session, membership),
                     selectionScores: await this.selection.loadScores(
                         transaction,
                         session,

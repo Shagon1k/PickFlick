@@ -34,8 +34,12 @@ export class SelectionService {
         return loadSelectionScores(tx, session, membership, this.movies);
     }
 
-    loadAuthors(tx: Prisma.TransactionClient, session: Prisma.SessionGetPayload<object>) {
-        return loadNominationAuthors(tx, session, this.movies);
+    loadAuthors(
+        tx: Prisma.TransactionClient,
+        session: Prisma.SessionGetPayload<object>,
+        membership: TMembership,
+    ) {
+        return loadNominationAuthors(tx, session, membership, this.movies);
     }
 
     async loadOutcome(
@@ -89,7 +93,7 @@ export class SelectionService {
             nominations: nominations.map((row) => ({
                 id: row.id,
                 movie: movies.get(row.movieId)!,
-                author: canViewNominationAuthors(session)
+                author: canViewNominationAuthors(session, membership.club)
                     ? row.participant.membership.user.displayName
                     : null,
                 ownScore:

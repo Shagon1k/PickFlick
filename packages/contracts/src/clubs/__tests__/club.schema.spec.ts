@@ -31,11 +31,13 @@ describe('createClubSchema', () => {
 
 describe('updateClubSettingsSchema', () => {
     const visibility = {
-        showNominationAuthors: true,
+        showNominationAuthorsDuring: true,
+        showNominationAuthorsAfter: true,
+        showSelectionScoresDuring: false,
+        showSelectionScoresAfter: false,
+        showRatingsDuring: false,
+        showRatingsAfter: true,
         showNominationsBeforeSubmit: true,
-        showVoteResults: false,
-        showRatingResults: true,
-        useMonochromeMedia: true,
     };
 
     it('should accept Club details with every visibility flag', () => {

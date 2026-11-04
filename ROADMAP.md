@@ -286,7 +286,7 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
   point, numeric IDs compare numerically, text IDs by code point, and missing mappings sort last.
   Repeated Movies remain separate nominations. Closure freezes inputs, ranking and the decisive
   tie-break; later roster or catalog changes cannot recalculate history.
-- New Sessions snapshot six independent visibility settings: nomination authors, named Selection
+- Current Club settings govern six independent visibility controls for all existing and new Sessions: nomination authors, named Selection
   scores and Session ratings, each During/After Session. Every plan can configure them; Admins and
   Moderators obey the same flags as Members. Pre-submission nomination-list visibility remains
   a separate stored Club setting. Appearance belongs to personal Settings; existing Club/Session
@@ -302,7 +302,7 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
   Each participant submits once; identical retries preserve the saved response. Only accepted
   participants count toward positive N/N completion; received responses from departed participants
   remain part of history. Manual completion may keep partial or empty ratings.
-- Other participants' Session Ratings and the Session average follow the snapshotted period flag,
+- Other participants' Session Ratings and the Session average follow the current Club period flag,
   including for operators. A caller can always read their own response while they remain a Club
   member. Hidden scores also stay absent from Hub averages, Club analytics and derived private
   achievement/notification projections.
@@ -317,11 +317,14 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
 
 ### Club analytics
 
-**Legacy visibility:** Sessions created before period-specific snapshots retain their existing
-rules. Their individual Selection ballots remain private; legacy aggregate Selection visibility
-keeps its saved flag/role/tier boundary, and legacy completed ratings keep their saved flag/role
-boundary. Club edits never rewrite existing Session snapshots. New-policy behavior is implemented
-under Phase 18; its deferred tests and fixture updates remain required before delivery acceptance.
+**Global visibility:** Saving Club visibility settings changes disclosure for existing, historical
+and new Sessions on subsequent reads. All roles and plans follow the same current During/After
+flags, including Sessions created before period-specific snapshots. Stored Session visibility fields
+remain historical data and do not authorize disclosure. Selection scales, frozen scores and Session
+Ratings remain unchanged. Existing Session pages refresh through their version poll after a settings
+change; Hub views reread on navigation or return to the tab. Per-Session Admin sharing is Deferred
+in [#204](https://github.com/Shagon1k/PickFlick/issues/204). This owner decision on 2026-11-04
+supersedes the earlier snapshot-only disclosure rule; hosted acceptance remains part of Phase 18.
 
 Active Club analytics count Completed screenings, including PAST imports and repeat viewings.
 Open and Cancelled Sessions do not contribute. Every plan gets all Overview statistics and the
@@ -330,8 +333,8 @@ The existing Club entitlement adapter supplies the plan until billing is impleme
 
 Rating aggregates use immutable SessionRating rows, never editable Personal Ratings. Each received
 response has equal weight, including retained responses after departure. Repeat screenings share a
-canonical Movie ranking. Missing responses remain unknown. New-snapshot results require saved
-After visibility for all roles; legacy results retain their original role/flag policy. Filtering happens
+canonical Movie ranking. Missing responses remain unknown. All results require the current Club's
+After visibility for every role, including legacy Sessions. Filtering happens
 before averaging, ranking and latest-screening sorting. Analytics expose no individual responses,
 comments or hidden response counts. Archived Clubs keep read access for current members.
 

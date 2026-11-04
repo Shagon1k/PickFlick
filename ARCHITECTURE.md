@@ -223,10 +223,14 @@ settings were not stored; it preserves phase, version, details, and history.
 
 Migration `20261103000200_club_visibility_periods` adds six non-null Club settings and six nullable
 Session snapshot fields. Club values are initialized from existing settings; old Sessions remain
-all-null period snapshots. A database check rejects partial snapshots. The null legacy marker keeps
-old role/flag/tier disclosure rules without exposing historical named Selection ballots. New
-snapshots apply the period flags to every role on every plan. Changing Club settings affects future
-Sessions only. The retained old columns support legacy reads and do not authorize new snapshots.
+all-null period snapshots. A database check rejects partial snapshots. As approved on 2026-11-04,
+all disclosure reads now use the current Club period flags, for every Session, role and plan.
+Neither nullable snapshots nor legacy role/tier rules override current Club settings. Retained
+Session columns are historical data; no schema migration or backfill is needed. Saving changed
+visibility increments each Club Session's progressVersion in the same transaction without changing
+updatedAt or emitting phase events/notifications. Existing version polling refreshes open Session
+pages; the settings action also invalidates Session routes. Hub views retain their navigation/tab
+return refresh. Per-Session sharing remains Deferred in #204.
 
 Personal Appearance is Proposed as part of Phase 19 personal Settings (#65): per-user monochrome, quiet mode, list spacing
 and optional table columns across Club Hub, Sessions and My Library. No preference storage or
@@ -665,11 +669,11 @@ updated API; existing Selection Sessions are checked on their next workflow muta
 This internal snapshot is never included in Session detail responses. Session detail returns a
 discriminated `selectionOutcome` after closure, including in later phases. Native results have
 `source: 'LIVE'`; imported evidence has `source: 'IMPORTED'` without fabricated closure or ranking fields. Every current Club member
-can see the winning Movie and closure information. New snapshots gate aggregate and named scores
-through the same saved Selection period policy: before Completed the caller must also have submitted
+can see the winning Movie and closure information. All Sessions gate aggregate and named scores
+through the current Club Selection period policy: before Completed the caller must also have submitted
 a ballot, while Completed uses After. There is no operator or plan bypass. App Admin status grants
-no Club access. Nominator names use the independent author period flag. Legacy snapshots retain
-their original role/tier aggregate boundary and never return named ballots. Provider mappings,
+no Club access. Nominator names use the independent current Club author period flag. Legacy
+visibility snapshots have no authority over disclosure. Provider mappings,
 closure actor IDs and the internal snapshot never enter the DTO.
 
 The separately authorized `selectionScores` DTO exposes only the saved scale, film summaries and
@@ -734,9 +738,9 @@ same transaction. Any event or audit failure rolls back completion and its submi
 
 Session detail includes `rating` in Rating and Completed: accepted/submitted/received counts,
 permissions, the caller's own immutable response and a policy-filtered results object. Other
-responses and the average follow the saved During/After policy for all roles. During requires the
-viewer's own submitted rating; After begins only at Completed. Legacy Sessions retain their former
-post-completion role/flag policy. Hidden results
+responses and the average follow the current Club During/After policy for all roles. During requires the
+viewer's own submitted rating; After begins only at Completed. Legacy Sessions use the same global
+policy. Hidden results
 are `null`, including their average and comments. Current Club Membership remains required for
 every read. The existing version poll refreshes other clients; no new transport, dependency,
 notification delivery, runtime variable or deployment topology is introduced.
@@ -748,13 +752,13 @@ Session roster with the existing Movie and Session facts. It creates no extra ra
 Later Club settings and source ballot edits cannot change saved Selection
 metrics or Session settings; Club departure leaves terminal attendance intact. Movie summaries and
 account display names remain current as described above. The UI renders only server-authorized
-aggregate, author-only and named-score projections; legacy individual ballots stay private.
+aggregate, author-only and named-score projections under current Club visibility.
 
 `GET /clubs/:clubId/hub` projects `activeSession` only from Nomination, Selection or Watching.
 Every open Rating Session remains in `ratingSessions`, regardless of the recent-activity limit.
 Rating `progressCount` counts received responses from accepted participants. History rows expose
-`ratingAverage` only for Completed Sessions permitted by the saved After policy for new snapshots,
-or the existing role/flag boundary for legacy snapshots. The average includes every received historical response,
+`ratingAverage` only for Completed Sessions permitted by the current Club After policy,
+including legacy Sessions and all roles. The average includes every received historical response,
 including departed participants. Empty, hidden and open results return `null`; comments and
 individual scores are never added to Hub responses.
 
@@ -848,13 +852,13 @@ Apply migration 30 before the updated API.
 
 The `selectionOutcome` union replaces the separate imported response field. Its `IMPORTED` variant
 returns the saved scale and permitted imported nomination summaries, including author display names
-when the saved author policy permits them. Names follow current account data and anonymization;
+when the current Club author policy permits them. Names follow current account data and anonymization;
 Membership IDs remain private. Its `LIVE` variant preserves native winner, closure and breakdown
 behavior. Active voting still uses `selection`; imported post-screening ratings still use `rating`.
 Zero is a recorded score; an absent score total is null. Totals count only supplied cells and do not
-rank nominations or recalculate the screened Movie. The saved period policy uses the same rules
-as live post-close breakdowns; new snapshots may expose sparse named cells only when After permits
-them. Legacy individual cells and all Membership IDs remain private. Completed reuses the live rival-card presentation for permitted imported nominations,
+rank nominations or recalculate the screened Movie. Current Club period flags use the same rules
+as live post-close breakdowns; sparse named cells are exposed only when After permits them,
+including for legacy imports. Membership IDs remain private. Completed reuses the live rival-card presentation for permitted imported nominations,
 labels the screened film independently of totals, and shows missing totals as `—` beside the recorded
 score count. One LOGGED info popover explains missing evidence; no winner or ranking is invented.
 
@@ -949,9 +953,8 @@ adds no dependency, environment variable, worker or deployment change.
 ### Club analytics and rating rankings
 
 The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership authorization and
-repeatable-read Completed Session projections. New-snapshot rating queries select only responses
-with saved `showRatingsAfter`, including for Admins/Moderators. Legacy rows retain their former
-role/flag policy.
+repeatable-read Completed Session projections. Rating queries select responses only when the
+current Club has `showRatingsAfter`, including for Admins/Moderators and legacy Sessions.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
 caching. Every plan gets the ranking rows and all Overview statistics. The existing
 entitlement adapter supplies the plan; this adds no billing behavior.
@@ -1007,9 +1010,9 @@ existing default transaction isolation; the next read incorporates concurrent so
 Result-derived Club award state is restricted to Admins/Moderators to avoid leaking historical
 hidden results after visibility changes. Saved privacy classification also protects retired versions.
 Members receive only current private definition cards with masked state, independent of earned rows;
-retired private award rows are omitted. New-snapshot After flags restrict operators too: if any
-Completed Session hides a result category, the corresponding private achievement keys are hidden
-across that Club, including older earned versions. Award records remain stored. Notification
+retired private award rows are omitted. Current Club After flags restrict operators too: a hidden
+result category hides the corresponding private achievement keys across the Club, including older
+earned versions. Award records remain stored. Notification
 production and resolution recheck the same keys, avoiding a hidden-award existence leak.
 Personal Hot Take evaluates only currently accessible
 Completed results. World Tour uses the configured catalog's cached production countries. TheTVDB's

@@ -22,18 +22,14 @@ export async function loadSelectionScores(
     membership: TMembership,
     moviesService: MoviesService,
 ): Promise<TSelectionScores | null> {
-    if (!canViewSelectionScores(session, true)) return null;
-    const source =
-        session.type === 'PAST'
-            ? await readPastScores(tx, session.id)
-            : session.selectionResult !== null
-              ? await readFrozenScores(tx, session)
-              : session.phase === 'SELECTION'
-                ? await readLiveScores(tx, session.id)
-                : null;
+    if (!canViewSelectionScores(session, membership.club, true)) return null;
+    let source: IScoreSource | null = null;
+    if (session.type === 'PAST') source = await readPastScores(tx, session.id);
+    else if (session.selectionResult !== null) source = await readFrozenScores(tx, session);
+    else if (session.phase === 'SELECTION') source = await readLiveScores(tx, session.id);
     if (!source) return null;
     const hasSubmitted = source.ballots.some((ballot) => ballot.membershipId === membership.id);
-    if (!canViewSelectionScores(session, hasSubmitted)) return null;
+    if (!canViewSelectionScores(session, membership.club, hasSubmitted)) return null;
     const movies = await moviesService.findSummaries(
         tx,
         source.films.map((film) => film.movieId),

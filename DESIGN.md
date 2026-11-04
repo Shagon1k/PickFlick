@@ -360,12 +360,12 @@ here.
   Admins always see Delete Club; Session history keeps it disabled, with the reason in the existing
   action tooltip and no separate explanatory line.
   The existing no-history deletion rule and typed Club-name confirmation are retained.
-- New Sessions use six controls (Nomination authors, named Selection scores and Session ratings,
+- Club settings provide six global controls (Nomination authors, named Selection scores and Session ratings,
   each During/After Session), available on all plans. During Selection/Rating,
   other submitted responses appear only after the caller submits their own response. After means
   Session Completed, and all visibility switches apply to Admins/Moderators as well as Members.
-  Existing Session snapshots keep their prior disclosure boundaries and never acquire newly
-  disclosed individual ballots. Authorized Selection matrices show participant names, film columns
+  Save Changes applies the current rules to existing, historical and future Sessions. The Settings
+  tooltip explains this scope. Legacy Session fields do not override the global rules. Authorized Selection matrices show participant names, film columns
   and missing imported cells as `—`; author-only nominations remain independent of score visibility.
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
@@ -716,7 +716,7 @@ data; this work does not rewrite historical records.
 - Positive N/N completion is automatic. Session Settings offers Close Rating early to authorized
   operators, with received/pending counts and typed `CLOSE`. Cancel or Escape preserves Rating and
   returns focus. Failure preserves the dialog and confirmation; success focuses the Session heading.
-- Other responses and the Club score appear only when the server's saved period policy permits
+- Other responses and the Club score appear only when the current Club period policy permits
   them; live disclosure additionally requires the caller's own submitted rating. Completed results show
   individual scores, comments and the average only when the server permits them. Hidden results,
   no received ratings, non-participation and read-only Clubs have explicit text. The caller's own

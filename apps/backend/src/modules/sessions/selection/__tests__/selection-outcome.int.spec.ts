@@ -139,16 +139,16 @@ describe('Selection outcome', () => {
 
     it.each([
         { tier: 'FREE', show: false, hasBreakdown: false },
-        { tier: 'FREE', show: true, hasBreakdown: false },
+        { tier: 'FREE', show: true, hasBreakdown: true },
         { tier: 'PRO', show: false, hasBreakdown: false },
         { tier: 'PRO', show: true, hasBreakdown: true },
     ] as const)(
         'should filter $tier post-close results with visibility $show',
         async ({ tier, show, hasBreakdown }) => {
             vi.spyOn(tiers, 'getClubEntitlements').mockReturnValue(tiers.getTierEntitlements(tier));
-            await api.prisma.session.update({
-                where: { id: sessionId },
-                data: { showVoteResults: show, showNominationAuthors: false },
+            await api.prisma.club.update({
+                where: { id: clubId },
+                data: { showSelectionScoresAfter: show, showNominationAuthorsAfter: false },
             });
             await submit();
             expect((await read()).selectionOutcome).toBeNull();
@@ -163,23 +163,38 @@ describe('Selection outcome', () => {
                 closure: 'MANUAL',
             });
             expect(Boolean(detail.selectionOutcome?.breakdown)).toBe(hasBreakdown);
+            const visibleBreakdown = expect.objectContaining({
+                ballotCount: 1,
+                reason: 'TOTAL',
+                scaleMin: 0,
+                scaleMax: 3,
+                ranking: expect.arrayContaining([
+                    expect.objectContaining({
+                        total: 3,
+                        maximumCount: 1,
+                        supporterCount: 1,
+                        author: null,
+                    }),
+                    expect.objectContaining({
+                        total: 1,
+                        maximumCount: 0,
+                        supporterCount: 1,
+                        author: null,
+                    }),
+                ]),
+            });
             for (const userId of users.slice(0, 2)) {
                 const outcome = (await read(userId)).selectionOutcome;
-                expect(outcome?.breakdown).toMatchObject({
-                    ballotCount: 1,
-                    reason: 'TOTAL',
-                    scaleMin: 0,
-                    scaleMax: 3,
-                    ranking: [
-                        { total: 3, maximumCount: 1, supporterCount: 1, author: null },
-                        { total: 1, maximumCount: 0, supporterCount: 1, author: null },
-                    ],
-                });
+                expect(outcome?.breakdown).toEqual(hasBreakdown ? visibleBreakdown : null);
             }
         },
     );
 
     it('should preserve frozen metrics and closure across retries, reads and later source changes', async () => {
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showSelectionScoresDuring: true },
+        });
         await submit();
         await close();
         const saved = (await read(users[0])).selectionOutcome;
@@ -207,28 +222,41 @@ describe('Selection outcome', () => {
         await api.expectStatus(200, `/sessions/${sessionId}/progress`, { userId: users[2] });
     });
 
-    it('should recheck current tier and role while keeping the Session visibility snapshot', async () => {
+    it('should apply current Club visibility to native legacy outcomes without tier or role bypass', async () => {
         const entitlement = vi
             .spyOn(tiers, 'getClubEntitlements')
             .mockReturnValue(tiers.getTierEntitlements('PRO'));
         await api.prisma.session.update({
             where: { id: sessionId },
-            data: { showVoteResults: true },
+            data: {
+                showNominationAuthorsDuring: null,
+                showNominationAuthorsAfter: null,
+                showSelectionScoresDuring: null,
+                showSelectionScoresAfter: null,
+                showRatingsDuring: null,
+                showRatingsAfter: null,
+            },
         });
         await close();
+        await complete();
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showSelectionScoresAfter: true },
+        });
         expect((await read()).selectionOutcome?.breakdown).toMatchObject({
             ballotCount: 0,
             reason: 'NOMINATION_TIME',
         });
-        await api.prisma.club.update({ where: { id: clubId }, data: { showVoteResults: false } });
-        expect((await read()).selectionOutcome?.breakdown).not.toBeNull();
         entitlement.mockReturnValue(tiers.getTierEntitlements('FREE'));
-        expect((await read()).selectionOutcome?.breakdown).toBeNull();
-        await api.prisma.membership.updateMany({
-            where: { clubId, userId: users[0] },
-            data: { role: 'MEMBER' },
+        expect((await read()).selectionOutcome?.breakdown).not.toBeNull();
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showSelectionScoresAfter: false },
         });
-        expect((await read(users[0])).selectionOutcome?.breakdown).toBeNull();
+        for (const userId of users.slice(0, 3)) {
+            expect((await read(userId)).selectionOutcome?.breakdown).toBeNull();
+            expect((await read(userId)).selectionScores).toBeNull();
+        }
     });
 
     it('should retain Completed inputs after Club changes and departure and reject historical mutations', async () => {

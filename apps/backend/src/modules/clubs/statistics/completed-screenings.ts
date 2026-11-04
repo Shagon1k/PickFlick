@@ -1,11 +1,6 @@
-import type { TClubRole } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-export function readCompletedScreenings(
-    tx: Prisma.TransactionClient,
-    clubId: string,
-    role: TClubRole,
-) {
+export function readCompletedScreenings(tx: Prisma.TransactionClient, clubId: string) {
     return tx.session.findMany({
         where: { clubId, phase: 'COMPLETED' },
         orderBy: { id: 'asc' },
@@ -16,13 +11,7 @@ export function readCompletedScreenings(
             ratings: {
                 where: {
                     session: {
-                        OR: [
-                            { showRatingsAfter: true },
-                            {
-                                showRatingsAfter: null,
-                                ...(role === 'MEMBER' ? { showRatingResults: true } : {}),
-                            },
-                        ],
+                        club: { showRatingsAfter: true },
                     },
                 },
                 select: { score: true },

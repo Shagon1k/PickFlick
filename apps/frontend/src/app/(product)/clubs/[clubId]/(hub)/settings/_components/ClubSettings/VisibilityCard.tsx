@@ -22,7 +22,10 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
         <section aria-labelledby="club-visibility-title" className={styles.card}>
             <div className={styles.cardTitle}>
                 <h2 id="club-visibility-title">Settings</h2>
-                <InfoTip label="About visibility settings">These rules apply to everyone.</InfoTip>
+                <InfoTip label="About visibility settings">
+                    Saved rules apply to everyone and to all existing and future Sessions in this
+                    Club.
+                </InfoTip>
             </div>
             <form action={formAction} className={styles.cardForm}>
                 <StoredClubInfo projection={projection} />

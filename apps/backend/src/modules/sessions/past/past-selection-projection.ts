@@ -35,7 +35,7 @@ export async function loadPastSelection(
         nominations: canSeeBreakdown
             ? visible.map((row) => ({
                   movie: movies.get(row.movieId)!,
-                  author: canViewNominationAuthors(session)
+                  author: canViewNominationAuthors(session, membership.club)
                       ? (row.nominator?.user.displayName ?? null)
                       : null,
                   scoreCount: row.scores.length,

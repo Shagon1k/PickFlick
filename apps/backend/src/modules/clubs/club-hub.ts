@@ -19,7 +19,7 @@ export async function readClubHub(tx: Prisma.TransactionClient, userId: string, 
             loadClubAccess(tx, membership.club),
             tx.session.count({ where: { clubId, phase: { not: 'CANCELLED' } } }),
             loadHubSessions(tx, clubId),
-            readCompletedScreenings(tx, clubId, membership.role),
+            readCompletedScreenings(tx, clubId),
             findActiveMembers(tx, clubId),
         ],
     );

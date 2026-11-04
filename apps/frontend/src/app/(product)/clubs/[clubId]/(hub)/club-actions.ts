@@ -79,6 +79,7 @@ export async function updateClubSettingsAction(
     );
     revalidatePath(`/clubs/${clubId}`, 'layout');
     revalidatePath('/app');
+    revalidatePath('/sessions/[sessionId]', 'page');
     return result;
 }
 

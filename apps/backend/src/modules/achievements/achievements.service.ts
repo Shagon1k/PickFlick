@@ -31,7 +31,7 @@ export class AchievementsService {
                     scope: 'CLUB',
                     subjectId: clubId,
                     hidePrivate: member.role === 'MEMBER',
-                    hiddenPrivateKeys: hiddenResultAchievementKeys(sessions),
+                    hiddenPrivateKeys: hiddenResultAchievementKeys(member.club),
                     ...facts,
                 }),
             };

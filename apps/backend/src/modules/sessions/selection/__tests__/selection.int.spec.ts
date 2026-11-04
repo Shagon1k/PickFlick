@@ -261,9 +261,9 @@ describe('Selection ballots', () => {
     });
 
     it('should expose only own scores and filter nominator identities independently', async () => {
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationAuthors: false, showVoteResults: false },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsDuring: false, showSelectionScoresDuring: false },
         });
         await submit(ballot(3), admin);
         const data = await read();
@@ -272,9 +272,9 @@ describe('Selection ballots', () => {
             true,
         );
         expect((await read(admin)).nominations.every((row) => row.ownScore === 3)).toBe(true);
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationAuthors: true },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsDuring: true },
         });
         expect((await read()).nominations.every((row) => row.author === 'Test User')).toBe(true);
     });

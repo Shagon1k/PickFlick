@@ -69,7 +69,7 @@ describe('buildPersonalAchievements', () => {
     it('should deny hidden averages and ignore another user and unproven timestamps', () => {
         const facts = buildFacts();
         facts.sessions[0]!.club.memberships[0]!.role = 'MEMBER';
-        facts.sessions[0]!.showRatingResults = false;
+        facts.sessions[0]!.club.showRatingsAfter = false;
         facts.sessions[0]!.progressEvents = [];
         facts.sessions[0]!.scheduledAt = new Date('2026-10-01');
         const { metrics } = buildPersonalAchievements(facts);
@@ -122,6 +122,7 @@ describe('buildPersonalAchievements', () => {
         const facts = buildFacts();
         const original = facts.sessions[0]!.club.memberships[0]!;
         const club = {
+            ...buildScreening().club,
             memberships: [
                 { ...original, leftAt: new Date('2026-10-04'), status: 'LEFT' as const },
                 { ...original, id: 'rejoined', joinedAt: new Date('2026-10-05') },

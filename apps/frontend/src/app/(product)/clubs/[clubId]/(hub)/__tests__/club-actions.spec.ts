@@ -52,7 +52,7 @@ const settingsForm = () =>
         name: 'Midnight Society',
         selectionScaleMin: '0',
         selectionScaleMax: '7',
-        showVoteResults: 'on',
+        showSelectionScoresAfter: 'on',
     });
 
 const avatarForm = () => {
@@ -82,11 +82,13 @@ describe('Club settings actions', () => {
             name: 'Midnight Society',
             selectionScaleMin: 0,
             selectionScaleMax: 7,
-            showNominationAuthors: false,
+            showNominationAuthorsDuring: false,
+            showNominationAuthorsAfter: false,
+            showSelectionScoresDuring: false,
+            showSelectionScoresAfter: true,
+            showRatingsDuring: false,
+            showRatingsAfter: false,
             showNominationsBeforeSubmit: false,
-            showVoteResults: true,
-            showRatingResults: false,
-            useMonochromeMedia: false,
         });
     });
 

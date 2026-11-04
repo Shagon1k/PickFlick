@@ -1052,3 +1052,42 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
   or rating changes, screenshots or automated suites. A stale duplicate dev CSS chunk temporarily
   retained 12px padding; a full page navigation cleared it and confirmed the final 8px styles.
   Tests/baselines and the single final commit remain deferred.
+
+### Global Club visibility — owner decision, 2026-11-04
+
+The owner superseded snapshot-only disclosure: current Club During/After settings govern all
+existing, legacy and future Sessions, without role/plan bypass. Own responses remain readable;
+During requires the viewer's own response, After begins at Completed. Stored scores, scale and
+Session visibility columns are unchanged. Shared policy reads, Hub averages, Club analytics and
+result-derived achievement/notification projections use current Club flags. Settings changes
+invalidate Session routes and advance their existing progress signal without changing history
+order or producing lifecycle notifications. The Settings tooltip explains the global scope.
+
+Per-Session Admin sharing is separately Deferred in #204. Verification evidence for this focused
+change is recorded below; it does not establish acceptance of the remaining Phase 18 work.
+
+Focused verification on the isolated `PF-fix-global-club-visibility` worktree, based on
+`c96f3bd26e7761dc4f3c747ee59c7e86d5984c94`:
+
+- 116/116 API/database integration checks passed across Sessions, Club settings/history/ratings,
+  achievements and notifications. New checks cover saved settings on existing and legacy Sessions,
+  every role, opt-in/out, own-response visibility, During submission and Completed boundaries,
+  native/imported scores, preserved historical values and unchanged history ordering.
+- 56/56 focused unit checks passed for the visibility matrix, achievement rules, Club settings
+  schema and settings actions. Backend type checking and production build passed.
+- Final lint of all touched backend modules, frontend files and contract tests passed.
+- The full unit suite reports 639 passed and five failures: past-Session schema fixture, three
+  Movie controller mock cases and the marketing-plan fixture. All five also fail on the unchanged
+  source revision; that control run had seven failures before the two related settings fixtures
+  were updated in this change. One unhandled Movie controller mock rejection remains inherited.
+- The repository `verify` run passed its high-severity dependency-audit gate and stopped at lint
+  errors across the unfinished Phase 18 source. Earlier lint output for the new tests was fixed
+  and the affected files passed the final lint run. Whole-frontend build/type checking remains
+  blocked by the unchanged `SessionHistory.tsx:60` union access to `denied`; frontend compilation
+  itself succeeds. Browser/hosted visual acceptance is not established.
+- Validation used a separate disposable PostgreSQL database and Redis. No user's database,
+  provider, deployment, dependency version, production setting or stored score was changed.
+
+This focused change belongs to the existing Phase 18 branch and issue #63. The owner requires
+continuing in that branch. Unrelated local `AGENTS.md` edits remain outside the implementation
+commit. Issue #63 remains In progress; #204 remains Deferred.

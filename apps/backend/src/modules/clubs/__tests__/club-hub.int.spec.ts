@@ -242,7 +242,9 @@ describe('Club Hub projection', () => {
     it('should project Rating progress and policy-filtered historical averages from received responses', async () => {
         const users = await Promise.all(Array.from({ length: 3 }, () => createUser(api.prisma)));
         const clubId = randomUUID();
-        await api.prisma.club.create({ data: { id: clubId, name: 'History projection' } });
+        await api.prisma.club.create({
+            data: { id: clubId, name: 'History projection', showRatingsAfter: false },
+        });
         try {
             const memberships = [];
             for (const [index, role] of (['ADMIN', 'MODERATOR', 'MEMBER'] as const).entries())
@@ -283,20 +285,20 @@ describe('Club Hub projection', () => {
             });
             await api.prisma.club.update({
                 where: { id: clubId },
-                data: { showRatingResults: true },
+                data: { showRatingsAfter: true },
             });
             for (const userId of users.slice(0, 2))
                 expect((await read(userId)).historySessions).toMatchObject([
                     { id: session.id, ratingAverage: 7 },
                 ]);
             expect((await read(users[2]!)).historySessions).toMatchObject([
-                { id: session.id, ratingAverage: null },
+                { id: session.id, ratingAverage: 7 },
             ]);
             await api.prisma.membership.update({
                 where: { id: memberships[1] },
                 data: { role: 'MEMBER' },
             });
-            expect((await read(users[1]!)).historySessions[0]?.ratingAverage).toBeNull();
+            expect((await read(users[1]!)).historySessions[0]?.ratingAverage).toBe(7);
             const published = await createSession(api.prisma, clubId, {
                 type: 'PRE_SELECTED',
                 phase: 'RATING',

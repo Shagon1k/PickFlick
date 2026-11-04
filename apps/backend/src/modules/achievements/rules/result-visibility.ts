@@ -1,23 +1,17 @@
+import type { IClubVisibility } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import type { TClubAchievementKey } from './rule-catalog.js';
 
-/** Result-derived awards must not reveal facts which even the Club's operators cannot read. */
+/** Result-derived awards follow the Club's current disclosure rules, including stored awards. */
 export function hiddenResultAchievementKeys(
-    sessions: {
-        phase: string;
-        showRatingsAfter: boolean | null;
-        showSelectionScoresAfter: boolean | null;
-    }[],
+    club: Pick<IClubVisibility, 'showRatingsAfter' | 'showSelectionScoresAfter'>,
 ): TClubAchievementKey[] {
-    const completed = sessions.filter((session) => session.phase === 'COMPLETED');
     return [
-        ...(completed.some((session) => session.showRatingsAfter === false)
+        ...(!club.showRatingsAfter
             ? (['critics-circle', 'cult-classic', 'shared-taste'] as const)
             : []),
-        ...(completed.some((session) => session.showSelectionScoresAfter === false)
-            ? (['perfect-split'] as const)
-            : []),
+        ...(!club.showSelectionScoresAfter ? (['perfect-split'] as const) : []),
     ];
 }
 
@@ -26,9 +20,9 @@ export async function readHiddenResultAchievementKeys(
     clubId: string,
 ) {
     return hiddenResultAchievementKeys(
-        await tx.session.findMany({
-            where: { clubId, phase: 'COMPLETED' },
-            select: { phase: true, showRatingsAfter: true, showSelectionScoresAfter: true },
+        await tx.club.findUniqueOrThrow({
+            where: { id: clubId },
+            select: { showRatingsAfter: true, showSelectionScoresAfter: true },
         }),
     );
 }

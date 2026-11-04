@@ -33,7 +33,7 @@ export async function createHubSessionProjection(
 ) {
     const ids = [...new Set(rows.map(({ id }) => id))];
     const visibleRatingIds = rows
-        .filter((row) => row.phase === 'COMPLETED' && canViewCompletedRatings(row, membership.role))
+        .filter((row) => row.phase === 'COMPLETED' && canViewCompletedRatings(membership.club))
         .map((row) => row.id);
     const ratingIds = rows.filter((row) => row.phase === 'RATING').map((row) => row.id);
     const [ordinalById, own, averages, participants] = await Promise.all([

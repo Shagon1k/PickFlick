@@ -14,7 +14,7 @@ import {
     type TMembership,
 } from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
-import { canViewSelectionResults } from './session-visibility.js';
+import { canViewSelectionScores } from './session-visibility.js';
 
 export async function canManage(transaction: Prisma.TransactionClient, membership: TMembership) {
     const { access } = await loadClubAccess(transaction, membership.club);
@@ -39,10 +39,10 @@ export async function assertManager(
 
 export function canViewSelectionBreakdown(
     session: Prisma.SessionGetPayload<object>,
-    membership: Pick<TMembership, 'role'>,
+    membership: Pick<TMembership, 'club'>,
     hasSubmitted = false,
 ) {
-    return canViewSelectionResults(session, membership.role, hasSubmitted);
+    return canViewSelectionScores(session, membership.club, hasSubmitted);
 }
 
 /** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */

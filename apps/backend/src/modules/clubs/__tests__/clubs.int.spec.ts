@@ -107,11 +107,13 @@ describe('ClubsController', () => {
             name: 'Midnight Society Updated',
             selectionScaleMin: 0,
             selectionScaleMax: 7,
-            showNominationAuthors: true,
+            showNominationAuthorsDuring: true,
+            showNominationAuthorsAfter: true,
+            showSelectionScoresDuring: false,
+            showSelectionScoresAfter: false,
+            showRatingsDuring: false,
+            showRatingsAfter: false,
             showNominationsBeforeSubmit: true,
-            showVoteResults: false,
-            showRatingResults: false,
-            useMonochromeMedia: true,
         };
 
         it('should let the Admin save and record an audit event', async () => {
@@ -123,7 +125,7 @@ describe('ClubsController', () => {
             const saved = (await response.json()) as IClubSettings;
 
             expect(saved.club.name).toBe('Midnight Society Updated');
-            expect(saved.visibility.showRatingResults).toBe(false);
+            expect(saved.visibility.showRatingsAfter).toBe(false);
             expect(
                 await api.prisma.clubAuditEvent.findFirst({
                     where: { clubId: club.id, action: 'CLUB_SETTINGS_UPDATED' },
@@ -141,14 +143,17 @@ describe('ClubsController', () => {
             expect(response.status).toBe(403);
         });
 
-        it('should keep vote results hidden on a Free Club', async () => {
+        it('should allow global Selection disclosure settings on a Free Club', async () => {
             const response = await api.request(`/clubs/${club.id}/settings`, {
                 method: 'PATCH',
                 userId: admin,
-                json: { ...settings, showVoteResults: true },
+                json: { ...settings, showSelectionScoresAfter: true },
             });
 
-            expect(await reasonOf(response)).toBe('TIER_SETTING_UNAVAILABLE');
+            expect(response.status).toBe(200);
+            expect(
+                ((await response.json()) as IClubSettings).visibility.showSelectionScoresAfter,
+            ).toBe(true);
         });
     });
 

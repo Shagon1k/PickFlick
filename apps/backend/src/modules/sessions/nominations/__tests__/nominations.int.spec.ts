@@ -160,7 +160,11 @@ describe('Nominations', () => {
         });
         await api.prisma.session.update({
             where: { id: sessionId },
-            data: { showNominationsBeforeSubmit: false, showNominationAuthors: false },
+            data: { showNominationsBeforeSubmit: false },
+        });
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsDuring: false },
         });
         await submit();
         const response = await read(admin);
@@ -183,9 +187,9 @@ describe('Nominations', () => {
         expect(visible.nominations.every((row) => row.author === null)).toBe(true);
         expect(JSON.stringify(visible)).not.toContain('Private Nominator');
         expect(JSON.stringify(visible)).not.toContain(memberParticipant);
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationAuthors: true },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsDuring: true },
         });
         expect(nominationData(await (await read()).json()).nominations).toEqual(
             expect.arrayContaining([expect.objectContaining({ author: 'Private Nominator' })]),

@@ -47,7 +47,7 @@ export class RatingService {
                 : [],
         );
         const isOpen = session.phase === 'RATING';
-        const canSeeResults = canViewRatingResults(session, membership.role, Boolean(own?.rating));
+        const canSeeResults = canViewRatingResults(session, membership.club, Boolean(own?.rating));
         return {
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.rating).length,

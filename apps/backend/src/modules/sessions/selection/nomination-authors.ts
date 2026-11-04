@@ -1,6 +1,7 @@
 import type { TSessionNominationAuthors } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewNominationAuthors } from '../session-visibility.js';
 import { selectionScoresSnapshotSchema } from './selection-result.js';
@@ -9,12 +10,12 @@ import { selectionScoresSnapshotSchema } from './selection-result.js';
 export async function loadNominationAuthors(
     tx: Prisma.TransactionClient,
     session: Prisma.SessionGetPayload<object>,
+    membership: TMembership,
     moviesService: MoviesService,
 ): Promise<TSessionNominationAuthors | null> {
     if (
         session.type === 'PRE_SELECTED' ||
-        session.showNominationAuthorsDuring === null ||
-        !canViewNominationAuthors(session) ||
+        !canViewNominationAuthors(session, membership.club) ||
         (session.phase !== 'WATCHING' &&
             session.phase !== 'RATING' &&
             session.phase !== 'COMPLETED')

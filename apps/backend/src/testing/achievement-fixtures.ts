@@ -11,10 +11,9 @@ export function buildScreening(overrides: Partial<TAchievementSession> = {}): TA
         phase: 'COMPLETED',
         scheduledAt: new Date('2026-10-01T23:30:00Z'),
         selectionResult: null,
-        showRatingResults: true,
-        showRatingsAfter: null,
-        showSelectionScoresAfter: null,
         club: {
+            showRatingsAfter: true,
+            showSelectionScoresAfter: true,
             memberships: [
                 {
                     id: 'member-1',
