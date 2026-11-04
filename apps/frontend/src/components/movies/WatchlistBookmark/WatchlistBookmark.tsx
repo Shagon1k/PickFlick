@@ -81,13 +81,15 @@ export default function WatchlistBookmark({
                         type="button"
                     >
                         {variant === 'poster' ? (
-                            <svg aria-hidden="true" viewBox="0 0 24 24">
-                                <path className={styles.halo} d={RIBBON} />
-                                <path d={RIBBON} />
-                            </svg>
+                            <span className={styles.bookmarkIcon} data-press-surface>
+                                <svg aria-hidden="true" viewBox="0 0 24 24">
+                                    <path className={styles.halo} d={RIBBON} />
+                                    <path d={RIBBON} />
+                                </svg>
+                            </span>
                         ) : (
                             <>
-                                <span>{priorityLabel}</span>
+                                <span data-press-surface>{priorityLabel}</span>
                                 <Icon name="chevron-down" />
                             </>
                         )}

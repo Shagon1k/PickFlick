@@ -247,3 +247,10 @@ zero/missing/tied scores and a sign-in click held until hydration. The Login reg
 on the preceding implementation because the button is enabled before its handler exists; the
 fix reuses the existing hydration hook. Final gate results belong to the
 [verification register](phase-18-human-verification-3.md#verification-resumed--2026-11-04).
+
+The hosted follow-up caught press-animation geometry in the Watchlist priority captures: scaling
+the popover anchor left Floating UI at a fractional intermediate position. The control now pulses
+its existing inner press surface; its anchor stays fixed. Captures also wait for the automatic
+Medium save to finish. Seven Watchlist contract checks and ten repeated strict Linux comparisons
+pass after the fix, without changing either baseline PNG or the screenshot tolerance. The
+[hosted follow-up](phase-18-human-verification-3.md#hosted-visual-follow-up) records the reproduction.

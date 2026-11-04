@@ -118,6 +118,10 @@ for (const viewport of screenshotViewports) {
             await page.getByRole('button', { name: 'Add to watchlist', exact: true }).click();
             const dialog = page.getByRole('dialog');
             await expect(dialog).toHaveCSS('opacity', '1');
+            const medium = dialog.getByRole('button', { name: 'Medium', exact: true });
+            await expect(medium).toHaveAttribute('aria-pressed', 'true');
+            await expect(medium).toBeEnabled();
+            await page.mouse.move(0, 0);
             await settle(page);
             await expect(page).toHaveScreenshot(`watchlist-priority-${viewport.name}.png`);
             await dialog.getByRole('button', { name: 'High', exact: true }).click();

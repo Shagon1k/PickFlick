@@ -45,6 +45,21 @@ reset the user's development database. No test/coverage gate, retry policy, acce
 screenshot tolerance was weakened.
 Detailed hosted evidence belongs in #63 and PR #199 after the final push.
 
+### Hosted visual follow-up
+
+PR CI on `ba42260d` found two Watchlist priority screenshot failures (23–172 differing pixels),
+despite the earlier clean local visual run. CI traces showed fractional popover coordinates during
+the bookmark's press animation. A new geometry assertion reproduces the defect: the anchor grows
+from 48×58 to approximately 48.64×58.77 while pressed, so Floating UI can retain an intermediate
+position. The existing press-surface mechanism now animates the ribbon icon or table label while
+keeping the anchor fixed. The visual test waits for the initial Medium save to finish and clears
+pointer hover before capturing.
+
+The new geometry assertion fails on the preceding code. After the fix, all seven Watchlist contract
+checks pass in the pinned Linux image, and both affected visual checks pass five repeats each with
+one worker (10/10, no retries). Existing PNGs and the zero-pixel threshold are unchanged. Hosted
+verification of the follow-up remains required.
+
 ## Severity
 
 - **Blocker**: a core flow cannot finish, or data, security or privacy is at risk.

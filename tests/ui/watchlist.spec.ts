@@ -20,6 +20,17 @@ test(
         await ribbon.hover();
         await settle(page);
         expect(await ribbon.boundingBox()).toEqual(resting);
+        await ribbon.dispatchEvent('pointerdown', { button: 0, isPrimary: true });
+        await ribbon.evaluate((element) => {
+            for (const animation of element.getAnimations({ subtree: true })) {
+                animation.pause();
+                animation.currentTime = Number(animation.effect!.getTiming().duration) / 2;
+            }
+        });
+        expect(await ribbon.boundingBox()).toEqual(resting);
+        await ribbon.evaluate((element) => {
+            for (const animation of element.getAnimations({ subtree: true })) animation.finish();
+        });
         let release = () => {};
         let hasCaptured = false;
         const held = new Promise<void>((resolve) => {
