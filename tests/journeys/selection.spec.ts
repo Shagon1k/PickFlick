@@ -88,22 +88,20 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
         const firstPage = pages[0]!;
         await pages[1]!.goto(`/sessions/${session.id}`);
         await expect(
-            pages[1]!
-                .getByText('Selection in progress — 0 of 2 participants have submitted.', {
-                    exact: true,
-                })
-                .filter({ visible: true }),
+            pages[1]!.getByRole('status').filter({
+                hasText: /^Selection in progress — 0 of 2 participants have submitted\.$/u,
+            }),
         ).toBeVisible();
         await submitScores(firstPage, session.id, 0);
         await expect(
-            firstPage.getByText('Submitted · Waiting for other participants', { exact: true }),
+            firstPage
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
         ).toBeVisible();
         await expect(
-            pages[1]!
-                .getByText('Selection in progress — 1 of 2 participants have submitted.', {
-                    exact: true,
-                })
-                .filter({ visible: true }),
+            pages[1]!.getByRole('status').filter({
+                hasText: /^Selection in progress — 1 of 2 participants have submitted\.$/u,
+            }),
         ).toBeVisible({ timeout: 20000 });
         await firstPage.reload();
         await expect(firstPage.getByRole('radio')).toHaveCount(0);

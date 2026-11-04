@@ -62,12 +62,14 @@ for (const viewport of screenshotViewports) {
             await signInMock(context, `valid-settings-admin-past-${viewport.name}`);
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
+            const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
+            await expect(form.getByLabel('Date', { exact: true })).toBeEnabled();
             await settle(page);
             const film = page.getByRole('combobox', { name: 'Select a Movie' });
             await film.fill('remembered');
             await page.getByRole('option', { name: /A remembered film/u }).click();
-            await page.getByLabel('Date', { exact: true }).fill('2020-01-01');
-            await page.getByLabel('Location').fill('Old cinema');
+            await form.getByLabel('Date', { exact: true }).fill('2020-01-01');
+            await form.getByLabel('Location').fill('Old cinema');
             await settle(page);
             await expect(page).toHaveScreenshot(`past-session-film-${viewport.name}.png`, {
                 fullPage: true,

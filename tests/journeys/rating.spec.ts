@@ -81,7 +81,9 @@ test('Three participants submit once and all clients see automatic completion', 
                 .first()
                 .getByText('You', { exact: true }),
         ).toBeVisible();
-        await expect(pages[0]!.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
+        await expect(
+            pages[0]!.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+        ).toBeVisible({
             timeout: 20000,
         });
         const duplicates = await Promise.all(
@@ -150,7 +152,9 @@ test('A Moderator completes partial Rating and every client keeps only received 
         ).toBeVisible();
         const before = await prisma.sessionRating.findMany({ where: { sessionId: session.id } });
         const operatorPage = pages[1]!;
-        await expect(operatorPage.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
+        await expect(
+            operatorPage.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+        ).toBeVisible({
             timeout: 20000,
         });
         await operatorPage.getByRole('button', { name: 'Session settings' }).click();

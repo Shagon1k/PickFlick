@@ -19,7 +19,9 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(page.getByText(/Rating in progress — 1 of 3/)).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+            ).toBeVisible();
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const first = page.getByRole('radio', { name: '1 of 10', exact: true });
             // Ten stars share one row, so a star narrows on phones but keeps a 44px height.
@@ -47,7 +49,9 @@ for (const viewport of canonicalViewports) {
                     .first()
                     .getByText('You', { exact: true }),
             ).toBeVisible();
-            await expect(page.getByText(/Rating in progress — 2 of 3/)).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress — 2 of 3/ }),
+            ).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await page.reload();
             await expect(
@@ -78,7 +82,11 @@ for (const viewport of canonicalViewports) {
             await expect(page.getByRole('list', { name: 'Session ratings' })).toContainText(
                 'A lasting impression.',
             );
-            await expect(page.getByText('A memorable screening.')).toBeVisible();
+            await expect(
+                page
+                    .getByRole('button', { name: 'Read the review by Casey', exact: true })
+                    .getByText('A memorable screening.', { exact: true }),
+            ).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -118,7 +126,9 @@ for (const [scenario, joinCount, removedCount] of [
         async ({ context, page }) => {
             await authenticate(context, scenario);
             await page.goto(ROUTE);
-            await expect(page.getByText(/Rating in progress/u)).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress/u }),
+            ).toBeVisible();
             await expect(
                 page.getByRole('heading', { name: 'Your rating', exact: true }),
             ).toHaveCount(0);
@@ -210,6 +220,10 @@ test('Completed Rating explains an empty result without inventing responses', as
 }) => {
     await authenticate(context, 'empty-completed');
     await page.goto(ROUTE);
-    await expect(page.getByText('No ratings were received.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('region', { name: 'Ratings', exact: true })
+            .getByText('No ratings were received.'),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
 });

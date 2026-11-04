@@ -119,13 +119,14 @@ async function addNomination(page: Page, query: string) {
 
 /** Step one: the screened film, its date and place. */
 async function fillFilm(page: Page, query: string, location = 'Old cinema') {
+    const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
     const search = page.getByRole('combobox', { name: 'Select a Movie' });
     await search.fill(query);
     await expect(page.getByRole('option')).toHaveCount(1);
     await search.press('ArrowDown');
     await search.press('Enter');
-    await page.getByLabel('Date').fill('2020-01-01');
-    await page.getByLabel('Location').fill(location);
+    await form.getByLabel('Date').fill('2020-01-01');
+    await form.getByLabel('Location').fill(location);
 }
 
 const next = (page: Page) => page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -141,6 +142,7 @@ test('A minimal past Session waits for hydration, retains input after a request 
     const journey = await createPastJourney(browser);
     const { clubId, context, query, prisma } = journey;
     const page = await context.newPage();
+    const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
     const path = `/clubs/${clubId}/sessions/past/new`;
     let releaseScripts!: () => void;
     const scriptsReady = new Promise<void>((resolve) => {
@@ -159,9 +161,9 @@ test('A minimal past Session waits for hydration, retains input after a request 
                 .getByRole('button', { name: 'Next', exact: true, includeHidden: true }),
         ).toBeDisabled();
         releaseScripts();
-        await expect(page.getByLabel('Date')).toBeEnabled();
+        await expect(form.getByLabel('Date')).toBeEnabled();
         await fillFilm(page, query);
-        await expect(page.getByLabel('Date')).toHaveValue('2020-01-01');
+        await expect(form.getByLabel('Date')).toHaveValue('2020-01-01');
         await next(page);
         await next(page);
         await page.getByRole('button', { name: 'Remove A remembered film', exact: true }).click();
@@ -174,7 +176,7 @@ test('A minimal past Session waits for hydration, retains input after a request 
         ).toBeVisible();
         await back(page);
         await back(page);
-        await expect(page.getByLabel('Location')).toHaveValue('Old cinema');
+        await expect(form.getByLabel('Location')).toHaveValue('Old cinema');
         await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
             'A remembered film',
         );
@@ -205,6 +207,7 @@ test('Retrying after a lost committed response rejects changed evidence and pres
     const journey = await createPastJourney(browser);
     const { clubId, context, query, prisma } = journey;
     const page = await context.newPage();
+    const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
     const path = `/clubs/${clubId}/sessions/past/new`;
     try {
         await page.goto(path);
@@ -233,7 +236,7 @@ test('Retrying after a lost committed response rejects changed evidence and pres
         await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).uncheck();
         await ratings.getByRole('radio', { name: '9 of 10', exact: true }).click();
         await back(page);
-        await page.getByLabel('Location').fill('Changed cinema');
+        await form.getByLabel('Location').fill('Changed cinema');
         await next(page);
         await next(page);
         await logSession(page);
@@ -249,11 +252,11 @@ test('Retrying after a lost committed response rejects changed evidence and pres
         ).not.toBeChecked();
         await expect(ratings.getByRole('radio', { name: '9 of 10', exact: true })).toBeChecked();
         await back(page);
-        await expect(page.getByLabel('Location')).toHaveValue('Changed cinema');
+        await expect(form.getByLabel('Location')).toHaveValue('Changed cinema');
         expect(await prisma.session.findUniqueOrThrow({ where: { id: committed.id } })).toEqual(
             committed,
         );
-        await page.getByLabel('Location').fill('Old cinema');
+        await form.getByLabel('Location').fill('Old cinema');
         await next(page);
         await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
         await ratings.getByRole('radio', { name: '8 of 10', exact: true }).click();
@@ -281,6 +284,7 @@ for (const viewport of canonicalViewports) {
             const journey = await createPastJourney(browser);
             const { clubId, query, rivalQuery, context, prisma } = journey;
             const page = await context.newPage();
+            const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
             await page.setViewportSize(viewport);
             await page.emulateMedia({ reducedMotion: 'reduce' });
             try {
@@ -294,13 +298,13 @@ for (const viewport of canonicalViewports) {
                 await next(page);
                 await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeFocused();
                 await fillFilm(page, query);
-                await page.getByLabel('Date').fill('2999-01-01');
+                await form.getByLabel('Date').fill('2999-01-01');
                 await next(page);
                 await expect(
                     page.getByText('Choose a valid date in the past.').last(),
                 ).toBeVisible();
-                await page.getByLabel('Date').fill('2020-01-01');
-                await page.getByLabel('Notes').fill('Only one historical rating is known.');
+                await form.getByLabel('Date').fill('2020-01-01');
+                await form.getByLabel('Notes').fill('Only one historical rating is known.');
                 await next(page);
                 await page
                     .getByRole('checkbox', { name: 'Former attendee (former member)' })

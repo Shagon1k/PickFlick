@@ -61,7 +61,11 @@ test('Only Club operators open Rating and both clients see the manual transition
         await expect(adminPage.getByRole('dialog', { name: 'Open Rating' })).toBeVisible();
         await adminPage.getByRole('button', { name: 'Keep Watching' }).click();
         await adminPage.goto(`/sessions/${session.id}`);
-        await expect(memberPage.getByText('3 members have joined the screening.')).toBeVisible({
+        await expect(
+            memberPage
+                .getByRole('status')
+                .filter({ hasText: '3 members have joined the screening.' }),
+        ).toBeVisible({
             timeout: 20000,
         });
         expect(await prisma.session.findUniqueOrThrow({ where: { id: session.id } })).toMatchObject(

@@ -20,7 +20,9 @@ test(
         await expect(groups).toHaveCount(2);
         await expect(page.getByText('Nominated by Jordan Member')).toHaveCount(0);
         await page.getByRole('button', { name: 'Submit scores' }).click();
-        await expect(page.getByText('Choose a score for every nomination.')).toBeVisible();
+        await expect(
+            page.getByRole('status').filter({ hasText: 'Choose a score for every nomination.' }),
+        ).toBeVisible();
         await expect(groups.first().getByRole('radio', { name: '0 of 3' })).toBeFocused();
         await page.keyboard.press('End');
         await expect(groups.first().getByRole('radio', { name: '3 of 3' })).toBeChecked();
@@ -34,18 +36,20 @@ test(
         await expect(
             page
                 .getByRole('main')
-                .getByText('Submitted · Waiting for other participants', { exact: true }),
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
         ).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Your scores', exact: true })).toBeFocused();
         await expect(page.getByRole('radio')).toHaveCount(0);
         await expect(
-            page.getByText('2 of 3 participants have submitted.', { exact: false }),
+            page.getByRole('status').filter({ hasText: '2 of 3 participants have submitted.' }),
         ).toBeVisible();
         await page.reload();
         await expect(
             page
                 .getByRole('main')
-                .getByText('Submitted · Waiting for other participants', { exact: true }),
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
         ).toBeVisible();
         await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
     },
@@ -58,15 +62,18 @@ test('recoverable failure and offline submission preserve scores', async ({ cont
         await group.getByRole('radio', { name: '2 of 3' }).click();
     await page.getByRole('button', { name: 'Submit scores' }).click();
     await expect(
-        page.getByText('We could not save your ballot. Your scores are still here; try again.'),
+        page.getByRole('status').filter({
+            hasText: 'We could not save your ballot. Your scores are still here; try again.',
+        }),
     ).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(2);
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Submit scores' }).click();
     await expect(
-        page.getByText(
-            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
-        ),
+        page.getByRole('status').filter({
+            hasText:
+                'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
+        }),
     ).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(2);
 });
@@ -87,7 +94,8 @@ test('legacy scale supports touch and omits zero', async ({ browser }) => {
         await expect(
             page
                 .getByRole('main')
-                .getByText('Submitted · Waiting for other participants', { exact: true }),
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
         ).toBeVisible();
     } finally {
         await context.close();

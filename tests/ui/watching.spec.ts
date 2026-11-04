@@ -29,7 +29,11 @@ for (const viewport of canonicalViewports) {
                 }),
             ).toBeVisible();
             await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
-            await expect(page.getByText('Room A', { exact: true })).toBeVisible();
+            await expect(
+                page
+                    .getByRole('region', { name: 'Session details', exact: true })
+                    .getByText('Room A', { exact: true }),
+            ).toBeVisible();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

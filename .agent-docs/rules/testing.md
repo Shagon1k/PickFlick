@@ -45,6 +45,10 @@
 ## Playwright
 
 - Prefer role and label locators. Assert with web-first assertions (`toBeVisible`, `toHaveURL`).
+- Streaming routes may retain hidden server markup and inert skeletons. Scope visible-content
+  checks to accessible roles or named regions rather than page-wide text. Keep privacy absence
+  checks global so hidden disclosures still fail. Wait for enabled controls before typing into
+  a form that gates input until hydration.
 - After `page.goto(…, { waitUntil: 'load' })`, call `settle(page)` from `settle.ts` before measuring
   layout, contrast, or pixels: it waits for fonts, images, and finite animations. Never wait for
   `networkidle`; link prefetching keeps the network busy.

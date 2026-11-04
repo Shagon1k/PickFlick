@@ -70,6 +70,24 @@ measuring or entering data. All assertions, timeouts and retry policy remain unc
 affected cases pass five repeats each in the pinned Linux image with one worker (15/15, no retries).
 The failed Delivery gate reported only `UI_RESULT=failure`; its other five inputs were successful.
 
+### Accessible streamed-content audit
+
+CI on `371f3e36` found two more instances of the same selector class: the waiting-member
+Nomination status and an ineligible Rating status matched hidden streamed markup, including
+Skeleton's hidden measuring text. The audit replaces broad progress/submission queries across
+Nomination, Selection, Rating and their real-API journeys with accessible status locators.
+Counter, review and empty-state assertions use their named section or review control. The Past
+Session real-API scenarios and visual checks also scope Date/Location/Notes to the named form;
+the disabled-before-JavaScript/enabled-after-hydration assertion remains intact. Privacy absence
+assertions still inspect the whole DOM, including hidden content. The testing rules record this
+distinction. No product behavior, timeouts, retries, pixel tolerances or baseline images changed.
+
+Pinned-Linux evidence after the audit: 58/58 phase/Completed contract checks, 8/8 Watching checks
+and 17/17 real-API journeys pass against the isolated test services. The two reported cases plus the Past Session
+smoke and visual cases pass five repeats each with one worker: 30/30 without retries, against
+unchanged PNGs. The user's dev app stays on its original services while these checks run in the
+owned container. Exact-head hosted verification remains pending.
+
 ## Severity
 
 - **Blocker**: a core flow cannot finish, or data, security or privacy is at risk.

@@ -75,7 +75,11 @@ for (const viewport of canonicalViewports) {
             await expect(
                 page.getByRole('region', { name: 'Session details', exact: true }),
             ).toContainText('Bring snacks.');
-            await expect(page.getByText('A memorable screening.')).toBeVisible();
+            await expect(
+                page
+                    .getByRole('button', { name: 'Read the review by Casey', exact: true })
+                    .getByText('A memorable screening.', { exact: true }),
+            ).toBeVisible();
             const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
             await expect(rivals.getByText('The rival nomination')).toBeVisible();
             const score = rivals
@@ -143,7 +147,11 @@ test('Completed hidden results disclose no other comments, nominees or vote tota
 }) => {
     await authenticate(context, 'valid-rating-history-hidden-completed');
     await page.goto(SESSION_ROUTE);
-    await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('region', { name: 'Nomination Rivals', exact: true })
+            .getByText('Votes are hidden for this Session.'),
+    ).toBeVisible();
     await expect(page.getByText('A memorable screening.')).toHaveCount(0);
     await expect(page.getByText('The rival nomination')).toHaveCount(0);
     await expect(page.getByText(/Winner nominated by/)).toHaveCount(0);
@@ -172,5 +180,9 @@ test('Hub Sessions lists only the running Session and explains an empty history'
     await page.goto(HUB_ROUTE);
     await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Open Ratings', exact: true })).toHaveCount(0);
-    await expect(page.getByText('No Session history yet.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('region', { name: 'History', exact: true })
+            .getByText('No Session history yet.'),
+    ).toBeVisible();
 });
